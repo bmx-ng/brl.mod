@@ -3,7 +3,7 @@
 
 #include <signal.h>
 
-void __bb_appstub_appstub();
+void __bb_brl_appstub_appstub();
 
 int main( int argc,char *argv[] ){
 
@@ -11,7 +11,7 @@ int main( int argc,char *argv[] ){
 	
 	bbStartup( argc,argv,0,0 );
 	
-	__bb_appstub_appstub();
+	__bb_brl_appstub_appstub();
 
 	return 0;
 }

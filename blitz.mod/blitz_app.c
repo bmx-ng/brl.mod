@@ -260,7 +260,7 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	char lnk[PATH_MAX];
 	pid_t pid;
 	
-	asm( "movl %%ebp,%0;":"=r"(ebp) );//::"%ebp" );
+	// asm( "movl %%ebp,%0;":"=r"(ebp) );//::"%ebp" );
 	
 	bbGCStackTop=ebp+28;
 	

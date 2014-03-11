@@ -64,3 +64,7 @@ void bbGCSuspend(){
 void bbGCResume(){
 	GC_enable();
 }
+
+int bbGCMemAlloced(){
+	return GC_get_heap_size();
+}
