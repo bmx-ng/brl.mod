@@ -195,9 +195,9 @@ returns: 0 if file at @path doesn't exist, FILETYPE_FILE (1) if the file is a pl
 End Rem
 Function FileType( path$ )
 	FixPath path
-	Local mode,size,mtime,ctime
-	If stat_( path,mode,size,mtime,ctime ) Return 0
-	Select mode & S_IFMT_
+	Local Mode,size,mtime,ctime
+	If stat_( path,Mode,size,mtime,ctime ) Return 0
+	Select Mode & S_IFMT_
 	Case S_IFREG_ Return FILETYPE_FILE
 	Case S_IFDIR_ Return FILETYPE_DIR
 	End Select
@@ -210,8 +210,8 @@ returns: The time the file at @path was last modified
 End Rem
 Function FileTime( path$ )
 	FixPath path
-	Local mode,size,mtime,ctime
-	If stat_( path,mode,size,mtime,ctime ) Return 0
+	Local Mode,size,mtime,ctime
+	If stat_( path,Mode,size,mtime,ctime ) Return 0
 	Return mtime
 End Function
 
@@ -221,8 +221,8 @@ returns: Size, in bytes, of the file at @path, or -1 if the file does not exist
 end rem
 Function FileSize( path$ )
 	FixPath path
-	Local mode,size,mtime,ctime
-	If stat_( path,mode,size,mtime,ctime ) Return -1
+	Local Mode,size,mtime,ctime
+	If stat_( path,Mode,size,mtime,ctime ) Return -1
 	Return size
 End Function
 
@@ -232,17 +232,17 @@ returns: file mode flags
 end rem
 Function FileMode( path$ )
 	FixPath path
-	Local mode,size,mtime,ctime
-	If stat_( path,mode,size,mtime,ctime ) Return -1
-	Return mode & 511
+	Local Mode,size,mtime,ctime
+	If stat_( path,Mode,size,mtime,ctime ) Return -1
+	Return Mode & 511
 End Function
 
 Rem
 bbdoc: Set file mode
 end rem
-Function SetFileMode( path$,mode )
+Function SetFileMode( path$,Mode )
 	FixPath path
-	chmod_ path,mode
+	chmod_ path,Mode
 End Function
 
 Rem
@@ -252,7 +252,7 @@ End Rem
 Function CreateFile( path$ )
 	FixPath path
 	remove_ path
-	Local t=fopen_( path,"wb" )
+	Local t:Byte Ptr=fopen_( path,"wb" )
 	If t fclose_ t
 	If FileType( path )=FILETYPE_FILE Return True
 End Function
@@ -367,7 +367,7 @@ End Rem
 Function DeleteDir( path$,recurse=False )
 	FixPath path,True
 	If recurse
-		Local dir=ReadDir( path )
+		Local dir:Byte Ptr=ReadDir( path )
 		If Not dir Return
 		Repeat
 			Local t$=NextFile( dir )
@@ -407,14 +407,14 @@ Rem
 bbdoc: Return next file in a directory
 returns: File name of next file in directory opened using #ReadDir, or an empty string if there are no more files to read.
 End Rem
-Function NextFile$( dir )
+Function NextFile$( dir:Byte Ptr )
 	Return readdir_( dir )
 End Function
 
 Rem
 bbdoc: Close a directory
 End Rem
-Function CloseDir( dir )
+Function CloseDir( dir:Byte Ptr )
 	closedir_ dir
 End Function
 
@@ -426,7 +426,7 @@ about: The @skip_dots parameter, if true, removes the '.' (current) and '..'
 end rem
 Function LoadDir$[]( dir$,skip_dots=True )
 	FixPath dir,True
-	Local d=ReadDir( dir )
+	Local d:Byte Ptr=ReadDir( dir )
 	If Not d Return
 	Local i$[100],n
 	Repeat
