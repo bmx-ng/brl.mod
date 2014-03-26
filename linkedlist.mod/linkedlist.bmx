@@ -6,12 +6,14 @@ bbdoc: Data structures/Linked lists
 End Rem
 Module BRL.LinkedList
 
-ModuleInfo "Version: 1.07"
+ModuleInfo "Version: 1.08"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.08"
+ModuleInfo "History: Clear TLink fields on Remove()."
 ModuleInfo "History: 1.07 Release"
 ModuleInfo "History: Changed Reverse to maintain TLink stability"
 ModuleInfo "History: 1.06 Release"
@@ -59,6 +61,8 @@ Type TLink
 		_value=Null
 		_succ._pred=_pred
 		_pred._succ=_succ
+		_pred=Null
+		_succ=Null
 	End Method
 
 End Type
@@ -100,14 +104,14 @@ Type TList
 		_head._value=_head
 	End Method
 	
-?Not Threaded
+'?Not Threaded
 	Method Delete()
 		Clear
 		_head._value=Null
 		_head._succ=Null
 		_head._pred=Null
 	End Method
-?
+'?
 	Rem
 	bbdoc: Clear a linked list
 	about: Removes all objects from @list.
