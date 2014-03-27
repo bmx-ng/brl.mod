@@ -65,11 +65,11 @@ Incbin "gldrawtextfont.bin"
 Extern
 	Function bbGLGraphicsShareContexts()
 	Function bbGLGraphicsGraphicsModes( buf:Byte Ptr,size )
-	Function bbGLGraphicsAttachGraphics( widget,flags )
-	Function bbGLGraphicsCreateGraphics( width,height,depth,hertz,flags )
-	Function bbGLGraphicsGetSettings( context,width Var,height Var,depth Var,hertz Var,flags Var )
-	Function bbGLGraphicsClose( context )	
-	Function bbGLGraphicsSetGraphics( context )
+	Function bbGLGraphicsAttachGraphics:Byte Ptr( widget:Byte Ptr,flags )
+	Function bbGLGraphicsCreateGraphics:Byte Ptr( width,height,depth,hertz,flags )
+	Function bbGLGraphicsGetSettings( context:Byte Ptr,width Var,height Var,depth Var,hertz Var,flags Var )
+	Function bbGLGraphicsClose( context:Byte Ptr )	
+	Function bbGLGraphicsSetGraphics( context:Byte Ptr )
 	Function bbGLGraphicsFlip( sync )
 End Extern
 
@@ -99,7 +99,7 @@ Type TGLGraphics Extends TGraphics
 		_context=0
 	End Method
 	
-	Field _context
+	Field _context:Byte Ptr
 	
 End Type
 
@@ -121,7 +121,7 @@ Type TGLGraphicsDriver Extends TGraphicsDriver
 		Return modes
 	End Method
 	
-	Method AttachGraphics:TGLGraphics( widget,flags )
+	Method AttachGraphics:TGLGraphics( widget:Byte Ptr,flags )
 		Local t:TGLGraphics=New TGLGraphics
 		t._context=bbGLGraphicsAttachGraphics( widget,flags )
 		Return t
@@ -134,7 +134,7 @@ Type TGLGraphicsDriver Extends TGraphicsDriver
 	End Method
 	
 	Method SetGraphics( g:TGraphics )
-		Local context
+		Local context:Byte Ptr
 		Local t:TGLGraphics=TGLGraphics( g )
 		If t context=t._context
 		bbGLGraphicsSetGraphics context

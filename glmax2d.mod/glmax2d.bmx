@@ -101,7 +101,6 @@ Function DeleteTex( name,seq )
 End Function
 
 Function CreateTex( width,height,flags )
-
 	'alloc new tex
 	Local name
 	glGenTextures 1,Varptr name
@@ -289,7 +288,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		Return GLGraphicsDriver().GraphicsModes()
 	End Method
 	
-	Method AttachGraphics:TMax2DGraphics( widget,flags )
+	Method AttachGraphics:TMax2DGraphics( widget:Byte Ptr,flags )
 		Local g:TGLGraphics=GLGraphicsDriver().AttachGraphics( widget,flags )
 		If g Return TMax2DGraphics.Create( g,Self )
 	End Method

@@ -51,14 +51,14 @@ typedef struct BBGLContext BBGLContext;
 
 struct BBGLContext{
 	int mode,width,height,depth,hertz,flags,sync;
-	int window;
+	Window window;
 	GLXContext glContext;
 };
 
 // glgraphics.bmx interface
 
 int bbGLGraphicsGraphicsModes( int *imodes,int maxcount );
-BBGLContext *bbGLGraphicsAttachGraphics( int window,int flags );
+BBGLContext *bbGLGraphicsAttachGraphics( void * window,int flags );
 BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,int flags );
 void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hz,int *flags );
 void bbGLGraphicsClose( BBGLContext *context );
@@ -130,13 +130,13 @@ static void _swapBuffers( BBGLContext *context ){
 	bbSystemPoll();
 }
 
-BBGLContext *bbGLGraphicsAttachGraphics( int window,int flags ){
+BBGLContext *bbGLGraphicsAttachGraphics( void * window,int flags ){
 	BBGLContext *context=(BBGLContext*)malloc( sizeof(BBGLContext) );
 	memset( context,0,sizeof(BBGLContext) );
 	context->mode=MODE_WIDGET;
 	context->flags=flags;
 	context->sync=-1;	
-	context->window=window;
+	context->window=(Window)window;
 	return context;
 }
 

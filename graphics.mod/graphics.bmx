@@ -78,7 +78,7 @@ Type TGraphicsDriver
 
 	Method GraphicsModes:TGraphicsMode[]() Abstract
 	
-	Method AttachGraphics:TGraphics( widget,flags ) Abstract
+	Method AttachGraphics:TGraphics( widget:Byte Ptr,flags ) Abstract
 	
 	Method CreateGraphics:TGraphics( width,height,depth,hertz,flags ) Abstract
 	
@@ -181,11 +181,11 @@ about:
 in the range 0 (inclusive) to the value returned by #CountGraphicsModes (exclusive).
 End Rem
 Function GetGraphicsMode( index,width Var,height Var,depth Var,hertz Var )
-	Local mode:TGraphicsMode=GraphicsModes()[index]
-	width=mode.width
-	height=mode.height
-	depth=mode.depth
-	hertz=mode.hertz
+	Local Mode:TGraphicsMode=GraphicsModes()[index]
+	width=Mode.width
+	height=Mode.height
+	depth=Mode.depth
+	hertz=Mode.hertz
 End Function
 
 Rem
@@ -196,11 +196,11 @@ A value of 0 for any of @width, @height, @depth or @hertz will cause that
 parameter to be ignored.
 End Rem
 Function GraphicsModeExists( width,height,depth=0,hertz=0 )
-	For Local mode:TGraphicsMode=EachIn GraphicsModes()
-		If width And width<>mode.width Continue
-		If height And height<>mode.height Continue
-		If depth And depth<>mode.depth Continue
-		If hertz And hertz<>mode.hertz Continue
+	For Local Mode:TGraphicsMode=EachIn GraphicsModes()
+		If width And width<>Mode.width Continue
+		If height And height<>Mode.height Continue
+		If depth And depth<>Mode.depth Continue
+		If hertz And hertz<>Mode.hertz Continue
 		Return True
 	Next
 	Return False
@@ -229,7 +229,7 @@ Function CreateGraphics:TGraphics( width,height,depth,hertz,flags )
 	Return g
 End Function
 
-Function AttachGraphics:TGraphics( widget,flags )
+Function AttachGraphics:TGraphics( widget:Byte Ptr,flags )
 	flags:|_defaultFlags
 	Local g:TGraphics
 	Try
