@@ -8,12 +8,14 @@ The PNG loader module provides the ability to load PNG format #pixmaps.
 End Rem
 Module BRL.PNGLoader
 
-ModuleInfo "Version: 1.05"
+ModuleInfo "Version: 1.06"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.06"
+ModuleInfo "History: Use Byte Ptr instead of int for.. pointers."
 ModuleInfo "History: 1.05"
 ModuleInfo "History: libpng update to 1.6.7."
 ModuleInfo "History: 1.04"
@@ -31,15 +33,15 @@ Private
 
 Global png_stream:TStream
 
-Function png_read_fn( png_ptr,buf:Byte Ptr,size )
+Function png_read_fn( png_ptr:Byte Ptr,buf:Byte Ptr,size )
 	Return png_stream.ReadBytes( buf,size )
 End Function
 
-Function png_write_fn( png_ptr,buf:Byte Ptr,size )
+Function png_write_fn( png_ptr:Byte Ptr,buf:Byte Ptr,size )
 	Return png_stream.WriteBytes( buf,size )
 End Function
 
-Function png_flush_fn( png_ptr )
+Function png_flush_fn( png_ptr:Byte Ptr )
 	png_stream.Flush
 End Function
 
@@ -66,7 +68,7 @@ Function LoadPixmapPNG:TPixmap( url:Object )
 	EndIf
 	
 	Try
-		Local png_ptr=png_create_read_struct( "1.6.7",Null,Null,Null )
+		Local png_ptr:Byte Ptr=png_create_read_struct( "1.6.7",Null,Null,Null )
 		
 		' check for valid png_ptr
 		If Not png_ptr Then
@@ -75,13 +77,13 @@ Function LoadPixmapPNG:TPixmap( url:Object )
 			Return
 		End If
 		
-		Local info_ptr=png_create_info_struct( png_ptr )
+		Local info_ptr:Byte Ptr=png_create_info_struct( png_ptr )
 		
 		' check for valid info_ptr
 		If Not info_ptr Then
 			png_stream.Close
 			png_stream=Null
-			png_destroy_read_struct Varptr png_ptr,Null,Null
+			png_destroy_read_struct png_ptr,Null,Null
 			Return
 		End If
 		
@@ -89,7 +91,7 @@ Function LoadPixmapPNG:TPixmap( url:Object )
 	
 		png_set_read_fn png_ptr,Null,png_read_fn
 			
-		png_read_png png_ptr,info_ptr,PNG_TRANSFORM_EXPAND|PNG_TRANSFORM_STRIP_16,0
+		png_read_png png_ptr,info_ptr,PNG_TRANSFORM_EXPAND|PNG_TRANSFORM_STRIP_16,Null
 	
 		Local width,height,bit_depth,color_type,interlace_type,compression_type,filter_method
 		png_get_IHDR png_ptr,info_ptr,width,height,bit_depth,color_type,interlace_type,compression_type,filter_method
@@ -163,8 +165,8 @@ Function SavePixmapPNG( pixmap:TPixmap,url:Object,compression=5 )
 	If Not png_stream Return
 	
 	Try
-		Local png_ptr=png_create_write_struct( "1.6.7",Null,Null,Null )
-		Local info_ptr=png_create_info_struct( png_ptr )
+		Local png_ptr:Byte Ptr=png_create_write_struct( "1.6.7",Null,Null,Null )
+		Local info_ptr:Byte Ptr=png_create_info_struct( png_ptr )
 	
 		png_set_write_fn png_ptr,Null,png_write_fn,png_flush_fn
 	
