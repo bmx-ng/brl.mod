@@ -10,8 +10,8 @@ extern "C"{
 
 #define BBNULLARRAY (&bbEmptyArray)
 
-#define BBARRAYSIZE(q,n) (20+(n)*sizeof(int)+(q))
-#define BBARRAYDATA(p,n) ((void*)((char*)(p)+20+(n)*sizeof(int)))
+#define BBARRAYSIZE(q,n) ((2*sizeof(void*)+12)+(n)*sizeof(int)+(q))
+#define BBARRAYDATA(p,n) ((void*)((char*)(p)+(2*sizeof(void*)+12)+(n)*sizeof(int)))
 
 struct BBArray{
 	//extends BBObject
