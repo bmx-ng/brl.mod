@@ -155,10 +155,9 @@ static int mouseViewPos( NSView *view,int *x,int *y ){
 	NSPoint point;
 	NSWindow *window;
 	if( displayCaptured || !view ){
-		Point point;
-		GetMouse( &point );
-		*x=point.h;
-		*y=point.v;
+		point = [NSEvent mouseLocation];
+		*x=point.x;
+		*y=point.y;
 		return 1;
 	}
 	window=[view window];
