@@ -10,26 +10,15 @@
 //mem bit flags system in ref couter/Mark Sibly GCs...
 //
 void *bbMemAlloc( int size ){
-	void *p,*q;
-	
-	size+=SIZEALIGN+4;
+	void *p;
 	
 	p=malloc( size );
+	return p;
 	
-	if( !p ){
-		bbGCCollect();
-		p=malloc( size );
-		if( !p ) return 0;
-	}
-
-	q=(void*)( ((unsigned)p+ALIGNMASK+4) & ~ALIGNMASK );
-	*((void**)q-1)=p;
-
-	return q;
 }
 
 void bbMemFree( void *p ){
-	if( p ) free( ((void**)p)[-1] );
+	if( p ) free( p );
 }
 
 void *bbMemExtend( void *mem,int size,int new_size ){
