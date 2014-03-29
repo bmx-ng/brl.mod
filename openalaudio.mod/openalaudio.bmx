@@ -95,7 +95,7 @@ Type TOpenALSource
 End Type
 
 Function EnumOpenALDevices$[]()
-	Local p:Byte Ptr=alcGetString( 0,ALC_DEVICE_SPECIFIER )
+	Local p:Byte Ptr=alcGetString(Null,ALC_DEVICE_SPECIFIER )
 	If Not p Return
 	Local devs$[100],n
 	While p[0] And n<100
@@ -374,7 +374,7 @@ Type TOpenALAudioDriver Extends TAudioDriver
 		Return t
 	End Function
 	
-	Field _name$,_devname$,_device,_context
+	Field _name$,_devname$,_device:Byte Ptr,_context:Byte Ptr
 
 End Type
 
@@ -394,7 +394,7 @@ Function EnableOpenALAudio()
 		For Local devname$=EachIn EnumOpenALDevices()
 			TOpenALAudioDriver.Create( "OpenAL "+devname,devname )
 		Next
-		TOpenALAudioDriver.Create "OpenAL Default",String.FromCString( alcGetString( 0,ALC_DEFAULT_DEVICE_SPECIFIER ) )
+		TOpenALAudioDriver.Create "OpenAL Default",String.FromCString( alcGetString( Null,ALC_DEFAULT_DEVICE_SPECIFIER ) )
 		okay=True
 	EndIf
 	done=True
