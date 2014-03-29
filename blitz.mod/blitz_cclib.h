@@ -4,9 +4,17 @@
 
 #include "blitz_types.h"
 
+
 #ifdef __cplusplus
 extern "C"{
 #endif
+
+float bbNANf;
+double bbNANd;
+float bbPOSINFf;
+double bbPOSINFd;
+float bbNEGINFf;
+double bbNEGINFd;
 
 int		bbIntAbs( int x );
 int		bbIntSgn( int x );
