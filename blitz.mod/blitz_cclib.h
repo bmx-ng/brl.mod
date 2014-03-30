@@ -9,8 +9,10 @@
 extern "C"{
 #endif
 
-float bbNANf;
-double bbNANd;
+float bbPOSNANf;
+double bbPOSNANd;
+float bbNEGNANf;
+double bbNEGNANd;
 float bbPOSINFf;
 double bbPOSINFd;
 float bbNEGINFf;
