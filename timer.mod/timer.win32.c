@@ -21,7 +21,7 @@ static void __stdcall timerProc( UINT timer,UINT msg,DWORD user,DWORD u1,DWORD u
 	bbSystemPostSyncOp( timerSyncOp,(BBObject*)user,timer );
 }
 
-int bbTimerStart( float hertz,BBObject *bbTimer ){
+void * bbTimerStart( float hertz,BBObject *bbTimer ){
 	int timer;
 	
 	if( n_timers==MAX_TIMERS ) return 0;
@@ -32,12 +32,13 @@ int bbTimerStart( float hertz,BBObject *bbTimer ){
 	BBRETAIN( bbTimer );
 	
 	timers[n_timers++]=timer;
-	return timer;
+	return (void*)timer;
 }
 
-void bbTimerStop( int timer,BBObject *bbTimer ){
+void bbTimerStop( void* t,BBObject *bbTimer ){
 	int i;
 	
+	int timer=(int)t;
 	for( i=0;i<n_timers && timer!=timers[i];++i ) {}
 	if( i==n_timers ) return;
 

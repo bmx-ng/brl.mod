@@ -6,11 +6,14 @@ bbdoc: Events/Timers
 End Rem
 Module BRL.Timer
 
-ModuleInfo "Version: 1.02"
+ModuleInfo "Version: 1.03"
 ModuleInfo "Author: Simon Armstrong, Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
+
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Update to use Byte Ptr instead of int."
 
 Rem
 History:
@@ -36,8 +39,8 @@ Import "timer.linux.c"
 ?
 
 Extern
-Function bbTimerStart( hertz#,timer:TTimer )
-Function bbTimerStop( handle,timer:TTimer )
+Function bbTimerStart:Byte Ptr( hertz#,timer:TTimer )
+Function bbTimerStop( handle:Byte Ptr,timer:TTimer )
 End Extern
 
 Function _TimerFired( timer:TTimer )
@@ -81,7 +84,7 @@ Type TTimer
 	
 	Function Create:TTimer( hertz#,event:TEvent=Null )
 		Local t:TTimer=New TTimer
-		Local handle=bbTimerStart( hertz,t )
+		Local handle:Byte Ptr=bbTimerStart( hertz,t )
 		If Not handle Return
 '		t._cycle=t
 		t._event=event
@@ -93,7 +96,7 @@ Type TTimer
 	Field _wticks
 	Field _cycle:TTimer	'no longer used...see history
 	Field _event:TEvent
-	Field _handle
+	Field _handle:Byte Ptr
 
 End Type
 
