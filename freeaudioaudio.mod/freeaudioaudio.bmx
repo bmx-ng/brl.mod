@@ -46,11 +46,11 @@ Public
 
 Type TFreeAudioSound Extends TSound
 
-	Field fa_sound
+	Field fa_sound:Byte Ptr
 	
 	Method Delete()
 		fa_FreeSound fa_sound
-		If CLOG WriteStdout "Deleted FreeAudio sound "+fa_sound+"~n"
+		If CLOG WriteStdout "Deleted FreeAudio sound "+Long(fa_sound)+"~n"
 	End Method
 
 	Method Play:TFreeAudioChannel( alloced_channel:TChannel )
@@ -190,10 +190,10 @@ Type TFreeAudioAudioDriver Extends TAudioDriver
 		If fa_channel Return TFreeAudioChannel.CreateWithChannel( fa_channel )
 	End Method
 		
-	Function Create:TFreeAudioAudioDriver( name$,mode )
+	Function Create:TFreeAudioAudioDriver( name$,Mode )
 		Local t:TFreeAudioAudioDriver=New TFreeAudioAudioDriver
 		t._name=name
-		t._mode=mode
+		t._mode=Mode
 		Return t
 	End Function
 	
