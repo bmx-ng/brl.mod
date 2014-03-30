@@ -56,7 +56,7 @@ BBString*	bbStringToUpper( BBString *str );
 int		bbStringToInt( BBString *str );
 float	bbStringToFloat( BBString *str );
 double	bbStringToDouble( BBString *str );
-void		bbStringToLong( BBString *str,BBInt64 *r );
+BBInt64		bbStringToLong( BBString *str );
 char*	bbStringToCString( BBString *str );
 BBChar*	bbStringToWString( BBString *str );
 char*	bbStringToUTF8String( BBString *str );

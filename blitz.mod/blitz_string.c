@@ -393,16 +393,16 @@ int bbStringToInt( BBString *t ){
 	return neg ? -n : n;
 }
 
-void bbStringToLong( BBString *t,BBInt64 *r ){
+BBInt64 bbStringToLong( BBString *t ){
 	int i=0,neg=0;
 	BBInt64 n=0;
 	
 	while( i<t->length && isspace(t->buf[i]) ) ++i;
-	if( i==t->length ){ *r=0;return; }
+	if( i==t->length ){ return 0; }
 	
 	if( t->buf[i]=='+' ) ++i;
 	else if( neg=(t->buf[i]=='-') ) ++i;
-	if( i==t->length ){ *r=0;return; }
+	if( i==t->length ){ return 0; }
 	
 	if( t->buf[i]=='%' ){
 		for( ++i;i<t->length;++i ){
@@ -424,7 +424,8 @@ void bbStringToLong( BBString *t,BBInt64 *r ){
 			n=n*10+(c-'0');
 		}
 	}
-	*r=neg ? -n : n;
+	//*r=neg ? -n : n;
+	return neg ? -n : n;
 }
 
 float bbStringToFloat( BBString *t ){
