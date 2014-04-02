@@ -136,13 +136,19 @@ void *addressOfParam( void *p ){
 
 BBArray *bbArrayNew( const char *type,int dims,... ){
 
-//#if BB_ARGP
-//	int *lens=(int*)bbArgp(8);
-//#else
-	int *lens=&dims+1;
-//#endif
+	int lens[256];
 
-	BBArray *arr=allocateArray( type,dims,lens );
+	va_list lengths;
+	
+	va_start(lengths, dims);
+	
+	int i;
+	for (i = 0; i < dims; i++) {
+		lens[i] = va_arg(lengths, int);
+	}
+	va_end(lengths);
+
+	BBArray *arr=allocateArray( type,dims, &lens );
 	
 	initializeArray( arr );
 	
