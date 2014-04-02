@@ -83,9 +83,9 @@ static BBArray *allocateArray( const char *type,int dims,int *lens ){
 	case 's':size=2;break;
 	case 'l':size=8;break;
 	case 'd':size=8;break;
-	case ':':flags=0;break;
-	case '$':flags=0;break;
-	case '[':flags=0;break;
+	case ':':size=sizeof(void*);flags=0;break;
+	case '$':size=sizeof(void*);flags=0;break;
+	case '[':size=sizeof(void*);flags=0;break;
 	}
 	size*=length;
 	
