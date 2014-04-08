@@ -66,7 +66,6 @@ BBClass bbStringClass={
 
 BBString bbEmptyString={
 	&bbStringClass, //clas
-	BBGC_MANYREFS,	//refs
 	0				//length
 };
 
@@ -89,7 +88,7 @@ static void bbStringFree( BBObject *o ){
 #ifdef BB_GC_RC
 	BBString *str=(BBString*)o;
 	if( str==&bbEmptyString ){
-		str->refs=BBGC_MANYREFS;
+		//str->refs=BBGC_MANYREFS;
 		return;
 	}
 	bbGCDeallocObject( str,sizeof(BBString)+str->length*sizeof(BBChar) );
@@ -556,7 +555,7 @@ BBArray *bbStringSplit( BBString *str,BBString *sep ){
 			i2=bbStringFind( str,sep,i );
 			if( i2==-1 ) i2=str->length;
 			bit=bbStringSlice( str,i,i2 );
-			BBINCREFS( bit );
+			//BBINCREFS( bit );
 			*p++=bit;
 			i=i2+sep->length;
 		}
@@ -581,7 +580,7 @@ BBArray *bbStringSplit( BBString *str,BBString *sep ){
 		i2=i++;
 		while( i!=str->length && str->buf[i]>32 ) ++i;
 		bit=bbStringSlice( str,i2,i );
-		BBINCREFS( bit );
+		//BBINCREFS( bit );
 		*p++=bit;
 	}
 	return bits;

@@ -28,8 +28,8 @@ BBClass bbObjectClass={
 };
 
 BBObject bbNullObject={
-	0,			//clas
-	BBGC_MANYREFS	//refs
+	0			//clas
+	//BBGC_MANYREFS	//refs
 };
 
 BBObject *bbObjectNew( BBClass *clas ){
@@ -45,7 +45,7 @@ void bbObjectFree( BBObject *o ){
 #ifdef BB_GC_RC
 
 	if( o==&bbNullObject ){
-		o->refs=BBGC_MANYREFS;
+		//o->refs=BBGC_MANYREFS;
 		return;
 	}
 

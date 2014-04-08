@@ -10,19 +10,19 @@ extern "C"{
 
 #define BBNULLARRAY (&bbEmptyArray)
 
-#define BBARRAYSIZE(q,n) ((2*sizeof(void*)+12)+(n)*sizeof(int)+(q))
-#define BBARRAYDATA(p,n) ((void*)((char*)(p)+(2*sizeof(void*)+12)+(n)*sizeof(int)))
+#define BBARRAYSIZE(q,n) ((2*sizeof(void*)+8)+(n)*sizeof(int)+(q))
+#define BBARRAYDATA(p,n) ((void*)((char*)(p)+(2*sizeof(void*)+8)+(n)*sizeof(int)))
 
 struct BBArray{
 	//extends BBObject
 	BBClass*	clas;
-	int			refs;
+	//int			refs;
 
-	const char* type;			//8
-	int			dims;			//12
-	int			size;			//16 : total size minus this header
-	int			scales[1];		//20 : [dims]
-								//sizeof=20+dims*sizeof(int)
+	const char* type;			//4
+	int			dims;			//8
+	int			size;			//12 : total size minus this header
+	int			scales[1];		//16 : [dims]
+								//sizeof=16+dims*sizeof(int)
 };
 
 extern		BBClass bbArrayClass;

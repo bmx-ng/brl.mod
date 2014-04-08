@@ -41,7 +41,7 @@ struct BBGCPool{
 
 struct BBGCMem{
 	BBGCPool *pool;
-	int refs;
+	//int refs;
 };
 
 void		bbGCStartup();

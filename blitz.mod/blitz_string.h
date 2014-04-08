@@ -12,7 +12,6 @@ extern "C"{
 
 struct BBString{
 	BBClass*	clas;
-	int		refs;
 	int		length;
 	BBChar	buf[];
 };

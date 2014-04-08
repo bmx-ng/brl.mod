@@ -18,7 +18,7 @@ BBGCMem *bbGCAlloc( int sz,BBGCPool *pool ){
 	void *ocd;
 	BBGCMem *q=(BBGCMem*)GC_malloc( sz );
 	q->pool=pool;
-	q->refs=-1;
+	//q->refs=-1;
 	GC_register_finalizer( q,gc_finalizer,pool,&ofn,&ocd );
 	return q;
 }
@@ -31,7 +31,7 @@ BBObject * bbGCAllocObject( int sz,BBClass *clas,int flags ){
 		q=(BBObject*)GC_malloc( sz );
 	}
 	q->clas=clas;
-	q->refs=-1;
+	//q->refs=-1;
 	if( flags & BBGC_FINALIZE ){
 		GC_finalization_proc ofn;
 		void *ocd;

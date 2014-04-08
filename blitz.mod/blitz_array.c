@@ -32,7 +32,7 @@ BBClass bbArrayClass={
 
 BBArray bbEmptyArray={
 	&bbArrayClass,	//clas
-	BBGC_MANYREFS,	//refs
+	//BBGC_MANYREFS,	//refs
 	"",			//type
 	0,			//dims
 	0,			//size
@@ -47,7 +47,7 @@ static void bbArrayFree( BBObject *o ){
 	BBArray *arr=(BBArray*)o;
 	
 	if( arr==&bbEmptyArray ){
-		arr->refs=BBGC_MANYREFS;
+		//arr->refs=BBGC_MANYREFS;
 		return;
 	}
 
@@ -56,7 +56,7 @@ static void bbArrayFree( BBObject *o ){
 		p=(BBObject**)BBARRAYDATA(arr,arr->dims);
 		for( k=arr->scales[0];k>0;--k ){
 			BBObject *o=*p++;
-			BBDECREFS( o );
+			//BBDECREFS( o );
 		}
 		break;
 	}
@@ -213,7 +213,7 @@ BBArray *bbArraySlice( const char *type,BBArray *inarr,int beg,int end ){
 			BBObject **src=(BBObject**)BBARRAYDATA(inarr,inarr->dims)+beg;
 			for( k=0;k<n;++k ){ 
 				BBObject *o=*src++;
-				BBINCREFS( o );
+				//BBINCREFS( o );
 				*dst++=o; 
 			}
 			p=(char*)dst;
@@ -261,7 +261,7 @@ BBArray *bbArrayConcat( const char *type,BBArray *x,BBArray *y ){
 		BBObject **p=(BBObject**)data;
 		for( i=0;i<length;++i ){
 			BBObject *o=*p++;
-			BBINCREFS( o );
+			//BBINCREFS( o );
 		}
 	}
 #endif

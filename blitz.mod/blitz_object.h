@@ -37,7 +37,7 @@ struct BBClass{
 struct BBObject{
 	//extends BBGCMem
 	BBClass*	clas;
-	int		refs;
+	//int		refs;
 };
 
 extern	BBClass bbObjectClass;
