@@ -79,7 +79,7 @@ Type TFreeAudioSound Extends TSound
 		Return TFreeAudioChannel.CreateWithChannel( fa_channel )
 	End Method
 
-	Function CreateWithSound:TFreeAudioSound( fa_sound,src:TAudioSample )
+	Function CreateWithSound:TFreeAudioSound( fa_sound:Byte Ptr,src:TAudioSample )
 		Local t:TFreeAudioSound=New TFreeAudioSound
 		t.fa_sound=fa_sound
 '		t.src=src
@@ -180,8 +180,8 @@ Type TFreeAudioAudioDriver Extends TAudioDriver
 		channels=ChannelsPerSample[sample.format]
 		If Not channels Return
 		bits=8*BytesPerSample[sample.format]/channels
-		Local fa_sound=fa_CreateSound( sample.length,bits,channels,sample.hertz,sample.samples,loop_flag )
-		If CLOG WriteStdout "Generated FreeAudio sound "+fa_sound+"~n"
+		Local fa_sound:Byte Ptr=fa_CreateSound( sample.length,bits,channels,sample.hertz,sample.samples,loop_flag )
+		If CLOG WriteStdout "Generated FreeAudio sound "+Long(fa_sound)+"~n"
 		Return TFreeAudioSound.CreateWithSound( fa_sound,sample )
 	End Method
 	
