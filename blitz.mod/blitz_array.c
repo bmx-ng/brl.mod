@@ -277,15 +277,8 @@ BBArray *bbArrayFromData( const char *type,int length,void *data ){
 	
 	arr=allocateArray( type,1,&length );
 
-	if( type[0]=='b' ){
-		unsigned char *p=BBARRAYDATA( arr,1 );
-		for( k=0;k<length;++k ) p[k]=((int*)data)[k];
-	}else if( type[0]=='s' ){
-		unsigned short *p=BBARRAYDATA( arr,1 );
-		for( k=0;k<length;++k ) p[k]=((int*)data)[k];
-	}else{
-		memcpy( BBARRAYDATA( arr,1 ),data,arr->size );
-	}
+	memcpy( BBARRAYDATA( arr,1 ),data,arr->size );
+
 	return arr;
 }
 
