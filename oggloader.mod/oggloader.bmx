@@ -31,14 +31,10 @@ Function readfunc( buf@Ptr,size,nmemb,src:Object )
 	Return bytes/size
 End Function
 
-Function seekfunc( src_obj:Object,off0,off1,whence )
+Function seekfunc( src_obj:Object,offset:Long,whence )
 	Local off
 	Local src:TStream=TStream(src_obj)
-?X86
-	off=off0
-?PPC
-	off=off1
-?
+
 	Local res=-1
 	Select whence
 		Case 0
@@ -69,9 +65,9 @@ Type TAudioSampleLoaderOGG Extends TAudioSampleLoader
 		If Not ogg Return
 
 		Local format
-?PPC
+?BigEndian
 		If channels=1 format=SF_MONO16BE Else format=SF_STEREO16BE
-?X86
+?LittleEndian
 		If channels=1 format=SF_MONO16LE Else format=SF_STEREO16LE
 ?
 		Local size=samples*2*channels
