@@ -196,7 +196,7 @@ static void setMouseView( NSView *view,int x,int y,BBObject *source ){
 	}
 }
 
-static NSEvent *appDefEvent( int subtype,int data1,int data2 ){
+static NSEvent *appDefEvent( int subtype, NSInteger data1, NSInteger data2 ){
 	return [NSEvent 
 	otherEventWithType:NSApplicationDefined
 	location:NSMakePoint(0,0)
@@ -613,7 +613,7 @@ int bbOpenURL( BBString *bburl ){
 
 void bbSystemPostSyncOp( BBSyncOp syncOp,BBObject *syncInfo,int asyncRet ){
 	AsyncOp *p=(AsyncOp*)malloc( sizeof(AsyncOp) );
-	NSEvent *event=appDefEvent( BB_RESERVEDEVENTSUBTYPE1,(int)p,0 );
+	NSEvent *event=appDefEvent( BB_RESERVEDEVENTSUBTYPE1,(NSInteger)p,0 );
 	p->asyncOp=0;
 	p->asyncRet=asyncRet;
 	p->syncOp=syncOp;
@@ -623,7 +623,7 @@ void bbSystemPostSyncOp( BBSyncOp syncOp,BBObject *syncInfo,int asyncRet ){
 
 void bbSystemStartAsyncOp( BBAsyncOp asyncOp,int asyncInfo,BBSyncOp syncOp,BBObject *syncInfo ){
 	AsyncOp *p=(AsyncOp*)malloc( sizeof( AsyncOp ) );
-	NSEvent *event=appDefEvent( BB_RESERVEDEVENTSUBTYPE1,(int)p,0 );
+	NSEvent *event=appDefEvent( BB_RESERVEDEVENTSUBTYPE1,(NSInteger)p,0 );
 	BBRETAIN( syncInfo );
 	p->asyncOp=asyncOp;
 	p->asyncInfo=asyncInfo;
