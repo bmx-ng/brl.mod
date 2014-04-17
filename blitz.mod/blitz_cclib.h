@@ -9,14 +9,14 @@
 extern "C"{
 #endif
 
-float bbPOSNANf;
-double bbPOSNANd;
-float bbNEGNANf;
-double bbNEGNANd;
-float bbPOSINFf;
-double bbPOSINFd;
-float bbNEGINFf;
-double bbNEGINFd;
+extern float bbPOSNANf;
+extern double bbPOSNANd;
+extern float bbNEGNANf;
+extern double bbNEGNANd;
+extern float bbPOSINFf;
+extern double bbPOSINFd;
+extern float bbNEGINFf;
+extern double bbNEGINFd;
 
 int		bbIntAbs( int x );
 int		bbIntSgn( int x );
