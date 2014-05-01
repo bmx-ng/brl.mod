@@ -88,7 +88,7 @@ void bbObjectReserved(){
 BBObject *bbObjectDowncast( BBObject *o,BBClass *t ){
 	BBClass *p=o->clas;
 	while( p && p!=t ) p=p->super;
-	return p ? o : &bbNullObject;
+	return p ? o : (t==&bbStringClass) ? &bbEmptyString : (t==&bbArrayClass) ? &bbEmptyArray : &bbNullObject;
 }
 
 void bbObjectRegisterType( BBClass *clas ){
