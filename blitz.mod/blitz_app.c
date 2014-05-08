@@ -7,7 +7,7 @@ BBString*	bbAppDir=BBNULLSTRING;
 BBString*	bbAppFile=BBNULLSTRING;
 BBString*	bbAppTitle=BBNULLSTRING;
 BBString*	bbLaunchDir=BBNULLSTRING;
-BBArray*	bbAppArgs=BBNULLSTRING;
+BBArray*	bbAppArgs=BBNULLARRAY;
 
 void **bbGCStackTop;
 
