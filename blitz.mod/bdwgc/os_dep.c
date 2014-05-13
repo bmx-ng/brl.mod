@@ -98,11 +98,6 @@
 # include <malloc.h>   /* for locking */
 #endif
 
-#if defined(LINUX) || defined(FREEBSD) || defined(SOLARIS) || defined(IRIX5) \
-    || ((defined(USE_MMAP) || defined(USE_MUNMAP)) && !defined(USE_WINALLOC))
-# define MMAP_SUPPORTED
-#endif
-
 #if defined(MMAP_SUPPORTED) || defined(ADD_HEAP_GUARD_PAGES)
 # if defined(USE_MUNMAP) && !defined(USE_MMAP)
 #   error "invalid config - USE_MUNMAP requires USE_MMAP"
@@ -441,11 +436,15 @@ GC_INNER char * GC_get_maps(void)
     /* define data_start as a weak symbol.  The latter is technically   */
     /* broken, since the user program may define data_start, in which   */
     /* case we lose.  Nonetheless, we try both, preferring __data_start.*/
-    /* We assume gcc-compatible pragmas.        */
+    /* We assume gcc-compatible pragmas.                                */
 #   pragma weak __data_start
-    extern int __data_start[];
 #   pragma weak data_start
-    extern int data_start[];
+    extern int __data_start[], data_start[];
+#   ifdef PLATFORM_ANDROID
+#     pragma weak _etext
+#     pragma weak __dso_handle
+      extern int _etext[], __dso_handle[];
+#   endif
 # endif /* LINUX */
   extern int _end[];
 
@@ -457,6 +456,19 @@ GC_INNER char * GC_get_maps(void)
   {
 #   if (defined(LINUX) || defined(HURD)) && !defined(IGNORE_PROG_DATA_START)
       /* Try the easy approaches first: */
+#     ifdef PLATFORM_ANDROID
+        /* Workaround for "gold" (default) linker (as of Android NDK r9b).      */
+        if ((word)__data_start < (word)_etext
+            && (word)_etext < (word)__dso_handle) {
+          GC_data_start = (ptr_t)(__dso_handle);
+#         ifdef DEBUG_ADD_DEL_ROOTS
+            GC_log_printf(
+                "__data_start is wrong; using __dso_handle as data start\n");
+#         endif
+          GC_ASSERT((word)GC_data_start <= (word)_end);
+          return;
+        }
+#     endif
       if ((ptr_t)__data_start != 0) {
           GC_data_start = (ptr_t)(__data_start);
           GC_ASSERT((word)GC_data_start <= (word)_end);
@@ -2052,8 +2064,7 @@ STATIC ptr_t GC_unix_mmap_get_mem(word bytes)
 #   undef IGNORE_PAGES_EXECUTABLE
 
     if (result == MAP_FAILED) return(0);
-    last_addr = (ptr_t)result + bytes + GC_page_size - 1;
-    last_addr = (ptr_t)((word)last_addr & ~(GC_page_size - 1));
+    last_addr = (ptr_t)ROUNDUP_PAGESIZE((word)result + bytes);
 #   if !defined(LINUX)
       if (last_addr == 0) {
         /* Oops.  We got the end of the address space.  This isn't      */
@@ -2173,8 +2184,7 @@ void * os2_alloc(size_t bytes)
     ptr_t result = 0; /* initialized to prevent warning. */
     word i;
 
-    /* Round up allocation size to multiple of page size */
-    bytes = (bytes + GC_page_size-1) & ~(GC_page_size-1);
+    bytes = ROUNDUP_PAGESIZE(bytes);
 
     /* Try to find reserved, uncommitted pages */
     for (i = 0; i < GC_n_heap_bases; i++) {
@@ -2349,9 +2359,8 @@ void * os2_alloc(size_t bytes)
 /* Return 0 if the block is too small to make this feasible.    */
 STATIC ptr_t GC_unmap_start(ptr_t start, size_t bytes)
 {
-    ptr_t result;
-    /* Round start to next page boundary.       */
-    result = (ptr_t)((word)(start + GC_page_size - 1) & ~(GC_page_size - 1));
+    ptr_t result = (ptr_t)ROUNDUP_PAGESIZE((word)start);
+
     if ((word)(result + GC_page_size) > (word)(start + bytes)) return 0;
     return result;
 }
@@ -3252,8 +3261,7 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 #   endif
     if (!GC_dirty_maintained) return;
     h_trunc = (struct hblk *)((word)h & ~(GC_page_size-1));
-    h_end = (struct hblk *)(((word)(h + nblocks) + GC_page_size-1)
-                            & ~(GC_page_size-1));
+    h_end = (struct hblk *)ROUNDUP_PAGESIZE((word)(h + nblocks));
     if (h_end == h_trunc + 1 &&
         get_pht_entry_from_index(GC_dirty_pages, PHT_HASH(h_trunc))) {
         /* already marked dirty, and hence unprotected. */

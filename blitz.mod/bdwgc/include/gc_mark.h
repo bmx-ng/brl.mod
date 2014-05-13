@@ -193,14 +193,40 @@ GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc);
 /* the descriptor is not correct.  Even in the single-threaded case,    */
 /* we need to be sure that cleared objects on a free list don't         */
 /* cause a GC crash if they are accidentally traced.                    */
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t /* lb */,
-                                                       int /* k */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL GC_generic_malloc(
+                                                            size_t /* lb */,
+                                                            int /* knd */);
 
-GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_ignore_off_page(
-                                        size_t /* lb */, int /* k */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+                                        GC_generic_malloc_ignore_off_page(
+                                            size_t /* lb */, int /* knd */);
                                 /* As above, but pointers to past the   */
                                 /* first page of the resulting object   */
                                 /* are ignored.                         */
+
+/* Same as above but primary for allocating an object of the same kind  */
+/* as an existing one (kind obtained by GC_get_kind_and_size).          */
+/* Not suitable for GCJ and typed-malloc kinds.                         */
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+                                        GC_generic_or_special_malloc(
+                                            size_t /* size */, int /* knd */);
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+                                        GC_debug_generic_or_special_malloc(
+                                            size_t /* size */, int /* knd */,
+                                            GC_EXTRA_PARAMS);
+
+#ifdef GC_DEBUG
+# define GC_GENERIC_OR_SPECIAL_MALLOC(sz, knd) \
+                GC_debug_generic_or_special_malloc(sz, knd, GC_EXTRAS)
+#else
+# define GC_GENERIC_OR_SPECIAL_MALLOC(sz, knd) \
+                GC_generic_or_special_malloc(sz, knd)
+#endif /* !GC_DEBUG */
+
+/* Similar to GC_size but returns object kind.  Size is returned too    */
+/* if psize is not NULL.                                                */
+GC_API int GC_CALL GC_get_kind_and_size(const void *, size_t * /* psize */)
+                                                        GC_ATTR_NONNULL(1);
 
 typedef void (GC_CALLBACK * GC_describe_type_fn)(void * /* p */,
                                                  char * /* out_buf */);

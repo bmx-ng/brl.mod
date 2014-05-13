@@ -429,7 +429,8 @@ GC_API int GC_CALL GC_posix_memalign(void ** /* memptr */, size_t /* align */,
 /* Explicitly deallocate an object.  Dangerous if used incorrectly.     */
 /* Requires a pointer to the base of an object.                         */
 /* If the argument is stubborn, it should not be changeable when freed. */
-/* An object should not be enabled for finalization when it is          */
+/* An object should not be enabled for finalization (and it should not  */
+/* contain registered disappearing links of any kind) when it is        */
 /* explicitly deallocated.                                              */
 /* GC_free(0) is a no-op, as required by ANSI C for free.               */
 GC_API void GC_CALL GC_free(void *);
@@ -1062,7 +1063,10 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void ** /* link */,
         /* email discussion with John Ellis.                    */
         /* link must be non-NULL (and be properly aligned).     */
         /* obj must be a pointer to the first word of an object */
-        /* allocated by GC_malloc or friends.  It is unsafe to  */
+        /* allocated by GC_malloc or friends.   A link          */
+        /* disappears when it is unregistered manually, or when */
+        /* (*link) is cleared, or when the object containing    */
+        /* this link is garbage collected.  It is unsafe to     */
         /* explicitly deallocate the object containing link.    */
         /* Explicit deallocation of obj may or may not cause    */
         /* link to eventually be cleared.                       */
@@ -1161,6 +1165,9 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void);
 /* GC_ignore_warn_proc may be used as an argument for GC_set_warn_proc  */
 /* to suppress all warnings (unless statistics printing is turned on).  */
 GC_API void GC_CALLBACK GC_ignore_warn_proc(char *, GC_word);
+
+/* Change file descriptor of GC log.  Unavailable on some targets.      */
+GC_API void GC_CALL GC_set_log_fd(int);
 
 /* abort_func is invoked on GC fatal aborts (just before OS-dependent   */
 /* abort or exit(1) is called).  Must be non-NULL.  The default one     */
@@ -1269,8 +1276,9 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
 
   /* Explicitly enable GC_register_my_thread() invocation.              */
   /* Done implicitly if a GC thread-creation function is called (or     */
-  /* implicit thread registration is activated).  Otherwise, it must    */
-  /* be called from the main (or any previously registered) thread      */
+  /* implicit thread registration is activated, or the collector is     */
+  /* compiled with GC_ALWAYS_MULTITHREADED defined).  Otherwise, it     */
+  /* must be called from the main (or any previously registered) thread */
   /* between the collector initialization and the first explicit        */
   /* registering of a thread (it should be called as late as possible). */
   GC_API void GC_CALL GC_allow_register_threads(void);
@@ -1287,7 +1295,7 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* functions are called to create the thread, e.g. by including gc.h  */
   /* (which redefines some system functions) before calling the system  */
   /* thread creation function.  Nonetheless, thread cleanup routines    */
-  /* (eg., pthread key destructor) typically require manual thread      */
+  /* (e.g., pthread key destructor) typically require manual thread     */
   /* registering (and unregistering) if pointers to GC-allocated        */
   /* objects are manipulated inside.                                    */
   /* It is also always done implicitly on some platforms if             */
@@ -1610,11 +1618,23 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND)
 #elif (defined(PLATFORM_ANDROID) || defined(__ANDROID__)) \
       && !defined(GC_NOT_DLL)
-  /* Required if GC is built as shared lib with -D IGNORE_DYNAMIC_LOADING. */
 # pragma weak __data_start
   extern int __data_start[], _end[];
-# define GC_INIT_CONF_ROOTS (void)((GC_word)(__data_start) != 0 ? \
-                                (GC_add_roots(__data_start, _end), 0) : 0)
+# pragma weak _etext
+# pragma weak __dso_handle
+  extern int _etext[], __dso_handle[];
+  /* Explicitly register caller static data roots (__data_start points  */
+  /* to the beginning typically but NDK "gold" linker could provide it  */
+  /* incorrectly, so the workaround is to check the value and use       */
+  /* __dso_handle as an alternative data start reference if provided).  */
+  /* It also works for Android/x86 target where __data_start is not     */
+  /* defined currently (regardless of linker used).                     */
+# define GC_INIT_CONF_ROOTS \
+                (void)((GC_word)__data_start < (GC_word)_etext \
+                        && (GC_word)_etext < (GC_word)__dso_handle ? \
+                            (GC_add_roots(__dso_handle, _end), 0) : \
+                       (GC_word)__data_start != 0 ? \
+                            (GC_add_roots(__data_start, _end), 0) : 0)
 #else
 # define GC_INIT_CONF_ROOTS /* empty */
 #endif

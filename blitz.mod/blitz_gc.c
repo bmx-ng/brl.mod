@@ -6,36 +6,38 @@ static void gc_finalizer( void *mem,void *pool ){
 }
 
 static void gc_warn_proc( char *msg,GC_word arg ){
+	/*printf(msg,arg);fflush(stdout);*/
 }
 
 void bbGCStartup( void *spTop ){
 	GC_INIT();
 	GC_set_warn_proc( gc_warn_proc );
+	GC_enable_incremental();
 }
 
 BBGCMem *bbGCAlloc( int sz,BBGCPool *pool ){
 	GC_finalization_proc ofn;
 	void *ocd;
-	BBGCMem *q=(BBGCMem*)GC_malloc( sz );
+	BBGCMem *q=(BBGCMem*) GC_MALLOC( sz );
 	q->pool=pool;
 	//q->refs=-1;
-	GC_register_finalizer( q,gc_finalizer,pool,&ofn,&ocd );
+	GC_REGISTER_FINALIZER( q,gc_finalizer,pool,&ofn,&ocd );
 	return q;
 }
 
 BBObject * bbGCAllocObject( int sz,BBClass *clas,int flags ){
 	BBObject *q;
 	if( flags & BBGC_ATOMIC ){
-		q=(BBObject*)GC_malloc_atomic( sz );
+		q=(BBObject*)GC_MALLOC_ATOMIC( sz );
 	}else{
-		q=(BBObject*)GC_malloc( sz );
+		q=(BBObject*)GC_MALLOC( sz );
 	}
 	q->clas=clas;
 	//q->refs=-1;
 	if( flags & BBGC_FINALIZE ){
 		GC_finalization_proc ofn;
 		void *ocd;
-		GC_register_finalizer( q,gc_finalizer,clas,&ofn,&ocd );
+		GC_REGISTER_FINALIZER( q,gc_finalizer,clas,&ofn,&ocd );
 	}
 	return q;	
 }

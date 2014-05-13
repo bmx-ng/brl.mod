@@ -734,6 +734,7 @@
 # if defined(__GNUC__) && ((__GNUC__ >= 3) \
                            || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)) \
      && !defined(__INTEL_COMPILER) && !defined(__PATHCC__) \
+     && !defined(__FUJITSU) /* for FX10 system */ \
      && !(defined(POWERPC) && defined(DARWIN)) /* for MacOS X 10.3.9 */ \
      && !defined(RTEMS) \
      && !defined(__clang__) /* since no-op in clang (3.0) */
@@ -860,7 +861,14 @@
 #     define OS_TYPE "LINUX"
       /* HEURISTIC1 has been reliably reported to fail for a 32-bit     */
       /* executable on a 64 bit kernel.                                 */
-#     define LINUX_STACKBOTTOM
+#     if defined(__bg__)
+        /* The Linux Compute Node Kernel (used on BlueGene systems)     */
+        /* does not support LINUX_STACKBOTTOM way.                      */
+#       define HEURISTIC2
+#       define NO_PTHREAD_GETATTR_NP
+#     else
+#       define LINUX_STACKBOTTOM
+#     endif
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
@@ -1849,11 +1857,7 @@
         /* This does not work on NUE:                           */
 #       define LINUX_STACKBOTTOM
         /* We also need the base address of the register stack  */
-        /* backing store.  This is computed in                  */
-        /* GC_linux_register_stack_base based on the following  */
-        /* constants:                                           */
-#       define BACKING_STORE_ALIGNMENT 0x100000
-#       define BACKING_STORE_DISPLACEMENT 0x80000000
+        /* backing store.                                       */
         extern ptr_t GC_register_stackbottom;
 #       define BACKING_STORE_BASE GC_register_stackbottom
 #       define SEARCH_FOR_DATA_START
@@ -2227,7 +2231,7 @@
              extern int etext[];
 #            define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
 #       endif
-#       if defined(__GLIBC__)
+#       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* At present, there's a bug in GLibc getcontext() on         */
           /* Linux/x64 (it clears FPU exception mask).  We define this  */
           /* macro to workaround it.                                    */
@@ -2548,6 +2552,11 @@
 
 #ifdef USE_WINALLOC
 # undef USE_MMAP
+#endif
+
+#if defined(LINUX) || defined(FREEBSD) || defined(SOLARIS) || defined(IRIX5) \
+    || ((defined(USE_MMAP) || defined(USE_MUNMAP)) && !defined(USE_WINALLOC))
+# define MMAP_SUPPORTED
 #endif
 
 #if defined(GC_DISABLE_INCREMENTAL) || defined(MANUAL_VDB)
@@ -2886,8 +2895,8 @@
         /* REDIRECT_MALLOC macro defined.                               */
         /* GET_MEM() returns a HLKSIZE aligned chunk.                   */
         /* 0 is taken to mean failure.                                  */
-        /* In the case os USE_MMAP, the argument must also be a         */
-        /* physical page size.                                          */
+        /* In case of MMAP_SUPPORTED, the argument must also be         */
+        /* a multiple of a physical page size.                          */
         /* GET_MEM is currently not assumed to retrieve 0 filled space, */
         /* though we should perhaps take advantage of the case in which */
         /* does.                                                        */

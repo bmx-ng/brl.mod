@@ -32,12 +32,15 @@
  * kind k objects of size i points to a non-empty
  * free list. It returns a pointer to the first entry on the free list.
  * In a single-threaded world, GC_allocobj may be called to allocate
- * an object of (small) size i as follows:
+ * an object of (small) size lb as follows:
  *
- *            opp = &(GC_objfreelist[i]);
- *            if (*opp == 0) GC_allocobj(i, NORMAL);
- *            ptr = *opp;
- *            *opp = obj_link(ptr);
+ *   lg = GC_size_map[lb];
+ *   op = GC_objfreelist[lg];
+ *   if (NULL == op) {
+ *     op = GENERAL_MALLOC(lb, NORMAL);
+ *   } else {
+ *     GC_objfreelist[lg] = obj_link(op);
+ *   }
  *
  * Note that this is very fast if the free list is non-empty; it should
  * only involve the execution of 4 or 5 simple instructions.
@@ -1011,8 +1014,14 @@ GC_API void GC_CALL GC_gcollect(void)
     if (GC_have_errors) GC_print_all_errors();
 }
 
+STATIC word GC_heapsize_at_forced_unmap = 0;
+
 GC_API void GC_CALL GC_gcollect_and_unmap(void)
 {
+    /* Record current heap size to make heap growth more conservative   */
+    /* afterwards (as if the heap is growing from zero size again).     */
+    GC_heapsize_at_forced_unmap = GC_heapsize;
+    /* Collect and force memory unmapping to OS. */
     (void)GC_try_to_collect_general(GC_never_stop_func, TRUE);
 }
 
@@ -1078,6 +1087,16 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
     phdr -> hb_flags = 0;
     GC_freehblk(p);
     GC_heapsize += bytes;
+
+    /* Normally the caller calculates a new GC_collect_at_heapsize,
+     * but this is also called directly from alloc_mark_stack, so
+     * adjust here. It will be recalculated when called from
+     * GC_expand_hp_inner.
+     */
+    GC_collect_at_heapsize += bytes;
+    if (GC_collect_at_heapsize < GC_heapsize /* wrapped */)
+       GC_collect_at_heapsize = (word)(-1);
+
     if ((word)p <= (word)GC_least_plausible_heap_addr
         || GC_least_plausible_heap_addr == 0) {
         GC_least_plausible_heap_addr = (void *)((ptr_t)p - sizeof(word));
@@ -1150,14 +1169,7 @@ GC_INNER GC_bool GC_expand_hp_inner(word n)
                                 /* heap to expand soon.                   */
 
     if (n < MINHINCR) n = MINHINCR;
-    bytes = n * HBLKSIZE;
-    /* Make sure bytes is a multiple of GC_page_size */
-      {
-        word mask = GC_page_size - 1;
-        bytes += mask;
-        bytes &= ~mask;
-      }
-
+    bytes = ROUNDUP_PAGESIZE(n * HBLKSIZE);
     if (GC_max_heapsize != 0 && GC_heapsize + bytes > GC_max_heapsize) {
         /* Exceeded self-imposed limit */
         return(FALSE);
@@ -1234,7 +1246,7 @@ static word last_bytes_finalized = 0;
 
 /* Collect or expand heap in an attempt make the indicated number of    */
 /* free blocks available.  Should be called until the blocks are        */
-/* available (seting retry value to TRUE unless this is the first call  */
+/* available (setting retry value to TRUE unless this is the first call */
 /* in a loop) or until it fails by returning FALSE.                     */
 GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
                                       GC_bool ignore_off_page,
@@ -1266,8 +1278,9 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
       }
     }
 
-    blocks_to_get = GC_heapsize/(HBLKSIZE*GC_free_space_divisor)
-                        + needed_blocks;
+    blocks_to_get = (GC_heapsize - GC_heapsize_at_forced_unmap)
+                        / (HBLKSIZE * GC_free_space_divisor)
+                    + needed_blocks;
     if (blocks_to_get > MAXHINCR) {
       word slop;
 
@@ -1288,7 +1301,8 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
     }
 
     if (!GC_expand_hp_inner(blocks_to_get)
-        && !GC_expand_hp_inner(needed_blocks)) {
+        && (blocks_to_get == needed_blocks
+            || !GC_expand_hp_inner(needed_blocks))) {
       if (gc_not_stopped == FALSE) {
         /* Don't increment GC_fail_count here (and no warning).     */
         GC_gcollect_inner();
@@ -1334,21 +1348,21 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
       EXIT_GC();
       if (*flh == 0) {
         GC_new_hblk(gran, kind);
-      }
-      if (*flh == 0) {
-        ENTER_GC();
-        if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED
-            && !tried_minor) {
-          GC_collect_a_little_inner(1);
-          tried_minor = TRUE;
-        } else {
-          if (!GC_collect_or_expand(1, FALSE, retry)) {
-            EXIT_GC();
-            return(0);
+        if (*flh == 0) {
+          ENTER_GC();
+          if (GC_incremental && GC_time_limit == GC_TIME_UNLIMITED
+              && !tried_minor) {
+            GC_collect_a_little_inner(1);
+            tried_minor = TRUE;
+          } else {
+            if (!GC_collect_or_expand(1, FALSE, retry)) {
+              EXIT_GC();
+              return(0);
+            }
+            retry = TRUE;
           }
-          retry = TRUE;
+          EXIT_GC();
         }
-        EXIT_GC();
       }
     }
     /* Successful allocation; reset failure count.      */
