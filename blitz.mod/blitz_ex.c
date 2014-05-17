@@ -1,10 +1,12 @@
 
 #include "blitz.h"
 
+
 #define EX_GROW 10
 
 typedef struct BBExEnv{
-	char	_cpu_state[256];	//worse case - bit ugly, but better than an #ifdef
+	jmp_buf buf;
+	BBObject * ex;
 }BBExEnv;
 
 typedef struct BBExStack{
@@ -73,7 +75,20 @@ static void freeExStack( BBExStack *st ){
 	setExStack( 0 );
 }
 
-void *bbExEnter(){
+BBObject* bbExObject() {
+	BBExStack *st=getExStack();
+	if (st) {
+		BBObject * ex = st->ex_sp->ex;
+		if (st->ex_sp==st->ex_base) {
+			freeExStack(st);
+		}
+		return ex;
+	} else {
+		return &bbNullObject;
+	}
+}
+
+jmp_buf *bbExEnter(){
 	BBExStack *st=exStack();
 
 	if( st->ex_sp==st->ex_end ){
@@ -83,22 +98,17 @@ void *bbExEnter(){
 		st->ex_sp=st->ex_base+len;
 	}
 
-	return (st->ex_sp++)->_cpu_state;
+	return &((st->ex_sp++)->buf);
 }
 
 void bbExThrow( BBObject *p ){
 	BBExStack *st=getExStack();
-	
+
 	if( !st ) bbOnDebugUnhandledEx( p );
 	
-	if( --st->ex_sp==st->ex_base ){
-		static char buf[256];
-		memcpy( buf,st->ex_sp->_cpu_state,256 );
-		freeExStack( st );
-		//_bbExThrow( buf,p ); TODO : BaH
-	}else{
-		//_bbExThrow( st->ex_sp->_cpu_state,p ); TODO : BaH
-	}
+	--st->ex_sp;
+	st->ex_sp->ex = p;
+	longjmp(st->ex_sp->buf, 1);
 }
 
 void bbExLeave(){

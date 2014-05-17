@@ -15,13 +15,14 @@ void*	bbArgp( int offset );
 #endif
 #endif
 
-void*	bbExEnter();
+jmp_buf*	bbExEnter();
 void		bbExThrow( BBObject *p );
 void		bbExThrowCString( const char *p );
 void		bbExLeave();
+BBObject*   bbExObject();
 
-void		_bbExEnter( void *_cpu_state );
-void*	_bbExThrow( void *_cpu_state,void *p );
+//void	_bbExEnter( void *_cpu_state );
+//void*	_bbExThrow( void *_cpu_state,void *p );
 
 #ifdef __cplusplus
 }

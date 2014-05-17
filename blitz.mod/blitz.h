@@ -19,6 +19,9 @@
 //# define BB_GC_RC
 //#endif
 
+// exceptions
+#include <setjmp.h>
+
 #include "blitz_types.h"
 #include "blitz_memory.h"
 #include "blitz_thread.h"
