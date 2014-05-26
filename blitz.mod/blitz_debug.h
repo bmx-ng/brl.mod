@@ -35,8 +35,13 @@ struct BBDebugDecl{
 	const char		*name,*type_tag;
 	union{
 		BBString*	const_value;
+#if ( __WORDSIZE == 64 )
+		BBInt64		local_offset;
+		BBInt64		field_offset;
+#else
 		int			local_offset;
 		int			field_offset;
+#endif
 		void		*global_address;
 	};
 };
