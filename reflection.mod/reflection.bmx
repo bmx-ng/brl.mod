@@ -26,8 +26,12 @@ Private
 
 Extern
 
-Function bbObjectNew:Object( class )
+Function bbObjectNew:Object( class:Byte Ptr )
+?x86
 Function bbObjectRegisteredTypes:Int Ptr( count Var )
+?x64
+Function bbObjectRegisteredTypes:Long Ptr( count Var )
+?
 
 Function bbArrayNew1D:Object( typeTag:Byte Ptr,length )
 
@@ -50,8 +54,8 @@ Function bbRefPushObject( p:Byte Ptr,obj:Object )
 Function bbRefInitObject( p:Byte Ptr,obj:Object )
 Function bbRefAssignObject( p:Byte Ptr,obj:Object )
 
-Function bbRefGetObjectClass( obj:Object )
-Function bbRefGetSuperClass( class )
+Function bbRefGetObjectClass:Byte Ptr( obj:Object )
+Function bbRefGetSuperClass:Byte Ptr( class:Byte Ptr )
 
 End Extern
 
@@ -61,12 +65,12 @@ Type TClass
 		Return _class-TClass( with )._class
 	End Method
 	
-	Method SetClass:TClass( class )
+	Method SetClass:TClass( class:Byte Ptr )
 		_class=class
 		Return Self
 	End Method
 	
-	Field _class
+	Field _class:Byte Ptr
 End Type
 
 Function _Get:Object( p:Byte Ptr,typeId:TTypeId )
@@ -108,8 +112,8 @@ Function _Push:Byte Ptr( sp:Byte Ptr,typeId:TTypeId,value:Object )
 		Return sp+4
 	Default
 		If value
-			Local c=typeId._class
-			Local t=bbRefGetObjectClass( value )
+			Local c:Byte Ptr=typeId._class
+			Local t:Byte Ptr=bbRefGetObjectClass( value )
 			While t And t<>c
 				t=bbRefGetSuperClass( t )
 			Wend
@@ -139,8 +143,8 @@ Function _Assign( p:Byte Ptr,typeId:TTypeId,value:Object )
 		bbRefAssignObject p,value
 	Default
 		If value
-			Local c=typeId._class
-			Local t=bbRefGetObjectClass( value )
+			Local c:Byte Ptr=typeId._class
+			Local t:Byte Ptr=bbRefGetObjectClass( value )
 			While t And t<>c
 				t=bbRefGetSuperClass( t )
 			Wend
@@ -285,17 +289,29 @@ Global DoubleTypeId:TTypeId=New TTypeId.Init( "Double",8 )
 Rem
 bbdoc: Primitive object type
 End Rem
+?x86
 Global ObjectTypeId:TTypeId=New TTypeId.Init( "Object",4,bbRefObjectClass() )
+?x64
+Global ObjectTypeId:TTypeId=New TTypeId.Init( "Object",8,bbRefObjectClass() )
+?
 
 Rem
 bbdoc: Primitive string type
 End Rem
+?x86
 Global StringTypeId:TTypeId=New TTypeId.Init( "String",4,bbRefStringClass(),ObjectTypeId )
+?x64
+Global StringTypeId:TTypeId=New TTypeId.Init( "String",8,bbRefStringClass(),ObjectTypeId )
+?
 
 Rem
 bbdoc: Primitive array type
 End Rem
+?x86
 Global ArrayTypeId:TTypeId=New TTypeId.Init( "Null[]",4,bbRefArrayClass(),ObjectTypeId )
+?x64
+Global ArrayTypeId:TTypeId=New TTypeId.Init( "Null[]",8,bbRefArrayClass(),ObjectTypeId )
+?
 
 Rem
 bbdoc: Type member - field or method.
@@ -433,12 +449,12 @@ bbdoc: Type method
 End Rem
 Type TMethod Extends TMember
 
-	Method Init:TMethod( name$,typeId:TTypeId,meta$,selfTypeId:TTypeId,index,argTypes:TTypeId[] )
+	Method Init:TMethod( name$,typeId:TTypeId,meta$,selfTypeId:TTypeId,ref:Byte Ptr,argTypes:TTypeId[] )
 		_name=name
 		_typeId=typeId
 		_meta=meta
 		_selfTypeId=selfTypeId
-		_index=index
+		_ref=ref
 		_argTypes=argTypes
 		Return Self
 	End Method
@@ -454,13 +470,15 @@ Type TMethod Extends TMember
 	bbdoc: Invoke method
 	End Rem
 	Method Invoke:Object( obj:Object,args:Object[] )
-		If _index<65536
-			Return _Call( bbRefMethodPtr( obj,_index ),_typeId,obj,args,_argTypes )
-		EndIf
-		Return _Call( Byte Ptr(_index),_typeId,obj,args,_argTypes )
+		'If _index<65536
+		'	Return _Call( bbRefMethodPtr( obj,_index ),_typeId,obj,args,_argTypes )
+		'EndIf
+		Return _Call( _ref,_typeId,obj,args,_argTypes )
 	End Method
 	
-	Field _selfTypeId:TTypeId,_index,_argTypes:TTypeId[]
+	Field _selfTypeId:TTypeId
+	Field _ref:Byte Ptr
+	Field _argTypes:TTypeId[]
 
 End Type
 
@@ -501,7 +519,11 @@ Type TTypeId
 					dim :+ ","
 				Next
 			End If
+?x86
 			_arrayType=New TTypeId.Init( _name+"[" + dim + "]",4,bbRefArrayClass() )
+?x64
+			_arrayType=New TTypeId.Init( _name+"[" + dim + "]",8,bbRefArrayClass() )
+?
 			_arrayType._elementType=Self
 			If _super
 				_arrayType._super=_super.ArrayType()
@@ -679,7 +701,7 @@ Type TTypeId
 	End Rem	
 	Function ForObject:TTypeId( obj:Object )
 		_Update
-		Local class=bbRefGetObjectClass( obj )
+		Local class:Byte Ptr=bbRefGetObjectClass( obj )
 		If class=ArrayTypeId._class
 			If Not bbRefArrayLength( obj ) Return ArrayTypeId
 			Return TypeIdForTag( bbRefArrayTypeTag( obj ) ).ArrayType()
@@ -702,7 +724,7 @@ Type TTypeId
 
 	'***** PRIVATE *****
 	
-	Method Init:TTypeId( name$,size,class=0,supor:TTypeId=Null )
+	Method Init:TTypeId( name$,size,class:Byte Ptr=Null,supor:TTypeId=Null )
 		_name=name
 		_size=size
 		_class=class
@@ -714,9 +736,15 @@ Type TTypeId
 		Return Self
 	End Method
 	
-	Method SetClass:TTypeId( class )
-		Local debug=(Int Ptr class)[2]
-		Local name$=String.FromCString( Byte Ptr( (Int Ptr debug)[1] ) ),meta$
+	Method SetClass:TTypeId( class:Byte Ptr )
+?x86
+		Local debug:Byte Ptr=(Int Ptr class)[2]
+		Local name$=String.FromCString( Byte Ptr( (Int Ptr debug)[1] ) )
+?x64
+		Local debug:Byte Ptr=(Long Ptr class)[2]
+		Local name$=String.FromCString( Byte Ptr( (Long Ptr debug)[1] ) )
+?
+		Local meta$
 		Local i=name.Find( "{" )
 		If i<>-1
 			meta=name[i+1..name.length-1]
@@ -731,7 +759,12 @@ Type TTypeId
 	End Method
 	
 	Function _Update()
-		Local count,p:Int Ptr=bbObjectRegisteredTypes( count )
+		Local count:Int
+?x86
+		Local p:Int Ptr=bbObjectRegisteredTypes( count )
+?x64
+		Local p:Long Ptr=bbObjectRegisteredTypes( count )
+?
 		If count=_count Return
 		Local list:TList=New TList
 		For Local i=_count Until count
@@ -754,9 +787,13 @@ Type TTypeId
 		If Not _super._derived _super._derived=New TList
 		_super._derived.AddLast Self
 		
+?x86
 		Local debug=(Int Ptr _class)[2]
 		Local p:Int Ptr=(Int Ptr debug)+2
-		
+?x64
+		Local debug:Long=(Long Ptr _class)[2]
+		Local p:Long Ptr=(Long Ptr debug)+2
+?		
 		While p[0]
 			Local id$=String.FromCString( Byte Ptr p[1] )
 			Local ty$=String.FromCString( Byte Ptr p[2] )
@@ -816,7 +853,7 @@ Type TTypeId
 	
 	Field _name$
 	Field _meta$
-	Field _class
+	Field _class:Byte Ptr
 	Field _size=4
 	Field _fields:TList
 	Field _methods:TList
