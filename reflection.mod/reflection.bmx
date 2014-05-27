@@ -40,14 +40,14 @@ Function bbRefArrayClass()
 Function bbRefStringClass()
 Function bbRefObjectClass()
 
-Function bbRefArrayLength( array:Object, dim:Int = 0 )
-Function bbRefArrayTypeTag$( array:Object )
-Function bbRefArrayDimensions:Int( array:Object )
+Function bbRefArrayLength( _array:Object, dim:Int = 0 )
+Function bbRefArrayTypeTag$( _array:Object )
+Function bbRefArrayDimensions:Int( _array:Object )
 Function bbRefArrayCreate:Object( typeTag:Byte Ptr,dims:Int[] )
 
 Function bbRefFieldPtr:Byte Ptr( obj:Object,index )
 Function bbRefMethodPtr:Byte Ptr( obj:Object,index )
-Function bbRefArrayElementPtr:Byte Ptr( sz,array:Object,index )
+Function bbRefArrayElementPtr:Byte Ptr( sz,_array:Object,index )
 
 Function bbRefGetObject:Object( p:Byte Ptr )
 Function bbRefPushObject( p:Byte Ptr,obj:Object )
@@ -651,34 +651,34 @@ Type TTypeId
 	Rem
 	bbdoc: Get array length
 	End Rem
-	Method ArrayLength( array:Object, dim:Int = 0 )
+	Method ArrayLength( _array:Object, dim:Int = 0 )
 		If Not _elementType Throw "TypeID is not an array type"
-		Return bbRefArrayLength( array, dim )
+		Return bbRefArrayLength( _array, dim )
 	End Method
 	
 	Rem
 	bbdoc: Get the number of dimensions
 	End Rem
-	Method ArrayDimensions:Int( array:Object )
+	Method ArrayDimensions:Int( _array:Object )
 		If Not _elementType Throw "TypeID is not an array type"
-		Return bbRefArrayDimensions( array )
+		Return bbRefArrayDimensions( _array )
 	End Method
 	
 	Rem
 	bbdoc: Get an array element
 	End Rem
-	Method GetArrayElement:Object( array:Object,index )
+	Method GetArrayElement:Object( _array:Object,index )
 		If Not _elementType Throw "TypeID is not an array type"
-		Local p:Byte Ptr=bbRefArrayElementPtr( _elementType._size,array,index )
+		Local p:Byte Ptr=bbRefArrayElementPtr( _elementType._size,_array,index )
 		Return _Get( p,_elementType )
 	End Method
 	
 	Rem
 	bbdoc: Set an array element
 	End Rem
-	Method SetArrayElement( array:Object,index,value:Object )
+	Method SetArrayElement( _array:Object,index,value:Object )
 		If Not _elementType Throw "TypeID is not an array type"
-		Local p:Byte Ptr=bbRefArrayElementPtr( _elementType._size,array,index )
+		Local p:Byte Ptr=bbRefArrayElementPtr( _elementType._size,_array,index )
 		_Assign p,_elementType,value
 	End Method
 	
@@ -738,10 +738,10 @@ Type TTypeId
 	
 	Method SetClass:TTypeId( class:Byte Ptr )
 ?x86
-		Local debug:Byte Ptr=(Int Ptr class)[2]
+		Local debug:Int=(Int Ptr class)[2]
 		Local name$=String.FromCString( Byte Ptr( (Int Ptr debug)[1] ) )
 ?x64
-		Local debug:Byte Ptr=(Long Ptr class)[2]
+		Local debug:Long=(Long Ptr class)[2]
 		Local name$=String.FromCString( Byte Ptr( (Long Ptr debug)[1] ) )
 ?
 		Local meta$
@@ -761,9 +761,9 @@ Type TTypeId
 	Function _Update()
 		Local count:Int
 ?x86
-		Local p:Int Ptr=bbObjectRegisteredTypes( count )
+		Local p:Int Ptr Ptr=bbObjectRegisteredTypes( count )
 ?x64
-		Local p:Long Ptr=bbObjectRegisteredTypes( count )
+		Local p:Long Ptr Ptr=bbObjectRegisteredTypes( count )
 ?
 		If count=_count Return
 		Local list:TList=New TList
@@ -779,25 +779,23 @@ Type TTypeId
 	
 	Method _Resolve()
 		If _fields Or Not _class Return
-		
 		_fields=New TList
 		_methods=New TList
-		_super=TTypeId( _classMap.ValueForKey( New TClass.SetClass( (Int Ptr _class)[0] ) ) )
+		_super=TTypeId( _classMap.ValueForKey( New TClass.SetClass( _class ) ) )
 		If Not _super _super=ObjectTypeId
 		If Not _super._derived _super._derived=New TList
 		_super._derived.AddLast Self
 		
 ?x86
-		Local debug=(Int Ptr _class)[2]
-		Local p:Int Ptr=(Int Ptr debug)+2
+		Local debug:Int Ptr=(Int Ptr Ptr _class)[2]
+		Local p:Int Ptr=debug+2
 ?x64
 		Local debug:Long=(Long Ptr _class)[2]
 		Local p:Long Ptr=(Long Ptr debug)+2
-?		
+?
 		While p[0]
 			Local id$=String.FromCString( Byte Ptr p[1] )
 			Local ty$=String.FromCString( Byte Ptr p[2] )
-			
 			Local meta$
 			Local i=ty.Find( "{" )
 			If i<>-1
