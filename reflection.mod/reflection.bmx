@@ -176,6 +176,9 @@ Function _Call:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],argTyp
 	Case DoubleTypeId
 		Local f:Double(p0,p1,p2,p3,p4,p5,p6,p7)=p
 		Return String.FromDouble( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+	Case VoidTypeId
+		Local f(p0,p1,p2,p3,p4,p5,p6,p7)=p
+		f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
 	Default
 		Local f:Object(p0,p1,p2,p3,p4,p5,p6,p7)=p
 		Return f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
@@ -226,6 +229,7 @@ Function TypeIdForTag:TTypeId( ty$ )
 	Case "f" Return FloatTypeId
 	Case "d" Return DoubleTypeId
 	Case "$" Return StringTypeId
+	Case "" Return VoidTypeId
 	End Select
 End Function
 
@@ -312,6 +316,10 @@ Global ArrayTypeId:TTypeId=New TTypeId.Init( "Null[]",4,bbRefArrayClass(),Object
 ?x64
 Global ArrayTypeId:TTypeId=New TTypeId.Init( "Null[]",8,bbRefArrayClass(),ObjectTypeId )
 ?
+
+' Void Type
+' Only used For Function/Method Return types
+Global VoidTypeId:TTypeId=New TTypeId.Init( "Void",0 )
 
 Rem
 bbdoc: Type member - field or method.
@@ -841,7 +849,7 @@ Type TTypeId
 						Next
 					EndIf
 					If retType
-						_methods.AddLast New TMethod.Init( id,retType,meta,Self,p[3],argTypes )
+						_methods.AddLast New TMethod.Init( id,retType,meta,Self,Byte Ptr p[3],argTypes )
 					EndIf
 				EndIf
 			End Select
