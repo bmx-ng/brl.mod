@@ -789,7 +789,11 @@ Type TTypeId
 		If _fields Or Not _class Return
 		_fields=New TList
 		_methods=New TList
-		_super=TTypeId( _classMap.ValueForKey( New TClass.SetClass( _class ) ) )
+?x86
+		_super=TTypeId( _classMap.ValueForKey( New TClass.SetClass( (Int Ptr _class)[0] ) ) )
+?x64
+		_super=TTypeId( _classMap.ValueForKey( New TClass.SetClass( (Long Ptr _class)[0] ) ) )
+?
 		If Not _super _super=ObjectTypeId
 		If Not _super._derived _super._derived=New TList
 		_super._derived.AddLast Self
