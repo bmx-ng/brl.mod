@@ -27,7 +27,7 @@ Private
 Extern
 
 Function bbObjectNew:Object( class:Byte Ptr )
-?x86
+?Not x64
 Function bbObjectRegisteredTypes:Int Ptr( count Var )
 ?x64
 Function bbObjectRegisteredTypes:Long Ptr( count Var )
@@ -474,7 +474,7 @@ Global DoubleTypeId:TTypeId=New TTypeId.Init( "Double",8 )
 Rem
 bbdoc: Primitive object type
 End Rem
-?x86
+?Not x64
 Global ObjectTypeId:TTypeId=New TTypeId.Init( "Object",4,bbRefObjectClass() )
 ?x64
 Global ObjectTypeId:TTypeId=New TTypeId.Init( "Object",8,bbRefObjectClass() )
@@ -483,7 +483,7 @@ Global ObjectTypeId:TTypeId=New TTypeId.Init( "Object",8,bbRefObjectClass() )
 Rem
 bbdoc: Primitive string type
 End Rem
-?x86
+?Not x64
 Global StringTypeId:TTypeId=New TTypeId.Init( "String",4,bbRefStringClass(),ObjectTypeId )
 ?x64
 Global StringTypeId:TTypeId=New TTypeId.Init( "String",8,bbRefStringClass(),ObjectTypeId )
@@ -492,7 +492,7 @@ Global StringTypeId:TTypeId=New TTypeId.Init( "String",8,bbRefStringClass(),Obje
 Rem
 bbdoc: Primitive array type
 End Rem
-?x86
+?Not x64
 Global ArrayTypeId:TTypeId=New TTypeId.Init( "Null[]",4,bbRefArrayClass(),ObjectTypeId )
 ?x64
 Global ArrayTypeId:TTypeId=New TTypeId.Init( "Null[]",8,bbRefArrayClass(),ObjectTypeId )
@@ -708,7 +708,7 @@ Type TTypeId
 					dim :+ ","
 				Next
 			End If
-?x86
+?Not x64
 			_arrayType=New TTypeId.Init( _name+"[" + dim + "]",4,bbRefArrayClass() )
 ?x64
 			_arrayType=New TTypeId.Init( _name+"[" + dim + "]",8,bbRefArrayClass() )
@@ -926,7 +926,7 @@ Type TTypeId
 	End Method
 	
 	Method SetClass:TTypeId( class:Byte Ptr )
-?x86
+?Not x64
 		Local debug:Int=(Int Ptr class)[2]
 		Local name$=String.FromCString( Byte Ptr( (Int Ptr debug)[1] ) )
 ?x64
@@ -949,7 +949,7 @@ Type TTypeId
 	
 	Function _Update()
 		Local count:Int
-?x86
+?Not x64
 		Local p:Int Ptr Ptr=bbObjectRegisteredTypes( count )
 ?x64
 		Local p:Long Ptr Ptr=bbObjectRegisteredTypes( count )
@@ -970,7 +970,7 @@ Type TTypeId
 		If _fields Or Not _class Return
 		_fields=New TList
 		_methods=New TList
-?x86
+?Not x64
 		_super=TTypeId( _classMap.ValueForKey( New TClass.SetClass( (Int Ptr _class)[0] ) ) )
 ?x64
 		_super=TTypeId( _classMap.ValueForKey( New TClass.SetClass( (Long Ptr _class)[0] ) ) )
@@ -979,7 +979,7 @@ Type TTypeId
 		If Not _super._derived _super._derived=New TList
 		_super._derived.AddLast Self
 		
-?x86
+?Not x64
 		Local debug:Int Ptr=(Int Ptr Ptr _class)[2]
 		Local p:Int Ptr=debug+2
 ?x64
