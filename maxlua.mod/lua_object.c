@@ -3,17 +3,25 @@
 
 #include <pub.mod/lua.mod/lua-5.1.4/src/lua.h>
 
+struct BBObjectContainer {
+	BBObject * o;
+};
+
 void lua_boxobject( lua_State *L,BBObject *obj ){
 	void *p;
-	BBRETAIN( obj );
+	
+	struct BBObjectContainer * uc = (struct BBObjectContainer *)GC_MALLOC_UNCOLLECTABLE(sizeof(struct BBObjectContainer*));
+	uc->o = obj;
+	
 	p=lua_newuserdata( L,4 );
-	*(BBObject**)p=obj;
+	*(struct BBObjectContainer**)p=uc;
 }
 
 BBObject *lua_unboxobject( lua_State *L,int index ){
 	void *p;
 	p=lua_touserdata( L,index );
-	return *(BBObject**)p;
+	struct BBObjectContainer * uc = *(struct BBObjectContainer**)p;
+	return uc->o;
 }
 
 void lua_pushlightobject( lua_State *L,BBObject *obj ){
@@ -25,6 +33,8 @@ BBObject *lua_tolightobject( lua_State *L,int index ){
 }
 
 void lua_gcobject( lua_State *L ){
-	BBObject *obj=lua_unboxobject( L,1 );
-	BBRELEASE( obj );
+	void *p;
+	p=lua_touserdata( L,1 );
+	struct BBObjectContainer * uc = *(struct BBObjectContainer**)p;
+	GC_FREE(uc);
 }
