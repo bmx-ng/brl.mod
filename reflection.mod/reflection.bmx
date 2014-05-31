@@ -155,33 +155,214 @@ Function _Assign( p:Byte Ptr,typeId:TTypeId,value:Object )
 End Function
 
 Function _Call:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],argTypes:TTypeId[] )
-	Local q[10],sp:Byte Ptr=q
-	bbRefPushObject sp,obj
-	sp:+4
-	If typeId=LongTypeId sp:+8
+	Local q:Byte Ptr[10]',sp:Byte Ptr=q
+	'bbRefPushObject sp,obj
+	'sp:+4
+	'If typeId=LongTypeId sp:+8
 	For Local i=0 Until args.length
-		If Int Ptr(sp)>=Int Ptr(q)+8 Throw "ERROR"
-		sp=_Push( sp,argTypes[i],args[i] )
+		'If Int Ptr(sp)>=Int Ptr(q)+8 Throw "ERROR"
+		_Push( Varptr q[i],argTypes[i],args[i] )
 	Next
-	If Int Ptr(sp)>Int Ptr(q)+8 Throw "ERROR"
+	'If Int Ptr(sp)>Int Ptr(q)+8 Throw "ERROR"
 	Select typeId
 	Case ByteTypeId,ShortTypeId,IntTypeId
-		Local f(p0,p1,p2,p3,p4,p5,p6,p7)=p
-		Return String.FromInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		Select argTypes.length
+			Case 0
+				Local f:Int(m:Object)=p
+				Return String.FromInt( f(obj) )
+			Case 1
+				Local f:Int(m:Object, p0:Byte Ptr)=p
+				Return String.FromInt( f(obj, q[0]) )
+			Case 2
+				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
+				Return String.FromInt( f(obj, q[0], q[1]) )
+			Case 3
+				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return String.FromInt( f(obj, q[0], q[1], q[2]) )
+			Case 4
+				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return String.FromInt( f(obj, q[0], q[1], q[2], q[3]) )
+			Case 5
+				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return String.FromInt( f(obj, q[0], q[1], q[2], q[3], q[4]) )
+			Case 6
+				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return String.FromInt( f(obj, q[0], q[1], q[2], q[3], q[4], q[5]) )
+			Case 7
+				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return String.FromInt( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
+			Case 8
+				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return String.FromInt( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
+			Default
+				Local f:Int(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return String.FromInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		End Select
 	Case LongTypeId
-		Throw "TODO"
+		Select argTypes.length
+			Case 0
+				Local f:Long(m:Object)=p
+				Return String.Fromlong( f(obj) )
+			Case 1
+				Local f:Long(m:Object, p0:Byte Ptr)=p
+				Return String.Fromlong( f(obj, q[0]) )
+			Case 2
+				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
+				Return String.Fromlong( f(obj, q[0], q[1]) )
+			Case 3
+				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return String.Fromlong( f(obj, q[0], q[1], q[2]) )
+			Case 4
+				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return String.Fromlong( f(obj, q[0], q[1], q[2], q[3]) )
+			Case 5
+				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return String.Fromlong( f(obj, q[0], q[1], q[2], q[3], q[4]) )
+			Case 6
+				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return String.Fromlong( f(obj, q[0], q[1], q[2], q[3], q[4], q[5]) )
+			Case 7
+				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return String.Fromlong( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
+			Case 8
+				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return String.Fromlong( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
+			Default
+				Local f:Long(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return String.Fromlong( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		End Select
 	Case FloatTypeId
-		Local f:Float(p0,p1,p2,p3,p4,p5,p6,p7)=p
-		Return String.FromFloat( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		Select argTypes.length
+			Case 0
+				Local f:Float(m:Object)=p
+				Return String.FromFloat( f(obj) )
+			Case 1
+				Local f:Float(m:Object, p0:Byte Ptr)=p
+				Return String.FromFloat( f(obj, q[0]) )
+			Case 2
+				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
+				Return String.FromFloat( f(obj, q[0], q[1]) )
+			Case 3
+				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return String.FromFloat( f(obj, q[0], q[1], q[2]) )
+			Case 4
+				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return String.FromFloat( f(obj, q[0], q[1], q[2], q[3]) )
+			Case 5
+				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return String.FromFloat( f(obj, q[0], q[1], q[2], q[3], q[4]) )
+			Case 6
+				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return String.FromFloat( f(obj, q[0], q[1], q[2], q[3], q[4], q[5]) )
+			Case 7
+				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return String.FromFloat( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
+			Case 8
+				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return String.FromFloat( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
+			Default
+				Local f:Float(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return String.FromFloat( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		End Select
 	Case DoubleTypeId
-		Local f:Double(p0,p1,p2,p3,p4,p5,p6,p7)=p
-		Return String.FromDouble( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		Select argTypes.length
+			Case 0
+				Local f:Double(m:Object)=p
+				Return String.FromDouble( f(obj) )
+			Case 1
+				Local f:Double(m:Object, p0:Byte Ptr)=p
+				Return String.FromDouble( f(obj, q[0]) )
+			Case 2
+				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
+				Return String.FromDouble( f(obj, q[0], q[1]) )
+			Case 3
+				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return String.FromDouble( f(obj, q[0], q[1], q[2]) )
+			Case 4
+				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return String.FromDouble( f(obj, q[0], q[1], q[2], q[3]) )
+			Case 5
+				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return String.FromDouble( f(obj, q[0], q[1], q[2], q[3], q[4]) )
+			Case 6
+				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return String.FromDouble( f(obj, q[0], q[1], q[2], q[3], q[4], q[5]) )
+			Case 7
+				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return String.FromDouble( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
+			Case 8
+				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return String.FromDouble( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
+			Default
+				Local f:Double(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return String.FromDouble( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		End Select
 	Case VoidTypeId
-		Local f(p0,p1,p2,p3,p4,p5,p6,p7)=p
-		f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
+		Select argTypes.length
+			Case 0
+				Local f(m:Object)=p
+				f(obj)
+			Case 1
+				Local f(m:Object, p0:Byte Ptr)=p
+				f(obj, q[0])
+			Case 2
+				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
+				f(obj, q[0], q[1])
+			Case 3
+				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				f(obj, q[0], q[1], q[2])
+			Case 4
+				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				f(obj, q[0], q[1], q[2], q[3])
+			Case 5
+				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				f(obj, q[0], q[1], q[2], q[3], q[4])
+			Case 6
+				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				f(obj, q[0], q[1], q[2], q[3], q[4], q[5])
+			Case 7
+				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6])
+			Case 8
+				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7])
+			Default
+				Local f(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
+		End Select
 	Default
-		Local f:Object(p0,p1,p2,p3,p4,p5,p6,p7)=p
-		Return f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
+		Select argTypes.length
+			Case 0
+				Local f:Object(m:Object)=p
+				Return f(obj)
+			Case 1
+				Local f:Object(m:Object, p0:Byte Ptr)=p
+				Return f(obj, q[0])
+			Case 2
+				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
+				Return f(obj, q[0], q[1])
+			Case 3
+				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return f(obj, q[0], q[1], q[2])
+			Case 4
+				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return f(obj, q[0], q[1], q[2], q[3])
+			Case 5
+				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return f(obj, q[0], q[1], q[2], q[3], q[4])
+			Case 6
+				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return f(obj, q[0], q[1], q[2], q[3], q[4], q[5])
+			Case 7
+				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6])
+			Case 8
+				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7])
+			Default
+				Local f:Object(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
+		End Select
 	End Select
 End Function
 
