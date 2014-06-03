@@ -39,6 +39,13 @@ BBObject *bbObjectNew( BBClass *clas ){
 	return o;
 }
 
+BBObject *bbObjectAtomicNew( BBClass *clas ){
+	int flags=( clas->dtor!=bbObjectDtor ) ? BBGC_FINALIZE | BBGC_ATOMIC : BBGC_ATOMIC;
+	BBObject *o=(BBObject*)bbGCAllocObject( clas->instance_size,clas,flags );
+	clas->ctor( o );
+	return o;
+}
+
 void bbObjectFree( BBObject *o ){
 	BBClass *clas=o->clas;
 

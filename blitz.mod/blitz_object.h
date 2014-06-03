@@ -44,6 +44,7 @@ extern	BBClass bbObjectClass;
 extern	BBObject bbNullObject;
 
 BBObject*	bbObjectNew( BBClass *t );
+BBObject*	bbObjectAtomicNew( BBClass *t );
 void		bbObjectFree( BBObject *o );
 
 void		bbObjectCtor( BBObject *o );
