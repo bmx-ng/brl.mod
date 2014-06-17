@@ -16,16 +16,16 @@ void *bbRefArrayElementPtr( int sz,BBArray *array,int index ){
 	return (char*)BBARRAYDATA( array,array->dims )+sz*index;
 }
 
-int bbRefArrayClass(){
-	return (int)&bbArrayClass;
+void * bbRefArrayClass(){
+	return &bbArrayClass;
 }
 
-int bbRefStringClass(){
-	return (int)&bbStringClass;
+void * bbRefStringClass(){
+	return &bbStringClass;
 }
 
-int bbRefObjectClass(){
-	return (int)&bbObjectClass;
+void * bbRefObjectClass(){
+	return &bbObjectClass;
 }
 
 int bbRefArrayLength( BBArray *array, int dim ){

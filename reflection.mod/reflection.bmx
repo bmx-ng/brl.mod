@@ -36,9 +36,9 @@ Function bbObjectRegisteredTypes:Long Ptr( count Var )
 Function bbArrayNew1D:Object( typeTag:Byte Ptr,length )
 
 
-Function bbRefArrayClass()
-Function bbRefStringClass()
-Function bbRefObjectClass()
+Function bbRefArrayClass:Byte Ptr()
+Function bbRefStringClass:Byte Ptr()
+Function bbRefObjectClass:Byte Ptr()
 
 Function bbRefArrayLength( _array:Object, dim:Int = 0 )
 Function bbRefArrayTypeTag$( _array:Object )
@@ -983,8 +983,8 @@ Type TTypeId
 		Local debug:Int Ptr=(Int Ptr Ptr _class)[2]
 		Local p:Int Ptr=debug+2
 ?x64
-		Local debug:Long=(Long Ptr _class)[2]
-		Local p:Long Ptr=(Long Ptr debug)+2
+		Local debug:Long Ptr=(Long Ptr Ptr _class)[2]
+		Local p:Long Ptr=debug+2
 ?
 		While p[0]
 			Local id$=String.FromCString( Byte Ptr p[1] )
