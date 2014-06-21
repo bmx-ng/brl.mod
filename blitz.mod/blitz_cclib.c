@@ -52,17 +52,17 @@ void bbFloatToLong( BBInt64 *r,double x ){
 	*r=x;
 }
 
-void bbLongNeg( BBInt64 *r,BBInt64 x ){
-	*r=-x;
+BBInt64 bbLongNeg( BBInt64 x ){
+	return -x;
 }
-void bbLongNot( BBInt64 *r,BBInt64 x ){
-	*r=~x;
+BBInt64 bbLongNot( BBInt64 x ){
+	return ~x;
 }
-void bbLongAbs( BBInt64 *r,BBInt64 x ){
-	*r=x>=0 ? x : -x;
+BBInt64 bbLongAbs( BBInt64 x ){
+	return x>=0 ? x : -x;
 }
-void bbLongSgn( BBInt64 *r,BBInt64 x ){
-	*r=x>0 ? 1 : (x<0 ? -1 : 0);
+BBInt64 bbLongSgn( BBInt64 x ){
+	return x>0 ? 1 : (x<0 ? -1 : 0);
 }
 void bbLongAdd( BBInt64 *r,BBInt64 x,BBInt64 y ){
 	*r=x+y;
@@ -79,11 +79,11 @@ void bbLongDiv( BBInt64 *r,BBInt64 x,BBInt64 y ){
 void bbLongMod( BBInt64 *r,BBInt64 x,BBInt64 y ){
 	*r=x%y;
 }
-void bbLongMin( BBInt64 *r,BBInt64 x,BBInt64 y ){
-	*r=x<y ? x : y;
+BBInt64 bbLongMin( BBInt64 x,BBInt64 y ){
+	return x<y ? x : y;
 }
-void bbLongMax( BBInt64 *r,BBInt64 x,BBInt64 y ){
-	*r=x>y ? x : y;
+BBInt64 bbLongMax( BBInt64 x,BBInt64 y ){
+	return x>y ? x : y;
 }
 void bbLongAnd( BBInt64 *r,BBInt64 x,BBInt64 y ){
 	*r=x&y;
