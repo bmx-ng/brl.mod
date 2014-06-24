@@ -396,9 +396,9 @@ End Function
 
 Rem
 bbdoc: Open a directory
-returns: An integer directory handle, or 0 if the directory does not exist
+returns: A directory handle, or 0 if the directory does not exist
 End Rem
-Function ReadDir( path$ )
+Function ReadDir:Byte Ptr( path$ )
 	FixPath path,True
 	Return opendir_( path )
 End Function
