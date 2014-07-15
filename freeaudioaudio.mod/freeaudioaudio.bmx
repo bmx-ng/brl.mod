@@ -150,7 +150,7 @@ Type TFreeAudioAudioDriver Extends TAudioDriver
 	Method Startup()
 		If _mode<>-1 Return fa_Init( _mode )<>-1
 		If fa_Init( 0 )<>-1 Return True
-?Win32
+?Not MacOS
 		Return fa_Init( 1 )<>-1
 ?
 	End Method
