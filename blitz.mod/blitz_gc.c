@@ -70,3 +70,52 @@ void bbGCResume(){
 int bbGCMemAlloced(){
 	return GC_get_heap_size();
 }
+
+static struct tree_root *retain_root = 0;
+
+#define generic_compare(x, y) (((x) > (y)) - ((x) < (y)))
+
+int node_compare(const void *x, const void *y) {
+
+        struct retain_node * node_x = (struct retain_node *)x;
+        struct retain_node * node_y = (struct retain_node *)y;
+
+        return generic_compare(node_x->obj, node_y->obj);
+}
+
+void bbGCRetain( BBObject *p ) {
+	struct retain_node * node = (struct retain_node *)GC_MALLOC(sizeof(struct retain_node));
+	node->count = 1;
+	node->obj = p;
+	
+	struct retain_node * old_node = (struct retain_node *)tree_map(&node->link, node_compare, &retain_root);
+	if (&node->link != &old_node->link) {
+		// this object already exists here... increment our reference count
+		old_node->count++;
+		
+		// delete the new node, since we don't need it
+		GC_FREE(node);
+	}
+}
+
+void bbGCRelease( BBObject *p ) {
+	// create something to look up
+	struct retain_node * node = (struct retain_node *)malloc(sizeof(struct retain_node));
+	node->obj = p;
+	
+	struct retain_node * found = (struct retain_node *)tree_search(node, node_compare, retain_root);
+	// done with that
+	free(node);
+	if (found) {
+		// found a retained object!
+		
+		found->count--;
+		if (found->count <=0) {
+			// remove from the tree
+			tree_del(&found->link, &retain_root);
+			// free the node
+			found->obj = 0;
+			GC_FREE(found);
+		}
+	}
+}

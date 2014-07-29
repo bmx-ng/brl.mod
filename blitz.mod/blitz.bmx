@@ -122,6 +122,8 @@ Import "bdwgc/backgraph.c"
 Import "bdwgc/win32_threads.c"
 Import "bdwgc/thread_local_alloc.c"	'bdwgc only? not gc6.7
 
+Import "tree/tree.c"
+
 Extern
 Global OnDebugStop()="bbOnDebugStop"
 Global OnDebugLog( message$ )="bbOnDebugLog"

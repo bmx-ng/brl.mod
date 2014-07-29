@@ -3,6 +3,7 @@
 #define BLITZ_GC_H
 
 #include "blitz_types.h"
+#include "tree/tree.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -80,8 +81,14 @@ void		bbGCRelease( BBObject *p );
 // For BDW GC...
 //
 #ifdef BB_GC_BDW
-#define	BBRETAIN(X) {}
-#define	BBRELEASE(X) {}
+struct retain_node {
+	struct tree_root link;
+	BBOBJECT obj;
+	int count;
+};
+
+#define	BBRETAIN(X) bbGCRetain( ((BBObject*)(X)) );
+#define	BBRELEASE(X) bbGCRelease( ((BBObject*)(X)) );
 #endif
 
 // Internal use only
