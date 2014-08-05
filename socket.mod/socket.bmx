@@ -22,7 +22,7 @@ Private
 Extern "os"
 ?Win32
 Const FIONREAD=$4004667F
-Function ioctl_( socket,opt,buf:Byte Ptr )="ioctlsocket@12"
+Function ioctl_( socket,opt,buf:Byte Ptr )="ioctlsocket"
 ?MacOS
 Const FIONREAD=$4004667F
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
