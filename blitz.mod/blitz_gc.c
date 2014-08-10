@@ -1,6 +1,16 @@
 
 #include "blitz.h"
 
+#ifdef _WIN32
+extern void *_bss_end__;
+extern void *_data_start__;
+#endif
+
+#ifdef __linux
+extern void *__data_start;
+extern void *_end;
+#endif
+
 static void gc_finalizer( void *mem,void *pool ){
 	((BBGCPool*)pool)->free( (BBGCMem*)mem );
 }
