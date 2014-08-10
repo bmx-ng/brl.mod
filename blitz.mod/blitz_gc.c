@@ -10,9 +10,23 @@ static void gc_warn_proc( char *msg,GC_word arg ){
 }
 
 void bbGCStartup( void *spTop ){
+	GC_set_no_dls(1);
+	GC_clear_roots();
+#ifdef _WIN32
+	GC_add_roots(&_data_start__, &_bss_end__);
+#endif
+
+#ifdef __APPLE__
+	int *seg=getsegbyname( "__DATA" );
+
+	GC_add_roots((void**)seg[6], (void**)(seg[6]+seg[7]));
+#endif
+
+#ifdef __linux
+	GC_add_roots(&__data_start, &_end);
+#endif	
 	GC_INIT();
 	GC_set_warn_proc( gc_warn_proc );
-	GC_enable_incremental();
 }
 
 BBGCMem *bbGCAlloc( int sz,BBGCPool *pool ){
