@@ -4,5 +4,7 @@
 *.bak
 *.x64.a
 *.x64.i
+*.arm.a
+*.arm.i
 
 .bmx/
