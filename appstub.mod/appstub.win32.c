@@ -41,7 +41,7 @@ static LONG WINAPI unhandledExceptionFilter( EXCEPTION_POINTERS *xinfo ){
 
 void bbLibStartup();
 
-void __bb_appstub_appstub();
+void __bb_brl_appstub_appstub();
 
 int main( int argc,char *argv[] ){
 
@@ -53,7 +53,7 @@ int main( int argc,char *argv[] ){
 
 	bbStartup( argc,argv,0,0 );
 
-	__bb_appstub_appstub();
+	__bb_brl_appstub_appstub();
 
 	return 0;
 }
@@ -64,7 +64,7 @@ BOOL WINAPI DllMain( HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved ){
 
 	bbLibStartup();
 	
-	__bb_appstub_appstub();
+	__bb_brl_appstub_appstub();
 
 	return 1;
 }
