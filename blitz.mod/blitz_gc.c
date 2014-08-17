@@ -1,6 +1,10 @@
 
 #include "blitz.h"
 
+#ifdef __APPLE__
+#include <mach-o/getsect.h>
+#endif
+
 #ifdef _WIN32
 extern void *_bss_end__;
 extern void *_data_start__;
@@ -27,9 +31,15 @@ void bbGCStartup( void *spTop ){
 #endif
 
 #ifdef __APPLE__
-	int *seg=getsegbyname( "__DATA" );
+#ifndef __LP64__
+	struct segment_command * seg;
+#else
+	struct segment_command_64 * seg;
+#endif
+	
+	seg = getsegbyname( "__DATA" );
 
-	GC_add_roots((void**)seg[6], (void**)(seg[6]+seg[7]));
+	GC_add_roots((void*)seg->vmaddr, (void*)(seg->vmaddr + seg->vmsize));
 #endif
 
 #ifdef __linux
