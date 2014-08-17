@@ -83,12 +83,14 @@ static BBArray *allocateArray( const char *type,int dims,int *lens ){
 	case 's':size=2;break;
 	case 'l':size=8;break;
 	case 'd':size=8;break;
+	case '*':size=sizeof(void*);break;
 	case ':':size=sizeof(void*);flags=0;break;
 	case '$':size=sizeof(void*);flags=0;break;
 	case '[':size=sizeof(void*);flags=0;break;
+	case '(':size=sizeof(void*);break;
 	}
 	size*=length;
-	
+
 	arr=(BBArray*)bbGCAllocObject( BBARRAYSIZE(size,dims),&bbArrayClass,flags );
 
 	arr->type=type;
