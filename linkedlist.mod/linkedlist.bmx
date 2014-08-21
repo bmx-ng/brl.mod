@@ -14,12 +14,17 @@ ModuleInfo "Modserver: BRL"
 
 ModuleInfo "History: 1.08"
 ModuleInfo "History: Clear TLink fields on Remove()."
+ModuleInfo "History: Added enumeration pool."
 ModuleInfo "History: 1.07 Release"
 ModuleInfo "History: Changed Reverse to maintain TLink stability"
 ModuleInfo "History: 1.06 Release"
 ModuleInfo "History: Added optional CompareFunc parameter to Sort"
 ModuleInfo "History: 1.05 Release"
 ModuleInfo "History: Sort now swaps links instead of values"
+
+?Threaded
+Import BRL.Threads
+?
 
 Function CompareObjects( o1:Object,o2:Object )
 	Return o1.Compare( o2 )
@@ -72,10 +77,26 @@ bbdoc: Enumerator Object use by TList in order to implement Eachin support.
 End Rem
 Type TListEnum
 
+	Global _pool:TList = New TList
+?Threaded
+	Global _mutex:TMutex = CreateMutex()
+?
+
 	Field _link:TLink
 
 	Method HasNext()
-		Return _link._value<>_link
+		Local has:Int = _link._value<>_link
+		If Not has Then
+?Threaded
+			LockMutex(_mutex)
+?
+			_pool.AddLast(Self)
+?Threaded
+			UnlockMutex(_mutex)
+?
+			_link = Null
+		End If
+		Return has
 	End Method
 
 	Method NextObject:Object()
@@ -405,7 +426,16 @@ Type TList
 	End Method
 		
 	Method ObjectEnumerator:TListEnum()
-		Local enum:TListEnum=New TListEnum
+?Threaded
+			LockMutex(_mutex)
+?
+		Local enum:TListEnum=TListEnum._pool.RemoveFirst()
+?Threaded
+			UnlockMutex(_mutex)
+?
+		If Not enum Then
+			enum = New TListEnum
+		End If
 		enum._link=_head._succ
 		Return enum
 	End Method
