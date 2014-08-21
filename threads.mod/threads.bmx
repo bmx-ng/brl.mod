@@ -6,8 +6,14 @@ bbdoc: System/Threads
 End Rem
 Module BRL.Threads
 
+ModuleInfo "Version: 1.01"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
+
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Use Byte Ptr instead of Int handles."
+ModuleInfo "History: 1.00"
+ModuleInfo "History: Initial release."
 
 ?Threaded
 
@@ -17,33 +23,33 @@ Private
 
 Extern
 
-Function bbThreadAllocData()
+Function bbThreadAllocData:Byte Ptr()
 Function bbThreadSetData( index,data:Object )
 Function bbThreadGetData:Object( index )
 
 Function bbAtomicCAS( target Var,old_value,new_value )
 Function bbAtomicAdd( target Var,value )
 
-Function threads_CreateThread( entry:Object( data:Object ),data:Object )
-Function threads_DetachThread( thread )
-Function threads_WaitThread:Object( thread )
+Function threads_CreateThread:Byte Ptr( entry:Object( data:Object ),data:Object )
+Function threads_DetachThread( thread:Byte Ptr )
+Function threads_WaitThread:Object( thread:Byte Ptr )
 
-Function threads_CreateMutex()
-Function threads_CloseMutex( mutex )
-Function threads_LockMutex( mutex )
-Function threads_TryLockMutex( mutex )
-Function threads_UnlockMutex( mutex )
+Function threads_CreateMutex:Byte Ptr()
+Function threads_CloseMutex( mutex:Byte Ptr )
+Function threads_LockMutex( mutex:Byte Ptr )
+Function threads_TryLockMutex( mutex:Byte Ptr )
+Function threads_UnlockMutex( mutex:Byte Ptr )
 
-Function threads_CreateSemaphore( count )
-Function threads_CloseSemaphore( sema )
-Function threads_WaitSemaphore( sema )
-Function threads_PostSemaphore( sema )
+Function threads_CreateSemaphore:Byte Ptr( count )
+Function threads_CloseSemaphore( sema:Byte Ptr )
+Function threads_WaitSemaphore( sema:Byte Ptr )
+Function threads_PostSemaphore( sema:Byte Ptr )
 
-Function threads_CreateCond()
-Function threads_WaitCond( cond,mutex )
-Function threads_SignalCond( cond )
-Function threads_BroadcastCond( cond )
-Function threads_CloseCond( cond )
+Function threads_CreateCond:Byte Ptr()
+Function threads_WaitCond( cond:Byte Ptr,mutex:Byte Ptr )
+Function threads_SignalCond( cond:Byte Ptr )
+Function threads_BroadcastCond( cond:Byte Ptr )
+Function threads_CloseCond( cond:Byte Ptr )
 
 End Extern
 
@@ -127,7 +133,7 @@ Type TThread
 	End Method
 	
 	Field _running
-	Field _handle
+	Field _handle:Byte Ptr
 	Field _result:Object
 	
 	Field _entry:Object( data:Object )
@@ -158,14 +164,14 @@ Type TThreadData
 	bbdoc: Create thread data
 	End Rem
 	Function Create:TThreadData()
-		Local handle=bbThreadAllocData()
+		Local handle:Byte Ptr=bbThreadAllocData()
 		If Not handle Return
 		Local data:TThreadData=New TThreadData
 		data._handle=handle
 		Return data
 	End Function
 
-	Field _handle
+	Field _handle:Byte Ptr
 
 End Type
 
@@ -212,7 +218,7 @@ Type TMutex
 	bbdoc: Create a new mutex
 	End Rem
 	Function Create:TMutex()
-		Local handle=threads_CreateMutex()
+		Local handle:Byte Ptr=threads_CreateMutex()
 		If Not handle Return
 		Local mutex:TMutex=New TMutex
 		mutex._handle=handle
@@ -223,7 +229,7 @@ Type TMutex
 		If _handle threads_CloseMutex _handle
 	End Method
 	
-	Field _handle
+	Field _handle:Byte Ptr
 	
 End Type
 
@@ -261,7 +267,7 @@ Type TSemaphore
 	bbdoc: Create a new semaphore
 	End Rem
 	Function Create:TSemaphore( count )
-		Local handle=threads_CreateSemaphore( count )
+		Local handle:Byte Ptr=threads_CreateSemaphore( count )
 		If Not handle Return
 		Local semaphore:TSemaphore=New TSemaphore
 		semaphore._handle=handle
@@ -272,7 +278,7 @@ Type TSemaphore
 		If _handle threads_CloseSemaphore _handle
 	End Method
 	
-	Field _handle
+	Field _handle:Byte Ptr
 	
 End Type
 
@@ -318,7 +324,7 @@ Type TCondVar
 	bbdoc: Create a new condvar
 	End Rem
 	Function Create:TCondVar()
-		Local handle=threads_CreateCond()
+		Local handle:Byte Ptr=threads_CreateCond()
 		If Not handle Return
 		Local condvar:TCondVar=New TCondVar
 		condvar._handle=handle
@@ -329,7 +335,7 @@ Type TCondVar
 		If _handle threads_CloseCond _handle
 	End Method
 	
-	Field _handle
+	Field _handle:Byte Ptr
 
 End Type
 
