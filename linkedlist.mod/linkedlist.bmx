@@ -429,7 +429,7 @@ Type TList
 ?Threaded
 			LockMutex(_mutex)
 ?
-		Local enum:TListEnum=TListEnum._pool.RemoveFirst()
+		Local enum:TListEnum=TListEnum(TListEnum._pool.RemoveFirst())
 ?Threaded
 			UnlockMutex(_mutex)
 ?
