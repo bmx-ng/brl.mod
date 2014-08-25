@@ -22,7 +22,7 @@ ModuleInfo "History: 1.02 Release"
 ModuleInfo "History: Added volume,pan,rate states to channel"
 ModuleInfo "History: 1.01 Initial Release"
 
-?Win32
+?disabled
 
 Import BRL.Math
 Import BRL.Audio

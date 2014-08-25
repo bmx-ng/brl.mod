@@ -70,7 +70,7 @@ ModuleInfo "History: Fixed EnumDisplayModes returning swapped depth<->hertz"
 ModuleInfo "History: 1.02 Release"
 ModuleInfo "History: Fixed D3D7 mouse capture in 'windowed' fullscreen mode"
 
-?Win32
+?disabled
 Import "d3d7graphics.bmx"
 Import "d3d9graphics.bmx"
 ?

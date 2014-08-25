@@ -202,7 +202,7 @@ Type TFreeAudioAudioDriver Extends TAudioDriver
 End Type
 
 ?Win32
-If DirectSoundCreate TFreeAudioAudioDriver.Create "FreeAudio DirectSound",1
+'If DirectSoundCreate TFreeAudioAudioDriver.Create "FreeAudio DirectSound",1
 TFreeAudioAudioDriver.Create "FreeAudio Multimedia",0
 ?MacOS
 TFreeAudioAudioDriver.Create "FreeAudio CoreAudio",0

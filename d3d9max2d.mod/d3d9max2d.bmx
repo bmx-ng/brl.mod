@@ -11,12 +11,13 @@ Module BRL.D3D9Max2D
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 
-?Win32
+?disabled
 
 Import BRL.Max2D
 Import BRL.DXGraphics
 
 Import BRL.D3D7Max2D
+
 
 Const LOG_ERRS=True'False
 
