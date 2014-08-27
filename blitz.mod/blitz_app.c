@@ -187,9 +187,9 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	char *ebp;
 	OSVERSIONINFO os={ sizeof(os) };
 	
-	asm( "movl %%ebp,%0;":"=r"(ebp) );//::"%ebp" );
+	//asm( "movl %%ebp,%0;":"=r"(ebp) );//::"%ebp" );
 	
-	bbGCStackTop=ebp+28;
+	//bbGCStackTop=ebp+28;
 	
 	// BaH bbThreadStartup();
 	bbGCStartup();

@@ -6,8 +6,13 @@
 #endif
 
 #ifdef _WIN32
+#ifdef __x86_64__
+extern void *__bss_end__;
+extern void *__data_start__;
+#else
 extern void *_bss_end__;
 extern void *_data_start__;
+#endif
 #endif
 
 #ifdef __linux
@@ -27,7 +32,11 @@ void bbGCStartup( void *spTop ){
 	GC_set_no_dls(1);
 	GC_clear_roots();
 #ifdef _WIN32
+#ifdef __x86_64__
+	GC_add_roots(&__data_start__, &__bss_end__);
+#else
 	GC_add_roots(&_data_start__, &_bss_end__);
+#endif
 #endif
 
 #ifdef __APPLE__
