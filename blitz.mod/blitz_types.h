@@ -43,6 +43,19 @@ extern const char *bbStringTypeTag;	//"$"
 extern const char *bbObjectTypeTag;	//":Object"
 extern const char *bbBytePtrTypeTag;//"*b"
 
+struct bbDataDef { 
+	char * type; 
+	union {
+		BBBYTE b;
+		BBSHORT s;
+		BBINT i;
+		BBLONG l;
+		BBFLOAT f;
+		BBDOUBLE d;
+		BBSTRING t;
+	};
+};
+
 #ifdef __cplusplus
 }
 #endif
