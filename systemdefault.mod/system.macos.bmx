@@ -2,7 +2,7 @@ Strict
 
 Import BRL.Event
 
-Import "driver.bmx"
+Import BRL.System
 Import "system.macos.m"
 
 Extern
@@ -22,6 +22,11 @@ Function bbOpenURL( url$ )
 
 Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet ),syncInfo:Object,asyncRet )
 Function bbSystemStartAsyncOp( asyncOp( asyncInfo ),asyncInfo,syncOp( syncInfo:Object,asyncRet ),syncInfo:Object )
+
+Function bbSystemDesktopWidth:Int()
+Function bbSystemDesktopHeight:Int()
+Function bbSystemDesktopDepth:Int()
+Function bbSystemDesktopHertz:Int()
 
 End Extern
 
@@ -105,6 +110,22 @@ Type TMacOSSystemDriver Extends TSystemDriver
 '		Return system_( "open "" + url.Replace("~q","") + "~q" )
 		bbOpenURL( url )
 	End Method
+
+	Method DesktopWidth:Int()
+		Return bbSystemDesktopWidth()
+	End Method
 	
+	Method DesktopHeight:Int()
+		Return bbSystemDesktopHeight()
+	End Method
+	
+	Method DesktopDepth:Int()
+		Return bbSystemDesktopDepth()
+	End Method
+	
+	Method DesktopHertz:Int()
+		Return bbSystemDesktopHertz()
+	End Method
+
 End Type
 

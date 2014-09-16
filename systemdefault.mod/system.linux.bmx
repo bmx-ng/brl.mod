@@ -1,7 +1,7 @@
 
 Strict
 
-Import "driver.bmx"
+Import BRL.System
 Import "system.linux.c"
 
 Import "-lXxf86vm"
@@ -24,6 +24,11 @@ Function bbSystemStartAsyncOp( asyncOp( asyncInfo ),asyncInfo,syncOp( syncInfo:O
 
 Function bbSystemAsyncFD()
 Function bbSystemFlushAsyncOps()
+
+Function bbSystemDesktopWidth:Int()
+Function bbSystemDesktopHeight:Int()
+Function bbSystemDesktopDepth:Int()
+Function bbSystemDesktopHertz:Int()
 
 End Extern
 
@@ -95,6 +100,22 @@ Type TLinuxSystemDriver Extends TSystemDriver
 		ElseIf getenv_("GNOME_DESKTOP_SESSION_ID")
 			system_ "gnome-open ~q"+url+"~q"
 		EndIf
+	End Method
+
+	Method DesktopWidth:Int()
+		Return bbSystemDesktopWidth()
+	End Method
+	
+	Method DesktopHeight:Int()
+		Return bbSystemDesktopHeight()
+	End Method
+	
+	Method DesktopDepth:Int()
+		Return bbSystemDesktopDepth()
+	End Method
+	
+	Method DesktopHertz:Int()
+		Return bbSystemDesktopHertz()
 	End Method
 
 End Type

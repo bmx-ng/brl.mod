@@ -16,6 +16,11 @@ Type TSystemDriver
 	Method RequestDir$( text$,path$ ) Abstract
 
 	Method OpenURL( url$ ) Abstract	
+
+	Method DesktopWidth:Int() Abstract
+	Method DesktopHeight:Int() Abstract
+	Method DesktopDepth:Int() Abstract
+	Method DesktopHertz:Int() Abstract
 	
 End Type
 

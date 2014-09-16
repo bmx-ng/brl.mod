@@ -6,12 +6,14 @@ bbdoc: System/System
 End Rem
 Module BRL.System
 
-ModuleInfo "Version: 1.28"
+ModuleInfo "Version: 1.29"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.29"
+ModuleInfo "History: Split out into BRL.System and BRL.SystemDefault modules."
 ModuleInfo "History: 1.28"
 ModuleInfo "History: Added custom format option to CurrentDate()."
 ModuleInfo "History: 1.27"
@@ -73,21 +75,6 @@ Import BRL.FileSystem
 Import Pub.StdC
 
 Import "driver.bmx"
-
-Import "system.c"
-
-?MacOS
-Import "system.macos.bmx"
-Driver=New TMacOSSystemDriver
-?Win32
-Import "system.win32.bmx"
-Import "-lcomdlg32"
-Driver=New TWin32SystemDriver
-?Linux
-Import "-lX11"
-Import "system.linux.bmx"
-Driver=New TLinuxSystemDriver
-?
 
 Private
 
@@ -305,19 +292,22 @@ Function OpenURL( url$ )
 	Return Driver.OpenURL( url )
 End Function
 
-Extern
 
 Rem
 bbdoc: Get desktop width
 returns: Width of the desktop, in pixels
 End Rem
-Function DesktopWidth()="bbSystemDesktopWidth"
+Function DesktopWidth()
+	Return Driver.DesktopWidth()
+End Function
 
 Rem
 bbdoc: Get desktop height
 returns: Height of the desktop, in pixels
 End Rem
-Function DesktopHeight()="bbSystemDesktopHeight"
+Function DesktopHeight()
+	Return Driver.DesktopHeight()
+End Function
 
 Rem
 bbdoc: Get desktop depth
@@ -327,7 +317,9 @@ The depth of the desktop is the number of bits per pixel.
 
 Note that on some platforms this function may return 0 if the desktop depth cannot be determined.
 End Rem
-Function DesktopDepth()="bbSystemDesktopDepth"
+Function DesktopDepth()
+	Return Driver.DesktopDepth()
+End Function
 
 Rem
 bbdoc: Get desktop refresh rate
@@ -335,6 +327,8 @@ returns: Refresh rate, in cycles per second, of the desktop
 about:
 Note that on some platforms this function may return 0 if the desktop refresh rate cannot be determined.
 End Rem
-Function DesktopHertz()="bbSystemDesktopHertz"
+Function DesktopHertz()
+	Return Driver.DesktopHertz()
+End Function
 
-End Extern
+'End Extern
