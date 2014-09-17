@@ -4,7 +4,7 @@
 #include <OpenGL/gl.h>
 #include <OpenGL/OpenGL.h>
 
-#include <brl.mod/system.mod/system.h>
+#include <brl.mod/systemdefault.mod/system.h>
 
 enum{
 	FLAGS_BACKBUFFER=	0x2,
