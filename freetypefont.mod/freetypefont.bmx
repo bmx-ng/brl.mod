@@ -64,7 +64,7 @@ End Type
 
 Type TFreeTypeFont Extends BRL.Font.TFont
 
-	Field _face:FTFace
+	'Field _face:FTFace
 	Field _ft_face:Byte Ptr
 	Field _style,_height
 	Field _ascend,_descend
@@ -102,28 +102,35 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 		
 		If FT_Load_Glyph( _ft_face,index+1,FT_LOAD_RENDER ) Return glyph
 			
-		Local slot:FTGlyph=New FTGlyph
-		MemCopy slot,_face.glyphslot,SizeOf slot
+		'Local slot:FTGlyph=New FTGlyph
+		'MemCopy slot,bmx_freetype_Face_glyph(_ft_face),SizeOf slot
+		Local _slot:Byte Ptr = bmx_freetype_Face_glyph(_ft_face)
 
-		glyph._x=slot.bitmap_left
-		glyph._y=-slot.bitmap_top+_ascend
-		glyph._w=slot.width
-		glyph._h=slot.rows
-		glyph._advance=slot.advancex Sar 6
+		Local width:Int = bmx_freetype_Slot_bitmap_width(_slot)
+		Local rows:Int = bmx_freetype_Slot_bitmap_rows(_slot)
+		Local pitch:Int = bmx_freetype_Slot_bitmap_pitch(_slot)
+		Local advancex:Int = bmx_freetype_Slot_advance_x(_slot)
+		Local buffer:Byte Ptr = bmx_freetype_Slot_bitmap_buffer(_slot)
 		
-		If slot.width=0 Return glyph
+		glyph._x=bmx_freetype_Slot_bitmapleft(_slot)
+		glyph._y=-bmx_freetype_Slot_bitmaptop(_slot)+_ascend
+		glyph._w=width
+		glyph._h=rows
+		glyph._advance=advancex Sar 6
+		
+		If width=0 Return glyph
 	
 		Local pixmap:TPixmap
-			
-		If slot.numgreys
-			pixmap=TPixmap.CreateStatic( slot.buffer,slot.width,slot.rows,slot.pitch,PF_A8 ).Copy()
+		
+		If bmx_freetype_Slot_bitmap_numgreys(_slot)
+			pixmap=TPixmap.CreateStatic( buffer,width,rows,pitch,PF_A8 ).Copy()
 		Else
-			pixmap=CreatePixmap( slot.width,slot.rows,PF_A8 )
+			pixmap=CreatePixmap( width,rows,PF_A8 )
 			Local b
-			For Local y=0 Until slot.rows
+			For Local y=0 Until rows
 				Local dst:Byte Ptr=pixmap.PixelPtr(0,y)
-				Local src:Byte Ptr=slot.buffer+y*slot.pitch
-				For Local x=0 Until slot.width
+				Local src:Byte Ptr=buffer+y*pitch
+				For Local x=0 Until width
 					If (x&7)=0 b=src[x/8]
 					If b & $80 dst[x]=$ff Else dst[x]=0
 					b:+b
@@ -180,20 +187,21 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 			Return
 		EndIf
 		
-		Local face:FTFace=New FTFace
-		MemCopy face,ft_face,SizeOf face
+		'Local face:FTFace=New FTFace
+		'MemCopy face,ft_face,SizeOf face
 		
-		Local metrics:FTMetrics=New FTMetrics
-		MemCopy metrics,face.metrics,SizeOf metrics
+		Local ft_size:Byte Ptr = bmx_freetype_Face_size(ft_face)
+		'Local metrics:FTMetrics=New FTMetrics
+		'MemCopy metrics,face.metrics,SizeOf metrics
 		
 		Local font:TFreeTypeFont=New TFreeTypeFont
-		font._face=face
+		'font._face=face
 		font._ft_face=ft_face
 		font._style=style
-		font._height=metrics.height Sar 6
-		font._ascend=metrics.ascend Sar 6
-		font._descend=metrics.descend Sar 6
-		font._glyphs=New TFreeTypeGlyph[face.numglyphs]
+		font._height=bmx_freetype_Size_height(ft_size) Sar 6
+		font._ascend=bmx_freetype_Size_ascend(ft_size) Sar 6
+		font._descend=bmx_freetype_Size_descend(ft_size) Sar 6
+		font._glyphs=New TFreeTypeGlyph[bmx_freetype_Face_numglyphs(ft_face)]
 		font._buf=buf
 		font._buf_size=buf_size
 		
