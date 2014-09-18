@@ -59,7 +59,7 @@ String^Object{
 
 }AF="bbStringClass"
 
-Array^Object{
+___Array^Object{
 
 	.elementTypeEncoding:Byte Ptr
 	.numberOfDimensions:Int
