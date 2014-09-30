@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: System/Threads 
@@ -23,12 +23,12 @@ Private
 
 Extern
 
-Function bbThreadAllocData:Byte Ptr()
-Function bbThreadSetData( index,data:Object )
-Function bbThreadGetData:Object( index )
+Function bbThreadAllocData:Int()
+Function bbThreadSetData( index:Int,data:Object )
+Function bbThreadGetData:Object( index:Int )
 
-Function bbAtomicCAS( target Var,old_value,new_value )
-Function bbAtomicAdd( target Var,value )
+Function bbAtomicCAS:Int( target:Int Var,old_value:Int,new_value:Int )
+Function bbAtomicAdd:Int( target:Int Var,value:Int )
 
 Function threads_CreateThread:Byte Ptr( entry:Object( data:Object ),data:Object )
 Function threads_DetachThread( thread:Byte Ptr )
@@ -37,10 +37,10 @@ Function threads_WaitThread:Object( thread:Byte Ptr )
 Function threads_CreateMutex:Byte Ptr()
 Function threads_CloseMutex( mutex:Byte Ptr )
 Function threads_LockMutex( mutex:Byte Ptr )
-Function threads_TryLockMutex( mutex:Byte Ptr )
+Function threads_TryLockMutex:Int( mutex:Byte Ptr )
 Function threads_UnlockMutex( mutex:Byte Ptr )
 
-Function threads_CreateSemaphore:Byte Ptr( count )
+Function threads_CreateSemaphore:Byte Ptr( count:Int )
 Function threads_CloseSemaphore( sema:Byte Ptr )
 Function threads_WaitSemaphore( sema:Byte Ptr )
 Function threads_PostSemaphore( sema:Byte Ptr )
@@ -89,7 +89,7 @@ Type TThread
 	Rem
 	bbdoc: Check if this thread is running
 	End Rem
-	Method Running()
+	Method Running:Int()
 		Return _running
 	End Method
 	
@@ -132,7 +132,7 @@ Type TThread
 		If _handle threads_DetachThread _handle
 	End Method
 	
-	Field _running
+	Field _running:Int
 	Field _handle:Byte Ptr
 	Field _result:Object
 	
@@ -164,14 +164,14 @@ Type TThreadData
 	bbdoc: Create thread data
 	End Rem
 	Function Create:TThreadData()
-		Local handle:Byte Ptr=bbThreadAllocData()
-		If Not handle Return
+		Local handle:Int=bbThreadAllocData()
+		If Not handle Return Null
 		Local data:TThreadData=New TThreadData
 		data._handle=handle
 		Return data
 	End Function
 
-	Field _handle:Byte Ptr
+	Field _handle:Int
 
 End Type
 
@@ -201,7 +201,7 @@ Type TMutex
 	bbdoc: Try to lock the mutex
 	returns: #True if mutex was successfully locked; #False if mutex was already locked by another thread.
 	End Rem
-	Method TryLock()
+	Method TryLock:Int()
 		Assert _handle
 		Return threads_TryLockMutex( _handle )
 	End Method
@@ -219,7 +219,7 @@ Type TMutex
 	End Rem
 	Function Create:TMutex()
 		Local handle:Byte Ptr=threads_CreateMutex()
-		If Not handle Return
+		If Not handle Return Null
 		Local mutex:TMutex=New TMutex
 		mutex._handle=handle
 		Return mutex
@@ -266,9 +266,9 @@ Type TSemaphore
 	Rem
 	bbdoc: Create a new semaphore
 	End Rem
-	Function Create:TSemaphore( count )
+	Function Create:TSemaphore( count:Int )
 		Local handle:Byte Ptr=threads_CreateSemaphore( count )
-		If Not handle Return
+		If Not handle Return Null
 		Local semaphore:TSemaphore=New TSemaphore
 		semaphore._handle=handle
 		Return semaphore
@@ -325,7 +325,7 @@ Type TCondVar
 	End Rem
 	Function Create:TCondVar()
 		Local handle:Byte Ptr=threads_CreateCond()
-		If Not handle Return
+		If Not handle Return Null
 		Local condvar:TCondVar=New TCondVar
 		condvar._handle=handle
 		Return condvar
@@ -382,7 +382,7 @@ Once one a thread has been detached, it wil no longer be possible to use #WaitTh
 This allows the thread to run without your program having to continually check whether it has completedin order to close it.
 End Rem
 Function DetachThread( thread:TThread )
-	Return thread.Detach()
+	thread.Detach()
 End Function
 
 Rem
@@ -403,7 +403,7 @@ Rem
 bbdoc: Check if a thread is running
 returns: #True if @thread is still running, otherwise #False.
 End Rem
-Function ThreadRunning( thread:TThread )
+Function ThreadRunning:Int( thread:TThread )
 	Return thread.Running()
 End Function
 
@@ -455,7 +455,7 @@ Rem
 bbdoc: Try to lock a mutex
 returns: #True if @mutex was successfully locked; #False if @mutex was already locked by another thread.
 End Rem
-Function TryLockMutex( mutex:TMutex )
+Function TryLockMutex:Int( mutex:TMutex )
 	Return mutex.TryLock()
 End Function
 
@@ -470,7 +470,7 @@ Rem
 bbdoc: Create a semaphore
 returns: A new semaphore object
 End Rem
-Function CreateSemaphore:TSemaphore( count )
+Function CreateSemaphore:TSemaphore( count:Int )
 	Return TSemaphore.Create( count )
 End Function
 
@@ -537,7 +537,7 @@ returns: @True if target was updated
 about:
 Atomically replace @target with @new_value if @target equals @old_value.
 End Rem
-Function CompareAndSwap( target Var,oldValue,newValue )
+Function CompareAndSwap:Int( target:Int Var,oldValue:Int,newValue:Int )
 	Return bbAtomicCAS( target,oldValue,newValue )
 End Function
 
@@ -547,7 +547,7 @@ returns: Previuous value of target
 about:
 Atomically add @value to @target.
 End Rem
-Function AtomicAdd( target Var,value )
+Function AtomicAdd:Int( target:Int Var,value:Int )
 	Return bbAtomicAdd( target,value )
 End Function
 
@@ -555,9 +555,9 @@ Rem
 bbdoc: Atomically swap values
 returns: The old value of @target
 End Rem
-Function AtomicSwap( target Var,value )
+Function AtomicSwap:Int( target:Int Var,value:Int )
 	Repeat
-		Local oldval=target
+		Local oldval:Int=target
 		If CompareAndSwap( target,oldval,value ) Return oldval
 	Forever
 End Function
