@@ -3,7 +3,7 @@
 
 #include <gl/gl.h>
 
-#include <brl.mod/system.mod/system.h>
+#include <brl.mod/systemdefault.mod/system.h>
 
 enum{
 	_BACKBUFFER=	0x2,

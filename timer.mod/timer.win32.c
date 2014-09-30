@@ -3,7 +3,7 @@
 #include <mmsystem.h>
 #include <stdio.h>
 
-#include <brl.mod/system.mod/system.h>
+#include <brl.mod/systemdefault.mod/system.h>
 
 #define MAX_TIMERS 16
 
