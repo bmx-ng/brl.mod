@@ -427,11 +427,11 @@ Type TList
 		
 	Method ObjectEnumerator:TListEnum()
 ?Threaded
-			LockMutex(_mutex)
+			LockMutex(TListEnum._mutex)
 ?
 		Local enum:TListEnum=TListEnum(TListEnum._pool.RemoveFirst())
 ?Threaded
-			UnlockMutex(_mutex)
+			UnlockMutex(TListEnum._mutex)
 ?
 		If Not enum Then
 			enum = New TListEnum
