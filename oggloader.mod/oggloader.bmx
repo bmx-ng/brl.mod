@@ -35,15 +35,16 @@ Function seekfunc( src_obj:Object,offset:Long,whence )
 	Local off
 	Local src:TStream=TStream(src_obj)
 
-	Local res=-1
-	Select whence
-		Case 0
-			res=src.Seek(off)			'SEEK_SET
-		Case 1
-			res=src.Seek(src.Pos()+off)	'SEEK_CUR
-		Case 2
-			res=src.Seek(src.Size()+off)	'SEEK_END
-	End Select
+	Local res:Long=-1
+	res=src.Seek(off, whence)
+'	Select whence
+'		Case 0
+'			res=src.Seek(off)			'SEEK_SET
+'		Case 1
+'			res=src.Seek(src.Pos()+off)	'SEEK_CUR
+'		Case 2
+'			res=src.Seek(src.Size()+off)	'SEEK_END
+'	End Select
 	If res>=0 Return 0
 	Return -1
 End Function
@@ -51,7 +52,7 @@ End Function
 Function closefunc( src:Object )
 End Function
 
-Function tellfunc( src:Object )
+Function tellfunc:Long( src:Object )
 	Return TStream(src).Pos()
 End Function
 

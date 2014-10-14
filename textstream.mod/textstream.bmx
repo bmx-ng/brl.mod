@@ -42,8 +42,8 @@ Type TTextStream Extends TStreamWrapper
 	Const UTF16BE=3
 	Const UTF16LE=4
 
-	Method Read( buf:Byte Ptr,count )
-		For Local i=0 Until count
+	Method Read:Long( buf:Byte Ptr,count:Long )
+		For Local i:Long=0 Until count
 			If _bufcount=32 _FlushRead
 			Local hi=_ReadByte()
 			Local lo=_ReadByte()
@@ -55,8 +55,8 @@ Type TTextStream Extends TStreamWrapper
 		Return count
 	End Method
 	
-	Method Write( buf:Byte Ptr,count )
-		For Local i=0 Until count
+	Method Write:Long( buf:Byte Ptr,count:Long )
+		For Local i:Long=0 Until count
 			Local hi=buf[i] Shr 4
 			Local lo=buf[i] & $f
 			hi:+48;If hi>57 hi:+7

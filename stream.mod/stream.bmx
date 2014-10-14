@@ -95,7 +95,7 @@ Type TIO
 	bbdoc: Get position of seekable stream
 	returns: Stream position as a byte offset, or -1 if stream is not seekable
 	End Rem
-	Method Pos()
+	Method Pos:Long()
 		Return -1
 	End Method
 
@@ -103,7 +103,7 @@ Type TIO
 	bbdoc: Get size of seekable stream
 	returns: Size, in bytes, of seekable stream, or 0 if stream is not seekable
 	End Rem
- 	Method Size()
+ 	Method Size:Long()
 		Return 0
 	End Method
 
@@ -111,7 +111,7 @@ Type TIO
 	bbdoc: Seek to position in seekable stream
 	returns: New stream position, or -1 if stream is not seekable
 	End Rem
-	Method Seek( pos )
+	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ )
 		Return -1
 	End Method
 
@@ -140,7 +140,7 @@ Type TIO
 	
 	If this method returns 0, the stream has reached end of file.
 	End Rem
-	Method Read( buf:Byte Ptr,count )
+	Method Read:Long( buf:Byte Ptr,count:Long )
 		RuntimeError "Stream is not readable"
 		Return 0
 	End Method
@@ -154,7 +154,7 @@ Type TIO
 	
 	If this method returns 0, the stream has reached end of file.
 	End Rem
-	Method Write( buf:Byte Ptr,count )
+	Method Write:Long( buf:Byte Ptr,count:Long )
 		RuntimeError "Stream is not writeable"
 		Return 0
 	End Method
@@ -185,10 +185,10 @@ Type TStream Extends TIO
 	If @count bytes were not successfully read, a #TStreamReadException is thrown. This typically
 	occurs due to end of file.
 	End Rem
-	Method ReadBytes( buf:Byte Ptr,count )
-		Local t=count
+	Method ReadBytes:Long( buf:Byte Ptr,count:Long )
+		Local t:Long=count
 		While count>0
-			Local n=Read( buf,count )
+			Local n:Long=Read( buf,count )
 			If Not n Throw New TStreamReadException
 			count:-n
 			buf:+n
@@ -204,10 +204,10 @@ Type TStream Extends TIO
 	If @count bytes were not successfully written, a #TStreamWriteException is thrown. This typically
 	occurs due to end of file.
 	End Rem
-	Method WriteBytes( buf:Byte Ptr,count )
-		Local t=count
+	Method WriteBytes:Long( buf:Byte Ptr,count:Long )
+		Local t:Long=count
 		While count>0
-			Local n=Write( buf,count )
+			Local n:Long=Write( buf,count )
 			If Not n Throw New TStreamWriteException
 			count:-n
 			buf:+n
@@ -223,11 +223,11 @@ Type TStream Extends TIO
 	If @count bytes were not successfully read, a #TStreamReadException is thrown. This typically
 	occurs due to end of file.
 	End Rem
-	Method SkipBytes( count )
-		Local t=count
+	Method SkipBytes:Long( count:Long )
+		Local t:Long=count
 		Local buf:Byte[1024]
 		While count>0
-			Local n=Read( buf,Min(count,buf.length) )
+			Local n:Long=Read( buf,Min(count,buf.length) )
 			If Not n Throw New TStreamReadException
 			count:-n
 		Wend
@@ -466,16 +466,16 @@ Type TStreamWrapper Extends TStream
 		Return _stream.Eof()
 	End Method
 
-	Method Pos()
+	Method Pos:Long()
 		Return _stream.Pos()
 	End Method
 
-	Method Size()
+	Method Size:Long()
 		Return _stream.Size()
 	End Method
 	
-	Method Seek( pos )
-		Return _stream.Seek( pos )
+	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ )
+		Return _stream.Seek( pos, whence )
 	End Method
 
 	Method Flush()
@@ -486,11 +486,11 @@ Type TStreamWrapper Extends TStream
 		_stream.Close
 	End Method
 
-	Method Read( buf:Byte Ptr,count )
+	Method Read:Long( buf:Byte Ptr,count:Long )
 		Return _stream.Read( buf,count )
 	End Method
 
-	Method Write( buf:Byte Ptr,count )
+	Method Write:Long( buf:Byte Ptr,count:Long )
 		Return _stream.Write( buf,count )
 	End Method
 	
@@ -583,25 +583,25 @@ Type TCStream Extends TStream
 	Const MODE_READ=1
 	Const MODE_WRITE=2
 	
-	Field _pos,_size,_mode
+	Field _pos:Long,_size:Long,_mode
 	Field _cstream:Byte Ptr
 
-	Method Pos()
+	Method Pos:Long()
 		Return _pos
 	End Method
 
-	Method Size()
+	Method Size:Long()
 		Return _size
 	End Method
 
-	Method Seek( pos )
+	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ )
 		Assert _cstream Else "Attempt to seek closed stream"
-		fseek_ _cstream,pos,SEEK_SET_
+		fseek_ _cstream,pos,whence
 		_pos=ftell_( _cstream )
 		Return _pos
 	End Method
 
-	Method Read( buf:Byte Ptr,count )
+	Method Read:Long( buf:Byte Ptr,count:Long )
 		Assert _cstream Else "Attempt to read from closed stream"
 		Assert _mode & MODE_READ Else "Attempt to read from write-only stream"
 		count=fread_( buf,1,count,_cstream )	
@@ -609,7 +609,7 @@ Type TCStream Extends TStream
 		Return count
 	End Method
 
-	Method Write( buf:Byte Ptr,count )
+	Method Write:Long( buf:Byte Ptr,count:Long )
 		Assert _cstream Else "Attempt to write to closed stream"
 		Assert _mode & MODE_WRITE Else "Attempt to write to read-only stream"
 		count=fwrite_( buf,1,count,_cstream )
@@ -639,23 +639,23 @@ Type TCStream Extends TStream
 	bbdoc: Create a TCStream from a 'C' filename
 	End Rem
 	Function OpenFile:TCStream( path$,readable,writeable )
-		Local mode$,_mode
+		Local Mode$,_mode
 		If readable And writeable
-			mode="r+b"
+			Mode="r+b"
 			_mode=MODE_READ|MODE_WRITE
 		Else If writeable
-			mode="wb"
+			Mode="wb"
 			_mode=MODE_WRITE
 		Else
-			mode="rb"
+			Mode="rb"
 			_mode=MODE_READ
 		EndIf
 		path=path.Replace( "\","/" )
-		Local cstream:Byte Ptr=fopen_( path,mode )
+		Local cstream:Byte Ptr=fopen_( path,Mode )
 ?Linux
 		If (Not cstream) And (Not writeable)
 			path=CasedFileName(path)
-			If path cstream=fopen_( path,mode )
+			If path cstream=fopen_( path,Mode )
 		EndIf
 ?
 		If cstream Return CreateWithCStream( cstream,_mode )
@@ -664,14 +664,14 @@ Type TCStream Extends TStream
 	Rem
 	bbdoc: Create a TCStream from a 'C' stream handle
 	end rem
-	Function CreateWithCStream:TCStream( cstream:Byte Ptr,mode )
+	Function CreateWithCStream:TCStream( cstream:Byte Ptr,Mode )
 		Local stream:TCStream=New TCStream
 		stream._cstream=cstream
 		stream._pos=ftell_( cstream )
 		fseek_ cstream,0,SEEK_END_
 		stream._size=ftell_( cstream )
 		fseek_ cstream,stream._pos,SEEK_SET_
-		stream._mode=mode
+		stream._mode=Mode
 		Return stream
 	End Function
 
@@ -785,7 +785,7 @@ Rem
 bbdoc: Get current position of seekable stream
 returns: Current stream position, or -1 If stream is not seekable
 End Rem
-Function StreamPos( stream:TStream )
+Function StreamPos:Long( stream:TStream )
 	Return stream.Pos()
 End Function
 
@@ -793,7 +793,7 @@ Rem
 bbdoc: Get current size of seekable stream
 returns: Current stream size in bytes, or -1 If stream is not seekable
 End Rem
-Function StreamSize( stream:TStream )
+Function StreamSize:Long( stream:TStream )
 	Return stream.Size()
 End Function
 
@@ -801,8 +801,8 @@ Rem
 bbdoc: Set stream position of seekable stream
 returns: New stream position, or -1 If stream is not seekable
 End Rem
-Function SeekStream( stream:TStream,pos )
-	Return stream.Seek( pos )
+Function SeekStream:Long( stream:TStream, pos:Long, whence:Int = SEEK_SET_ )
+	Return stream.Seek( pos, whence )
 End Function
 
 Rem
@@ -1106,11 +1106,11 @@ End Rem
 Function CasedFileName$(path$)
 	Local	dir:Byte Ptr
 	Local   sub$,s$,f$,folder$,p
-	Local	mode,size,mtime,ctime
+	Local	Mode,size:Long,mtime,ctime
         
-	If stat_( path,mode,size,mtime,ctime )=0
-		mode:&S_IFMT_
-		If mode=S_IFREG_ Or mode=S_IFDIR_ Return path
+	If stat_( path,Mode,size,mtime,ctime )=0
+		Mode:&S_IFMT_
+		If Mode=S_IFREG_ Or Mode=S_IFDIR_ Return path
 	EndIf
 	folder$="."
 	For p=Len(path)-2 To 0 Step -1

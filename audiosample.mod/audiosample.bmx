@@ -183,7 +183,7 @@ Function LoadAudioSample:TAudioSample( url:Object )
 	Local stream:TStream=ReadStream( url )
 	If Not stream Return
 
-	Local pos=stream.Pos()
+	Local pos:Long=stream.Pos()
 	If pos=-1 RuntimeError "Stream is not seekable"
 
 	Local sample:TAudioSample

@@ -195,7 +195,7 @@ returns: 0 if file at @path doesn't exist, FILETYPE_FILE (1) if the file is a pl
 End Rem
 Function FileType( path$ )
 	FixPath path
-	Local Mode,size,mtime,ctime
+	Local Mode,size:Long,mtime,ctime
 	If stat_( path,Mode,size,mtime,ctime ) Return 0
 	Select Mode & S_IFMT_
 	Case S_IFREG_ Return FILETYPE_FILE
@@ -210,7 +210,7 @@ returns: The time the file at @path was last modified
 End Rem
 Function FileTime( path$ )
 	FixPath path
-	Local Mode,size,mtime,ctime
+	Local Mode,size:Long,mtime,ctime
 	If stat_( path,Mode,size,mtime,ctime ) Return 0
 	Return mtime
 End Function
@@ -219,9 +219,9 @@ Rem
 bbdoc: Get file size
 returns: Size, in bytes, of the file at @path, or -1 if the file does not exist
 end rem
-Function FileSize( path$ )
+Function FileSize:Long( path$ )
 	FixPath path
-	Local Mode,size,mtime,ctime
+	Local Mode,size:Long,mtime,ctime
 	If stat_( path,Mode,size,mtime,ctime ) Return -1
 	Return size
 End Function
@@ -232,7 +232,7 @@ returns: file mode flags
 end rem
 Function FileMode( path$ )
 	FixPath path
-	Local Mode,size,mtime,ctime
+	Local Mode,size:Long,mtime,ctime
 	If stat_( path,Mode,size,mtime,ctime ) Return -1
 	Return Mode & 511
 End Function

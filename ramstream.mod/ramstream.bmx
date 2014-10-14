@@ -16,23 +16,34 @@ Import BRL.Stream
 
 Type TRamStream Extends TStream
 
-	Field _pos,_size,_buf:Byte Ptr,_read,_write
+	Field _pos:Long,_size:Long,_buf:Byte Ptr,_read,_write
 
-	Method Pos()
+	Method Pos:Long()
 		Return _pos
 	End Method
 
-	Method Size()
+	Method Size:Long()
 		Return _size
 	End Method
 
-	Method Seek( pos )
-		If pos<0 pos=0 Else If pos>_size pos=_size
+	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ )
+		If whence = SEEK_SET_ Then
+			If pos<0 pos=0 Else If pos>_size pos=_size
+		ElseIf whence = SEEK_END_ Then
+			If pos>=0 Then
+				pos = _size
+			Else
+				pos = _size + pos
+				If pos < 0 Then
+					pos = 0
+				End If
+			End If
+		End If
 		_pos=pos
 		Return _pos
 	End Method
 
-	Method Read( buf:Byte Ptr,count )
+	Method Read:Long( buf:Byte Ptr,count:Long )
 		If count<=0 Or _read=False Return 0
 		If _pos+count>_size count=_size-_pos
 		MemCopy buf,_buf+_pos,count
@@ -40,7 +51,7 @@ Type TRamStream Extends TStream
 		Return count
 	End Method
 
-	Method Write( buf:Byte Ptr,count )
+	Method Write:Long( buf:Byte Ptr,count:Long )
 		If count<=0 Or _write=False Return 0
 		If _pos+count>_size count=_size-_pos
 		MemCopy _buf+_pos,buf,count
@@ -48,7 +59,7 @@ Type TRamStream Extends TStream
 		Return count
 	End Method
 
-	Function Create:TRamStream( buf:Byte Ptr,size,readable,writeable )
+	Function Create:TRamStream( buf:Byte Ptr,size:Long,readable,writeable )
 		Local stream:TRamStream=New TRamStream
 		stream._pos=0
 		stream._size=size
@@ -69,7 +80,7 @@ A ram stream extends a stream object so can be used anywhere a stream is expecte
 Be careful when working with ram streams, as any attempt to access memory
 which has not been allocated to your application can result in a runtime crash.
 End Rem
-Function CreateRamStream:TRamStream( ram:Byte Ptr,size,readable,writeable )
+Function CreateRamStream:TRamStream( ram:Byte Ptr,size:Long,readable,writeable )
 	Return TRamStream.Create( ram,size,readable,writeable )
 End Function
 
@@ -78,7 +89,7 @@ Type TRamStreamFactory Extends TStreamFactory
 		If proto="incbin" And writeable=False
 			Local buf:Byte Ptr=IncbinPtr( path )
 			If Not buf Return
-			Local size=IncbinLen( path )
+			Local size:Long=IncbinLen( path )
 			Return TRamStream.Create( buf,size,readable,writeable )
 		EndIf
 	End Method

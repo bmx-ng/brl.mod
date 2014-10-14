@@ -30,11 +30,11 @@ Type TCStandardIO Extends TStream
 		fflush_ stdout_
 	End Method
 
-	Method Read( buf:Byte Ptr,count )
+	Method Read:Long( buf:Byte Ptr,count:Long )
 		Return fread_( buf,1,count,stdin_ )
 	End Method
 
-	Method Write( buf:Byte Ptr,count )
+	Method Write:Long( buf:Byte Ptr,count:Long )
 		Return fwrite_( buf,1,count,stdout_ )
 	End Method
 

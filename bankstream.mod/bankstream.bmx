@@ -22,23 +22,34 @@ bbdoc: BankStream Object
 End Rem
 Type TBankStream Extends TStream
 
-	Field _pos,_bank:TBank
+	Field _pos:Long,_bank:TBank
 
-	Method Pos()
+	Method Pos:Long()
 		Return _pos
 	End Method
 
-	Method Size()
+	Method Size:Long()
 		Return _bank.Size()
 	End Method
 
-	Method Seek( pos )
-		If pos<0 pos=0 Else If pos>_bank.Size() pos=_bank.Size()
+	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ )
+		If whence = SEEK_SET_ Then
+			If pos<0 pos=0 Else If pos>_bank.Size() pos=_bank.Size()
+		ElseIf whence = SEEK_END_ Then
+			If pos>=0 Then
+				pos = _bank.Size()
+			Else
+				pos = _bank.Size() + pos
+				If pos < 0 Then
+					pos = 0
+				End If
+			End If
+		End If
 		_pos=pos
 		Return _pos
 	End Method
 	
-	Method Read( buf:Byte Ptr,count )
+	Method Read:Long( buf:Byte Ptr,count:Long )
 		If count<=0 Or _pos>=_bank.Size() Return 0
 		If _pos+count>_bank.Size() count=_bank.Size()-_pos
 		MemCopy buf,_bank.Buf()+_pos,count
@@ -46,7 +57,7 @@ Type TBankStream Extends TStream
 		Return count
 	End Method
 
-	Method Write( buf:Byte Ptr,count )
+	Method Write:Long( buf:Byte Ptr,count:Long )
 		If count<=0 Or _pos>_bank.Size() Return 0
 		If _pos+count>_bank.Size() _bank.Resize _pos+count
 		MemCopy _bank.Buf()+_pos,buf,count
