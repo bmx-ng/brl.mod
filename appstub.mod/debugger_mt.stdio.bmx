@@ -1,5 +1,7 @@
 Strict
 
+Import "debugger.stdio.glue.c"
+
 NoDebug
 
 Private
@@ -31,8 +33,27 @@ Global bbEmptyString:Byte
 Global brl_blitz_NullFunctionError:Byte Ptr
 Function bbIsMainThread()="bbIsMainThread"
 Function bbGCValidate:Int( mem:Int ) = "bbGCValidate"
+
+
+
+	Function DebugScopeName:String( scope:Int Ptr )="bmx_debugger_DebugScopeName"
+	Function bmx_debugger_DebugScopeKind:Int( scope:Int Ptr )
+	Function bmx_debugger_DebugScopeDecl:Byte Ptr( scope:Int Ptr )
+
+	Function DebugDeclName:String( decl:Int Ptr )="bmx_debugger_DebugDeclName"
+	Function bmx_debugger_DebugDeclType:String( decl:Int Ptr )
+	Function bmx_debugger_DebugDeclKind:Int( decl:Int Ptr )
+	Function bmx_debugger_DebugDeclNext:Byte Ptr( decl:Int Ptr )
+	Function bmx_debugger_DebugDecl_VarAddress:Byte Ptr( decl:Int Ptr)
+	Function bmx_debugger_DebugDecl_StringFromAddress:String( addr:Byte Ptr)
+	
+	Function DebugStmFile:String( stm:Int Ptr )="bmx_debugger_DebugStmFile"
+	Function DebugStmLine:Int( stm:Int Ptr )="bmx_debugger_DebugStmLine"
+	Function DebugStmChar:Int( stm:Int Ptr )="bmx_debugger_DebugStmChar"
+
 End Extern
 
+?Not x64
 Function ToHex$( val )
 	Local buf:Short[8]
 	For Local k=7 To 0 Step -1
@@ -43,6 +64,18 @@ Function ToHex$( val )
 	Next
 	Return String.FromShorts( buf,8 ).ToLower()
 End Function
+?x64
+Function ToHex$( val:Long )
+	Local buf:Short[16]
+	For Local k=15 To 0 Step -1
+		Local n=(val&15)+Asc("0")
+		If n>Asc("9") n=n+(Asc("A")-Asc("9")-1)
+		buf[k]=n
+		val:Shr 4
+	Next
+	Return String.FromShorts( buf,16 ).ToLower()
+End Function
+?
 
 Function IsAlpha( ch )
 	Return (ch>=Asc("a") And ch<=Asc("z")) Or (ch>=Asc("A") And ch<=Asc("Z"))
@@ -164,23 +197,23 @@ Const DEBUGSCOPEKIND_LOCAL=3
 
 Function DebugError( t$ )
 	WriteStderr "Debugger Error:"+t+"~n"
-	End
+'	End
 End Function
 
-Function DebugStmFile$( stm:Int Ptr )
-	Return String.FromCString( Byte Ptr stm[DEBUGSTM_FILE] )
-End Function
-
-Function DebugStmLine( stm:Int Ptr )
-	Return stm[DEBUGSTM_LINE]
-End Function
-
-Function DebugStmChar( stm:Int Ptr )
-	Return stm[DEBUGSTM_CHAR]
-End Function
+'Function DebugStmFile$( stm:Int Ptr )
+'	Return String.FromCString( Byte Ptr stm[DEBUGSTM_FILE] )
+'End Function
+'
+'Function DebugStmLine( stm:Int Ptr )
+'	Return stm[DEBUGSTM_LINE]
+'End Function
+'
+'Function DebugStmChar( stm:Int Ptr )
+'	Return stm[DEBUGSTM_CHAR]
+'End Function
 
 Function DebugDeclKind$( decl:Int Ptr )
-	Select decl[DEBUGDECL_KIND]
+	Select bmx_debugger_DebugDeclKind(decl)'[DEBUGDECL_KIND]
 	Case DEBUGDECLKIND_CONST Return "Const"
 	Case DEBUGDECLKIND_LOCAL Return "Local"
 	Case DEBUGDECLKIND_FIELD Return "Field"
@@ -190,12 +223,13 @@ Function DebugDeclKind$( decl:Int Ptr )
 	DebugError "Invalid decl kind"
 End Function
 
-Function DebugDeclName$( decl:Int Ptr )
-	Return String.FromCString( Byte Ptr decl[DEBUGDECL_NAME] )
-End Function
+'Function DebugDeclName$( decl:Int Ptr )
+'	Return String.FromCString( Byte Ptr decl[DEBUGDECL_NAME] )
+'End Function
 
 Function DebugDeclType$( decl:Int Ptr )
-	Local t$=String.FromCString( Byte Ptr decl[DEBUGDECL_TYPE] )
+	'Local t$=String.FromCString( Byte Ptr decl[DEBUGDECL_TYPE] )
+	Local t$=bmx_debugger_DebugDeclType(decl)
 	Local ty$=TypeName( t )
 	Return ty
 End Function
@@ -227,16 +261,19 @@ Function DebugEscapeString$( s$ )
 End Function
 
 Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
-	If decl[DEBUGDECL_KIND]=DEBUGDECLKIND_CONST
+	If bmx_debugger_DebugDeclKind(decl)=DEBUGDECLKIND_CONST
 		Local p:Byte Ptr=Byte Ptr decl[DEBUGDECL_ADDR]
 		Return DebugEscapeString(String.FromShorts( Short Ptr(p+12),(Int Ptr (p+8))[0] ))
 	EndIf
 
 	Local p:Byte Ptr
-	Select decl[DEBUGDECL_KIND]
+	Select bmx_debugger_DebugDeclKind(decl)'[DEBUGDECL_KIND]
 	Case DEBUGDECLKIND_GLOBAL
 		p=Byte Ptr decl[DEBUGDECL_ADDR]
-	Case DEBUGDECLKIND_LOCAL,DEBUGDECLKIND_FIELD
+	Case DEBUGDECLKIND_LOCAL
+		p=bmx_debugger_DebugDecl_VarAddress(decl)
+		'p=Byte Ptr decl[DEBUGDECL_ADDR]
+	Case DEBUGDECLKIND_FIELD
 		p=Byte Ptr (inst+decl[DEBUGDECL_ADDR])
 	Case DEBUGDECLKIND_VARPARAM
 		p=Byte Ptr (inst+decl[DEBUGDECL_ADDR])
@@ -261,10 +298,10 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 	Case Asc("d")
 		Return String.FromDouble( (Double Ptr p)[0] )
 	Case Asc("$")
-		p=(Byte Ptr Ptr p)[0]
-		Local sz=Int Ptr(p+8)[0]
-		Local s$=String.FromShorts( Short Ptr(p+12),sz )
-		Return DebugEscapeString( s )
+		'p=(Byte Ptr Ptr p)[0]
+		'Local sz=Int Ptr(p+8)[0]
+		'Local s$=String.FromShorts( Short Ptr(p+12),sz )
+		Return DebugEscapeString( bmx_debugger_DebugDecl_StringFromAddress(p) )
 	Case Asc("z")
 		p=(Byte Ptr Ptr p)[0]
 		If Not p Return "Null"
@@ -298,7 +335,7 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 End Function
 
 Function DebugScopeKind$( scope:Int Ptr )
-	Select scope[DEBUGSCOPE_KIND]
+	Select bmx_debugger_DebugScopeKind(scope)
 	Case DEBUGSCOPEKIND_FUNCTION Return "Function"
 	Case DEBUGSCOPEKIND_TYPE Return "Type"
 	Case DEBUGSCOPEKIND_LOCAL Return "Local"
@@ -306,9 +343,9 @@ Function DebugScopeKind$( scope:Int Ptr )
 	DebugError "Invalid scope kind"
 End Function
 
-Function DebugScopeName$( scope:Int Ptr )
-	Return String.FromCString( Byte Ptr scope[DEBUGSCOPE_NAME] )
-End Function
+'Function DebugScopeName$( scope:Int Ptr )
+	'Return String.FromCString( Byte Ptr scope[DEBUGSCOPE_NAME] )
+'End Function
 
 Function DebugScopeDecls:Int Ptr[]( scope:Int Ptr )
 	Local n,p:Int Ptr=scope+DEBUGSCOPE_DECLS
@@ -331,7 +368,7 @@ Extern
 Global bbOnDebugStop()
 Global bbOnDebugLog( message$ )
 Global bbOnDebugEnterStm( stm:Int Ptr )
-Global bbOnDebugEnterScope( scope:Int Ptr,inst:Byte Ptr )
+Global bbOnDebugEnterScope( scope:Int Ptr)',inst:Byte Ptr )
 Global bbOnDebugLeaveScope()
 Global bbOnDebugPushExState()
 Global bbOnDebugPopExState()
@@ -368,7 +405,7 @@ Type TExState
 End Type
 
 Type TDbgState
-	Field mode,debugLevel,funcLevel
+	Field Mode,debugLevel,funcLevel
 	Field currentScope:TScope=New TScope
 	Field scopeStack:TScope[],scopeStackTop
 	Field exStateStack:TExState[],exStateStackTop
@@ -406,44 +443,46 @@ Function WriteDebug( t$ )
 	WriteStderr "~~>"+t
 End Function
 
-Function DumpScope( scope:Int Ptr,inst:Byte Ptr )
+Function DumpScope( scope:Int Ptr)',inst:Byte Ptr )
 
-	Local decl:Int Ptr=scope+DEBUGSCOPE_DECLS
+	Local decl:Int Ptr=bmx_debugger_DebugScopeDecl(scope)'+DEBUGSCOPE_DECLS
 	
 	Local kind$=DebugScopeKind( scope ),name$=DebugScopeName( scope )
+'DebugError "DumpScope : " + name
 	
 	If Not name name="<local>"
 	
 	WriteDebug kind+" "+name+"~n"
 	
-	While decl[DEBUGDECL_KIND]<>DEBUGDECLKIND_END
+	While bmx_debugger_DebugDeclKind(decl)<>DEBUGDECLKIND_END
 	
-		Select decl[DEBUGDECL_KIND]
+		Select bmx_debugger_DebugDeclKind(decl)
 		Case DEBUGDECLKIND_TYPEMETHOD,DEBUGDECLKIND_TYPEFUNCTION
-			decl:+4
+			decl = bmx_debugger_DebugDeclNext(decl)
 			Continue
 		End Select
 
 		Local kind$=DebugDeclKind( decl )
 		Local name$=DebugDeclname( decl )
 		Local tipe$=DebugDeclType( decl )
-		Local value$=DebugDeclValue( decl,inst )
+		Local value$=DebugDeclValue( decl,0 )
 		
 		WriteDebug kind+" "+name+":"+tipe+"="+value+"~n"
 
-		decl:+4	
+		'decl:+4
+		decl = bmx_debugger_DebugDeclNext(decl)
 	Wend
 End Function
 
 Function DumpClassScope( clas:Int Ptr,inst:Byte Ptr )
-
+'WriteDebug("DumpClassScope")
 	Local supa:Int Ptr=Int Ptr clas[0]
 	
 	If Not supa Return
 	
 	DumpClassScope supa,inst
 	
-	DumpScope Int Ptr clas[2],inst
+	DumpScope Int Ptr clas[2]',inst
 
 End Function
 
@@ -505,13 +544,14 @@ Function DumpObject( inst:Byte Ptr,index )
 End Function
 
 Function DumpScopeStack()
+'DebugError("DumpScopeStack")
 	Local dbgState:TDbgState = GetDbgState()
 	For Local i=Max(dbgState.scopeStackTop-100,0) Until dbgState.scopeStackTop
 		Local t:TScope=dbgState.scopeStack[i]
 		Local stm:Int Ptr=t.stm
 		If Not stm Continue
 		WriteDebug "@"+DebugStmFile(stm)+"<"+DebugStmLine(stm)+","+DebugStmChar(stm)+">~n"
-		DumpScope t.scope,t.inst
+		DumpScope t.scope',t.inst
 	Next
 End Function
 
@@ -540,17 +580,17 @@ Function UpdateDebug( msg$ )
 
 		Select line[..1].ToLower()
 		Case "r"
-			dbgState.mode=MODE_RUN
+			dbgState.Mode=MODE_RUN
 			Exit
 		Case "s"
-			dbgState.mode=MODE_STEP
+			dbgState.Mode=MODE_STEP
 			dbgState.debugLevel=dbgState.funcLevel
 			Exit
 		Case "e"
-			dbgState.mode=MODE_STEPIN
+			dbgState.Mode=MODE_STEPIN
 			Exit
 		Case "l"
-			dbgState.mode=MODE_STEPOUT
+			dbgState.Mode=MODE_STEPOUT
 			dbgState.debugLevel=dbgState.scopeStackTop-1
 			Exit
 		Case "t"
@@ -567,11 +607,19 @@ Function UpdateDebug( msg$ )
 			EndIf
 			If t[..1]="$" t=t[1..].Trim()
 			If t[..2].ToLower()="0x" t=t[2..].Trim()
+?Not x64
 			Local pointer = Int( "$"+t )
+?x64
+			Local pointer:Long = Long( "$"+t )
+?
 			If Not (pointer And bbGCValidate(pointer)) Then Continue
+?Not x64
 			Local inst:Int Ptr=Int Ptr pointer
-			
 			Local cmd$="ObjectDump@"+ToHex( Int inst )
+?x64
+			Local inst:Long Ptr=Long Ptr pointer
+			Local cmd$="ObjectDump@"+ToHex( Long inst )
+?			
 			If i<>-1 cmd:+":"+index
 			WriteDebug cmd$+"{~n"
 
@@ -616,7 +664,7 @@ Function OnDebugEnterStm( stm:Int Ptr )
 	Local dbgState:TDbgState = GetDbgState()
 	dbgState.currentScope.stm=stm
 	
-	Select dbgState.mode
+	Select dbgState.Mode
 	Case MODE_RUN
 		Return
 	Case MODE_STEP
@@ -632,8 +680,8 @@ Function OnDebugEnterStm( stm:Int Ptr )
 	UpdateDebug "Debug:~n"
 End Function
 
-Function OnDebugEnterScope( scope:Int Ptr,inst:Byte Ptr )
-
+Function OnDebugEnterScope( scope:Int Ptr)',inst:Byte Ptr )
+'DebugError ">>> OnDebugEnterScope : " + DebugScopeName(scope)
 	Local dbgState:TDbgState = GetDbgState()
 	GCSuspend
 
@@ -647,23 +695,24 @@ Function OnDebugEnterScope( scope:Int Ptr,inst:Byte Ptr )
 	dbgState.currentScope=dbgState.scopeStack[dbgState.scopeStackTop]
 
 	dbgState.currentScope.scope=scope
-	dbgState.currentScope.inst=inst
+	dbgState.currentScope.inst=0
 
 	dbgState.scopeStackTop:+1
 
-	If dbgState.currentScope.scope[DEBUGSCOPE_KIND]=DEBUGSCOPEKIND_FUNCTION dbgState.funcLevel:+1
+	If bmx_debugger_DebugScopeKind(dbgState.currentScope.scope)=DEBUGSCOPEKIND_FUNCTION dbgState.funcLevel:+1
 
 	GCResume	
 End Function
 
 Function OnDebugLeaveScope()
+'DebugError "<<< OnDebugLeaveScope"
 
 	Local dbgState:TDbgState = GetDbgState()
 	GCSuspend
 
 	If Not dbgState.scopeStackTop DebugError "scope stack underflow"
 
-	If dbgState.currentScope.scope[DEBUGSCOPE_KIND]=DEBUGSCOPEKIND_FUNCTION dbgState.funcLevel:-1
+	If bmx_debugger_DebugScopeKind(dbgState.currentScope.scope)=DEBUGSCOPEKIND_FUNCTION dbgState.funcLevel:-1
 	
 	dbgState.scopeStackTop:-1
 

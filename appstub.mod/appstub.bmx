@@ -51,7 +51,7 @@ ModuleInfo "History: Modified float and double debug output to match compiler pr
 
 ?Debug
 'Import "debugger.stdio.bmx"
-'Import "debugger_mt.stdio.bmx"	'Let's give Otus's new MT friendly debugger a whirl!
+Import "debugger_mt.stdio.bmx"	'Let's give Otus's new MT friendly debugger a whirl!
 ?
 
 ?MacOS

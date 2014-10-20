@@ -16,7 +16,7 @@ static void debugUnhandledEx( BBObject *ex ){
 void (*bbOnDebugStop)()=debugNop;
 void (*bbOnDebugLog)( BBString *str )=debugNop;
 void (*bbOnDebugEnterStm)( BBDebugStm *stm )=debugNop;
-void (*bbOnDebugEnterScope)( BBDebugScope *scope,void *inst )=debugNop;
+void (*bbOnDebugEnterScope)( BBDebugScope *scope )=debugNop;
 void (*bbOnDebugLeaveScope)()=debugNop;
 void (*bbOnDebugPushExState)()=debugNop;
 void (*bbOnDebugPopExState)()=debugNop;

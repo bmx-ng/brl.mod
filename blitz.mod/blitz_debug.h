@@ -36,13 +36,13 @@ struct BBDebugDecl{
 	union{
 		BBString*	const_value;
 #if ( __WORDSIZE == 64 )
-		BBInt64		local_offset;
+//		BBInt64		local_offset;
 		BBInt64		field_offset;
 #else
-		int			local_offset;
+//		int			local_offset;
 		int			field_offset;
 #endif
-		void		*global_address;
+		void		*var_address;
 	};
 };
 
@@ -68,7 +68,7 @@ extern void bbCAssertEx();
 extern void (*bbOnDebugStop)();
 extern void (*bbOnDebugLog)( BBString *msg );
 extern void (*bbOnDebugEnterStm)( BBDebugStm *stm );
-extern void (*bbOnDebugEnterScope)( BBDebugScope *scope,void *inst );
+extern void (*bbOnDebugEnterScope)( BBDebugScope *scope );//,void *inst );
 extern void (*bbOnDebugLeaveScope)();
 extern void (*bbOnDebugPushExState)();
 extern void (*bbOnDebugPopExState)();
