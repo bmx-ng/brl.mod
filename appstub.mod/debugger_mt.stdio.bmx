@@ -25,8 +25,6 @@ End Extern
 ?
 
 Extern
-Global bbStringClass:Byte
-Global bbArrayClass:Byte
 Global bbNullObject:Byte
 Global bbEmptyArray:Byte
 Global bbEmptyString:Byte
@@ -44,8 +42,21 @@ Function bbGCValidate:Int( mem:Int ) = "bbGCValidate"
 	Function bmx_debugger_DebugDeclType:String( decl:Int Ptr )
 	Function bmx_debugger_DebugDeclKind:Int( decl:Int Ptr )
 	Function bmx_debugger_DebugDeclNext:Byte Ptr( decl:Int Ptr )
-	Function bmx_debugger_DebugDecl_VarAddress:Byte Ptr( decl:Int Ptr)
-	Function bmx_debugger_DebugDecl_StringFromAddress:String( addr:Byte Ptr)
+	Function bmx_debugger_DebugDecl_VarAddress:Byte Ptr( decl:Int Ptr )
+	Function bmx_debugger_DebugDecl_FieldOffset:Byte Ptr(decl:Int Ptr, inst:Byte Ptr)
+	Function bmx_debugger_DebugDecl_StringFromAddress:String( addr:Byte Ptr )
+	Function bmx_debugger_DebugDeclTypeChar:Int( decl:Int Ptr )
+	Function bmx_debugger_DebugDecl_ArraySize:Int( decl:Byte Ptr )
+	Function bmx_debugger_DebugDecl_ArrayDecl:Byte Ptr(inst:Byte Ptr)
+	Function bmx_debugger_DebugDecl_ArrayDeclIndexedPart(decl:Byte Ptr, inst:Byte Ptr, index:Int)
+	Function bmx_debugger_DebugDecl_ArrayDeclFree(decl:Byte Ptr)
+
+	Function bmx_debugger_DebugDecl_clas:Byte Ptr( inst:Byte Ptr )
+	Function bmx_debugger_DebugDecl_isStringClass:Int( clas:Byte Ptr )
+	Function bmx_debugger_DebugDecl_isArrayClass:Int( clas:Byte Ptr )
+	
+	Function bmx_debugger_DebugClassSuper:Byte Ptr(clas:Byte Ptr)
+	Function bmx_debugger_DebugClassScope:Byte Ptr(clas:Byte Ptr)
 	
 	Function DebugStmFile:String( stm:Int Ptr )="bmx_debugger_DebugStmFile"
 	Function DebugStmLine:Int( stm:Int Ptr )="bmx_debugger_DebugStmLine"
@@ -165,14 +176,14 @@ Function TypeName$( tag$ Var )
 End Function
 
 'int offsets into 12 byte DebugStm struct
-Const DEBUGSTM_FILE=0
-Const DEBUGSTM_LINE=1
-Const DEBUGSTM_CHAR=2
+'Const DEBUGSTM_FILE=0
+'Const DEBUGSTM_LINE=1
+'Const DEBUGSTM_CHAR=2
 
 'int offsets into 16 byte DebugDecl struct
-Const DEBUGDECL_KIND=0
-Const DEBUGDECL_NAME=1
-Const DEBUGDECL_TYPE=2
+'Const DEBUGDECL_KIND=0
+'Const DEBUGDECL_NAME=1
+'Const DEBUGDECL_TYPE=2
 Const DEBUGDECL_ADDR=3
 
 'DEBUGDECL_KIND values
@@ -186,9 +197,9 @@ Const DEBUGDECLKIND_TYPEMETHOD=6
 Const DEBUGDECLKIND_TYPEFUNCTION=7
 
 'int offsets into 12+n_decls*4 byte DebugScope struct
-Const DEBUGSCOPE_KIND=0
-Const DEBUGSCOPE_NAME=1
-Const DEBUGSCOPE_DECLS=2
+'Const DEBUGSCOPE_KIND=0
+'Const DEBUGSCOPE_NAME=1
+'Const DEBUGSCOPE_DECLS=2
 
 'DEBUGSCOPE_KIND values
 Const DEBUGSCOPEKIND_FUNCTION=1
@@ -197,23 +208,11 @@ Const DEBUGSCOPEKIND_LOCAL=3
 
 Function DebugError( t$ )
 	WriteStderr "Debugger Error:"+t+"~n"
-'	End
+	End
 End Function
 
-'Function DebugStmFile$( stm:Int Ptr )
-'	Return String.FromCString( Byte Ptr stm[DEBUGSTM_FILE] )
-'End Function
-'
-'Function DebugStmLine( stm:Int Ptr )
-'	Return stm[DEBUGSTM_LINE]
-'End Function
-'
-'Function DebugStmChar( stm:Int Ptr )
-'	Return stm[DEBUGSTM_CHAR]
-'End Function
-
 Function DebugDeclKind$( decl:Int Ptr )
-	Select bmx_debugger_DebugDeclKind(decl)'[DEBUGDECL_KIND]
+	Select bmx_debugger_DebugDeclKind(decl)
 	Case DEBUGDECLKIND_CONST Return "Const"
 	Case DEBUGDECLKIND_LOCAL Return "Local"
 	Case DEBUGDECLKIND_FIELD Return "Field"
@@ -223,12 +222,7 @@ Function DebugDeclKind$( decl:Int Ptr )
 	DebugError "Invalid decl kind"
 End Function
 
-'Function DebugDeclName$( decl:Int Ptr )
-'	Return String.FromCString( Byte Ptr decl[DEBUGDECL_NAME] )
-'End Function
-
 Function DebugDeclType$( decl:Int Ptr )
-	'Local t$=String.FromCString( Byte Ptr decl[DEBUGDECL_TYPE] )
 	Local t$=bmx_debugger_DebugDeclType(decl)
 	Local ty$=TypeName( t )
 	Return ty
@@ -236,16 +230,22 @@ End Function
 
 Function DebugDeclSize( decl:Int Ptr )
 
-	Local tag=(Byte Ptr Ptr(decl+DEBUGDECL_TYPE))[0][0]
+	Local tag=bmx_debugger_DebugDeclTypeChar(decl)
 
 	Select tag
 	Case Asc("b") Return 1
 	Case Asc("s") Return 2
+	Case Asc("i") Return 4
+	Case Asc("f") Return 4
 	Case Asc("l") Return 8
 	Case Asc("d") Return 8
 	End Select
-	
+
+?Not x64
 	Return 4
+?x64
+	Return 8
+?
 
 End Function
 
@@ -261,28 +261,32 @@ Function DebugEscapeString$( s$ )
 End Function
 
 Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
+
 	If bmx_debugger_DebugDeclKind(decl)=DEBUGDECLKIND_CONST
 		Local p:Byte Ptr=Byte Ptr decl[DEBUGDECL_ADDR]
-		Return DebugEscapeString(String.FromShorts( Short Ptr(p+12),(Int Ptr (p+8))[0] ))
+		Return DebugEscapeString(String.FromShorts( Short Ptr(p+12),(Int Ptr (p+8))[0] )) ' TODO
 	EndIf
 
 	Local p:Byte Ptr
-	Select bmx_debugger_DebugDeclKind(decl)'[DEBUGDECL_KIND]
+	Select bmx_debugger_DebugDeclKind(decl)
 	Case DEBUGDECLKIND_GLOBAL
-		p=Byte Ptr decl[DEBUGDECL_ADDR]
+		p=bmx_debugger_DebugDecl_VarAddress(decl)
 	Case DEBUGDECLKIND_LOCAL
 		p=bmx_debugger_DebugDecl_VarAddress(decl)
-		'p=Byte Ptr decl[DEBUGDECL_ADDR]
 	Case DEBUGDECLKIND_FIELD
-		p=Byte Ptr (inst+decl[DEBUGDECL_ADDR])
+		p=bmx_debugger_DebugDecl_FieldOffset(decl, inst)
 	Case DEBUGDECLKIND_VARPARAM
-		p=Byte Ptr (inst+decl[DEBUGDECL_ADDR])
+		p=bmx_debugger_DebugDecl_VarAddress(decl)
+?Not x64
 		p=Byte Ptr ( (Int Ptr p)[0] )
+?x64
+		p=Byte Ptr ( (Long Ptr p)[0] )
+?
 	Default
 		DebugError "Invalid decl kind"
 	End Select
 	
-	Local tag=(Byte Ptr Ptr(decl+DEBUGDECL_TYPE))[0][0]
+	Local tag=bmx_debugger_DebugDeclTypeChar(decl)
 	
 	Select tag
 	Case Asc("b")
@@ -298,9 +302,7 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 	Case Asc("d")
 		Return String.FromDouble( (Double Ptr p)[0] )
 	Case Asc("$")
-		'p=(Byte Ptr Ptr p)[0]
-		'Local sz=Int Ptr(p+8)[0]
-		'Local s$=String.FromShorts( Short Ptr(p+12),sz )
+		p=(Byte Ptr Ptr p)[0]
 		Return DebugEscapeString( bmx_debugger_DebugDecl_StringFromAddress(p) )
 	Case Asc("z")
 		p=(Byte Ptr Ptr p)[0]
@@ -313,7 +315,11 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		Local s$=String.FromWString( Short Ptr p )
 		Return DebugEscapeString( s )
 	Case Asc("*"),Asc("?")
+?Not x64
 		Return "$"+ToHex( (Int Ptr p)[0] )
+?x64
+		Return "$"+ToHex( (Long Ptr p)[0] )
+?
 	Case Asc("(")
 		p=(Byte Ptr Ptr p)[0]
 		If p=brl_blitz_NullFunctionError Return "Null"
@@ -325,13 +331,16 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 	Case Asc("[")
 		p=(Byte Ptr Ptr p)[0]
 		If Not p Return "Null"
-		If Not (Int Ptr (p+20))[0] Return "Null"
+		If Not bmx_debugger_DebugDecl_ArraySize(p) Return "Null"
 	Default
 		DebugError "Invalid decl typetag:"+Chr(tag)
 	End Select
 	
+?Not x64
 	Return "$"+ToHex( Int p )
-
+?x64
+	Return "$"+ToHex( Long p )
+?
 End Function
 
 Function DebugScopeKind$( scope:Int Ptr )
@@ -343,26 +352,22 @@ Function DebugScopeKind$( scope:Int Ptr )
 	DebugError "Invalid scope kind"
 End Function
 
-'Function DebugScopeName$( scope:Int Ptr )
-	'Return String.FromCString( Byte Ptr scope[DEBUGSCOPE_NAME] )
+'Function DebugScopeDecls:Int Ptr[]( scope:Int Ptr )
+'	Local n,p:Int Ptr=scope+DEBUGSCOPE_DECLS
+'	While p[n]<>DEBUGDECLKIND_END
+'		n:+1
+'	Wend
+'	Local decls:Int Ptr[n]
+'	For Local i=0 Until n
+'		decls[i]=p+i*4
+'	Next
+'	Return decls
 'End Function
 
-Function DebugScopeDecls:Int Ptr[]( scope:Int Ptr )
-	Local n,p:Int Ptr=scope+DEBUGSCOPE_DECLS
-	While p[n]<>DEBUGDECLKIND_END
-		n:+1
-	Wend
-	Local decls:Int Ptr[n]
-	For Local i=0 Until n
-		decls[i]=p+i*4
-	Next
-	Return decls
-End Function
-
-Function DebugObjectScope:Int Ptr( inst:Byte Ptr )
-	Local clas:Int Ptr Ptr=(Int Ptr Ptr Ptr inst)[0]
-	Return clas[2]
-End Function
+'Function DebugObjectScope:Int Ptr( inst:Byte Ptr )
+'	Local clas:Int Ptr Ptr=(Int Ptr Ptr Ptr inst)[0]
+'	Return clas[2]
+'End Function
 
 Extern
 Global bbOnDebugStop()
@@ -443,12 +448,11 @@ Function WriteDebug( t$ )
 	WriteStderr "~~>"+t
 End Function
 
-Function DumpScope( scope:Int Ptr)',inst:Byte Ptr )
+Function DumpScope( scope:Byte Ptr, inst:Byte Ptr )
 
-	Local decl:Int Ptr=bmx_debugger_DebugScopeDecl(scope)'+DEBUGSCOPE_DECLS
+	Local decl:Byte Ptr=bmx_debugger_DebugScopeDecl(scope)
 	
 	Local kind$=DebugScopeKind( scope ),name$=DebugScopeName( scope )
-'DebugError "DumpScope : " + name
 	
 	If Not name name="<local>"
 	
@@ -465,56 +469,49 @@ Function DumpScope( scope:Int Ptr)',inst:Byte Ptr )
 		Local kind$=DebugDeclKind( decl )
 		Local name$=DebugDeclname( decl )
 		Local tipe$=DebugDeclType( decl )
-		Local value$=DebugDeclValue( decl,0 )
+		Local value$=DebugDeclValue( decl, inst )
 		
 		WriteDebug kind+" "+name+":"+tipe+"="+value+"~n"
 
-		'decl:+4
 		decl = bmx_debugger_DebugDeclNext(decl)
 	Wend
 End Function
 
 Function DumpClassScope( clas:Int Ptr,inst:Byte Ptr )
-'WriteDebug("DumpClassScope")
-	Local supa:Int Ptr=Int Ptr clas[0]
+
+	Local supa:Int Ptr = bmx_debugger_DebugClassSuper(clas)
 	
 	If Not supa Return
 	
 	DumpClassScope supa,inst
 	
-	DumpScope Int Ptr clas[2]',inst
+	DumpScope bmx_debugger_DebugClassScope(clas),inst
 
 End Function
 
 Function DumpObject( inst:Byte Ptr,index )
 
-	Local clas:Int Ptr=(Int Ptr Ptr inst)[0]
+	Local clas:Byte Ptr=bmx_debugger_DebugDecl_clas(inst)
 	
-	If clas=Int Ptr Varptr bbStringClass
+	If bmx_debugger_DebugDecl_isStringClass(clas)
 
-		WriteDebug DebugEscapeString(String.FromShorts( Short Ptr(inst+12),(Int Ptr (inst+8))[0] ))+"~n"
+		WriteDebug DebugEscapeString(bmx_debugger_DebugDecl_StringFromAddress(inst))+"~n"
 
 		Return
 
-	Else If clas=Int Ptr Varptr bbArrayClass
-	
-		Local length=(Int Ptr (inst+20))[0]
+	Else If bmx_debugger_DebugDecl_isArrayClass(clas)
+
+		Local length=bmx_debugger_DebugDecl_ArraySize(inst)
 
 		If Not length Return
 		
-		Local decl:Int[3]
-		decl[0]=DEBUGDECLKIND_LOCAL
-		decl[2]=(Int Ptr (inst+8))[0]
-		
-		Local sz=DebugDeclSize( decl )
-		
-		Local p:Byte Ptr=Byte Ptr(20+(Int Ptr (inst+12))[0]*4)
-
+		Local decl:Byte Ptr = bmx_debugger_DebugDecl_ArrayDecl(inst)
+			
 		For Local i=1 To 10
 
 			If index>=length Exit
 			
-			decl[3]=Int(p+index*sz)
+			bmx_debugger_DebugDecl_ArrayDeclIndexedPart(decl, inst, index)
 		
 			Local value$=DebugDeclValue( decl,inst )
 			
@@ -523,6 +520,8 @@ Function DumpObject( inst:Byte Ptr,index )
 			index:+1
 			
 		Next
+
+		bmx_debugger_DebugDecl_ArrayDeclFree(decl)
 		
 		If index<length
 
@@ -544,14 +543,13 @@ Function DumpObject( inst:Byte Ptr,index )
 End Function
 
 Function DumpScopeStack()
-'DebugError("DumpScopeStack")
 	Local dbgState:TDbgState = GetDbgState()
 	For Local i=Max(dbgState.scopeStackTop-100,0) Until dbgState.scopeStackTop
 		Local t:TScope=dbgState.scopeStack[i]
 		Local stm:Int Ptr=t.stm
 		If Not stm Continue
 		WriteDebug "@"+DebugStmFile(stm)+"<"+DebugStmLine(stm)+","+DebugStmChar(stm)+">~n"
-		DumpScope t.scope',t.inst
+		DumpScope t.scope, t.inst
 	Next
 End Function
 
@@ -681,7 +679,6 @@ Function OnDebugEnterStm( stm:Int Ptr )
 End Function
 
 Function OnDebugEnterScope( scope:Int Ptr)',inst:Byte Ptr )
-'DebugError ">>> OnDebugEnterScope : " + DebugScopeName(scope)
 	Local dbgState:TDbgState = GetDbgState()
 	GCSuspend
 
@@ -705,8 +702,6 @@ Function OnDebugEnterScope( scope:Int Ptr)',inst:Byte Ptr )
 End Function
 
 Function OnDebugLeaveScope()
-'DebugError "<<< OnDebugLeaveScope"
-
 	Local dbgState:TDbgState = GetDbgState()
 	GCSuspend
 
