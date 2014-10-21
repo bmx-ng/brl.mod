@@ -45,6 +45,9 @@ ModuleInfo "History: Added graphics flags handling"
 
 Import BRL.Graphics
 Import BRL.Pixmap
+?win32
+Import BRL.Glew
+?
 Import Pub.OpenGL
 Import BRL.SystemDefault
 
