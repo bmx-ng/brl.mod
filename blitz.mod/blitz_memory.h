@@ -8,13 +8,13 @@
 extern "C"{
 #endif
 
-void*	bbMemAlloc( int );
+void*	bbMemAlloc( size_t );
 void		bbMemFree( void *mem );
-void*	bbMemExtend( void *mem,int size,int new_size );
+void*	bbMemExtend( void *mem,size_t size,size_t new_size );
 
-void		bbMemClear( void *dst,int size );
-void		bbMemCopy( void *dst,const void *src,int size );
-void		bbMemMove( void *dst,const void *src,int size );
+void		bbMemClear( void *dst,size_t size );
+void		bbMemCopy( void *dst,const void *src,size_t size );
+void		bbMemMove( void *dst,const void *src,size_t size );
 
 #ifdef __cplusplus
 }
