@@ -22,7 +22,6 @@ ModuleInfo "History: 1.02 Release"
 ModuleInfo "History: Added volume,pan,rate states to channel"
 ModuleInfo "History: 1.01 Initial Release"
 
-?disabled
 
 Import BRL.Math
 Import BRL.Audio
@@ -36,19 +35,19 @@ Global _driver:TDirectSoundAudioDriver
 
 Type TBuf
 	Field _succ:TBuf
-	Field _buffer:IDirectSoundBuffer,_seq,_paused
+	Field _buffer:Byte Ptr,_seq,_paused
 	
 	Method Playing()
 		If _paused Return False
-		Local status
-		DSASS _buffer.GetStatus( status )
+		Local status:Int
+		DSASS bmx_directsound_IDirectSoundBuffer_getstatus(_buffer, Varptr status)
 		Return (status & DSBSTATUS_PLAYING)<>0
 	End Method
 	
 	Method Active()
 		If _paused Return True
-		Local status
-		DSASS _buffer.GetStatus( status )
+		Local status:Int
+		DSASS bmx_directsound_IDirectSoundBuffer_getstatus(_buffer, Varptr status)
 		Return (status & DSBSTATUS_PLAYING)<>0
 	End Method
 
@@ -104,30 +103,16 @@ Type TDirectSoundSound Extends TSound
 		Local chans=ChannelsPerSample[format]
 		Local bps=BytesPerSample[format]/chans
 		Local size=length*chans*bps
+
+		Local buf:Byte Ptr
+		DSASS bmx_directsound_IDirectSound_createsoundbuffer(_driver._dsound, Varptr buf, length, hertz, format, chans, bps, size, flags, _driver._mode), "CreateSoundBuffer"
 		
-		Local fmt:WAVEFORMATEX=New WAVEFORMATEX	
-		fmt.wFormatTag=1
-		fmt.nChannels=chans
-		fmt.nSamplesPerSec=hertz
-		fmt.wBitsPerSample=bps*8
-		fmt.nBlockAlign=fmt.wBitsPerSample/8*fmt.nChannels
-		fmt.nAvgBytesPerSec=fmt.nSamplesPerSec*fmt.nBlockAlign
-		
-		Local desc:DSBUFFERDESC=New DSBUFFERDESC
-		desc.dwSize=SizeOf(DSBUFFERDESC)
-		desc.dwFlags=DSBCAPS_GLOBALFOCUS|DSBCAPS_STATIC|DSBCAPS_CTRLPAN|DSBCAPS_CTRLVOLUME|DSBCAPS_CTRLFREQUENCY
-		If _driver._mode=1 Or (flags & 2)<>2 desc.dwFlags:|DSBCAPS_LOCSOFTWARE
-		desc.dwBufferBytes=size
-		desc.lpwfxFormat=fmt
-		
-		Local buf:IDirectSoundBuffer
-		DSASS _driver._dsound.CreateSoundBuffer( desc,buf,Null ),"CreateSoundBuffer"
 		If CLOG WriteStdout "Created DirectSound buffer~n"
 		
 		Local ptr1:Byte Ptr,bytes1,ptr2:Byte Ptr,bytes2
-		DSASS buf.Lock( 0,size,ptr1,bytes1,ptr2,bytes2,0 ),"Lock SoundBuffer"
+		DSASS bmx_directsound_IDirectSoundBuffer_lock(buf, 0,size,Varptr ptr1,Varptr bytes1,Varptr ptr2,Varptr bytes2,0 ),"Lock SoundBuffer"
 		MemCopy ptr1,sample.samples,size
-		DSASS buf.Unlock( ptr1,bytes1,ptr2,bytes2 ),"Unlock SoundBuffer"
+		DSASS bmx_directsound_IDirectSoundBuffer_unlock(buf, ptr1,bytes1,ptr2,bytes2),"Unlock SoundBuffer"
 
 		Local t:TDirectSoundSound=New TDirectSoundSound
 		t._seq=_driver._seq
@@ -142,7 +127,7 @@ Type TDirectSoundSound Extends TSound
 		Return t
 	End Function
 	
-	Field _seq,_buffer:IDirectSoundBuffer,_hertz,_loop,_bufs:TBuf
+	Field _seq,_buffer:Byte Ptr,_hertz,_loop,_bufs:TBuf
 	
 End Type
 
@@ -155,7 +140,8 @@ Type TDirectSoundChannel Extends TChannel
 
 	Method Stop()
 		If Not _buf Or _seq<>_buf._seq Return
-		_buf._buffer.Stop
+		bmx_directsound_IDirectSoundBuffer_stop(_buf._buffer)
+		'_buf._buffer.Stop
 		_buf._paused=False
 		_buf._seq:+1
 		_buf=Null
@@ -168,10 +154,10 @@ Type TDirectSoundChannel Extends TChannel
 			_buf=Null
 			Return
 		EndIf
-		If paused 
-			_buf._buffer.Stop
+		If paused
+			bmx_directsound_IDirectSoundBuffer_stop(_buf._buffer)
 		Else
-			_buf._buffer.Play 0,0,_playFlags
+			bmx_directsound_IDirectSoundBuffer_play(_buf._buffer, 0, 0, _playFlags)
 		EndIf
 		_buf._paused=paused
 	End Method
@@ -180,7 +166,7 @@ Type TDirectSoundChannel Extends TChannel
 		volume=Min(Max(volume,0),1)^.1
 		_volume=volume
 		If Not _buf Or _seq<>_buf._seq Return
-		_buf._buffer.SetVolume (1-volume)*-10000
+		bmx_directsound_IDirectSoundBuffer_setvolume(_buf._buffer, (1-volume)*-10000)
 	End Method
 	
 	Method SetPan( pan# )
@@ -188,7 +174,7 @@ Type TDirectSoundChannel Extends TChannel
 		pan=Sgn(pan) * (1-(1-Abs(pan))^.1)		
 		_pan=pan
 		If Not _buf Or _seq<>_buf._seq Return
-		_buf._buffer.SetPan pan*10000
+		bmx_directsound_IDirectSoundBuffer_setpan(_buf._buffer, pan*10000)
 	End Method
 	
 	Method SetDepth( depth# )
@@ -198,7 +184,7 @@ Type TDirectSoundChannel Extends TChannel
 	Method SetRate( rate# )
 		_rate=rate
 		If Not _buf Or _seq<>_buf._seq Return
-		_buf._buffer.SetFrequency _hertz * rate
+		bmx_directsound_IDirectSoundBuffer_setfrequency(_buf._buffer, _hertz * rate)
 	End Method
 	
 	Method Playing()
@@ -218,8 +204,8 @@ Type TDirectSoundChannel Extends TChannel
 		Wend
 		If Not t
 			_driver.FlushLonely
-			Local buf:IDirectSoundBuffer
-			If _driver._dsound.DuplicateSoundBuffer( sound._buffer,buf )<0 Return False
+			Local buf:Byte Ptr
+			If bmx_directsound_IDirectSound_duplicatesoundbuffer(_driver._dsound, sound._buffer,Varptr buf)<0 Return False
 			If CLOG WriteStdout "Duplicated DirectSound buffer~n"
 			t=New TBuf
 			t._buffer=buf
@@ -232,10 +218,10 @@ Type TDirectSoundChannel Extends TChannel
 		_hertz=sound._hertz
 		If sound._loop _playFlags=DSBPLAY_LOOPING Else _playFlags=0
 		_buf._paused=True
-		_buf._buffer.SetCurrentPosition 0
-		_buf._buffer.SetVolume (1-_volume)*-10000
-		_buf._buffer.SetPan _pan * 10000
-		_buf._buffer.SetFrequency _hertz * _rate
+		bmx_directsound_IDirectSoundBuffer_setcurrentposition(_buf._buffer, 0)
+		bmx_directsound_IDirectSoundBuffer_setvolume(_buf._buffer, (1-_volume)*-10000)
+		bmx_directsound_IDirectSoundBuffer_setpan(_buf._buffer, _pan * 10000)
+		bmx_directsound_IDirectSoundBuffer_setfrequency(_buf._buffer, _hertz * _rate)
 		Return True
 	End Method
 	
@@ -257,8 +243,8 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 	End Method
 	
 	Method Startup()
-		If DirectSoundCreate( Null,_dsound,Null )>=0
-			If _dsound.SetCooperativeLevel( GetDesktopWindow(),DSSCL_PRIORITY )>=0
+		If bmx_directsound_IDirectSound_create(Varptr _dsound)>=0
+			If bmx_directsound_IDirectSound_setcooperativeLevel(_dsound, GetDesktopWindow(),DSSCL_PRIORITY )>=0
 				Rem
 				'Never seen this succeed!
 				'Apparently a NOP on Win2K/XP/Vista, and
@@ -282,7 +268,7 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 				_driver=Self
 				Return True
 			EndIf
-			_dsound.Release_
+			bmx_directsound_IDirectSound_release(_dsound)
 		EndIf
 	End Method
 	
@@ -290,7 +276,7 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 		_seq:+1
 		_driver=Null
 		_lonely=Null
-		_dsound.Release_
+		bmx_directsound_IDirectSound_release(_dsound)
 	End Method
 
 	Method CreateSound:TDirectSoundSound( sample:TAudioSample,flags )
@@ -323,7 +309,7 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 			If t.Active()
 				p=t
 			Else
-				t._buffer.Release_
+				bmx_directsound_IDirectSoundBuffer_release(t._buffer)
 				If CLOG WriteStdout "Released DirectSound buffer~n"
 				If p p._succ=t._succ Else _lonely=t._succ
 			EndIf
@@ -331,7 +317,7 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 		Wend
 	End Method
 
-	Field _name$,_mode,_dsound:IDirectSound,_lonely:TBuf
+	Field _name$,_mode,_dsound:Byte Ptr,_lonely:TBuf
 
 	Global _seq
 		
