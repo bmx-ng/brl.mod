@@ -1,4 +1,4 @@
-Strict
+SuperStrict
 
 Import "debugger.stdio.glue.c"
 
@@ -8,13 +8,13 @@ Private
 
 ?Win32
 Extern "Win32"
-Const SW_SHOW=5
-Const SW_RESTORE=9
-Function IsIconic( hwnd )
-Function GetForegroundWindow()
-Function SetForegroundWindow( hwnd )
-Function ShowWindow( hwnd,cmdShow )
-Function GetCurrentThreadId()
+Const SW_SHOW:Int=5
+Const SW_RESTORE:Int=9
+Function IsIconic:Int( hwnd:Byte Ptr )
+Function GetForegroundWindow:Byte Ptr()
+Function SetForegroundWindow:Int( hwnd:Byte Ptr )
+Function ShowWindow:Int( hwnd:Byte Ptr,cmdShow:Int )
+Function GetCurrentThreadId:Int()
 End Extern
 ?
 
@@ -29,8 +29,8 @@ Global bbNullObject:Byte
 Global bbEmptyArray:Byte
 Global bbEmptyString:Byte
 Global brl_blitz_NullFunctionError:Byte Ptr
-Function bbIsMainThread()="bbIsMainThread"
-Function bbGCValidate:Int( mem:Int ) = "bbGCValidate"
+Function bbIsMainThread:Int()="bbIsMainThread"
+Function bbGCValidate:Int( mem:Byte Ptr ) = "bbGCValidate"
 
 
 
@@ -67,8 +67,8 @@ End Extern
 ?Not x64
 Function ToHex$( val )
 	Local buf:Short[8]
-	For Local k=7 To 0 Step -1
-		Local n=(val&15)+Asc("0")
+	For Local k:Int=7 To 0 Step -1
+		Local n:Int=(val&15)+Asc("0")
 		If n>Asc("9") n=n+(Asc("A")-Asc("9")-1)
 		buf[k]=n
 		val:Shr 4
@@ -78,8 +78,8 @@ End Function
 ?x64
 Function ToHex$( val:Long )
 	Local buf:Short[16]
-	For Local k=15 To 0 Step -1
-		Local n=(val&15)+Asc("0")
+	For Local k:Int=15 To 0 Step -1
+		Local n:Int=(val&15)+Asc("0")
 		If n>Asc("9") n=n+(Asc("A")-Asc("9")-1)
 		buf[k]=n
 		val:Shr 4
@@ -88,26 +88,26 @@ Function ToHex$( val:Long )
 End Function
 ?
 
-Function IsAlpha( ch )
+Function IsAlpha:Int( ch:Int )
 	Return (ch>=Asc("a") And ch<=Asc("z")) Or (ch>=Asc("A") And ch<=Asc("Z"))
 End Function
 
-Function IsNumeric( ch )
+Function IsNumeric:Int( ch:Int )
 	Return ch>=Asc("0") And ch<=Asc("9")
 End Function
 
-Function IsAlphaNumeric( ch )
+Function IsAlphaNumeric:Int( ch:Int )
 	Return IsAlpha(ch) Or IsNumeric(ch)
 End Function
 
-Function IsUnderscore( ch )
+Function IsUnderscore:Int( ch:Int )
 	Return ch=Asc("_")
 End Function
 
 Function Ident$( tag$ Var )
 	If Not tag Return ""
 	If Not IsAlpha( tag[0] ) And Not IsUnderscore( tag[0] ) Return ""
-	Local i=1
+	Local i:Int=1
 	While i<tag.length And (IsAlphaNumeric(tag[i]) Or IsUnderscore(tag[i]))
 		i:+1
 	Wend
@@ -184,17 +184,17 @@ End Function
 'Const DEBUGDECL_KIND=0
 'Const DEBUGDECL_NAME=1
 'Const DEBUGDECL_TYPE=2
-Const DEBUGDECL_ADDR=3
+Const DEBUGDECL_ADDR:Int=3
 
 'DEBUGDECL_KIND values
-Const DEBUGDECLKIND_END=0
-Const DEBUGDECLKIND_CONST=1
-Const DEBUGDECLKIND_LOCAL=2
-Const DEBUGDECLKIND_FIELD=3
-Const DEBUGDECLKIND_GLOBAL=4
-Const DEBUGDECLKIND_VARPARAM=5
-Const DEBUGDECLKIND_TYPEMETHOD=6
-Const DEBUGDECLKIND_TYPEFUNCTION=7
+Const DEBUGDECLKIND_END:Int=0
+Const DEBUGDECLKIND_CONST:Int=1
+Const DEBUGDECLKIND_LOCAL:Int=2
+Const DEBUGDECLKIND_FIELD:Int=3
+Const DEBUGDECLKIND_GLOBAL:Int=4
+Const DEBUGDECLKIND_VARPARAM:Int=5
+Const DEBUGDECLKIND_TYPEMETHOD:Int=6
+Const DEBUGDECLKIND_TYPEFUNCTION:Int=7
 
 'int offsets into 12+n_decls*4 byte DebugScope struct
 'Const DEBUGSCOPE_KIND=0
@@ -202,9 +202,9 @@ Const DEBUGDECLKIND_TYPEFUNCTION=7
 'Const DEBUGSCOPE_DECLS=2
 
 'DEBUGSCOPE_KIND values
-Const DEBUGSCOPEKIND_FUNCTION=1
-Const DEBUGSCOPEKIND_TYPE=2
-Const DEBUGSCOPEKIND_LOCAL=3
+Const DEBUGSCOPEKIND_FUNCTION:Int=1
+Const DEBUGSCOPEKIND_TYPE:Int=2
+Const DEBUGSCOPEKIND_LOCAL:Int=3
 
 Function DebugError( t$ )
 	WriteStderr "Debugger Error:"+t+"~n"
@@ -228,9 +228,9 @@ Function DebugDeclType$( decl:Int Ptr )
 	Return ty
 End Function
 
-Function DebugDeclSize( decl:Int Ptr )
+Function DebugDeclSize:Int( decl:Int Ptr )
 
-	Local tag=bmx_debugger_DebugDeclTypeChar(decl)
+	Local tag:Int=bmx_debugger_DebugDeclTypeChar(decl)
 
 	Select tag
 	Case Asc("b") Return 1
@@ -286,7 +286,7 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		DebugError "Invalid decl kind"
 	End Select
 	
-	Local tag=bmx_debugger_DebugDeclTypeChar(decl)
+	Local tag:Int=bmx_debugger_DebugDeclTypeChar(decl)
 	
 	Select tag
 	Case Asc("b")
@@ -390,37 +390,37 @@ bbOnDebugPopExState=OnDebugPopExState
 bbOnDebugUnhandledEx=OnDebugUnhandledEx
 
 ?Win32
-Global _ideHwnd=GetForegroundWindow();
-Global _appHwnd
+Global _ideHwnd:Byte Ptr=GetForegroundWindow();
+Global _appHwnd:Byte Ptr
 ?
 
 '********** Debugger code here **********
 
-Const MODE_RUN=0
-Const MODE_STEP=1
-Const MODE_STEPIN=2
-Const MODE_STEPOUT=3
+Const MODE_RUN:Int=0
+Const MODE_STEP:Int=1
+Const MODE_STEPIN:Int=2
+Const MODE_STEPOUT:Int=3
 
 Type TScope
 	Field scope:Int Ptr,inst:Byte Ptr,stm:Int Ptr
 End Type
 
 Type TExState
-	Field scopeStackTop
+	Field scopeStackTop:Int
 End Type
 
 Type TDbgState
-	Field Mode,debugLevel,funcLevel
+	Field Mode:Int,debugLevel:Int,funcLevel:Int
 	Field currentScope:TScope=New TScope
-	Field scopeStack:TScope[],scopeStackTop
-	Field exStateStack:TExState[],exStateStackTop
+	Field scopeStack:TScope[],scopeStackTop:Int
+	Field exStateStack:TExState[],exStateStackTop:Int
 End Type
 
 ?Threaded
 Extern
-Function bbThreadAllocData()
+Function bbThreadAllocData:Int()
 Function bbThreadSetData( index,data:Object )
-Function bbThreadGetData:TDbgState( index )
+Function bbThreadGetData:TDbgState( index:Int )
 End Extern
 ?
 
@@ -489,7 +489,7 @@ Function DumpClassScope( clas:Int Ptr,inst:Byte Ptr )
 
 End Function
 
-Function DumpObject( inst:Byte Ptr,index )
+Function DumpObject( inst:Byte Ptr,index:Int )
 
 	Local clas:Byte Ptr=bmx_debugger_DebugDecl_clas(inst)
 	
@@ -501,13 +501,13 @@ Function DumpObject( inst:Byte Ptr,index )
 
 	Else If bmx_debugger_DebugDecl_isArrayClass(clas)
 
-		Local length=bmx_debugger_DebugDecl_ArraySize(inst)
+		Local length:Int=bmx_debugger_DebugDecl_ArraySize(inst)
 
 		If Not length Return
 		
 		Local decl:Byte Ptr = bmx_debugger_DebugDecl_ArrayDecl(inst)
 			
-		For Local i=1 To 10
+		For Local i:Int=1 To 10
 
 			If index>=length Exit
 			
@@ -544,7 +544,7 @@ End Function
 
 Function DumpScopeStack()
 	Local dbgState:TDbgState = GetDbgState()
-	For Local i=Max(dbgState.scopeStackTop-100,0) Until dbgState.scopeStackTop
+	For Local i:Int=Max(dbgState.scopeStackTop-100,0) Until dbgState.scopeStackTop
 		Local t:TScope=dbgState.scopeStack[i]
 		Local stm:Int Ptr=t.stm
 		If Not stm Continue
@@ -554,7 +554,7 @@ Function DumpScopeStack()
 End Function
 
 Function UpdateDebug( msg$ )
-	Global indebug
+	Global indebug:Int
 	If indebug Return
 	indebug=True
 	
@@ -597,8 +597,8 @@ Function UpdateDebug( msg$ )
 			WriteDebug "}~n"
 		Case "d"
 			Local t$=line[1..].Trim()
-			Local index
-			Local i=t.Find(":")
+			Local index:Int
+			Local i:Int=t.Find(":")
 			If i<>-1
 				index=Int( t[i+1..] )
 				t=t[..i]
@@ -606,7 +606,7 @@ Function UpdateDebug( msg$ )
 			If t[..1]="$" t=t[1..].Trim()
 			If t[..2].ToLower()="0x" t=t[2..].Trim()
 ?Not x64
-			Local pointer = Int( "$"+t )
+			Local pointer:Int = Int( "$"+t )
 ?x64
 			Local pointer:Long = Long( "$"+t )
 ?
@@ -684,7 +684,7 @@ Function OnDebugEnterScope( scope:Int Ptr)',inst:Byte Ptr )
 
 	If dbgState.scopeStackTop=dbgState.scopeStack.length 
 		dbgState.scopeStack=dbgState.scopeStack[..dbgState.scopeStackTop * 2 + 32]
-		For Local i=dbgState.scopeStackTop Until dbgState.scopeStack.length
+		For Local i:Int=dbgState.scopeStackTop Until dbgState.scopeStack.length
 			dbgState.scopeStack[i]=New TScope
 		Next
 	EndIf
@@ -727,7 +727,7 @@ Function OnDebugPushExState()
 
 	If dbgState.exStateStackTop=dbgState.exStateStack.length 
 		dbgState.exStateStack=dbgState.exStateStack[..dbgState.exStateStackTop * 2 + 32]
-		For Local i=dbgState.exStateStackTop Until dbgState.exStateStack.length
+		For Local i:Int=dbgState.exStateStackTop Until dbgState.exStateStack.length
 			dbgState.exStateStack[i]=New TExState
 		Next
 	EndIf
