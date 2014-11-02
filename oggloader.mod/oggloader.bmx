@@ -27,26 +27,13 @@ Import BRL.AudioSample
 Private
 
 Function readfunc( buf@Ptr,size,nmemb,src:Object )
-	Local bytes=TStream(src).Read(buf,size*nmemb)
+	Local bytes:Long=TStream(src).Read(buf,size*nmemb)
 	Return bytes/size
 End Function
 
 Function seekfunc( src_obj:Object,offset:Long,whence )
-	Local off
 	Local src:TStream=TStream(src_obj)
-
-	Local res:Long=-1
-	res=src.Seek(off, whence)
-'	Select whence
-'		Case 0
-'			res=src.Seek(off)			'SEEK_SET
-'		Case 1
-'			res=src.Seek(src.Pos()+off)	'SEEK_CUR
-'		Case 2
-'			res=src.Seek(src.Size()+off)	'SEEK_END
-'	End Select
-	If res>=0 Return 0
-	Return -1
+	Return src.Seek(offset, whence)
 End Function
 
 Function closefunc( src:Object )
