@@ -20,7 +20,7 @@ End Extern
 
 ?MacOS
 Extern
-Function CGDisplayIsCaptured( displayId )
+Function CGDisplayIsCaptured:Int( displayId:Int )
 End Extern
 ?
 
@@ -65,7 +65,7 @@ Function bbGCValidate:Int( mem:Byte Ptr ) = "bbGCValidate"
 End Extern
 
 ?Not x64
-Function ToHex$( val )
+Function ToHex$( val:Int )
 	Local buf:Short[8]
 	For Local k:Int=7 To 0 Step -1
 		Local n:Int=(val&15)+Asc("0")
