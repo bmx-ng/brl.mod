@@ -22,6 +22,7 @@ ModuleInfo "History: 1.02 Release"
 ModuleInfo "History: Added volume,pan,rate states to channel"
 ModuleInfo "History: 1.01 Initial Release"
 
+?win32
 
 Import BRL.Math
 Import BRL.Audio
@@ -287,10 +288,10 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 		Return TDirectSoundChannel.Create( True )
 	End Method
 	
-	Function Create:TDirectSoundAudioDriver( name$,mode )
+	Function Create:TDirectSoundAudioDriver( name$,Mode )
 		Local t:TDirectSoundAudioDriver=New TDirectSoundAudioDriver
 		t._name=name
-		t._mode=mode
+		t._mode=Mode
 		Return t
 	End Function
 
@@ -324,3 +325,5 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 End Type
 
 If DirectSoundCreate TDirectSoundAudioDriver.Create "DirectSound",0
+
+?
