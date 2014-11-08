@@ -53,13 +53,19 @@ Import BRL.SystemDefault
 Import "glgraphics.win32.c"
 ?MacOS
 Import "glgraphics.macos.m"
-?Linux
+?Linuxx86
+Import "-lX11"
+Import "-lXxf86vm"
+Import "-lGL"
+Import "glgraphics.linux.c"
+?Linuxx64
 Import "-lX11"
 Import "-lXxf86vm"
 Import "-lGL"
 Import "glgraphics.linux.c"
 ?
 
+?Not linuxarm
 Private
 
 Incbin "gldrawtextfont.bin"
@@ -378,3 +384,5 @@ End Rem
 Function GLShareContexts()
 	bbGLGraphicsShareContexts
 End Function
+
+?
