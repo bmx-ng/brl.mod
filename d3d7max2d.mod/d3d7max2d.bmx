@@ -8,12 +8,14 @@ The Direct3D7 Max2D module provides a Direct3D7 driver for #Max2D.
 End Rem
 Module BRL.D3D7Max2D
 
-ModuleInfo "Version: 1.19"
+ModuleInfo "Version: 1.20"
 ModuleInfo "Author: Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.20"
+ModuleInfo "History: Changed Assert to Throw. One can at least catch a Throw."
 ModuleInfo "History: 1.19 Release"
 ModuleInfo "History: Fixed/cleaned up a few things"
 ModuleInfo "History: 1.18 Release"
@@ -114,7 +116,9 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 		EndIf
 		
 		Local t:TMax2DGraphics=TMax2DGraphics( g )
-		Assert t And TD3D7Graphics( t._graphics )
+		If Not t Or Not TD3D7Graphics( t._graphics ) Then
+			Throw "SetGraphics failed for D3D7"
+		End If
 
 		D3D7GraphicsDriver().SetGraphics t._graphics
 		

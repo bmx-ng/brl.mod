@@ -8,8 +8,12 @@ The Direct3D9 Max2D module provides a Direct3D9 driver for #Max2D.
 End Rem
 Module BRL.D3D9Max2D
 
+ModuleInfo "Version: 1.01"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
+
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Changed Assert to Throw. One can at least catch a Throw."
 
 ?disabled
 
@@ -284,7 +288,9 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 
 		_d3d9graphics=TD3D9Graphics( _max2dGraphics._graphics )
 
-		Assert _max2dGraphics And _d3d9graphics
+		If Not _max2dGraphics Or Not _d3d9graphics Then
+			Throw "SetGraphics failed for D3D9"
+		End If
 
 		_d3dDev=_d3d9Graphics.GetDirect3DDevice()
 		
