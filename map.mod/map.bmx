@@ -26,6 +26,10 @@ ModuleInfo "History: Added procedural interface"
 ModuleInfo "History: 1.02 Release"
 ModuleInfo "History: Fixed TMap.Remove:TNode not returning node"
 
+Import "intmap.bmx"
+Import "ptrmap.bmx"
+Import "map.c"
+
 Private
 
 Global nil:TNode=New TNode
@@ -564,3 +568,4 @@ End Rem
 Function CopyMap:TMap( map:TMap )
 	Return map.Copy()
 End Function
+
