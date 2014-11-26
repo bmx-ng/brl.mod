@@ -30,7 +30,7 @@ Type TPtrMap
 		Return bmx_map_ptrmap_isempty(Varptr _root)
 	End Method
 	
-	Method Insert( key:Int,value:Object )
+	Method Insert( key:Byte Ptr,value:Object )
 		bmx_map_ptrmap_insert(key, value, Varptr _root)
 	End Method
 
