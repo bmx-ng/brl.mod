@@ -16,8 +16,13 @@ extern void *_data_start__;
 #endif
 
 #ifdef __linux
+#ifdef __ANDROID__
+extern int __data_start[];
+extern int _end[];
+#else
 extern void *__data_start;
 extern void *_end;
+#endif
 #endif
 
 static void gc_finalizer( void *mem,void *pool ){
