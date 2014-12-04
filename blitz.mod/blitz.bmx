@@ -46,7 +46,11 @@ ModuleInfo "History: Lotsa little tidyups"
 ModuleInfo "History: 1.04 Release"
 ModuleInfo "History: Fixed C Compiler warnings"
 
+?Not android
 ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE"
+?android
+ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE"
+?
 
 Import "blitz_app.c"
 Import "blitz_types.c"
