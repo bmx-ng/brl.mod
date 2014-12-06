@@ -206,10 +206,15 @@ End Type
 TFreeAudioAudioDriver.Create "FreeAudio Multimedia",0
 ?MacOS
 TFreeAudioAudioDriver.Create "FreeAudio CoreAudio",0
-?Linux
+?Linuxx86
 TFreeAudioAudioDriver.Create "FreeAudio Pulse Audio",0
 TFreeAudioAudioDriver.Create "FreeAudio ALSA",1
-'TFreeAudioAudioDriver.Create "FreeAudio OpenSound System",2
+?Linuxx64
+TFreeAudioAudioDriver.Create "FreeAudio Pulse Audio",0
+TFreeAudioAudioDriver.Create "FreeAudio ALSA",1
+?raspberrypi
+TFreeAudioAudioDriver.Create "FreeAudio Pulse Audio",0
+TFreeAudioAudioDriver.Create "FreeAudio ALSA",1
 ?
 TFreeAudioAudioDriver.Create "FreeAudio",-1
 
