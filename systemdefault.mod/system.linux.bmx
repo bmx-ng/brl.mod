@@ -1,5 +1,8 @@
-
 Strict
+
+?Not android
+
+Import "-lX11"
 
 Import BRL.System
 Import "system.linux.c"
@@ -119,3 +122,7 @@ Type TLinuxSystemDriver Extends TSystemDriver
 	End Method
 
 End Type
+
+Driver=New TLinuxSystemDriver
+
+?

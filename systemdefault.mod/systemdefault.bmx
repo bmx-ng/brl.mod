@@ -72,7 +72,9 @@ Import BRL.System
 Import BRL.KeyCodes
 Import BRL.Hook
 
+?Not android
 Import "system.c"
+?
 
 ?MacOS
 Import "system.macos.bmx"
@@ -82,7 +84,5 @@ Import "system.win32.bmx"
 Import "-lcomdlg32"
 Driver=New TWin32SystemDriver
 ?Linux
-Import "-lX11"
 Import "system.linux.bmx"
-Driver=New TLinuxSystemDriver
 ?
