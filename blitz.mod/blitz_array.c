@@ -305,9 +305,9 @@ BBArray *bbArrayDimensions( BBArray *arr ){
 BBArray *bbArrayCastFromObject( BBObject *o,const char *type ){
 	BBArray *arr=(BBArray*)o;
 	if( arr==&bbEmptyArray ) return arr;
-	if( arr->clas!=&bbArrayClass ) return (BBArray*)BBNULLOBJECT;
+	if( arr->clas!=&bbArrayClass ) return &bbEmptyArray;
 	if( arr->type[0]==':' && type[0]==':' ) return arr;
-	if( strcmp( arr->type,type ) ) return (BBArray*)BBNULLOBJECT;
+	if( strcmp( arr->type,type ) ) return &bbEmptyArray;
 	return arr;
 }
 
