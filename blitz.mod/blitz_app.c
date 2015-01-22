@@ -173,6 +173,60 @@ int bbIsMainThread(){
 	return pthread_self()==_mainThread;
 }
 
+#elif __EMSCRIPTEN__
+
+#include <unistd.h>
+//#include <pthread.h>
+#include <limits.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <sys/sysinfo.h>
+
+static int base_time;
+//static pthread_t _mainThread;
+
+static void startup(){
+	struct sysinfo info;
+	
+	//_mainThread=pthread_self();
+
+	//sysinfo( &info );
+	base_time=bbMilliSecs()-info.uptime*1000;
+}
+
+//***** ThreadSafe! *****
+void bbDelay( int millis ){
+	int i,e;
+	
+	if( millis<0 ) return;
+
+	e=bbMilliSecs()+millis;
+	
+	for( i=0;;++i ){
+		int t=e-bbMilliSecs();
+		if( t<=0 ){
+			if( !i ) usleep( 0 );	//always sleep at least once.
+			break;
+		}
+		usleep( t*1000 );
+	}
+}
+
+//***** ThreadSafe! *****
+int bbMilliSecs(){
+	int t;
+	struct timeval tv;
+	gettimeofday(&tv,0);
+	t=tv.tv_sec*1000;
+	t+=tv.tv_usec/1000;
+	return t-base_time;
+}
+
+int bbIsMainThread(){
+	return 1;
+//	return pthread_self()==_mainThread;
+}
+
 #endif
 
 void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){

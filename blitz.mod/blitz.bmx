@@ -46,10 +46,20 @@ ModuleInfo "History: Lotsa little tidyups"
 ModuleInfo "History: 1.04 Release"
 ModuleInfo "History: Fixed C Compiler warnings"
 
-?Not android
+?win32
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE"
+?macos
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE"
+?linuxx86
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE"
+?linuxx64
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE"
+?raspberrypi
 ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE"
 ?android
 ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE"
+?emscripten
+ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE"
 ?
 
 Import "blitz_app.c"

@@ -24,7 +24,9 @@
 
 #include "blitz_types.h"
 #include "blitz_memory.h"
+#ifndef __EMSCRIPTEN__
 #include "blitz_thread.h"
+#endif
 #include "blitz_gc.h"
 #include "blitz_ex.h"
 #include "blitz_cclib.h"

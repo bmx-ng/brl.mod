@@ -620,6 +620,7 @@ BBString *bbStringJoin( BBString *sep,BBArray *bits ){
 	return str;
 }
 #ifndef __ANDROID__
+#ifndef __EMSCRIPTEN__
 static void mktmp( void *p ){
 	static AO_t i;
 	static void *bufs[32];
@@ -627,6 +628,15 @@ static void mktmp( void *p ){
 	bbMemFree( bufs[n] );
 	bufs[n]=p;
 }
+#else
+static void mktmp( void *p ){
+	static int i;
+	static void *bufs[32];
+	int n=++i & 31;
+	bbMemFree( bufs[n] );
+	bufs[n]=p;
+}
+#endif
 #else
 static void mktmp( void *p ){
 	static int i;

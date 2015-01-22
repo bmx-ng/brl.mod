@@ -62,6 +62,8 @@ Import "-framework Carbon"
 Import "appstub.win32.c"
 ?Linux
 Import "appstub.linux.c"
+?emscripten
+Import "appstub.linux.c"
 ?
 
 Extern
