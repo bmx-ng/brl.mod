@@ -181,6 +181,10 @@
 #    endif
 #    define mach_type_known
 # endif
+# if defined(__or1k__)
+#    define OR1K        /* OpenRISC/or1k */
+#    define mach_type_known
+# endif
 # if defined(DGUX) && (defined(i386) || defined(__i386__))
 #    define I386
 #    ifndef _USING_DGUX
@@ -481,7 +485,11 @@
 #   define mach_type_known
 # endif
 # if defined(__CYGWIN32__) || defined(__CYGWIN__)
-#   define I386
+#   if defined(__LP64__)
+#     define X86_64
+#   else
+#     define I386
+#   endif
 #   define CYGWIN32
 #   define mach_type_known
 # endif
@@ -551,6 +559,11 @@
 # endif
 
 # if defined(SYMBIAN)
+#   define mach_type_known
+# endif
+
+# if defined(__EMSCRIPTEN__)
+#   define I386
 #   define mach_type_known
 # endif
 
@@ -748,6 +761,15 @@
 #   define ALIGNMENT 4
 #   define DATASTART NULL
 #   define DATAEND NULL
+# endif
+
+# ifdef __EMSCRIPTEN__
+#   define OS_TYPE "EMSCRIPTEN"
+#   define CPP_WORDSZ 32
+#   define ALIGNMENT 4
+#   define DATASTART NULL
+#   define DATAEND NULL
+#   define STACK_NOT_SCANNED
 # endif
 
 # define STACK_GRAN 0x1000000
@@ -1353,6 +1375,11 @@
 #         define PREFETCH_FOR_WRITE(x) \
             __asm__ __volatile__ ("prefetchw %0" : : "m"(*(char *)(x)))
 #       endif
+#       if defined(__GLIBC__)
+          /* Workaround lock elision implementation for some glibc.     */
+#         define GLIBC_2_19_TSX_BUG
+#         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
+#       endif
 #   endif
 #   ifdef CYGWIN32
 #       define OS_TYPE "CYGWIN32"
@@ -1654,6 +1681,24 @@
 #   endif
 # endif
 
+# ifdef OR1K
+#   define CPP_WORDSZ 32
+#   define MACH_TYPE "OR1K"
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+#     define DYNAMIC_LOADING
+      extern int _end[];
+#     define DATAEND (ptr_t)(_end)
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)(__data_start))
+#     define ALIGNMENT 4
+#     ifndef HBLKSIZE
+#       define HBLKSIZE 4096
+#     endif
+#     define LINUX_STACKBOTTOM
+#   endif /* Linux */
+# endif
+
 # ifdef HP_PA
 #   define MACH_TYPE "HP_PA"
 #   ifdef __LP64__
@@ -1886,6 +1931,17 @@
 #           define PREFETCH_FOR_WRITE(x) __lfetch(__lfhint_nta, (x))
 #           define CLEAR_DOUBLE(x) __stf_spill((void *)(x), 0)
 #         endif /* __INTEL_COMPILER */
+#       endif
+#   endif
+#   ifdef CYGWIN32
+#       define OS_TYPE "CYGWIN32"
+#       define DATASTART ((ptr_t)GC_DATASTART)  /* From gc.h */
+#       define DATAEND   ((ptr_t)GC_DATAEND)
+#       undef STACK_GRAN
+#       define STACK_GRAN 0x10000
+#       ifdef USE_MMAP
+#         define NEED_FIND_LIMIT
+#         define USE_MMAP_ANON
 #       endif
 #   endif
 #   ifdef MSWIN32
@@ -2237,6 +2293,11 @@
           /* macro to workaround it.                                    */
           /* FIXME: This seems to be fixed in GLibc v2.14.              */
 #         define GETCONTEXT_FPU_EXCMASK_BUG
+#       endif
+#       if defined(__GLIBC__)
+          /* Workaround lock elision implementation for some glibc.     */
+#         define GLIBC_2_19_TSX_BUG
+#         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
 #       endif
 #   endif
 #   ifdef DARWIN
@@ -2602,7 +2663,8 @@
 
 #if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HURD) \
                              || defined(OPENBSD) || defined(ARM32) \
-                             || defined(MIPS) || defined(AVR32))) \
+                             || defined(MIPS) || defined(AVR32) \
+                             || defined(OR1K))) \
      || (defined(LINUX) && (defined(SPARC) || defined(M68K))) \
      || ((defined(RTEMS) || defined(PLATFORM_ANDROID)) && defined(I386))) \
     && !defined(NO_GETCONTEXT)

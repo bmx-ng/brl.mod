@@ -299,30 +299,29 @@ GC_INNER char * GC_get_maps(void)
                                     char **prot, unsigned int *maj_dev,
                                     char **mapping_name)
   {
-    char *start_start, *end_start, *maj_dev_start;
-    char *p;
-    char *endp;
+    unsigned char *start_start, *end_start, *maj_dev_start;
+    unsigned char *p;   /* unsigned for isspace, isxdigit */
 
     if (buf_ptr == NULL || *buf_ptr == '\0') {
         return NULL;
     }
 
-    p = buf_ptr;
+    p = (unsigned char *)buf_ptr;
     while (isspace(*p)) ++p;
     start_start = p;
     GC_ASSERT(isxdigit(*start_start));
-    *start = (ptr_t)strtoul(start_start, &endp, 16); p = endp;
+    *start = (ptr_t)strtoul((char *)start_start, (char **)&p, 16);
     GC_ASSERT(*p=='-');
 
     ++p;
     end_start = p;
     GC_ASSERT(isxdigit(*end_start));
-    *end = (ptr_t)strtoul(end_start, &endp, 16); p = endp;
+    *end = (ptr_t)strtoul((char *)end_start, (char **)&p, 16);
     GC_ASSERT(isspace(*p));
 
     while (isspace(*p)) ++p;
     GC_ASSERT(*p == 'r' || *p == '-');
-    *prot = p;
+    *prot = (char *)p;
     /* Skip past protection field to offset field */
        while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
     GC_ASSERT(isxdigit(*p));
@@ -330,16 +329,16 @@ GC_INNER char * GC_get_maps(void)
           while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
     maj_dev_start = p;
     GC_ASSERT(isxdigit(*maj_dev_start));
-    *maj_dev = strtoul(maj_dev_start, NULL, 16);
+    *maj_dev = strtoul((char *)maj_dev_start, NULL, 16);
 
     if (mapping_name == 0) {
       while (*p && *p++ != '\n');
     } else {
       while (*p && *p != '\n' && *p != '/' && *p != '[') p++;
-      *mapping_name = p;
+      *mapping_name = (char *)p;
       while (*p && *p++ != '\n');
     }
-    return p;
+    return (char *)p;
   }
 #endif /* REDIRECT_MALLOC || DYNAMIC_LOADING || IA64 || ... */
 
@@ -795,11 +794,15 @@ GC_INNER word GC_page_size = 0;
     /* gcc version of boehm-gc).                                        */
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
     {
-      void * _tlsbase;
+#     ifdef X86_64
+        sb -> mem_base = ((NT_TIB*)NtCurrentTeb())->StackBase;
+#     else
+        void * _tlsbase;
 
-      __asm__ ("movl %%fs:4, %0"
-               : "=r" (_tlsbase));
-      sb -> mem_base = _tlsbase;
+        __asm__ ("movl %%fs:4, %0"
+                 : "=r" (_tlsbase));
+        sb -> mem_base = _tlsbase;
+#     endif
       return GC_SUCCESS;
     }
 # endif /* CYGWIN32 */
@@ -1198,13 +1201,13 @@ GC_INNER word GC_page_size = 0;
       if (pthread_getattr_np(pthread_self(), &attr) == 0) {
         if (pthread_attr_getstack(&attr, &stackaddr, &size) == 0
             && stackaddr != NULL) {
-          pthread_attr_destroy(&attr);
+          (void)pthread_attr_destroy(&attr);
 #         ifdef STACK_GROWS_DOWN
             stackaddr = (char *)stackaddr + size;
 #         endif
           return (ptr_t)stackaddr;
         }
-        pthread_attr_destroy(&attr);
+        (void)pthread_attr_destroy(&attr);
       }
       WARN("pthread_getattr_np or pthread_attr_getstack failed"
            " for main thread\n", 0);
@@ -1281,7 +1284,7 @@ GC_INNER word GC_page_size = 0;
     if (pthread_attr_getstack(&attr, &(b -> mem_base), &size) != 0) {
         ABORT("pthread_attr_getstack failed");
     }
-    pthread_attr_destroy(&attr);
+    (void)pthread_attr_destroy(&attr);
 #   ifdef STACK_GROWS_DOWN
         b -> mem_base = (char *)(b -> mem_base) + size;
 #   endif
@@ -1534,6 +1537,7 @@ void GC_register_data_segments(void)
       GC_add_roots_inner((ptr_t)O32_BASE(seg),
                          (ptr_t)(O32_BASE(seg)+O32_SIZE(seg)), FALSE);
     }
+    (void)fclose(myexefile);
 }
 
 # else /* !OS2 */
@@ -4182,7 +4186,7 @@ GC_INNER void GC_dirty_init(void)
   /* This will call the real pthread function, not our wrapper */
   if (pthread_create(&thread, &attr, GC_mprotect_thread, NULL) != 0)
     ABORT("pthread_create failed");
-  pthread_attr_destroy(&attr);
+  (void)pthread_attr_destroy(&attr);
 
   /* Setup the sigbus handler for ignoring the meaningless SIGBUSs */
 # ifdef BROKEN_EXCEPTION_HANDLING
@@ -4580,8 +4584,10 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
    for (; !((word)fp HOTTER_THAN (word)frame)
           && !((word)GC_stackbottom HOTTER_THAN (word)fp)
           && nframes < NFRAMES;
-       fp = (struct frame *)((long) fp -> FR_SAVFP + BIAS), nframes++) {
-      register int i;
+        fp = (struct frame *)((long) fp -> FR_SAVFP + BIAS), nframes++) {
+#     if NARGS > 0
+        register int i;
+#     endif
 
       info[nframes].ci_pc = fp->FR_SAVPC;
 #     if NARGS > 0

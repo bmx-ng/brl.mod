@@ -1480,7 +1480,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 
 #if defined(GC_WIN32_THREADS) \
     && (!defined(GC_PTHREADS) || defined(GC_BUILD) || defined(WINAPI))
-                /* Note: for Cygwin and win32-pthread, this is skipped  */
+                /* Note: for Cygwin and pthreads-win32, this is skipped */
                 /* unless windows.h is included before gc.h.            */
 
 # if !defined(GC_NO_THREAD_DECLS) || defined(GC_BUILD)
@@ -1600,7 +1600,7 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 /* THREAD_LOCAL_ALLOC defined and the initial allocation call is not    */
 /* to GC_malloc() or GC_malloc_atomic().                                */
 
-#ifdef __CYGWIN32__
+#if defined(__CYGWIN32__) || defined(__CYGWIN__)
   /* Similarly gnu-win32 DLLs need explicit initialization from the     */
   /* main program, as does AIX.                                         */
   extern int _data_start__[], _data_end__[], _bss_start__[], _bss_end__[];

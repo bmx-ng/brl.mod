@@ -349,13 +349,14 @@ GC_INNER void GC_extend_size_map(size_t i)
 /* another frame.                                                       */
 GC_API void * GC_CALL GC_clear_stack(void *arg)
 {
+# ifndef STACK_NOT_SCANNED
     ptr_t sp = GC_approx_sp();  /* Hotter than actual sp */
 #   ifdef THREADS
         word volatile dummy[SMALL_CLEAR_SIZE];
         static unsigned random_no = 0;
-                                 /* Should be more random than it is ... */
-                                 /* Used to occasionally clear a bigger  */
-                                 /* chunk.                               */
+                                /* Should be more random than it is ... */
+                                /* Used to occasionally clear a bigger  */
+                                /* chunk.                               */
 #   endif
     ptr_t limit;
 
@@ -374,52 +375,53 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
         /* frequency decreases, thus clearing frequency would decrease, */
         /* thus more junk remains accessible, thus the heap gets        */
         /* larger ...                                                   */
-# ifdef THREADS
-    if (++random_no % 13 == 0) {
+#   ifdef THREADS
+      if (++random_no % 13 == 0) {
         limit = sp;
         MAKE_HOTTER(limit, BIG_CLEAR_SIZE*sizeof(word));
         limit = (ptr_t)((word)limit & ~0xf);
                         /* Make it sufficiently aligned for assembly    */
                         /* implementations of GC_clear_stack_inner.     */
         return GC_clear_stack_inner(arg, limit);
-    } else {
+      } else {
         BZERO((void *)dummy, SMALL_CLEAR_SIZE*sizeof(word));
-        return arg;
-    }
-# else
-    if (GC_gc_no > GC_stack_last_cleared) {
+      }
+#   else
+      if (GC_gc_no > GC_stack_last_cleared) {
         /* Start things over, so we clear the entire stack again */
-        if (GC_stack_last_cleared == 0) GC_high_water = (ptr_t)GC_stackbottom;
+        if (GC_stack_last_cleared == 0)
+          GC_high_water = (ptr_t)GC_stackbottom;
         GC_min_sp = GC_high_water;
         GC_stack_last_cleared = GC_gc_no;
         GC_bytes_allocd_at_reset = GC_bytes_allocd;
-    }
-    /* Adjust GC_high_water */
-        MAKE_COOLER(GC_high_water, WORDS_TO_BYTES(DEGRADE_RATE) + GC_SLOP);
-        if ((word)sp HOTTER_THAN (word)GC_high_water) {
-            GC_high_water = sp;
-        }
-        MAKE_HOTTER(GC_high_water, GC_SLOP);
-    limit = GC_min_sp;
-    MAKE_HOTTER(limit, SLOP);
-    if ((word)sp COOLER_THAN (word)limit) {
+      }
+      /* Adjust GC_high_water */
+      MAKE_COOLER(GC_high_water, WORDS_TO_BYTES(DEGRADE_RATE) + GC_SLOP);
+      if ((word)sp HOTTER_THAN (word)GC_high_water) {
+          GC_high_water = sp;
+      }
+      MAKE_HOTTER(GC_high_water, GC_SLOP);
+      limit = GC_min_sp;
+      MAKE_HOTTER(limit, SLOP);
+      if ((word)sp COOLER_THAN (word)limit) {
         limit = (ptr_t)((word)limit & ~0xf);
                         /* Make it sufficiently aligned for assembly    */
                         /* implementations of GC_clear_stack_inner.     */
         GC_min_sp = sp;
-        return(GC_clear_stack_inner(arg, limit));
-    } else if (GC_bytes_allocd - GC_bytes_allocd_at_reset > CLEAR_THRESHOLD) {
+        return GC_clear_stack_inner(arg, limit);
+      } else if (GC_bytes_allocd - GC_bytes_allocd_at_reset
+                    > CLEAR_THRESHOLD) {
         /* Restart clearing process, but limit how much clearing we do. */
         GC_min_sp = sp;
         MAKE_HOTTER(GC_min_sp, CLEAR_THRESHOLD/4);
         if ((word)GC_min_sp HOTTER_THAN (word)GC_high_water)
           GC_min_sp = GC_high_water;
         GC_bytes_allocd_at_reset = GC_bytes_allocd;
-    }
-    return(arg);
+      }
+#   endif
 # endif
+  return arg;
 }
-
 
 /* Return a pointer to the base address of p, given a pointer to a      */
 /* an address within an object.  Return 0 o.w.                          */
@@ -864,9 +866,14 @@ GC_API void GC_CALL GC_init(void)
 #     ifdef SN_TARGET_PS3
         {
           pthread_mutexattr_t mattr;
-          pthread_mutexattr_init(&mattr);
-          pthread_mutex_init(&GC_allocate_ml, &mattr);
-          pthread_mutexattr_destroy(&mattr);
+
+          if (0 != pthread_mutexattr_init(&mattr)) {
+            ABORT("pthread_mutexattr_init failed");
+          }
+          if (0 != pthread_mutex_init(&GC_allocate_ml, &mattr)) {
+            ABORT("pthread_mutex_init failed");
+          }
+          (void)pthread_mutexattr_destroy(&mattr);
         }
 #     endif
 #   endif /* THREADS */
@@ -1505,8 +1512,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
 #define BUFSZ 1024
 
-#ifdef NO_VSNPRINTF
-  /* In case this function is missing (e.g., in DJGPP v2.0.3).  */
+#if defined(DJGPP) || defined(__STRICT_ANSI__)
+  /* vsnprintf is missing in DJGPP (v2.0.3) */
 # define GC_VSNPRINTF(buf, bufsz, format, args) vsprintf(buf, format, args)
 #elif defined(_MSC_VER)
 # ifdef MSWINCE
@@ -1771,18 +1778,22 @@ GC_API void ** GC_CALL GC_new_free_list(void)
 GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
                                           int adjust, int clear)
 {
-    unsigned result = GC_n_kinds++;
+    unsigned result = GC_n_kinds;
 
-    if (GC_n_kinds > MAXOBJKINDS) ABORT("Too many kinds");
-    GC_obj_kinds[result].ok_freelist = fl;
-    GC_obj_kinds[result].ok_reclaim_list = 0;
-    GC_obj_kinds[result].ok_descriptor = descr;
-    GC_obj_kinds[result].ok_relocate_descr = adjust;
-    GC_obj_kinds[result].ok_init = (GC_bool)clear;
-#   ifdef ENABLE_DISCLAIM
+    if (result < MAXOBJKINDS) {
+      GC_n_kinds++;
+      GC_obj_kinds[result].ok_freelist = fl;
+      GC_obj_kinds[result].ok_reclaim_list = 0;
+      GC_obj_kinds[result].ok_descriptor = descr;
+      GC_obj_kinds[result].ok_relocate_descr = adjust;
+      GC_obj_kinds[result].ok_init = (GC_bool)clear;
+#     ifdef ENABLE_DISCLAIM
         GC_obj_kinds[result].ok_mark_unconditionally = FALSE;
         GC_obj_kinds[result].ok_disclaim_proc = 0;
-#   endif
+#     endif
+    } else {
+      ABORT("Too many kinds");
+    }
     return result;
 }
 
@@ -1799,10 +1810,14 @@ GC_API unsigned GC_CALL GC_new_kind(void **fl, GC_word descr, int adjust,
 
 GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc proc)
 {
-    unsigned result = GC_n_mark_procs++;
+    unsigned result = GC_n_mark_procs;
 
-    if (GC_n_mark_procs > MAX_MARK_PROCS) ABORT("Too many mark procedures");
-    GC_mark_procs[result] = proc;
+    if (result < MAX_MARK_PROCS) {
+      GC_n_mark_procs++;
+      GC_mark_procs[result] = proc;
+    } else {
+      ABORT("Too many mark procedures");
+    }
     return result;
 }
 
