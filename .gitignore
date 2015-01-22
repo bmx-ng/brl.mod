@@ -6,5 +6,13 @@
 *.x64.i
 *.arm.a
 *.arm.i
+*.armeabi.a
+*.armeabi.i
+*.armeabiv7a.a
+*.armeabiv7a.i
+*.arm64v8a.a
+*.arm64v8a.i
+*.js.a
+*.js.i
 
 .bmx/
