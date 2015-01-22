@@ -3,7 +3,7 @@
 
 #include <signal.h>
 
-void __bb_brl_appstub_appstub();
+int __bb_brl_appstub_appstub();
 
 #ifndef __ANDROID__
 int main( int argc,char *argv[] ){
