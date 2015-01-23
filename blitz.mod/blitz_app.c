@@ -190,6 +190,7 @@ static void startup(){
 	
 	//_mainThread=pthread_self();
 
+	// TODO : appears as "undefined" when linking... need this for millisecs support.
 	//sysinfo( &info );
 	base_time=bbMilliSecs()-info.uptime*1000;
 }
