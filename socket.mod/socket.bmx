@@ -29,6 +29,9 @@ Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
 ?Linux
 Const FIONREAD=$541b
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
+?emscripten
+Const FIONREAD=$541b
+Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
 ?
 End Extern
 
