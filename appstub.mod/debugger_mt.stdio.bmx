@@ -419,7 +419,7 @@ End Type
 ?Threaded
 Extern
 Function bbThreadAllocData:Int()
-Function bbThreadSetData( index,data:Object )
+Function bbThreadSetData( index:Int,data:Object )
 Function bbThreadGetData:TDbgState( index:Int )
 End Extern
 ?

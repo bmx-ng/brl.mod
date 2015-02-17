@@ -7,3 +7,4 @@ void bbOnDebugPushExState()!
 void bbOnDebugPopExState()!
 void bbOnDebugUnhandledEx( BBObject * )!
 int   bbGCValidate( void * )!
+BBObject* bbThreadGetData(int )!
