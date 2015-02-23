@@ -73,7 +73,7 @@ Import "blitz_array.c"
 Import "blitz_handle.c"
 Import "blitz_debug.c"
 Import "blitz_incbin.c"
-'Import "blitz_thread.c"
+Import "blitz_thread.c"
 Import "blitz_ex.c"
 Import "blitz_gc.c"
 

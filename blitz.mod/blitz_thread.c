@@ -123,10 +123,6 @@ BBThread *bbThreadCreate( BBThreadProc proc,BBObject *data ){
 	thread->detached=0;
 	thread->handle=CreateThread( 0,0,threadProc,thread,CREATE_SUSPENDED,&thread->id );
 
-	CONTEXT ctx={CONTEXT_CONTROL};
-	GetThreadContext( thread->handle,&ctx );
-	thread->stackTop=ctx.Esp;
-
 	BB_LOCK
 	addThread( thread );
 	BB_UNLOCK
@@ -179,16 +175,6 @@ BBThread *_bbThreadLockThreads(){
 	for( t=threads;t;t=t->succ ){
 		if( t!=curThread ){
 			SuspendThread( t->handle );
-			CONTEXT ctx={CONTEXT_INTEGER|CONTEXT_CONTROL};
-			GetThreadContext( t->handle,&ctx );
-			t->locked_regs[0]=ctx.Edi;
-			t->locked_regs[1]=ctx.Esi;
-			t->locked_regs[2]=ctx.Ebx;
-			t->locked_regs[3]=ctx.Edx;
-			t->locked_regs[4]=ctx.Ecx;
-			t->locked_regs[5]=ctx.Eax;
-			t->locked_regs[6]=ctx.Ebp;
-			t->locked_sp=ctx.Esp;
 		}
 	}
 	return threads;
@@ -223,8 +209,6 @@ static pthread_key_t curThreadTls;
 
 static void suspendSigHandler( int sig ){//,siginfo_t *info,ucontext_t *ctx ){
 	BBThread *thread=pthread_getspecific( curThreadTls );
-	
-	thread->locked_sp=bbGCRootRegs( thread->locked_regs );
 	
 #ifdef DEBUG_THREADS
 	printf( "In suspendSigHandler! thread=%p locked_sp=%p\n",thread,thread->locked_sp );fflush( stdout );
@@ -277,7 +261,6 @@ void bbThreadStartup(){
 static void *threadProc( void *p ){
 	BBThread *thread=p;
 	
-	thread->stackTop=bbGCRootRegs( thread->locked_regs );
 	pthread_setspecific( curThreadTls,thread );
 	
 	BB_LOCK

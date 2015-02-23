@@ -246,7 +246,7 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	
 	//bbGCStackTop=ebp+28;
 	
-	// BaH bbThreadStartup();
+	bbThreadStartup();
 	bbGCStartup();
 
 	if( GetVersionEx( &os ) ){
@@ -319,7 +319,7 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	
 	bbGCStackTop=ebp+28;
 	
-	// BaH bbThreadStartup();
+	bbThreadStartup();
 	bbGCStartup();
 	
 	getcwd( buf,PATH_MAX );
@@ -357,7 +357,7 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	bbGCStackTop=&argc;
 //#endif
 
-	// BaH bbThreadStartup();
+	bbThreadStartup();
 	bbGCStartup();
 	
 	getcwd( buf,PATH_MAX );
