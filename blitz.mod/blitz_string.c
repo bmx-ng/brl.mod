@@ -450,7 +450,7 @@ BBString *bbStringToLower( BBString *str ){
 		if( c<192 ){
 			c=(c>='A' && c<='Z') ? (c|32) : c;
 		}else{
-			int lo=0,hi=sizeof(bbToLowerData)/4-1;
+			int lo=0,hi=3828/4-1; // sizeof(bbToLowerData)=3828
 			while( lo<=hi ){
 				int mid=(lo+hi)/2;
 				if( c<bbToLowerData[mid*2] ){
@@ -477,7 +477,7 @@ BBString *bbStringToUpper( BBString *str ){
 		if( c<181 ){
 			c=(c>='a' && c<='z') ? (c&~32) : c;
 		}else{
-			int lo=0,hi=sizeof(bbToUpperData)/4-1;
+			int lo=0,hi= 3860/4-1; //  sizeof(bbToUpperData)= 3860
 			while( lo<=hi ){
 				int mid=(lo+hi)/2;
 				if( c<bbToUpperData[mid*2] ){

@@ -76,6 +76,7 @@ Import "blitz_incbin.c"
 Import "blitz_thread.c"
 Import "blitz_ex.c"
 Import "blitz_gc.c"
+Import "blitz_unicode.c"
 
 '?Threaded
 'Import "blitz_gc_ms.c"
