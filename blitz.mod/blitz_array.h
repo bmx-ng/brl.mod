@@ -17,6 +17,7 @@ extern "C"{
 #define BBARRAYSIZE(q,n) ((2*sizeof(void*)+8)+(n)*sizeof(int)+(q))
 #define BBARRAYDATA(p,n) ((void*)((char*)(p)+(2*sizeof(void*)+8)+(n)*sizeof(int)))
 #endif
+#define BBARRAYDATAINDEX(p,n,i) bbArrayIndex(p,n,i)
 
 struct BBArray{
 	//extends BBObject
@@ -46,6 +47,8 @@ void		bbArraySort( BBArray *arr,int ascending );
 BBArray*	bbArrayDimensions( BBArray *arr );
 
 BBArray*	bbArrayConcat( const char *type,BBArray *x,BBArray *y );
+
+void*	bbArrayIndex( BBArray *, int, int );
 
 #ifdef __cplusplus
 }

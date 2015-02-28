@@ -302,6 +302,11 @@ BBArray *bbArrayDimensions( BBArray *arr ){
 	return dims;
 }
 
+void * bbArrayIndex( BBArray * arr, int offset, int index) {
+	if (index >= arr->scales[0]) brl_blitz_ArrayBoundsError();
+	return BBARRAYDATA(arr, offset);
+}
+
 BBArray *bbArrayCastFromObject( BBObject *o,const char *type ){
 	BBArray *arr=(BBArray*)o;
 	if( arr==&bbEmptyArray ) return arr;
