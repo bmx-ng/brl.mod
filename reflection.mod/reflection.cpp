@@ -78,4 +78,8 @@ BBClass *bbRefGetSuperClass( BBClass *clas ){
 	return clas->super;
 }
 
+BBString * bbStringFromRef(void * ref) {
+	return (BBString*)ref;
+}
+
 }

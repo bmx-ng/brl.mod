@@ -6,12 +6,15 @@ bbdoc: BASIC/Reflection
 End Rem
 Module BRL.Reflection
 
-ModuleInfo "Version: 1.02"
+ModuleInfo "Version: 1.03"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Added grable enhancements."
+ModuleInfo "History: Added support for globals."
 ModuleInfo "History: 1.02 Release"
 ModuleInfo "History: Added Brucey's size fix to GetArrayElement()/SetArrayElement()."
 ModuleInfo "History: 1.01 Release"
@@ -57,6 +60,8 @@ Function bbRefAssignObject( p:Byte Ptr,obj:Object )
 Function bbRefGetObjectClass:Byte Ptr( obj:Object )
 Function bbRefGetSuperClass:Byte Ptr( class:Byte Ptr )
 
+Function bbStringFromRef:String( ref:Byte Ptr )
+
 End Extern
 
 Type TClass
@@ -88,6 +93,13 @@ Function _Get:Object( p:Byte Ptr,typeId:TTypeId )
 	Case DoubleTypeId
 		Return String.FromDouble( (Double Ptr p)[0] )
 	Default
+		If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
+?Not x64
+			Return String.FromInt( (Int Ptr p)[0] )
+?x64
+			Return String.FromLong( (Long Ptr p)[0] )
+?
+		EndIf
 		Return bbRefGetObject( p )
 	End Select
 End Function
@@ -112,6 +124,16 @@ Function _Push:Byte Ptr( sp:Byte Ptr,typeId:TTypeId,value:Object )
 		Return sp+4
 	Default
 		If value
+			If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
+?Not x64
+				(Int Ptr sp)[0]=value.ToString().ToInt()
+				Return sp+4
+?x64
+				(Long Ptr sp)[0]=value.ToString().ToLong()
+				Return sp+8
+?
+			EndIf	
+
 			Local c:Byte Ptr=typeId._class
 			Local t:Byte Ptr=bbRefGetObjectClass( value )
 			While t And t<>c
@@ -143,6 +165,15 @@ Function _Assign( p:Byte Ptr,typeId:TTypeId,value:Object )
 		bbRefAssignObject p,value
 	Default
 		If value
+			If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
+?Not x64
+				(Int Ptr p)[0]=value.ToString().ToInt()
+?x64
+				(Long Ptr p)[0]=value.ToString().ToLong()
+?
+				Return
+			EndIf	
+
 			Local c:Byte Ptr=typeId._class
 			Local t:Byte Ptr=bbRefGetObjectClass( value )
 			While t And t<>c
@@ -154,7 +185,285 @@ Function _Assign( p:Byte Ptr,typeId:TTypeId,value:Object )
 	End Select
 End Function
 
-Function _Call:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],argTypes:TTypeId[] )
+Function _CallFunction:Object( p:Byte Ptr,typeId:TTypeId,args:Object[],argTypes:TTypeId[] )
+	Local q:Byte Ptr[10]
+	For Local i=0 Until args.length
+		_Push( Varptr q[i],argTypes[i],args[i] )
+	Next
+
+	Select typeId
+	Case ByteTypeId,ShortTypeId,IntTypeId
+		Select argTypes.length
+			Case 0
+				Local f:Int()=p
+				Return String.FromInt( f() )
+			Case 1
+				Local f:Int(p0:Byte Ptr)=p
+				Return String.FromInt( f(q[0]) )
+			Case 2
+				Local f:Int(p0:Byte Ptr, p1:Byte Ptr)=p
+				Return String.FromInt( f(q[0], q[1]) )
+			Case 3
+				Local f:Int(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return String.FromInt( f(q[0], q[1], q[2]) )
+			Case 4
+				Local f:Int(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return String.FromInt( f(q[0], q[1], q[2], q[3]) )
+			Case 5
+				Local f:Int(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return String.FromInt( f(q[0], q[1], q[2], q[3], q[4]) )
+			Case 6
+				Local f:Int(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return String.FromInt( f(q[0], q[1], q[2], q[3], q[4], q[5]) )
+			Case 7
+				Local f:Int(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return String.FromInt( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
+			Case 8
+				Local f:Int(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return String.FromInt( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
+			Default
+				Local f:Int(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return String.FromInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		End Select
+	Case LongTypeId
+		Select argTypes.length
+			Case 0
+				Local f:Long()=p
+				Return String.Fromlong( f() )
+			Case 1
+				Local f:Long(p0:Byte Ptr)=p
+				Return String.Fromlong( f(q[0]) )
+			Case 2
+				Local f:Long(p0:Byte Ptr, p1:Byte Ptr)=p
+				Return String.Fromlong( f(q[0], q[1]) )
+			Case 3
+				Local f:Long(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return String.Fromlong( f(q[0], q[1], q[2]) )
+			Case 4
+				Local f:Long(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return String.Fromlong( f(q[0], q[1], q[2], q[3]) )
+			Case 5
+				Local f:Long(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return String.Fromlong( f(q[0], q[1], q[2], q[3], q[4]) )
+			Case 6
+				Local f:Long(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return String.Fromlong( f(q[0], q[1], q[2], q[3], q[4], q[5]) )
+			Case 7
+				Local f:Long(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return String.Fromlong( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
+			Case 8
+				Local f:Long(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return String.Fromlong( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
+			Default
+				Local f:Long(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return String.Fromlong( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		End Select
+	Case FloatTypeId
+		Select argTypes.length
+			Case 0
+				Local f:Float()=p
+				Return String.FromFloat( f() )
+			Case 1
+				Local f:Float(p0:Byte Ptr)=p
+				Return String.FromFloat( f(q[0]) )
+			Case 2
+				Local f:Float(p0:Byte Ptr, p1:Byte Ptr)=p
+				Return String.FromFloat( f(q[0], q[1]) )
+			Case 3
+				Local f:Float(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return String.FromFloat( f(q[0], q[1], q[2]) )
+			Case 4
+				Local f:Float(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return String.FromFloat( f(q[0], q[1], q[2], q[3]) )
+			Case 5
+				Local f:Float(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return String.FromFloat( f(q[0], q[1], q[2], q[3], q[4]) )
+			Case 6
+				Local f:Float(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return String.FromFloat( f(q[0], q[1], q[2], q[3], q[4], q[5]) )
+			Case 7
+				Local f:Float(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return String.FromFloat( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
+			Case 8
+				Local f:Float(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return String.FromFloat( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
+			Default
+				Local f:Float(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return String.FromFloat( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		End Select
+	Case DoubleTypeId
+		Select argTypes.length
+			Case 0
+				Local f:Double()=p
+				Return String.FromDouble( f() )
+			Case 1
+				Local f:Double(p0:Byte Ptr)=p
+				Return String.FromDouble( f(q[0]) )
+			Case 2
+				Local f:Double(p0:Byte Ptr, p1:Byte Ptr)=p
+				Return String.FromDouble( f(q[0], q[1]) )
+			Case 3
+				Local f:Double(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return String.FromDouble( f(q[0], q[1], q[2]) )
+			Case 4
+				Local f:Double(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return String.FromDouble( f(q[0], q[1], q[2], q[3]) )
+			Case 5
+				Local f:Double(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return String.FromDouble( f(q[0], q[1], q[2], q[3], q[4]) )
+			Case 6
+				Local f:Double(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return String.FromDouble( f(q[0], q[1], q[2], q[3], q[4], q[5]) )
+			Case 7
+				Local f:Double(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return String.FromDouble( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
+			Case 8
+				Local f:Double(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return String.FromDouble( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
+			Default
+				Local f:Double(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return String.FromDouble( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		End Select
+	Case VoidTypeId
+		Select argTypes.length
+			Case 0
+				Local f()=p
+				f()
+			Case 1
+				Local f(p0:Byte Ptr)=p
+				f(q[0])
+			Case 2
+				Local f(p0:Byte Ptr, p1:Byte Ptr)=p
+				f(q[0], q[1])
+			Case 3
+				Local f(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				f(q[0], q[1], q[2])
+			Case 4
+				Local f(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				f(q[0], q[1], q[2], q[3])
+			Case 5
+				Local f(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				f(q[0], q[1], q[2], q[3], q[4])
+			Case 6
+				Local f(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				f(q[0], q[1], q[2], q[3], q[4], q[5])
+			Case 7
+				Local f(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				f(q[0], q[1], q[2], q[3], q[4], q[5], q[6])
+			Case 8
+				Local f(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7])
+			Default
+				Local f(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
+		End Select
+	Default
+		If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
+?Not x64
+			Select argTypes.length
+				Case 0
+					Local f:Byte Ptr()=p
+					Return String.FromInt(Int f())
+				Case 1
+					Local f:Byte Ptr(p0:Byte Ptr)=p
+					Return String.FromInt(Int f(q[0]))
+				Case 2
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr)=p
+					Return String.FromInt(Int f(q[0], q[1]))
+				Case 3
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+					Return String.FromInt(Int f(q[0], q[1], q[2]))
+				Case 4
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+					Return String.FromInt(Int f(q[0], q[1], q[2], q[3]))
+				Case 5
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+					Return String.FromInt(Int f(q[0], q[1], q[2], q[3], q[4]))
+				Case 6
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+					Return String.FromInt(Int f(q[0], q[1], q[2], q[3], q[4], q[5]))
+				Case 7
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+					Return String.FromInt(Int f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]))
+				Case 8
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+					Return String.FromInt(Int f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]))
+				Default
+					Local f:Byte Ptr(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+					Return String.FromInt(Int f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ))
+			End Select
+?x64
+			Select argTypes.length
+				Case 0
+					Local f:Byte Ptr()=p
+					Return String.Fromlong(Long f())
+				Case 1
+					Local f:Byte Ptr(p0:Byte Ptr)=p
+					Return String.Fromlong(Long f(q[0]))
+				Case 2
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr)=p
+					Return String.Fromlong(Long f(q[0], q[1]))
+				Case 3
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+					Return String.Fromlong(Long f(q[0], q[1], q[2]))
+				Case 4
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+					Return String.Fromlong(Long f(q[0], q[1], q[2], q[3]))
+				Case 5
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+					Return String.Fromlong(Long f(q[0], q[1], q[2], q[3], q[4]))
+				Case 6
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+					Return String.Fromlong(Long f(q[0], q[1], q[2], q[3], q[4], q[5]))
+				Case 7
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+					Return String.Fromlong(Long f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]))
+				Case 8
+					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+					Return String.Fromlong(Long f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]))
+				Default
+					Local f:Byte Ptr(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+					Return String.Fromlong(Long f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ))
+			End Select
+?
+		Else
+			Select argTypes.length
+				Case 0
+					Local f:Object()=p
+					Return f()
+				Case 1
+					Local f:Object(p0:Byte Ptr)=p
+					Return f(q[0])
+				Case 2
+					Local f:Object(p0:Byte Ptr, p1:Byte Ptr)=p
+					Return f(q[0], q[1])
+				Case 3
+					Local f:Object(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+					Return f(q[0], q[1], q[2])
+				Case 4
+					Local f:Object(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+					Return f(q[0], q[1], q[2], q[3])
+				Case 5
+					Local f:Object(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+					Return f(q[0], q[1], q[2], q[3], q[4])
+				Case 6
+					Local f:Object(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+					Return f(q[0], q[1], q[2], q[3], q[4], q[5])
+				Case 7
+					Local f:Object(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+					Return f(q[0], q[1], q[2], q[3], q[4], q[5], q[6])
+				Case 8
+					Local f:Object(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+					Return f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7])
+				Default
+					Local f:Object(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+					Return f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
+			End Select
+		End If
+	End Select
+End Function
+
+Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],argTypes:TTypeId[] )
 	Local q:Byte Ptr[10]',sp:Byte Ptr=q
 	'bbRefPushObject sp,obj
 	'sp:+4
@@ -331,38 +640,108 @@ Function _Call:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],argTyp
 				f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
 		End Select
 	Default
-		Select argTypes.length
-			Case 0
-				Local f:Object(m:Object)=p
-				Return f(obj)
-			Case 1
-				Local f:Object(m:Object, p0:Byte Ptr)=p
-				Return f(obj, q[0])
-			Case 2
-				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
-				Return f(obj, q[0], q[1])
-			Case 3
-				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return f(obj, q[0], q[1], q[2])
-			Case 4
-				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return f(obj, q[0], q[1], q[2], q[3])
-			Case 5
-				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return f(obj, q[0], q[1], q[2], q[3], q[4])
-			Case 6
-				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return f(obj, q[0], q[1], q[2], q[3], q[4], q[5])
-			Case 7
-				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6])
-			Case 8
-				Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7])
-			Default
-				Local f:Object(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
-		End Select
+		If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
+?Not x64
+			Select argTypes.length
+				Case 0
+					Local f:Byte Ptr(m:Object)=p
+					Return String.FromInt(Int f(obj))
+				Case 1
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr)=p
+					Return String.FromInt(Int f(obj, q[0]))
+				Case 2
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
+					Return String.FromInt(Int f(obj, q[0], q[1]))
+				Case 3
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+					Return String.FromInt(Int f(obj, q[0], q[1], q[2]))
+				Case 4
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+					Return String.FromInt(Int f(obj, q[0], q[1], q[2], q[3]))
+				Case 5
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+					Return String.FromInt(Int f(obj, q[0], q[1], q[2], q[3], q[4]))
+				Case 6
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+					Return String.FromInt(Int f(obj, q[0], q[1], q[2], q[3], q[4], q[5]))
+				Case 7
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+					Return String.FromInt(Int f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]))
+				Case 8
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+					Return String.FromInt(Int f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]))
+				Default
+					Local f:Byte Ptr(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+					Return String.FromInt(Int f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ))
+			End Select
+?x64
+			Select argTypes.length
+				Case 0
+					Local f:Byte Ptr(m:Object)=p
+					Return String.FromLong(Long f(obj))
+				Case 1
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr)=p
+					Return String.FromLong(Long f(obj, q[0]))
+				Case 2
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
+					Return String.FromLong(Long f(obj, q[0], q[1]))
+				Case 3
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+					Return String.FromLong(Long f(obj, q[0], q[1], q[2]))
+				Case 4
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+					Return String.FromLong(Long f(obj, q[0], q[1], q[2], q[3]))
+				Case 5
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+					Return String.FromLong(Long f(obj, q[0], q[1], q[2], q[3], q[4]))
+				Case 6
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+					Return String.FromLong(Long f(obj, q[0], q[1], q[2], q[3], q[4], q[5]))
+				Case 7
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+					Return String.FromLong(Long f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]))
+				Case 8
+					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+					Return String.FromLong(Long f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]))
+				Default
+					Local f:Byte Ptr(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+					Return String.FromLong(Long f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ))
+			End Select
+?
+		Else
+			Select argTypes.length
+				Case 0
+					Local f:Object(m:Object)=p
+					Return f(obj)
+				Case 1
+					Local f:Object(m:Object, p0:Byte Ptr)=p
+					Return f(obj, q[0])
+				Case 2
+					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
+					Return f(obj, q[0], q[1])
+				Case 3
+					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+					Return f(obj, q[0], q[1], q[2])
+				Case 4
+					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+					Return f(obj, q[0], q[1], q[2], q[3])
+				Case 5
+					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+					Return f(obj, q[0], q[1], q[2], q[3], q[4])
+				Case 6
+					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+					Return f(obj, q[0], q[1], q[2], q[3], q[4], q[5])
+				Case 7
+					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+					Return f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6])
+				Case 8
+					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+					Return f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7])
+				Default
+					Local f:Object(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+					Return f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
+			End Select
+		End If
 	End Select
 End Function
 
@@ -370,8 +749,18 @@ Function TypeTagForId$( id:TTypeId )
 	If id.ExtendsType( ArrayTypeId )
 		Return "[]"+TypeTagForId( id.ElementType() )
 	EndIf
-	If id.ExtendsType( ObjectTypeId )
-		Return ":"+id.Name()
+	If id.ExtendsType( PointerTypeId )
+		Return "*"+TypeTagForId(id._elementType)
+	EndIf
+	If id.ExtendsType( FunctionTypeId )
+		Local s:String
+		For Local t:TTypeId = EachIn id._argTypes
+			If s Then s :+ ","
+			s :+ TypeTagForId(t)
+		Next
+		s = "(" + s + ")"
+		If id._retType Then s :+ TypeTagForId(id._retType)
+		Return s
 	EndIf
 	Select id
 	Case ByteTypeId Return "b"
@@ -381,7 +770,12 @@ Function TypeTagForId$( id:TTypeId )
 	Case FloatTypeId Return "f"
 	Case DoubleTypeId Return "d"
 	Case StringTypeId Return "$"
+	Case PointerTypeId Return "*"
+	Case FunctionTypeId Return "("
 	End Select
+	If id.ExtendsType( ObjectTypeId )
+		Return ":"+id.Name()
+	EndIf
 	Throw "ERROR"
 End Function
 
@@ -402,6 +796,71 @@ Function TypeIdForTag:TTypeId( ty$ )
 		If i<>-1 ty=ty[i+1..]
 		Return TTypeId.ForName( ty )
 	EndIf
+	If ty.StartsWith( "*" ) Then
+		ty = ty[1..]
+		Local id:TTypeId = TypeIdForTag( ty )
+		If id Then
+			id._pointerType = Null
+			id = id.PointerType()
+		EndIf
+		Return id
+	EndIf
+	If ty.StartsWith( "(" ) Then
+		Local t:String[]
+		Local idx:Int = ty.FindLast(")")
+		If idx > 0 Then
+			t = [ ty[1..idx], ty[idx+1..] ]
+		Else
+			t = [ ty[1..], "" ]
+		EndIf
+		Local retType:TTypeId=TypeIdForTag( t[1] ), argTypes:TTypeId[]
+		If t[0].length>0 Then
+			Local i:Int,b:Int,q$=t[0], args:TList=New TList
+			While i < q.length
+				Select q[i]
+				Case Asc( "," )
+					args.AddLast q[b..i]
+					i:+1
+					b=i
+				Case Asc( "[" )
+					i:+1
+					While i<q.length And q[i]=Asc(",")
+						i:+1
+					Wend
+				Case Asc( "(" )
+					Local level:Int = 1
+					i:+1
+					While i < q.Length
+						If q[i] = Asc(",") Then
+							If level = 0 Then 
+								Exit
+							End If
+						ElseIf q[i] = Asc(")") Then
+							level :- 1
+						ElseIf q[i] = Asc("(") Then 
+							level :+ 1
+						EndIf
+						i:+1
+					Wend
+				Default
+					i:+1
+				End Select
+			Wend
+			If b < q.Length Then args.AddLast q[b..]
+			
+			argTypes=New TTypeId[args.Count()]
+
+			i=0
+			For Local s:String = EachIn args
+				argTypes[i]=TypeIdForTag( s )
+				If Not argTypes[i] Then argTypes[i] = ObjectTypeId
+				i:+1
+			Next
+		EndIf
+		If Not retType Then retType = ObjectTypeId
+		retType._functionType = Null
+		Return retType.FunctionType(argTypes)
+	EndIf
 	Select ty
 	Case "b" Return ByteTypeId
 	Case "s" Return ShortTypeId
@@ -410,6 +869,8 @@ Function TypeIdForTag:TTypeId( ty$ )
 	Case "f" Return FloatTypeId
 	Case "d" Return DoubleTypeId
 	Case "$" Return StringTypeId
+	Case "*" Return PointerTypeId
+	Case "(" Return FunctionTypeId
 	Case "" Return VoidTypeId
 	End Select
 End Function
@@ -503,7 +964,25 @@ Global ArrayTypeId:TTypeId=New TTypeId.Init( "Null[]",8,bbRefArrayClass(),Object
 Global VoidTypeId:TTypeId=New TTypeId.Init( "Void",0 )
 
 Rem
-bbdoc: Type member - field or method.
+bbdoc: Primitive pointer type
+End Rem
+?Not x64
+Global PointerTypeId:TTypeId=New TTypeId.Init( "Ptr",4 )
+?x64
+Global PointerTypeId:TTypeId=New TTypeId.Init( "Ptr",8 )
+?
+
+Rem
+bbdoc: Primitive function type
+End Rem
+?Not x64
+Global FunctionTypeId:TTypeId=New TTypeId.Init( "Null()",4 )
+?x64
+Global FunctionTypeId:TTypeId=New TTypeId.Init( "Null()",8 )
+?
+
+Rem
+bbdoc: Type member - Field Or Method.
 End Rem
 Type TMember
 
@@ -531,6 +1010,73 @@ Type TMember
 	Field _name$,_typeId:TTypeId,_meta$
 	
 End Type
+
+Rem
+bbdoc: Type constant
+EndRem
+Type TConstant Extends TMember
+
+?Not x64
+	Method Init:TConstant( name:String, typeId:TTypeId, meta:String, stringRef:Int Ptr)
+?x64
+	Method Init:TConstant( name:String, typeId:TTypeId, meta:String, stringRef:Long Ptr)
+?
+		_name = name
+		_typeId = typeId
+		_meta = meta
+		_stringRef = stringRef
+		Return Self
+	EndMethod
+
+	Rem
+	bbdoc: Get constant value
+	EndRem
+	Method GetString:String()
+		Return bbStringFromRef(_stringRef)
+	EndMethod
+
+	Rem
+	bbdoc: Get constant value as @Int
+	EndRem
+	Method GetInt:Int()
+		Return GetString().ToInt()
+	EndMethod
+
+	Rem
+	bbdoc: Get constant value as @Float
+	EndRem	
+	Method GetFloat:Int()
+		Return GetString().ToFloat()
+	EndMethod
+
+	Rem
+	bbdoc: Get constant value as @Long
+	EndRem	
+	Method GetLong:Long()
+		Return GetString().ToLong()
+	EndMethod
+
+	Rem
+	bbdoc: Get constant value as @Double
+	EndRem	
+	Method GetDouble:Int()
+		Return GetString().ToDouble()
+	EndMethod
+
+	Rem
+	bbdoc: Get constant value as @{Byte Ptr}
+	EndRem
+	Method GetPointer:Byte Ptr()
+		Return Byte Ptr GetString().ToInt()
+	EndMethod
+
+?Not x64
+	Field _stringRef:Int Ptr
+?x64
+	Field _stringRef:Long Ptr
+?
+
+EndType
 
 Rem
 bbdoc: Type field
@@ -634,6 +1180,159 @@ Type TField Extends TMember
 End Type
 
 Rem
+bbdoc: Type global
+End Rem
+Type TGlobal Extends TMember
+
+	Method Init:TGlobal( name$,typeId:TTypeId,meta$,ref:Byte Ptr )
+		_name=name
+		_typeId=typeId
+		_meta=meta
+		_ref=ref
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Get global value
+	End Rem
+	Method Get:Object()
+		Return _Get( _ref,_typeId )
+	End Method
+	
+	Rem
+	bbdoc: Get int global value
+	End Rem
+	Method GetInt:Int( )
+		Return GetString().ToInt()
+	End Method
+	
+	Rem
+	bbdoc: Get long global value
+	End Rem
+	Method GetLong:Long()
+		Return GetString().ToLong()
+	End Method
+	
+	Rem
+	bbdoc: Get float global value
+	End Rem
+	Method GetFloat:Float()
+		Return GetString().ToFloat()
+	End Method
+	
+	Rem
+	bbdoc: Get double global value
+	End Rem
+	Method GetDouble:Double()
+		Return GetString().ToDouble()
+	End Method
+	
+	Rem
+	bbdoc: Get string global value
+	End Rem
+	Method GetString$()
+		Return String( Get() )
+	End Method
+	
+	Rem
+	bbdoc: Set global value
+	End Rem
+	Method Set(value:Object )
+		_Assign _ref,_typeId,value
+	End Method
+	
+	Rem
+	bbdoc: Set int global value
+	End Rem
+	Method SetInt(value:Int )
+		SetString String.FromInt( value )
+	End Method
+	
+	Rem
+	bbdoc: Set long global value
+	End Rem
+	Method SetLong(value:Long )
+		SetString String.FromLong( value )
+	End Method
+	
+	Rem
+	bbdoc: Set float global value
+	End Rem
+	Method SetFloat(value:Float )
+		SetString String.FromFloat( value )
+	End Method
+	
+	Rem
+	bbdoc: Set double global value
+	End Rem
+	Method SetDouble(value:Double )
+		SetString String.FromDouble( value )
+	End Method
+	
+	Rem
+	bbdoc: Set string global value
+	End Rem
+	Method SetString(value$ )
+		Set value
+	End Method
+	
+	Field _ref:Byte Ptr
+	
+End Type
+
+Rem
+bbdoc: Type function
+endrem
+Type TFunction Extends TMember
+	Method Init:TFunction(name:String, typeId:TTypeId, meta:String, selfTypeId:TTypeId, ref:Byte Ptr, argTypes:TTypeId[])
+		_name=name
+		_typeId=typeId
+		_meta=meta
+		_selfTypeId=selfTypeId		
+		_ref=ref
+		_argTypes=argTypes
+'		If _index >= 65536 Then
+'			_fptr = Byte Ptr(_index)
+'		Else
+'			_fptr = Null
+'		EndIf
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Get function arg types
+	End Rem
+	Method ArgTypes:TTypeId[]()
+		Return _argTypes
+	End Method
+	
+	Rem
+	bbdoc: Get function return type
+	End Rem
+	Method ReturnType:TTypeId()
+		Return _typeId
+	End Method
+		
+	Rem
+	bbdoc: Get function pointer.
+	endrem
+	Method FunctionPtr:Byte Ptr()
+		Return _ref
+	End Method
+	
+	Rem
+	bbdoc: Invoke type function
+	endrem	
+	Method Invoke:Object(args:Object[] = Null)
+		Return _CallFunction( _ref, _typeId, args, _argTypes)
+	End Method
+	
+	Field _selfTypeId:TTypeId
+	Field _ref:Byte Ptr
+	Field _argTypes:TTypeId[]
+EndType
+
+Rem
 bbdoc: Type method
 End Rem
 Type TMethod Extends TMember
@@ -659,10 +1358,7 @@ Type TMethod Extends TMember
 	bbdoc: Invoke method
 	End Rem
 	Method Invoke:Object( obj:Object,args:Object[] )
-		'If _index<65536
-		'	Return _Call( bbRefMethodPtr( obj,_index ),_typeId,obj,args,_argTypes )
-		'EndIf
-		Return _Call( _ref,_typeId,obj,args,_argTypes )
+		Return _CallMethod( _ref,_typeId,obj,args,_argTypes )
 	End Method
 	
 	Field _selfTypeId:TTypeId
@@ -729,7 +1425,69 @@ Type TTypeId
 	Method ElementType:TTypeId()
 		Return _elementType
 	End Method
-	
+
+	Rem
+	bbdoc: Get pointer type
+	End Rem
+	Method PointerType:TTypeId()
+		If Not _pointerType Then
+?Not x64
+			_pointerType = New TTypeId.Init( _name + " Ptr", 4)
+?x64
+			_pointerType = New TTypeId.Init( _name + " Ptr", 8)
+?
+			_pointerType._elementType = Self
+			If _super Then
+				_pointerType._super = _super.PointerType()
+			Else
+				_pointerType._super = PointerTypeId
+			EndIf
+		EndIf
+		Return _pointerType
+	End Method
+
+	Rem
+	bbdoc: Get function pointer type
+	End Rem
+	Method FunctionType:TTypeId( args:TTypeId[]=Null)
+		If Not _functionType Then
+			Local s:String
+			For Local t:TTypeId = EachIn args
+				If s Then s :+ ","
+				s :+ t.Name()
+			Next
+?Not x64
+			_functionType = New TTypeId.Init( _name + "(" + s + ")", 4)
+?x64
+			_functionType = New TTypeId.Init( _name + "(" + s + ")", 8)
+?
+			_functionType._retType = Self
+			_functionType._argTypes = args
+			If _super Then
+				_functionType._super = _super.FunctionType()
+			Else
+				_functionType._super = FunctionTypeId
+			EndIf
+		EndIf
+		Return _functionType
+	End Method
+
+	Rem
+	bbdoc: Get function return type
+	End Rem
+	Method ReturnType:TTypeId()
+		If Not _retType Then Throw "TypeID is not a function type"
+		Return _retType
+	End Method
+		
+	Rem
+	bbdoc: Get function argument types
+	End Rem
+	Method ArgTypes:TTypeId[]()
+		If Not _retType Then Throw "TypeID is not a function type"
+		Return _argTypes
+	End Method		
+
 	Rem
 	bbdoc: Determine if type extends a type
 	End Rem
@@ -755,12 +1513,36 @@ Type TTypeId
 	End Method
 	
 	Rem
+	bbdoc: Get list of constants
+	about: Only returns constants declared in this type, not in super types.
+	End Rem
+	Method Constants:TList()
+		Return _consts
+	End Method	
+	
+	Rem
 	bbdoc: Get list of fields
 	about: Only returns fields declared in this type, not in super types.
 	End Rem
 	Method Fields:TList()
 		Return _fields
 	End Method
+
+	Rem
+	bbdoc: Get list of globals
+	about: Only returns globals declared in this type, not in super types.
+	End Rem
+	Method Globals:TList()
+		Return _globals
+	End Method
+
+	Rem
+	bbdoc: Get list of functions
+	about: Only returns functions declared in this type, not in super types.
+	EndRem
+	Method Functions:TList()
+		Return _functions
+	End Method	
 	
 	Rem
 	bbdoc: Get list of methods
@@ -769,6 +1551,18 @@ Type TTypeId
 	Method Methods:TList()
 		Return _methods
 	End Method
+	
+	Rem
+	bbdoc: Find a constant by name
+	about: Searchs type hierarchy for constant called @name.
+	End Rem
+	Method FindConstant:TConstant( name$ )
+		name=name.ToLower()
+		For Local t:TConstant=EachIn _consts
+			If t.Name().ToLower()=name Return t
+		Next
+		If _super Return _super.FindConstant( name )
+	End Method	
 	
 	Rem
 	bbdoc: Find a field by name
@@ -780,6 +1574,30 @@ Type TTypeId
 			If t.Name().ToLower()=name Return t
 		Next
 		If _super Return _super.FindField( name )
+	End Method
+
+	Rem
+	bbdoc: Find a global by name
+	about: Searchs type hierarchy for global called @name.
+	End Rem
+	Method FindGlobal:TGlobal( name$ )
+		name=name.ToLower()
+		For Local t:TGlobal=EachIn _globals
+			If t.Name().ToLower()=name Return t
+		Next
+		If _super Return _super.FindGlobal( name )
+	End Method
+
+	Rem
+	bbdoc: Find a function by name
+	about: Searches type heirarchy for function called @name
+	endrem
+	Method FindFunction:TFunction(name:String)
+		name = name.ToLower()
+		For Local t:TFunction = EachIn _functions
+			If t.Name().ToLower() = name Return t
+		Next
+		If _super Return _super.FindFunction(name)
 	End Method
 	
 	Rem
@@ -793,7 +1611,20 @@ Type TTypeId
 		Next
 		If _super Return _super.FindMethod( name )
 	End Method
-	
+
+	Rem
+	bbdoc: Enumerate all constants
+	about: Returns a list of all constants in type hierarchy
+	End Rem	
+	Method EnumConstants:TList( list:TList=Null )
+		If Not list list=New TList
+		If _super _super.EnumConstants list
+		For Local t:TConstant=EachIn _consts
+			list.AddLast t
+		Next
+		Return list
+	End Method
+
 	Rem
 	bbdoc: Enumerate all fields
 	about: Returns a list of all fields in type hierarchy
@@ -804,6 +1635,47 @@ Type TTypeId
 		For Local t:TField=EachIn _fields
 			list.AddLast t
 		Next
+		Return list
+	End Method
+
+	Rem
+	bbdoc: Enumerate all globals
+	about: Returns a list of all globals in type hierarchy
+	End Rem	
+	Method EnumGlobals:TList( list:TList=Null )
+		If Not list list=New TList
+		If _super _super.EnumGlobals list
+		For Local t:TField=EachIn _globals
+			list.AddLast t
+		Next
+		Return list
+	End Method
+
+	Rem
+	bbdoc: Enumerate all functions
+	about: Returns a list of all functions in type hierarchy
+	End Rem
+	Method EnumFunctions:TList( list:TList=Null )
+		Function compareFunction:Int( a:TFunction, b:TFunction)
+			Return a.Name().Compare(b.Name())
+		EndFunction
+
+		If Not list list=New TList
+		If _super And _super <> Self Then _super.EnumFunctions list
+		For Local t:TFunction=EachIn _functions
+			list.AddLast t
+		Next
+		
+		' remove overridden functions
+		list.Sort( True, compareFunction)
+		Local prev:TFunction
+		For Local t:TFunction = EachIn list
+			If prev Then				
+				If (t.Name().Compare(prev.Name())) = 0 Then list.Remove(prev)
+			EndIf
+			prev = t
+		Next
+
 		Return list
 	End Method
 	
@@ -880,6 +1752,44 @@ Type TTypeId
 			' TODO
 			name=name[..name.length-2]
 			Return TTypeId( _nameMap.ValueForKey( name.ToLower() ) ).ArrayType()
+		' pointers
+		ElseIf name.EndsWith( "Ptr" )
+			name=name[..name.length-4].Trim()
+			If Not name Then Return Null
+			Local baseType:TTypeId = ForName( name )
+			If baseType Then
+				' check for valid pointer base types
+				Select baseType
+					Case ByteTypeId, ShortTypeId, IntTypeId, LongTypeId, FloatTypeId, DoubleTypeId
+						Return baseType.PointerType()
+					Default
+						If baseType.ExtendsType(PointerTypeId) Then Return baseType.PointerType()
+				EndSelect
+			EndIf
+			Return Null
+		' function pointers
+		ElseIf name.EndsWith( ")" )
+			' check if its in the table already
+			Local t:TTypeId = TTypeId( _nameMap.ValueForKey( name.ToLower() ) )
+			If t Then Return t
+			Local i:Int = name.Find("(")
+			Local ret:TTypeId = ForName( name[..i].Trim())
+			Local typs:TTypeId[]
+			If ret Then
+				Local params:String = name[i+1..name.Length-1].Trim()
+				If params Then
+					Local args:String[] = params.Split(",")
+					If args.Length >= 1 And args[0] Then
+						typs = New TTypeId[args.Length]
+						For Local i:Int = 0 Until args.Length
+							typs[i] = ForName(args[i].Trim())
+							If Not typs[i] Then typs[i] = ObjectTypeId
+						Next
+					EndIf
+				EndIf
+				ret._functionType = Null
+				Return ret.FunctionType(typs)
+			EndIf
 		Else
 			Return TTypeId( _nameMap.ValueForKey( name.ToLower() ) )
 		EndIf
@@ -918,7 +1828,10 @@ Type TTypeId
 		_size=size
 		_class=class
 		_super=supor
+		_consts=New TList
 		_fields=New TList
+		_globals=New TList
+		_functions=New TList
 		_methods=New TList
 		_nameMap.Insert _name.ToLower(),Self
 		If class _classMap.Insert New TClass.SetClass( class ),Self
@@ -968,7 +1881,10 @@ Type TTypeId
 	
 	Method _Resolve()
 		If _fields Or Not _class Return
+		_consts=New TList
 		_fields=New TList
+		_globals=New TList
+		_functions=New TList
 		_methods=New TList
 ?Not x64
 		_super=TTypeId( _classMap.ValueForKey( New TClass.SetClass( (Int Ptr _class)[0] ) ) )
@@ -997,10 +1913,22 @@ Type TTypeId
 			EndIf
 
 			Select p[0]
+			Case 1	'const
+				Local tt:TTypeId = TypeIdFortag(ty)
+				If tt Then
+?Not x64
+					_consts.AddLast New TConstant.Init( id, tt, meta, Int Ptr(p[3]))
+?x64
+					_consts.AddLast New TConstant.Init( id, tt, meta, Long Ptr(p[3]))
+?
+				EndIf
 			Case 3	'field
 				Local typeId:TTypeId=TypeIdForTag( ty )
 				If typeId _fields.AddLast New TField.Init( id,typeId,meta,p[3] )
-			Case 6	'method
+			Case 4	'global
+				Local typeId:TTypeId=TypeIdForTag( ty )
+				If typeId _globals.AddLast New TGlobal.Init( id,typeId,meta,p[3] )
+			Case 6, 7	'method/function
 				Local t$[]=ty.Split( ")" )
 				Local retType:TTypeId=TypeIdForTag( t[1] )
 				If retType
@@ -1034,7 +1962,11 @@ Type TTypeId
 						Next
 					EndIf
 					If retType
-						_methods.AddLast New TMethod.Init( id,retType,meta,Self,Byte Ptr p[3],argTypes )
+						If p[0] = 6 Then ' method
+							_methods.AddLast New TMethod.Init(id, retType, meta, Self, Byte Ptr p[3], argTypes)
+						Else ' function
+							_functions.AddLast New TFunction.Init(id, retType, meta, Self, Byte Ptr p[3], argTypes)
+						End If
 					EndIf
 				EndIf
 			End Select
@@ -1046,13 +1978,22 @@ Type TTypeId
 	Field _meta$
 	Field _class:Byte Ptr
 	Field _size=4
+	Field _consts:TList
 	Field _fields:TList
+	Field _globals:TList
+	Field _functions:TList
 	Field _methods:TList
 	Field _super:TTypeId
 	Field _derived:TList
 	Field _arrayType:TTypeId
 	Field _elementType:TTypeId
 	Field _typeTag:Byte Ptr
+	
+	Field _pointerType:TTypeId
+	
+	Field _functionType:TTypeId
+	Field _argTypes:TTypeId[]
+	Field _retType:TTypeId
 	
 	Global _count,_nameMap:TMap=New TMap,_classMap:TMap=New TMap
 	
