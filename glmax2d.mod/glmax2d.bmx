@@ -33,7 +33,7 @@ ModuleInfo "History: Ripped out a bunch of dead code"
 ModuleInfo "History: 1.05 Release"
 ModuleInfo "History: Added checks to prevent invalid textures deletes"
 
-?Not linuxarm
+?Not opengles
 
 Import BRL.Max2D
 Import BRL.GLGraphics

@@ -3,6 +3,8 @@
 
 //#define DEBUG_THREADS
 
+#ifndef __EMSCRIPTEN__
+
 //***** Common *****
 
 int _bbNeedsLock;
@@ -444,3 +446,5 @@ int bbAtomicAdd( volatile int *p,int incr ){
 }
 
 #endif
+
+#endif // __EMSCRIPTEN__
