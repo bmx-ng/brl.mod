@@ -187,9 +187,11 @@ End Function
 
 Function _CallFunction:Object( p:Byte Ptr,typeId:TTypeId,args:Object[],argTypes:TTypeId[] )
 	Local q:Byte Ptr[10]
-	For Local i=0 Until args.length
-		_Push( Varptr q[i],argTypes[i],args[i] )
-	Next
+	If args Then
+		For Local i=0 Until args.length
+			_Push( Varptr q[i],argTypes[i],args[i] )
+		Next
+	End If
 
 	Select typeId
 	Case ByteTypeId,ShortTypeId,IntTypeId
@@ -468,10 +470,12 @@ Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],
 	'bbRefPushObject sp,obj
 	'sp:+4
 	'If typeId=LongTypeId sp:+8
-	For Local i=0 Until args.length
-		'If Int Ptr(sp)>=Int Ptr(q)+8 Throw "ERROR"
-		_Push( Varptr q[i],argTypes[i],args[i] )
-	Next
+	If args Then
+		For Local i=0 Until args.length
+			'If Int Ptr(sp)>=Int Ptr(q)+8 Throw "ERROR"
+			_Push( Varptr q[i],argTypes[i],args[i] )
+		Next
+	End If
 	'If Int Ptr(sp)>Int Ptr(q)+8 Throw "ERROR"
 	Select typeId
 	Case ByteTypeId,ShortTypeId,IntTypeId
@@ -1357,7 +1361,7 @@ Type TMethod Extends TMember
 	Rem
 	bbdoc: Invoke method
 	End Rem
-	Method Invoke:Object( obj:Object,args:Object[] )
+	Method Invoke:Object( obj:Object,args:Object[] = Null)
 		Return _CallMethod( _ref,_typeId,obj,args,_argTypes )
 	End Method
 	
