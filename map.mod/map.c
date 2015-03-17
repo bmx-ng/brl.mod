@@ -23,8 +23,9 @@ void bmx_map_intmap_clear(struct tree_root ** root) {
 	struct intmap_node *node;
 	struct intmap_node *tmp;
 	tree_for_each_entry_safe(node, tmp, *root, link) {
+		BBRELEASE(node->value);
 		tree_del(&node->link, root);
-		GC_FREE(node);
+		free(node);
 	}
 }
 
@@ -33,17 +34,19 @@ int bmx_map_intmap_isempty(struct tree_root ** root) {
 }
 
 void bmx_map_intmap_insert( int key, BBObject *value, struct tree_root ** root ) {
-	struct intmap_node * node = (struct intmap_node *)GC_MALLOC(sizeof(struct intmap_node));
+	struct intmap_node * node = (struct intmap_node *)malloc(sizeof(struct intmap_node));
 	node->key = key;
 	node->value = value;
+	BBRETAIN(value);
 	
 	struct intmap_node * old_node = (struct intmap_node *)tree_map(&node->link, compare_intmap_nodes, root);
 
 	if (&node->link != &old_node->link) {
+		BBRELEASE(old_node->value);
 		// key already exists. Store the value in this node.
 		old_node->value = value;
 		// delete the new node, since we don't need it
-		GC_FREE(node);
+		free(node);
 	}
 }
 
@@ -63,7 +66,7 @@ BBObject * bmx_map_intmap_valueforkey(int key, struct tree_root ** root) {
 	struct intmap_node node;
 	node.key = key;
 	
-	struct intmap_node * found = (struct intmap_node *)tree_map(&node.link, compare_intmap_nodes, root);
+	struct intmap_node * found = (struct intmap_node *)tree_search(&node, compare_intmap_nodes, *root);
 	
 	if (found) {
 		return found->value;
@@ -79,8 +82,9 @@ int bmx_map_intmap_remove(int key, struct tree_root ** root) {
 	struct intmap_node * found = (struct intmap_node *)tree_search(&node, compare_intmap_nodes, *root);
 	
 	if (found) {
+		BBRELEASE(found->value);
 		tree_del(&found->link, root);
-		GC_FREE(found);
+		free(found);
 		return 1;
 	} else {
 		return 0;
@@ -143,8 +147,9 @@ void bmx_map_ptrmap_clear(struct tree_root ** root) {
 	struct ptrmap_node *node;
 	struct ptrmap_node *tmp;
 	tree_for_each_entry_safe(node, tmp, *root, link) {
+		BBRELEASE(node->value);
 		tree_del(&node->link, root);
-		GC_FREE(node);
+		free(node);
 	}
 }
 
@@ -153,17 +158,19 @@ int bmx_map_ptrmap_isempty(struct tree_root ** root) {
 }
 
 void bmx_map_ptrmap_insert( void * key, BBObject *value, struct tree_root ** root ) {
-	struct ptrmap_node * node = (struct ptrmap_node *)GC_MALLOC(sizeof(struct ptrmap_node));
+	struct ptrmap_node * node = (struct ptrmap_node *)malloc(sizeof(struct ptrmap_node));
 	node->key = key;
 	node->value = value;
+	BBRETAIN(value);
 	
 	struct ptrmap_node * old_node = (struct ptrmap_node *)tree_map(&node->link, compare_ptrmap_nodes, root);
 
 	if (&node->link != &old_node->link) {
+		BBRELEASE(old_node->value);
 		// key already exists. Store the value in this node.
 		old_node->value = value;
 		// delete the new node, since we don't need it
-		GC_FREE(node);
+		free(node);
 	}
 }
 
@@ -199,8 +206,9 @@ int bmx_map_ptrmap_remove(void * key, struct tree_root ** root) {
 	struct ptrmap_node * found = (struct ptrmap_node *)tree_search(&node, compare_ptrmap_nodes, *root);
 	
 	if (found) {
+		BBRELEASE(found->value);
 		tree_del(&found->link, root);
-		GC_FREE(found);
+		free(found);
 		return 1;
 	} else {
 		return 0;
