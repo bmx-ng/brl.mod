@@ -43,6 +43,7 @@ Function bbGCValidate:Int( mem:Byte Ptr ) = "bbGCValidate"
 	Function bmx_debugger_DebugDeclKind:Int( decl:Int Ptr )
 	Function bmx_debugger_DebugDeclNext:Byte Ptr( decl:Int Ptr )
 	Function bmx_debugger_DebugDecl_VarAddress:Byte Ptr( decl:Int Ptr )
+	Function bmx_debugger_DebugDecl_ConstValue:String( decl:Int Ptr )
 	Function bmx_debugger_DebugDecl_FieldOffset:Byte Ptr(decl:Int Ptr, inst:Byte Ptr)
 	Function bmx_debugger_DebugDecl_StringFromAddress:String( addr:Byte Ptr )
 	Function bmx_debugger_DebugDeclTypeChar:Int( decl:Int Ptr )
@@ -263,9 +264,8 @@ End Function
 Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 
 	If bmx_debugger_DebugDeclKind(decl)=DEBUGDECLKIND_CONST
-		Local p:Byte Ptr=Byte Ptr decl[DEBUGDECL_ADDR]
-		Return DebugEscapeString(String.FromShorts( Short Ptr(p+12),(Int Ptr (p+8))[0] )) ' TODO
-	EndIf
+		Return DebugEscapeString(bmx_debugger_DebugDecl_ConstValue(decl))
+	End If
 
 	Local p:Byte Ptr
 	Select bmx_debugger_DebugDeclKind(decl)

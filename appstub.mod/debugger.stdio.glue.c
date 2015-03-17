@@ -37,6 +37,10 @@ void * bmx_debugger_DebugDecl_VarAddress( struct BBDebugDecl * decl ) {
 	return decl->var_address;
 }
 
+BBString * bmx_debugger_DebugDecl_ConstValue(struct BBDebugDecl * decl) {
+	return decl->const_value;
+}
+
 void * bmx_debugger_DebugDecl_FieldOffset(struct BBDebugDecl * decl, void * inst) {
 	return ((char *)inst) + decl->field_offset;
 }
