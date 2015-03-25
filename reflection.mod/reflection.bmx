@@ -61,6 +61,7 @@ Function bbRefGetObjectClass:Byte Ptr( obj:Object )
 Function bbRefGetSuperClass:Byte Ptr( class:Byte Ptr )
 
 Function bbStringFromRef:String( ref:Byte Ptr )
+Function bbRefArrayNull:Object()
 
 End Extern
 
@@ -180,6 +181,10 @@ Function _Assign( p:Byte Ptr,typeId:TTypeId,value:Object )
 				t=bbRefGetSuperClass( t )
 			Wend
 			If Not t Throw "ERROR"
+		Else
+			If typeId.Name().Endswith("]") Then
+				value = bbRefArrayNull()
+			EndIf
 		EndIf
 		bbRefAssignObject p,value
 	End Select
