@@ -82,4 +82,8 @@ BBString * bbStringFromRef(void * ref) {
 	return (BBString*)ref;
 }
 
+BBArray * bbRefArrayNull() {
+	return &bbEmptyArray;
+}
+
 }
