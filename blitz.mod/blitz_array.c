@@ -303,7 +303,7 @@ BBArray *bbArrayDimensions( BBArray *arr ){
 }
 
 void * bbArrayIndex( BBArray * arr, int offset, int index) {
-	if (index >= arr->scales[0]) brl_blitz_ArrayBoundsError();
+	if (index < 0 || index >= arr->scales[0]) brl_blitz_ArrayBoundsError();
 	return BBARRAYDATA(arr, offset);
 }
 
