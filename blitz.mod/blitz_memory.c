@@ -25,8 +25,10 @@ void bbMemFree( void *p ){
 void *bbMemExtend( void *mem,size_t size,size_t new_size ){
 	void *p;
 	p=bbMemAlloc( new_size );
-	bbMemCopy( p,mem,size );
-	bbMemFree( mem );
+	if (mem) {
+		bbMemCopy( p,mem,size );
+		bbMemFree( mem );
+	}
 	return p;
 }
 
