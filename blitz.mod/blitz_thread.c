@@ -1,6 +1,8 @@
 
 #include "blitz.h"
 
+#include "bdwgc/libatomic_ops/src/atomic_ops.h"
+
 //#define DEBUG_THREADS
 
 #ifndef __EMSCRIPTEN__
@@ -25,7 +27,7 @@ static void flushDeadThreads(){
 #ifdef _WIN32
 			CloseHandle( t->handle );
 #endif
-			free( t );
+			GC_FREE( t );
 		}else{
 			p=&t->succ;
 		}
@@ -47,7 +49,7 @@ static void removeThread( BBThread *thread ){
 #ifdef _WIN32
 				CloseHandle( t->handle );
 #endif
-				free( t );
+				GC_FREE( t );
 			}else{
 				t->succ=deadThreads;
 				deadThreads=t;
@@ -98,7 +100,7 @@ void bbThreadStartup(){
 
 	curThreadTls=TlsAlloc();
 
-	BBThread *thread=malloc( sizeof( BBThread ) );
+	BBThread *thread=GC_MALLOC( sizeof( BBThread ) );
 	
 	thread->proc=0;
 	memset( thread->data,0,sizeof(thread->data) );
@@ -117,7 +119,7 @@ void bbThreadStartup(){
 }
 
 BBThread *bbThreadCreate( BBThreadProc proc,BBObject *data ){
-	BBThread *thread=malloc( sizeof( BBThread ) );
+	BBThread *thread=GC_MALLOC( sizeof( BBThread ) );
 	
 	thread->proc=proc;
 	memset( thread->data,0,sizeof(thread->data) );
@@ -242,7 +244,7 @@ void bbThreadStartup(){
 		
 	if( sigaction( SIGUSR2,&act,0 )<0 ) exit(-1);
 		
-	BBThread *thread=malloc( sizeof( BBThread ) );
+	BBThread *thread=GC_MALLOC( sizeof( BBThread ) );
 	memset( thread->data,0,sizeof(thread->data) );
 	
 	thread->proc=0;
@@ -293,7 +295,7 @@ static void *threadProc( void *p ){
 }
 
 BBThread *bbThreadCreate( BBThreadProc proc,BBObject *data ){
-	BBThread *thread=malloc( sizeof( BBThread ) );
+	BBThread *thread=GC_MALLOC( sizeof( BBThread ) );
 	memset( thread->data,0,sizeof(thread->data) );
 	
 	thread->proc=proc;
@@ -311,7 +313,7 @@ BBThread *bbThreadCreate( BBThreadProc proc,BBObject *data ){
 		}
 		bb_sem_destroy( &thread->runsema );
 	}
-	free( thread );
+	GC_FREE( thread );
 	return 0;
 }
 
@@ -393,58 +395,13 @@ void _bbThreadUnlockThreads(){
 #endif
 
 //***** Atomic ops *****
-#if __ppc__
 
 int bbAtomicCAS( volatile int *addr,int old,int new_val ){
-	int oldval;
-	int result=0;
-
-	__asm__ __volatile__(
-		"1:lwarx %0,0,%2\n"   /* load and reserve              */
-		"cmpw %0, %4\n"      /* if load is not equal to 	*/
-		"bne 2f\n"            /*   old, fail			*/
-		"stwcx. %3,0,%2\n"    /* else store conditional         */
-		"bne- 1b\n"           /* retry if lost reservation      */
-		"li %1,1\n"	     /* result = 1;			*/
-		"2:\n"
-		: "=&r"(oldval), "=&r"(result)
-		: "r"(addr), "r"(new_val), "r"(old), "1"(result)
-		: "memory", "cc");
-
-	return result;
+	return AO_int_compare_and_swap(addr, old, new_val);
 }
 
 int bbAtomicAdd( volatile int *p,int incr ){
-	int old;
-	for(;;){
-		old=*p;
-		if( bbAtomicCAS( p,old,old+incr ) ) return old;
-	}
+	return AO_fetch_and_add((AO_t*)p, incr);
 }
-
-#else
-
-int bbAtomicCAS( volatile int *addr,int old,int new_val ){
-	char result;
-
-	__asm__ __volatile__(
-		"lock; cmpxchgl %3, %0; setz %1"
-		: "=m"(*addr), "=q"(result)
-		: "m"(*addr), "r" (new_val), "a"(old) : "memory");
-
-	return (int)result;
-}
-
-int bbAtomicAdd( volatile int *p,int incr ){
-	int result;
-
-	__asm__ __volatile__ ("lock; xaddl %0, %1" :
-			"=r" (result), "=m" (*p) : "0" (incr), "m" (*p)
-			: "memory");
-
-	return result;
-}
-
-#endif
 
 #endif // __EMSCRIPTEN__
