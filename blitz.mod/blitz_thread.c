@@ -397,7 +397,7 @@ void _bbThreadUnlockThreads(){
 //***** Atomic ops *****
 
 int bbAtomicCAS( volatile int *addr,int old,int new_val ){
-	return AO_int_compare_and_swap(addr, old, new_val);
+	return AO_compare_and_swap(addr, old, new_val);
 }
 
 int bbAtomicAdd( volatile int *p,int incr ){
