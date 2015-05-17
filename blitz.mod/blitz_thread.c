@@ -100,12 +100,11 @@ void bbThreadStartup(){
 
 	curThreadTls=TlsAlloc();
 
-	BBThread *thread=GC_MALLOC( sizeof( BBThread ) );
+	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
 	
 	thread->proc=0;
 	memset( thread->data,0,sizeof(thread->data) );
 	thread->detached=0;
-	thread->stackTop=bbGCStackTop;
 	thread->id=GetCurrentThreadId();
 	if( !DuplicateHandle( GetCurrentProcess(),GetCurrentThread(),GetCurrentProcess(),&thread->handle,0,FALSE,DUPLICATE_SAME_ACCESS ) ){
 		exit( -1 );
@@ -119,7 +118,7 @@ void bbThreadStartup(){
 }
 
 BBThread *bbThreadCreate( BBThreadProc proc,BBObject *data ){
-	BBThread *thread=GC_MALLOC( sizeof( BBThread ) );
+	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
 	
 	thread->proc=proc;
 	memset( thread->data,0,sizeof(thread->data) );
@@ -172,28 +171,6 @@ int bbThreadSuspend( BBThread *thread ){
 int bbThreadResume( BBThread *thread ){
 	return ResumeThread( thread->handle );
 }
-
-BBThread *_bbThreadLockThreads(){
-	BBThread *curThread=bbThreadGetCurrent();
-	BBThread *t;
-	for( t=threads;t;t=t->succ ){
-		if( t!=curThread ){
-			SuspendThread( t->handle );
-		}
-	}
-	return threads;
-}
-
-void _bbThreadUnlockThreads(){
-	BBThread *curThread=bbThreadGetCurrent();
-	BBThread *t;
-	for( t=threads;t;t=t->succ ){
-		if( t!=curThread ){
-			ResumeThread( t->handle );
-		}
-	}
-}
-
 //***** POSIX threads *****
 #else
 
@@ -211,23 +188,6 @@ pthread_mutexattr_t _bb_mutexattr;
 static BBThread *threads;
 static pthread_key_t curThreadTls;
 
-static void suspendSigHandler( int sig ){//,siginfo_t *info,ucontext_t *ctx ){
-	BBThread *thread=pthread_getspecific( curThreadTls );
-	
-#ifdef DEBUG_THREADS
-	printf( "In suspendSigHandler! thread=%p locked_sp=%p\n",thread,thread->locked_sp );fflush( stdout );
-#endif
-	
-	bb_sem_post( &thread->acksema );
-	
-	//wait for resume - apparently very naughty!
-	bb_sem_wait( &thread->runsema );
-
-#ifdef DEBUG_THREADS	
-	printf( "Got resume!\n" );fflush( stdout );
-#endif
-}
-
 void bbThreadStartup(){
 
 	if( pthread_mutexattr_init( &_bb_mutexattr )<0 ) exit(-1);
@@ -236,25 +196,14 @@ void bbThreadStartup(){
 	if( pthread_key_create( &curThreadTls,0 )<0 ) exit(-1);
 
 	if( bb_mutex_init( &_bbLock )<0 ) exit(-1);
-	
-	struct sigaction act;
-	memset( &act,0,sizeof(act) );
-	act.sa_handler=suspendSigHandler;
-	act.sa_flags=SA_RESTART;
 		
-	if( sigaction( SIGUSR2,&act,0 )<0 ) exit(-1);
-		
-	BBThread *thread=GC_MALLOC( sizeof( BBThread ) );
+	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
 	memset( thread->data,0,sizeof(thread->data) );
 	
 	thread->proc=0;
 	thread->detached=0;
-	thread->suspended=0;
 	thread->handle=pthread_self();
-	if( !bb_sem_init( &thread->runsema,0 ) ) exit(-1);
-	if( !bb_sem_init( &thread->acksema,0 ) ) exit(-1);
 
-	thread->stackTop=bbGCStackTop;
 	pthread_setspecific( curThreadTls,thread );
 	
 	thread->succ=threads;
@@ -271,11 +220,8 @@ static void *threadProc( void *p ){
 	addThread( thread );
 	BB_UNLOCK
 	
-	bb_sem_post( &thread->acksema );
-	bb_sem_wait( &thread->runsema );
-	
 #ifdef DEBUG_THREADS
-	printf( "Thread %p added, stackTop=%p\n",thread,thread->stackTop );fflush( stdout );
+	printf( "Thread %p added\n",thread );fflush( stdout );
 #endif
 	
 	void *ret=thread->proc( thread->data[0] );
@@ -283,9 +229,6 @@ static void *threadProc( void *p ){
 	BB_LOCK
 	removeThread( thread );
 	BB_UNLOCK
-	
-	bb_sem_destroy( &thread->runsema );
-	bb_sem_destroy( &thread->acksema );
 	
 #ifdef DEBUG_THREADS
 	printf( "Thread %p removed\n",thread );fflush( stdout );
@@ -295,23 +238,15 @@ static void *threadProc( void *p ){
 }
 
 BBThread *bbThreadCreate( BBThreadProc proc,BBObject *data ){
-	BBThread *thread=GC_MALLOC( sizeof( BBThread ) );
+	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
 	memset( thread->data,0,sizeof(thread->data) );
 	
 	thread->proc=proc;
 	thread->data[0]=data;
 	thread->detached=0;
-	thread->suspended=1;
-	if( bb_sem_init( &thread->runsema,0 ) ){
-		if( bb_sem_init( &thread->acksema,0 ) ){
-			if( pthread_create( &thread->handle,0,threadProc,thread )>=0 ){
-				bb_sem_wait( &thread->acksema );
-				_bbNeedsLock=1;
-				return thread;
-			}
-			bb_sem_destroy( &thread->acksema );
-		}
-		bb_sem_destroy( &thread->runsema );
+	if( pthread_create( &thread->handle,0,threadProc,thread )==0 ){
+		_bbNeedsLock=1;
+		return thread;
 	}
 	GC_FREE( thread );
 	return 0;
@@ -337,61 +272,9 @@ BBThread *bbThreadGetCurrent(){
 	return pthread_getspecific( curThreadTls );
 }
 
-int bbThreadSuspend( BBThread *thread ){
-	BB_LOCK
-	
-	int n=thread->suspended++;
-	
-	if( n==0 ){
-		pthread_kill( thread->handle,SIGUSR2 );
-		bb_sem_wait( &thread->acksema );
-	}
-
-	BB_UNLOCK
-	
-	return n;
-}
-
 int bbThreadResume( BBThread *thread ){
-	BB_LOCK
-	
-	int n=thread->suspended--;
-	
-	if( n==1 ){
-		bb_sem_post( &thread->runsema );
-	}
-	
-	BB_UNLOCK
-	
-	return n;
+	return 0;
 }
-
-BBThread *_bbThreadLockThreads(){
-	BBThread *curThread=bbThreadGetCurrent();
-	BBThread *t;
-	for( t=threads;t;t=t->succ ){
-		if( t!=curThread ){
-			if( !t->suspended++ ){
-				pthread_kill( t->handle,SIGUSR2 );
-				bb_sem_wait( &t->acksema );
-			}
-		}
-	}
-	return threads;
-}
-
-void _bbThreadUnlockThreads(){
-	BBThread *curThread=bbThreadGetCurrent();
-	BBThread *t;
-	for( t=threads;t;t=t->succ ){
-		if( t!=curThread ){
-			if( !--t->suspended ){
-				bb_sem_post( &t->runsema );
-			}
-		}
-	}
-}
-
 #endif
 
 //***** Atomic ops *****

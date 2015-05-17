@@ -82,17 +82,12 @@ struct BBThread{
 	BBThreadProc proc;
 	void *data[32];
 	int detached;
-	void *stackTop;
-	void *locked_sp;
 	int locked_regs[BB_THREADREGS];
 #ifdef _WIN32
 	HANDLE handle;
 	DWORD id;
 #else
 	pthread_t handle;
-	int suspended;
-	bb_sem_t runsema;
-	bb_sem_t acksema;
 #endif
 };
 
@@ -105,16 +100,11 @@ BBObject*		bbThreadWait( BBThread *thread );
 BBThread*		bbThreadGetMain();
 BBThread*		bbThreadGetCurrent();
 
-int			bbThreadSuspend( BBThread *thread );
 int			bbThreadResume( BBThread *thread );
 
 int			bbThreadAllocData();
 void			bbThreadSetData( int index,BBObject *data );
 BBObject*		bbThreadGetData( int index );
-
-//These MUST be inside a BB_LOCK/BB_UNLOCK
-BBThread*		_bbThreadLockThreads();
-void			_bbThreadUnlockThreads();
 
 int			bbAtomicCAS( volatile int *target,int oldVal,int newVal );
 int			bbAtomicAdd( volatile int *target,int incr );
