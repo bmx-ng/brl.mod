@@ -6,12 +6,14 @@ bbdoc: Events/Event queue
 End Rem
 Module BRL.EventQueue
 
-ModuleInfo "Version: 1.01"
-ModuleInfo "Author: Mark Sibly"
+ModuleInfo "Version: 1.02"
+ModuleInfo "Author: Mark Sibly, Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Reuse TEvent objects."
 ModuleInfo "History: 1.01 Release"
 ModuleInfo "History: Fixed CurrentEvent being retained in queue array"
 ModuleInfo "History: 1.00 Release"
@@ -87,7 +89,6 @@ Function PollEvent()
 		EndIf
 	EndIf
 	CurrentEvent=queue[queue_get & QUEUEMASK]
-	queue[queue_get & QUEUEMASK]=Null
 	queue_get:+1
 	Return CurrentEvent.id
 End Function
@@ -107,7 +108,6 @@ Function WaitEvent()
 		WaitSystem
 	Wend
 	CurrentEvent=queue[queue_get & QUEUEMASK]
-	queue[queue_get & QUEUEMASK]=Null
 	queue_get:+1
 	Return CurrentEvent.id
 End Function
@@ -139,7 +139,18 @@ Function PostEvent( event:TEvent,update=False )
 		Wend
 	EndIf
 	If queue_put-queue_get=QUEUESIZE Return
-	queue[queue_put & QUEUEMASK]=event
+	Local q:TEvent = queue[queue_put & QUEUEMASK]
+	If Not q Then
+		q = New TEvent
+		queue[queue_put & QUEUEMASK] = q
+	End If
+	q.id = event.id
+	q.source = event.source
+	q.data=event.data
+	q.mods=event.mods
+	q.x=event.x
+	q.y=event.y
+	q.extra=event.extra
 	queue_put:+1
 End Function
 

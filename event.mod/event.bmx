@@ -6,12 +6,15 @@ bbdoc: Events/Events
 End Rem
 Module BRL.Event
 
-ModuleInfo "Version: 1.03"
-ModuleInfo "Author: Mark Sibly"
+ModuleInfo "Version: 1.04"
+ModuleInfo "Author: Mark Sibly, Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Added event pool."
+ModuleInfo "History: Added EVENT_TOUCHDOWN, EVENT_TOUCHUP and EVENT_TOUCHMOVE."
 ModuleInfo "History: 1.03 Release"
 ModuleInfo "History: Added missing EVENT_HOTKEY ToString case"
 ModuleInfo "History: Added process events"
@@ -21,6 +24,18 @@ ModuleInfo "History: 1.01 Release"
 ModuleInfo "History: Added EVENT_KEYREPEAT"
 
 Import BRL.Hook
+Import BRL.LinkedList
+?threaded
+Import BRL.Threads
+?
+Private
+
+Global _eventPool:TList = New TList
+?threaded
+Global _eventLock:TMutex = TMutex.Create()
+?
+
+Public
 
 Rem
 bbdoc: Hook id for emitted events
@@ -80,6 +95,13 @@ Type TEvent
 	End Rem
 	Method Emit()
 		RunHooks EmitEventHook,Self
+?threaded
+		_eventLock.Lock()
+?
+		_eventPool.AddLast Self
+?threaded
+		_eventLock.Unlock()
+?
 	End Method
 
 	Rem
@@ -104,7 +126,18 @@ Type TEvent
 	returns: A new event object
 	End Rem
 	Function Create:TEvent( id,source:Object=Null,data=0,mods=0,x=0,y=0,extra:Object=Null )
-		Local t:TEvent=New TEvent
+		Local t:TEvent
+?threaded
+		_eventLock.Lock()
+?
+		If Not _eventPool.IsEmpty() Then
+			t = TEvent(_eventPool.RemoveFirst())
+		Else
+			t = New TEvent
+		End If
+?threaded
+		_eventLock.Unlock()
+?
 		t.id=id
 		t.source=source
 		t.data=data
