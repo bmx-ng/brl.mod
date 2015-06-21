@@ -190,12 +190,12 @@ BBObject * bmx_map_ptrmap_valueforkey(void * key, struct tree_root ** root) {
 	struct ptrmap_node node;
 	node.key = key;
 	
-	struct ptrmap_node * found = (struct ptrmap_node *)tree_map(&node.link, compare_ptrmap_nodes, root);
+	struct ptrmap_node * found = (struct ptrmap_node *) tree_search(&node, compare_ptrmap_nodes, *root);
 	
 	if (found) {
 		return found->value;
 	}
-	
+
 	return &bbNullObject;
 }
 
