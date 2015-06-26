@@ -8,12 +8,15 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.18"
+ModuleInfo "Version: 1.19"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.19"
+ModuleInfo "History: Added interfaces."
+ModuleInfo "History: Added Interface and EndInterface keyword docs"
 ModuleInfo "History: 1.18"
 ModuleInfo "History: WriteStdout and WriteStderr now write UTF-8"
 ModuleInfo "History: 1.17 Release"
@@ -927,5 +930,15 @@ End Rem
 Rem
 bbdoc: Create a string of length 1 with a character code
 keyword: "Chr"
+End Rem
+
+Rem
+bbdoc: Begin a user defined Interface declaration
+keyword: "Interface"
+End Rem
+
+Rem
+bbdoc: End a user defined Interface declaration
+keyword: "EndInterface"
 End Rem
 
