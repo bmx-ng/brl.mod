@@ -22,9 +22,9 @@ BBClass bbArrayClass={
 	bbObjectToString,
 	bbObjectCompare,
 	bbObjectSendMessage,
-	bbObjectReserved,
-	bbObjectReserved,
-	bbObjectReserved,
+	0,
+	0,
+	0,
 	
 	bbArraySort,
 	bbArrayDimensions

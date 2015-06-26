@@ -24,9 +24,9 @@ BBClass bbStringClass={
 	(BBString*(*)(BBObject*))bbStringToString,
 	(int(*)(BBObject*,BBObject*))bbStringCompare,
 	bbObjectSendMessage,
-	bbObjectReserved,
-	bbObjectReserved,
-	bbObjectReserved,
+	0,
+	0,
+	0,
 	
 	bbStringFind,
 	bbStringFindLast,
