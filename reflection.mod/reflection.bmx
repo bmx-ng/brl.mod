@@ -58,26 +58,12 @@ Function bbRefInitObject( p:Byte Ptr,obj:Object )
 Function bbRefAssignObject( p:Byte Ptr,obj:Object )
 
 Function bbRefGetObjectClass:Byte Ptr( obj:Object )
-Function bbRefGetSuperClass:Byte Ptr( class:Byte Ptr )
 
+Function bbRefGetSuperClass:Byte Ptr( class:Byte Ptr )
 Function bbStringFromRef:String( ref:Byte Ptr )
 Function bbRefArrayNull:Object()
 
 End Extern
-
-Type TClass
-
-	Method Compare( with:Object )
-		Return _class-TClass( with )._class
-	End Method
-	
-	Method SetClass:TClass( class:Byte Ptr )
-		_class=class
-		Return Self
-	End Method
-	
-	Field _class:Byte Ptr
-End Type
 
 Function _Get:Object( p:Byte Ptr,typeId:TTypeId )
 	Select typeId
@@ -1076,7 +1062,11 @@ Type TConstant Extends TMember
 	bbdoc: Get constant value as @{Byte Ptr}
 	EndRem
 	Method GetPointer:Byte Ptr()
+?Not x64
 		Return Byte Ptr GetString().ToInt()
+?x64
+		Return Byte Ptr GetString().ToLong()
+?
 	EndMethod
 
 ?Not x64
@@ -1300,11 +1290,6 @@ Type TFunction Extends TMember
 		_selfTypeId=selfTypeId		
 		_ref=ref
 		_argTypes=argTypes
-'		If _index >= 65536 Then
-'			_fptr = Byte Ptr(_index)
-'		Else
-'			_fptr = Null
-'		EndIf
 		Return Self
 	End Method
 
@@ -1814,7 +1799,7 @@ Type TTypeId
 			If Not bbRefArrayLength( obj ) Return ArrayTypeId
 			Return TypeIdForTag( bbRefArrayTypeTag( obj ) ).ArrayType()
 		Else
-			Return TTypeId( _classMap.ValueForKey( New TClass.SetClass( class ) ) )
+			Return TTypeId( _classMap.ValueForKey( class ) )
 		EndIf
 	End Function
 	
@@ -1843,7 +1828,7 @@ Type TTypeId
 		_functions=New TList
 		_methods=New TList
 		_nameMap.Insert _name.ToLower(),Self
-		If class _classMap.Insert New TClass.SetClass( class ),Self
+		If class _classMap.Insert class,Self
 		Return Self
 	End Method
 	
@@ -1865,7 +1850,7 @@ Type TTypeId
 		_meta=meta
 		_class=class
 		_nameMap.Insert _name.ToLower(),Self
-		_classMap.Insert New TClass.SetClass( class ),Self
+		_classMap.Insert class,Self
 		Return Self
 	End Method
 	
@@ -1896,9 +1881,9 @@ Type TTypeId
 		_functions=New TList
 		_methods=New TList
 ?Not x64
-		_super=TTypeId( _classMap.ValueForKey( New TClass.SetClass( (Int Ptr _class)[0] ) ) )
+		_super=TTypeId( _classMap.ValueForKey( (Int Ptr _class)[0] ) )
 ?x64
-		_super=TTypeId( _classMap.ValueForKey( New TClass.SetClass( (Long Ptr _class)[0] ) ) )
+		_super=TTypeId( _classMap.ValueForKey( (Long Ptr _class)[0] ) )
 ?
 		If Not _super _super=ObjectTypeId
 		If Not _super._derived _super._derived=New TList
@@ -2004,6 +1989,6 @@ Type TTypeId
 	Field _argTypes:TTypeId[]
 	Field _retType:TTypeId
 	
-	Global _count,_nameMap:TMap=New TMap,_classMap:TMap=New TMap
+	Global _count,_nameMap:TMap=New TMap,_classMap:TPtrMap=New TPtrMap
 	
 End Type
