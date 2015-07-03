@@ -22,9 +22,9 @@ BBClass bbObjectClass={
 	bbObjectToString,
 	bbObjectCompare,
 	bbObjectSendMessage,
-	bbObjectReserved,
-	bbObjectReserved,
-	bbObjectReserved,
+	0,
+	0,
+	0,
 };
 
 BBObject bbNullObject={
@@ -111,4 +111,50 @@ void bbObjectRegisterType( BBClass *clas ){
 BBClass **bbObjectRegisteredTypes( int *count ){
 	*count=reg_put-reg_base;
 	return reg_base;
+}
+
+BBObject * bbInterfaceDowncast(BBOBJECT o, BBINTERFACE ifc) {
+	int i;
+
+	BBCLASS superclas = o->clas;
+
+	do {
+		BBCLASS clas = superclas;
+		superclas = clas->super;
+
+		BBINTERFACEOFFSETS offsets      = clas->ifc_offsets;
+		if (offsets) {
+			for (i = clas->ifc_size; i; i--) {
+				if (offsets->ifc == ifc) {
+					return o;
+				}
+				offsets++;
+			}
+		}
+	} while (superclas);
+
+	return &bbNullObject;
+}
+
+void * bbObjectInterface(BBOBJECT o, BBINTERFACE ifc) {
+	int i;
+
+	BBCLASS superclas = o->clas;
+
+	do {
+		BBCLASS clas = superclas;
+		superclas = clas->super;
+
+		BBINTERFACEOFFSETS offsets      = clas->ifc_offsets;
+		if (offsets) {
+			for (i = clas->ifc_size; i; i--) {
+				if (offsets->ifc == ifc) {
+					return (char*) clas->ifc_vtable + offsets->offset;
+				}
+				offsets++;
+			}
+		}
+	} while (superclas);
+
+	return &bbNullObject;
 }

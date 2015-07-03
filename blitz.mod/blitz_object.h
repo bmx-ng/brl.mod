@@ -27,10 +27,11 @@ struct BBClass{
 	BBString*	(*ToString)( BBObject *x );
 	int		(*Compare)( BBObject *x,BBObject *y );
 	BBObject*	(*SendMessage)( BBObject *m,BBObject *s );
-	void		(*_reserved1_)();
-	void		(*_reserved2_)();
-	void		(*_reserved3_)();
-	
+
+	BBINTERFACEOFFSETS ifc_offsets;
+	void * ifc_vtable;
+	int ifc_size;
+
 	void*	vfns[32];
 };
 
@@ -38,6 +39,15 @@ struct BBObject{
 	//extends BBGCMem
 	BBClass*	clas;
 	//int		refs;
+};
+
+struct BBInterface {
+	const char *name;
+};
+
+struct BBInterfaceOffsets {
+    BBINTERFACE ifc;
+    int offset;
 };
 
 extern	BBClass bbObjectClass;
@@ -59,6 +69,9 @@ BBObject*	bbObjectDowncast( BBObject *o,BBClass *t );
 
 void		bbObjectRegisterType( BBClass *clas );
 BBClass**	bbObjectRegisteredTypes( int *count );
+
+BBObject * bbInterfaceDowncast(BBOBJECT o, BBINTERFACE ifc);
+void * bbObjectInterface(BBOBJECT o, BBINTERFACE ifc);
 
 #ifdef __cplusplus
 }

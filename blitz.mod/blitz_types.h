@@ -20,6 +20,8 @@ typedef struct BBClass	BBClass;
 typedef struct BBObject	BBObject;
 typedef struct BBString	BBString;
 typedef struct BBArray	BBArray;
+typedef struct BBInterface BBInterface;
+typedef struct BBInterfaceOffsets BBInterfaceOffsets;
 
 typedef unsigned char	BBBYTE;
 typedef unsigned short	BBSHORT;
@@ -31,6 +33,8 @@ typedef BBClass*		BBCLASS;
 typedef BBObject*		BBOBJECT;
 typedef BBString*		BBSTRING;
 typedef BBArray*		BBARRAY;
+typedef BBInterface*	BBINTERFACE;
+typedef BBInterfaceOffsets * BBINTERFACEOFFSETS;
 
 extern const char *bbVoidTypeTag;	//"?"
 extern const char *bbByteTypeTag;	//"b"
