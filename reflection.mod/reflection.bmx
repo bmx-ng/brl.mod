@@ -6,12 +6,14 @@ bbdoc: BASIC/Reflection
 End Rem
 Module BRL.Reflection
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.04"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Added support for interfaces."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Added grable enhancements."
 ModuleInfo "History: Added support for globals."
@@ -32,8 +34,10 @@ Extern
 Function bbObjectNew:Object( class:Byte Ptr )
 ?Not x64
 Function bbObjectRegisteredTypes:Int Ptr( count Var )
+Function bbObjectRegisteredInterfaces:Int Ptr( count Var )
 ?x64
 Function bbObjectRegisteredTypes:Long Ptr( count Var )
+Function bbObjectRegisteredInterfaces:Long Ptr( count Var )
 ?
 
 Function bbArrayNew1D:Object( typeTag:Byte Ptr,length )
@@ -62,6 +66,11 @@ Function bbRefGetObjectClass:Byte Ptr( obj:Object )
 Function bbRefGetSuperClass:Byte Ptr( class:Byte Ptr )
 Function bbStringFromRef:String( ref:Byte Ptr )
 Function bbRefArrayNull:Object()
+
+Function bbInterfaceName:Byte Ptr(ifc:Byte Ptr)
+Function bbInterfaceClass:Byte Ptr(ifc:Byte Ptr)
+Function bbObjectImplementedCount:Int(class:Byte Ptr)
+Function bbObjectImplementedInterface:Byte Ptr(class:Byte Ptr, index:Int)
 
 End Extern
 
@@ -1503,7 +1512,15 @@ Type TTypeId
 	End Rem	
 	Method NewObject:Object()
 		If Not _class Throw "Unable to create new object"
+		If _interface Throw "Unable to create object from interface"
 		Return bbObjectNew( _class )
+	End Method
+	
+	Rem
+	bbdoc: Returns True if this TypeId is an interface.
+	End Rem
+	Method IsInterface:Int()
+		Return _interface <> Null
 	End Method
 	
 	Rem
@@ -1544,6 +1561,13 @@ Type TTypeId
 	End Rem
 	Method Methods:TList()
 		Return _methods
+	End Method
+	
+	Rem
+	bbdoc: Get list of implemented interfaces.
+	End Rem
+	Method Interfaces:TList()
+		Return _interfaces
 	End Method
 	
 	Rem
@@ -1815,6 +1839,18 @@ Type TTypeId
 		Return list
 	End Function
 
+	Rem
+	bbdoc: Gets a list of all interfaces
+	End Rem
+	Function EnumInterfaces:TList()
+		_Update
+		Local list:TList=New TList
+		For Local t:TTypeId=EachIn _interfaceMap.Values()
+			list.AddLast t
+		Next
+		Return list
+	End Function
+
 	'***** PRIVATE *****
 	
 	Method Init:TTypeId( name$,size,class:Byte Ptr=Null,supor:TTypeId=Null )
@@ -1853,6 +1889,23 @@ Type TTypeId
 		_classMap.Insert class,Self
 		Return Self
 	End Method
+
+	Method SetInterface:TTypeId( ifc:Byte Ptr )
+		Local name:String = String.FromCString(bbInterfaceName(ifc))
+		Local meta$
+		Local i=name.Find( "{" )
+		If i<>-1
+			meta=name[i+1..name.length-1]
+			name=name[..i]
+		EndIf
+		_name=name
+		_meta=meta
+		_interface=ifc
+		_class=bbInterfaceClass(ifc)
+		_nameMap.Insert _name.ToLower(),Self
+		_interfaceMap.Insert ifc,Self
+		Return Self
+	End Method
 	
 	Function _Update()
 		Local count:Int
@@ -1868,6 +1921,26 @@ Type TTypeId
 			list.AddLast ty
 		Next
 		_count=count
+		_UpdateInterfaces()
+		For Local t:TTypeId=EachIn list
+			t._Resolve
+		Next
+	End Function
+
+	Function _UpdateInterfaces()
+		Local count:Int
+?Not x64
+		Local p:Int Ptr Ptr=bbObjectRegisteredInterfaces( count )
+?x64
+		Local p:Long Ptr Ptr=bbObjectRegisteredInterfaces( count )
+?
+		If count=_icount Return
+		Local list:TList=New TList
+		For Local i=_icount Until count
+			Local ty:TTypeId=New TTypeId.SetInterface( p[i] )
+			list.AddLast ty
+		Next
+		_icount=count
 		For Local t:TTypeId=EachIn list
 			t._Resolve
 		Next
@@ -1880,11 +1953,15 @@ Type TTypeId
 		_globals=New TList
 		_functions=New TList
 		_methods=New TList
+		_interfaces=New TList
+		
+		If Not _interface Then
 ?Not x64
-		_super=TTypeId( _classMap.ValueForKey( (Int Ptr _class)[0] ) )
+			_super=TTypeId( _classMap.ValueForKey( (Int Ptr _class)[0] ) )
 ?x64
-		_super=TTypeId( _classMap.ValueForKey( (Long Ptr _class)[0] ) )
+			_super=TTypeId( _classMap.ValueForKey( (Long Ptr _class)[0] ) )
 ?
+		End If
 		If Not _super _super=ObjectTypeId
 		If Not _super._derived _super._derived=New TList
 		_super._derived.AddLast Self
@@ -1966,17 +2043,26 @@ Type TTypeId
 			End Select
 			p:+4
 		Wend
+		' implemented interfaces ?
+		Local imps:Int = bbObjectImplementedCount(_class)
+		If imps > 0 Then
+			For Local i:Int = 0 Until imps
+				_interfaces.AddLast(_interfaceMap.ValueForKey(bbObjectImplementedInterface(_class, i)))
+			Next
+		End If
 	End Method
 	
 	Field _name$
 	Field _meta$
 	Field _class:Byte Ptr
+	Field _interface:Byte Ptr
 	Field _size=4
 	Field _consts:TList
 	Field _fields:TList
 	Field _globals:TList
 	Field _functions:TList
 	Field _methods:TList
+	Field _interfaces:TList
 	Field _super:TTypeId
 	Field _derived:TList
 	Field _arrayType:TTypeId
@@ -1990,5 +2076,6 @@ Type TTypeId
 	Field _retType:TTypeId
 	
 	Global _count,_nameMap:TMap=New TMap,_classMap:TPtrMap=New TPtrMap
+	Global _icount:Int, _interfaceMap:TPtrMap=New TPtrMap
 	
 End Type

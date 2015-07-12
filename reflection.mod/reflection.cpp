@@ -86,4 +86,20 @@ BBArray * bbRefArrayNull() {
 	return &bbEmptyArray;
 }
 
+const char * bbInterfaceName(BBInterface * ifc) {
+	return ifc->clas->debug_scope->name;
+}
+
+BBClass * bbInterfaceClass(BBInterface * ifc) {
+	return ifc->clas;
+}
+
+int bbObjectImplementedCount(BBClass *clas) {
+	return clas->ifc_size;
+}
+
+BBInterface * bbObjectImplementedInterface(BBClass * clas, int index) {
+	return clas->ifc_offsets[index].ifc;
+}
+
 }
