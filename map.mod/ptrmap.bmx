@@ -57,16 +57,26 @@ Type TPtrMap
 	End Method
 	
 	Method Keys:TPtrMapEnumerator()
-		Local nodeenum:TPtrNodeEnumerator=New TPtrKeyEnumerator
-		nodeenum._node=_FirstNode()
+		Local nodeenum:TPtrNodeEnumerator
+		If Not isEmpty() Then
+			nodeenum=New TPtrKeyEnumerator
+			nodeenum._node=_FirstNode()
+		Else
+			nodeenum=New TPtrEmptyEnumerator
+		End If
 		Local mapenum:TPtrMapEnumerator=New TPtrMapEnumerator
 		mapenum._enumerator=nodeenum
 		Return mapenum
 	End Method
 	
 	Method Values:TPtrMapEnumerator()
-		Local nodeenum:TPtrNodeEnumerator=New TPtrValueEnumerator
-		nodeenum._node=_FirstNode()
+		Local nodeenum:TPtrNodeEnumerator
+		If Not isEmpty() Then
+			nodeenum=New TPtrValueEnumerator
+			nodeenum._node=_FirstNode()
+		Else
+			nodeenum=New TPtrEmptyEnumerator
+		End If
 		Local mapenum:TPtrMapEnumerator=New TPtrMapEnumerator
 		mapenum._enumerator=nodeenum
 		Return mapenum
@@ -164,4 +174,9 @@ Type TPtrMapEnumerator
 	Field _enumerator:TPtrNodeEnumerator
 End Type
 
+Type TPtrEmptyEnumerator Extends TPtrNodeEnumerator
+	Method HasNext()
+		Return False
+	End Method
+End Type
 

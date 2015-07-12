@@ -57,16 +57,26 @@ Type TIntMap
 	End Method
 	
 	Method Keys:TIntMapEnumerator()
-		Local nodeenum:TIntNodeEnumerator=New TIntKeyEnumerator
-		nodeenum._node=_FirstNode()
+		Local nodeenum:TIntNodeEnumerator
+		If Not isEmpty() Then
+			nodeenum=New TIntKeyEnumerator
+			nodeenum._node=_FirstNode()
+		Else
+			nodeenum=New TIntEmptyEnumerator
+		End If
 		Local mapenum:TIntMapEnumerator=New TIntMapEnumerator
 		mapenum._enumerator=nodeenum
 		Return mapenum
 	End Method
 	
 	Method Values:TIntMapEnumerator()
-		Local nodeenum:TIntNodeEnumerator=New TIntValueEnumerator
-		nodeenum._node=_FirstNode()
+		Local nodeenum:TIntNodeEnumerator
+		If Not isEmpty() Then
+			nodeenum=New TIntValueEnumerator
+			nodeenum._node=_FirstNode()
+		Else
+			nodeenum=New TIntEmptyEnumerator
+		End If
 		Local mapenum:TIntMapEnumerator=New TIntMapEnumerator
 		mapenum._enumerator=nodeenum
 		Return mapenum
@@ -164,3 +174,8 @@ Type TIntMapEnumerator
 	Field _enumerator:TIntNodeEnumerator
 End Type
 
+Type TIntEmptyEnumerator Extends TIntNodeEnumerator
+	Method HasNext()
+		Return False
+	End Method
+End Type
