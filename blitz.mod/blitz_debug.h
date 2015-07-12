@@ -36,10 +36,8 @@ struct BBDebugDecl{
 	union{
 		BBString*	const_value;
 #if ( __WORDSIZE == 64 )
-//		BBInt64		local_offset;
 		BBInt64		field_offset;
 #else
-//		int			local_offset;
 		int			field_offset;
 #endif
 		void		*var_address;
@@ -49,7 +47,8 @@ struct BBDebugDecl{
 enum{
 	BBDEBUGSCOPE_FUNCTION=1,
 	BBDEBUGSCOPE_USERTYPE=2,
-	BBDEBUGSCOPE_LOCALBLOCK=3
+	BBDEBUGSCOPE_LOCALBLOCK=3,
+	BBDEBUGSCOPE_USERINTERFACE=4,
 };
 
 struct BBDebugScope{

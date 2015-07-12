@@ -42,6 +42,7 @@ struct BBObject{
 };
 
 struct BBInterface {
+	BBClass*	clas;
 	const char *name;
 };
 
@@ -69,6 +70,9 @@ BBObject*	bbObjectDowncast( BBObject *o,BBClass *t );
 
 void		bbObjectRegisterType( BBClass *clas );
 BBClass**	bbObjectRegisteredTypes( int *count );
+
+void bbObjectRegisterInterface( BBInterface * ifc );
+BBInterface **bbObjectRegisteredInterfaces( int *count );
 
 BBObject * bbInterfaceDowncast(BBOBJECT o, BBINTERFACE ifc);
 void * bbObjectInterface(BBOBJECT o, BBINTERFACE ifc);

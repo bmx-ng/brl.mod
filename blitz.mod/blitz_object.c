@@ -4,6 +4,7 @@
 #define REG_GROW 256
 
 static BBClass **reg_base,**reg_put,**reg_end;
+static BBClass **ireg_base,**ireg_put,**ireg_end;
 
 static BBDebugScope debugScope={
 	BBDEBUGSCOPE_USERTYPE,
@@ -111,6 +112,21 @@ void bbObjectRegisterType( BBClass *clas ){
 BBClass **bbObjectRegisteredTypes( int *count ){
 	*count=reg_put-reg_base;
 	return reg_base;
+}
+
+void bbObjectRegisterInterface( BBInterface * ifc ){
+	if( ireg_put==ireg_end ){
+		int len=ireg_put-ireg_base,new_len=len+REG_GROW;
+		ireg_base=(BBInterface**)bbMemExtend( ireg_base,len*sizeof(BBInterface*),new_len*sizeof(BBInterface*) );
+		ireg_end=ireg_base+new_len;
+		ireg_put=ireg_base+len;
+	}
+	*ireg_put++=ifc;
+}
+
+BBInterface **bbObjectRegisteredInterfaces( int *count ){
+	*count=ireg_put-ireg_base;
+	return ireg_base;
 }
 
 BBObject * bbInterfaceDowncast(BBOBJECT o, BBINTERFACE ifc) {
