@@ -6,7 +6,7 @@ Import BRL.Graphics
 Import Pub.DirectX
 
 Import BRL.LinkedList
-
+Import brl.systemdefault
 
 Private
 
@@ -19,7 +19,7 @@ Global _d3dCaps:D3DCAPS9
 Global _modes:TGraphicsMode[]
 
 Global _d3dDev:IDirect3DDevice9
-Global _d3dDevRefs
+Global _d3dDevRefs:Int
 
 Global _presentParams:D3DPRESENT_PARAMETERS
 
@@ -33,50 +33,51 @@ Type TD3D9AutoRelease
 	Field unk:IUnknown
 End Type
 
-Function D3D9WndProc( hwnd,msg,wp,lp ) "win32"
+Function D3D9WndProc:Byte Ptr( hwnd:Byte Ptr,msg:Int,wp:Byte Ptr,lp:Byte Ptr ) "win32"
 
 	bbSystemEmitOSEvent hwnd,msg,wp,lp,Null
 	
 	Select msg
 	Case WM_CLOSE
-		Return
+		Return Null
 	Case WM_SYSKEYDOWN
-		If wp<>KEY_F4 Return
+		If wp<>KEY_F4 Return Null
 	End Select
 
 	Return DefWindowProcW( hwnd,msg,wp,lp )
 
 End Function
 
-Function OpenD3DDevice( hwnd,width,height,depth,hertz,flags )
-
+Function OpenD3DDevice:Int( hwnd:Byte Ptr,width:Int,height:Int,depth:Int,hertz:Int,flags:Int)
 	If _d3dDevRefs
-		If Not _presentParams.Windowed Return False
+		If Not _presentParams.GetWindowed() Return False
 		If depth<>0 Return False
 		_d3dDevRefs:+1
 		Return True
 	EndIf
 
-	Local windowed=(depth=0)
-	Local fullscreen=(depth<>0)	
+	Local windowed:Int=(depth=0)
+	Local fullscreen:Int=(depth<>0)	
 
 	Local pp:D3DPRESENT_PARAMETERS=New D3DPRESENT_PARAMETERS
-	pp.BackBufferWidth=width
-	pp.BackBufferHeight=height
-	pp.BackBufferCount=1
-	pp.BackBufferFormat=(D3DFMT_X8R8G8B8 * fullscreen) + (D3DFMT_UNKNOWN * windowed)
-	pp.MultiSampleType=D3DMULTISAMPLE_NONE
-	pp.SwapEffect=(D3DSWAPEFFECT_DISCARD * fullscreen) + (D3DSWAPEFFECT_COPY * windowed)
-	pp.hDeviceWindow=hwnd
-	pp.Windowed=windowed
-	pp.Flags=D3DPRESENTFLAG_LOCKABLE_BACKBUFFER
-	pp.FullScreen_RefreshRateInHz=(hertz * fullscreen)
-	pp.PresentationInterval=D3DPRESENT_INTERVAL_ONE	'IMMEDIATE
+	pp.SetBackBufferWidth(width)
+	pp.SetBackBufferHeight(height)
+	pp.SetBackBufferCount(1)
+	pp.SetBackBufferFormat((D3DFMT_X8R8G8B8 * fullscreen) + (D3DFMT_UNKNOWN * windowed))
+	pp.SetMultiSampleType(D3DMULTISAMPLE_NONE)
+	pp.SetSwapEffect((D3DSWAPEFFECT_DISCARD * fullscreen) + (D3DSWAPEFFECT_COPY * windowed))
+	pp.SethDeviceWindow(hwnd)
+	pp.SetWindowed(windowed)
+	pp.SetFlags(D3DPRESENTFLAG_LOCKABLE_BACKBUFFER)
+	pp.SetFullScreen_RefreshRateInHz(hertz * fullscreen)
+	pp.SetPresentationInterval(D3DPRESENT_INTERVAL_ONE)	'IMMEDIATE
 	
-	Local cflags=D3DCREATE_FPU_PRESERVE
+	Local cflags:Int=D3DCREATE_FPU_PRESERVE
+	
+	_d3dDev = New IDirect3DDevice9
 	
 	'OK, try hardware vertex processing...
-	Local tflags=D3DCREATE_PUREDEVICE|D3DCREATE_HARDWARE_VERTEXPROCESSING|cflags
+	Local tflags:Int=D3DCREATE_PUREDEVICE|D3DCREATE_HARDWARE_VERTEXPROCESSING|cflags
 	If _d3d.CreateDevice( 0,D3DDEVTYPE_HAL,hwnd,tflags,pp,_d3dDev )<0
 
 		'Failed! Try mixed vertex processing...
@@ -87,6 +88,7 @@ Function OpenD3DDevice( hwnd,width,height,depth,hertz,flags )
 			tflags=D3DCREATE_SOFTWARE_VERTEXPROCESSING|cflags
 			If _d3d.CreateDevice( 0,D3DDEVTYPE_HAL,hwnd,tflags,pp,_d3dDev )<0
 			
+				_d3dDev = Null
 				'Failed! Go home and watch family guy instead...
 				Return False
 			EndIf
@@ -101,8 +103,10 @@ Function OpenD3DDevice( hwnd,width,height,depth,hertz,flags )
 
 	'Occlusion Query
 	If Not _d3dOccQuery
+		_d3dOccQuery = New IDirect3DQuery9
 		If _d3ddev.CreateQuery(9,_d3dOccQuery)<0 '9 hardcoded for D3DQUERYTYPE_OCCLUSION
 			DebugLog "Cannot create Occlussion Query!"
+			_d3dOccQuery = Null
 		EndIf
 	EndIf
 	If _d3dOccQuery _d3dOccQuery.Issue(2) 'D3DISSUE_BEGIN
@@ -129,13 +133,18 @@ Function CloseD3DDevice()
 End Function
 
 Function ResetD3DDevice()
-	If _d3dOccQuery _d3dOccQuery.Release_
+	If _d3dOccQuery
+		_d3dOccQuery.Release_
+	Else
+		_d3dOccQuery = New IDirect3DQuery9
+	End If
 	
 	If _d3dDev.Reset( _presentParams )<0
 		Throw "_d3dDev.Reset failed"
 	EndIf
 
 	If _d3ddev.CreateQuery(9,_d3dOccQuery)<0
+		_d3dOccQuery = Null
 		DebugLog "Cannot create Occlussion Query!"
 	EndIf
 	If _d3dOccQuery _d3dOccQuery.Issue(2) 'D3DISSUE_BEGIN
@@ -148,11 +157,11 @@ Global UseDX9RenderLagFix:Int = 0
 
 Type TD3D9Graphics Extends TGraphics
 
-	Method Attach:TD3D9Graphics( hwnd,flags )
-		Local rect[4]
+	Method Attach:TD3D9Graphics( hwnd:Byte Ptr,flags:Int )
+		Local rect:Int[4]
 		GetClientRect hwnd,rect
-		Local width=rect[2]-rect[0]
-		Local height=rect[3]-rect[1]
+		Local width:Int=rect[2]-rect[0]
+		Local height:Int=rect[3]-rect[1]
 
 		OpenD3DDevice hwnd,width,height,0,0,flags
 		
@@ -161,11 +170,12 @@ Type TD3D9Graphics Extends TGraphics
 		_height=height
 		_flags=flags
 		_attached=True
+
 		Return Self
 	End Method
 	
-	Method Create:TD3D9Graphics( width,height,depth,hertz,flags )
-		Local wstyle
+	Method Create:TD3D9Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Int)
+		Local wstyle:Int
 
 		If depth
 			wstyle=WS_VISIBLE|WS_POPUP
@@ -173,10 +183,10 @@ Type TD3D9Graphics Extends TGraphics
 			wstyle=WS_VISIBLE|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX
 		EndIf
 		
-		Local rect[4]
+		Local rect:Int[4]
 
 		If Not depth
-			Local desktopRect[4]
+			Local desktopRect:Int[4]
 			GetWindowRect GetDesktopWindow(),desktopRect
 				
 			rect[0]=desktopRect[2]/2-width/2;		
@@ -187,7 +197,7 @@ Type TD3D9Graphics Extends TGraphics
 			AdjustWindowRect rect,wstyle,0
 		EndIf
 
-		Local hwnd=CreateWindowExW( 0,_wndClass,AppTitle,wstyle,rect[0],rect[1],rect[2]-rect[0],rect[3]-rect[1],0,0,GetModuleHandleA(Null),Null )
+		Local hwnd:Byte Ptr=CreateWindowExW( 0,_wndClass,AppTitle,wstyle,rect[0],rect[1],rect[2]-rect[0],rect[3]-rect[1],0,0,GetModuleHandleA(Null),Null )
 		If Not hwnd Return Null
 
 		If Not depth
@@ -217,26 +227,26 @@ Type TD3D9Graphics Extends TGraphics
 
 	Method ValidateSize()
 		If _attached
-			Local rect[4]
+			Local rect:Int[4]
 			GetClientRect _hwnd,rect
 			_width=rect[2]-rect[0]
 			_height=rect[3]-rect[1]
-			If _width>_presentParams.BackBufferWidth Or _height>_presentParams.BackBufferHeight
-				_presentParams.BackBufferWidth=Max( _width,_presentParams.BackBufferWidth )
-				_presentParams.BackBufferHeight=Max( _height,_presentParams.BackbufferHeight )
+			If _width>_presentParams.GetBackBufferWidth() Or _height>_presentParams.GetBackBufferHeight()
+				_presentParams.SetBackBufferWidth(Max( _width,_presentParams.GetBackBufferWidth()) )
+				_presentParams.SetBackBufferHeight(Max( _height,_presentParams.GetBackbufferHeight()) )
 				ResetD3DDevice
 			EndIf
 		EndIf
 	End Method
 	
 	'NOTE: Returns 1 if flip was successful, otherwise device lost or reset...
-	Method Flip( sync )
+	Method Flip:Int( sync:Int )
 	
-		Local reset
+		Local reset:Int
 
 		If sync sync=D3DPRESENT_INTERVAL_ONE Else sync=D3DPRESENT_INTERVAL_IMMEDIATE
-		If sync<>_presentParams.PresentationInterval
-			_presentParams.PresentationInterval=sync
+		If sync<>_presentParams.GetPresentationInterval()
+			_presentParams.SetPresentationInterval(sync)
 			reset=True
 		EndIf
 		
@@ -250,7 +260,7 @@ Type TD3D9Graphics Extends TGraphics
 
 			Else If _attached
 			
-				Local rect[]=[0,0,_width,_height]
+				Local rect:Int[]=[0,0,_width,_height]
 				Return _d3dDev.Present( rect,rect,_hwnd,Null )>=0
 
 			Else
@@ -271,7 +281,7 @@ Type TD3D9Graphics Extends TGraphics
 		Return _driver
 	End Method
 	
-	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var )
+	Method GetSettings:Int( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Int Var )
 		'
 		ValidateSize
 		'
@@ -282,8 +292,8 @@ Type TD3D9Graphics Extends TGraphics
 		flags=_flags
 	End Method
 
-	Method Close()
-		If Not _hwnd Return
+	Method Close:Int()
+		If Not _hwnd Return False
 		CloseD3DDevice
 		If Not _attached DestroyWindow( _hwnd )
 		_hwnd=0
@@ -306,13 +316,13 @@ Type TD3D9Graphics Extends TGraphics
 	End Method
 
 	
-	Field _hwnd
-	Field _width
-	Field _height
-	Field _depth
-	Field _hertz
-	Field _flags
-	Field _attached
+	Field _hwnd:Byte Ptr
+	Field _width:Int
+	Field _height:Int
+	Field _depth:Int
+	Field _hertz:Int
+	Field _flags:Int
+	Field _attached:Int
 
 End Type
 
@@ -321,11 +331,11 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 	Method Create:TD3D9GraphicsDriver()
 	
 		'create d3d9
-		If Not d3d9Lib Return Null
+		'If Not d3d9Lib Return Null
 		
 		_d3d=Direct3DCreate9( 32 )
 		If Not _d3d Return Null
-		
+
 		'get caps
 		_d3dCaps=New D3DCAPS9
 		If _d3d.GetDeviceCaps( D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,_d3dCaps )<0
@@ -335,35 +345,35 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		EndIf
 
 		'enum graphics modes		
-		Local n=_d3d.GetAdapterModeCount( D3DADAPTER_DEFAULT,D3DFMT_X8R8G8B8 )
+		Local n:Int=_d3d.GetAdapterModeCount( D3DADAPTER_DEFAULT,D3DFMT_X8R8G8B8 )
 		_modes=New TGraphicsMode[n]
-		Local j
-		For Local i=0 Until n
-			Local d3dmode:D3DDISPLAYMODE=New D3DDISPLAYMODE
-
+		Local j:Int
+		Local d3dmode:D3DDISPLAYMODE = New D3DDISPLAYMODE
+		For Local i:Int=0 Until n
 			If _d3d.EnumAdapterModes( D3DADAPTER_DEFAULT,D3DFMT_X8R8G8B8,i,d3dmode )<0
 				Continue
 			EndIf
 			
 			Local Mode:TGraphicsMode=New TGraphicsMode
-			Mode.width=d3dmode.Width
-			Mode.height=d3dmode.Height
-			Mode.hertz=d3dmode.RefreshRate
+			Mode.width=d3dmode.GetWidth()
+			Mode.height=d3dmode.GetHeight()
+			Mode.hertz=d3dmode.GetRefreshRate()
 			Mode.depth=32
-			
 			_modes[j]=Mode
 			j:+1
 		Next
 		_modes=_modes[..j]
 	
+	
+		Local name:Short Ptr = _wndClass.ToWString()
 		'register wndclass
 		Local wndclass:WNDCLASSW=New WNDCLASSW
-		wndclass.hInstance=GetModuleHandleW( Null )
-		wndclass.lpfnWndProc=D3D9WndProc
-		wndclass.hCursor=LoadCursorW( Null,Short Ptr IDC_ARROW )
-		wndclass.lpszClassName=_wndClass.ToWString()
-		RegisterClassW wndclass
-		MemFree wndclass.lpszClassName
+		wndclass.SethInstance(GetModuleHandleW( Null ))
+		wndclass.SetlpfnWndProc(D3D9WndProc)
+		wndclass.SethCursor(LoadCursorW( Null,Short Ptr IDC_ARROW ))
+		wndclass.SetlpszClassName(name)
+		RegisterClassW wndclass.classPtr
+		MemFree name
 
 		Return Self
 	End Method
@@ -372,11 +382,11 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		Return _modes
 	End Method
 	
-	Method AttachGraphics:TD3D9Graphics( widget,flags )
-		Return New TD3D9Graphics.Attach( widget,flags )
+	Method AttachGraphics:TD3D9Graphics( widget:Byte Ptr,flags:Int )
+		Return New TD3D9Graphics.Attach( widget:Byte Ptr,flags:Int )
 	End Method
 	
-	Method CreateGraphics:TD3D9Graphics( width,height,depth,hertz,flags )
+	Method CreateGraphics:TD3D9Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Int)
 		Return New TD3D9Graphics.Create( width,height,depth,hertz,flags )
 	End Method
 
@@ -388,7 +398,7 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		_graphics=TD3D9Graphics( g )
 	End Method
 	
-	Method Flip( sync )
+	Method Flip( sync:Int )
 		Local present:Int = _graphics.Flip(sync)
 		If UseDX9RenderLagFix Then
 			Local pixelsdrawn:Int
@@ -413,7 +423,7 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 End Type
 
 Function D3D9GraphicsDriver:TD3D9GraphicsDriver()
-	Global _done
+	Global _done:Int
 	If Not _done
 		_driver=New TD3D9GraphicsDriver.Create()
 		_done=True

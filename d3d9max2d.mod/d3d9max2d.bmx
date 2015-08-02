@@ -15,12 +15,12 @@ ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Changed Assert to Throw. One can at least catch a Throw."
 
-?disabled
+?win32
 
 Import BRL.Max2D
 Import BRL.DXGraphics
 
-Import BRL.D3D7Max2D
+'Import BRL.D3D7Max2D
 
 
 Const LOG_ERRS=True'False
@@ -82,7 +82,7 @@ Type TD3D9ImageFrame Extends TImageFrame
 	End Method
 
 	Method Create:TD3D9ImageFrame( pixmap:TPixmap,flags )
-	
+
 		Local width=pixmap.width,pow2width=Pow2Size( width )
 		Local height=pixmap.height,pow2height=Pow2Size( height )
 		
@@ -108,16 +108,18 @@ Type TD3D9ImageFrame Extends TImageFrame
 		Local usage=0
 		Local pool=D3DPOOL_MANAGED
 		
+		_texture = New IDirect3DTexture9
 		If _d3dDev.CreateTexture( pow2width,pow2height,levels,usage,format,pool,_texture,Null )<0
 			d3derr "Unable to create texture~n"
+			_texture = Null
 			Return
 		EndIf
 		
 		_d3d9Graphics.AutoRelease _texture
 
 		Local level
+		Local dstsurf:IDirect3DSurface9 = New IDirect3DSurface9
 		Repeat
-			Local dstsurf:IDirect3DSurface9
 			If _texture.GetSurfaceLevel( level,dstsurf )<0
 				If level=0
 					d3derr "_texture.GetSurfaceLevel failed~n"
@@ -244,14 +246,15 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 
 	Method Create:TD3D9Max2DDriver()
+
 		If Not D3D9GraphicsDriver() Return Null
-		
+
 		Local d3d:IDirect3D9=D3D9GraphicsDriver().GetDirect3D()
 
 		If d3d.CheckDeviceFormat( D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,D3DFMT_X8R8G8B8,0,D3DRTYPE_TEXTURE,D3DFMT_A8R8G8B8 )<0
 			Return Null
 		EndIf
-		
+
 		Return Self
 	End Method
 
@@ -260,7 +263,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		Return D3D9GraphicsDriver().GraphicsModes()
 	End Method
 	
-	Method AttachGraphics:TGraphics( widget,flags )
+	Method AttachGraphics:TGraphics( widget:Byte Ptr,flags )
 		Local g:TD3D9Graphics=D3D9GraphicsDriver().AttachGraphics( widget,flags )
 		If g Return TMax2DGraphics.Create( g,Self )
 	End Method
@@ -272,6 +275,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 	
 	Method SetGraphics( g:TGraphics )
+
 		If Not g
 			If _d3dDev
 				_d3dDev.EndScene
@@ -316,17 +320,16 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 	
 	Method ResetDevice()
-	
 		_d3d9graphics.ValidateSize
 		_d3d9graphics.GetSettings _gw,_gh,_gd,_gr,_gf
 	
 		Local viewport:D3DVIEWPORT9=New D3DVIEWPORT9
-		viewport.X=0
-		viewport.Y=0
-		viewport.Width=_gw
-		viewport.Height=_gh
-		viewport.MinZ=0.0
-		viewport.MaxZ=1.0
+		viewport.SetX(0)
+		viewport.SetY(0)
+		viewport.SetWidth(_gw)
+		viewport.SetHeight(_gh)
+		viewport.SetMinZ(0.0)
+		viewport.SetMaxZ(1.0)
 		_d3dDev.SetViewport viewport
 
 		_d3dDev.SetRenderState D3DRS_ALPHAREF,$80
@@ -341,7 +344,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		
 		_d3dDev.SetTexture 0,Null
 		_bound_texture=Null
-		
+
 		_d3dDev.SetFVF D3DFVF_XYZ|D3DFVF_DIFFUSE|D3DFVF_TEX1
 		
 		_d3dDev.SetTextureStageState 0,D3DTSS_COLORARG1,D3DTA_TEXTURE		
@@ -546,7 +549,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	Method DrawPixmap( pixmap:TPixmap,x,y )
 		Local width=pixmap.width,height=pixmap.height
 	
-		Local dstsurf:IDirect3DSurface9
+		Local dstsurf:IDirect3DSurface9 = New IDirect3DSurface9
 		If _d3dDev.GetRenderTarget( 0,dstsurf )<0
 			d3derr "GetRenderTarget failed~n"
 			Return
@@ -596,7 +599,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 			d3derr "dstsurf.GetDC failed~n"
 		EndIf
 		
-		BitBlt Int(dstdc),0,0,width,height,Int(srcdc),x,y,ROP_SRCCOPY
+		BitBlt dstdc,0,0,width,height,srcdc,x,y,ROP_SRCCOPY
 		
 		srcsurf.ReleaseDC srcdc
 		dstsurf.ReleaseDC dstdc

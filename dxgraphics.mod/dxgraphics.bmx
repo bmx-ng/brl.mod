@@ -72,5 +72,6 @@ ModuleInfo "History: Fixed D3D7 mouse capture in 'windowed' fullscreen mode"
 
 ?disabled
 Import "d3d7graphics.bmx"
+?win32
 Import "d3d9graphics.bmx"
 ?
