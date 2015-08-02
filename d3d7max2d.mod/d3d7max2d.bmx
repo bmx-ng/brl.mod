@@ -59,7 +59,7 @@ ModuleInfo "History: Clamped alpha/color/clsColor"
 ModuleInfo "History: Fixed viewport (now uses clip planes)"
 ModuleInfo "History: Fixed Mag filter"
 
-?win32
+?disabled
 
 Import BRL.DXGraphics
 Import BRL.GLMax2D
