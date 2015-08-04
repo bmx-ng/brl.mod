@@ -63,7 +63,7 @@ BBString *bbReadStdin(){
 
 #if __APPLE__
 
-#include <CoreServices/CoreServices.h>
+#include <CoreFoundation/CoreFoundation.h>
 
 #include <limits.h>
 #include <unistd.h>
