@@ -65,6 +65,8 @@ BBString *bbReadStdin(){
 
 #include <CoreFoundation/CoreFoundation.h>
 
+#include <mach/mach_time.h>
+
 #include <limits.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -81,13 +83,15 @@ void bbDelay( int millis ){
 }
 
 int bbMilliSecs(){
-	double t;
-	UnsignedWide uw;
-	Microseconds( &uw );
-	t=(uw.hi<<(32-9))|(uw.lo>>9);	//divide by 512...!
-	
-	return (int) (long long) ( t/(1000.0/512.0) );
+	static mach_timebase_info_data_t info;
+
+	if (info.denom == 0) {
+		mach_timebase_info(&info);
+	}
+
+	return (int)((mach_absolute_time() * info.numer) / ((1000 * 1000) * info.denom));
 }
+
 
 int bbIsMainThread(){
 	return pthread_self()==_mainThread;
