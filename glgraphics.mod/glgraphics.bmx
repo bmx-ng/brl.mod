@@ -46,7 +46,7 @@ ModuleInfo "History: Added graphics flags handling"
 ?Win32
 Import "glgraphics.win32.c"
 Import "source.bmx"
-?MacOS
+?osx
 Import "glgraphics.macos.m"
 Import "source.bmx"
 ?Linuxx86

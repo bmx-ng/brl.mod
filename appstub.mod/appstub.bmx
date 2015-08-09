@@ -54,10 +54,12 @@ ModuleInfo "History: Modified float and double debug output to match compiler pr
 Import "debugger_mt.stdio.bmx"	'Let's give Otus's new MT friendly debugger a whirl!
 ?
 
-?MacOS
+?osx
 Import "appstub.macos.m"
 Import "-framework Cocoa"
 Import "-framework Carbon"
+?ios
+Import "appstub.ios.c"
 ?Win32
 Import "appstub.win32.c"
 ?Linux

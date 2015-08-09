@@ -14,5 +14,8 @@
 *.arm64v8a.i
 *.js.a
 *.js.i
-
+*.armv7.a
+*.armv7.i
+*.arm64.a
+*.arm64.i
 .bmx/

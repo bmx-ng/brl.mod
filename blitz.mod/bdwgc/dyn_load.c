@@ -1449,10 +1449,10 @@ GC_INNER void GC_init_dyld(void)
         GC_log_printf("Forcing full bind of GC code...\n");
 #     endif
       /* FIXME: '_dyld_bind_fully_image_containing_address' is deprecated. */
-      if (!_dyld_bind_fully_image_containing_address(
+/*      if (!_dyld_bind_fully_image_containing_address(
                                                   (unsigned long *)GC_malloc))
         ABORT("_dyld_bind_fully_image_containing_address failed");
-    }
+*/    }
 # endif
 }
 

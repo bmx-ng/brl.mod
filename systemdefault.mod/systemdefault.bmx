@@ -76,7 +76,7 @@ Import BRL.Hook
 Import "system.c"
 ?
 
-?MacOS
+?osx
 Import "system.macos.bmx"
 Driver=New TMacOSSystemDriver
 ?Win32

@@ -1,5 +1,5 @@
 
-#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
 
 #include <brl.mod/blitz.mod/blitz.h>
 

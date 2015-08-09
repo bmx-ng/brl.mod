@@ -35,7 +35,7 @@ static void gc_warn_proc( char *msg,GC_word arg ){
 
 void bbGCStartup( void *spTop ){
 	GC_set_no_dls(1);
-	GC_clear_roots();
+/*	GC_clear_roots();
 #ifdef _WIN32
 #ifdef __x86_64__
 	GC_add_roots(&__data_start__, &__bss_end__);
@@ -53,12 +53,13 @@ void bbGCStartup( void *spTop ){
 	
 	seg = getsegbyname( "__DATA" );
 
-	GC_add_roots((void*)seg->vmaddr, (void*)(seg->vmaddr + seg->vmsize));
+//	GC_add_roots((void*)seg->vmaddr, (void*)(seg->vmaddr + seg->vmsize));
 #endif
 
 #ifdef __linux
 	GC_add_roots(&__data_start, &_end);
-#endif	
+#endif
+*/
 	GC_INIT();
 	GC_set_warn_proc( gc_warn_proc );
 }
