@@ -74,7 +74,7 @@ STATIC struct finalizable_object * GC_finalize_now = 0;
 
 static signed_word log_fo_table_size = -1;
 
-GC_INNER void GC_push_finalizer_structures(void)
+GC_API void GC_CALL GC_push_finalizer_structures(void)
 {
     GC_ASSERT((word)&GC_dl_hashtbl.head % sizeof(word) == 0);
     GC_ASSERT((word)&GC_fo_head % sizeof(word) == 0);
@@ -146,7 +146,7 @@ GC_API int GC_CALL GC_register_disappearing_link(void * * link)
 
 STATIC int GC_register_disappearing_link_inner(
                         struct dl_hashtbl_s *dl_hashtbl, void **link,
-                        const void *obj)
+                        const void *obj, const char *tbl_log_name)
 {
     struct disappearing_link *curr_dl;
     size_t index;
@@ -159,7 +159,7 @@ STATIC int GC_register_disappearing_link_inner(
         || dl_hashtbl -> entries > ((word)1 << dl_hashtbl -> log_size)) {
         GC_grow_table((struct hash_chain_entry ***)&dl_hashtbl -> head,
                       &dl_hashtbl -> log_size);
-        GC_COND_LOG_PRINTF("Grew dl table to %u entries\n",
+        GC_COND_LOG_PRINTF("Grew %s table to %u entries\n", tbl_log_name,
                            1 << (unsigned)dl_hashtbl -> log_size);
     }
     index = HASH2(link, dl_hashtbl -> log_size);
@@ -213,7 +213,8 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
 {
     if (((word)link & (ALIGNMENT-1)) != 0 || NULL == link)
         ABORT("Bad arg to GC_general_register_disappearing_link");
-    return GC_register_disappearing_link_inner(&GC_dl_hashtbl, link, obj);
+    return GC_register_disappearing_link_inner(&GC_dl_hashtbl, link, obj,
+                                               "dl");
 }
 
 #ifdef DBG_HDRS_ALL
@@ -263,12 +264,36 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     return 1;
 }
 
+/* Finalizer callback support. */
+STATIC GC_await_finalize_proc GC_object_finalized_proc = 0;
+
+GC_API void GC_CALL GC_set_await_finalize_proc(GC_await_finalize_proc fn)
+{
+  DCL_LOCK_STATE;
+
+  LOCK();
+  GC_object_finalized_proc = fn;
+  UNLOCK();
+}
+
+GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
+{
+  GC_await_finalize_proc fn;
+  DCL_LOCK_STATE;
+
+  LOCK();
+  fn = GC_object_finalized_proc;
+  UNLOCK();
+  return fn;
+}
+
 #ifndef GC_LONG_REFS_NOT_NEEDED
   GC_API int GC_CALL GC_register_long_link(void * * link, const void * obj)
   {
     if (((word)link & (ALIGNMENT-1)) != 0 || NULL == link)
         ABORT("Bad arg to GC_register_long_link");
-    return GC_register_disappearing_link_inner(&GC_ll_hashtbl, link, obj);
+    return GC_register_disappearing_link_inner(&GC_ll_hashtbl, link, obj,
+                                               "long dl");
   }
 
   GC_API int GC_CALL GC_unregister_long_link(void * * link)
@@ -788,6 +813,9 @@ GC_INNER void GC_finalize(void)
                 fo_set_next(prev_fo, next_fo);
               }
               GC_fo_entries--;
+              if (GC_object_finalized_proc)
+                GC_object_finalized_proc(real_ptr);
+
             /* Add to list of objects awaiting finalization.    */
               fo_set_next(curr_fo, GC_finalize_now);
               GC_finalize_now = curr_fo;
@@ -1007,7 +1035,7 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
     return count;
 }
 
-static GC_word last_finalizer_notification = 0;
+static word last_finalizer_notification = 0;
 
 GC_INNER void GC_notify_or_invoke_finalizers(void)
 {

@@ -158,6 +158,8 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 # else
     /* Turn on GC_win32_dll_threads. */
     GC_ASSERT(!parallel_initialized);
+    /* Note that GC_use_threads_discovery is expected to be called by   */
+    /* the client application (not from DllMain) at start-up.           */
 #   ifndef GC_DISCOVER_TASK_THREADS
       GC_win32_dll_threads = TRUE;
 #   endif
@@ -597,6 +599,14 @@ GC_API int GC_CALL GC_thread_is_registered(void)
     me = GC_lookup_thread_inner(thread_id);
     UNLOCK();
     return me != NULL;
+}
+
+GC_API void GC_CALL GC_register_altstack(void *stack GC_ATTR_UNUSED,
+                                         GC_word stack_size GC_ATTR_UNUSED,
+                                         void *altstack GC_ATTR_UNUSED,
+                                         GC_word altstack_size GC_ATTR_UNUSED)
+{
+  /* TODO: Implement */
 }
 
 /* Make sure thread descriptor t is not protected by the VDB            */
@@ -1180,6 +1190,8 @@ STATIC void GC_suspend(GC_thread t)
 # if defined(MPROTECT_VDB)
     AO_CLEAR(&GC_fault_handler_lock);
 # endif
+  if (GC_on_thread_event)
+    GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED, THREAD_HANDLE(t));
 }
 
 #if defined(GC_ASSERTIONS) && !defined(CYGWIN32)
@@ -1278,6 +1290,8 @@ GC_INNER void GC_start_world(void)
         if (ResumeThread(THREAD_HANDLE(t)) == (DWORD)-1)
           ABORT("ResumeThread failed");
         t -> suspended = FALSE;
+        if (GC_on_thread_event)
+          GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, THREAD_HANDLE(t));
       }
     }
   } else {
@@ -1292,6 +1306,8 @@ GC_INNER void GC_start_world(void)
             ABORT("ResumeThread failed");
           UNPROTECT_THREAD(t);
           t -> suspended = FALSE;
+          if (GC_on_thread_event)
+            GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, THREAD_HANDLE(t));
         }
       }
     }
@@ -1736,8 +1752,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 # ifdef GC_PTHREADS_PARAMARK
 #   include <pthread.h>
 
-#   ifndef NUMERIC_THREAD_ID
-#     define NUMERIC_THREAD_ID(id) (unsigned long)GC_PTHREAD_PTRVAL(id)
+#   if defined(GC_ASSERTIONS) && !defined(NUMERIC_THREAD_ID)
+#     define NUMERIC_THREAD_ID(id) (unsigned long)(word)GC_PTHREAD_PTRVAL(id)
       /* Id not guaranteed to be unique. */
 #   endif
 
@@ -2493,7 +2509,7 @@ GC_INNER void GC_thr_init(void)
   }
 
   /* Cygwin-pthreads calls CreateThread internally, but it's not easily */
-  /* interceptible by us..., so intercept pthread_create instead.       */
+  /* interceptable by us..., so intercept pthread_create instead.       */
   GC_API int GC_pthread_create(pthread_t *new_thread,
                                GC_PTHREAD_CREATE_CONST pthread_attr_t *attr,
                                void *(*start_routine)(void *), void *arg)
@@ -2674,6 +2690,11 @@ GC_INNER void GC_thr_init(void)
       DWORD thread_id;
       static int entry_count = 0;
 
+      /* Note that GC_use_threads_discovery should be called by the     */
+      /* client application at start-up to activate automatic thread    */
+      /* registration (it is the default GC behavior since v7.0alpha7); */
+      /* to always have automatic thread registration turned on, the GC */
+      /* should be compiled with -D GC_DISCOVER_TASK_THREADS.           */
       if (!GC_win32_dll_threads && parallel_initialized) return TRUE;
 
       switch (reason) {

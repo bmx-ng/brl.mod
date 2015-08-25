@@ -129,7 +129,8 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 /* Evaluates the stack range for a given thread.  Returns the lower     */
 /* bound and sets *phi to the upper one.                                */
 STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
-                                GC_bool thread_blocked, mach_port_t my_thread)
+                                GC_bool thread_blocked, mach_port_t my_thread,
+                                ptr_t *paltstack_lo, ptr_t *paltstack_hi)
 {
   ptr_t lo;
   if (thread == my_thread) {
@@ -264,27 +265,34 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(r31));
 
 #   elif defined(ARM32)
-      lo = (void *)state.__sp;
+      lo = (void *)state.THREAD_FLD(sp);
 #     ifndef DARWIN_DONT_PARSE_STACK
-        *phi = GC_FindTopOfStack(state.__sp);
+        *phi = GC_FindTopOfStack(state.THREAD_FLD(sp));
 #     endif
-      GC_push_one(state.__r[0]);
-      GC_push_one(state.__r[1]);
-      GC_push_one(state.__r[2]);
-      GC_push_one(state.__r[3]);
-      GC_push_one(state.__r[4]);
-      GC_push_one(state.__r[5]);
-      GC_push_one(state.__r[6]);
-      GC_push_one(state.__r[7]);
-      GC_push_one(state.__r[8]);
-      GC_push_one(state.__r[9]);
-      GC_push_one(state.__r[10]);
-      GC_push_one(state.__r[11]);
-      GC_push_one(state.__r[12]);
-      /* GC_push_one(state.__sp); */
-      GC_push_one(state.__lr);
-      /* GC_push_one(state.__pc); */
-      GC_push_one(state.__cpsr);
+      {
+        int j;
+        for (j = 0; j <= 12; j++) {
+          GC_push_one(state.THREAD_FLD(r[j]));
+        }
+      }
+      /* "pc" and "sp" are skipped */
+      GC_push_one(state.THREAD_FLD(lr));
+      GC_push_one(state.THREAD_FLD(cpsr));
+
+#   elif defined(AARCH64)
+      lo = (void *)state.THREAD_FLD(sp);
+#     ifndef DARWIN_DONT_PARSE_STACK
+        *phi = GC_FindTopOfStack(state.THREAD_FLD(sp));
+#     endif
+      {
+        int j;
+        for (j = 0; j <= 28; j++) {
+          GC_push_one(state.THREAD_FLD(x[j]));
+        }
+      }
+      /* "cpsr", "pc" and "sp" are skipped */
+      GC_push_one(state.THREAD_FLD(fp));
+      GC_push_one(state.THREAD_FLD(lr));
 
 #   else
 #     error FIXME for non-x86 || ppc || arm architectures
@@ -295,6 +303,15 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     /* p is guaranteed to be non-NULL regardless of GC_query_task_threads. */
     *phi = (p->flags & MAIN_THREAD) != 0 ? GC_stackbottom : p->stack_end;
 # endif
+  if (p->altstack != NULL && (word)p->altstack <= (word)lo
+      && (word)lo <= (word)p->altstack + p->altstack_size) {
+    *paltstack_lo = lo;
+    *paltstack_hi = p->altstack + p->altstack_size;
+    lo = p->stack;
+    *phi = p->stack + p->stack_size;
+  } else {
+    *paltstack_lo = NULL;
+  }
 # ifdef DEBUG_THREADS
     GC_log_printf("Darwin: Stack for thread %p = [%p,%p)\n",
                   (void *)thread, lo, *phi);
@@ -305,7 +322,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 GC_INNER void GC_push_all_stacks(void)
 {
   int i;
-  ptr_t lo, hi;
+  ptr_t lo, hi, altstack_lo, altstack_hi;
   task_t my_task = current_task();
   mach_port_t my_thread = mach_thread_self();
   GC_bool found_me = FALSE;
@@ -327,10 +344,17 @@ GC_INNER void GC_push_all_stacks(void)
 
       for (i = 0; i < (int)listcount; i++) {
         thread_act_t thread = act_list[i];
-        lo = GC_stack_range_for(&hi, thread, NULL, FALSE, my_thread);
-        GC_ASSERT((word)lo <= (word)hi);
-        total_size += hi - lo;
-        GC_push_all_stack(lo, hi);
+        lo = GC_stack_range_for(&hi, thread, NULL, FALSE, my_thread,
+                                &altstack_lo, &altstack_hi);
+        if (lo) {
+          GC_ASSERT((word)lo <= (word)hi);
+          total_size += hi - lo;
+          GC_push_all_stack(lo, hi);
+        }
+        if (altstack_lo) {
+          total_size += altstack_hi - altstack_lo;
+          GC_push_all_stack(altstack_lo, altstack_hi);
+        }
         nthreads++;
         if (thread == my_thread)
           found_me = TRUE;
@@ -348,10 +372,16 @@ GC_INNER void GC_push_all_stacks(void)
         if ((p->flags & FINISHED) == 0) {
           thread_act_t thread = (thread_act_t)p->stop_info.mach_thread;
           lo = GC_stack_range_for(&hi, thread, p, (GC_bool)p->thread_blocked,
-                                  my_thread);
-          GC_ASSERT((word)lo <= (word)hi);
-          total_size += hi - lo;
-          GC_push_all_stack_sections(lo, hi, p->traced_stack_sect);
+                                  my_thread, &altstack_lo, &altstack_hi);
+          if (lo) {
+            GC_ASSERT((word)lo <= (word)hi);
+            total_size += hi - lo;
+            GC_push_all_stack_sections(lo, hi, p->traced_stack_sect);
+          }
+          if (altstack_lo) {
+            total_size += altstack_hi - altstack_lo;
+            GC_push_all_stack(altstack_lo, altstack_hi);
+          }
           nthreads++;
           if (thread == my_thread)
             found_me = TRUE;
@@ -488,6 +518,8 @@ STATIC GC_bool GC_suspend_thread_list(thread_act_array_t act_list, int count,
     }
     if (!found)
       GC_mach_threads_count++;
+    if (GC_on_thread_event)
+      GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED, (void *)thread);
   }
   return changed;
 }
@@ -576,6 +608,9 @@ GC_INNER void GC_stop_world(void)
           kern_result = thread_suspend(p->stop_info.mach_thread);
           if (kern_result != KERN_SUCCESS)
             ABORT("thread_suspend failed");
+          if (GC_on_thread_event)
+            GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
+                               (void *)p->stop_info.mach_thread);
         }
       }
     }
@@ -616,6 +651,8 @@ GC_INLINE void GC_thread_resume(thread_act_t thread)
   kern_result = thread_resume(thread);
   if (kern_result != KERN_SUCCESS)
     ABORT("thread_resume failed");
+  if (GC_on_thread_event)
+    GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)thread);
 }
 
 /* Caller holds allocation lock, and has held it continuously since     */

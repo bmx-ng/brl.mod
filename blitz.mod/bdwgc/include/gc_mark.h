@@ -274,10 +274,13 @@ GC_API void GC_CALL GC_set_mark_bit(const void *) GC_ATTR_NONNULL(1);
 
 /* Push everything in the given range onto the mark stack.              */
 /* (GC_push_conditional pushes either all or only dirty pages depending */
-/* on the third argument.)                                              */
+/* on the third argument.)  GC_push_all_eager also ensures that stack   */
+/* is scanned immediately, not just scheduled for scanning.             */
 GC_API void GC_CALL GC_push_all(char * /* bottom */, char * /* top */);
+GC_API void GC_CALL GC_push_all_eager(char * /* bottom */, char * /* top */);
 GC_API void GC_CALL GC_push_conditional(char * /* bottom */, char * /* top */,
                                         int /* bool all */);
+GC_API void GC_CALL GC_push_finalizer_structures(void);
 
 /* Set and get the client push-other-roots procedure.  A client         */
 /* supplied procedure should also call the original procedure.          */
@@ -286,6 +289,16 @@ GC_API void GC_CALL GC_push_conditional(char * /* bottom */, char * /* top */,
 typedef void (GC_CALLBACK * GC_push_other_roots_proc)(void);
 GC_API void GC_CALL GC_set_push_other_roots(GC_push_other_roots_proc);
 GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void);
+
+/* Walk the GC heap visiting all reachable objects.  Assume the caller  */
+/* holds the allocation lock.  Object base pointer, object size and     */
+/* client custom data are passed to the callback (holding the lock).    */
+typedef void (GC_CALLBACK *GC_reachable_object_proc)(void * /* obj */,
+                                                size_t /* bytes */,
+                                                void * /* client_data */);
+GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
+                                GC_reachable_object_proc,
+                                void * /* client_data */) GC_ATTR_NONNULL(1);
 
 #ifdef __cplusplus
   } /* end of extern "C" */

@@ -407,6 +407,26 @@ STATIC void GC_maybe_gc(void)
     }
 }
 
+STATIC GC_on_collection_event_proc GC_on_collection_event = 0;
+
+GC_API void GC_CALL GC_set_on_collection_event(GC_on_collection_event_proc fn)
+{
+    /* fn may be 0 (means no event notifier). */
+    DCL_LOCK_STATE;
+    LOCK();
+    GC_on_collection_event = fn;
+    UNLOCK();
+}
+
+GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void)
+{
+    GC_on_collection_event_proc fn;
+    DCL_LOCK_STATE;
+    LOCK();
+    fn = GC_on_collection_event;
+    UNLOCK();
+    return fn;
+}
 
 /*
  * Stop the world garbage collection.  Assumes lock held. If stop_func is
@@ -421,12 +441,17 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 #   endif
     ASSERT_CANCEL_DISABLED();
     if (GC_dont_gc || (*stop_func)()) return FALSE;
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_START);
     if (GC_incremental && GC_collection_in_progress()) {
       GC_COND_LOG_PRINTF(
             "GC_try_to_collect_inner: finishing collection in progress\n");
       /* Just finish collection already in progress.    */
         while(GC_collection_in_progress()) {
-            if ((*stop_func)()) return(FALSE);
+            if ((*stop_func)()) {
+              /* TODO: Notify GC_EVENT_ABANDON */
+              return(FALSE);
+            }
             GC_collect_a_little_inner(1);
         }
     }
@@ -450,6 +475,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
         if ((GC_find_leak || stop_func != GC_never_stop_func)
             && !GC_reclaim_all(stop_func, FALSE)) {
             /* Aborted.  So far everything is still consistent. */
+            /* TODO: Notify GC_EVENT_ABANDON */
             return(FALSE);
         }
     GC_invalidate_mark_state();  /* Flush mark stack.   */
@@ -467,6 +493,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
         GC_unpromote_black_lists();
       } /* else we claim the world is already still consistent.  We'll  */
         /* finish incrementally.                                        */
+      /* TODO: Notify GC_EVENT_ABANDON */
       return(FALSE);
     }
     GC_finish_collection();
@@ -477,6 +504,8 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
                       MS_TIME_DIFF(current_time,start_time));
       }
 #   endif
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_END);
     return(TRUE);
 }
 
@@ -608,7 +637,18 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
         GET_TIME(start_time);
 #   endif
 
+#   ifdef THREADS
+      if (GC_on_collection_event)
+        GC_on_collection_event(GC_EVENT_PRE_STOP_WORLD);
+#   endif
+
     STOP_WORLD();
+
+#   ifdef THREADS
+      if (GC_on_collection_event)
+        GC_on_collection_event(GC_EVENT_POST_STOP_WORLD);
+#   endif
+
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = TRUE;
 #   endif
@@ -623,6 +663,9 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #   endif
 
     /* Mark from all roots.  */
+        if (GC_on_collection_event)
+          GC_on_collection_event(GC_EVENT_MARK_START);
+
         /* Minimize junk left in my registers and on the stack */
             GC_clear_a_few_frames();
             GC_noop6(0,0,0,0,0,0);
@@ -636,7 +679,20 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
 #           ifdef THREAD_LOCAL_ALLOC
               GC_world_stopped = FALSE;
 #           endif
+
+#           ifdef THREADS
+              if (GC_on_collection_event)
+                GC_on_collection_event(GC_EVENT_PRE_START_WORLD);
+#           endif
+
             START_WORLD();
+
+#           ifdef THREADS
+              if (GC_on_collection_event)
+                GC_on_collection_event(GC_EVENT_POST_START_WORLD);
+#           endif
+
+            /* TODO: Notify GC_EVENT_MARK_ABANDON */
             return(FALSE);
           }
           if (GC_mark_some(GC_approx_sp())) break;
@@ -653,11 +709,25 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
     if (GC_debugging_started) {
       (*GC_check_heap)();
     }
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_MARK_END);
 
 #   ifdef THREAD_LOCAL_ALLOC
       GC_world_stopped = FALSE;
 #   endif
+
+#   ifdef THREADS
+      if (GC_on_collection_event)
+        GC_on_collection_event(GC_EVENT_PRE_START_WORLD);
+#   endif
+
     START_WORLD();
+
+#   ifdef THREADS
+      if (GC_on_collection_event)
+        GC_on_collection_event(GC_EVENT_POST_START_WORLD);
+#   endif
+
 #   ifndef SMALL_CONFIG
       if (GC_PRINT_STATS_FLAG) {
         unsigned long time_diff;
@@ -846,6 +916,8 @@ STATIC void GC_finish_collection(void)
       if (GC_print_stats)
         GET_TIME(start_time);
 #   endif
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_RECLAIM_START);
 
 #   ifndef GC_GET_HEAP_USAGE_NOT_NEEDED
       if (GC_bytes_found > 0)
@@ -951,6 +1023,8 @@ STATIC void GC_finish_collection(void)
 
     IF_USE_MUNMAP(GC_unmap_old());
 
+    if (GC_on_collection_event)
+      GC_on_collection_event(GC_EVENT_RECLAIM_END);
 #   ifndef SMALL_CONFIG
       if (GC_print_stats) {
         GET_TIME(done_time);

@@ -16,36 +16,6 @@
 
 #include "private/gc_priv.h"
 
-#if defined(LINUX) && !defined(POWERPC) && !defined(NO_SIGCONTEXT_H)
-# include <linux/version.h>
-# if (LINUX_VERSION_CODE <= 0x10400)
-    /* Ugly hack to get struct sigcontext_struct definition.  Required  */
-    /* for some early 1.3.X releases.  Will hopefully go away soon.     */
-    /* in some later Linux releases, asm/sigcontext.h may have to       */
-    /* be included instead.                                             */
-#   define __KERNEL__
-#   include <asm/signal.h>
-#   undef __KERNEL__
-# else
-    /* Kernels prior to 2.1.1 defined struct sigcontext_struct instead of */
-    /* struct sigcontext.  libc6 (glibc2) uses "struct sigcontext" in     */
-    /* prototypes, so we have to include the top-level sigcontext.h to    */
-    /* make sure the former gets defined to be the latter if appropriate. */
-#   include <features.h>
-#   if 2 <= __GLIBC__
-#     if 2 == __GLIBC__ && 0 == __GLIBC_MINOR__
-        /* glibc 2.1 no longer has sigcontext.h.  But signal.h          */
-        /* has the right declaration for glibc 2.1.                     */
-#       include <sigcontext.h>
-#     endif /* 0 == __GLIBC_MINOR__ */
-#   else /* __GLIBC__ < 2 */
-      /* libc5 doesn't have <sigcontext.h>: go directly with the kernel   */
-      /* one.  Check LINUX_VERSION_CODE to see which we should reference. */
-#     include <asm/sigcontext.h>
-#   endif /* __GLIBC__ < 2 */
-# endif
-#endif /* LINUX && !POWERPC */
-
 #if !defined(OS2) && !defined(PCR) && !defined(AMIGA) && !defined(MACOS) \
     && !defined(MSWINCE) && !defined(__CC_ARM)
 # include <sys/types.h>
@@ -781,10 +751,17 @@ GC_INNER word GC_page_size = 0;
 
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
     {
-      ptr_t trunc_sp = (ptr_t)((word)GC_approx_sp() & ~(GC_page_size - 1));
+      ptr_t trunc_sp;
+      word size;
+
+      /* Set page size if it is not ready (so client can use this       */
+      /* function even before GC is initialized).                       */
+      if (!GC_page_size) GC_setpagesize();
+
+      trunc_sp = (ptr_t)((word)GC_approx_sp() & ~(GC_page_size - 1));
       /* FIXME: This won't work if called from a deeply recursive       */
       /* client code (and the committed stack space has grown).         */
-      word size = GC_get_writable_length(trunc_sp, 0);
+      size = GC_get_writable_length(trunc_sp, 0);
       GC_ASSERT(size != 0);
       sb -> mem_base = trunc_sp + size;
       return GC_SUCCESS;
@@ -1868,16 +1845,15 @@ void GC_register_data_segments(void)
   }
 # endif
 
-# if defined(FREEBSD) && !defined(PCR) && (defined(I386) || defined(X86_64) \
-                                || defined(powerpc) || defined(__powerpc__))
-
+#ifdef DATASTART_USES_BSDGETDATASTART
 /* Its unclear whether this should be identical to the above, or        */
 /* whether it should apply to non-X86 architectures.                    */
 /* For now we don't assume that there is always an empty page after     */
 /* etext.  But in some cases there actually seems to be slightly more.  */
 /* This also deals with holes between read-only data and writable data. */
-ptr_t GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr)
-{
+  GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t max_page_size,
+                                        ptr_t etext_addr)
+  {
     word text_end = ((word)(etext_addr) + sizeof(word) - 1)
                      & ~(sizeof(word) - 1);
         /* etext rounded to word boundary       */
@@ -1897,10 +1873,8 @@ ptr_t GC_FreeBSDGetDataStart(size_t max_page_size, ptr_t etext_addr)
         result = GC_find_limit((ptr_t)(DATAEND), FALSE);
     }
     return(result);
-}
-
-# endif /* FREEBSD */
-
+  }
+#endif /* DATASTART_USES_BSDGETDATASTART */
 
 #ifdef AMIGA
 
@@ -2397,7 +2371,7 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
 #   ifdef USE_WINALLOC
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
-          GC_word free_len;
+          word free_len;
 
           if (VirtualQuery(start_addr, &mem_info, sizeof(mem_info))
               != sizeof(mem_info))
@@ -2436,7 +2410,7 @@ GC_INNER void GC_remap(ptr_t start, size_t bytes)
 #   ifdef USE_WINALLOC
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
-          GC_word alloc_len;
+          word alloc_len;
           ptr_t result;
 
           if (VirtualQuery(start_addr, &mem_info, sizeof(mem_info))
@@ -2505,7 +2479,7 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 #   ifdef USE_WINALLOC
       while (len != 0) {
           MEMORY_BASIC_INFORMATION mem_info;
-          GC_word free_len;
+          word free_len;
 
           if (VirtualQuery(start_addr, &mem_info, sizeof(mem_info))
               != sizeof(mem_info))
@@ -3086,7 +3060,9 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #     ifndef SEGV_ACCERR
 #       define SEGV_ACCERR 2
 #     endif
-#     if defined(POWERPC)
+#     if defined(AARCH64) || defined(ARM32)
+#       define CODE_OK (si -> si_code == SEGV_ACCERR)
+#     elif defined(POWERPC)
 #       define AIM  /* Pretend that we're AIM. */
 #       include <machine/trap.h>
 #       define CODE_OK (si -> si_code == EXC_DSI \
@@ -3481,127 +3457,11 @@ GC_INNER GC_bool GC_page_was_dirty(struct hblk *h)
  * can be called from within GC_call_with_alloc_lock, and the cord
  * package does so.  On systems that allow nested lock acquisition, this
  * happens to work.
- * On other systems, SET_LOCK_HOLDER and friends must be suitably defined.
  */
-
-#if 0
-static GC_bool syscall_acquired_lock = FALSE;   /* Protected by GC lock. */
-
-void GC_begin_syscall(void)
-{
-    /* FIXME: Resurrecting this code would require fixing the   */
-    /* test, which can spuriously return TRUE.                  */
-    if (!I_HOLD_LOCK()) {
-        LOCK();
-        syscall_acquired_lock = TRUE;
-    }
-}
-
-void GC_end_syscall(void)
-{
-    if (syscall_acquired_lock) {
-        syscall_acquired_lock = FALSE;
-        UNLOCK();
-    }
-}
-
-void GC_unprotect_range(ptr_t addr, word len)
-{
-    struct hblk * start_block;
-    struct hblk * end_block;
-    register struct hblk *h;
-    ptr_t obj_start;
-
-    if (!GC_dirty_maintained) return;
-    obj_start = GC_base(addr);
-    if (obj_start == 0) return;
-    if (GC_base(addr + len - 1) != obj_start) {
-        ABORT("GC_unprotect_range(range bigger than object)");
-    }
-    start_block = (struct hblk *)((word)addr & ~(GC_page_size - 1));
-    end_block = (struct hblk *)((word)(addr + len - 1) & ~(GC_page_size - 1));
-    end_block += GC_page_size/HBLKSIZE - 1;
-    for (h = start_block; (word)h <= (word)end_block; h++) {
-        register word index = PHT_HASH(h);
-
-        async_set_pht_entry_from_index(GC_dirty_pages, index);
-    }
-    UNPROTECT(start_block,
-              ((ptr_t)end_block - (ptr_t)start_block) + HBLKSIZE);
-}
-
 
 /* We no longer wrap read by default, since that was causing too many   */
 /* problems.  It is preferred that the client instead avoids writing    */
 /* to the write-protected heap with a system call.                      */
-/* This still serves as sample code if you do want to wrap system calls.*/
-
-#if !defined(MSWIN32) && !defined(MSWINCE) && !defined(GC_USE_LD_WRAP)
-/* Replacement for UNIX system call.                                    */
-/* Other calls that write to the heap should be handled similarly.      */
-/* Note that this doesn't work well for blocking reads:  It will hold   */
-/* the allocation lock for the entire duration of the call.             */
-/* Multi-threaded clients should really ensure that it won't block,     */
-/* either by setting the descriptor non-blocking, or by calling select  */
-/* or poll first, to make sure that input is available.                 */
-/* Another, preferred alternative is to ensure that system calls never  */
-/* write to the protected heap (see above).                             */
-# include <unistd.h>
-# include <sys/uio.h>
-ssize_t read(int fd, void *buf, size_t nbyte)
-{
-    int result;
-
-    GC_begin_syscall();
-    GC_unprotect_range(buf, (word)nbyte);
-#   if defined(IRIX5) || defined(GC_LINUX_THREADS)
-        /* Indirect system call may not always be easily available.     */
-        /* We could call _read, but that would interfere with the       */
-        /* libpthread interception of read.                             */
-        /* On Linux, we have to be careful with the linuxthreads        */
-        /* read interception.                                           */
-        {
-            struct iovec iov;
-
-            iov.iov_base = buf;
-            iov.iov_len = nbyte;
-            result = readv(fd, &iov, 1);
-        }
-#   else
-#     if defined(HURD)
-        result = __read(fd, buf, nbyte);
-#     else
-        /* The two zero args at the end of this list are because one
-           IA-64 syscall() implementation actually requires six args
-           to be passed, even though they aren't always used. */
-        result = syscall(SYS_read, fd, buf, nbyte, 0, 0);
-#     endif /* !HURD */
-#   endif
-    GC_end_syscall();
-    return(result);
-}
-#endif /* !MSWIN32 && !MSWINCE && !GC_LINUX_THREADS */
-
-#if defined(GC_USE_LD_WRAP) && !defined(THREADS)
-    /* We use the GNU ld call wrapping facility.                        */
-    /* I'm not sure that this actually wraps whatever version of read   */
-    /* is called by stdio.  That code also mentions __read.             */
-#   include <unistd.h>
-    ssize_t __wrap_read(int fd, void *buf, size_t nbyte)
-    {
-        int result;
-
-        GC_begin_syscall();
-        GC_unprotect_range(buf, (word)nbyte);
-        result = __real_read(fd, buf, nbyte);
-        GC_end_syscall();
-        return(result);
-    }
-
-    /* We should probably also do this for __read, or whatever stdio    */
-    /* actually calls.                                                  */
-#endif
-#endif /* 0 */
 
 # ifdef CHECKSUMS
     GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h GC_ATTR_UNUSED)
@@ -3832,7 +3692,6 @@ GC_INNER void GC_remove_protection(struct hblk *h, word nblocks,
 
 #include <mach/mach.h>
 #include <mach/mach_error.h>
-#include <mach/thread_status.h>
 #include <mach/exception.h>
 #include <mach/task.h>
 #include <pthread.h>
@@ -4269,7 +4128,12 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 # define DARWIN_EXC_STATE         ARM_EXCEPTION_STATE
 # define DARWIN_EXC_STATE_COUNT   ARM_EXCEPTION_STATE_COUNT
 # define DARWIN_EXC_STATE_T       arm_exception_state_t
-# define DARWIN_EXC_STATE_DAR     THREAD_FLD(far)
+# define DARWIN_EXC_STATE_DAR     THREAD_FLD_NAME(far)
+#elif defined(AARCH64)
+# define DARWIN_EXC_STATE         ARM_EXCEPTION_STATE64
+# define DARWIN_EXC_STATE_COUNT   ARM_EXCEPTION_STATE64_COUNT
+# define DARWIN_EXC_STATE_T       arm_exception_state64_t
+# define DARWIN_EXC_STATE_DAR     THREAD_FLD_NAME(far)
 #elif defined(POWERPC)
 # if CPP_WORDSZ == 32
 #   define DARWIN_EXC_STATE       PPC_EXCEPTION_STATE
@@ -4280,7 +4144,7 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 #   define DARWIN_EXC_STATE_COUNT PPC_EXCEPTION_STATE64_COUNT
 #   define DARWIN_EXC_STATE_T     ppc_exception_state64_t
 # endif
-# define DARWIN_EXC_STATE_DAR     THREAD_FLD(dar)
+# define DARWIN_EXC_STATE_DAR     THREAD_FLD_NAME(dar)
 #elif defined(I386) || defined(X86_64)
 # if CPP_WORDSZ == 32
 #   if defined(i386_EXCEPTION_STATE_COUNT) \
@@ -4299,7 +4163,7 @@ STATIC kern_return_t GC_forward_exception(mach_port_t thread, mach_port_t task,
 #   define DARWIN_EXC_STATE_COUNT x86_EXCEPTION_STATE64_COUNT
 #   define DARWIN_EXC_STATE_T     x86_exception_state64_t
 # endif
-# define DARWIN_EXC_STATE_DAR     THREAD_FLD(faultvaddr)
+# define DARWIN_EXC_STATE_DAR     THREAD_FLD_NAME(faultvaddr)
 #else
 # error FIXME for non-arm/ppc/x86 darwin
 #endif

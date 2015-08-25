@@ -402,6 +402,12 @@ GC_INNER void GC_push_all_stacks(void)
                         (void *)p->id, lo, hi);
 #       endif
         if (0 == lo) ABORT("GC_push_all_stacks: sp not set!");
+        if (p->altstack != NULL && (word)p->altstack <= (word)lo
+            && (word)lo <= (word)p->altstack + p->altstack_size) {
+          hi = p->altstack + p->altstack_size;
+          /* FIXME: Need to scan the normal stack too, but how ? */
+          /* FIXME: Assume stack grows down */
+        }
         GC_push_all_stack_sections(lo, hi, traced_stack_sect);
 #       ifdef STACK_GROWS_UP
           total_size += lo - hi;
@@ -466,8 +472,12 @@ STATIC int GC_suspend_all(void)
 {
   int n_live_threads = 0;
   int i;
-
 # ifndef NACL
+#   ifndef PLATFORM_ANDROID
+      pthread_t thread_id;
+#   else
+      pid_t thread_id;
+#   endif
     GC_thread p;
 #   ifndef GC_OPENBSD_UTHREADS
       int result;
@@ -499,12 +509,17 @@ STATIC int GC_suspend_all(void)
                 if (pthread_stackseg_np(p->id, &stack))
                   ABORT("pthread_stackseg_np failed");
                 p -> stop_info.stack_ptr = (ptr_t)stack.ss_sp - stack.ss_size;
+                if (GC_on_thread_event)
+                  GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
+                                     (void *)p->id);
               }
 #           else
 #             ifndef PLATFORM_ANDROID
-                result = pthread_kill(p -> id, GC_sig_suspend);
+                thread_id = p -> id;
+                result = pthread_kill(thread_id, GC_sig_suspend);
 #             else
-                result = android_thread_kill(p -> kernel_id, GC_sig_suspend);
+                thread_id = p -> kernel_id;
+                result = android_thread_kill(thread_id, GC_sig_suspend);
 #             endif
               switch(result) {
                 case ESRCH:
@@ -512,6 +527,9 @@ STATIC int GC_suspend_all(void)
                     n_live_threads--;
                     break;
                 case 0:
+                    if (GC_on_thread_event)
+                      GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
+                                         (void *)thread_id);
                     break;
                 default:
                     ABORT_ARG1("pthread_kill failed at suspend",
@@ -552,6 +570,8 @@ STATIC int GC_suspend_all(void)
           num_used++;
           if (GC_nacl_thread_parked[i] == 1) {
             num_threads_parked++;
+            if (GC_on_thread_event)
+              GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED, (void *)(word)i);
           }
         }
       }
@@ -797,6 +817,11 @@ GC_INNER void GC_start_world(void)
       register int n_live_threads = 0;
       register int result;
 #   endif
+#   ifndef PLATFORM_ANDROID
+      pthread_t thread_id;
+#   else
+      pid_t thread_id;
+#   endif
 #   ifdef GC_NETBSD_THREADS_WORKAROUND
       int code;
 #   endif
@@ -823,12 +848,15 @@ GC_INNER void GC_start_world(void)
 #         ifdef GC_OPENBSD_UTHREADS
             if (pthread_resume_np(p -> id) != 0)
               ABORT("pthread_resume_np failed");
+            if (GC_on_thread_event)
+              GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)p->id);
 #         else
 #           ifndef PLATFORM_ANDROID
-              result = pthread_kill(p -> id, GC_sig_thr_restart);
+              thread_id = p -> id;
+              result = pthread_kill(thread_id, GC_sig_thr_restart);
 #           else
-              result = android_thread_kill(p -> kernel_id,
-                                           GC_sig_thr_restart);
+              thread_id = p -> kernel_id;
+              result = android_thread_kill(thread_id, GC_sig_thr_restart);
 #           endif
             switch(result) {
                 case ESRCH:
@@ -836,6 +864,9 @@ GC_INNER void GC_start_world(void)
                     n_live_threads--;
                     break;
                 case 0:
+                    if (GC_on_thread_event)
+                      GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED,
+                                         (void *)thread_id);
                     break;
                 default:
                     ABORT_ARG1("pthread_kill failed at resume",
@@ -863,6 +894,9 @@ GC_INNER void GC_start_world(void)
       GC_log_printf("World starting...\n");
 #   endif
     GC_nacl_park_threads_now = 0;
+    if (GC_on_thread_event)
+      GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, NULL);
+      /* TODO: Send event for every unsuspended thread. */
 # endif
 }
 

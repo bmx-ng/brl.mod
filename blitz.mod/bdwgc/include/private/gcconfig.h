@@ -87,6 +87,7 @@
 /* And one for Darwin: */
 # if defined(macosx) || (defined(__APPLE__) && defined(__MACH__))
 #   define DARWIN
+#   include <TargetConditionals.h>
 # endif
 
 /* Determine the machine type: */
@@ -97,7 +98,7 @@
 # endif
 # if defined(__aarch64__)
 #    define AARCH64
-#    if !defined(LINUX)
+#    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -371,7 +372,9 @@
 #   elif defined(__arm__)
 #    define ARM32
 #    define mach_type_known
-#    define DARWIN_DONT_PARSE_STACK
+#   elif defined(__aarch64__)
+#    define AARCH64
+#    define mach_type_known
 #   endif
 # endif
 # if defined(__rtems__) && (defined(i386) || defined(__i386__))
@@ -410,10 +413,6 @@
 #   define X86_64
 #   define mach_type_known
 # endif
-# if defined(FREEBSD) && defined(__ia64__)
-#   define IA64
-#   define mach_type_known
-# endif
 # if defined(FREEBSD) && defined(__sparc__)
 #   define SPARC
 #   define mach_type_known
@@ -424,6 +423,10 @@
 # endif
 # if defined(FREEBSD) && defined(__arm__)
 #   define ARM32
+#   define mach_type_known
+# endif
+# if defined(FREEBSD) && defined(__aarch64__)
+#   define AARCH64
 #   define mach_type_known
 # endif
 # if defined(bsdi) && (defined(i386) || defined(__i386__))
@@ -968,9 +971,8 @@
 #           define DYNAMIC_LOADING
 #       endif
         extern char etext[];
-        ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
-#       define DATASTART_IS_FUNC
+#       define DATASTART_USES_BSDGETDATASTART
 #   endif
 #   ifdef NETBSD
 #     define ALIGNMENT 4
@@ -1302,15 +1304,6 @@
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
-#       if 0
-#         define HEURISTIC1
-#         undef STACK_GRAN
-#         define STACK_GRAN 0x10000000
-          /* STACKBOTTOM is usually 0xc0000000, but this changes with   */
-          /* different kernel configurations.  In particular, systems   */
-          /* with 2GB physical memory will usually move the user        */
-          /* address space limit, and hence initial SP to 0x80000000.   */
-#       endif
 #       if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       else
@@ -1455,9 +1448,8 @@
 #           define DYNAMIC_LOADING
 #       endif
         extern char etext[];
-        char * GC_FreeBSDGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
-#       define DATASTART_IS_FUNC
+#       define DATASTART_USES_BSDGETDATASTART
 #   endif
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
@@ -1526,7 +1518,9 @@
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
 #     define DARWIN_DONT_PARSE_STACK
-#     define DYNAMIC_LOADING
+#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
+#       define DYNAMIC_LOADING
+#     endif
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default). */
 #     define DATASTART ((ptr_t) get_etext())
@@ -1542,6 +1536,10 @@
       /* There seems to be some issues with trylock hanging on darwin.  */
       /* This should be looked into some more.                          */
 #     define NO_PTHREAD_TRYLOCK
+#     if TARGET_OS_IPHONE && !defined(NO_DYLD_BIND_FULLY_IMAGE)
+        /* iPhone/iPad simulator */
+#       define NO_DYLD_BIND_FULLY_IMAGE
+#     endif
 #   endif /* DARWIN */
 # endif
 
@@ -2020,9 +2018,14 @@
 # endif
 
 # ifdef AARCH64
-#   define CPP_WORDSZ 64
 #   define MACH_TYPE "AARCH64"
-#   define ALIGNMENT 8
+#   ifdef __ILP32__
+#     define CPP_WORDSZ 32
+#     define ALIGNMENT 4
+#   else
+#     define CPP_WORDSZ 64
+#     define ALIGNMENT 8
+#   endif
 #   ifndef HBLKSIZE
 #     define HBLKSIZE 4096
 #   endif
@@ -2034,6 +2037,43 @@
 #     define DATASTART ((ptr_t)__data_start)
       extern char _end[];
 #     define DATAEND ((ptr_t)(&_end))
+#   endif
+#   ifdef DARWIN
+      /* iOS */
+#     define OS_TYPE "DARWIN"
+#     define DARWIN_DONT_PARSE_STACK
+#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
+#       define DYNAMIC_LOADING
+#     endif
+#     define DATASTART ((ptr_t) get_etext())
+#     define DATAEND   ((ptr_t) get_end())
+#     define STACKBOTTOM ((ptr_t) 0x16fdfffff)
+#     ifndef USE_MMAP
+#       define USE_MMAP
+#     endif
+#     define USE_MMAP_ANON
+#     define MPROTECT_VDB
+#     include <unistd.h>
+#     define GETPAGESIZE() getpagesize()
+      /* FIXME: There seems to be some issues with trylock hanging on   */
+      /* darwin. This should be looked into some more.                  */
+#     define NO_PTHREAD_TRYLOCK
+#     if TARGET_OS_IPHONE && !defined(NO_DYLD_BIND_FULLY_IMAGE)
+#       define NO_DYLD_BIND_FULLY_IMAGE
+#     endif
+#   endif
+#   ifdef FREEBSD
+#     define OS_TYPE "FREEBSD"
+#     ifndef GC_FREEBSD_THREADS
+#       define MPROTECT_VDB
+#     endif
+#     define FREEBSD_STACKBOTTOM
+#     ifdef __ELF__
+#       define DYNAMIC_LOADING
+#     endif
+      extern char etext[];
+#     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
+#     define DATASTART_USES_BSDGETDATASTART
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.   */
@@ -2096,18 +2136,24 @@
 #   endif
 #   ifdef FREEBSD
       /* FreeBSD/arm */
-#     define ALIGNMENT 4
 #     define OS_TYPE "FREEBSD"
+#     ifndef GC_FREEBSD_THREADS
+#       define MPROTECT_VDB
+#     endif
+#     define SIG_SUSPEND SIGUSR1
+#     define SIG_THR_RESTART SIGUSR2
+#     define FREEBSD_STACKBOTTOM
 #     ifdef __ELF__
 #       define DYNAMIC_LOADING
 #     endif
-#     define HEURISTIC2
       extern char etext[];
-#     define SEARCH_FOR_DATA_START
+#     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
+#     define DATASTART_USES_BSDGETDATASTART
 #   endif
 #   ifdef DARWIN
-      /* iPhone */
+      /* iOS */
 #     define OS_TYPE "DARWIN"
+#     define DARWIN_DONT_PARSE_STACK
 #     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
 #       define DYNAMIC_LOADING
 #     endif
@@ -2124,7 +2170,7 @@
       /* FIXME: There seems to be some issues with trylock hanging on   */
       /* darwin. This should be looked into some more.                  */
 #     define NO_PTHREAD_TRYLOCK
-#     ifndef NO_DYLD_BIND_FULLY_IMAGE
+#     if TARGET_OS_IPHONE && !defined(NO_DYLD_BIND_FULLY_IMAGE)
 #       define NO_DYLD_BIND_FULLY_IMAGE
 #     endif
 #   endif
@@ -2303,7 +2349,9 @@
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
 #     define DARWIN_DONT_PARSE_STACK
-#     define DYNAMIC_LOADING
+#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
+#       define DYNAMIC_LOADING
+#     endif
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default)  */
 #     define DATASTART ((ptr_t) get_etext())
@@ -2319,6 +2367,10 @@
       /* There seems to be some issues with trylock hanging on darwin.  */
       /* This should be looked into some more.                          */
 #     define NO_PTHREAD_TRYLOCK
+#     if TARGET_OS_IPHONE && !defined(NO_DYLD_BIND_FULLY_IMAGE)
+        /* iPhone/iPad simulator */
+#       define NO_DYLD_BIND_FULLY_IMAGE
+#     endif
 #   endif
 #   ifdef FREEBSD
 #       define OS_TYPE "FREEBSD"
@@ -2340,9 +2392,8 @@
 #           define DYNAMIC_LOADING
 #       endif
         extern char etext[];
-        ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
 #       define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
-#       define DATASTART_IS_FUNC
+#       define DATASTART_USES_BSDGETDATASTART
 #   endif
 #   ifdef NETBSD
 #       define OS_TYPE "NETBSD"
@@ -2547,6 +2598,11 @@
 #if defined(FREEBSD) && (defined(__DragonFly__) || __FreeBSD__ >= 4 \
                          || (__FreeBSD_kernel__ >= 4))
 # define SUNOS5SIGS
+#endif
+
+#ifdef DATASTART_USES_BSDGETDATASTART
+  GC_INNER ptr_t GC_FreeBSDGetDataStart(size_t, ptr_t);
+# define DATASTART_IS_FUNC
 #endif
 
 #if !defined(GC_EXPLICIT_SIGNALS_UNBLOCK) && defined(SUNOS5SIGS) \
@@ -2912,7 +2968,7 @@
 #endif
 
 #if defined(POINTER_SHIFT) && !defined(POINTER_MASK)
-# define POINTER_MASK ((GC_word)(-1))
+# define POINTER_MASK ((word)(-1))
 #endif
 
 #if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
@@ -2942,7 +2998,8 @@
 # error "One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd."
 #endif
 
-#if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX)
+#if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \
+     && !defined(REDIRECT_MALLOC_IN_HEADER)
 # error "REDIRECT_MALLOC with THREADS works at most on Linux."
 #endif
 
@@ -2995,12 +3052,12 @@
     ptr_t GC_wince_get_mem(GC_word bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_wince_get_mem(bytes)
 # elif defined(AMIGA) && defined(GC_AMIGA_FASTALLOC)
-    void *GC_amiga_get_mem(size_t size);
+    void *GC_amiga_get_mem(size_t bytes);
 #   define GET_MEM(bytes) HBLKPTR((size_t) \
                           GC_amiga_get_mem((size_t)(bytes) + GC_page_size) \
                           + GC_page_size-1)
 # elif defined(SN_TARGET_PS3)
-    void *ps3_get_mem(size_t size);
+    void *ps3_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)ps3_get_mem(bytes)
 # else
     ptr_t GC_unix_get_mem(GC_word bytes);

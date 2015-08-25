@@ -94,6 +94,11 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include "gcconfig.h"
 #endif
 
+#if !defined(GC_ATOMIC_UNCOLLECTABLE) && defined(ATOMIC_UNCOLLECTABLE)
+  /* For compatibility with old-style naming. */
+# define GC_ATOMIC_UNCOLLECTABLE
+#endif
+
 #ifndef GC_INNER
   /* This tagging macro must be used at the start of every variable     */
   /* definition which is declared with GC_EXTERN.  Should be also used  */
@@ -258,7 +263,6 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                         /* finalizers to be run, and we haven't called  */
                         /* this procedure yet this GC cycle.            */
 
-   GC_INNER void GC_push_finalizer_structures(void);
    GC_INNER void GC_finalize(void);
                         /* Perform all indicated finalization actions   */
                         /* on unmarked objects.                         */
@@ -455,6 +459,10 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #   endif
 # endif
 
+#ifdef THREADS
+  GC_EXTERN GC_on_thread_event_proc GC_on_thread_event;
+#endif
+
 /* Abandon ship */
 # ifdef PCR
 #   define ABORT(s) PCR_Base_Panic(s)
@@ -524,7 +532,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 /* The argument (if any) format specifier should be:    */
 /* "%s", "%p" or "%"WARN_PRIdPTR.                       */
 #define WARN(msg, arg) (*GC_current_warn_proc)("GC Warning: " msg, \
-                                               (GC_word)(arg))
+                                               (word)(arg))
 GC_EXTERN GC_warn_proc GC_current_warn_proc;
 
 /* Print format type macro for decimal signed_word value passed WARN(). */
@@ -556,6 +564,7 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #endif
 
 #if defined(DARWIN)
+# include <mach/thread_status.h>
 # ifndef MAC_OS_X_VERSION_MAX_ALLOWED
 #   include <AvailabilityMacros.h>
                 /* Include this header just to import the above macro.  */
@@ -585,8 +594,20 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #     define GC_MACH_THREAD_STATE       x86_THREAD_STATE64
 #     define GC_MACH_THREAD_STATE_COUNT x86_THREAD_STATE64_COUNT
 #   endif
+# elif defined(ARM32) && defined(ARM_UNIFIED_THREAD_STATE)
+#   define GC_THREAD_STATE_T            arm_unified_thread_state_t
+#   define GC_MACH_THREAD_STATE         ARM_UNIFIED_THREAD_STATE
+#   define GC_MACH_THREAD_STATE_COUNT   ARM_UNIFIED_THREAD_STATE_COUNT
 # elif defined(ARM32)
 #   define GC_THREAD_STATE_T            arm_thread_state_t
+#   ifdef ARM_MACHINE_THREAD_STATE_COUNT
+#     define GC_MACH_THREAD_STATE       ARM_MACHINE_THREAD_STATE
+#     define GC_MACH_THREAD_STATE_COUNT ARM_MACHINE_THREAD_STATE_COUNT
+#   endif
+# elif defined(AARCH64)
+#   define GC_THREAD_STATE_T            arm_thread_state64_t
+#   define GC_MACH_THREAD_STATE         ARM_THREAD_STATE64
+#   define GC_MACH_THREAD_STATE_COUNT   ARM_THREAD_STATE64_COUNT
 # else
 #   error define GC_THREAD_STATE_T
 # endif
@@ -611,9 +632,14 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
   /* without __, thus hopefully, not breaking any existing              */
   /* Makefile.direct builds.                                            */
 # if __DARWIN_UNIX03
-#   define THREAD_FLD(x) __ ## x
+#   define THREAD_FLD_NAME(x) __ ## x
 # else
-#   define THREAD_FLD(x) x
+#   define THREAD_FLD_NAME(x) x
+# endif
+# if defined(ARM32) && defined(ARM_UNIFIED_THREAD_STATE)
+#   define THREAD_FLD(x) ts_32.THREAD_FLD_NAME(x)
+# else
+#   define THREAD_FLD(x) THREAD_FLD_NAME(x)
 # endif
 #endif /* DARWIN */
 
@@ -1192,7 +1218,7 @@ struct _GC_arrays {
                           /* objects on this and auobjfreelist  */
                           /* are always marked, except during   */
                           /* garbage collections.               */
-# ifdef ATOMIC_UNCOLLECTABLE
+# ifdef GC_ATOMIC_UNCOLLECTABLE
 #   define GC_auobjfreelist GC_arrays._auobjfreelist
     void *_auobjfreelist[MAXOBJGRANULES+1];
                         /* Atomic uncollectible but traced objs */
@@ -1373,7 +1399,7 @@ GC_EXTERN struct obj_kind {
 #define PTRFREE 0
 #define NORMAL  1
 #define UNCOLLECTABLE 2
-#ifdef ATOMIC_UNCOLLECTABLE
+#ifdef GC_ATOMIC_UNCOLLECTABLE
 # define AUNCOLLECTABLE 3
 # define STUBBORN 4
 # define IS_UNCOLLECTABLE(k) (((k) & ~1) == UNCOLLECTABLE)
@@ -1580,11 +1606,6 @@ GC_INNER GC_bool GC_collection_in_progress(void);
 GC_INNER void GC_push_all_stack(ptr_t b, ptr_t t);
                                     /* As GC_push_all but consider      */
                                     /* interior pointers as valid.      */
-GC_INNER void GC_push_all_eager(ptr_t b, ptr_t t);
-                                    /* Same as GC_push_all_stack, but   */
-                                    /* ensures that stack is scanned    */
-                                    /* immediately, not just scheduled  */
-                                    /* for scanning.                    */
 
   /* In the threads case, we push part of the current thread stack      */
   /* with GC_push_all_eager when we push the registers.  This gets the  */
@@ -2457,13 +2478,12 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define NEED_FIND_LIMIT
 #endif
 
-#if defined(FREEBSD) && (defined(I386) || defined(X86_64) \
-                        || defined(powerpc) || defined(__powerpc__))
+#if defined(DATASTART_USES_BSDGETDATASTART)
 # include <machine/trap.h>
 # if !defined(PCR)
 #   define NEED_FIND_LIMIT
 # endif
-#endif /* FREEBSD */
+#endif /* DATASTART_USES_BSDGETDATASTART */
 
 #if (defined(NETBSD) || defined(OPENBSD)) && defined(__ELF__) \
     && !defined(NEED_FIND_LIMIT)
