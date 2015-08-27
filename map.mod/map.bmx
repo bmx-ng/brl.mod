@@ -6,12 +6,14 @@ bbdoc: Data structures/Maps
 End Rem
 Module BRL.Map
 
-ModuleInfo "Version: 1.07"
+ModuleInfo "Version: 1.08"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.08"
+ModuleInfo "History: (Debug) Assertion on modification during iteration."
 ModuleInfo "History: 1.07 Release"
 ModuleInfo "History: Fixed MapKeys/MapValues functions to return enumerators"
 ModuleInfo "History: 1.06 Release"
@@ -126,10 +128,15 @@ End Type
 
 Type TNodeEnumerator
 	Method HasNext()
-		Return _node<>nil
+		Local has:Int = _node<>nil
+		If Not has Then
+			_map = Null
+		End If
+		Return has
 	End Method
 	
 	Method NextObject:Object()
+		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
 		Local node:TNode=_node
 		_node=_node.NextNode()
 		Return node
@@ -137,11 +144,15 @@ Type TNodeEnumerator
 
 	'***** PRIVATE *****
 		
-	Field _node:TNode	
+	Field _node:TNode
+	
+	Field _map:TMap
+	Field _expectedModCount:Int
 End Type
 
 Type TKeyEnumerator Extends TNodeEnumerator
 	Method NextObject:Object()
+		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
 		Local node:TNode=_node
 		_node=_node.NextNode()
 		Return node._key
@@ -150,6 +161,7 @@ End Type
 
 Type TValueEnumerator Extends TNodeEnumerator
 	Method NextObject:Object()
+		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
 		Local node:TNode=_node
 		_node=_node.NextNode()
 		Return node._value
@@ -176,6 +188,7 @@ Type TMap
 		If _root=nil Return
 		_root.Clear
 		_root=nil
+		_modCount :+ 1
 	End Method
 	
 	Method IsEmpty()
@@ -206,6 +219,8 @@ Type TMap
 		node._value=value
 		node._color=RED
 		node._parent=parent
+
+		_modCount :+ 1
 		
 		If parent=nil
 			_root=node
@@ -233,6 +248,7 @@ Type TMap
 		Local node:TNode=_FindNode( key )
 		If node=nil Return 0
 		 _RemoveNode node
+		_modCount :+ 1
 		Return 1
 	End Method
 	
@@ -241,6 +257,8 @@ Type TMap
 		nodeenum._node=_FirstNode()
 		Local mapenum:TMapEnumerator=New TMapEnumerator
 		mapenum._enumerator=nodeenum
+		nodeenum._map = Self
+		nodeenum._expectedModCount = _modCount
 		Return mapenum
 	End Method
 	
@@ -249,6 +267,8 @@ Type TMap
 		nodeenum._node=_FirstNode()
 		Local mapenum:TMapEnumerator=New TMapEnumerator
 		mapenum._enumerator=nodeenum
+		nodeenum._map = Self
+		nodeenum._expectedModCount = _modCount
 		Return mapenum
 	End Method
 	
@@ -257,10 +277,12 @@ Type TMap
 		map._root=_root.Copy( nil )
 		Return map
 	End Method
-	
+
 	Method ObjectEnumerator:TNodeEnumerator()
 		Local nodeenum:TNodeEnumerator=New TNodeEnumerator
 		nodeenum._node=_FirstNode()
+		nodeenum._map = Self
+		nodeenum._expectedModCount = _modCount
 		Return nodeenum
 	End Method
 	
@@ -478,6 +500,7 @@ Type TMap
 	
 	Field _root:TNode=nil
 	
+	Field _modCount:Int
 End Type
 
 Rem

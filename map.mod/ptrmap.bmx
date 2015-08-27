@@ -23,6 +23,9 @@ Type TPtrMap
 	End Method
 
 	Method Clear()
+		If Not IsEmpty() Then
+			_modCount :+ 1
+		End If
 		bmx_map_ptrmap_clear(Varptr _root)
 	End Method
 	
@@ -32,6 +35,7 @@ Type TPtrMap
 	
 	Method Insert( key:Byte Ptr,value:Object )
 		bmx_map_ptrmap_insert(key, value, Varptr _root)
+		_modCount :+ 1
 	End Method
 
 	Method Contains:Int( key:Byte Ptr )
@@ -43,6 +47,7 @@ Type TPtrMap
 	End Method
 	
 	Method Remove( key:Byte Ptr )
+		_modCount :+ 1
 		Return bmx_map_ptrmap_remove(key, Varptr _root)
 	End Method
 
@@ -66,6 +71,8 @@ Type TPtrMap
 		End If
 		Local mapenum:TPtrMapEnumerator=New TPtrMapEnumerator
 		mapenum._enumerator=nodeenum
+		nodeenum._map = Self
+		nodeenum._expectedModCount = _modCount
 		Return mapenum
 	End Method
 	
@@ -79,6 +86,8 @@ Type TPtrMap
 		End If
 		Local mapenum:TPtrMapEnumerator=New TPtrMapEnumerator
 		mapenum._enumerator=nodeenum
+		nodeenum._map = Self
+		nodeenum._expectedModCount = _modCount
 		Return mapenum
 	End Method
 	
@@ -91,10 +100,14 @@ Type TPtrMap
 	Method ObjectEnumerator:TPtrNodeEnumerator()
 		Local nodeenum:TPtrNodeEnumerator=New TPtrNodeEnumerator
 		nodeenum._node=_FirstNode()
+		nodeenum._map = Self
+		nodeenum._expectedModCount = _modCount
 		Return nodeenum
 	End Method
 
 	Field _root:Byte Ptr
+	
+	Field _modCount:Int
 	
 End Type
 
@@ -127,7 +140,7 @@ Type TPtrNode
 End Type
 
 Rem
-bbdoc: Byte Ptr holder for key returned by TIntMap.Keys() enumerator.
+bbdoc: Byte Ptr holder for key returned by TPtrMap.Keys() enumerator.
 End Rem
 Type TPtrKey
 	Field value:Byte Ptr
@@ -135,10 +148,15 @@ End Type
 
 Type TPtrNodeEnumerator
 	Method HasNext()
-		Return _node.HasNext()
+		Local has:Int = _node.HasNext()
+		If Not has Then
+			_map = Null
+		End If
+		Return has
 	End Method
 	
 	Method NextObject:Object()
+		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
 		Local node:TPtrNode=_node
 		_node=_node.NextNode()
 		Return node
@@ -147,11 +165,15 @@ Type TPtrNodeEnumerator
 	'***** PRIVATE *****
 		
 	Field _node:TPtrNode	
+
+	Field _map:TPtrMap
+	Field _expectedModCount:Int
 End Type
 
 Type TPtrKeyEnumerator Extends TPtrNodeEnumerator
 	Field _key:TPtrKey = New TPtrKey
 	Method NextObject:Object()
+		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
 		Local node:TPtrNode=_node
 		_node=_node.NextNode()
 		_key.value = node.Key()
@@ -161,6 +183,7 @@ End Type
 
 Type TPtrValueEnumerator Extends TPtrNodeEnumerator
 	Method NextObject:Object()
+		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
 		Local node:TPtrNode=_node
 		_node=_node.NextNode()
 		Return node.Value()
@@ -176,6 +199,7 @@ End Type
 
 Type TPtrEmptyEnumerator Extends TPtrNodeEnumerator
 	Method HasNext()
+		_map = Null
 		Return False
 	End Method
 End Type

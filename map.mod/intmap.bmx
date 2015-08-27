@@ -23,6 +23,9 @@ Type TIntMap
 	End Method
 
 	Method Clear()
+		If Not IsEmpty() Then
+			_modCount :+ 1
+		End If
 		bmx_map_intmap_clear(Varptr _root)
 	End Method
 	
@@ -32,6 +35,7 @@ Type TIntMap
 	
 	Method Insert( key:Int,value:Object )
 		bmx_map_intmap_insert(key, value, Varptr _root)
+		_modCount :+ 1
 	End Method
 
 	Method Contains:Int( key:Int )
@@ -43,6 +47,7 @@ Type TIntMap
 	End Method
 	
 	Method Remove( key:Int )
+		_modCount :+ 1
 		Return bmx_map_intmap_remove(key, Varptr _root)
 	End Method
 
@@ -66,6 +71,8 @@ Type TIntMap
 		End If
 		Local mapenum:TIntMapEnumerator=New TIntMapEnumerator
 		mapenum._enumerator=nodeenum
+		nodeenum._map = Self
+		nodeenum._expectedModCount = _modCount
 		Return mapenum
 	End Method
 	
@@ -79,6 +86,8 @@ Type TIntMap
 		End If
 		Local mapenum:TIntMapEnumerator=New TIntMapEnumerator
 		mapenum._enumerator=nodeenum
+		nodeenum._map = Self
+		nodeenum._expectedModCount = _modCount
 		Return mapenum
 	End Method
 	
@@ -91,11 +100,15 @@ Type TIntMap
 	Method ObjectEnumerator:TIntNodeEnumerator()
 		Local nodeenum:TIntNodeEnumerator=New TIntNodeEnumerator
 		nodeenum._node=_FirstNode()
+		nodeenum._map = Self
+		nodeenum._expectedModCount = _modCount
 		Return nodeenum
 	End Method
 
 	Field _root:Byte Ptr
-	
+
+	Field _modCount:Int
+
 End Type
 
 Type TIntNode
@@ -135,10 +148,15 @@ End Type
 
 Type TIntNodeEnumerator
 	Method HasNext()
-		Return _node.HasNext()
+		Local has:Int = _node.HasNext()
+		If Not has Then
+			_map = Null
+		End If
+		Return has
 	End Method
 	
 	Method NextObject:Object()
+		Assert _expectedModCount = _map._modCount, "TIntMap Concurrent Modification"
 		Local node:TIntNode=_node
 		_node=_node.NextNode()
 		Return node
@@ -147,11 +165,15 @@ Type TIntNodeEnumerator
 	'***** PRIVATE *****
 		
 	Field _node:TIntNode	
+
+	Field _map:TIntMap
+	Field _expectedModCount:Int
 End Type
 
 Type TIntKeyEnumerator Extends TIntNodeEnumerator
 	Field _key:TIntKey = New TIntKey
 	Method NextObject:Object()
+		Assert _expectedModCount = _map._modCount, "TIntMap Concurrent Modification"
 		Local node:TIntNode=_node
 		_node=_node.NextNode()
 		_key.value = node.Key()
@@ -161,6 +183,7 @@ End Type
 
 Type TIntValueEnumerator Extends TIntNodeEnumerator
 	Method NextObject:Object()
+		Assert _expectedModCount = _map._modCount, "TIntMap Concurrent Modification"
 		Local node:TIntNode=_node
 		_node=_node.NextNode()
 		Return node.Value()
@@ -176,6 +199,7 @@ End Type
 
 Type TIntEmptyEnumerator Extends TIntNodeEnumerator
 	Method HasNext()
+		_map = Null
 		Return False
 	End Method
 End Type
