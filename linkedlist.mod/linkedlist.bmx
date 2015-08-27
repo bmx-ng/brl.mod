@@ -6,12 +6,15 @@ bbdoc: Data structures/Linked lists
 End Rem
 Module BRL.LinkedList
 
-ModuleInfo "Version: 1.08"
+ModuleInfo "Version: 1.09"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.09"
+ModuleInfo "History: Added internal count."
+ModuleInfo "History: (Debug) Assertion on modification during iteration."
 ModuleInfo "History: 1.08"
 ModuleInfo "History: Clear TLink fields on Remove()."
 ModuleInfo "History: Added enumeration pool."
@@ -83,6 +86,8 @@ Type TListEnum
 ?
 
 	Field _link:TLink
+	Field _expectedModCount:Int
+	Field _list:TList
 
 	Method HasNext()
 		Local has:Int = _link._value<>_link
@@ -91,15 +96,19 @@ Type TListEnum
 			LockMutex(_mutex)
 ?
 			_pool.AddLast(Self)
+
+			_link = Null
+			_list = Null
+			_expectedModCount = 0
 ?Threaded
 			UnlockMutex(_mutex)
 ?
-			_link = Null
 		End If
 		Return has
 	End Method
 
 	Method NextObject:Object()
+		Assert _expectedModCount = _list._modCount, "TList Concurrent Modification"
 		Local value:Object=_link._value
 		Assert value<>_link
 		_link=_link._succ
@@ -114,6 +123,9 @@ End Rem
 Type TList
 
 	Field _head:TLink
+	
+	Field _count:Int
+	Field _modCount:Int
 	
 	Method _pad()
 	End Method
@@ -141,6 +153,8 @@ Type TList
 		While _head._succ<>_head
 			_head._succ.Remove
 		Wend
+		_modCount :+ 1
+		_count = 0
 	End Method
 
 	Rem
@@ -208,6 +222,8 @@ Type TList
 		If IsEmpty() Return
 		Local value:Object=_head._succ._value
 		_head._succ.remove
+		_count :- 1
+		_modCount :+ 1
 		Return value
 	End Method
 
@@ -219,6 +235,8 @@ Type TList
 		If IsEmpty() Return
 		Local value:Object=_head._pred._value
 		_head._pred.remove
+		_count :- 1
+		_modCount :+ 1
 		Return value
 	End Method
 
@@ -247,6 +265,8 @@ Type TList
 		link._pred=succ._pred
 		link._pred._succ=link
 		succ._pred=link
+		_count :+ 1
+		_modCount :+ 1
 		Return link
 	End Method
 
@@ -261,6 +281,8 @@ Type TList
 		link._succ=pred._succ
 		link._succ._pred=link
 		pred._succ=link
+		_count :+ 1
+		_modCount :+ 1
 		Return link
 	End Method
 
@@ -295,12 +317,7 @@ Type TList
 	returns: The numbers of objects in @list.
 	end rem
 	Method Count()
-		Local link:TLink=_head._succ,count
-		While link<>_head
-			count:+1
-			link=link._succ
-		Wend
-		Return count
+		Return _count
 	End Method
 
 	Rem
@@ -311,6 +328,8 @@ Type TList
 		Local link:TLink=FindLink( value )
 		If Not link Return False
 		link.Remove
+		_count :- 1
+		_modCount :+ 1
 		Return True
 	End Method
 	
@@ -321,6 +340,11 @@ Type TList
 		Local head:TLink=_head
 		_head=list._head
 		list._head=head
+		Local c:Int = list._count
+		list._count = _count
+		_count = c
+		_modCount :+ 1
+		list._modCount :+ 1
 	End Method
 	
 	Rem
@@ -348,6 +372,7 @@ Type TList
 			pred=succ
 			succ=link
 		Until pred=_head
+		_modCount :+ 1
 	End Method
 	
 	Rem
@@ -370,6 +395,7 @@ Type TList
 	Method Sort( ascending=True,compareFunc( o1:Object,o2:Object )=CompareObjects )
 		Local ccsgn=-1
 		If ascending ccsgn=1
+		Local modded:Int
 		
 		Local insize=1
 		Repeat
@@ -413,16 +439,26 @@ Type TList
 					t._pred=tail
 					tail._succ=t
 					tail=t
+					modded = True
 				Forever
 				p=q
 			Wend
 			tail._succ=_head
 			_head._pred=tail
 
-			If merges<=1 Return
+			If merges<=1 Then
+				If modded Then
+					_modCount :+ 1
+				End If
+				Return
+			End If
 
 			insize:*2
 		Forever
+		
+		If modded Then
+			_modCount :+ 1
+		End If
 	End Method
 		
 	Method ObjectEnumerator:TListEnum()
@@ -437,6 +473,8 @@ Type TList
 			enum = New TListEnum
 		End If
 		enum._link=_head._succ
+		enum._list = Self
+		enum._expectedModCount = _modCount
 		Return enum
 	End Method
 
