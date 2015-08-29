@@ -34,8 +34,8 @@ static void gc_warn_proc( char *msg,GC_word arg ){
 }
 
 void bbGCStartup( void *spTop ){
-	GC_set_no_dls(1);
-/*	GC_clear_roots();
+/*	GC_set_no_dls(1);
+	GC_clear_roots();
 #ifdef _WIN32
 #ifdef __x86_64__
 	GC_add_roots(&__data_start__, &__bss_end__);
