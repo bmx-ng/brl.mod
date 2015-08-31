@@ -65,7 +65,7 @@ Function bbGCValidate:Int( mem:Byte Ptr ) = "bbGCValidate"
 
 End Extern
 
-?Not x64
+?Not ptr64
 Function ToHex$( val:Int )
 	Local buf:Short[8]
 	For Local k:Int=7 To 0 Step -1
@@ -76,7 +76,7 @@ Function ToHex$( val:Int )
 	Next
 	Return String.FromShorts( buf,8 ).ToLower()
 End Function
-?x64
+?ptr64
 Function ToHex$( val:Long )
 	Local buf:Short[16]
 	For Local k:Int=15 To 0 Step -1
@@ -242,9 +242,9 @@ Function DebugDeclSize:Int( decl:Int Ptr )
 	Case Asc("d") Return 8
 	End Select
 
-?Not x64
+?Not ptr64
 	Return 4
-?x64
+?ptr64
 	Return 8
 ?
 
@@ -277,9 +277,9 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		p=bmx_debugger_DebugDecl_FieldOffset(decl, inst)
 	Case DEBUGDECLKIND_VARPARAM
 		p=bmx_debugger_DebugDecl_VarAddress(decl)
-?Not x64
+?Not ptr64
 		p=Byte Ptr ( (Int Ptr p)[0] )
-?x64
+?ptr64
 		p=Byte Ptr ( (Long Ptr p)[0] )
 ?
 	Default
@@ -315,9 +315,9 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		Local s$=String.FromWString( Short Ptr p )
 		Return DebugEscapeString( s )
 	Case Asc("*"),Asc("?")
-?Not x64
+?Not ptr64
 		Return "$"+ToHex( (Int Ptr p)[0] )
-?x64
+?ptr64
 		Return "$"+ToHex( (Long Ptr p)[0] )
 ?
 	Case Asc("(")
@@ -336,9 +336,9 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		DebugError "Invalid decl typetag:"+Chr(tag)
 	End Select
 	
-?Not x64
+?Not ptr64
 	Return "$"+ToHex( Int p )
-?x64
+?ptr64
 	Return "$"+ToHex( Long p )
 ?
 End Function
@@ -605,16 +605,16 @@ Function UpdateDebug( msg$ )
 			EndIf
 			If t[..1]="$" t=t[1..].Trim()
 			If t[..2].ToLower()="0x" t=t[2..].Trim()
-?Not x64
+?Not ptr64
 			Local pointer:Int = Int( "$"+t )
-?x64
+?ptr64
 			Local pointer:Long = Long( "$"+t )
 ?
 			If Not (pointer And bbGCValidate(pointer)) Then Continue
-?Not x64
+?Not ptr64
 			Local inst:Int Ptr=Int Ptr pointer
 			Local cmd$="ObjectDump@"+ToHex( Int inst )
-?x64
+?ptr64
 			Local inst:Long Ptr=Long Ptr pointer
 			Local cmd$="ObjectDump@"+ToHex( Long inst )
 ?			

@@ -32,10 +32,10 @@ Private
 Extern
 
 Function bbObjectNew:Object( class:Byte Ptr )
-?Not x64
+?Not ptr64
 Function bbObjectRegisteredTypes:Int Ptr( count Var )
 Function bbObjectRegisteredInterfaces:Int Ptr( count Var )
-?x64
+?ptr64
 Function bbObjectRegisteredTypes:Long Ptr( count Var )
 Function bbObjectRegisteredInterfaces:Long Ptr( count Var )
 ?
@@ -90,9 +90,9 @@ Function _Get:Object( p:Byte Ptr,typeId:TTypeId )
 		Return String.FromDouble( (Double Ptr p)[0] )
 	Default
 		If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
-?Not x64
+?Not ptr64
 			Return String.FromInt( (Int Ptr p)[0] )
-?x64
+?ptr64
 			Return String.FromLong( (Long Ptr p)[0] )
 ?
 		EndIf
@@ -121,10 +121,10 @@ Function _Push:Byte Ptr( sp:Byte Ptr,typeId:TTypeId,value:Object )
 	Default
 		If value
 			If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
-?Not x64
+?Not ptr64
 				(Int Ptr sp)[0]=value.ToString().ToInt()
 				Return sp+4
-?x64
+?ptr64
 				(Long Ptr sp)[0]=value.ToString().ToLong()
 				Return sp+8
 ?
@@ -162,9 +162,9 @@ Function _Assign( p:Byte Ptr,typeId:TTypeId,value:Object )
 	Default
 		If value
 			If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
-?Not x64
+?Not ptr64
 				(Int Ptr p)[0]=value.ToString().ToInt()
-?x64
+?ptr64
 				(Long Ptr p)[0]=value.ToString().ToLong()
 ?
 				Return
@@ -361,7 +361,7 @@ Function _CallFunction:Object( p:Byte Ptr,typeId:TTypeId,args:Object[],argTypes:
 		End Select
 	Default
 		If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
-?Not x64
+?Not ptr64
 			Select argTypes.length
 				Case 0
 					Local f:Byte Ptr()=p
@@ -394,7 +394,7 @@ Function _CallFunction:Object( p:Byte Ptr,typeId:TTypeId,args:Object[],argTypes:
 					Local f:Byte Ptr(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
 					Return String.FromInt(Int f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ))
 			End Select
-?x64
+?ptr64
 			Select argTypes.length
 				Case 0
 					Local f:Byte Ptr()=p
@@ -645,7 +645,7 @@ Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],
 		End Select
 	Default
 		If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
-?Not x64
+?Not ptr64
 			Select argTypes.length
 				Case 0
 					Local f:Byte Ptr(m:Object)=p
@@ -678,7 +678,7 @@ Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],
 					Local f:Byte Ptr(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
 					Return String.FromInt(Int f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ))
 			End Select
-?x64
+?ptr64
 			Select argTypes.length
 				Case 0
 					Local f:Byte Ptr(m:Object)=p
@@ -939,27 +939,27 @@ Global DoubleTypeId:TTypeId=New TTypeId.Init( "Double",8 )
 Rem
 bbdoc: Primitive object type
 End Rem
-?Not x64
+?Not ptr64
 Global ObjectTypeId:TTypeId=New TTypeId.Init( "Object",4,bbRefObjectClass() )
-?x64
+?ptr64
 Global ObjectTypeId:TTypeId=New TTypeId.Init( "Object",8,bbRefObjectClass() )
 ?
 
 Rem
 bbdoc: Primitive string type
 End Rem
-?Not x64
+?Not ptr64
 Global StringTypeId:TTypeId=New TTypeId.Init( "String",4,bbRefStringClass(),ObjectTypeId )
-?x64
+?ptr64
 Global StringTypeId:TTypeId=New TTypeId.Init( "String",8,bbRefStringClass(),ObjectTypeId )
 ?
 
 Rem
 bbdoc: Primitive array type
 End Rem
-?Not x64
+?Not ptr64
 Global ArrayTypeId:TTypeId=New TTypeId.Init( "Null[]",4,bbRefArrayClass(),ObjectTypeId )
-?x64
+?ptr64
 Global ArrayTypeId:TTypeId=New TTypeId.Init( "Null[]",8,bbRefArrayClass(),ObjectTypeId )
 ?
 
@@ -970,18 +970,18 @@ Global VoidTypeId:TTypeId=New TTypeId.Init( "Void",0 )
 Rem
 bbdoc: Primitive pointer type
 End Rem
-?Not x64
+?Not ptr64
 Global PointerTypeId:TTypeId=New TTypeId.Init( "Ptr",4 )
-?x64
+?ptr64
 Global PointerTypeId:TTypeId=New TTypeId.Init( "Ptr",8 )
 ?
 
 Rem
 bbdoc: Primitive function type
 End Rem
-?Not x64
+?Not ptr64
 Global FunctionTypeId:TTypeId=New TTypeId.Init( "Null()",4 )
-?x64
+?ptr64
 Global FunctionTypeId:TTypeId=New TTypeId.Init( "Null()",8 )
 ?
 
@@ -1020,9 +1020,9 @@ bbdoc: Type constant
 EndRem
 Type TConstant Extends TMember
 
-?Not x64
+?Not ptr64
 	Method Init:TConstant( name:String, typeId:TTypeId, meta:String, stringRef:Int Ptr)
-?x64
+?ptr64
 	Method Init:TConstant( name:String, typeId:TTypeId, meta:String, stringRef:Long Ptr)
 ?
 		_name = name
@@ -1071,16 +1071,16 @@ Type TConstant Extends TMember
 	bbdoc: Get constant value as @{Byte Ptr}
 	EndRem
 	Method GetPointer:Byte Ptr()
-?Not x64
+?Not ptr64
 		Return Byte Ptr GetString().ToInt()
-?x64
+?ptr64
 		Return Byte Ptr GetString().ToLong()
 ?
 	EndMethod
 
-?Not x64
+?Not ptr64
 	Field _stringRef:Int Ptr
-?x64
+?ptr64
 	Field _stringRef:Long Ptr
 ?
 
@@ -1407,9 +1407,9 @@ Type TTypeId
 					dim :+ ","
 				Next
 			End If
-?Not x64
+?Not ptr64
 			_arrayType=New TTypeId.Init( _name+"[" + dim + "]",4,bbRefArrayClass() )
-?x64
+?ptr64
 			_arrayType=New TTypeId.Init( _name+"[" + dim + "]",8,bbRefArrayClass() )
 ?
 			_arrayType._elementType=Self
@@ -1434,9 +1434,9 @@ Type TTypeId
 	End Rem
 	Method PointerType:TTypeId()
 		If Not _pointerType Then
-?Not x64
+?Not ptr64
 			_pointerType = New TTypeId.Init( _name + " Ptr", 4)
-?x64
+?ptr64
 			_pointerType = New TTypeId.Init( _name + " Ptr", 8)
 ?
 			_pointerType._elementType = Self
@@ -1459,9 +1459,9 @@ Type TTypeId
 				If s Then s :+ ","
 				s :+ t.Name()
 			Next
-?Not x64
+?Not ptr64
 			_functionType = New TTypeId.Init( _name + "(" + s + ")", 4)
-?x64
+?ptr64
 			_functionType = New TTypeId.Init( _name + "(" + s + ")", 8)
 ?
 			_functionType._retType = Self
@@ -1869,10 +1869,10 @@ Type TTypeId
 	End Method
 	
 	Method SetClass:TTypeId( class:Byte Ptr )
-?Not x64
+?Not ptr64
 		Local debug:Int=(Int Ptr class)[2]
 		Local name$=String.FromCString( Byte Ptr( (Int Ptr debug)[1] ) )
-?x64
+?ptr64
 		Local debug:Long=(Long Ptr class)[2]
 		Local name$=String.FromCString( Byte Ptr( (Long Ptr debug)[1] ) )
 ?
@@ -1909,9 +1909,9 @@ Type TTypeId
 	
 	Function _Update()
 		Local count:Int
-?Not x64
+?Not ptr64
 		Local p:Int Ptr Ptr=bbObjectRegisteredTypes( count )
-?x64
+?ptr64
 		Local p:Long Ptr Ptr=bbObjectRegisteredTypes( count )
 ?
 		If count=_count Return
@@ -1929,9 +1929,9 @@ Type TTypeId
 
 	Function _UpdateInterfaces()
 		Local count:Int
-?Not x64
+?Not ptr64
 		Local p:Int Ptr Ptr=bbObjectRegisteredInterfaces( count )
-?x64
+?ptr64
 		Local p:Long Ptr Ptr=bbObjectRegisteredInterfaces( count )
 ?
 		If count=_icount Return
@@ -1956,9 +1956,9 @@ Type TTypeId
 		_interfaces=New TList
 		
 		If Not _interface Then
-?Not x64
+?Not ptr64
 			_super=TTypeId( _classMap.ValueForKey( (Int Ptr _class)[0] ) )
-?x64
+?ptr64
 			_super=TTypeId( _classMap.ValueForKey( (Long Ptr _class)[0] ) )
 ?
 		End If
@@ -1966,10 +1966,10 @@ Type TTypeId
 		If Not _super._derived _super._derived=New TList
 		_super._derived.AddLast Self
 		
-?Not x64
+?Not ptr64
 		Local debug:Int Ptr=(Int Ptr Ptr _class)[2]
 		Local p:Int Ptr=debug+2
-?x64
+?ptr64
 		Local debug:Long Ptr=(Long Ptr Ptr _class)[2]
 		Local p:Long Ptr=debug+2
 ?
@@ -1987,9 +1987,9 @@ Type TTypeId
 			Case 1	'const
 				Local tt:TTypeId = TypeIdFortag(ty)
 				If tt Then
-?Not x64
+?Not ptr64
 					_consts.AddLast New TConstant.Init( id, tt, meta, Int Ptr(p[3]))
-?x64
+?ptr64
 					_consts.AddLast New TConstant.Init( id, tt, meta, Long Ptr(p[3]))
 ?
 				EndIf
