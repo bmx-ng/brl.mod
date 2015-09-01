@@ -6,12 +6,14 @@ bbdoc: User input/Polled input
 End Rem
 Module BRL.PolledInput
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Added SetAutoPoll() function."
 ModuleInfo "History: 1.01 Release"
 ModuleInfo "History: Fixed charQueue bug"
 
@@ -349,4 +351,11 @@ Function WaitMouse()
 			If MouseHit(n) Return n
 		Next
 	Forever
+End Function
+
+Rem
+bbdoc: Enables or disables autopolling.
+End Rem
+Function SetAutoPoll(value:Int)
+	autoPoll = value
 End Function
