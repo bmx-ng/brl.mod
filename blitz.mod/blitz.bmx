@@ -67,6 +67,10 @@ ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE"
 ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE"
 ?
 
+?debug
+ModuleInfo "CC_OPTS: -DBMX_DEBUG"
+?
+
 Import "blitz_app.c"
 Import "blitz_types.c"
 Import "blitz_cclib.c"
