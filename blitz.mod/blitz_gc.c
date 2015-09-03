@@ -95,11 +95,15 @@ void bbGCFree( BBGCMem *q ){
 }
 
 int bbGCValidate( void *q ){
-	return GC_base( q )==q;
+	return GC_is_heap_ptr( q );
 }
 
 int bbGCCollect(){
 	GC_gcollect();
+}
+
+int bbGCCollectALittle() {
+	return GC_collect_a_little();
 }
 
 void bbGCSetMode( int mode ){

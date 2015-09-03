@@ -53,6 +53,7 @@ BBObject*	bbGCAllocObject( int size,BBClass *clas,int flags );
 int 		bbGCValidate( void *p );
 int		bbGCMemAlloced();
 int		bbGCCollect();
+int     bbGCCollectALittle();
 void		bbGCSuspend();
 void		bbGCResume();
 void		bbGCRetain( BBObject *p );

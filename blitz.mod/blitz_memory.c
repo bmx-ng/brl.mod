@@ -12,14 +12,15 @@
 void *bbMemAlloc( size_t size ){
 	void *p;
 	
-	//p=malloc( size );
-	p=GC_MALLOC_ATOMIC_UNCOLLECTABLE( size );
+	p=malloc( size );
+	//p=GC_MALLOC_ATOMIC_UNCOLLECTABLE( size );
 	return p;
 	
 }
 
 void bbMemFree( void *p ){
-	if( p ) GC_free( p );
+	//if( p ) GC_free( p );
+	if ( p ) free(p);
 }
 
 void *bbMemExtend( void *mem,size_t size,size_t new_size ){

@@ -406,6 +406,15 @@ End Rem
 Function GCCollect:Int()="bbGCCollect"
 
 Rem
+bbdoc: Run garbage collector, collecting a little
+returns: Returns 0 if there is no more to collect.
+about:
+This function will have no effect if the garbage collector has been
+suspended due to #GCSuspend.
+End Rem
+Function GCCollectALittle:Int()="bbGCCollectAlittle"
+
+Rem
 bbdoc: Memory allocated by application
 returns: The amount of memory, in bytes, currently allocated by the application
 about:
