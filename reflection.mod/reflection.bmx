@@ -2056,7 +2056,12 @@ Type TTypeId
 	Field _meta$
 	Field _class:Byte Ptr
 	Field _interface:Byte Ptr
+' default object size
+?Not ptr64
 	Field _size=4
+?ptr64
+	Field _size=8
+?
 	Field _consts:TList
 	Field _fields:TList
 	Field _globals:TList
