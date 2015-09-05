@@ -1,8 +1,6 @@
 
 #include <brl.mod/blitz.mod/blitz.h>
-#include <cstdarg>
-
-extern "C"{
+//#include <cstdarg>
 
 void *bbRefFieldPtr( BBObject *obj,int index ){
 	return (char*)obj+index;
@@ -34,6 +32,50 @@ int bbRefArrayLength( BBArray *array, int dim ){
 
 int bbRefArrayDimensions( BBArray *array ){
 	return array->dims;
+}
+
+BBClass * bbRefClassSuper( BBClass* clas ){
+	return clas->super;
+}
+
+BBDebugScope * bbRefClassDebugScope( BBClass* clas ){
+	return clas->debug_scope;
+}
+
+const char * bbRefClassDebugScopeName( BBClass* clas ){
+	return clas->debug_scope->name;
+}
+
+BBDebugDecl * bbRefClassDebugDecl( BBClass* clas ){
+	return clas->debug_scope->decls;
+}
+
+int bbDebugDeclKind( BBDebugDecl * decl ){
+	return decl->kind;
+}
+
+const char * bbDebugDeclName( BBDebugDecl * decl ){
+	return decl->name;
+}
+
+const char * bbDebugDeclType( BBDebugDecl * decl ){
+	return decl->type_tag;
+}
+
+BBString * bbDebugDeclConstValue( BBDebugDecl * decl ){
+	return decl->const_value;
+}
+
+int bbDebugDeclFieldOffset( BBDebugDecl * decl ){
+	return decl->field_offset;
+}
+
+void * bbDebugDeclVarAddress( BBDebugDecl * decl ){
+	return decl->var_address;
+}
+
+BBDebugDecl * bbDebugDeclNext( BBDebugDecl * decl ){
+	return decl + 1;
 }
 
 //Note: arrDims must be 1D int array...
@@ -102,4 +144,3 @@ BBInterface * bbObjectImplementedInterface(BBClass * clas, int index) {
 	return clas->ifc_offsets[index].ifc;
 }
 
-}

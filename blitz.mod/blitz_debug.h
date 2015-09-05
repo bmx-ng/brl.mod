@@ -35,12 +35,8 @@ struct BBDebugDecl{
 	const char		*name,*type_tag;
 	union{
 		BBString*	const_value;
-#if ( __WORDSIZE == 64 )
-		BBInt64		field_offset;
-#else
 		int			field_offset;
-#endif
-		void		*var_address;
+		void*		var_address;
 	};
 };
 

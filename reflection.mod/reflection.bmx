@@ -25,7 +25,7 @@ ModuleInfo "History: Fixed NewArray using temp type name"
 Import BRL.LinkedList
 Import BRL.Map
 
-Import "reflection.cpp"
+Import "reflection.c"
 
 Private
 
@@ -71,6 +71,18 @@ Function bbInterfaceName:Byte Ptr(ifc:Byte Ptr)
 Function bbInterfaceClass:Byte Ptr(ifc:Byte Ptr)
 Function bbObjectImplementedCount:Int(class:Byte Ptr)
 Function bbObjectImplementedInterface:Byte Ptr(class:Byte Ptr, index:Int)
+
+Function bbRefClassSuper:Byte Ptr(clas:Byte Ptr)
+Function bbRefClassDebugScope:Byte Ptr(clas:Byte Ptr)
+Function bbRefClassDebugDecl:Byte Ptr(clas:Byte Ptr)
+Function bbRefClassDebugScopeName:Byte Ptr(class:Byte Ptr)
+Function bbDebugDeclKind:Int(decl:Byte Ptr)
+Function bbDebugDeclName:Byte Ptr(decl:Byte Ptr)
+Function bbDebugDeclType:Byte Ptr(decl:Byte Ptr)
+Function bbDebugDeclConstValue:String(decl:Byte Ptr)
+Function bbDebugDeclFieldOffset:Int(decl:Byte Ptr)
+Function bbDebugDeclVarAddress:Byte Ptr(decl:Byte Ptr)
+Function bbDebugDeclNext:Byte Ptr(decl:Byte Ptr)
 
 End Extern
 
@@ -1020,15 +1032,11 @@ bbdoc: Type constant
 EndRem
 Type TConstant Extends TMember
 
-?Not ptr64
-	Method Init:TConstant( name:String, typeId:TTypeId, meta:String, stringRef:Int Ptr)
-?ptr64
-	Method Init:TConstant( name:String, typeId:TTypeId, meta:String, stringRef:Long Ptr)
-?
+	Method Init:TConstant( name:String, typeId:TTypeId, meta:String, str:String)
 		_name = name
 		_typeId = typeId
 		_meta = meta
-		_stringRef = stringRef
+		_string = str
 		Return Self
 	EndMethod
 
@@ -1036,7 +1044,7 @@ Type TConstant Extends TMember
 	bbdoc: Get constant value
 	EndRem
 	Method GetString:String()
-		Return bbStringFromRef(_stringRef)
+		Return _string
 	EndMethod
 
 	Rem
@@ -1078,12 +1086,7 @@ Type TConstant Extends TMember
 ?
 	EndMethod
 
-?Not ptr64
-	Field _stringRef:Int Ptr
-?ptr64
-	Field _stringRef:Long Ptr
-?
-
+	Field _string:String
 EndType
 
 Rem
@@ -1869,13 +1872,7 @@ Type TTypeId
 	End Method
 	
 	Method SetClass:TTypeId( class:Byte Ptr )
-?Not ptr64
-		Local debug:Int=(Int Ptr class)[2]
-		Local name$=String.FromCString( Byte Ptr( (Int Ptr debug)[1] ) )
-?ptr64
-		Local debug:Long=(Long Ptr class)[2]
-		Local name$=String.FromCString( Byte Ptr( (Long Ptr debug)[1] ) )
-?
+		Local name$=String.FromCString( bbRefClassDebugScopeName(class) )
 		Local meta$
 		Local i=name.Find( "{" )
 		If i<>-1
@@ -1956,26 +1953,17 @@ Type TTypeId
 		_interfaces=New TList
 		
 		If Not _interface Then
-?Not ptr64
-			_super=TTypeId( _classMap.ValueForKey( (Int Ptr _class)[0] ) )
-?ptr64
-			_super=TTypeId( _classMap.ValueForKey( (Long Ptr _class)[0] ) )
-?
+			_super=TTypeId( _classMap.ValueForKey(bbRefClassSuper(_class)))
 		End If
 		If Not _super _super=ObjectTypeId
 		If Not _super._derived _super._derived=New TList
 		_super._derived.AddLast Self
 		
-?Not ptr64
-		Local debug:Int Ptr=(Int Ptr Ptr _class)[2]
-		Local p:Int Ptr=debug+2
-?ptr64
-		Local debug:Long Ptr=(Long Ptr Ptr _class)[2]
-		Local p:Long Ptr=debug+2
-?
-		While p[0]
-			Local id$=String.FromCString( Byte Ptr p[1] )
-			Local ty$=String.FromCString( Byte Ptr p[2] )
+		Local p:Byte Ptr = bbRefClassDebugDecl(_class)
+		
+		While bbDebugDeclKind(p)
+			Local id$=String.FromCString( bbDebugDeclName(p) )
+			Local ty$=String.FromCString( bbDebugDeclType(p) )
 			Local meta$
 			Local i=ty.Find( "{" )
 			If i<>-1
@@ -1983,22 +1971,18 @@ Type TTypeId
 				ty=ty[..i]
 			EndIf
 
-			Select p[0]
+			Select bbDebugDeclKind(p)
 			Case 1	'const
 				Local tt:TTypeId = TypeIdFortag(ty)
 				If tt Then
-?Not ptr64
-					_consts.AddLast New TConstant.Init( id, tt, meta, Int Ptr(p[3]))
-?ptr64
-					_consts.AddLast New TConstant.Init( id, tt, meta, Long Ptr(p[3]))
-?
+					_consts.AddLast New TConstant.Init( id, tt, meta, bbDebugDeclConstValue(p))
 				EndIf
 			Case 3	'field
 				Local typeId:TTypeId=TypeIdForTag( ty )
-				If typeId _fields.AddLast New TField.Init( id,typeId,meta,p[3] )
+				If typeId _fields.AddLast New TField.Init( id,typeId,meta,bbDebugDeclFieldOffset(p) )
 			Case 4	'global
 				Local typeId:TTypeId=TypeIdForTag( ty )
-				If typeId _globals.AddLast New TGlobal.Init( id,typeId,meta,p[3] )
+				If typeId _globals.AddLast New TGlobal.Init( id,typeId,meta, bbDebugDeclVarAddress(p) )
 			Case 6, 7	'method/function
 				Local t$[]=ty.Split( ")" )
 				Local retType:TTypeId=TypeIdForTag( t[1] )
@@ -2033,15 +2017,15 @@ Type TTypeId
 						Next
 					EndIf
 					If retType
-						If p[0] = 6 Then ' method
-							_methods.AddLast New TMethod.Init(id, retType, meta, Self, Byte Ptr p[3], argTypes)
+						If bbDebugDeclKind(p) = 6 Then ' method
+							_methods.AddLast New TMethod.Init(id, retType, meta, Self, bbDebugDeclVarAddress(p), argTypes)
 						Else ' function
-							_functions.AddLast New TFunction.Init(id, retType, meta, Self, Byte Ptr p[3], argTypes)
+							_functions.AddLast New TFunction.Init(id, retType, meta, Self, bbDebugDeclVarAddress(p), argTypes)
 						End If
 					EndIf
 				EndIf
 			End Select
-			p:+4
+			p = bbDebugDeclNext(p)
 		Wend
 		' implemented interfaces ?
 		Local imps:Int = bbObjectImplementedCount(_class)
