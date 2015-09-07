@@ -55,6 +55,7 @@ Function bbGCValidate:Int( mem:Byte Ptr ) = "bbGCValidate"
 	Function bmx_debugger_DebugDecl_clas:Byte Ptr( inst:Byte Ptr )
 	Function bmx_debugger_DebugDecl_isStringClass:Int( clas:Byte Ptr )
 	Function bmx_debugger_DebugDecl_isArrayClass:Int( clas:Byte Ptr )
+	Function bmx_debugger_DebugDecl_isBaseObject:Int( clas:Byte Ptr )
 	
 	Function bmx_debugger_DebugClassSuper:Byte Ptr(clas:Byte Ptr)
 	Function bmx_debugger_DebugClassScope:Byte Ptr(clas:Byte Ptr)
@@ -531,7 +532,7 @@ Function DumpObject( inst:Byte Ptr,index:Int )
 		
 	Else
 			
-		If Not clas[0]
+		If bmx_debugger_DebugDecl_isBaseObject(clas) Then
 			WriteDebug "Object~n"
 			Return
 		EndIf

@@ -69,6 +69,10 @@ int bmx_debugger_DebugDecl_isArrayClass(BBClass * clas) {
 	return clas == &bbArrayClass;
 }
 
+int bmx_debugger_DebugDecl_isBaseObject(BBClass * clas) {
+	return clas->super == 0;
+}
+
 struct BBDebugDecl * bmx_debugger_DebugDecl_ArrayDecl(BBArray  * arr) {
 	struct BBDebugDecl * decl = malloc(sizeof(struct BBDebugDecl));
 	
