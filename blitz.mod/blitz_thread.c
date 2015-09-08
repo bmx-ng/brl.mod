@@ -280,7 +280,7 @@ int bbThreadResume( BBThread *thread ){
 //***** Atomic ops *****
 int bbAtomicCAS( volatile int *addr,int old,int new_val ){
 #ifndef __ANDROID__
-	return AO_int_compare_and_swap(addr, old, new_val);
+	return AO_compare_and_swap(addr, old, new_val);
 #else
 	return __sync_val_compare_and_swap(addr, old, new_val);
 #endif
