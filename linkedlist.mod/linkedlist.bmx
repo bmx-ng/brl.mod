@@ -86,7 +86,9 @@ Type TListEnum
 ?
 
 	Field _link:TLink
+?ngcmod
 	Field _expectedModCount:Int
+?
 	Field _list:TList
 
 	Method HasNext()
@@ -99,6 +101,7 @@ Type TListEnum
 
 			_link = Null
 			_list = Null
+?ngcmod
 			_expectedModCount = 0
 ?Threaded
 			UnlockMutex(_mutex)
@@ -108,7 +111,9 @@ Type TListEnum
 	End Method
 
 	Method NextObject:Object()
+?ngcmod
 		Assert _expectedModCount = _list._modCount, "TList Concurrent Modification"
+?
 		Local value:Object=_link._value
 		Assert value<>_link
 		_link=_link._succ
@@ -125,7 +130,9 @@ Type TList
 	Field _head:TLink
 	
 	Field _count:Int
+?ngcmod
 	Field _modCount:Int
+?
 	
 	Method _pad()
 	End Method
@@ -153,7 +160,9 @@ Type TList
 		While _head._succ<>_head
 			_head._succ.Remove
 		Wend
+?ngcmod
 		_modCount :+ 1
+?
 		_count = 0
 	End Method
 
@@ -223,7 +232,9 @@ Type TList
 		Local value:Object=_head._succ._value
 		_head._succ.remove
 		_count :- 1
+?ngcmod
 		_modCount :+ 1
+?
 		Return value
 	End Method
 
@@ -236,7 +247,9 @@ Type TList
 		Local value:Object=_head._pred._value
 		_head._pred.remove
 		_count :- 1
+?ngcmod
 		_modCount :+ 1
+?
 		Return value
 	End Method
 
@@ -266,7 +279,9 @@ Type TList
 		link._pred._succ=link
 		succ._pred=link
 		_count :+ 1
+?ngcmod
 		_modCount :+ 1
+?
 		Return link
 	End Method
 
@@ -282,7 +297,9 @@ Type TList
 		link._succ._pred=link
 		pred._succ=link
 		_count :+ 1
+?ngcmod
 		_modCount :+ 1
+?
 		Return link
 	End Method
 
@@ -329,7 +346,9 @@ Type TList
 		If Not link Return False
 		link.Remove
 		_count :- 1
+?ngcmod
 		_modCount :+ 1
+?
 		Return True
 	End Method
 	
@@ -343,8 +362,10 @@ Type TList
 		Local c:Int = list._count
 		list._count = _count
 		_count = c
+?ngcmod
 		_modCount :+ 1
 		list._modCount :+ 1
+?
 	End Method
 	
 	Rem
@@ -372,7 +393,9 @@ Type TList
 			pred=succ
 			succ=link
 		Until pred=_head
+?ngcmod
 		_modCount :+ 1
+?
 	End Method
 	
 	Rem
@@ -447,18 +470,22 @@ Type TList
 			_head._pred=tail
 
 			If merges<=1 Then
+?ngcmod
 				If modded Then
 					_modCount :+ 1
 				End If
+?
 				Return
 			End If
 
 			insize:*2
 		Forever
 		
+?ngcmod
 		If modded Then
 			_modCount :+ 1
 		End If
+?
 	End Method
 		
 	Method ObjectEnumerator:TListEnum()
@@ -474,7 +501,9 @@ Type TList
 		End If
 		enum._link=_head._succ
 		enum._list = Self
+?ngcmod
 		enum._expectedModCount = _modCount
+?
 		Return enum
 	End Method
 

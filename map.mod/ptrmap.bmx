@@ -23,9 +23,11 @@ Type TPtrMap
 	End Method
 
 	Method Clear()
+?ngcmod
 		If Not IsEmpty() Then
 			_modCount :+ 1
 		End If
+?
 		bmx_map_ptrmap_clear(Varptr _root)
 	End Method
 	
@@ -35,7 +37,9 @@ Type TPtrMap
 	
 	Method Insert( key:Byte Ptr,value:Object )
 		bmx_map_ptrmap_insert(key, value, Varptr _root)
+?ngcmod
 		_modCount :+ 1
+?
 	End Method
 
 	Method Contains:Int( key:Byte Ptr )
@@ -47,7 +51,9 @@ Type TPtrMap
 	End Method
 	
 	Method Remove( key:Byte Ptr )
+?ngcmod
 		_modCount :+ 1
+?
 		Return bmx_map_ptrmap_remove(key, Varptr _root)
 	End Method
 
@@ -72,7 +78,9 @@ Type TPtrMap
 		Local mapenum:TPtrMapEnumerator=New TPtrMapEnumerator
 		mapenum._enumerator=nodeenum
 		nodeenum._map = Self
+?ngcmod
 		nodeenum._expectedModCount = _modCount
+?
 		Return mapenum
 	End Method
 	
@@ -87,7 +95,9 @@ Type TPtrMap
 		Local mapenum:TPtrMapEnumerator=New TPtrMapEnumerator
 		mapenum._enumerator=nodeenum
 		nodeenum._map = Self
+?ngcmod
 		nodeenum._expectedModCount = _modCount
+?
 		Return mapenum
 	End Method
 	
@@ -101,13 +111,17 @@ Type TPtrMap
 		Local nodeenum:TPtrNodeEnumerator=New TPtrNodeEnumerator
 		nodeenum._node=_FirstNode()
 		nodeenum._map = Self
+?ngcmod
 		nodeenum._expectedModCount = _modCount
+?
 		Return nodeenum
 	End Method
 
 	Field _root:Byte Ptr
 	
+?ngcmod
 	Field _modCount:Int
+?
 	
 End Type
 
@@ -156,7 +170,9 @@ Type TPtrNodeEnumerator
 	End Method
 	
 	Method NextObject:Object()
+?ngcmod
 		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
+?
 		Local node:TPtrNode=_node
 		_node=_node.NextNode()
 		Return node
@@ -167,13 +183,17 @@ Type TPtrNodeEnumerator
 	Field _node:TPtrNode	
 
 	Field _map:TPtrMap
+?ngcmod
 	Field _expectedModCount:Int
+?
 End Type
 
 Type TPtrKeyEnumerator Extends TPtrNodeEnumerator
 	Field _key:TPtrKey = New TPtrKey
 	Method NextObject:Object()
+?ngcmod
 		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
+?
 		Local node:TPtrNode=_node
 		_node=_node.NextNode()
 		_key.value = node.Key()
@@ -183,7 +203,9 @@ End Type
 
 Type TPtrValueEnumerator Extends TPtrNodeEnumerator
 	Method NextObject:Object()
+?ngcmod
 		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
+?
 		Local node:TPtrNode=_node
 		_node=_node.NextNode()
 		Return node.Value()

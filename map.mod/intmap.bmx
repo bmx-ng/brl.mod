@@ -23,9 +23,11 @@ Type TIntMap
 	End Method
 
 	Method Clear()
+?ngcmod
 		If Not IsEmpty() Then
 			_modCount :+ 1
 		End If
+?
 		bmx_map_intmap_clear(Varptr _root)
 	End Method
 	
@@ -35,7 +37,9 @@ Type TIntMap
 	
 	Method Insert( key:Int,value:Object )
 		bmx_map_intmap_insert(key, value, Varptr _root)
+?ngcmod
 		_modCount :+ 1
+?
 	End Method
 
 	Method Contains:Int( key:Int )
@@ -47,7 +51,9 @@ Type TIntMap
 	End Method
 	
 	Method Remove( key:Int )
+?ngcmod
 		_modCount :+ 1
+?
 		Return bmx_map_intmap_remove(key, Varptr _root)
 	End Method
 
@@ -72,7 +78,9 @@ Type TIntMap
 		Local mapenum:TIntMapEnumerator=New TIntMapEnumerator
 		mapenum._enumerator=nodeenum
 		nodeenum._map = Self
+?ngcmod
 		nodeenum._expectedModCount = _modCount
+?
 		Return mapenum
 	End Method
 	
@@ -87,7 +95,9 @@ Type TIntMap
 		Local mapenum:TIntMapEnumerator=New TIntMapEnumerator
 		mapenum._enumerator=nodeenum
 		nodeenum._map = Self
+?ngcmod
 		nodeenum._expectedModCount = _modCount
+?
 		Return mapenum
 	End Method
 	
@@ -101,13 +111,17 @@ Type TIntMap
 		Local nodeenum:TIntNodeEnumerator=New TIntNodeEnumerator
 		nodeenum._node=_FirstNode()
 		nodeenum._map = Self
+?ngcmod
 		nodeenum._expectedModCount = _modCount
+?
 		Return nodeenum
 	End Method
 
 	Field _root:Byte Ptr
 
+?ngcmod
 	Field _modCount:Int
+?
 
 End Type
 
@@ -156,7 +170,9 @@ Type TIntNodeEnumerator
 	End Method
 	
 	Method NextObject:Object()
+?ngcmod
 		Assert _expectedModCount = _map._modCount, "TIntMap Concurrent Modification"
+?
 		Local node:TIntNode=_node
 		_node=_node.NextNode()
 		Return node
@@ -167,13 +183,17 @@ Type TIntNodeEnumerator
 	Field _node:TIntNode	
 
 	Field _map:TIntMap
+?ngcmod
 	Field _expectedModCount:Int
+?
 End Type
 
 Type TIntKeyEnumerator Extends TIntNodeEnumerator
 	Field _key:TIntKey = New TIntKey
 	Method NextObject:Object()
+?ngcmod
 		Assert _expectedModCount = _map._modCount, "TIntMap Concurrent Modification"
+?
 		Local node:TIntNode=_node
 		_node=_node.NextNode()
 		_key.value = node.Key()
@@ -183,7 +203,9 @@ End Type
 
 Type TIntValueEnumerator Extends TIntNodeEnumerator
 	Method NextObject:Object()
+?ngcmod
 		Assert _expectedModCount = _map._modCount, "TIntMap Concurrent Modification"
+?
 		Local node:TIntNode=_node
 		_node=_node.NextNode()
 		Return node.Value()
