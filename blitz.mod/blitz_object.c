@@ -17,6 +17,7 @@ BBClass bbObjectClass={
 	bbObjectFree,   //free
 	&debugScope,	//debug_scope
 	8,				//instance_size
+	0,             //extra
 	
 	bbObjectCtor,
 	bbObjectDtor,

@@ -16,6 +16,7 @@ BBClass bbArrayClass={
 	bbArrayFree,	//free
 	&debugScope,	//DebugScope
 	0,			//instance_size
+	0,          //extra
 	0,			//ctor
 	0,			//dtor
 	

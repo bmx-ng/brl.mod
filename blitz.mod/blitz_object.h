@@ -20,6 +20,7 @@ struct BBClass{
 	BBDebugScope*debug_scope;
 
 	int		instance_size;
+	void*   extra;
 
 	void		(*ctor)( BBObject *o );
 	void		(*dtor)( BBObject *o );
