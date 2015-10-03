@@ -202,7 +202,7 @@ STATIC sem_t GC_suspend_ack_sem;
 
 STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 
-#ifdef SA_SIGINFO
+#ifndef NO_SA_SIGACTION
   STATIC void GC_suspend_handler(int sig, siginfo_t * info GC_ATTR_UNUSED,
                                  void * context GC_ATTR_UNUSED)
 #else
@@ -216,7 +216,7 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg, void *context);
 # else
     /* We believe that in all other cases the full context is already   */
     /* in the signal handler frame.                                     */
-#   ifndef SA_SIGINFO
+#   ifdef NO_SA_SIGACTION
       void *context = 0;
 #   endif
     GC_suspend_handler_inner((ptr_t)(word)sig, context);
@@ -447,7 +447,7 @@ GC_INNER void GC_push_all_stacks(void)
   int GC_stopping_pid = 0;
 #endif
 
-#ifdef PLATFORM_ANDROID
+#ifdef USE_TKILL_ON_ANDROID
   extern int tkill(pid_t tid, int sig); /* from sys/linux-unistd.h */
 
   static int android_thread_kill(pid_t tid, int sig)
@@ -463,7 +463,7 @@ GC_INNER void GC_push_all_stacks(void)
 
     return ret;
   }
-#endif /* PLATFORM_ANDROID */
+#endif /* USE_TKILL_ON_ANDROID */
 
 /* We hold the allocation lock.  Suspend all threads that might */
 /* still be running.  Return the number of suspend signals that */
@@ -473,7 +473,7 @@ STATIC int GC_suspend_all(void)
   int n_live_threads = 0;
   int i;
 # ifndef NACL
-#   ifndef PLATFORM_ANDROID
+#   ifndef USE_TKILL_ON_ANDROID
       pthread_t thread_id;
 #   else
       pid_t thread_id;
@@ -514,7 +514,7 @@ STATIC int GC_suspend_all(void)
                                      (void *)p->id);
               }
 #           else
-#             ifndef PLATFORM_ANDROID
+#             ifndef USE_TKILL_ON_ANDROID
                 thread_id = p -> id;
                 result = pthread_kill(thread_id, GC_sig_suspend);
 #             else
@@ -529,7 +529,8 @@ STATIC int GC_suspend_all(void)
                 case 0:
                     if (GC_on_thread_event)
                       GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED,
-                                         (void *)thread_id);
+                                         (void *)(word)thread_id);
+                                /* Note: thread_id might be truncated.  */
                     break;
                 default:
                     ABORT_ARG1("pthread_kill failed at suspend",
@@ -817,7 +818,7 @@ GC_INNER void GC_start_world(void)
       register int n_live_threads = 0;
       register int result;
 #   endif
-#   ifndef PLATFORM_ANDROID
+#   ifndef USE_TKILL_ON_ANDROID
       pthread_t thread_id;
 #   else
       pid_t thread_id;
@@ -851,7 +852,7 @@ GC_INNER void GC_start_world(void)
             if (GC_on_thread_event)
               GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED, (void *)p->id);
 #         else
-#           ifndef PLATFORM_ANDROID
+#           ifndef USE_TKILL_ON_ANDROID
               thread_id = p -> id;
               result = pthread_kill(thread_id, GC_sig_thr_restart);
 #           else
@@ -866,7 +867,7 @@ GC_INNER void GC_start_world(void)
                 case 0:
                     if (GC_on_thread_event)
                       GC_on_thread_event(GC_EVENT_THREAD_UNSUSPENDED,
-                                         (void *)thread_id);
+                                         (void *)(word)thread_id);
                     break;
                 default:
                     ABORT_ARG1("pthread_kill failed at resume",
@@ -924,7 +925,7 @@ GC_INNER void GC_stop_init(void)
 #   else
       act.sa_flags = 0
 #   endif
-#   ifdef SA_SIGINFO
+#   ifndef NO_SA_SIGACTION
                      | SA_SIGINFO
 #   endif
         ;
@@ -939,7 +940,7 @@ GC_INNER void GC_stop_init(void)
     GC_remove_allowed_signals(&act.sa_mask);
     /* GC_sig_thr_restart is set in the resulting mask. */
     /* It is unmasked by the handler when necessary.    */
-#   ifdef SA_SIGINFO
+#   ifndef NO_SA_SIGACTION
       act.sa_sigaction = GC_suspend_handler;
 #   else
       act.sa_handler = GC_suspend_handler;
@@ -949,7 +950,7 @@ GC_INNER void GC_stop_init(void)
         ABORT("Cannot set SIG_SUSPEND handler");
     }
 
-#   ifdef SA_SIGINFO
+#   ifndef NO_SA_SIGACTION
       act.sa_flags &= ~SA_SIGINFO;
 #   endif
     act.sa_handler = GC_restart_handler;

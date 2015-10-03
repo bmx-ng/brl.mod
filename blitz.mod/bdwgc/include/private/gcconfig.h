@@ -429,6 +429,10 @@
 #   define AARCH64
 #   define mach_type_known
 # endif
+# if defined(FREEBSD) && (defined(mips) || defined(__mips) || defined(_mips))
+#   define MIPS
+#   define mach_type_known
+# endif
 # if defined(bsdi) && (defined(i386) || defined(__i386__))
 #    define I386
 #    define BSDI
@@ -946,7 +950,7 @@
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
-      extern char _end[];
+      extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
 #   endif
@@ -986,7 +990,7 @@
 #     define NO_GETENV
 #     define CPP_WORDSZ 32
 #     define ALIGNMENT 4
-      extern int _end [];
+      extern int _end[];
       extern int __bss_start;
 #     define DATAEND (ptr_t)(_end)
 #     define DATASTART (ptr_t)(__bss_start)
@@ -1148,7 +1152,7 @@
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
-      extern char _end[];
+      extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
 #   endif
@@ -1338,9 +1342,15 @@
 #            endif
              extern int _end[];
 #            define DATAEND (ptr_t)(_end)
-#            if defined(PLATFORM_ANDROID) && !defined(GC_NO_SIGSETJMP)
-               /* As of Android NDK r8b, _sigsetjmp is still missing    */
-               /* for x86 (setjmp is used instead to find data_start).  */
+#            if defined(PLATFORM_ANDROID) && !defined(GC_NO_SIGSETJMP) \
+                && !(__ANDROID_API__ >= 18 || __GNUC__ > 4 \
+                     || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8) \
+                     || __clang_major__ > 3 \
+                     || (__clang_major__ == 3 && __clang_minor__ >= 2))
+               /* Older Android NDK releases lack sigsetjmp in x86 libc */
+               /* (setjmp is used instead to find data_start).  The bug */
+               /* is fixed in Android NDK r8e (so, ok to use sigsetjmp  */
+               /* if gcc4.8+, clang3.2+ or Android API level 18+).      */
 #              define GC_NO_SIGSETJMP
 #            endif
 #       else
@@ -1424,7 +1434,7 @@
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
-        extern char _end[];
+        extern int _end[];
 #       define DATAEND ((ptr_t)(&_end))
 #       define DYNAMIC_LOADING
 #   endif
@@ -1664,10 +1674,26 @@
 #    endif
      extern int _fdata[];
 #    define DATASTART ((ptr_t)_fdata)
-     extern char _end[];
+     extern int _end[];
 #    define DATAEND ((ptr_t)(&_end))
 #    define DYNAMIC_LOADING
 #  endif
+#  ifdef FREEBSD
+#    define OS_TYPE "FREEBSD"
+#    define ALIGNMENT 4
+#    ifndef GC_FREEBSD_THREADS
+#      define MPROTECT_VDB
+#    endif
+#    define SIG_SUSPEND SIGUSR1
+#    define SIG_THR_RESTART SIGUSR2
+#    define FREEBSD_STACKBOTTOM
+#    ifdef __ELF__
+#      define DYNAMIC_LOADING
+#    endif
+     extern char etext[];
+#    define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
+#    define DATASTART_USES_BSDGETDATASTART
+#  endif /* FreeBSD */
 #  if defined(NONSTOP)
 #    define CPP_WORDSZ 32
 #    define OS_TYPE "NONSTOP"
@@ -1758,7 +1784,7 @@
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
-      extern char _end[];
+      extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
 #  endif
@@ -1788,7 +1814,7 @@
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
-        extern char _end[];
+        extern int _end[];
 #       define DATAEND ((ptr_t)(&_end))
 #       define DYNAMIC_LOADING
 #   endif
@@ -2035,7 +2061,7 @@
 #     define DYNAMIC_LOADING
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
-      extern char _end[];
+      extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #   endif
 #   ifdef DARWIN
@@ -2184,7 +2210,7 @@
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
-      extern char _end[];
+      extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
 #   endif
@@ -2241,7 +2267,7 @@
 #      endif
        extern int __data_start[];
 #      define DATASTART ((ptr_t)__data_start)
-       extern char _end[];
+       extern int _end[];
 #      define DATAEND ((ptr_t)(&_end))
 #      define DYNAMIC_LOADING
 #   endif
@@ -2305,7 +2331,7 @@
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
-        extern char _end[];
+        extern int _end[];
 #       define DATAEND ((ptr_t)(&_end))
 #       define DYNAMIC_LOADING
 #   endif
@@ -2577,6 +2603,12 @@
 # define GETPAGESIZE() getpagesize()
 #endif
 
+#if defined(PLATFORM_ANDROID) && ((defined(MIPS) && (CPP_WORDSZ == 32)) \
+                        || defined(ARM32) || defined(I386) /* but not x32 */)
+  /* tkill() exists only on arm32/mips(32)/x86. */
+# define USE_TKILL_ON_ANDROID
+#endif
+
 #if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
         /* OS has SVR4 generic features.        */
         /* Probably others also qualify.        */
@@ -2711,6 +2743,15 @@
 # undef MPROTECT_VDB
 #endif
 
+#ifndef SA_SIGINFO
+# define NO_SA_SIGACTION
+#endif
+
+#if defined(NO_SA_SIGACTION) && defined(MPROTECT_VDB) && !defined(DARWIN) \
+    && !defined(MSWIN32) && !defined(MSWINCE)
+# undef MPROTECT_VDB
+#endif
+
 #if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
     && !defined(GWW_VDB) && !defined(MANUAL_VDB) \
     && !defined(GC_DISABLE_INCREMENTAL)
@@ -2722,7 +2763,7 @@
                              || defined(MIPS) || defined(AVR32) \
                              || defined(OR1K))) \
      || (defined(LINUX) && (defined(SPARC) || defined(M68K))) \
-     || ((defined(RTEMS) || defined(PLATFORM_ANDROID)) && defined(I386))) \
+     || (defined(RTEMS) && defined(I386)) || defined(PLATFORM_ANDROID)) \
     && !defined(NO_GETCONTEXT)
 # define NO_GETCONTEXT
 #endif
@@ -2857,7 +2898,8 @@
 #endif
 
 #if defined(CAN_HANDLE_FORK) && !defined(CAN_CALL_ATFORK) \
-    && !defined(HURD) && !defined(PLATFORM_ANDROID)
+    && !defined(HURD) \
+    && (!defined(PLATFORM_ANDROID) || __ANDROID_API__ >= 21)
   /* Have working pthread_atfork().     */
 # define CAN_CALL_ATFORK
 #endif

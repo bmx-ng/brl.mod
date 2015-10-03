@@ -1134,11 +1134,10 @@ void GC_push_thread_structures(void)
     } else
 # endif
   /* else */ {
-    GC_push_all((ptr_t)(GC_threads), (ptr_t)(GC_threads)+sizeof(GC_threads));
+    GC_PUSH_ALL_SYM(GC_threads);
   }
 # if defined(THREAD_LOCAL_ALLOC)
-    GC_push_all((ptr_t)(&GC_thread_key),
-                (ptr_t)(&GC_thread_key) + sizeof(GC_thread_key));
+    GC_PUSH_ALL_SYM(GC_thread_key);
     /* Just in case we ever use our own TLS implementation.     */
 # endif
 }
@@ -1705,12 +1704,10 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
   /* GC_mark_thread() is the same as in pthread_support.c */
 # ifdef GC_PTHREADS_PARAMARK
     STATIC void * GC_mark_thread(void * id)
+# elif defined(MSWINCE)
+    STATIC DWORD WINAPI GC_mark_thread(LPVOID id)
 # else
-#   ifdef MSWINCE
-      STATIC DWORD WINAPI GC_mark_thread(LPVOID id)
-#   else
-      STATIC unsigned __stdcall GC_mark_thread(void * id)
-#   endif
+    STATIC unsigned __stdcall GC_mark_thread(void * id)
 # endif
   {
     word my_mark_no = 0;
@@ -1723,6 +1720,12 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #   if !defined(GC_PTHREADS_PARAMARK)
       GC_marker_Id[(word)id] = GetCurrentThreadId();
 #   endif
+
+    /* Inform start_mark_threads() about completion of marker data init. */
+    GC_acquire_mark_lock();
+    if (0 == --GC_fl_builder_count)
+      GC_notify_all_builder();
+    GC_release_mark_lock();
 
     for (;; ++my_mark_no) {
       if (my_mark_no - GC_mark_no > (word)2) {
@@ -1773,6 +1776,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       pthread_t new_thread;
 
       GC_ASSERT(I_DONT_HOLD_LOCK());
+      GC_ASSERT(GC_fl_builder_count == 0);
 #     ifdef CAN_HANDLE_FORK
         if (available_markers_m1 <= 0 || GC_parallel) return;
                 /* Skip if parallel markers disabled or already started. */
@@ -1793,6 +1797,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       }
       GC_markers_m1 = i;
       (void)pthread_attr_destroy(&attr);
+      GC_wait_for_markers_init();
       GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
     }
 
@@ -1916,6 +1921,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         unsigned thread_id;
 #     endif
 
+      GC_ASSERT(GC_fl_builder_count == 0);
       /* Initialize GC_marker_cv[] fully before starting the    */
       /* first helper thread.                                   */
       for (i = 0; i < GC_markers_m1; ++i) {
@@ -1962,6 +1968,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         GC_markers_m1--;
         CloseHandle(GC_marker_cv[GC_markers_m1]);
       }
+      GC_wait_for_markers_init();
       GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
       if (i == 0) {
         CloseHandle(mark_cv);

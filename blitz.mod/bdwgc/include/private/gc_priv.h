@@ -109,7 +109,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* located in the "extra" folder).                                    */
 # if defined(GC_DLL) && defined(__GNUC__) && !defined(MSWIN32) \
         && !defined(MSWINCE) && !defined(CYGWIN32)
-#   if __GNUC__ >= 4
+#   if (__GNUC__ >= 4) && !defined(GC_NO_VISIBILITY)
       /* See the corresponding GC_API definition. */
 #     define GC_INNER __attribute__((__visibility__("hidden")))
 #   else
@@ -165,7 +165,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #ifndef GC_API_OSCALL
   /* This is used to identify GC routines called by name from OS.       */
 # if defined(__GNUC__)
-#   if __GNUC__ >= 4
+#   if (__GNUC__ >= 4) && !defined(GC_NO_VISIBILITY)
       /* Same as GC_API if GC_DLL.      */
 #     define GC_API_OSCALL extern __attribute__((__visibility__("default")))
 #   else
@@ -255,26 +255,30 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 
 
 #ifndef GC_NO_FINALIZATION
-#  define GC_INVOKE_FINALIZERS() GC_notify_or_invoke_finalizers()
-   GC_INNER void GC_notify_or_invoke_finalizers(void);
+# define GC_INVOKE_FINALIZERS() GC_notify_or_invoke_finalizers()
+  GC_INNER void GC_notify_or_invoke_finalizers(void);
                         /* If GC_finalize_on_demand is not set, invoke  */
                         /* eligible finalizers. Otherwise:              */
                         /* Call *GC_finalizer_notifier if there are     */
                         /* finalizers to be run, and we haven't called  */
                         /* this procedure yet this GC cycle.            */
 
-   GC_INNER void GC_finalize(void);
+  GC_INNER void GC_finalize(void);
                         /* Perform all indicated finalization actions   */
                         /* on unmarked objects.                         */
                         /* Unreachable finalizable objects are enqueued */
                         /* for processing by GC_invoke_finalizers.      */
                         /* Invoked with lock.                           */
 
-#  ifndef SMALL_CONFIG
-     GC_INNER void GC_print_finalization_stats(void);
-#  endif
+# ifndef GC_TOGGLE_REFS_NOT_NEEDED
+    GC_INNER void GC_process_togglerefs(void);
+                        /* Process the toggle-refs before GC starts.    */
+# endif
+# ifndef SMALL_CONFIG
+    GC_INNER void GC_print_finalization_stats(void);
+# endif
 #else
-#  define GC_INVOKE_FINALIZERS() (void)0
+# define GC_INVOKE_FINALIZERS() (void)0
 #endif /* GC_NO_FINALIZATION */
 
 #if !defined(DONT_ADD_BYTE_AT_END)
@@ -1603,6 +1607,9 @@ GC_INNER GC_bool GC_collection_in_progress(void);
 # define GC_PUSH_CONDITIONAL(b, t, all) GC_push_all((ptr_t)(b), (ptr_t)(t))
 #endif
 
+#define GC_PUSH_ALL_SYM(sym) \
+                GC_push_all((ptr_t)&(sym), (ptr_t)&(sym) + sizeof(sym))
+
 GC_INNER void GC_push_all_stack(ptr_t b, ptr_t t);
                                     /* As GC_push_all but consider      */
                                     /* interior pointers as valid.      */
@@ -2350,6 +2357,14 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define GC_STATIC_ASSERT(expr) (void)sizeof(char[(expr)? 1 : -1])
 #endif
 
+/* Runtime check for an argument declared as non-null is actually not null. */
+#if defined(__GNUC__) && __GNUC__ >= 4
+  /* Workaround tautological-pointer-compare Clang warning.     */
+# define NONNULL_ARG_NOT_NULL(arg) (*(volatile void **)&(arg) != NULL)
+#else
+# define NONNULL_ARG_NOT_NULL(arg) (NULL != (arg))
+#endif
+
 #define COND_DUMP_CHECKS \
           do { \
             GC_ASSERT(GC_compute_large_free_bytes() == GC_large_free_bytes); \
@@ -2386,6 +2401,7 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
   /* GC_notify_all_builder() is called when GC_fl_builder_count         */
   /* reaches 0.                                                         */
 
+  GC_INNER void GC_wait_for_markers_init(void);
   GC_INNER void GC_acquire_mark_lock(void);
   GC_INNER void GC_release_mark_lock(void);
   GC_INNER void GC_notify_all_builder(void);

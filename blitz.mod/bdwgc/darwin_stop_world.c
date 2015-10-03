@@ -178,7 +178,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
 #       if defined(ARM_UNIFIED_THREAD_STATE)
           state = unified_state;
 #       else
-          state = unified_state.ts_32;
+        state = unified_state.ts_32;
 #       endif
       } else
 #   endif
