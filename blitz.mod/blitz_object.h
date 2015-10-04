@@ -20,7 +20,6 @@ struct BBClass{
 	BBDebugScope*debug_scope;
 
 	int		instance_size;
-	void*   extra;
 
 	void		(*ctor)( BBObject *o );
 	void		(*dtor)( BBObject *o );
@@ -29,9 +28,9 @@ struct BBClass{
 	int		(*Compare)( BBObject *x,BBObject *y );
 	BBObject*	(*SendMessage)( BBObject *m,BBObject *s );
 
-	BBINTERFACEOFFSETS ifc_offsets;
-	void * ifc_vtable;
-	int ifc_size;
+	BBINTERFACETABLE itable;
+	void*   extra;
+	void*   reserved;
 
 	void*	vfns[32];
 };
@@ -50,6 +49,12 @@ struct BBInterface {
 struct BBInterfaceOffsets {
     BBINTERFACE ifc;
     int offset;
+};
+
+struct BBInterfaceTable {
+	BBINTERFACEOFFSETS ifc_offsets;
+	void * ifc_vtable;
+	int ifc_size;
 };
 
 extern	BBClass bbObjectClass;

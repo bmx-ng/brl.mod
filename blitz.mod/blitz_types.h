@@ -20,6 +20,7 @@ typedef struct BBClass	BBClass;
 typedef struct BBObject	BBObject;
 typedef struct BBString	BBString;
 typedef struct BBArray	BBArray;
+typedef struct BBInterfaceTable BBInterfaceTable;
 typedef struct BBInterface BBInterface;
 typedef struct BBInterfaceOffsets BBInterfaceOffsets;
 
@@ -33,6 +34,7 @@ typedef BBClass*		BBCLASS;
 typedef BBObject*		BBOBJECT;
 typedef BBString*		BBSTRING;
 typedef BBArray*		BBARRAY;
+typedef BBInterfaceTable*	BBINTERFACETABLE;
 typedef BBInterface*	BBINTERFACE;
 typedef BBInterfaceOffsets * BBINTERFACEOFFSETS;
 

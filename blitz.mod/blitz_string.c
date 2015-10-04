@@ -18,15 +18,14 @@ BBClass bbStringClass={
 	bbStringFree,   //free
 	&debugScope,	//DebugScope
 	0,				//instance_size
-	0,              //extra
 	0,				//ctor
 	0,				//dtor
 
 	(BBString*(*)(BBObject*))bbStringToString,
 	(int(*)(BBObject*,BBObject*))bbStringCompare,
 	bbObjectSendMessage,
-	0,
-	0,
+	0,              //interface
+	0,              //extra
 	0,
 	
 	bbStringFind,

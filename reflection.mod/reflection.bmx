@@ -69,6 +69,7 @@ Function bbRefArrayNull:Object()
 
 Function bbInterfaceName:Byte Ptr(ifc:Byte Ptr)
 Function bbInterfaceClass:Byte Ptr(ifc:Byte Ptr)
+Function bbObjectImplementsInterfaces:Int(class:Byte Ptr)
 Function bbObjectImplementedCount:Int(class:Byte Ptr)
 Function bbObjectImplementedInterface:Byte Ptr(class:Byte Ptr, index:Int)
 
@@ -2028,11 +2029,14 @@ Type TTypeId
 			p = bbDebugDeclNext(p)
 		Wend
 		' implemented interfaces ?
-		Local imps:Int = bbObjectImplementedCount(_class)
-		If imps > 0 Then
-			For Local i:Int = 0 Until imps
-				_interfaces.AddLast(_interfaceMap.ValueForKey(bbObjectImplementedInterface(_class, i)))
-			Next
+		Local impInt:Int = bbObjectImplementsInterfaces(_class)
+		If impInt Then
+			Local imps:Int = bbObjectImplementedCount(_class)
+			If imps > 0 Then
+				For Local i:Int = 0 Until imps
+					_interfaces.AddLast(_interfaceMap.ValueForKey(bbObjectImplementedInterface(_class, i)))
+				Next
+			End If
 		End If
 	End Method
 	

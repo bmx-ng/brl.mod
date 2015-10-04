@@ -17,16 +17,15 @@ BBClass bbObjectClass={
 	bbObjectFree,   //free
 	&debugScope,	//debug_scope
 	8,				//instance_size
-	0,             //extra
 	
 	bbObjectCtor,
 	bbObjectDtor,
 	bbObjectToString,
 	bbObjectCompare,
 	bbObjectSendMessage,
-	0,
-	0,
-	0,
+	0,             //interface
+	0,             //extra
+	0,             //reserved
 };
 
 BBObject bbNullObject={
@@ -139,9 +138,10 @@ BBObject * bbInterfaceDowncast(BBOBJECT o, BBINTERFACE ifc) {
 		BBCLASS clas = superclas;
 		superclas = clas->super;
 
-		BBINTERFACEOFFSETS offsets      = clas->ifc_offsets;
-		if (offsets) {
-			for (i = clas->ifc_size; i; i--) {
+		BBINTERFACETABLE table = clas->itable;
+		if (table) {
+			BBINTERFACEOFFSETS offsets = table->ifc_offsets;
+			for (i = table->ifc_size; i; i--) {
 				if (offsets->ifc == ifc) {
 					return o;
 				}
@@ -162,11 +162,12 @@ void * bbObjectInterface(BBOBJECT o, BBINTERFACE ifc) {
 		BBCLASS clas = superclas;
 		superclas = clas->super;
 
-		BBINTERFACEOFFSETS offsets      = clas->ifc_offsets;
-		if (offsets) {
-			for (i = clas->ifc_size; i; i--) {
+		BBINTERFACETABLE table = clas->itable;
+		if (table) {
+			BBINTERFACEOFFSETS offsets = table->ifc_offsets;
+			for (i = table->ifc_size; i; i--) {
 				if (offsets->ifc == ifc) {
-					return (char*) clas->ifc_vtable + offsets->offset;
+					return (char*) table->ifc_vtable + offsets->offset;
 				}
 				offsets++;
 			}

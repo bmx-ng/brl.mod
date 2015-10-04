@@ -136,11 +136,15 @@ BBClass * bbInterfaceClass(BBInterface * ifc) {
 	return ifc->clas;
 }
 
+int bbObjectImplementsInterfaces(BBClass *clas) {
+	return clas->itable != 0;
+}
+
 int bbObjectImplementedCount(BBClass *clas) {
-	return clas->ifc_size;
+	return clas->itable->ifc_size;
 }
 
 BBInterface * bbObjectImplementedInterface(BBClass * clas, int index) {
-	return clas->ifc_offsets[index].ifc;
+	return clas->itable->ifc_offsets[index].ifc;
 }
 
