@@ -32,6 +32,7 @@ ModuleInfo "History: Fixed TMap.Remove:TNode not returning node"
 Import "intmap.bmx"
 Import "ptrmap.bmx"
 Import "stringmap.bmx"
+Import "objectmap.bmx"
 Import "map.c"
 
 Private
