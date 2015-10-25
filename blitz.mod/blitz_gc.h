@@ -83,7 +83,7 @@ void		bbGCRelease( BBObject *p );
 //
 #ifdef BB_GC_BDW
 struct retain_node {
-	struct tree_root link;
+	struct avl_root link;
 	BBOBJECT obj;
 	int count;
 };

@@ -6,7 +6,7 @@
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
 struct intmap_node {
-	struct tree_root link;
+	struct avl_root link;
 	int key;
 	BBOBJECT value;
 };
@@ -19,27 +19,27 @@ static int compare_intmap_nodes(const void *x, const void *y) {
         return generic_compare(node_x->key, node_y->key);
 }
 
-void bmx_map_intmap_clear(struct tree_root ** root) {
+void bmx_map_intmap_clear(struct avl_root ** root) {
 	struct intmap_node *node;
 	struct intmap_node *tmp;
-	tree_for_each_entry_safe(node, tmp, *root, link) {
+	avl_for_each_entry_safe(node, tmp, *root, link) {
 		BBRELEASE(node->value);
-		tree_del(&node->link, root);
+		avl_del(&node->link, root);
 		free(node);
 	}
 }
 
-int bmx_map_intmap_isempty(struct tree_root ** root) {
+int bmx_map_intmap_isempty(struct avl_root ** root) {
 	return *root == 0;
 }
 
-void bmx_map_intmap_insert( int key, BBObject *value, struct tree_root ** root ) {
+void bmx_map_intmap_insert( int key, BBObject *value, struct avl_root ** root ) {
 	struct intmap_node * node = (struct intmap_node *)malloc(sizeof(struct intmap_node));
 	node->key = key;
 	node->value = value;
 	BBRETAIN(value);
 	
-	struct intmap_node * old_node = (struct intmap_node *)tree_map(&node->link, compare_intmap_nodes, root);
+	struct intmap_node * old_node = (struct intmap_node *)avl_map(&node->link, compare_intmap_nodes, root);
 
 	if (&node->link != &old_node->link) {
 		BBRELEASE(old_node->value);
@@ -50,7 +50,7 @@ void bmx_map_intmap_insert( int key, BBObject *value, struct tree_root ** root )
 	}
 }
 
-int bmx_map_intmap_contains(int key, struct tree_root ** root) {
+int bmx_map_intmap_contains(int key, struct avl_root ** root) {
 	struct intmap_node node;
 	node.key = key;
 	
@@ -62,7 +62,7 @@ int bmx_map_intmap_contains(int key, struct tree_root ** root) {
 	}
 }
 
-BBObject * bmx_map_intmap_valueforkey(int key, struct tree_root ** root) {
+BBObject * bmx_map_intmap_valueforkey(int key, struct avl_root ** root) {
 	struct intmap_node node;
 	node.key = key;
 	
@@ -75,7 +75,7 @@ BBObject * bmx_map_intmap_valueforkey(int key, struct tree_root ** root) {
 	return &bbNullObject;
 }
 
-int bmx_map_intmap_remove(int key, struct tree_root ** root) {
+int bmx_map_intmap_remove(int key, struct avl_root ** root) {
 	struct intmap_node node;
 	node.key = key;
 	
@@ -83,7 +83,7 @@ int bmx_map_intmap_remove(int key, struct tree_root ** root) {
 	
 	if (found) {
 		BBRELEASE(found->value);
-		tree_del(&found->link, root);
+		avl_del(&found->link, root);
 		free(found);
 		return 1;
 	} else {
@@ -95,7 +95,7 @@ struct intmap_node * bmx_map_intmap_nextnode(struct intmap_node * node) {
 	return tree_successor(node);
 }
 
-struct intmap_node * bmx_map_intmap_firstnode(struct tree_root * root) {
+struct intmap_node * bmx_map_intmap_firstnode(struct avl_root * root) {
 	return tree_min(root);
 }
 
@@ -107,7 +107,7 @@ BBObject * bmx_map_intmap_value(struct intmap_node * node) {
 	return node->value;
 }
 
-int bmx_map_intmap_hasnext(struct intmap_node * node, struct tree_root * root) {
+int bmx_map_intmap_hasnext(struct intmap_node * node, struct avl_root * root) {
 	if (!root) {
 		return 0;
 	}
@@ -119,10 +119,10 @@ int bmx_map_intmap_hasnext(struct intmap_node * node, struct tree_root * root) {
 	return (tree_successor(node) != 0) ? 1 : 0;
 }
 
-void bmx_map_intmap_copy(struct tree_root ** dst_root, struct tree_root * src_root) {
+void bmx_map_intmap_copy(struct avl_root ** dst_root, struct avl_root * src_root) {
 	struct intmap_node *src_node;
 	struct intmap_node *tmp;
-	tree_for_each_entry_safe(src_node, tmp, src_root, link) {
+	avl_for_each_entry_safe(src_node, tmp, src_root, link) {
 		bmx_map_intmap_insert(src_node->key, src_node->value, dst_root);
 	}
 }
@@ -130,7 +130,7 @@ void bmx_map_intmap_copy(struct tree_root ** dst_root, struct tree_root * src_ro
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
 struct ptrmap_node {
-	struct tree_root link;
+	struct avl_root link;
 	void * key;
 	BBOBJECT value;
 };
@@ -143,27 +143,27 @@ static int compare_ptrmap_nodes(const void *x, const void *y) {
         return generic_compare(node_x->key, node_y->key);
 }
 
-void bmx_map_ptrmap_clear(struct tree_root ** root) {
+void bmx_map_ptrmap_clear(struct avl_root ** root) {
 	struct ptrmap_node *node;
 	struct ptrmap_node *tmp;
-	tree_for_each_entry_safe(node, tmp, *root, link) {
+	avl_for_each_entry_safe(node, tmp, *root, link) {
 		BBRELEASE(node->value);
-		tree_del(&node->link, root);
+		avl_del(&node->link, root);
 		free(node);
 	}
 }
 
-int bmx_map_ptrmap_isempty(struct tree_root ** root) {
+int bmx_map_ptrmap_isempty(struct avl_root ** root) {
 	return *root == 0;
 }
 
-void bmx_map_ptrmap_insert( void * key, BBObject *value, struct tree_root ** root ) {
+void bmx_map_ptrmap_insert( void * key, BBObject *value, struct avl_root ** root ) {
 	struct ptrmap_node * node = (struct ptrmap_node *)malloc(sizeof(struct ptrmap_node));
 	node->key = key;
 	node->value = value;
 	BBRETAIN(value);
 	
-	struct ptrmap_node * old_node = (struct ptrmap_node *)tree_map(&node->link, compare_ptrmap_nodes, root);
+	struct ptrmap_node * old_node = (struct ptrmap_node *)avl_map(&node->link, compare_ptrmap_nodes, root);
 
 	if (&node->link != &old_node->link) {
 		BBRELEASE(old_node->value);
@@ -174,7 +174,7 @@ void bmx_map_ptrmap_insert( void * key, BBObject *value, struct tree_root ** roo
 	}
 }
 
-int bmx_map_ptrmap_contains(void * key, struct tree_root ** root) {
+int bmx_map_ptrmap_contains(void * key, struct avl_root ** root) {
 	struct ptrmap_node node;
 	node.key = key;
 	
@@ -186,7 +186,7 @@ int bmx_map_ptrmap_contains(void * key, struct tree_root ** root) {
 	}
 }
 
-BBObject * bmx_map_ptrmap_valueforkey(void * key, struct tree_root ** root) {
+BBObject * bmx_map_ptrmap_valueforkey(void * key, struct avl_root ** root) {
 	struct ptrmap_node node;
 	node.key = key;
 	
@@ -199,7 +199,7 @@ BBObject * bmx_map_ptrmap_valueforkey(void * key, struct tree_root ** root) {
 	return &bbNullObject;
 }
 
-int bmx_map_ptrmap_remove(void * key, struct tree_root ** root) {
+int bmx_map_ptrmap_remove(void * key, struct avl_root ** root) {
 	struct ptrmap_node node;
 	node.key = key;
 	
@@ -207,7 +207,7 @@ int bmx_map_ptrmap_remove(void * key, struct tree_root ** root) {
 	
 	if (found) {
 		BBRELEASE(found->value);
-		tree_del(&found->link, root);
+		avl_del(&found->link, root);
 		free(found);
 		return 1;
 	} else {
@@ -219,7 +219,7 @@ struct ptrmap_node * bmx_map_ptrmap_nextnode(struct ptrmap_node * node) {
 	return tree_successor(node);
 }
 
-struct ptrmap_node * bmx_map_ptrmap_firstnode(struct tree_root * root) {
+struct ptrmap_node * bmx_map_ptrmap_firstnode(struct avl_root * root) {
 	return tree_min(root);
 }
 
@@ -231,7 +231,7 @@ BBObject * bmx_map_ptrmap_value(struct ptrmap_node * node) {
 	return node->value;
 }
 
-int bmx_map_ptrmap_hasnext(struct ptrmap_node * node, struct tree_root * root) {
+int bmx_map_ptrmap_hasnext(struct ptrmap_node * node, struct avl_root * root) {
 	if (!root) {
 		return 0;
 	}
@@ -243,10 +243,10 @@ int bmx_map_ptrmap_hasnext(struct ptrmap_node * node, struct tree_root * root) {
 	return (tree_successor(node) != 0) ? 1 : 0;
 }
 
-void bmx_map_ptrmap_copy(struct tree_root ** dst_root, struct tree_root * src_root) {
+void bmx_map_ptrmap_copy(struct avl_root ** dst_root, struct avl_root * src_root) {
 	struct ptrmap_node *src_node;
 	struct ptrmap_node *tmp;
-	tree_for_each_entry_safe(src_node, tmp, src_root, link) {
+	avl_for_each_entry_safe(src_node, tmp, src_root, link) {
 		bmx_map_ptrmap_insert(src_node->key, src_node->value, dst_root);
 	}
 }
@@ -254,7 +254,7 @@ void bmx_map_ptrmap_copy(struct tree_root ** dst_root, struct tree_root * src_ro
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
 struct stringmap_node {
-	struct tree_root link;
+	struct avl_root link;
 	BBString * key;
 	BBOBJECT value;
 };
@@ -266,29 +266,29 @@ static int compare_stringmap_nodes(const void *x, const void *y) {
         return bbStringCompare(node_x->key, node_y->key);
 }
 
-void bmx_map_stringmap_clear(struct tree_root ** root) {
+void bmx_map_stringmap_clear(struct avl_root ** root) {
 	struct stringmap_node *node;
 	struct stringmap_node *tmp;
-	tree_for_each_entry_safe(node, tmp, *root, link) {
+	avl_for_each_entry_safe(node, tmp, *root, link) {
 		BBRELEASE(node->key);
 		BBRELEASE(node->value);
-		tree_del(&node->link, root);
+		avl_del(&node->link, root);
 		free(node);
 	}
 }
 
-int bmx_map_stringmap_isempty(struct tree_root ** root) {
+int bmx_map_stringmap_isempty(struct avl_root ** root) {
 	return *root == 0;
 }
 
-void bmx_map_stringmap_insert( BBString * key, BBObject *value, struct tree_root ** root) {
+void bmx_map_stringmap_insert( BBString * key, BBObject *value, struct avl_root ** root) {
 	struct stringmap_node * node = (struct stringmap_node *)malloc(sizeof(struct stringmap_node));
 	node->key = key;
 	BBRETAIN(key);
 	node->value = value;
 	BBRETAIN(value);
 	
-	struct stringmap_node * old_node = (struct stringmap_node *)tree_map(&node->link, compare_stringmap_nodes, root);
+	struct stringmap_node * old_node = (struct stringmap_node *)avl_map(&node->link, compare_stringmap_nodes, root);
 
 	if (&node->link != &old_node->link) {
 		BBRELEASE(old_node->key);
@@ -300,7 +300,7 @@ void bmx_map_stringmap_insert( BBString * key, BBObject *value, struct tree_root
 	}
 }
 
-int bmx_map_stringmap_contains(BBString * key, struct tree_root ** root) {
+int bmx_map_stringmap_contains(BBString * key, struct avl_root ** root) {
 	struct stringmap_node node;
 	node.key = key;
 	
@@ -312,7 +312,7 @@ int bmx_map_stringmap_contains(BBString * key, struct tree_root ** root) {
 	}
 }
 
-BBObject * bmx_map_stringmap_valueforkey(BBString * key, struct tree_root ** root) {
+BBObject * bmx_map_stringmap_valueforkey(BBString * key, struct avl_root ** root) {
 	struct stringmap_node node;
 	node.key = key;
 	
@@ -325,7 +325,7 @@ BBObject * bmx_map_stringmap_valueforkey(BBString * key, struct tree_root ** roo
 	return &bbNullObject;
 }
 
-int bmx_map_stringmap_remove(int key, struct tree_root ** root) {
+int bmx_map_stringmap_remove(BBString * key, struct avl_root ** root) {
 	struct stringmap_node node;
 	node.key = key;
 	
@@ -334,7 +334,7 @@ int bmx_map_stringmap_remove(int key, struct tree_root ** root) {
 	if (found) {
 		BBRELEASE(found->key);
 		BBRELEASE(found->value);
-		tree_del(&found->link, root);
+		avl_del(&found->link, root);
 		free(found);
 		return 1;
 	} else {
@@ -346,7 +346,7 @@ struct stringmap_node * bmx_map_stringmap_nextnode(struct stringmap_node * node)
 	return tree_successor(node);
 }
 
-struct stringmap_node * bmx_map_stringmap_firstnode(struct tree_root * root) {
+struct stringmap_node * bmx_map_stringmap_firstnode(struct avl_root * root) {
 	return tree_min(root);
 }
 
@@ -358,7 +358,7 @@ BBObject * bmx_map_stringmap_value(struct stringmap_node * node) {
 	return node->value;
 }
 
-int bmx_map_stringmap_hasnext(struct stringmap_node * node, struct tree_root * root) {
+int bmx_map_stringmap_hasnext(struct stringmap_node * node, struct avl_root * root) {
 	if (!root) {
 		return 0;
 	}
@@ -370,10 +370,10 @@ int bmx_map_stringmap_hasnext(struct stringmap_node * node, struct tree_root * r
 	return (tree_successor(node) != 0) ? 1 : 0;
 }
 
-void bmx_map_stringmap_copy(struct tree_root ** dst_root, struct tree_root * src_root) {
+void bmx_map_stringmap_copy(struct avl_root ** dst_root, struct avl_root * src_root) {
 	struct stringmap_node *src_node;
 	struct stringmap_node *tmp;
-	tree_for_each_entry_safe(src_node, tmp, src_root, link) {
+	avl_for_each_entry_safe(src_node, tmp, src_root, link) {
 		bmx_map_stringmap_insert(src_node->key, src_node->value, dst_root);
 	}
 }
@@ -381,7 +381,7 @@ void bmx_map_stringmap_copy(struct tree_root ** dst_root, struct tree_root * src
 /* +++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 
 struct objectmap_node {
-	struct tree_root link;
+	struct avl_root link;
 	BBOBJECT key;
 	BBOBJECT value;
 };
@@ -393,29 +393,29 @@ static int compare_objectmap_nodes(const void *x, const void *y) {
         return node_x->key->clas->Compare(node_x->key, node_y->key);
 }
 
-void bmx_map_objectmap_clear(struct tree_root ** root) {
+void bmx_map_objectmap_clear(struct avl_root ** root) {
 	struct objectmap_node *node;
 	struct objectmap_node *tmp;
-	tree_for_each_entry_safe(node, tmp, *root, link) {
+	avl_for_each_entry_safe(node, tmp, *root, link) {
 		BBRELEASE(node->key);
 		BBRELEASE(node->value);
-		tree_del(&node->link, root);
+		avl_del(&node->link, root);
 		free(node);
 	}
 }
 
-int bmx_map_objectmap_isempty(struct tree_root ** root) {
+int bmx_map_objectmap_isempty(struct avl_root ** root) {
 	return *root == 0;
 }
 
-void bmx_map_objectmap_insert( BBObject * key, BBObject *value, struct tree_root ** root) {
+void bmx_map_objectmap_insert( BBObject * key, BBObject *value, struct avl_root ** root) {
 	struct objectmap_node * node = (struct objectmap_node *)malloc(sizeof(struct objectmap_node));
 	node->key = key;
 	BBRETAIN(key);
 	node->value = value;
 	BBRETAIN(value);
 	
-	struct objectmap_node * old_node = (struct objectmap_node *)tree_map(&node->link, compare_objectmap_nodes, root);
+	struct objectmap_node * old_node = (struct objectmap_node *)avl_map(&node->link, compare_objectmap_nodes, root);
 
 	if (&node->link != &old_node->link) {
 		BBRELEASE(node->key);
@@ -427,7 +427,7 @@ void bmx_map_objectmap_insert( BBObject * key, BBObject *value, struct tree_root
 	}
 }
 
-int bmx_map_objectmap_contains(BBObject * key, struct tree_root ** root) {
+int bmx_map_objectmap_contains(BBObject * key, struct avl_root ** root) {
 	struct objectmap_node node;
 	node.key = key;
 	
@@ -439,7 +439,7 @@ int bmx_map_objectmap_contains(BBObject * key, struct tree_root ** root) {
 	}
 }
 
-BBObject * bmx_map_objectmap_valueforkey(BBObject * key, struct tree_root ** root) {
+BBObject * bmx_map_objectmap_valueforkey(BBObject * key, struct avl_root ** root) {
 	struct objectmap_node node;
 	node.key = key;
 	
@@ -452,7 +452,7 @@ BBObject * bmx_map_objectmap_valueforkey(BBObject * key, struct tree_root ** roo
 	return &bbNullObject;
 }
 
-int bmx_map_objectmap_remove(int key, struct tree_root ** root) {
+int bmx_map_objectmap_remove(BBObject * key, struct avl_root ** root) {
 	struct objectmap_node node;
 	node.key = key;
 	
@@ -461,7 +461,7 @@ int bmx_map_objectmap_remove(int key, struct tree_root ** root) {
 	if (found) {
 		BBRELEASE(found->key);
 		BBRELEASE(found->value);
-		tree_del(&found->link, root);
+		avl_del(&found->link, root);
 		free(found);
 		return 1;
 	} else {
@@ -473,7 +473,7 @@ struct objectmap_node * bmx_map_objectmap_nextnode(struct objectmap_node * node)
 	return tree_successor(node);
 }
 
-struct objectmap_node * bmx_map_objectmap_firstnode(struct tree_root * root) {
+struct objectmap_node * bmx_map_objectmap_firstnode(struct avl_root * root) {
 	return tree_min(root);
 }
 
@@ -485,7 +485,7 @@ BBObject * bmx_map_objectmap_value(struct objectmap_node * node) {
 	return node->value;
 }
 
-int bmx_map_objectmap_hasnext(struct objectmap_node * node, struct tree_root * root) {
+int bmx_map_objectmap_hasnext(struct objectmap_node * node, struct avl_root * root) {
 	if (!root) {
 		return 0;
 	}
@@ -497,10 +497,10 @@ int bmx_map_objectmap_hasnext(struct objectmap_node * node, struct tree_root * r
 	return (tree_successor(node) != 0) ? 1 : 0;
 }
 
-void bmx_map_objectmap_copy(struct tree_root ** dst_root, struct tree_root * src_root) {
+void bmx_map_objectmap_copy(struct avl_root ** dst_root, struct avl_root * src_root) {
 	struct objectmap_node *src_node;
 	struct objectmap_node *tmp;
-	tree_for_each_entry_safe(src_node, tmp, src_root, link) {
+	avl_for_each_entry_safe(src_node, tmp, src_root, link) {
 		bmx_map_objectmap_insert(src_node->key, src_node->value, dst_root);
 	}
 }
