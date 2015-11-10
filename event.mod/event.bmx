@@ -6,12 +6,14 @@ bbdoc: Events/Events
 End Rem
 Module BRL.Event
 
-ModuleInfo "Version: 1.04"
+ModuleInfo "Version: 1.05"
 ModuleInfo "Author: Mark Sibly, Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.05"
+ModuleInfo "History: Added EVENT_MULTIGESTURE."
 ModuleInfo "History: 1.04"
 ModuleInfo "History: Added event pool."
 ModuleInfo "History: Added EVENT_TOUCHDOWN, EVENT_TOUCHUP and EVENT_TOUCHMOVE."
@@ -225,6 +227,7 @@ Const EVENT_TOUCHMASK=$40000
 Const EVENT_TOUCHDOWN=$40001
 Const EVENT_TOUCHUP=$40002
 Const EVENT_TOUCHMOVE=$40003
+Const EVENT_MULTIGESTURE=$80000
 Const EVENT_USEREVENTMASK=$80000000
 
 TEvent.RegisterId EVENT_APPSUSPEND,"AppSuspend"
@@ -265,6 +268,7 @@ TEvent.RegisterId EVENT_PROCESSEXIT,"ProcessExit"
 TEvent.RegisterId EVENT_TOUCHDOWN,"TouchDown"
 TEvent.RegisterId EVENT_TOUCHUP,"TouchUp"
 TEvent.RegisterId EVENT_TOUCHMOVE,"TouchMove"
+TEvent.RegisterId EVENT_MULTIGESTURE,"MultiGesture"
 
 Rem
 bbdoc: Emit an event
