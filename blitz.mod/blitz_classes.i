@@ -57,6 +57,9 @@ String^Object{
 	+FromUTF8String:String( utf8String:Byte Ptr )="bbStringFromUTF8String"
 	-ToUTF8String:Byte Ptr()="bbStringToUTF8String"
 
+	-ToSizet:size_t()="bbStringToSizet"
+	+FromSizet:String( sizetValue:size_t )="bbStringFromSizet"
+
 }AF="bbStringClass"
 
 ___Array^Object{

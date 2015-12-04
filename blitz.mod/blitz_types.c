@@ -6,6 +6,7 @@ const char *bbByteTypeTag="b";
 const char *bbShortTypeTag="s";
 const char *bbIntTypeTag="i";
 const char *bbLongTypeTag="l";
+const char *bbSizetTypeTag="z";
 const char *bbFloatTypeTag="f";
 const char *bbDoubleTypeTag="d";
 const char *bbStringTypeTag="$";
@@ -18,6 +19,7 @@ BBINT bbConvertToInt( struct bbDataDef * data ){
 	case 's':return data->s;
 	case 'i':return data->i;
 	case 'l':return data->l;
+	case 'z':return data->z;
 	case 'f':return data->f;
 	case 'd':return data->d;
 	case '$':return bbStringToInt( data->t );
@@ -31,6 +33,7 @@ BBLONG bbConvertToLong( struct bbDataDef * data ){
 	case 's':return data->s;
 	case 'i':return data->i;
 	case 'l':return data->l;
+	case 'z':return data->z;
 	case 'f':return data->f;
 	case 'd':return data->d;
 	case '$':return bbStringToLong( data->t );
@@ -44,6 +47,7 @@ BBFLOAT bbConvertToFloat( struct bbDataDef * data ){
 	case 's':return data->s;
 	case 'i':return data->i;
 	case 'l':return data->l;
+	case 'z':return data->z;
 	case 'f':return data->f;
 	case 'd':return data->d;
 	case '$':return bbStringToFloat( data->t );
@@ -57,6 +61,7 @@ BBDOUBLE bbConvertToDouble( struct bbDataDef * data ){
 	case 's':return data->s;
 	case 'i':return data->i;
 	case 'l':return data->l;
+	case 'z':return data->z;
 	case 'f':return data->f;
 	case 'd':return data->d;
 	case '$':return bbStringToFloat( data->t );
@@ -70,9 +75,24 @@ BBSTRING bbConvertToString( struct bbDataDef * data ){
 	case 's':return bbStringFromInt( data->s );
 	case 'i':return bbStringFromInt( data->i );
 	case 'l':return bbStringFromLong( data->l );
+	case 'z':return bbStringFromSizet( data->z );
 	case 'f':return bbStringFromFloat( data->f );
 	case 'd':return bbStringFromFloat( data->d );
 	case '$':return data->t;
 	}
 	return &bbEmptyString;
+}
+
+BBSIZET bbConvertToSizet( struct bbDataDef * data ){
+	switch( data->type[0] ){
+	case 'b':return data->b;
+	case 's':return data->s;
+	case 'i':return data->i;
+	case 'l':return data->l;
+	case 'z':return data->z;
+	case 'f':return data->f;
+	case 'd':return data->d;
+	case '$':return bbStringToSizet( data->t );
+	}
+	return 0;
 }

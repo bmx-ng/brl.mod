@@ -142,6 +142,8 @@ Function TypeName$( tag$ Var )
 		Return "CString"
 	Case "w"
 		Return "WString"
+	Case "t"
+		Return "size_t"
 	Case ":","?"
 		Local id$=Ident( tag )
 		While tag And tag[0]=Asc(".")
@@ -241,6 +243,7 @@ Function DebugDeclSize:Int( decl:Int Ptr )
 	Case Asc("f") Return 4
 	Case Asc("l") Return 8
 	Case Asc("d") Return 8
+	' size_t (t) fall-through to ptr64 size below
 	End Select
 
 ?Not ptr64
@@ -302,6 +305,8 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		Return String.FromFloat( (Float Ptr p)[0] )
 	Case Asc("d")
 		Return String.FromDouble( (Double Ptr p)[0] )
+	Case Asc("t")
+		Return String.FromSizet( (size_t Ptr p)[0] )
 	Case Asc("$")
 		p=(Byte Ptr Ptr p)[0]
 		Return DebugEscapeString( bmx_debugger_DebugDecl_StringFromAddress(p) )

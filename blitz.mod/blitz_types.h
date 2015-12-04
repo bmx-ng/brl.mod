@@ -30,6 +30,7 @@ typedef signed int		BBINT;
 typedef BBInt64			BBLONG;
 typedef float			BBFLOAT;
 typedef double			BBDOUBLE;
+typedef size_t			BBSIZET;
 typedef BBClass*		BBCLASS;
 typedef BBObject*		BBOBJECT;
 typedef BBString*		BBSTRING;
@@ -43,6 +44,7 @@ extern const char *bbByteTypeTag;	//"b"
 extern const char *bbShortTypeTag;	//"s"
 extern const char *bbIntTypeTag;	//"i"
 extern const char *bbLongTypeTag;	//"l"
+extern const char *bbSizetTypeTag;	//"z"
 extern const char *bbFloatTypeTag;	//"f"
 extern const char *bbDoubleTypeTag;	//"d"
 extern const char *bbStringTypeTag;	//"$"
@@ -56,6 +58,7 @@ struct bbDataDef {
 		BBSHORT s;
 		BBINT i;
 		BBLONG l;
+		BBSIZET z;
 		BBFLOAT f;
 		BBDOUBLE d;
 		BBSTRING t;

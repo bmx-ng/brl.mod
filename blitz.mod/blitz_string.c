@@ -61,7 +61,11 @@ BBClass bbStringClass={
 	bbStringJoin,
 	
 	bbStringFromUTF8String,
-	bbStringToUTF8String
+	bbStringToUTF8String,
+	
+	bbStringToSizet,
+	bbStringFromSizet
+
 };
 
 BBString bbEmptyString={
@@ -133,6 +137,14 @@ BBString *bbStringFromLong( BBInt64 n ){
 		*--p=n%10+'0';
 	}while(n/=10);
 	if( neg ) *--p='-';
+	return bbStringFromBytes( p,buf+64-p );
+}
+
+BBString *bbStringFromSizet( BBSIZET n ){
+	char buf[64],*p=buf+64;
+	do{
+		*--p=n%10+'0';
+	}while(n/=10);
 	return bbStringFromBytes( p,buf+64-p );
 }
 
@@ -425,6 +437,41 @@ BBInt64 bbStringToLong( BBString *t ){
 	}
 	//*r=neg ? -n : n;
 	return neg ? -n : n;
+}
+
+BBSIZET bbStringToSizet( BBString *t ){
+	int i=0,neg=0;
+	BBSIZET n=0;
+	
+	while( i<t->length && isspace(t->buf[i]) ) ++i;
+	if( i==t->length ){ return 0; }
+	
+	if( t->buf[i]=='+' ) ++i;
+	else if( neg=(t->buf[i]=='-') ) ++i;
+	if( i==t->length ){ return 0; }
+	
+	if( t->buf[i]=='%' ){
+		for( ++i;i<t->length;++i ){
+			int c=t->buf[i];
+			if( c!='0' && c!='1' ) break;
+			n=n*2+(c-'0');
+		}
+	}else if( t->buf[i]=='$' ){
+		for( ++i;i<t->length;++i ){
+			int c=toupper(t->buf[i]);
+			if( !isxdigit(c) ) break;
+			if( c>='A' ) c-=('A'-'0'-10);
+			n=n*16+(c-'0');
+		}
+	}else{
+		for( ;i<t->length;++i ){
+			int c=t->buf[i];
+			if( !isdigit(c) ) break;
+			n=n*10+(c-'0');
+		}
+	}
+	//*r=neg ? -n : n;
+	return n;
 }
 
 float bbStringToFloat( BBString *t ){

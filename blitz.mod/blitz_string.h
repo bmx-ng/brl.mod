@@ -24,6 +24,7 @@ BBString*bbStringFromChar( int c );
 
 BBString*bbStringFromInt( int n );
 BBString*	bbStringFromLong( BBInt64 n );
+BBString*	bbStringFromSizet( BBSIZET n );
 BBString*bbStringFromFloat( float n );
 BBString*	bbStringFromDouble( double n );
 BBString*	bbStringFromBytes( const char *p,int n );
@@ -55,7 +56,8 @@ BBString*	bbStringToUpper( BBString *str );
 int		bbStringToInt( BBString *str );
 float	bbStringToFloat( BBString *str );
 double	bbStringToDouble( BBString *str );
-BBInt64		bbStringToLong( BBString *str );
+BBInt64 bbStringToLong( BBString *str );
+BBSIZET bbStringToSizet( BBString *str );
 char*	bbStringToCString( BBString *str );
 BBChar*	bbStringToWString( BBString *str );
 char*	bbStringToUTF8String( BBString *str );

@@ -88,6 +88,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens ){
 	case '$':size=sizeof(void*);flags=0;break;
 	case '[':size=sizeof(void*);flags=0;break;
 	case '(':size=sizeof(void*);break;
+	case 'z':size=sizeof(BBSIZET);break;
 	}
 	size*=length;
 
@@ -360,6 +361,7 @@ QSORTARRAY( int,qsort_i )
 QSORTARRAY( BBInt64,qsort_l );
 QSORTARRAY( float,qsort_f );
 QSORTARRAY( double,qsort_d );
+QSORTARRAY( BBSIZET,qsort_z );
 #undef LESSTHAN
 #define LESSTHAN(X,Y) ((*X)->clas->Compare(*(X),*(Y))<0)
 QSORTARRAY( BBObject*,qsort_obj );
@@ -371,6 +373,7 @@ QSORTARRAY( int,qsort_i_d )
 QSORTARRAY( BBInt64,qsort_l_d );
 QSORTARRAY( float,qsort_f_d );
 QSORTARRAY( double,qsort_d_d );
+QSORTARRAY( BBSIZET,qsort_z_d );
 #undef LESSTHAN
 #define LESSTHAN(X,Y) ((*X)->clas->Compare(*(X),*(Y))>0)
 QSORTARRAY( BBObject*,qsort_obj_d );
@@ -390,6 +393,7 @@ void bbArraySort( BBArray *arr,int ascending ){
 		case 'f':qsort_f( (float*)p,(float*)p+n );break;
 		case 'd':qsort_d( (double*)p,(double*)p+n );break;
 		case '$':case ':':qsort_obj( (BBObject**)p,(BBObject**)p+n );break;
+		case 'z':qsort_z( (BBSIZET*)p,(BBSIZET*)p+n );break;
 		}
 	}else{
 		switch( arr->type[0] ){
@@ -400,6 +404,7 @@ void bbArraySort( BBArray *arr,int ascending ){
 		case 'f':qsort_f_d( (float*)p,(float*)p+n );break;
 		case 'd':qsort_d_d( (double*)p,(double*)p+n );break;
 		case '$':case ':':qsort_obj_d( (BBObject**)p,(BBObject**)p+n );break;
+		case 'z':qsort_z_d( (BBSIZET*)p,(BBSIZET*)p+n );break;
 		}
 	}
 }

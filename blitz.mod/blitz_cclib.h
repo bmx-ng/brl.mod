@@ -59,6 +59,11 @@ int		bbLongSeq( BBInt64 x,BBInt64 y );
 int		bbLongSne( BBInt64 x,BBInt64 y );
 double	bbLongToFloat( BBInt64 x );
 
+BBSIZET bbSizetMin( BBSIZET x,BBSIZET y );
+BBSIZET bbSizetMax( BBSIZET x,BBSIZET y );
+BBSIZET bbSizetSgn( BBSIZET x );
+BBSIZET bbSizetAbs( BBSIZET x );
+
 #ifdef __cplusplus
 }
 #endif

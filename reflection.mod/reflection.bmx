@@ -97,6 +97,8 @@ Function _Get:Object( p:Byte Ptr,typeId:TTypeId )
 		Return String.FromInt( (Int Ptr p)[0] )
 	Case LongTypeId
 		Return String.FromLong( (Long Ptr p)[0] )
+	Case SizetTypeId
+		Return String.FromSizet( (size_t Ptr p)[0] )
 	Case FloatTypeId
 		Return String.FromFloat( (Float Ptr p)[0] )
 	Case DoubleTypeId
@@ -121,6 +123,13 @@ Function _Push:Byte Ptr( sp:Byte Ptr,typeId:TTypeId,value:Object )
 	Case LongTypeId
 		(Long Ptr sp)[0]=value.ToString().ToLong()
 		Return sp+8
+	Case SizetTypeId
+		(size_t Ptr sp)[0]=value.ToString().ToSizet()
+?Not ptr64
+		Return sp+4
+?ptr64
+		Return sp+8
+?
 	Case FloatTypeId
 		(Float Ptr sp)[0]=value.ToString().ToFloat()
 		Return sp+4
@@ -165,6 +174,8 @@ Function _Assign( p:Byte Ptr,typeId:TTypeId,value:Object )
 		(Int Ptr p)[0]=value.ToString().ToInt()
 	Case LongTypeId
 		(Long Ptr p)[0]=value.ToString().ToLong()
+	Case SizetTypeId
+		(size_t Ptr p)[0]=value.ToString().ToSizet()
 	Case FloatTypeId
 		(Float Ptr p)[0]=value.ToString().ToFloat()
 	Case DoubleTypeId
@@ -207,7 +218,11 @@ Function _CallFunction:Object( p:Byte Ptr,typeId:TTypeId,args:Object[],argTypes:
 	End If
 
 	Select typeId
+?Not ptr64
+	Case ByteTypeId,ShortTypeId,IntTypeId,SizetTypeId
+?ptr64
 	Case ByteTypeId,ShortTypeId,IntTypeId
+?
 		Select argTypes.length
 			Case 0
 				Local f:Int()=p
@@ -240,7 +255,11 @@ Function _CallFunction:Object( p:Byte Ptr,typeId:TTypeId,args:Object[],argTypes:
 				Local f:Int(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
 				Return String.FromInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
 		End Select
+?Not ptr64
 	Case LongTypeId
+?ptr64
+	Case LongTypeId,SizetTypeId
+?
 		Select argTypes.length
 			Case 0
 				Local f:Long()=p
@@ -491,7 +510,11 @@ Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],
 	End If
 	'If Int Ptr(sp)>Int Ptr(q)+8 Throw "ERROR"
 	Select typeId
+?Not ptr64
+	Case ByteTypeId,ShortTypeId,IntTypeId,SizetTypeId
+?ptr64
 	Case ByteTypeId,ShortTypeId,IntTypeId
+?
 		Select argTypes.length
 			Case 0
 				Local f:Int(m:Object)=p
@@ -524,7 +547,11 @@ Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],
 				Local f:Int(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
 				Return String.FromInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
 		End Select
+?Not ptr64
 	Case LongTypeId
+?ptr64
+	Case LongTypeId,SizetTypeId
+?
 		Select argTypes.length
 			Case 0
 				Local f:Long(m:Object)=p
@@ -784,6 +811,7 @@ Function TypeTagForId$( id:TTypeId )
 	Case ShortTypeId Return "s"
 	Case IntTypeId Return "i"
 	Case LongTypeId Return "l"
+	Case SizetTypeId Return "t"
 	Case FloatTypeId Return "f"
 	Case DoubleTypeId Return "d"
 	Case StringTypeId Return "$"
@@ -883,6 +911,7 @@ Function TypeIdForTag:TTypeId( ty$ )
 	Case "s" Return ShortTypeId
 	Case "i" Return IntTypeId
 	Case "l" Return LongTypeId
+	Case "t" Return SizetTypeId
 	Case "f" Return FloatTypeId
 	Case "d" Return DoubleTypeId
 	Case "$" Return StringTypeId
@@ -938,6 +967,15 @@ Rem
 bbdoc: Primitive long type
 End Rem
 Global LongTypeId:TTypeId=New TTypeId.Init( "Long",8 )
+
+Rem
+bbdoc: Primitive size_t type
+End Rem
+?Not ptr64
+Global SizetTypeId:TTypeId=New TTypeId.Init( "size_t",4 )
+?ptr64
+Global SizetTypeId:TTypeId=New TTypeId.Init( "size_t",8 )
+?
 
 Rem
 bbdoc: Primitive float type
@@ -1070,6 +1108,13 @@ Type TConstant Extends TMember
 	EndMethod
 
 	Rem
+	bbdoc: Get constant value as @size_t
+	EndRem	
+	Method GetSizet:size_t()
+		Return GetString().ToSizet()
+	EndMethod
+
+	Rem
 	bbdoc: Get constant value as @Double
 	EndRem	
 	Method GetDouble:Int()
@@ -1122,6 +1167,13 @@ Type TField Extends TMember
 	End Rem
 	Method GetLong:Long( obj:Object )
 		Return GetString( obj ).ToLong()
+	End Method
+	
+	Rem
+	bbdoc: Get size_t field value
+	End Rem
+	Method GetSizet:size_t( obj:Object )
+		Return GetString( obj ).ToSizet()
 	End Method
 	
 	Rem
@@ -1226,6 +1278,13 @@ Type TGlobal Extends TMember
 	End Method
 	
 	Rem
+	bbdoc: Get size_t global value
+	End Rem
+	Method GetSizet:size_t()
+		Return GetString().ToSizet()
+	End Method
+	
+	Rem
 	bbdoc: Get float global value
 	End Rem
 	Method GetFloat:Float()
@@ -1265,6 +1324,13 @@ Type TGlobal Extends TMember
 	End Rem
 	Method SetLong(value:Long )
 		SetString String.FromLong( value )
+	End Method
+	
+	Rem
+	bbdoc: Set size_t global value
+	End Rem
+	Method SetSizet(value:size_t )
+		SetString String.FromSizet( value )
 	End Method
 	
 	Rem

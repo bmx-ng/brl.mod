@@ -124,3 +124,16 @@ int bbLongSne( BBInt64 x,BBInt64 y ){
 double bbLongToFloat( BBInt64 x ){
 	return (double)x;
 }
+
+BBSIZET bbSizetAbs( BBSIZET x ){
+	return x>=0 ? x : -x;
+}
+BBSIZET bbSizetSgn( BBSIZET x ){
+	return x==0 ? 0 : (x>0 ? 1 : -1);
+}
+BBSIZET bbSizetMin( BBSIZET x,BBSIZET y ){
+	return x<y ? x : y;
+}
+BBSIZET bbSizetMax( BBSIZET x,BBSIZET y ){ 
+	return x>y ? x : y;
+}
