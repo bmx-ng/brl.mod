@@ -27,8 +27,8 @@ Function bbThreadAllocData:Int()
 Function bbThreadSetData( index:Int,data:Object )
 Function bbThreadGetData:Object( index:Int )
 
-Function bbAtomicCAS:Int( target:Int Var,old_value:Int,new_value:Int )
-Function bbAtomicAdd:Int( target:Int Var,value:Int )
+Function bbAtomicCAS:Int( target:Int Ptr,old_value:Int,new_value:Int )
+Function bbAtomicAdd:Int( target:Int Ptr,value:Int )
 
 Function threads_CreateThread:Byte Ptr( entry:Object( data:Object ),data:Object )
 Function threads_DetachThread( thread:Byte Ptr )
@@ -538,7 +538,7 @@ about:
 Atomically replace @target with @new_value if @target equals @old_value.
 End Rem
 Function CompareAndSwap:Int( target:Int Var,oldValue:Int,newValue:Int )
-	Return bbAtomicCAS( target,oldValue,newValue )
+	Return bbAtomicCAS( VarPtr target,oldValue,newValue )
 End Function
 
 Rem
@@ -548,7 +548,7 @@ about:
 Atomically add @value to @target.
 End Rem
 Function AtomicAdd:Int( target:Int Var,value:Int )
-	Return bbAtomicAdd( target,value )
+	Return bbAtomicAdd( VarPtr target,value )
 End Function
 
 Rem
@@ -558,7 +558,7 @@ End Rem
 Function AtomicSwap:Int( target:Int Var,value:Int )
 	Repeat
 		Local oldval:Int=target
-		If CompareAndSwap( target,oldval,value ) Return oldval
+		If CompareAndSwap( VarPtr target,oldval,value ) Return oldval
 	Forever
 End Function
 
