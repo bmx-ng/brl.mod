@@ -60,6 +60,11 @@ String^Object{
 	-ToSizet:size_t()="bbStringToSizet"
 	+FromSizet:String( sizetValue:size_t )="bbStringFromSizet"
 
+	-ToUInt:UInt()="bbStringToUInt"
+	+FromUInt:String( uintValue:UInt )="bbStringFromUInt"
+	-ToULong:ULong()="bbStringToULong"
+	+FromULong:String( ulongValue:ULong )="bbStringFromULong"
+
 }AF="bbStringClass"
 
 ___Array^Object{

@@ -82,6 +82,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens ){
 	case 'b':size=1;break;
 	case 's':size=2;break;
 	case 'l':size=8;break;
+	case 'y':size=8;break;
 	case 'd':size=8;break;
 	case '*':size=sizeof(void*);break;
 	case ':':size=sizeof(void*);flags=0;break;
@@ -358,7 +359,9 @@ static void IDENT( TYPE *lo,TYPE *hi ){\
 QSORTARRAY( unsigned char,_qsort_b )
 QSORTARRAY( unsigned short,qsort_s )
 QSORTARRAY( int,qsort_i )
+QSORTARRAY( unsigned int,qsort_u )
 QSORTARRAY( BBInt64,qsort_l );
+QSORTARRAY( BBUInt64,qsort_y );
 QSORTARRAY( float,qsort_f );
 QSORTARRAY( double,qsort_d );
 QSORTARRAY( BBSIZET,qsort_z );
@@ -370,7 +373,9 @@ QSORTARRAY( BBObject*,qsort_obj );
 QSORTARRAY( unsigned char,qsort_b_d )
 QSORTARRAY( unsigned short,qsort_s_d )
 QSORTARRAY( int,qsort_i_d )
+QSORTARRAY( unsigned int,qsort_u_d )
 QSORTARRAY( BBInt64,qsort_l_d );
+QSORTARRAY( BBUInt64,qsort_y_d );
 QSORTARRAY( float,qsort_f_d );
 QSORTARRAY( double,qsort_d_d );
 QSORTARRAY( BBSIZET,qsort_z_d );
@@ -389,7 +394,9 @@ void bbArraySort( BBArray *arr,int ascending ){
 		case 'b':_qsort_b( (unsigned char*)p,(unsigned char*)p+n );break;
 		case 's':qsort_s( (unsigned short*)p,(unsigned short*)p+n );break;
 		case 'i':qsort_i( (int*)p,(int*)p+n );break;
+		case 'u':qsort_u( (unsigned int*)p,(unsigned int*)p+n );break;
 		case 'l':qsort_l( (BBInt64*)p,(BBInt64*)p+n );break;
+		case 'y':qsort_y( (BBUInt64*)p,(BBUInt64*)p+n );break;
 		case 'f':qsort_f( (float*)p,(float*)p+n );break;
 		case 'd':qsort_d( (double*)p,(double*)p+n );break;
 		case '$':case ':':qsort_obj( (BBObject**)p,(BBObject**)p+n );break;
@@ -400,7 +407,9 @@ void bbArraySort( BBArray *arr,int ascending ){
 		case 'b':qsort_b_d( (unsigned char*)p,(unsigned char*)p+n );break;
 		case 's':qsort_s_d( (unsigned short*)p,(unsigned short*)p+n );break;
 		case 'i':qsort_i_d( (int*)p,(int*)p+n );break;
+		case 'u':qsort_u_d( (unsigned int*)p,(unsigned int*)p+n );break;
 		case 'l':qsort_l_d( (BBInt64*)p,(BBInt64*)p+n );break;
+		case 'y':qsort_y_d( (BBUInt64*)p,(BBUInt64*)p+n );break;
 		case 'f':qsort_f_d( (float*)p,(float*)p+n );break;
 		case 'd':qsort_d_d( (double*)p,(double*)p+n );break;
 		case '$':case ':':qsort_obj_d( (BBObject**)p,(BBObject**)p+n );break;

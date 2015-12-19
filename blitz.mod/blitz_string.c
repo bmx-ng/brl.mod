@@ -64,7 +64,12 @@ BBClass bbStringClass={
 	bbStringToUTF8String,
 	
 	bbStringToSizet,
-	bbStringFromSizet
+	bbStringFromSizet,
+
+	bbStringToUInt,
+	bbStringFromUInt,
+	bbStringToULong,
+	bbStringFromULong
 
 };
 
@@ -127,6 +132,14 @@ BBString *bbStringFromInt( int n ){
 	return bbStringFromBytes( p,buf+64-p );
 }
 
+BBString *bbStringFromUInt( unsigned int n ){
+	char buf[64],*p=buf+64;
+	do{
+		*--p=n%10+'0';
+	}while(n/=10);
+	return bbStringFromBytes( p,buf+64-p );
+}
+
 BBString *bbStringFromLong( BBInt64 n ){
 	char buf[64],*p=buf+64;
 	int neg=n<0;
@@ -137,6 +150,14 @@ BBString *bbStringFromLong( BBInt64 n ){
 		*--p=n%10+'0';
 	}while(n/=10);
 	if( neg ) *--p='-';
+	return bbStringFromBytes( p,buf+64-p );
+}
+
+BBString *bbStringFromULong( BBUInt64 n ){
+	char buf[64],*p=buf+64;
+	do{
+		*--p=n%10+'0';
+	}while(n/=10);
 	return bbStringFromBytes( p,buf+64-p );
 }
 
@@ -178,6 +199,15 @@ BBString *bbStringFromShorts( const unsigned short *p,int n ){
 }
 
 BBString *bbStringFromInts( const int *p,int n ){
+	int k;
+	BBString *str;
+	if( !n ) return &bbEmptyString;
+	str=bbStringNew( n );
+	for( k=0;k<n;++k ) str->buf[k]=p[k];
+	return str;
+}
+
+BBString *bbStringFromUInts( const unsigned int *p,int n ){
 	int k;
 	BBString *str;
 	if( !n ) return &bbEmptyString;
@@ -404,6 +434,40 @@ int bbStringToInt( BBString *t ){
 	return neg ? -n : n;
 }
 
+unsigned int bbStringToUInt( BBString *t ){
+	int i=0;
+	unsigned n=0;
+	
+	while( i<t->length && isspace(t->buf[i]) ) ++i;
+	if( i==t->length ) return 0;
+	
+	if( t->buf[i]=='+' ) ++i;
+	else if( t->buf[i]=='-' ) ++i;
+	if( i==t->length ) return 0;
+
+	if( t->buf[i]=='%' ){
+		for( ++i;i<t->length;++i ){
+			int c=t->buf[i];
+			if( c!='0' && c!='1' ) break;
+			n=n*2+(c-'0');
+		}
+	}else if( t->buf[i]=='$' ){
+		for( ++i;i<t->length;++i ){
+			int c=toupper(t->buf[i]);
+			if( !isxdigit(c) ) break;
+			if( c>='A' ) c-=('A'-'0'-10);
+			n=n*16+(c-'0');
+		}
+	}else{
+		for( ;i<t->length;++i ){
+			int c=t->buf[i];
+			if( !isdigit(c) ) break;
+			n=n*10+(c-'0');
+		}
+	}
+	return n;
+}
+
 BBInt64 bbStringToLong( BBString *t ){
 	int i=0,neg=0;
 	BBInt64 n=0;
@@ -437,6 +501,40 @@ BBInt64 bbStringToLong( BBString *t ){
 	}
 	//*r=neg ? -n : n;
 	return neg ? -n : n;
+}
+
+BBUInt64 bbStringToULong( BBString *t ){
+	int i=0;
+	BBUInt64 n=0;
+	
+	while( i<t->length && isspace(t->buf[i]) ) ++i;
+	if( i==t->length ){ return 0; }
+	
+	if( t->buf[i]=='+' ) ++i;
+	else if( t->buf[i]=='-' ) ++i;
+	if( i==t->length ){ return 0; }
+	
+	if( t->buf[i]=='%' ){
+		for( ++i;i<t->length;++i ){
+			int c=t->buf[i];
+			if( c!='0' && c!='1' ) break;
+			n=n*2+(c-'0');
+		}
+	}else if( t->buf[i]=='$' ){
+		for( ++i;i<t->length;++i ){
+			int c=toupper(t->buf[i]);
+			if( !isxdigit(c) ) break;
+			if( c>='A' ) c-=('A'-'0'-10);
+			n=n*16+(c-'0');
+		}
+	}else{
+		for( ;i<t->length;++i ){
+			int c=t->buf[i];
+			if( !isdigit(c) ) break;
+			n=n*10+(c-'0');
+		}
+	}
+	return n;
 }
 
 BBSIZET bbStringToSizet( BBString *t ){

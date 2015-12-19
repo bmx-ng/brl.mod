@@ -137,3 +137,29 @@ BBSIZET bbSizetMin( BBSIZET x,BBSIZET y ){
 BBSIZET bbSizetMax( BBSIZET x,BBSIZET y ){ 
 	return x>y ? x : y;
 }
+
+BBUINT bbUIntAbs( BBUINT x ){
+	return x>=0 ? x : -x;
+}
+BBUINT bbUIntSgn( BBUINT x ){
+	return x==0 ? 0 : (x>0 ? 1 : -1);
+}
+BBUINT bbUIntMin( BBUINT x,BBUINT y ){
+	return x<y ? x : y;
+}
+BBUINT bbUIntMax( BBUINT x,BBUINT y ){ 
+	return x>y ? x : y;
+}
+
+BBULONG bbULongAbs( BBULONG x ){
+	return x>=0 ? x : -x;
+}
+BBULONG bbULongSgn( BBULONG x ){
+	return x==0 ? 0 : (x>0 ? 1 : -1);
+}
+BBULONG bbULongMin( BBULONG x,BBULONG y ){
+	return x<y ? x : y;
+}
+BBULONG bbULongMax( BBULONG x,BBULONG y ){ 
+	return x>y ? x : y;
+}

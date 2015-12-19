@@ -27,7 +27,9 @@ typedef struct BBInterfaceOffsets BBInterfaceOffsets;
 typedef unsigned char	BBBYTE;
 typedef unsigned short	BBSHORT;
 typedef signed int		BBINT;
+typedef unsigned int	BBUINT;
 typedef BBInt64			BBLONG;
+typedef BBUInt64		BBULONG;
 typedef float			BBFLOAT;
 typedef double			BBDOUBLE;
 typedef size_t			BBSIZET;
@@ -43,7 +45,9 @@ extern const char *bbVoidTypeTag;	//"?"
 extern const char *bbByteTypeTag;	//"b"
 extern const char *bbShortTypeTag;	//"s"
 extern const char *bbIntTypeTag;	//"i"
+extern const char *bbUIntTypeTag;	//"u"
 extern const char *bbLongTypeTag;	//"l"
+extern const char *bbULongTypeTag;	//"y"
 extern const char *bbSizetTypeTag;	//"z"
 extern const char *bbFloatTypeTag;	//"f"
 extern const char *bbDoubleTypeTag;	//"d"
@@ -57,7 +61,9 @@ struct bbDataDef {
 		BBBYTE b;
 		BBSHORT s;
 		BBINT i;
+		BBUINT u;
 		BBLONG l;
+		BBULONG y;
 		BBSIZET z;
 		BBFLOAT f;
 		BBDOUBLE d;

@@ -64,6 +64,16 @@ BBSIZET bbSizetMax( BBSIZET x,BBSIZET y );
 BBSIZET bbSizetSgn( BBSIZET x );
 BBSIZET bbSizetAbs( BBSIZET x );
 
+BBUINT bbUIntMin( BBUINT x, BBUINT y );
+BBUINT bbUIntMax( BBUINT x, BBUINT y );
+BBUINT bbUIntSgn( BBUINT x );
+BBUINT bbUIntAbs( BBUINT x );
+
+BBULONG bbULongMin( BBULONG x, BBULONG y );
+BBULONG bbULongMax( BBULONG x, BBULONG y );
+BBULONG bbULongSgn( BBULONG x );
+BBULONG bbULongAbs( BBULONG x );
+
 #ifdef __cplusplus
 }
 #endif
