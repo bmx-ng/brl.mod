@@ -6,12 +6,14 @@ bbdoc: BASIC/Reflection
 End Rem
 Module BRL.Reflection
 
-ModuleInfo "Version: 1.04"
+ModuleInfo "Version: 1.05"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.05"
+ModuleInfo "History: Added size_t, UInt and ULong primitives."
 ModuleInfo "History: 1.04"
 ModuleInfo "History: Added support for interfaces."
 ModuleInfo "History: 1.03"
@@ -95,8 +97,12 @@ Function _Get:Object( p:Byte Ptr,typeId:TTypeId )
 		Return String.FromInt( (Short Ptr p)[0] )
 	Case IntTypeId
 		Return String.FromInt( (Int Ptr p)[0] )
+	Case UIntTypeId
+		Return String.FromUInt( (UInt Ptr p)[0] )
 	Case LongTypeId
 		Return String.FromLong( (Long Ptr p)[0] )
+	Case ULongTypeId
+		Return String.FromULong( (ULong Ptr p)[0] )
 	Case SizetTypeId
 		Return String.FromSizet( (size_t Ptr p)[0] )
 	Case FloatTypeId
@@ -120,8 +126,14 @@ Function _Push:Byte Ptr( sp:Byte Ptr,typeId:TTypeId,value:Object )
 	Case ByteTypeId,ShortTypeId,IntTypeId
 		(Int Ptr sp)[0]=value.ToString().ToInt()
 		Return sp+4
+	Case UIntTypeId
+		(UInt Ptr sp)[0]=value.ToString().ToUInt()
+		Return sp+4
 	Case LongTypeId
 		(Long Ptr sp)[0]=value.ToString().ToLong()
+		Return sp+8
+	Case ULongTypeId
+		(ULong Ptr sp)[0]=value.ToString().ToULong()
 		Return sp+8
 	Case SizetTypeId
 		(size_t Ptr sp)[0]=value.ToString().ToSizet()
@@ -172,8 +184,12 @@ Function _Assign( p:Byte Ptr,typeId:TTypeId,value:Object )
 		(Short Ptr p)[0]=value.ToString().ToInt()
 	Case IntTypeId
 		(Int Ptr p)[0]=value.ToString().ToInt()
+	Case UIntTypeId
+		(UInt Ptr p)[0]=value.ToString().ToUInt()
 	Case LongTypeId
 		(Long Ptr p)[0]=value.ToString().ToLong()
+	Case ULongTypeId
+		(ULong Ptr p)[0]=value.ToString().ToULong()
 	Case SizetTypeId
 		(size_t Ptr p)[0]=value.ToString().ToSizet()
 	Case FloatTypeId
@@ -218,11 +234,7 @@ Function _CallFunction:Object( p:Byte Ptr,typeId:TTypeId,args:Object[],argTypes:
 	End If
 
 	Select typeId
-?Not ptr64
-	Case ByteTypeId,ShortTypeId,IntTypeId,SizetTypeId
-?ptr64
 	Case ByteTypeId,ShortTypeId,IntTypeId
-?
 		Select argTypes.length
 			Case 0
 				Local f:Int()=p
@@ -256,10 +268,43 @@ Function _CallFunction:Object( p:Byte Ptr,typeId:TTypeId,args:Object[],argTypes:
 				Return String.FromInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
 		End Select
 ?Not ptr64
-	Case LongTypeId
+	Case UIntTypeId,SizetTypeId
 ?ptr64
-	Case LongTypeId,SizetTypeId
+	Case UIntTypeId
 ?
+		Select argTypes.length
+			Case 0
+				Local f:UInt()=p
+				Return String.FromUInt( f() )
+			Case 1
+				Local f:UInt(p0:Byte Ptr)=p
+				Return String.FromUInt( f(q[0]) )
+			Case 2
+				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr)=p
+				Return String.FromUInt( f(q[0], q[1]) )
+			Case 3
+				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return String.FromUInt( f(q[0], q[1], q[2]) )
+			Case 4
+				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return String.FromUInt( f(q[0], q[1], q[2], q[3]) )
+			Case 5
+				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return String.FromUInt( f(q[0], q[1], q[2], q[3], q[4]) )
+			Case 6
+				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return String.FromUInt( f(q[0], q[1], q[2], q[3], q[4], q[5]) )
+			Case 7
+				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return String.FromUInt( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
+			Case 8
+				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return String.FromUInt( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
+			Default
+				Local f:UInt(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return String.FromUInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		End Select
+	Case LongTypeId
 		Select argTypes.length
 			Case 0
 				Local f:Long()=p
@@ -291,6 +336,43 @@ Function _CallFunction:Object( p:Byte Ptr,typeId:TTypeId,args:Object[],argTypes:
 			Default
 				Local f:Long(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
 				Return String.Fromlong( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		End Select
+?Not ptr64
+	Case ULongTypeId
+?ptr64
+	Case ULongTypeId,SizetTypeId
+?
+		Select argTypes.length
+			Case 0
+				Local f:ULong()=p
+				Return String.FromULong( f() )
+			Case 1
+				Local f:ULong(p0:Byte Ptr)=p
+				Return String.FromULong( f(q[0]) )
+			Case 2
+				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr)=p
+				Return String.FromULong( f(q[0], q[1]) )
+			Case 3
+				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return String.FromULong( f(q[0], q[1], q[2]) )
+			Case 4
+				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return String.FromULong( f(q[0], q[1], q[2], q[3]) )
+			Case 5
+				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return String.FromULong( f(q[0], q[1], q[2], q[3], q[4]) )
+			Case 6
+				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return String.FromULong( f(q[0], q[1], q[2], q[3], q[4], q[5]) )
+			Case 7
+				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return String.FromULong( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
+			Case 8
+				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return String.FromULong( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
+			Default
+				Local f:ULong(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return String.FromULong( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
 		End Select
 	Case FloatTypeId
 		Select argTypes.length
@@ -510,11 +592,7 @@ Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],
 	End If
 	'If Int Ptr(sp)>Int Ptr(q)+8 Throw "ERROR"
 	Select typeId
-?Not ptr64
-	Case ByteTypeId,ShortTypeId,IntTypeId,SizetTypeId
-?ptr64
 	Case ByteTypeId,ShortTypeId,IntTypeId
-?
 		Select argTypes.length
 			Case 0
 				Local f:Int(m:Object)=p
@@ -548,10 +626,43 @@ Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],
 				Return String.FromInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
 		End Select
 ?Not ptr64
-	Case LongTypeId
+	Case UIntTypeId,SizetTypeId
 ?ptr64
-	Case LongTypeId,SizetTypeId
+	Case UIntTypeId
 ?
+		Select argTypes.length
+			Case 0
+				Local f:UInt(m:Object)=p
+				Return String.FromUInt( f(obj) )
+			Case 1
+				Local f:UInt(m:Object, p0:Byte Ptr)=p
+				Return String.FromUInt( f(obj, q[0]) )
+			Case 2
+				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
+				Return String.FromUInt( f(obj, q[0], q[1]) )
+			Case 3
+				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return String.FromUInt( f(obj, q[0], q[1], q[2]) )
+			Case 4
+				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return String.FromUInt( f(obj, q[0], q[1], q[2], q[3]) )
+			Case 5
+				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return String.FromUInt( f(obj, q[0], q[1], q[2], q[3], q[4]) )
+			Case 6
+				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return String.FromUInt( f(obj, q[0], q[1], q[2], q[3], q[4], q[5]) )
+			Case 7
+				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return String.FromUInt( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
+			Case 8
+				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return String.FromUInt( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
+			Default
+				Local f:UInt(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return String.FromUInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		End Select
+	Case LongTypeId
 		Select argTypes.length
 			Case 0
 				Local f:Long(m:Object)=p
@@ -583,6 +694,43 @@ Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],
 			Default
 				Local f:Long(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
 				Return String.Fromlong( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
+		End Select
+?Not ptr64
+	Case ULongTypeId
+?ptr64
+	Case ULongTypeId,SizetTypeId
+?
+		Select argTypes.length
+			Case 0
+				Local f:ULong(m:Object)=p
+				Return String.FromULong( f(obj) )
+			Case 1
+				Local f:ULong(m:Object, p0:Byte Ptr)=p
+				Return String.FromULong( f(obj, q[0]) )
+			Case 2
+				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
+				Return String.FromULong( f(obj, q[0], q[1]) )
+			Case 3
+				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
+				Return String.FromULong( f(obj, q[0], q[1], q[2]) )
+			Case 4
+				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
+				Return String.FromULong( f(obj, q[0], q[1], q[2], q[3]) )
+			Case 5
+				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
+				Return String.FromULong( f(obj, q[0], q[1], q[2], q[3], q[4]) )
+			Case 6
+				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
+				Return String.FromULong( f(obj, q[0], q[1], q[2], q[3], q[4], q[5]) )
+			Case 7
+				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
+				Return String.FromULong( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
+			Case 8
+				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
+				Return String.FromULong( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
+			Default
+				Local f:ULong(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
+				Return String.FromULong( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
 		End Select
 	Case FloatTypeId
 		Select argTypes.length
@@ -810,7 +958,9 @@ Function TypeTagForId$( id:TTypeId )
 	Case ByteTypeId Return "b"
 	Case ShortTypeId Return "s"
 	Case IntTypeId Return "i"
+	Case UIntTypeId Return "u"
 	Case LongTypeId Return "l"
+	Case ULongTypeId Return "y"
 	Case SizetTypeId Return "t"
 	Case FloatTypeId Return "f"
 	Case DoubleTypeId Return "d"
@@ -910,7 +1060,9 @@ Function TypeIdForTag:TTypeId( ty$ )
 	Case "b" Return ByteTypeId
 	Case "s" Return ShortTypeId
 	Case "i" Return IntTypeId
+	Case "u" Return UIntTypeId
 	Case "l" Return LongTypeId
+	Case "y" Return ULongTypeId
 	Case "t" Return SizetTypeId
 	Case "f" Return FloatTypeId
 	Case "d" Return DoubleTypeId
@@ -964,9 +1116,19 @@ End Rem
 Global IntTypeId:TTypeId=New TTypeId.Init( "Int",4 )
 
 Rem
+bbdoc: Primitive unsigned int type
+End Rem
+Global UIntTypeId:TTypeId=New TTypeId.Init( "UInt",4 )
+
+Rem
 bbdoc: Primitive long type
 End Rem
 Global LongTypeId:TTypeId=New TTypeId.Init( "Long",8 )
+
+Rem
+bbdoc: Primitive unsigned long type
+End Rem
+Global ULongTypeId:TTypeId=New TTypeId.Init( "ULong",8 )
 
 Rem
 bbdoc: Primitive size_t type

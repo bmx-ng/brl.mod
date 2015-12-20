@@ -130,8 +130,12 @@ Function TypeName$( tag$ Var )
 		Return "Short"
 	Case "i"
 		Return "Int"
+	Case "u"
+		Return "UInt"
 	Case "l"
 		Return "Long"
+	Case "y"
+		Return "ULong"
 	Case "f"
 		Return "Float"
 	Case "d"
@@ -240,8 +244,10 @@ Function DebugDeclSize:Int( decl:Int Ptr )
 	Case Asc("b") Return 1
 	Case Asc("s") Return 2
 	Case Asc("i") Return 4
+	Case Asc("u") Return 4
 	Case Asc("f") Return 4
 	Case Asc("l") Return 8
+	Case Asc("y") Return 8
 	Case Asc("d") Return 8
 	' size_t (t) fall-through to ptr64 size below
 	End Select
@@ -299,8 +305,12 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		Return String.FromInt( (Short Ptr p)[0] )
 	Case Asc("i")
 		Return String.FromInt( (Int Ptr p)[0] )
+	Case Asc("u")
+		Return String.FromUInt( (Unt Ptr p)[0] )
 	Case Asc("l")
 		Return String.FromLong( (Long Ptr p)[0] )
+	Case Asc("y")
+		Return String.FromULong( (ULong Ptr p)[0] )
 	Case Asc("f")
 		Return String.FromFloat( (Float Ptr p)[0] )
 	Case Asc("d")

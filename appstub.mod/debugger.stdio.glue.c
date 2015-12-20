@@ -90,6 +90,7 @@ void bmx_debugger_DebugDecl_ArrayDeclIndexedPart(struct BBDebugDecl * decl, BBAr
 		case 'b':size=1;break;
 		case 's':size=2;break;
 		case 'l':size=8;break;
+		case 'y':size=8;break;
 		case 'd':size=8;break;
 		case '*':size=sizeof(void*);break;
 		case ':':size=sizeof(void*);break;
