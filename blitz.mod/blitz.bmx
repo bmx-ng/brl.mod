@@ -444,13 +444,13 @@ about:
 After converting an object to an integer handle, you must later
 release it using the #Release command.
 End Rem
-Function HandleFromObject:Int( obj:Object )="bbHandleFromObject"
+Function HandleFromObject:size_t( obj:Object )="bbHandleFromObject"
 
 Rem
 bbdoc: Convert integer handle to object
 returns: The object associated with the integer handle
 End Rem
-Function HandleToObject:Object( handle:Int )="bbHandleToObject"
+Function HandleToObject:Object( handle:size_t )="bbHandleToObject"
 
 End Extern
 

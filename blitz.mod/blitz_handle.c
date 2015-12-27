@@ -1,6 +1,7 @@
 
 #include "blitz.h"
 
+/*
 #define HASH_SIZE 1024
 #define HASH_SLOT(X) (((X)/8)&(HASH_SIZE-1))	// divide-by-8 for better void* mapping.
 
@@ -61,9 +62,70 @@ BBObject *bbHandleToObject( int handle ){
 	return o ? o : &bbNullObject;
 }
 
-void bbHandleRelease( int handle ){
+void bbHandleRelease( int  handle ){
 	BBObject *o=(BBObject*)hashRemove( handle_hash,handle*8 );
 	if( !o ) return;
 	hashRemove( object_hash,(int)o );
 	BBRELEASE( o );
+}
+
+*/
+
+struct handle_node {
+	struct avl_root link;
+	BBOBJECT obj;
+};
+
+static struct avl_root *handle_root = 0;
+
+#define generic_compare(x, y) (((x) > (y)) - ((x) < (y)))
+
+static int node_compare(const void *x, const void *y) {
+
+        struct handle_node * node_x = (struct handle_node *)x;
+        struct handle_node * node_y = (struct handle_node *)y;
+
+        return generic_compare(node_x->obj, node_y->obj);
+}
+
+size_t bbHandleFromObject( BBObject *o ) {
+	struct handle_node * node = (struct handle_node *)malloc(sizeof(struct handle_node));
+	node->obj = o;
+	
+	struct handle_node * old_node = (struct handle_node *)avl_map(&node->link, node_compare, &handle_root );
+
+	if (&node->link != &old_node->link) {
+		// delete the new node, since we don't need it
+		free(node);
+	} else {
+		BBRETAIN(o);
+	}
+	
+	return (size_t)o;
+}
+
+BBObject *bbHandleToObject( size_t handle ) {
+	struct handle_node node;
+	node.obj = (BBOBJECT)handle;
+	
+	struct handle_node * found = (struct handle_node *)tree_search(&node, node_compare, handle_root );
+
+	if (found) {
+		return (BBOBJECT)handle;
+	}
+	
+	return &bbNullObject;
+}
+
+void bbHandleRelease( size_t handle ) {
+	struct handle_node node;
+	node.obj = (BBOBJECT)handle;
+	
+	struct handle_node * found = (struct handle_node *)tree_search(&node, node_compare, handle_root);
+	
+	if (found) {
+		BBRELEASE(found->obj);
+		avl_del(&found->link, &handle_root);
+		free(found);
+	}
 }

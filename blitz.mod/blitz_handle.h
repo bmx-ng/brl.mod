@@ -8,9 +8,9 @@
 extern "C"{
 #endif
 
-int			bbHandleFromObject( BBObject *o );
-BBObject*   bbHandleToObject( int handle );
-void		bbHandleRelease( int handle );
+size_t		bbHandleFromObject( BBObject *o );
+BBObject*   bbHandleToObject( size_t handle );
+void		bbHandleRelease( size_t handle );
 
 #ifdef __cplusplus
 }
