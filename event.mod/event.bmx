@@ -89,6 +89,8 @@ Type TEvent
 	End Rem
 	Field extra:Object
 	
+	Field usePool:Int
+	
 	Rem
 	bbdoc: Emit this event
 	about:
@@ -100,7 +102,9 @@ Type TEvent
 ?threaded
 		_eventLock.Lock()
 ?
-		_eventPool.AddLast Self
+		If usePool Then
+			_eventPool.AddLast Self
+		End If
 ?threaded
 		_eventLock.Unlock()
 ?
@@ -127,12 +131,12 @@ Type TEvent
 	bbdoc: Create an event object
 	returns: A new event object
 	End Rem
-	Function Create:TEvent( id,source:Object=Null,data=0,mods=0,x=0,y=0,extra:Object=Null )
+	Function Create:TEvent( id,source:Object=Null,data=0,mods=0,x=0,y=0,extra:Object=Null,usePool:Int = True )
 		Local t:TEvent
 ?threaded
 		_eventLock.Lock()
 ?
-		If Not _eventPool.IsEmpty() Then
+		If usePool And Not _eventPool.IsEmpty() Then
 			t = TEvent(_eventPool.RemoveFirst())
 		Else
 			t = New TEvent
@@ -147,6 +151,7 @@ Type TEvent
 		t.x=x
 		t.y=y
 		t.extra=extra
+		t.usePool = usePool
 		Return t
 	End Function
 	
@@ -283,8 +288,8 @@ Rem
 bbdoc: Create an event object
 returns: A new event object
 End Rem
-Function CreateEvent:TEvent( id,source:Object=Null,data=0,mods=0,x=0,y=0,extra:Object=Null )
-	Return TEvent.Create( id,source,data,mods,x,y,extra )
+Function CreateEvent:TEvent( id,source:Object=Null,data=0,mods=0,x=0,y=0,extra:Object=Null,usePool:Int = True )
+	Return TEvent.Create( id,source,data,mods,x,y,extra,usePool )
 End Function
 
 Rem
