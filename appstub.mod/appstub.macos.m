@@ -9,7 +9,6 @@ static int app_argc;
 static char **app_argv;
 
 static NSMutableArray *_appArgs;
-static NSAutoreleasePool *_globalPool;
 
 static void createAppMenu( NSString *appName ){
 
@@ -53,8 +52,7 @@ static void run(){
 }
 
 void bbFlushAutoreleasePool(){
-	[_globalPool release];
-	_globalPool=[[NSAutoreleasePool alloc] init];
+	// nothing to do here.
 }
 
 @interface BlitzMaxAppDelegate : NSObject{
@@ -99,41 +97,43 @@ int main( int argc,char *argv[] ){
 	CFURLRef url;
 	char *app_file,*p;
 	
-	_globalPool=[[NSAutoreleasePool alloc] init];
+	@autoreleasepool {
 
-	[NSApplication sharedApplication];
-	
-	app_argc=argc;
-	app_argv=argv;
-	
-	url=CFBundleCopyExecutableURL( CFBundleGetMainBundle() );
-
-	app_file=malloc( 4096 );
-	CFURLGetFileSystemRepresentation( url,true,(UInt8*)app_file,4096 );
-	
-	if( strstr( app_file,".app/Contents/MacOS/" ) ){
-		//GUI app!
-		//
-		p=strrchr( app_file,'/' );
-		if( p ){
-			++p;
-		}else{
-			 p=app_file;
-		}
-		createAppMenu( [NSString stringWithCString:p] );
-		free( app_file );
-	
-		[NSApp setDelegate:[[BlitzMaxAppDelegate alloc] init]];
+		[NSApplication sharedApplication];
 		
-		_appArgs=[[NSMutableArray arrayWithCapacity:10] retain];
-		[_appArgs addObject:[NSString stringWithCString:argv[0]] ];
+		app_argc=argc;
+		app_argv=argv;
+		
+		url=CFBundleCopyExecutableURL( CFBundleGetMainBundle() );
+	
+		app_file=malloc( 4096 );
+		CFURLGetFileSystemRepresentation( url,true,(UInt8*)app_file,4096 );
+		
+		if( strstr( app_file,".app/Contents/MacOS/" ) ){
+			//GUI app!
+			//
+			p=strrchr( app_file,'/' );
+			if( p ){
+				++p;
+			}else{
+				 p=app_file;
+			}
+			createAppMenu( [NSString stringWithCString:p] );
+			free( app_file );
+		
+			[NSApp setDelegate:[[BlitzMaxAppDelegate alloc] init]];
 			
-		[NSApp run];
-	}else{
-		//Console app!
-		//
-		free( app_file );
-
-		run();
+			_appArgs=[[NSMutableArray arrayWithCapacity:10] retain];
+			[_appArgs addObject:[NSString stringWithCString:argv[0]] ];
+				
+			[NSApp run];
+		}else{
+			//Console app!
+			//
+			free( app_file );
+	
+			run();
+		}
+	
 	}
 }
