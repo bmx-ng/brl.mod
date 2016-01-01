@@ -28,7 +28,7 @@ Added check for Win32 timer firing after timeKillEvent
 Removed brl.standardio dependancy
 End Rem
 
-Import BRL.System
+Import BRL.SystemDefault
 
 ?Win32
 Import "timer.win32.c"
