@@ -11,11 +11,11 @@ extern "C"{
 #define BBNULLARRAY (&bbEmptyArray)
 
 #ifdef __x86_64
-#define BBARRAYSIZE(q,n) ((2*sizeof(void*)+8)+(1+n)*sizeof(int)+(q))
-#define BBARRAYDATA(p,n) ((void*)((char*)(p)+(2*sizeof(void*)+8)+(1+n)*sizeof(int)))
+#define BBARRAYSIZE(q,n) ((2*sizeof(void*)+12)+(1+n)*sizeof(int)+(q))
+#define BBARRAYDATA(p,n) ((void*)((char*)(p)+(2*sizeof(void*)+12)+(1+n)*sizeof(int)))
 #else
-#define BBARRAYSIZE(q,n) ((2*sizeof(void*)+8)+(n)*sizeof(int)+(q))
-#define BBARRAYDATA(p,n) ((void*)((char*)(p)+(2*sizeof(void*)+8)+(n)*sizeof(int)))
+#define BBARRAYSIZE(q,n) ((2*sizeof(void*)+12)+(n)*sizeof(int)+(q))
+#define BBARRAYDATA(p,n) ((void*)((char*)(p)+(2*sizeof(void*)+12)+(n)*sizeof(int)))
 #endif
 #define BBARRAYDATAINDEX(p,n,i) bbArrayIndex(p,n,i)
 
@@ -26,7 +26,8 @@ struct BBArray{
 
 	const char* type;			//4
 	int			dims;			//8
-	int			size;			//12 : total size minus this header
+	unsigned int size;			//12 : total size minus this header
+	int			data_size;		// size of data element
 	int			scales[1];		//16 : [dims]
 								//sizeof=16+dims*sizeof(int)
 };
@@ -49,6 +50,9 @@ BBArray*	bbArrayDimensions( BBArray *arr );
 BBArray*	bbArrayConcat( const char *type,BBArray *x,BBArray *y );
 
 void*	bbArrayIndex( BBArray *, int, int );
+
+BBArray*	bbArrayNew1DStruct( const char *type,int length, int data_size );
+BBArray*	bbArrayNewStruct( const char *type,int dims, int data_size,... );
 
 #ifdef __cplusplus
 }

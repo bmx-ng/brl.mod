@@ -36,6 +36,7 @@ BBArray bbEmptyArray={
 	"",			//type
 	0,			//dims
 	0,			//size
+	0,			//data_size
 	0			//scales[0]
 };
 
@@ -64,7 +65,7 @@ static void bbArrayFree( BBObject *o ){
 #endif
 }
 
-static BBArray *allocateArray( const char *type,int dims,int *lens ){
+static BBArray *allocateArray( const char *type,int dims,int *lens, int data_size ){
 	int k,*len;
 	int size=4;
 	int length=1;
@@ -90,6 +91,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens ){
 	case '[':size=sizeof(void*);flags=0;break;
 	case '(':size=sizeof(void*);break;
 	case 'z':size=sizeof(BBSIZET);break;
+	case '#':size=data_size;flags=0;break; // extern structs
 	}
 	size*=length;
 
@@ -98,6 +100,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens ){
 	arr->type=type;
 	arr->dims=dims;
 	arr->size=size;
+	arr->data_size = data_size;
 	
 	len=lens;
 	for( k=0;k<dims;++k ) arr->scales[k]=*len++;
@@ -152,7 +155,28 @@ BBArray *bbArrayNew( const char *type,int dims,... ){
 	}
 	va_end(lengths);
 
-	BBArray *arr=allocateArray( type,dims, &lens );
+	BBArray *arr=allocateArray( type,dims, &lens, 0 );
+	
+	initializeArray( arr );
+	
+	return arr;
+}
+
+BBArray *bbArrayNewStruct( const char *type,int dims, int data_size, ... ){
+
+	int lens[256];
+
+	va_list lengths;
+	
+	va_start(lengths, dims);
+	
+	int i;
+	for (i = 0; i < dims; i++) {
+		lens[i] = va_arg(lengths, int);
+	}
+	va_end(lengths);
+
+	BBArray *arr=allocateArray( type,dims, &lens, data_size );
 	
 	initializeArray( arr );
 	
@@ -161,7 +185,7 @@ BBArray *bbArrayNew( const char *type,int dims,... ){
 
 BBArray *bbArrayNewEx( const char *type,int dims,int *lens ){
 
-	BBArray *arr=allocateArray( type,dims,lens );
+	BBArray *arr=allocateArray( type,dims,lens,0 );
 	
 	initializeArray( arr );
 	
@@ -170,7 +194,16 @@ BBArray *bbArrayNewEx( const char *type,int dims,int *lens ){
 
 BBArray *bbArrayNew1D( const char *type,int length ){
 
-	BBArray *arr=allocateArray( type,1,&length );
+	BBArray *arr=allocateArray( type,1,&length, 0 );
+	
+	initializeArray( arr );
+	
+	return arr;
+}
+
+BBArray *bbArrayNew1DStruct( const char *type,int length, int data_size ){
+
+	BBArray *arr=allocateArray( type,1,&length, data_size );
 	
 	initializeArray( arr );
 	
@@ -187,7 +220,7 @@ BBArray *bbArraySlice( const char *type,BBArray *inarr,int beg,int end ){
 
 	if( length<=0 ) return &bbEmptyArray;
 	
-	arr=allocateArray( type,1,&length );
+	arr=allocateArray( type,1,&length,0 );
 
 	el_size=arr->size/length;
 	
@@ -211,24 +244,10 @@ BBArray *bbArraySlice( const char *type,BBArray *inarr,int beg,int end ){
 	n=inarr->scales[0]-beg;
 	if( n>0 ){
 		if( beg+n>end ) n=end-beg;
-#ifdef BB_GC_RC
-		if( type[0]==':' || type[0]=='$' || type[0]=='[' ){
-			BBObject **dst=(BBObject**)p;
-			BBObject **src=(BBObject**)BBARRAYDATA(inarr,inarr->dims)+beg;
-			for( k=0;k<n;++k ){ 
-				BBObject *o=*src++;
-				//BBINCREFS( o );
-				*dst++=o; 
-			}
-			p=(char*)dst;
-		}else{
-			memcpy( p,(char*)BBARRAYDATA(inarr,inarr->dims)+beg*el_size,n*el_size );
-			p+=n*el_size;
-		}
-#else
+
 		memcpy( p,(char*)BBARRAYDATA(inarr,inarr->dims)+beg*el_size,n*el_size );
 		p+=n*el_size;
-#endif
+
 		beg+=n;
 		if( beg==end ) return arr;
 	}
@@ -252,23 +271,13 @@ BBArray *bbArrayConcat( const char *type,BBArray *x,BBArray *y ){
 	
 	if( length<=0 ) return &bbEmptyArray;
 
-	arr=allocateArray( type,1,&length );
+	arr=allocateArray( type,1,&length,x->data_size );
 	
 	data=(char*)BBARRAYDATA( arr,1 );
 	
 	memcpy( data,BBARRAYDATA( x,1 ),x->size );
 	memcpy( data+x->size,BBARRAYDATA( y,1 ),y->size );
 	
-#ifdef BB_GC_RC
-	if( type[0]==':' || type[0]=='$' || type[0]=='[' ){
-		int i;
-		BBObject **p=(BBObject**)data;
-		for( i=0;i<length;++i ){
-			BBObject *o=*p++;
-			//BBINCREFS( o );
-		}
-	}
-#endif
 	return arr;
 }
 
@@ -279,7 +288,7 @@ BBArray *bbArrayFromData( const char *type,int length,void *data ){
 
 	if( length<=0 ) return &bbEmptyArray;
 	
-	arr=allocateArray( type,1,&length );
+	arr=allocateArray( type,1,&length,0 );
 
 	memcpy( BBARRAYDATA( arr,1 ),data,arr->size );
 
