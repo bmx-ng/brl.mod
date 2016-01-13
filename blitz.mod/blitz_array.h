@@ -11,18 +11,20 @@ extern "C"{
 #define BBNULLARRAY (&bbEmptyArray)
 
 #define BBARRAYSIZE(q,n) (((offsetof(BBArray, scales) + n * sizeof(int)+0x0f) & ~0x0f)+(q))
-#define BBARRAYDATA(p,n) ((void*)((char*)(p)+((offsetof(BBArray, scales) + n * sizeof(int)+0x0f) & ~0x0f)))
+//#define BBARRAYDATA(p,n) ((void*)((char*)(p)+((offsetof(BBArray, scales) + n * sizeof(int)+0x0f) & ~0x0f)))
+#define BBARRAYDATA(p,n) ((void*)((char*)(p)+((BBArray*)(p))->data_start))
 #define BBARRAYDATAINDEX(p,n,i) bbArrayIndex(p,n,i)
 
 struct BBArray{
 	//extends BBObject
-	BBClass*	clas;
+	BBClass*        clas;
 
-	const char* type;			//
-	int			dims;			//
-	unsigned int size;			// total size minus this header
-	int			data_size;		// size of data element
-	int			scales[1];		// [dims]
+	const char*     type;       //
+	unsigned int    dims;       //
+	unsigned int    size;       // total size minus this header
+	unsigned short  data_size;  // size of data element
+	unsigned short  data_start; // start offset of data
+	unsigned int    scales[1];  // [dims]
 };
 
 extern		BBClass bbArrayClass;
@@ -44,8 +46,8 @@ BBArray*	bbArrayConcat( const char *type,BBArray *x,BBArray *y );
 
 void*	bbArrayIndex( BBArray *, int, int );
 
-BBArray*	bbArrayNew1DStruct( const char *type,int length, int data_size );
-BBArray*	bbArrayNewStruct( const char *type,int dims, int data_size,... );
+BBArray*	bbArrayNew1DStruct( const char *type,int length, unsigned short data_size );
+BBArray*	bbArrayNewStruct( const char *type,int dims, unsigned short data_size,... );
 
 #ifdef __cplusplus
 }

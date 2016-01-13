@@ -37,6 +37,7 @@ BBArray bbEmptyArray={
 	0,			//dims
 	0,			//size
 	0,			//data_size
+	0,			//data_start
 	0			//scales[0]
 };
 
@@ -65,7 +66,7 @@ static void bbArrayFree( BBObject *o ){
 #endif
 }
 
-static BBArray *allocateArray( const char *type,int dims,int *lens, int data_size ){
+static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned short data_size ){
 	int k,*len;
 	int size=4;
 	int length=1;
@@ -101,6 +102,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens, int data_siz
 	arr->dims=dims;
 	arr->size=size;
 	arr->data_size = data_size;
+	arr->data_start = (offsetof(BBArray, scales) + dims * sizeof(int)+0x0f) & ~0x0f; // 16-byte aligned
 	
 	len=lens;
 	for( k=0;k<dims;++k ) arr->scales[k]=*len++;
@@ -162,7 +164,7 @@ BBArray *bbArrayNew( const char *type,int dims,... ){
 	return arr;
 }
 
-BBArray *bbArrayNewStruct( const char *type,int dims, int data_size, ... ){
+BBArray *bbArrayNewStruct( const char *type,int dims, unsigned short data_size, ... ){
 
 	int lens[256];
 
@@ -201,7 +203,7 @@ BBArray *bbArrayNew1D( const char *type,int length ){
 	return arr;
 }
 
-BBArray *bbArrayNew1DStruct( const char *type,int length, int data_size ){
+BBArray *bbArrayNew1DStruct( const char *type,int length, unsigned short data_size ){
 
 	BBArray *arr=allocateArray( type,1,&length, data_size );
 	
