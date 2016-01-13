@@ -148,7 +148,7 @@ Function TypeName$( tag$ Var )
 		Return "WString"
 	Case "t"
 		Return "size_t"
-	Case ":","?"
+	Case ":","?","#"
 		Local id$=Ident( tag )
 		While tag And tag[0]=Asc(".")
 			tag=tag[1..]
@@ -330,7 +330,7 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		If Not p Return "Null"
 		Local s$=String.FromWString( Short Ptr p )
 		Return DebugEscapeString( s )
-	Case Asc("*"),Asc("?")
+	Case Asc("*"),Asc("?"),Asc("#")
 ?Not ptr64
 		Return "$"+ToHex( (Int Ptr p)[0] )
 ?ptr64
