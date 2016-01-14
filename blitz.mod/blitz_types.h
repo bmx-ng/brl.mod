@@ -71,6 +71,15 @@ struct bbDataDef {
 	};
 };
 
+BBINT bbConvertToInt( struct bbDataDef * data );
+BBUINT bbConvertToUInt( struct bbDataDef * data );
+BBLONG bbConvertToLong( struct bbDataDef * data );
+BBULONG bbConvertToULong( struct bbDataDef * data );
+BBFLOAT bbConvertToFloat( struct bbDataDef * data );
+BBDOUBLE bbConvertToDouble( struct bbDataDef * data );
+BBSTRING bbConvertToString( struct bbDataDef * data );
+BBSIZET bbConvertToSizet( struct bbDataDef * data );
+
 #ifdef __cplusplus
 }
 #endif
