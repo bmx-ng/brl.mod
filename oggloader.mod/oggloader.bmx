@@ -61,9 +61,10 @@ Type TAudioSampleLoaderOGG Extends TAudioSampleLoader
 		Local size=samples*2*channels
 		Local sample:TAudioSample=TAudioSample.Create( samples,freq,format )
 
-		Local err=Read_Ogg( ogg,sample.samples,size )
+		'negative amounts indicate an error, 0 = EOF, >0 = amount of bytes
+		Local bytesRead:int = Read_Ogg( ogg,sample.samples,size )
 		Read_Ogg( ogg,Null,0 )
-		If err Return
+		If bytesRead <= 0 Return
 
 		Return sample
 
