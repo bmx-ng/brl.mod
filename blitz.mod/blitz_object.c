@@ -85,7 +85,7 @@ int bbObjectCompare( BBObject *x,BBObject *y ){
 	return (char*)x-(char*)y;
 }
 
-BBObject *bbObjectSendMessage( BBObject *m,BBObject *s ){
+BBObject *bbObjectSendMessage( BBObject * o, BBObject *m,BBObject *s ){
 	return &bbNullObject;
 }
 

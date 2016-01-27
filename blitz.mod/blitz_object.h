@@ -26,7 +26,7 @@ struct BBClass{
 	
 	BBString*	(*ToString)( BBObject *x );
 	int		(*Compare)( BBObject *x,BBObject *y );
-	BBObject*	(*SendMessage)( BBObject *m,BBObject *s );
+	BBObject*	(*SendMessage)( BBObject * o, BBObject *m,BBObject *s );
 
 	BBINTERFACETABLE itable;
 	void*   extra;
@@ -69,7 +69,7 @@ void		bbObjectDtor( BBObject *o );
 
 BBString*	bbObjectToString( BBObject *o );
 int		bbObjectCompare( BBObject *x,BBObject *y );
-BBObject*	bbObjectSendMessage( BBObject *m,BBObject *s );
+BBObject*	bbObjectSendMessage( BBObject * o, BBObject *m,BBObject *s );
 void		bbObjectReserved();
 
 BBObject*	bbObjectDowncast( BBObject *o,BBClass *t );
