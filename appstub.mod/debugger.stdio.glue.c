@@ -130,3 +130,22 @@ BBClass * bmx_debugger_DebugClassSuper(BBClass * clas) {
 struct BBDebugScope * bmx_debugger_DebugClassScope(BBClass * clas) {
 	return clas->debug_scope;
 }
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void * bmx_debugger_ref_bbNullObject() {
+	return &bbNullObject;
+}
+
+void * bmx_debugger_ref_bbEmptyArray() {
+	return &bbEmptyArray;
+}
+
+void * bmx_debugger_ref_bbEmptyString() {
+	return &bbEmptyString;
+}
+
+void * bmx_debugger_ref_brl_blitz_NullFunctionError() {
+	return brl_blitz_NullFunctionError;
+}
+

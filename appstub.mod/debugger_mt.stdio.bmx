@@ -25,14 +25,8 @@ End Extern
 ?
 
 Extern
-Global bbNullObject:Byte
-Global bbEmptyArray:Byte
-Global bbEmptyString:Byte
-Global brl_blitz_NullFunctionError:Byte Ptr
-Function bbIsMainThread:Int()="bbIsMainThread"
-Function bbGCValidate:Int( mem:Byte Ptr ) = "bbGCValidate"
-
-
+	Function bbIsMainThread:Int()="bbIsMainThread"
+	Function bbGCValidate:Int( mem:Byte Ptr ) = "bbGCValidate"
 
 	Function DebugScopeName:String( scope:Int Ptr )="bmx_debugger_DebugScopeName"
 	Function bmx_debugger_DebugScopeKind:Int( scope:Int Ptr )
@@ -64,6 +58,10 @@ Function bbGCValidate:Int( mem:Byte Ptr ) = "bbGCValidate"
 	Function DebugStmLine:Int( stm:Int Ptr )="bmx_debugger_DebugStmLine"
 	Function DebugStmChar:Int( stm:Int Ptr )="bmx_debugger_DebugStmChar"
 
+	Function bmx_debugger_ref_bbNullObject:Byte Ptr()
+	Function bmx_debugger_ref_bbEmptyArray:Byte Ptr()
+	Function bmx_debugger_ref_bbEmptyString:Byte Ptr()
+	Function bmx_debugger_ref_brl_blitz_NullFunctionError:Byte Ptr()
 End Extern
 
 ?Not ptr64
@@ -338,12 +336,12 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 ?
 	Case Asc("(")
 		p=(Byte Ptr Ptr p)[0]
-		If p=brl_blitz_NullFunctionError Return "Null"
+		If p=bmx_debugger_ref_brl_blitz_NullFunctionError() Return "Null"
 	Case Asc(":")
 		p=(Byte Ptr Ptr p)[0]
-		If p=Varptr bbNullObject Return "Null"
-		If p=Varptr bbEmptyArray Return "Null[]"
-		If p=Varptr bbEmptyString Return "Null$"
+		If p=bmx_debugger_ref_bbNullObject() Return "Null"
+		If p=bmx_debugger_ref_bbEmptyArray() Return "Null[]"
+		If p=bmx_debugger_ref_bbEmptyString() Return "Null$"
 	Case Asc("[")
 		p=(Byte Ptr Ptr p)[0]
 		If Not p Return "Null"
