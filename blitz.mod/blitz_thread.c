@@ -3,6 +3,10 @@
 
 #include "bdwgc/libatomic_ops/src/atomic_ops.h"
 
+#ifdef __APPLE__
+#include <libkern/OSAtomic.h>
+#endif
+
 //#define DEBUG_THREADS
 
 #ifndef __EMSCRIPTEN__
@@ -280,7 +284,11 @@ int bbThreadResume( BBThread *thread ){
 //***** Atomic ops *****
 int bbAtomicCAS( volatile int *addr,int old,int new_val ){
 #ifndef __ANDROID__
-	return AO_compare_and_swap(addr, old, new_val);
+#	ifndef __APPLE__
+		return AO_compare_and_swap(addr, old, new_val);
+#	else
+		return OSAtomicCompareAndSwap32(old, new_val, addr);
+#	endif
 #else
 	return __sync_val_compare_and_swap(addr, old, new_val);
 #endif
@@ -288,7 +296,11 @@ int bbAtomicCAS( volatile int *addr,int old,int new_val ){
 
 int bbAtomicAdd( volatile int *p,int incr ){
 #ifndef __ANDROID__
-	return AO_fetch_and_add((AO_t*)p, incr);
+#	ifndef __APPLE__
+		return AO_fetch_and_add((AO_t*)p, incr);
+#	else
+		return OSAtomicAdd32(incr, p);
+#	endif
 #else
 	return __sync_fetch_and_add(p, incr);
 #endif
