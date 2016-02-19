@@ -283,19 +283,19 @@ int bbThreadResume( BBThread *thread ){
 
 //***** Atomic ops *****
 int bbAtomicCAS( volatile int *addr,int old,int new_val ){
-#ifndef __ANDROID__
+#if !defined(__ANDROID__) && !defined(_WIN32)
 #	ifndef __APPLE__
 		return AO_compare_and_swap(addr, old, new_val);
 #	else
 		return OSAtomicCompareAndSwap32(old, new_val, addr);
 #	endif
 #else
-	return __sync_val_compare_and_swap(addr, old, new_val);
+	return __sync_bool_compare_and_swap(addr, old, new_val);
 #endif
 }
 
 int bbAtomicAdd( volatile int *p,int incr ){
-#ifndef __ANDROID__
+#if !defined(__ANDROID__) && !defined(_WIN32)
 #	ifndef __APPLE__
 		return AO_fetch_and_add((AO_t*)p, incr);
 #	else
