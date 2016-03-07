@@ -239,7 +239,7 @@ Type TOpenALChannel Extends TChannel
 		If _seq<>_source._seq Return
 
 		pan:*90
-		alSource3f _source._id,AL_POSITION,Sin(pan),0,-Cos(pan)
+		alSource3f _source._id,AL_POSITION,Float(Sin(pan)),0,Float(-Cos(pan))
 	End Method
 	
 	Method SetDepth( depth# )

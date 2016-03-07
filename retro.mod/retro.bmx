@@ -163,7 +163,7 @@ bbdoc: Convert a 64 bit long integer value to a hexadecimal string
 returns: The hexadecimal string representation of @val 
 End Rem 
 Function LongHex$( val:Long ) 
-	Return Hex$( val Shr 32 )+Hex$( val ) 
+	Return Hex$( Int(val Shr 32) )+Hex$( Int(val) ) 
 End Function 
 
 Rem 
@@ -171,5 +171,5 @@ bbdoc: Convert a 64 bit long integer value to a binary string
 returns: The binary string representation of @val 
 End Rem 
 Function LongBin$( val:Long ) 
-	Return Bin$( val Shr 32 )+Bin$( val ) 
+	Return Bin$( Int(val Shr 32) )+Bin$( Int(val) ) 
 End Function 

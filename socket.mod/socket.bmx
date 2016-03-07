@@ -45,14 +45,14 @@ End Type
 
 Type TSocket
 
-	Method Send( buf:Byte Ptr,count,flags=0 )
-		Local n=send_( _socket,buf,count,flags )
+	Method Send:size_t( buf:Byte Ptr,count:size_t,flags=0 )
+		Local n:size_t=send_( _socket,buf,count,flags )
 		If n<0 Return 0
 		Return n
 	End Method
 
-	Method Recv( buf:Byte Ptr,count,flags=0 )
-		Local n=recv_( _socket,buf,count,flags )
+	Method Recv:size_t( buf:Byte Ptr,count:size_t,flags=0 )
+		Local n:size_t=recv_( _socket,buf,count,flags )
 		If n<0 Return 0
 		Return n
 	End Method

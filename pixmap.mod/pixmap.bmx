@@ -484,7 +484,7 @@ Function ResizePixmap:TPixmap( pixmap:TPixmap,width,height ) NoDebug
 		Else If iy>=in_pixmap.height-1
 			iy=in_pixmap.height-1;fy=0;in_pitch=0
 		EndIf
-		Local src:Byte Ptr=in_pixmap.PixelPtr(0,iy),dst:Byte Ptr=tmp
+		Local src:Byte Ptr=in_pixmap.PixelPtr(0,Int(iy)),dst:Byte Ptr=tmp
 		For Local x=0 Until width
 			Local tx#=(x+.5)*x_sc-.5
 			Local ix#=Floor(tx),fx#=tx-ix

@@ -629,7 +629,7 @@ Rem
 bbdoc: Move virtual mouse
 End Rem
 Function MoveVirtualMouse( x#,y# )
-	MoveMouse x/gc.vres_mousexscale,y/gc.vres_mouseyscale
+	MoveMouse Int(x/gc.vres_mousexscale),Int(y/gc.vres_mouseyscale)
 End Function
 
 Rem
@@ -814,10 +814,10 @@ about:
 This command is useful for calculating horizontal alignment of text when using 
 the #DrawText command.
 End Rem
-Function TextWidth( text$ )
+Function TextWidth( Text$ )
 	Local width=0
-	For Local n=0 Until text.length
-		Local i=gc.image_font.CharToGlyph( text[n] )
+	For Local n=0 Until Text.length
+		Local i=gc.image_font.CharToGlyph( Text[n] )
 		If i<0 Continue
 		width:+gc.image_font.LoadGlyph(i).Advance()
 	Next
@@ -831,7 +831,7 @@ about:
 This command is useful for calculating vertical alignment of text when using 
 the #DrawText command.
 End Rem
-Function TextHeight( text$ )
+Function TextHeight( Text$ )
 	Return gc.image_font.Height()
 	Rem
 	Local height=0

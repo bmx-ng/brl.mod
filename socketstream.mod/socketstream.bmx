@@ -23,11 +23,11 @@ Import BRL.Stream
 Type TSocketStream Extends TStream
 
 	Method Read:Long( buf:Byte Ptr,count:Long )
-		Return _socket.Recv( buf,count )
+		Return _socket.Recv( buf,size_t(count) )
 	End Method
 
 	Method Write:Long( buf:Byte Ptr,count:Long )
-		Return _socket.Send( buf,count )
+		Return _socket.Send( buf,size_t(count) )
 	End Method
 
 	Method Eof()
