@@ -624,7 +624,7 @@ Function UpdateDebug( msg$ )
 ?ptr64
 			Local pointer:Long = Long( "$"+t )
 ?
-			If Not (pointer And bbGCValidate(pointer)) Then Continue
+			If Not (pointer And bbGCValidate(Byte Ptr(pointer))) Then Continue
 ?Not ptr64
 			Local inst:Int Ptr=Int Ptr pointer
 			Local cmd$="ObjectDump@"+ToHex( Int inst )
