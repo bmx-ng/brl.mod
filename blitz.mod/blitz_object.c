@@ -47,6 +47,18 @@ BBObject *bbObjectAtomicNew( BBClass *clas ){
 	return o;
 }
 
+BBObject *bbObjectNewNC( BBClass *clas ){
+	int flags=( clas->dtor!=bbObjectDtor ) ? BBGC_FINALIZE : 0;
+	BBObject *o=(BBObject*)bbGCAllocObject( clas->instance_size,clas,flags );
+	return o;
+}
+
+BBObject *bbObjectAtomicNewNC( BBClass *clas ){
+	int flags=( clas->dtor!=bbObjectDtor ) ? BBGC_FINALIZE | BBGC_ATOMIC : BBGC_ATOMIC;
+	BBObject *o=(BBObject*)bbGCAllocObject( clas->instance_size,clas,flags );
+	return o;
+}
+
 void bbObjectFree( BBObject *o ){
 	BBClass *clas=o->clas;
 

@@ -7,10 +7,6 @@ Object^Null{
 	-ToString:String()="bbObjectToString"
 	-Compare:Int( otherObject:Object )="bbObjectCompare"
 	-SendMessage:Object( message:Object,source:object )="bbObjectSendMessage"
-
-	-_reserved1_()="bbObjectReserved"
-	-_reserved2_()="bbObjectReserved"
-	-_reserved3_()="bbObjectReserved"
 	
 }="bbObjectClass"
 

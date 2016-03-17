@@ -62,6 +62,8 @@ extern	BBObject bbNullObject;
 
 BBObject*	bbObjectNew( BBClass *t );
 BBObject*	bbObjectAtomicNew( BBClass *t );
+BBObject*	bbObjectNewNC( BBClass *t );
+BBObject*	bbObjectAtomicNewNC( BBClass *t );
 void		bbObjectFree( BBObject *o );
 
 void		bbObjectCtor( BBObject *o );
