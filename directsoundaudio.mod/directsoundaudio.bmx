@@ -167,7 +167,7 @@ Type TDirectSoundChannel Extends TChannel
 		volume=Min(Max(volume,0),1)^.1
 		_volume=volume
 		If Not _buf Or _seq<>_buf._seq Return
-		bmx_directsound_IDirectSoundBuffer_setvolume(_buf._buffer, (1-volume)*-10000)
+		bmx_directsound_IDirectSoundBuffer_setvolume(_buf._buffer, Int((1-volume)*-10000))
 	End Method
 	
 	Method SetPan( pan# )
@@ -175,7 +175,7 @@ Type TDirectSoundChannel Extends TChannel
 		pan=Sgn(pan) * (1-(1-Abs(pan))^.1)		
 		_pan=pan
 		If Not _buf Or _seq<>_buf._seq Return
-		bmx_directsound_IDirectSoundBuffer_setpan(_buf._buffer, pan*10000)
+		bmx_directsound_IDirectSoundBuffer_setpan(_buf._buffer, Int(pan*10000))
 	End Method
 	
 	Method SetDepth( depth# )
@@ -185,7 +185,7 @@ Type TDirectSoundChannel Extends TChannel
 	Method SetRate( rate# )
 		_rate=rate
 		If Not _buf Or _seq<>_buf._seq Return
-		bmx_directsound_IDirectSoundBuffer_setfrequency(_buf._buffer, _hertz * rate)
+		bmx_directsound_IDirectSoundBuffer_setfrequency(_buf._buffer, Int(_hertz * rate))
 	End Method
 	
 	Method Playing()
@@ -220,9 +220,9 @@ Type TDirectSoundChannel Extends TChannel
 		If sound._loop _playFlags=DSBPLAY_LOOPING Else _playFlags=0
 		_buf._paused=True
 		bmx_directsound_IDirectSoundBuffer_setcurrentposition(_buf._buffer, 0)
-		bmx_directsound_IDirectSoundBuffer_setvolume(_buf._buffer, (1-_volume)*-10000)
-		bmx_directsound_IDirectSoundBuffer_setpan(_buf._buffer, _pan * 10000)
-		bmx_directsound_IDirectSoundBuffer_setfrequency(_buf._buffer, _hertz * _rate)
+		bmx_directsound_IDirectSoundBuffer_setvolume(_buf._buffer, Int((1-_volume)*-10000))
+		bmx_directsound_IDirectSoundBuffer_setpan(_buf._buffer, Int(_pan * 10000))
+		bmx_directsound_IDirectSoundBuffer_setfrequency(_buf._buffer, Int(_hertz * _rate))
 		Return True
 	End Method
 	

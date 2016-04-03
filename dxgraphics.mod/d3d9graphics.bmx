@@ -33,7 +33,7 @@ Type TD3D9AutoRelease
 	Field unk:IUnknown
 End Type
 
-Function D3D9WndProc:Byte Ptr( hwnd:Byte Ptr,msg:Int,wp:Byte Ptr,lp:Byte Ptr ) "win32"
+Function D3D9WndProc:Byte Ptr( hwnd:Byte Ptr,msg:UInt,wp:Byte Ptr,lp:Byte Ptr ) "win32"
 
 	bbSystemEmitOSEvent hwnd,msg,wp,lp,Null
 	
@@ -197,7 +197,7 @@ Type TD3D9Graphics Extends TGraphics
 			AdjustWindowRect rect,wstyle,0
 		EndIf
 
-		Local hwnd:Byte Ptr=CreateWindowExW( 0,_wndClass,AppTitle,wstyle,rect[0],rect[1],rect[2]-rect[0],rect[3]-rect[1],0,0,GetModuleHandleA(Null),Null )
+		Local hwnd:Byte Ptr=CreateWindowExW( 0,_wndClass,AppTitle,wstyle,rect[0],rect[1],rect[2]-rect[0],rect[3]-rect[1],Null,Null,GetModuleHandleA(Null),Null )
 		If Not hwnd Return Null
 
 		If Not depth
