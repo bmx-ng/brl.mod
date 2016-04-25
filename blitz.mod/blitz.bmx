@@ -714,6 +714,11 @@ keyword: "Extends"
 End Rem
 
 Rem
+bbdoc: Specify user defined Interface(s)
+keyword: "Implements"
+End Rem
+
+Rem
 bbdoc: Begin a Method declaration
 keyword: "Method"
 End Rem
