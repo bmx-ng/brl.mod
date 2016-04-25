@@ -7,7 +7,7 @@ BBString * bmx_debugger_DebugScopeName(struct BBDebugScope * scope) {
 	return bbStringFromCString(scope->name);
 }
 
-int bmx_debugger_DebugScopeKind(struct BBDebugScope * scope) {
+unsigned int bmx_debugger_DebugScopeKind(struct BBDebugScope * scope) {
 	return scope->kind;
 }
 
@@ -25,7 +25,7 @@ BBString * bmx_debugger_DebugDeclType(struct BBDebugDecl * decl) {
 	return bbStringFromCString(decl->type_tag);
 }
 
-int bmx_debugger_DebugDeclKind(struct BBDebugDecl * decl) {
+unsigned int bmx_debugger_DebugDeclKind(struct BBDebugDecl * decl) {
 	return decl->kind;
 }
 

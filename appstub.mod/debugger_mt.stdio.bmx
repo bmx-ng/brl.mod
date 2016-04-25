@@ -29,12 +29,12 @@ Extern
 	Function bbGCValidate:Int( mem:Byte Ptr ) = "bbGCValidate"
 
 	Function DebugScopeName:String( scope:Int Ptr )="bmx_debugger_DebugScopeName"
-	Function bmx_debugger_DebugScopeKind:Int( scope:Int Ptr )
+	Function bmx_debugger_DebugScopeKind:UInt( scope:Int Ptr )
 	Function bmx_debugger_DebugScopeDecl:Byte Ptr( scope:Int Ptr )
 
 	Function DebugDeclName:String( decl:Int Ptr )="bmx_debugger_DebugDeclName"
 	Function bmx_debugger_DebugDeclType:String( decl:Int Ptr )
-	Function bmx_debugger_DebugDeclKind:Int( decl:Int Ptr )
+	Function bmx_debugger_DebugDeclKind:UInt( decl:Int Ptr )
 	Function bmx_debugger_DebugDeclNext:Byte Ptr( decl:Int Ptr )
 	Function bmx_debugger_DebugDecl_VarAddress:Byte Ptr( decl:Int Ptr )
 	Function bmx_debugger_DebugDecl_ConstValue:String( decl:Int Ptr )

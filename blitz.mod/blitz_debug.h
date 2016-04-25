@@ -31,12 +31,12 @@ enum{
 };
 
 struct BBDebugDecl{
-	int 			kind;
-	const char		*name,*type_tag;
+	unsigned int     kind;
+	const char       *name,*type_tag;
 	union{
-		BBString*	const_value;
-		int			field_offset;
-		void*		var_address;
+		BBString*    const_value;
+		unsigned int field_offset;
+		void*        var_address;
 	};
 };
 
@@ -48,7 +48,7 @@ enum{
 };
 
 struct BBDebugScope{
-	int				kind;
+	unsigned int	kind;
 	const char		*name;
 	BBDebugDecl		decls[1];
 };
