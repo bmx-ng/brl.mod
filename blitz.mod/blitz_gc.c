@@ -95,7 +95,13 @@ void bbGCFree( BBGCMem *q ){
 }
 
 int bbGCValidate( void *q ){
-	return GC_is_heap_ptr( q );
+	if (GC_is_heap_ptr( q )) {
+		// a pointer inside an object can return true here.
+		// double-check this is an actual object ref
+		return ((BBObject*)q)->clas->debug_scope->kind <= 4;
+	} else {
+		return 0;
+	}
 }
 
 int bbGCCollect(){
