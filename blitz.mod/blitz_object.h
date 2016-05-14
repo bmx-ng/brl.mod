@@ -19,7 +19,7 @@ struct BBClass{
 	
 	BBDebugScope*debug_scope;
 
-	int		instance_size;
+	unsigned int instance_size;
 
 	void		(*ctor)( BBObject *o );
 	void		(*dtor)( BBObject *o );
@@ -30,7 +30,7 @@ struct BBClass{
 
 	BBINTERFACETABLE itable;
 	void*   extra;
-	void*   reserved;
+	unsigned int obj_size;
 
 	void*	vfns[32];
 };

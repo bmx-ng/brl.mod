@@ -24,7 +24,7 @@ BBClass bbArrayClass={
 	bbObjectSendMessage,
 	0,          //interface
 	0,          //extra
-	0,
+	0,          //obj_size
 	
 	bbArraySort,
 	bbArrayDimensions

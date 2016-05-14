@@ -25,7 +25,7 @@ BBClass bbObjectClass={
 	bbObjectSendMessage,
 	0,             //interface
 	0,             //extra
-	0,             //reserved
+	0,             //obj_size
 };
 
 BBObject bbNullObject={
