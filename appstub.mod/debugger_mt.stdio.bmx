@@ -146,7 +146,7 @@ Function TypeName$( tag$ Var )
 		Return "WString"
 	Case "t"
 		Return "size_t"
-	Case ":","?","#"
+	Case ":","?","#","@"
 		Local id$=Ident( tag )
 		While tag And tag[0]=Asc(".")
 			tag=tag[1..]
@@ -346,6 +346,8 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		p=(Byte Ptr Ptr p)[0]
 		If Not p Return "Null"
 		If Not bmx_debugger_DebugDecl_ArraySize(p) Return "Null"
+	Case Asc("@")
+		Return "{}"
 	Default
 		DebugError "Invalid decl typetag:"+Chr(tag)
 	End Select
