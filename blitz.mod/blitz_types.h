@@ -41,6 +41,12 @@ typedef BBInterfaceTable*	BBINTERFACETABLE;
 typedef BBInterface*	BBINTERFACE;
 typedef BBInterfaceOffsets * BBINTERFACEOFFSETS;
 
+#ifdef __x86_64__
+#include <immintrin.h>
+typedef __m128i			BBINT128;
+typedef __m128			BBFLOAT128;
+#endif
+
 extern const char *bbVoidTypeTag;	//"?"
 extern const char *bbByteTypeTag;	//"b"
 extern const char *bbShortTypeTag;	//"s"

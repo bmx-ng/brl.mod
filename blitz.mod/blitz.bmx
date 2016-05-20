@@ -71,6 +71,11 @@ ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE"
 ModuleInfo "CC_OPTS: -DBMX_DEBUG"
 ?
 
+?x64
+ModuleInfo "CC_OPTS: -msse3"
+ModuleInfo "LD_OPTS: -msse3"
+?
+
 Import "blitz_app.c"
 Import "blitz_types.c"
 Import "blitz_cclib.c"

@@ -134,10 +134,14 @@ Function TypeName$( tag$ Var )
 		Return "Long"
 	Case "y"
 		Return "ULong"
+	Case "j"
+		Return "Int128"
 	Case "f"
 		Return "Float"
 	Case "d"
 		Return "Double"
+	Case "k"
+		Return "Float128"
 	Case "$"
 		Return "String"
 	Case "z"
@@ -247,6 +251,8 @@ Function DebugDeclSize:Int( decl:Int Ptr )
 	Case Asc("l") Return 8
 	Case Asc("y") Return 8
 	Case Asc("d") Return 8
+	Case Asc("j") Return 16
+	Case Asc("k") Return 16
 	' size_t (t) fall-through to ptr64 size below
 	End Select
 
@@ -347,6 +353,10 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		If Not p Return "Null"
 		If Not bmx_debugger_DebugDecl_ArraySize(p) Return "Null"
 	Case Asc("@")
+		Return "{}"
+	Case Asc("j")
+		Return "{}"
+	Case Asc("k")
 		Return "{}"
 	Default
 		DebugError "Invalid decl typetag:"+Chr(tag)

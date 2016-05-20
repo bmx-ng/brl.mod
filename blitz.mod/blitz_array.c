@@ -92,6 +92,10 @@ static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned sho
 	case '[':size=sizeof(void*);flags=0;break;
 	case '(':size=sizeof(void*);break;
 	case 'z':size=sizeof(BBSIZET);break;
+	#ifdef __x86_64__
+	case 'j':size=sizeof(BBINT128);break;
+	case 'k':size=sizeof(BBFLOAT128);break;
+	#endif
 	case '#':size=data_size;flags=0;break; // extern structs
 	}
 	size*=length;
