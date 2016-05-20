@@ -448,13 +448,13 @@ about:
 After converting an object to an integer handle, you must later
 release it using the #Release command.
 End Rem
-Function HandleFromObject:size_t( obj:Object )="bbHandleFromObject"
+Function HandleFromObject:Size_T( obj:Object )="bbHandleFromObject"
 
 Rem
 bbdoc: Convert integer handle to object
 returns: The object associated with the integer handle
 End Rem
-Function HandleToObject:Object( handle:size_t )="bbHandleToObject"
+Function HandleToObject:Object( handle:Size_T )="bbHandleToObject"
 
 End Extern
 
@@ -562,6 +562,12 @@ Rem
 bbdoc: 128 bit floating point intrinsic Type
 about: Only available on x64.
 keyword: "Float128"
+End Rem
+
+Rem
+bbdoc: 128 bit double intrinsic Type
+about: Only available on x64.
+keyword: "Double128"
 End Rem
 
 Rem

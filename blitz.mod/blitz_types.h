@@ -45,6 +45,7 @@ typedef BBInterfaceOffsets * BBINTERFACEOFFSETS;
 #include <immintrin.h>
 typedef __m128i			BBINT128;
 typedef __m128			BBFLOAT128;
+typedef __m128d			BBDOUBLE128;
 #endif
 
 extern const char *bbVoidTypeTag;	//"?"
