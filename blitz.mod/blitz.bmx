@@ -523,8 +523,29 @@ keyword: "Int"
 End Rem
 
 Rem
+bbdoc: Unsigned 32 bit integer Type
+keyword: "UInt"
+End Rem
+
+Rem
 bbdoc: Signed 64 bit integer Type
 keyword: "Long"
+End Rem
+
+Rem
+bbdoc: Unsigned 64 bit integer Type
+keyword: "ULong"
+End Rem
+
+Rem
+bbdoc: Unsigned 32/64 bit integer Type
+keyword: "Size_T"
+End Rem
+
+Rem
+bbdoc: 128 bit integer intrinsic Type
+about: Only available on x64.
+keyword: "Int128"
 End Rem
 
 Rem
@@ -535,6 +556,12 @@ End Rem
 Rem
 bbdoc: 64 bit floating point Type
 keyword: "Double"
+End Rem
+
+Rem
+bbdoc: 128 bit floating point intrinsic Type
+about: Only available on x64.
+keyword: "Float128"
 End Rem
 
 Rem
