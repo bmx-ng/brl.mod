@@ -73,7 +73,6 @@ ModuleInfo "CC_OPTS: -DBMX_DEBUG"
 
 ?x64
 ModuleInfo "CC_OPTS: -msse3"
-ModuleInfo "LD_OPTS: -msse3"
 ?
 
 Import "blitz_app.c"
