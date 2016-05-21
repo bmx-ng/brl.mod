@@ -71,10 +71,6 @@ ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE"
 ModuleInfo "CC_OPTS: -DBMX_DEBUG"
 ?
 
-?x64
-ModuleInfo "CC_OPTS: -msse3"
-?
-
 Import "blitz_app.c"
 Import "blitz_types.c"
 Import "blitz_cclib.c"
@@ -562,6 +558,12 @@ Rem
 bbdoc: 128 bit floating point intrinsic Type
 about: Only available on x64.
 keyword: "Float128"
+End Rem
+
+Rem
+bbdoc: 64 bit floating point intrinsic Type
+about: Only available on x64.
+keyword: "Float64"
 End Rem
 
 Rem

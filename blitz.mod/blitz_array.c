@@ -93,6 +93,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned sho
 	case '(':size=sizeof(void*);break;
 	case 'z':size=sizeof(BBSIZET);break;
 	#ifdef __x86_64__
+	case 'h':size=sizeof(BBFLOAT64);break;
 	case 'j':size=sizeof(BBINT128);break;
 	case 'k':size=sizeof(BBFLOAT128);break;
 	case 'm':size=sizeof(BBDOUBLE128);break;
