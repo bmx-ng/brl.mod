@@ -140,8 +140,12 @@ Function TypeName$( tag$ Var )
 		Return "Float"
 	Case "d"
 		Return "Double"
+	Case "h"
+		Return "Float64"
 	Case "k"
 		Return "Float128"
+	Case "m"
+		Return "Double128"
 	Case "$"
 		Return "String"
 	Case "z"
@@ -251,8 +255,10 @@ Function DebugDeclSize:Int( decl:Int Ptr )
 	Case Asc("l") Return 8
 	Case Asc("y") Return 8
 	Case Asc("d") Return 8
+	Case Asc("h") Return 8
 	Case Asc("j") Return 16
 	Case Asc("k") Return 16
+	Case Asc("m") Return 16
 	' size_t (t) fall-through to ptr64 size below
 	End Select
 
@@ -320,7 +326,7 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 	Case Asc("d")
 		Return String.FromDouble( (Double Ptr p)[0] )
 	Case Asc("t")
-		Return String.FromSizet( (size_t Ptr p)[0] )
+		Return String.FromSizet( (Size_T Ptr p)[0] )
 	Case Asc("$")
 		p=(Byte Ptr Ptr p)[0]
 		Return DebugEscapeString( bmx_debugger_DebugDecl_StringFromAddress(p) )
@@ -354,9 +360,13 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		If Not bmx_debugger_DebugDecl_ArraySize(p) Return "Null"
 	Case Asc("@")
 		Return "{}"
+	Case Asc("h")
+		Return "{}"
 	Case Asc("j")
 		Return "{}"
 	Case Asc("k")
+		Return "{}"
+	Case Asc("m")
 		Return "{}"
 	Default
 		DebugError "Invalid decl typetag:"+Chr(tag)
