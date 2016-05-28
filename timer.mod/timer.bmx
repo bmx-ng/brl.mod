@@ -1,19 +1,22 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Events/Timers
 End Rem
 Module BRL.Timer
 
-ModuleInfo "Version: 1.03"
-ModuleInfo "Author: Simon Armstrong, Mark Sibly"
+ModuleInfo "Version: 1.04"
+ModuleInfo "Author: Simon Armstrong, Mark Sibly, Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
-ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: New factory-based timer implementation."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Update to use Byte Ptr instead of int."
+
+Import BRL.Event
 
 Rem
 History:
@@ -28,75 +31,17 @@ Added check for Win32 timer firing after timeKillEvent
 Removed brl.standardio dependancy
 End Rem
 
-Import BRL.SystemDefault
+Type TTimer Abstract
 
-?Win32
-Import "timer.win32.c"
-?MacOS
-Import "timer.macos.m"
-?Linux
-Import "timer.linux.c"
-?
-
-Extern
-Function bbTimerStart:Byte Ptr( hertz#,timer:TTimer )
-Function bbTimerStop( handle:Byte Ptr,timer:TTimer )
-End Extern
-
-Function _TimerFired( timer:TTimer )
-	timer.Fire
-End Function
-
-Type TTimer
-
-	Method Ticks()
-		Return _ticks
-	End Method
+	Method Ticks:Int() Abstract
 	
-	Method Stop()
-		If Not _handle Return
-		bbTimerStop _handle,Self
-		_handle=0
-		_event=Null
-'		_cycle=Null
-	End Method
+	Method Stop() Abstract
 	
-	Method Fire()
-		If Not _handle Return
-		_ticks:+1
-		If _event
-			EmitEvent _event
-		Else
-			EmitEvent CreateEvent( EVENT_TIMERTICK,Self,_ticks )
-		EndIf
-	End Method
+	Method Fire() Abstract
 
-	Method Wait()
-		If Not _handle Return
-		Local n
-		Repeat
-			WaitSystem
-			n=_ticks-_wticks
-		Until n
-		_wticks:+n
-		Return n
-	End Method
+	Method Wait:Int() Abstract
 	
-	Function Create:TTimer( hertz#,event:TEvent=Null )
-		Local t:TTimer=New TTimer
-		Local handle:Byte Ptr=bbTimerStart( hertz,t )
-		If Not handle Return
-'		t._cycle=t
-		t._event=event
-		t._handle=handle
-		Return t
-	End Function
-
-	Field _ticks
-	Field _wticks
-	Field _cycle:TTimer	'no longer used...see history
-	Field _event:TEvent
-	Field _handle:Byte Ptr
+	Function Create:TTimer( hertz#,event:TEvent=Null ) Abstract
 
 End Type
 
@@ -112,14 +57,18 @@ If @event is Null, an event with an @id equal to EVENT_TIMERTICK and
 @source equal to the timer object will be emitted instead.
 End Rem
 Function CreateTimer:TTimer( hertz#,event:TEvent=Null )
-	Return TTimer.Create( hertz,event )
+	If timer_factories Then
+		Return timer_factories.Create(hertz, event)
+	Else
+		Throw "No Timer installed. Maybe Import BRL.TimerDefault ?"
+	End If
 End Function
 
 Rem
 bbdoc: Get timer tick counter
 returns: The number of times @timer has ticked over
 End Rem
-Function TimerTicks( timer:TTimer )
+Function TimerTicks:Int( timer:TTimer )
 	Return timer.Ticks()
 End Function
 
@@ -127,7 +76,7 @@ Rem
 bbdoc: Wait until a timer ticks
 returns: The number of ticks since the last call to #WaitTimer
 End Rem
-Function WaitTimer( timer:TTimer )
+Function WaitTimer:Int( timer:TTimer )
 	Return timer.Wait()
 End Function
 
@@ -138,3 +87,27 @@ End Rem
 Function StopTimer( timer:TTimer )
 	timer.Stop
 End Function
+
+Private
+
+Global timer_factories:TTimerFactory
+
+Public
+
+Type TTimerFactory
+	Field _succ:TTimerFactory
+	
+	Method New()
+		If _succ <> Null Then
+			Throw "Timer already installed : " + _succ.GetName()
+		End If
+		_succ=timer_factories
+		timer_factories=Self
+	End Method
+	
+	Method GetName:String() Abstract
+	
+	Method Create:TTimer(hertz#,event:TEvent=Null) Abstract
+		
+End Type
+
