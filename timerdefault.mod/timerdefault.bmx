@@ -1,7 +1,7 @@
 SuperStrict
 
 Rem
-bbdoc: Events/Timers
+bbdoc: Events/TimersDefault
 End Rem
 Module BRL.TimerDefault
 
