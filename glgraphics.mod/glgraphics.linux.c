@@ -345,7 +345,7 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,i
 		}
 		glXMakeCurrent(xdisplay,window,context);	
 		XIfEvent(xdisplay,&event,WaitForNotify,(XPointer)window);	     
-		XSelectInput(xdisplay,window,ResizeRedirectMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|KeyPressMask|KeyReleaseMask);	
+		XSelectInput(xdisplay,window,ResizeRedirectMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|KeyPressMask|KeyReleaseMask);	
 		xwindow=window;
 		bbSetSystemWindow(xwindow);
 	}

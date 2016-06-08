@@ -232,6 +232,17 @@ void bbSystemEmitOSEvent( XEvent *xevent,BBObject *source ){
 	case MotionNotify:
 		id=BBEVENT_MOUSEMOVE;
 		break;
+	case FocusIn:
+		id=BBEVENT_APPRESUME;
+		break;
+	case FocusOut:
+		//ignore if lost focus because the window got grabbed
+		//(moving around the windowed application)
+		if( xevent->xfocus.mode == NotifyGrab || xevent->xfocus.mode == NotifyUngrab) {
+			break;
+		}
+		id=BBEVENT_APPSUSPEND;
+		break;
 	case ClientMessage:
 		if( xevent->xclient.data.l[0]==XInternAtom( x_display,"WM_DELETE_WINDOW",True ) ){
 			id=BBEVENT_APPTERMINATE;
