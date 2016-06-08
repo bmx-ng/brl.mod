@@ -361,13 +361,13 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 	Case Asc("@")
 		Return "{}"
 	Case Asc("h")
-		Return "{}"
+		Return Float Ptr (Varptr p)[0] + "," + Float Ptr (Varptr p)[1]
 	Case Asc("j")
-		Return "{}"
+		Return Int Ptr (Varptr p)[0] + "," + Int Ptr (Varptr p)[1] + "," + Int Ptr (Varptr p)[2] + "," + Int Ptr (Varptr p)[3]
 	Case Asc("k")
-		Return "{}"
+		Return Float Ptr (Varptr p)[0] + "," + Float Ptr (Varptr p)[1] + "," + Float Ptr (Varptr p)[2] + "," + Float Ptr (Varptr p)[3]
 	Case Asc("m")
-		Return "{}"
+		Return Double Ptr(Varptr p)[0] + "," + Double Ptr (Varptr p)[1]
 	Default
 		DebugError "Invalid decl typetag:"+Chr(tag)
 	End Select
@@ -495,7 +495,7 @@ Function DumpScope( scope:Byte Ptr, inst:Byte Ptr )
 	WriteDebug kind+" "+name+"~n"
 	
 	While bmx_debugger_DebugDeclKind(decl)<>DEBUGDECLKIND_END
-	
+
 		Select bmx_debugger_DebugDeclKind(decl)
 		Case DEBUGDECLKIND_TYPEMETHOD,DEBUGDECLKIND_TYPEFUNCTION
 			decl = bmx_debugger_DebugDeclNext(decl)
@@ -542,7 +542,7 @@ Function DumpObject( inst:Byte Ptr,index:Int )
 		If Not length Return
 		
 		Local decl:Byte Ptr = bmx_debugger_DebugDecl_ArrayDecl(inst)
-			
+
 		For Local i:Int=1 To 10
 
 			If index>=length Exit
@@ -646,7 +646,8 @@ Function UpdateDebug( msg$ )
 ?ptr64
 			Local pointer:Long = Long( "$"+t )
 ?
-			If Not (pointer And bbGCValidate(Byte Ptr(pointer))) Then Continue
+			'If Not (pointer And bbGCValidate(Byte Ptr(pointer))) Then Continue
+			If Not pointer Continue
 ?Not ptr64
 			Local inst:Int Ptr=Int Ptr pointer
 			Local cmd$="ObjectDump@"+ToHex( Int inst )
