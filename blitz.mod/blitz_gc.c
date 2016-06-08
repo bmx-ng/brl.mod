@@ -104,6 +104,10 @@ int bbGCValidate( void *q ){
 				return 1;
 			}
 		}
+		// maybe an array?
+		if (clas == &bbArrayClass) {
+			return 1;
+		}
 	}
 	return 0;
 }
