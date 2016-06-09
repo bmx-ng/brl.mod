@@ -341,10 +341,12 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		Local s$=String.FromWString( Short Ptr p )
 		Return DebugEscapeString( s )
 	Case Asc("*"),Asc("?"),Asc("#")
+		Local deref$
 ?Not ptr64
-		Return "$"+ToHex( (Int Ptr p)[0] )
+		Return "$"+ToHex( (Int Ptr p)[0] )+deref
 ?ptr64
-		Return "$"+ToHex( (Long Ptr p)[0] )
+		If tag=Asc("*") deref = DebugDerefPointer(decl,Long Ptr p)
+		Return "$"+ToHex( (Long Ptr p)[0] )+deref
 ?
 	Case Asc("(")
 		p=(Byte Ptr Ptr p)[0]
@@ -387,6 +389,77 @@ Function DebugScopeKind$( scope:Int Ptr )
 	End Select
 	DebugError "Invalid scope kind"
 End Function
+
+Function DebugDerefPointer$(decl:Int Ptr, pointer:Long Ptr)
+	Local tipe$=DebugDeclType( decl )
+	Local datatype$ = tipe[..tipe.Find(" ",0)]
+	Local start:Int
+	Local count:Int
+	
+	Repeat
+		start = tipe.Find("Ptr",start+1)
+		If start = -1 Exit
+		count :+ 1
+	Forever
+	
+	For Local i:Int = 0 Until count
+		pointer = Long Ptr (Varptr pointer)[0]
+	Next
+
+	Local value:String
+	Select datatype
+	Case "Byte"
+		value = Byte Ptr (Varptr pointer)[0]
+		Return " {"+value+"}"
+
+	Case "Short"
+		value = Short Ptr (Varptr pointer)[0]
+		Return " {"+value+"}"
+
+	Case "Int"
+		value = Int Ptr (Varptr pointer)[0]
+		Return " {"+value+"}"
+
+	Case "Long"
+		value = Long Ptr (Varptr pointer)[0]
+		Return " {"+value+"}"
+
+	Case "Float"
+		value = Float Ptr (Varptr pointer)[0]
+		Return " {"+value+"}"
+		
+	Case "Double"
+		value = Double Ptr (Varptr pointer)[0]
+		Return " {"+value+"}"
+		
+	Case "Float64"
+		value = String(Float Ptr (Varptr pointer)[0])
+		value :+ "," + String(Float Ptr (Varptr pointer)[1])
+		Return " {"+value+"}"
+
+	Case "Float128"
+		value = String(Float Ptr (Varptr pointer)[0])
+		value :+ "," + String(Float Ptr (Varptr pointer)[1])
+		value :+ "," + String(Float Ptr (Varptr pointer)[2])
+		value :+ "," + String(Float Ptr (Varptr pointer)[3])
+		Return " {"+value+"}"
+
+	Case "Double128"
+		value = String(Double Ptr (Varptr pointer)[0])
+		value :+ "," + String(Double Ptr (Varptr pointer)[1])
+		Return " {"+value+"}"
+
+	Case "Int128"
+		value = String(Int Ptr (Varptr pointer)[0])
+		value :+ "," + String(Int Ptr (Varptr pointer)[1])
+		value :+ "," + String(Int Ptr (Varptr pointer)[2])
+		value :+ "," + String(Int Ptr (Varptr pointer)[3])
+		Return " {"+value+"}"
+
+	EndSelect
+	
+	Return ""
+EndFunction
 
 'Function DebugScopeDecls:Int Ptr[]( scope:Int Ptr )
 '	Local n,p:Int Ptr=scope+DEBUGSCOPE_DECLS
