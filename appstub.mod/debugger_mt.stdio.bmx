@@ -343,6 +343,7 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 	Case Asc("*"),Asc("?"),Asc("#")
 		Local deref$
 ?Not ptr64
+		If tag=Asc("*") deref = DebugDerefPointer(decl,Int Ptr p)
 		Return "$"+ToHex( (Int Ptr p)[0] )+deref
 ?ptr64
 		If tag=Asc("*") deref = DebugDerefPointer(decl,Long Ptr p)
@@ -390,7 +391,11 @@ Function DebugScopeKind$( scope:Int Ptr )
 	DebugError "Invalid scope kind"
 End Function
 
+?ptr64
 Function DebugDerefPointer$(decl:Int Ptr, pointer:Long Ptr)
+?Not ptr64
+Function DebugDerefPointer$(decl:Int Ptr, pointer:Int Ptr)
+? 
 	Local tipe$=DebugDeclType( decl )
 	Local datatype$ = tipe[..tipe.Find(" ",0)]
 	Local start:Int
@@ -403,7 +408,11 @@ Function DebugDerefPointer$(decl:Int Ptr, pointer:Long Ptr)
 	Forever
 	
 	For Local i:Int = 0 Until count
+?ptr64
 		pointer = Long Ptr (Varptr pointer)[0]
+?Not ptr64
+		pointer = Int Ptr (Varptr pointer)[0]
+?
 	Next
 
 	Local value:String
@@ -431,7 +440,7 @@ Function DebugDerefPointer$(decl:Int Ptr, pointer:Long Ptr)
 	Case "Double"
 		value = Double Ptr (Varptr pointer)[0]
 		Return " {"+value+"}"
-		
+
 	Case "Float64"
 		value = String(Float Ptr (Varptr pointer)[0])
 		value :+ "," + String(Float Ptr (Varptr pointer)[1])
