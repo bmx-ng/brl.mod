@@ -406,7 +406,7 @@ Function DebugDerefPointer$(decl:Int Ptr, pointer:Int Ptr)
 		If start = -1 Exit
 		count :+ 1
 	Forever
-	
+
 	For Local i:Int = 0 Until count
 ?ptr64
 		pointer = Long Ptr (Varptr pointer)[0]
@@ -414,6 +414,11 @@ Function DebugDerefPointer$(decl:Int Ptr, pointer:Int Ptr)
 		pointer = Int Ptr (Varptr pointer)[0]
 ?
 	Next
+
+	' Null
+	If pointer = 0 Then
+		Return " {-}"
+	End If
 
 	Local value:String
 	Select datatype
@@ -426,7 +431,7 @@ Function DebugDerefPointer$(decl:Int Ptr, pointer:Int Ptr)
 		Return " {"+value+"}"
 
 	Case "Int"
-		value = Int Ptr (Varptr pointer)[0]
+		value =  Int Ptr (Varptr pointer)[0]
 		Return " {"+value+"}"
 
 	Case "Long"
