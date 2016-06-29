@@ -85,6 +85,14 @@ BBInterface **bbObjectRegisteredInterfaces( int *count );
 BBObject * bbInterfaceDowncast(BBOBJECT o, BBINTERFACE ifc);
 void * bbObjectInterface(BBOBJECT o, BBINTERFACE ifc);
 
+struct struct_node {
+	struct avl_root link;
+	BBDebugScope * scope;
+};
+
+void bbObjectRegisterStruct( BBDebugScope *p );
+BBDebugScope * bbObjectStructInfo( char * name );
+
 #ifdef __cplusplus
 }
 #endif

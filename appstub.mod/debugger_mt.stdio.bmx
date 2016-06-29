@@ -62,6 +62,8 @@ Extern
 	Function bmx_debugger_ref_bbEmptyArray:Byte Ptr()
 	Function bmx_debugger_ref_bbEmptyString:Byte Ptr()
 	Function bmx_debugger_ref_brl_blitz_NullFunctionError:Byte Ptr()
+	
+	Function bbObjectStructInfo:Byte Ptr(name:Byte Ptr)
 End Extern
 
 ?Not ptr64
@@ -219,6 +221,8 @@ Const DEBUGDECLKIND_TYPEFUNCTION:Int=7
 Const DEBUGSCOPEKIND_FUNCTION:Int=1
 Const DEBUGSCOPEKIND_TYPE:Int=2
 Const DEBUGSCOPEKIND_LOCAL:Int=3
+Const DEBUGSCOPEKIND_INTERFACE:Int=4
+Const DEBUGSCOPEKIND_STRUCT:Int=5
 
 Function DebugError( t$ )
 	WriteStderr "Debugger Error:"+t+"~n"
@@ -362,7 +366,11 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		If Not p Return "Null"
 		If Not bmx_debugger_DebugDecl_ArraySize(p) Return "Null"
 	Case Asc("@")
-		Return "{}"
+?Not ptr64
+		Return "$"+ToHex( Int p ) + "@" + bmx_debugger_DebugDeclType(decl)[1..]
+?ptr64
+		Return "$"+ToHex( Long p ) + "@" + bmx_debugger_DebugDeclType(decl)[1..]
+?
 	Case Asc("h")
 		Return Float Ptr (Varptr p)[0] + "," + Float Ptr (Varptr p)[1]
 	Case Asc("j")
@@ -387,6 +395,8 @@ Function DebugScopeKind$( scope:Int Ptr )
 	Case DEBUGSCOPEKIND_FUNCTION Return "Function"
 	Case DEBUGSCOPEKIND_TYPE Return "Type"
 	Case DEBUGSCOPEKIND_LOCAL Return "Local"
+	Case DEBUGSCOPEKIND_INTERFACE Return "Interface"
+	Case DEBUGSCOPEKIND_STRUCT Return "Struct"
 	End Select
 	DebugError "Invalid scope kind"
 End Function
@@ -579,7 +589,7 @@ Function DumpScope( scope:Byte Ptr, inst:Byte Ptr )
 	If Not name name="<local>"
 	
 	WriteDebug kind+" "+name+"~n"
-	
+
 	While bmx_debugger_DebugDeclKind(decl)<>DEBUGDECLKIND_END
 
 		Select bmx_debugger_DebugDeclKind(decl)
@@ -664,6 +674,15 @@ Function DumpObject( inst:Byte Ptr,index:Int )
 	
 End Function
 
+Function DumpStruct( inst:Byte Ptr,index:Int,structName:String )
+	Local s:Byte Ptr = structName.ToCString()
+	Local scope:Byte Ptr = bbObjectStructInfo(s)
+	If scope Then
+		DumpScope scope,inst
+	End If
+	MemFree s
+End Function
+
 Function DumpScopeStack()
 	Local dbgState:TDbgState = GetDbgState()
 	For Local i:Int=Max(dbgState.scopeStackTop-100,0) Until dbgState.scopeStackTop
@@ -725,14 +744,23 @@ Function UpdateDebug( msg$ )
 				index=Int( t[i+1..] )
 				t=t[..i]
 			EndIf
-			If t[..1]="$" t=t[1..].Trim()
-			If t[..2].ToLower()="0x" t=t[2..].Trim()
+			
+			Local structType:String
+			Local n:Int = t.Find("@")
+			If n <> -1 Then
+				structType = t[n+1..]
+				t = t[..n]
+			Else
+				If t[..1]="$" t=t[1..].Trim()
+				If t[..2].ToLower()="0x" t=t[2..].Trim()
+			End If
+
 ?Not ptr64
 			Local pointer:Int = Int( "$"+t )
 ?ptr64
 			Local pointer:Long = Long( "$"+t )
 ?
-			If Not (pointer And bbGCValidate(Byte Ptr(pointer))) Then Continue
+			If Not structType And Not (pointer And bbGCValidate(Byte Ptr(pointer))) Then Continue
 ?Not ptr64
 			Local inst:Int Ptr=Int Ptr pointer
 			Local cmd$="ObjectDump@"+ToHex( Int inst )
@@ -740,10 +768,17 @@ Function UpdateDebug( msg$ )
 			Local inst:Long Ptr=Long Ptr pointer
 			Local cmd$="ObjectDump@"+ToHex( Long inst )
 ?			
+			If structType Then
+				cmd :+ "@" + structType
+			End If
 			If i<>-1 cmd:+":"+index
 			WriteDebug cmd$+"{~n"
 
-			DumpObject inst,index
+			If structType Then
+				DumpStruct inst,index,structType
+			Else
+				DumpObject inst,index
+			End If
 			WriteDebug "}~n"
 		Case "h"
 			WriteDebug "T - Stack trace~n"

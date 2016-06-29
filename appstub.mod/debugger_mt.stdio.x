@@ -8,3 +8,5 @@ void bbOnDebugPopExState()!
 void bbOnDebugUnhandledEx( BBObject * )!
 int   bbGCValidate( void * )!
 BBObject* bbThreadGetData(int )!
+BBDebugScope * bbObjectStructInfo( char * )!
+

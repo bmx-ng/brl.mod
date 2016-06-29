@@ -188,3 +188,42 @@ void * bbObjectInterface(BBOBJECT o, BBINTERFACE ifc) {
 
 	return &bbNullObject;
 }
+
+static struct avl_root *struct_root = 0;
+
+int struct_node_compare(const void *x, const void *y) {
+
+        struct struct_node * node_x = (struct struct_node *)x;
+        struct struct_node * node_y = (struct struct_node *)y;
+
+        return strcmp(node_x->scope->name, node_y->scope->name);
+}
+
+void bbObjectRegisterStruct( BBDebugScope *p ) {
+	struct struct_node * node = (struct struct_node *)malloc(sizeof(struct struct_node));
+	node->scope = p;
+	
+	struct struct_node * old_node = (struct struct_node *)avl_map(&node->link, struct_node_compare, &struct_root);
+	if (&node->link != &old_node->link) {
+		// this object already exists here...
+		// delete the new node, since we don't need it
+		// note : should never happen as structs should only ever be registered once.
+		free(node);
+	}
+}
+
+BBDebugScope * bbObjectStructInfo( char * name ) {
+	// create something to look up
+	struct struct_node node;
+	BBDebugScope scope;
+	scope.name = name;
+	node.scope = &scope;
+	
+	struct struct_node * found = (struct struct_node *)tree_search(&node, struct_node_compare, struct_root);
+
+	if (found) {
+		return found->scope;
+	}
+	
+	return 0;
+}
