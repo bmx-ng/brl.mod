@@ -408,6 +408,10 @@ Function DebugDerefPointer$(decl:Int Ptr, pointer:Int Ptr)
 	Forever
 
 	For Local i:Int = 0 Until count
+		' Null
+		If pointer = 0 Then
+			Return " {-}"
+		End If
 ?ptr64
 		pointer = Long Ptr (Varptr pointer)[0]
 ?Not ptr64
@@ -415,19 +419,14 @@ Function DebugDerefPointer$(decl:Int Ptr, pointer:Int Ptr)
 ?
 	Next
 
-	' Null
-	If pointer = 0 Then
-		Return " {-}"
-	End If
-
 	Local value:String
 	Select datatype
 	Case "Byte"
-		value = Byte Ptr (Varptr pointer)[0]
-		Return " {"+value+"}"
+		' don't reference a byte ptr in case its an OS handle ( which isn't a memory address! )
+		Return " {-}"
 
 	Case "Short"
-		value = Short Ptr (Varptr pointer)[0]
+		value = Short (Short  Ptr (Varptr pointer)[0])
 		Return " {"+value+"}"
 
 	Case "Int"
@@ -439,7 +438,7 @@ Function DebugDerefPointer$(decl:Int Ptr, pointer:Int Ptr)
 		Return " {"+value+"}"
 
 	Case "Float"
-		value = Float Ptr (Varptr pointer)[0]
+		value = Float (Float Ptr (pointer)[0])
 		Return " {"+value+"}"
 		
 	Case "Double"
