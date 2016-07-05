@@ -1,17 +1,19 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Events/Events
 End Rem
 Module BRL.Event
 
-ModuleInfo "Version: 1.05"
+ModuleInfo "Version: 1.06"
 ModuleInfo "Author: Mark Sibly, Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.06"
+ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.05"
 ModuleInfo "History: Added EVENT_MULTIGESTURE."
 ModuleInfo "History: 1.04"
@@ -47,7 +49,7 @@ The #EmitEventHook global variable contains a hook id for use with #AddHook.
 Each time #EmitEvent is called, the event is passed to all #EmitEventHook 
 hook functions by means of the hook function @data parameter.
 End Rem
-Global EmitEventHook=AllocHookId()
+Global EmitEventHook:Int=AllocHookId()
 
 Rem
 bbdoc: Event object type
@@ -57,7 +59,7 @@ Type TEvent
 	Rem
 	bbdoc: Event identifier
 	End Rem
-	Field id
+	Field id:Int
 	
 	Rem
 	bbdoc: Event source object
@@ -67,22 +69,22 @@ Type TEvent
 	Rem
 	bbdoc: Event specific data
 	End Rem
-	Field data
+	Field data:Int
 	
 	Rem
 	bbdoc: Event specific modifiers
 	End Rem
-	Field mods
+	Field mods:Int
 	
 	Rem
 	bbdoc: Event specific position data
 	End Rem
-	Field x
+	Field x:Int
 	
 	Rem
 	bbdoc: Event specific position data
 	End Rem
-	Field y
+	Field y:Int
 	
 	Rem
 	bbdoc: Event specific extra information
@@ -131,7 +133,7 @@ Type TEvent
 	bbdoc: Create an event object
 	returns: A new event object
 	End Rem
-	Function Create:TEvent( id,source:Object=Null,data=0,mods=0,x=0,y=0,extra:Object=Null,usePool:Int = True )
+	Function Create:TEvent( id:Int,source:Object=Null,data:Int=0,mods:Int=0,x:Int=0,y:Int=0,extra:Object=Null,usePool:Int = True )
 		Local t:TEvent
 ?threaded
 		_eventLock.Lock()
@@ -159,23 +161,23 @@ Type TEvent
 	bbdoc: Allocate a user event id
 	returns: A new user event id
 	End Rem
-	Function AllocUserId()
-		Global _id=EVENT_USEREVENTMASK
+	Function AllocUserId:Int()
+		Global _id:Int=EVENT_USEREVENTMASK
 		_id:+1
 		Return _id
 	End Function
 	
-	Function RegisterId( id,description$ )
+	Function RegisterId( id:Int,description$ )
 		_regids:+String(id)+"{"+description+"}"
 	End Function
 	
-	Function DescriptionForId$( id )
+	Function DescriptionForId$( id:Int )
 		Local t$="}"+String(id)+"{"
-		Local i=_regids.Find( t )
-		If i=-1 Return
+		Local i:Int=_regids.Find( t )
+		If i=-1 Return Null
 		i:+t.length
-		Local i2=_regids.Find( "}",i )
-		If i2=-1 Return
+		Local i2:Int=_regids.Find( "}",i )
+		If i2=-1 Return Null
 		Return _regids[i..i2]
 	End Function
 
@@ -183,57 +185,57 @@ Type TEvent
 	
 End Type
 
-Const EVENT_APPMASK=$100
-Const EVENT_APPSUSPEND=$101
-Const EVENT_APPRESUME=$102
-Const EVENT_APPTERMINATE=$103
-Const EVENT_APPOPENFILE=$104
-Const EVENT_APPIDLE=$105		'Reserved by Mark!
-Const EVENT_KEYMASK=$200
-Const EVENT_KEYDOWN=$201
-Const EVENT_KEYUP=$202
-Const EVENT_KEYCHAR=$203
-Const EVENT_KEYREPEAT=$204
-Const EVENT_MOUSEMASK=$400
-Const EVENT_MOUSEDOWN=$401
-Const EVENT_MOUSEUP=$402
-Const EVENT_MOUSEMOVE=$403
-Const EVENT_MOUSEWHEEL=$404
-Const EVENT_MOUSEENTER=$405
-Const EVENT_MOUSELEAVE=$406
-Const EVENT_TIMERMASK=$800
-Const EVENT_TIMERTICK=$801
-Const EVENT_HOTKEYMASK=$1000
-Const EVENT_HOTKEYHIT=$1001
-Const EVENT_GADGETMASK=$2000
-Const EVENT_GADGETACTION=$2001
-Const EVENT_GADGETPAINT=$2002
-Const EVENT_GADGETSELECT=$2003
-Const EVENT_GADGETMENU=$2004
-Const EVENT_GADGETOPEN=$2005
-Const EVENT_GADGETCLOSE=$2006
-Const EVENT_GADGETDONE=$2007
-Const EVENT_GADGETLOSTFOCUS=$2008
-Const EVENT_GADGETSHAPE=$2009	'reserved by Mark!
-Const EVENT_WINDOWMASK=$4000
-Const EVENT_WINDOWMOVE=$4001
-Const EVENT_WINDOWSIZE=$4002
-Const EVENT_WINDOWCLOSE=$4003
-Const EVENT_WINDOWACTIVATE=$4004
-Const EVENT_WINDOWACCEPT=$4005
-Const EVENT_MENUMASK=$8000
-Const EVENT_MENUACTION=$8001
-Const EVENT_STREAMMASK=$10000
-Const EVENT_STREAMEOF=$10001
-Const EVENT_STREAMAVAIL=$10002
-Const EVENT_PROCESSMASK=$20000
-Const EVENT_PROCESSEXIT=$20001
-Const EVENT_TOUCHMASK=$40000
-Const EVENT_TOUCHDOWN=$40001
-Const EVENT_TOUCHUP=$40002
-Const EVENT_TOUCHMOVE=$40003
-Const EVENT_MULTIGESTURE=$80000
-Const EVENT_USEREVENTMASK=$80000000
+Const EVENT_APPMASK:Int=$100
+Const EVENT_APPSUSPEND:Int=$101
+Const EVENT_APPRESUME:Int=$102
+Const EVENT_APPTERMINATE:Int=$103
+Const EVENT_APPOPENFILE:Int=$104
+Const EVENT_APPIDLE:Int=$105		'Reserved by Mark!
+Const EVENT_KEYMASK:Int=$200
+Const EVENT_KEYDOWN:Int=$201
+Const EVENT_KEYUP:Int=$202
+Const EVENT_KEYCHAR:Int=$203
+Const EVENT_KEYREPEAT:Int=$204
+Const EVENT_MOUSEMASK:Int=$400
+Const EVENT_MOUSEDOWN:Int=$401
+Const EVENT_MOUSEUP:Int=$402
+Const EVENT_MOUSEMOVE:Int=$403
+Const EVENT_MOUSEWHEEL:Int=$404
+Const EVENT_MOUSEENTER:Int=$405
+Const EVENT_MOUSELEAVE:Int=$406
+Const EVENT_TIMERMASK:Int=$800
+Const EVENT_TIMERTICK:Int=$801
+Const EVENT_HOTKEYMASK:Int=$1000
+Const EVENT_HOTKEYHIT:Int=$1001
+Const EVENT_GADGETMASK:Int=$2000
+Const EVENT_GADGETACTION:Int=$2001
+Const EVENT_GADGETPAINT:Int=$2002
+Const EVENT_GADGETSELECT:Int=$2003
+Const EVENT_GADGETMENU:Int=$2004
+Const EVENT_GADGETOPEN:Int=$2005
+Const EVENT_GADGETCLOSE:Int=$2006
+Const EVENT_GADGETDONE:Int=$2007
+Const EVENT_GADGETLOSTFOCUS:Int=$2008
+Const EVENT_GADGETSHAPE:Int=$2009	'reserved by Mark!
+Const EVENT_WINDOWMASK:Int=$4000
+Const EVENT_WINDOWMOVE:Int=$4001
+Const EVENT_WINDOWSIZE:Int=$4002
+Const EVENT_WINDOWCLOSE:Int=$4003
+Const EVENT_WINDOWACTIVATE:Int=$4004
+Const EVENT_WINDOWACCEPT:Int=$4005
+Const EVENT_MENUMASK:Int=$8000
+Const EVENT_MENUACTION:Int=$8001
+Const EVENT_STREAMMASK:Int=$10000
+Const EVENT_STREAMEOF:Int=$10001
+Const EVENT_STREAMAVAIL:Int=$10002
+Const EVENT_PROCESSMASK:Int=$20000
+Const EVENT_PROCESSEXIT:Int=$20001
+Const EVENT_TOUCHMASK:Int=$40000
+Const EVENT_TOUCHDOWN:Int=$40001
+Const EVENT_TOUCHUP:Int=$40002
+Const EVENT_TOUCHMOVE:Int=$40003
+Const EVENT_MULTIGESTURE:Int=$80000
+Const EVENT_USEREVENTMASK:Int=$80000000
 
 TEvent.RegisterId EVENT_APPSUSPEND,"AppSuspend"
 TEvent.RegisterId EVENT_APPRESUME,"AppResume"
@@ -288,7 +290,7 @@ Rem
 bbdoc: Create an event object
 returns: A new event object
 End Rem
-Function CreateEvent:TEvent( id,source:Object=Null,data=0,mods=0,x=0,y=0,extra:Object=Null,usePool:Int = True )
+Function CreateEvent:TEvent( id:Int,source:Object=Null,data:Int=0,mods:Int=0,x:Int=0,y:Int=0,extra:Object=Null,usePool:Int = True )
 	Return TEvent.Create( id,source,data,mods,x,y,extra,usePool )
 End Function
 
@@ -296,8 +298,8 @@ Rem
 bbdoc: Allocate a user event id
 returns: A new user event id
 End Rem
-Function AllocUserEventId( description$="" )
-	Local id=TEvent.AllocUserId()
+Function AllocUserEventId:Int( description$="" )
+	Local id:Int=TEvent.AllocUserId()
 	If description TEvent.RegisterId id,description
 	Return id
 End Function

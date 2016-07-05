@@ -1,14 +1,16 @@
 
-Strict
+SuperStrict
 
 Module BRL.FreeTypeFont
 
-ModuleInfo "Version: 1.09"
+ModuleInfo "Version: 1.10"
 ModuleInfo "Author: Simon Armstrong, Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.10"
+ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.09 Release"
 ModuleInfo "History: Offset glyph rect to allow for smooth font border"
 ModuleInfo "History: 1.08 Release"
@@ -41,7 +43,7 @@ Public
 Type TFreeTypeGlyph Extends TGlyph
 
 	Field _pixmap:TPixmap
-	Field _advance#,_x,_y,_w,_h
+	Field _advance#,_x:Int,_y:Int,_w:Int,_h:Int
 	
 	Method Pixels:TPixmap()
 		If _pixmap Return _pixmap
@@ -53,7 +55,7 @@ Type TFreeTypeGlyph Extends TGlyph
 		Return _advance
 	End Method
 	
-	Method GetRect( x Var,y Var,w Var,h Var )
+	Method GetRect( x:Int Var,y:Int Var,w:Int Var,h:Int Var )
 		x=_x
 		y=_y
 		w=_w
@@ -66,33 +68,33 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 
 	'Field _face:FTFace
 	Field _ft_face:Byte Ptr
-	Field _style,_height
-	Field _ascend,_descend
+	Field _style:Int,_height:Int
+	Field _ascend:Int,_descend:Int
 	Field _glyphs:TFreeTypeGlyph[]
-	Field _buf:Byte Ptr,_buf_size
+	Field _buf:Byte Ptr,_buf_size:Int
 	
 	Method Delete()
 		FT_Done_Face _ft_face
 		MemFree _buf
 	End Method
 
-	Method Style()
+	Method Style:Int()
 		Return _style
 	End Method
 
-	Method Height()
+	Method Height:Int()
 		Return _height
 	End Method
 	
-	Method CountGlyphs()
+	Method CountGlyphs:Int()
 		Return _glyphs.length
 	End Method
 	
-	Method CharToGlyph( char )
+	Method CharToGlyph:Int( char:Int )
 		Return FT_Get_Char_Index( _ft_face,char )-1
 	End Method
 	
-	Method LoadGlyph:TFreeTypeGlyph( index )
+	Method LoadGlyph:TFreeTypeGlyph( index:Int )
 	
 		Local glyph:TFreeTypeGlyph=_glyphs[index]
 		If glyph Return glyph
@@ -126,11 +128,11 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 			pixmap=TPixmap.CreateStatic( buffer,width,rows,pitch,PF_A8 ).Copy()
 		Else
 			pixmap=CreatePixmap( width,rows,PF_A8 )
-			Local b
-			For Local y=0 Until rows
+			Local b:Int
+			For Local y:Int=0 Until rows
 				Local dst:Byte Ptr=pixmap.PixelPtr(0,y)
 				Local src:Byte Ptr=buffer+y*pitch
-				For Local x=0 Until width
+				For Local x:Int=0 Until width
 					If (x&7)=0 b=src[x/8]
 					If b & $80 dst[x]=$ff Else dst[x]=0
 					b:+b
@@ -152,30 +154,30 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 
 	End Method
 	
-	Function Load:TFreeTypeFont( src$,size,style )
+	Function Load:TFreeTypeFont( src$,size:Int,style:Int )
 
 		Global ft_lib:Byte Ptr
 		
 		If Not ft_lib
-			If FT_Init_FreeType( Varptr ft_lib ) Return
+			If FT_Init_FreeType( Varptr ft_lib ) Return Null
 		EndIf
 
-		Local buf:Byte Ptr,buf_size
+		Local buf:Byte Ptr,buf_size:Int
 				
 		Local ft_face:Byte Ptr
 
 		If src.Find( "::" )>0
 			Local tmp:Byte[]=LoadByteArray( src )
 			buf_size=tmp.length
-			If Not buf_size Return
+			If Not buf_size Return Null
 			buf=MemAlloc( buf_size )
 			MemCopy buf,tmp,buf_size
 			If FT_New_Memory_Face( ft_lib,buf,buf_size,0,Varptr ft_face )
 				MemFree buf
-				Return
+				Return Null
 			EndIf
 		Else
-			If FT_New_Face( ft_lib,src$,0,Varptr ft_face ) Return
+			If FT_New_Face( ft_lib,src$,0,Varptr ft_face ) Return Null
 		EndIf
 		
 		While size
@@ -184,7 +186,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 		Wend
 		If Not size 
 			FT_Done_Face ft_face
-			Return
+			Return Null
 		EndIf
 		
 		'Local face:FTFace=New FTFace
@@ -213,7 +215,7 @@ End Type
 
 Type TFreeTypeFontLoader Extends TFontLoader
 
-	Method LoadFont:TFreeTypeFont( url:Object,size,style )
+	Method LoadFont:TFreeTypeFont( url:Object,size:Int,style:Int )
 	
 		Local src$=String( url )
 		

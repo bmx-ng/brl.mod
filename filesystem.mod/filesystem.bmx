@@ -1,17 +1,19 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: System/File system
 End Rem
 Module BRL.FileSystem
 
-ModuleInfo "Version: 1.09"
+ModuleInfo "Version: 1.10"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.10"
+ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.09 Release"
 ModuleInfo "History: Fixed RealPath breaking win32 //server paths"
 ModuleInfo "History: 1.08 Release"
@@ -28,7 +30,7 @@ ModuleInfo "History: Added optional resurse parameter to CreateDir"
 Import Pub.StdC
 Import BRL.BankStream
 
-Const FILETYPE_NONE=0,FILETYPE_FILE=1,FILETYPE_DIR=2
+Const FILETYPE_NONE:Int=0,FILETYPE_FILE:Int=1,FILETYPE_DIR:Int=2
 
 Private
 
@@ -37,39 +39,39 @@ Function _RootPath$( path$ )
 	If path.StartsWith( "//" )
 		Return path[ ..path.Find( "/",2 )+1 ]
 	EndIf
-	Local i=path.Find( ":" )
+	Local i:Int=path.Find( ":" )
 	If i<>-1 And path.Find( "/" )=i+1 Return path[..i+2]
 ?
 	If path.StartsWith( "/" ) Return "/"
 End Function
 
-Function _IsRootPath( path$ )
+Function _IsRootPath:Int( path$ )
 	Return path And _RootPath( path )=path
 End Function
 
-Function _IsRealPath( path$ )
+Function _IsRealPath:Int( path$ )
 	Return _RootPath( path )<>""
 End Function
 
 ?Win32
 Function _CurrentDrive$()
 	Local cd$=getcwd_()
-	Local i=cd.Find( ":" )
+	Local i:Int=cd.Find( ":" )
 	If i<>-1 Return cd[..i]
 End Function
 ?
 
 Public
 
-Function FixPath( path$ Var,dirPath=False )
+Function FixPath( path$ Var,dirPath:Int=False )
 	path=path.Replace("\","/")
 ?Win32
 	If path.StartsWith( "//" )
 		If path.Find( "/",2 )=-1 path:+"/"
 	Else
-		Local i=path.Find( ":" )
+		Local i:Int=path.Find( ":" )
 		If i<>-1 And ( i=path.length-1 Or path[i+1]<>Asc(":") )
-			Local i2=path.Find( "/" )
+			Local i2:Int=path.Find( "/" )
 			If i2=-1 Or i2>i+1 path=path[..i+1]+"/"+path[i+1..]
 		EndIf
 	EndIf
@@ -85,7 +87,7 @@ bbdoc: Strip directory from a file path
 End Rem
 Function StripDir$( path$ )
 	FixPath path
-	Local i=path.FindLast( "/" )
+	Local i:Int=path.FindLast( "/" )
 	If i<>-1 Return path[i+1..]
 	Return path
 End Function
@@ -95,7 +97,7 @@ bbdoc: Strip extension from a file path
 End Rem
 Function StripExt$( path$ )
 	FixPath path
-	Local i=path.FindLast( "." )
+	Local i:Int=path.FindLast( "." )
 	If i<>-1 And path.Find( "/",i+1 )=-1 Return path[..i]
 	Return path
 End Function
@@ -126,7 +128,7 @@ Function ExtractDir$( path$ )
 	FixPath path
 	If path="." Or path=".." Or _IsRootPath( path ) Return path
 
-	Local i=path.FindLast( "/" )
+	Local i:Int=path.FindLast( "/" )
 	If i=-1 Return ""
 	
 	If _IsRootPath( path[..i+1] ) i:+1
@@ -138,7 +140,7 @@ bbdoc: Extract extension from a file path
 End Rem
 Function ExtractExt$( path$ )
 	FixPath path
-	Local i=path.FindLast( "." )
+	Local i:Int=path.FindLast( "." )
 	If i<>-1 And path.Find( "/",i+1 )=-1 Return path[i+1..]
 End Function
 
@@ -172,7 +174,7 @@ Function RealPath$( path$ )
 	
 	path:+"/"
 	While path
-		Local i=path.Find( "/" )
+		Local i:Int=path.Find( "/" )
 		Local t$=path[..i]
 		path=path[i+1..]
 		Select t
@@ -193,9 +195,9 @@ Rem
 bbdoc: Get file type
 returns: 0 if file at @path doesn't exist, FILETYPE_FILE (1) if the file is a plain file or FILETYPE_DIR (2) if the file is a directory
 End Rem
-Function FileType( path$ )
+Function FileType:Int( path$ )
 	FixPath path
-	Local Mode,size:Long,mtime,ctime
+	Local Mode:Int,size:Long,mtime:Int,ctime:Int
 	If stat_( path,Mode,size,mtime,ctime ) Return 0
 	Select Mode & S_IFMT_
 	Case S_IFREG_ Return FILETYPE_FILE
@@ -208,9 +210,9 @@ Rem
 bbdoc: Get file time
 returns: The time the file at @path was last modified 
 End Rem
-Function FileTime( path$ )
+Function FileTime:Int( path$ )
 	FixPath path
-	Local Mode,size:Long,mtime,ctime
+	Local Mode:Int,size:Long,mtime:Int,ctime:Int
 	If stat_( path,Mode,size,mtime,ctime ) Return 0
 	Return mtime
 End Function
@@ -221,7 +223,7 @@ returns: Size, in bytes, of the file at @path, or -1 if the file does not exist
 end rem
 Function FileSize:Long( path$ )
 	FixPath path
-	Local Mode,size:Long,mtime,ctime
+	Local Mode:Int,size:Long,mtime:Int,ctime:Int
 	If stat_( path,Mode,size,mtime,ctime ) Return -1
 	Return size
 End Function
@@ -230,9 +232,9 @@ Rem
 bbdoc: Get file mode
 returns: file mode flags
 end rem
-Function FileMode( path$ )
+Function FileMode:Int( path$ )
 	FixPath path
-	Local Mode,size:Long,mtime,ctime
+	Local Mode:Int,size:Long,mtime:Int,ctime:Int
 	If stat_( path,Mode,size,mtime,ctime ) Return -1
 	Return Mode & 511
 End Function
@@ -240,7 +242,7 @@ End Function
 Rem
 bbdoc: Set file mode
 end rem
-Function SetFileMode( path$,Mode )
+Function SetFileMode( path$,Mode:Int )
 	FixPath path
 	chmod_ path,Mode
 End Function
@@ -249,7 +251,7 @@ Rem
 bbdoc: Create a file
 returns: True if successful
 End Rem
-Function CreateFile( path$ )
+Function CreateFile:Int( path$ )
 	FixPath path
 	remove_ path
 	Local t:Byte Ptr=fopen_( path,"wb" )
@@ -263,7 +265,7 @@ returns: True if successful
 about:
 If @recurse is true, any required subdirectories are also created.
 End Rem
-Function CreateDir( path$,recurse=False )
+Function CreateDir:Int( path$,recurse:Int=False )
 	FixPath path,True
 	If Not recurse
 		mkdir_ path,1023
@@ -272,7 +274,7 @@ Function CreateDir( path$,recurse=False )
 	Local t$
 	path=RealPath(path)+"/"
 	While path
-		Local i=path.find("/")+1
+		Local i:Int=path.find("/")+1
 		t:+path[..i]
 		path=path[i..]
 		Select FileType(t)
@@ -292,7 +294,7 @@ Rem
 bbdoc: Delete a file
 returns: True if successful
 End Rem
-Function DeleteFile( path$ )
+Function DeleteFile:Int( path$ )
 	FixPath path
 	remove_ path
 	Return FileType(path)=FILETYPE_NONE
@@ -302,7 +304,7 @@ Rem
 bbdoc: Renames a file
 returns: True if successful
 End Rem
-Function RenameFile( oldpath$,newpath$ )
+Function RenameFile:Int( oldpath$,newpath$ )
 	FixPath oldpath
 	FixPath newpath
 	Return rename_( oldpath,newpath)=0
@@ -312,8 +314,8 @@ Rem
 bbdoc: Copy a file
 returns: True if successful
 End Rem
-Function CopyFile( src$,dst$ )
-	Local in:TStream=ReadStream( src ),ok
+Function CopyFile:Int( src$,dst$ )
+	Local in:TStream=ReadStream( src ),ok:Int
 	If in
 		Local out:TStream=WriteStream( dst )
 		If out
@@ -333,9 +335,9 @@ Rem
 bbdoc: Copy a directory
 returns: True if successful
 End Rem
-Function CopyDir( src$,dst$ )
+Function CopyDir:Int( src$,dst$ )
 
-	Function CopyDir_( src$,dst$ )
+	Function CopyDir_:Int( src$,dst$ )
 		If FileType( dst )=FILETYPE_NONE CreateDir dst
 		If FileType( dst )<>FILETYPE_DIR Return False
 		For Local file$=EachIn LoadDir( src )
@@ -364,11 +366,11 @@ returns: True if successful
 about: Set @recurse to true to delete all subdirectories and files recursively - 
 but be careful!
 End Rem
-Function DeleteDir( path$,recurse=False )
+Function DeleteDir:Int( path$,recurse:Int=False )
 	FixPath path,True
 	If recurse
 		Local dir:Byte Ptr=ReadDir( path )
-		If Not dir Return
+		If Not dir Return False
 		Repeat
 			Local t$=NextFile( dir )
 			If t="" Exit
@@ -389,7 +391,7 @@ Rem
 bbdoc: Change current directory
 returns: True if successful
 End Rem
-Function ChangeDir( path$ )
+Function ChangeDir:Int( path$ )
 	FixPath path,True
 	If chdir_( path )=0 Return True
 End Function
@@ -424,11 +426,11 @@ returns: A string array containing contents of @dir
 about: The @skip_dots parameter, if true, removes the '.' (current) and '..'
 (parent) directories from the returned array.
 end rem
-Function LoadDir$[]( dir$,skip_dots=True )
+Function LoadDir$[]( dir$,skip_dots:Int=True )
 	FixPath dir,True
 	Local d:Byte Ptr=ReadDir( dir )
-	If Not d Return
-	Local i$[100],n
+	If Not d Return Null
+	Local i$[100],n:Int
 	Repeat
 		Local f$=NextFile( d )
 		If Not f Exit
@@ -449,15 +451,15 @@ to cache the contents of the file to ensure serial streams such as
 http: based url's are seekable. Use the #CloseStream command when
 finished reading and or writing to a Stream returned by #OpenFile.
 End Rem
-Function OpenFile:TStream( url:Object,readable=True,writeable=True )
+Function OpenFile:TStream( url:Object,readable:Int=True,writeable:Int=True )
 	Local stream:TStream=OpenStream( url,readable,writeable )
-	If Not stream Return
+	If Not stream Return Null
 	If stream.Pos()=-1 Return TBankStream.Create( TBank.Load(stream) )
 	Return stream
 End Function
 
 Rem
-bbdoc: Open a file for input.
+bbdoc: Open a file For Input.
 about:
 This command is similar to the #ReadStream command but will attempt
 to cache the contents of the file to ensure serial streams such as 

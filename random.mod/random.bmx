@@ -1,23 +1,25 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Math/Random numbers
 End Rem
 Module BRL.Random
 
-ModuleInfo "Version: 1.05"
+ModuleInfo "Version: 1.06"
 ModuleInfo "Author: Mark Sibly, Floyd"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.06"
+ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.05 Release"
 ModuleInfo "History: Fixed Rand() with negative min value bug"
 
 Private
-Global	rnd_state=$1234
-Const	RND_A=48271,RND_M=2147483647,RND_Q=44488,RND_R=3399
+Global	rnd_state:Int=$1234
+Const	RND_A:Int=48271,RND_M:Int=2147483647,RND_Q:Int=44488,RND_R:Int=3399
 Public
 
 Rem
@@ -77,16 +79,16 @@ The optional parameter allows you to use #Rand in 2 ways:
 * &Rand(x,y) | Random integer in the range x to y (inclusive)
 ]
 End Rem
-Function Rand( min_value,max_value=1 )
-	Local range=max_value-min_value
-	If range>0 Return Int( RndDouble()*(1+range) )+min_value
-	Return Int( RndDouble()*(1-range) )+max_value
+Function Rand:Int( min_value:Int,max_value:Int=1 )
+	Local Range:Int=max_value-min_value
+	If Range>0 Return Int( RndDouble()*(1+Range) )+min_value
+	Return Int( RndDouble()*(1-Range) )+max_value
 End Function
 
 Rem
 bbdoc: Set random number generator seed
 End Rem
-Function SeedRnd( seed )
+Function SeedRnd( seed:Int )
 	rnd_state=seed & $7fffffff             				'enforces rnd_state >= 0
 	If rnd_state=0 Or rnd_state=RND_M rnd_state=$1234	'disallow 0 and M
 End Function
@@ -97,6 +99,6 @@ returns: The current random number generator seed
 about: Use in conjunction with SeedRnd, RndSeed allows you to reproduce sequences of random
 numbers.
 End Rem
-Function RndSeed()
+Function RndSeed:Int()
 	Return rnd_state
 End Function

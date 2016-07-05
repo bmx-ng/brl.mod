@@ -1,44 +1,46 @@
 
-Strict
+SuperStrict
 
 Module BRL.Font
 
-ModuleInfo "Version: 1.05"
+ModuleInfo "Version: 1.06"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.06"
+ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.05 Release"
 ModuleInfo "History: Modified interface for improved unicode support"
 
-Const BOLDFONT=1
-Const ITALICFONT=2
-Const SMOOTHFONT=4
+Const BOLDFONT:Int=1
+Const ITALICFONT:Int=2
+Const SMOOTHFONT:Int=4
 
 Type TGlyph
 	
 	Method Pixels:Object() Abstract
 
 	Method Advance#() Abstract
-	Method GetRect( x Var,y Var,width Var,height Var ) Abstract
+	Method GetRect( x:Int Var,y:Int Var,width:Int Var,height:Int Var ) Abstract
 
 End Type
 
 Type TFont
 
-	Method Style() Abstract
-	Method Height() Abstract
-	Method CountGlyphs() Abstract
-	Method CharToGlyph( char ) Abstract
-	Method LoadGlyph:TGlyph( index ) Abstract
+	Method Style:Int() Abstract
+	Method Height:Int() Abstract
+	Method CountGlyphs:Int() Abstract
+	Method CharToGlyph:Int( char:Int ) Abstract
+	Method LoadGlyph:TGlyph( index:Int ) Abstract
 
 End Type
 
 Type TFontLoader
 	Field _succ:TFontLoader
 
-	Method LoadFont:TFont( url:Object,size,style ) Abstract
+	Method LoadFont:TFont( url:Object,size:Int,style:Int ) Abstract
 
 End Type
 
@@ -54,7 +56,7 @@ Function AddFontLoader( loader:TFontLoader )
 	_loaders=loader
 End Function
 
-Function LoadFont:TFont( url:Object,size,style=SMOOTHFONT )
+Function LoadFont:TFont( url:Object,size:Int,style:Int=SMOOTHFONT )
 
 	Local loader:TFontLoader=_loaders
 	
