@@ -120,53 +120,47 @@ BBString *bbStringFromChar( int c ){
 }
 
 BBString *bbStringFromInt( int n ){
-	char buf[64],*p=buf+64;
-	int neg=n<0;
-	if( neg ){
-		n=-n;if( n<0 ) return bbStringFromBytes( "-2147483648",11 );
-	}
-	do{
-		*--p=n%10+'0';
-	}while(n/=10);
-	if( neg ) *--p='-';
-	return bbStringFromBytes( p,buf+64-p );
+	char buf[64];
+
+	sprintf(buf, "%d", n);
+
+	return bbStringFromBytes( buf, strlen(buf) );
 }
 
 BBString *bbStringFromUInt( unsigned int n ){
-	char buf[64],*p=buf+64;
-	do{
-		*--p=n%10+'0';
-	}while(n/=10);
-	return bbStringFromBytes( p,buf+64-p );
+	char buf[64];
+
+	sprintf(buf, "%u", n);
+
+	return bbStringFromBytes( buf, strlen(buf) );
 }
 
 BBString *bbStringFromLong( BBInt64 n ){
-	char buf[64],*p=buf+64;
-	int neg=n<0;
-	if( neg ){
-		n=-n;if( n<0 ) return bbStringFromBytes( "-9223372036854775808",20 );
-	}
-	do{
-		*--p=n%10+'0';
-	}while(n/=10);
-	if( neg ) *--p='-';
-	return bbStringFromBytes( p,buf+64-p );
+	char buf[64];
+
+	sprintf(buf, "%lld", n);
+
+	return bbStringFromBytes( buf,strlen(buf) );
 }
 
 BBString *bbStringFromULong( BBUInt64 n ){
-	char buf[64],*p=buf+64;
-	do{
-		*--p=n%10+'0';
-	}while(n/=10);
-	return bbStringFromBytes( p,buf+64-p );
+	char buf[64];
+
+	sprintf(buf, "%llu", n);
+
+	return bbStringFromBytes( buf, strlen(buf) );
 }
 
 BBString *bbStringFromSizet( BBSIZET n ){
-	char buf[64],*p=buf+64;
-	do{
-		*--p=n%10+'0';
-	}while(n/=10);
-	return bbStringFromBytes( p,buf+64-p );
+	char buf[64];
+	
+#if UINTPTR_MAX == 0xffffffff
+	sprintf(buf, "%u", n);
+#else
+	sprintf(buf, "%llu", n);
+#endif
+
+	return bbStringFromBytes( buf, strlen(buf) );
 }
 
 BBString *bbStringFromFloat( float n ){
