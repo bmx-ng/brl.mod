@@ -429,6 +429,11 @@ Function DebugDerefPointer$(decl:Int Ptr, pointer:Int Ptr)
 ?
 	Next
 
+	' make sure the final pointer is not null
+	If pointer = 0 
+		Return " {-}"
+	EndIf
+
 	Local value:String
 	Select datatype
 	Case "Byte"
