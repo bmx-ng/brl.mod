@@ -187,6 +187,7 @@ Function TypeName$( tag$ Var )
 		Return TypeName( tag )+t+")"
 	End Select
 
+	If Not tag.length Return ""
 	DebugError "Invalid debug typetag:"+t
 
 End Function
