@@ -102,6 +102,10 @@ void bmx_debugger_DebugDecl_ArrayDeclIndexedPart(struct BBDebugDecl * decl, BBAr
 		case '[':size=sizeof(void*);break;
 		case '(':size=sizeof(void*);break;
 		case 'z':size=sizeof(BBSIZET);break;
+#ifdef _WIN32
+		case 'w':size=sizeof(WPARAM);break;
+		case 'x':size=sizeof(LPARAM);break;
+#endif
 	}
 
 	decl->var_address = ((char*)BBARRAYDATA(arr, arr->dims)) + size * index;

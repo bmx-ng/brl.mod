@@ -156,6 +156,10 @@ Function TypeName$( tag$ Var )
 		Return "WString"
 	Case "t"
 		Return "size_t"
+	Case "W"
+		Return "WParam"
+	Case "X"
+		Return "LParam"
 	Case ":","?","#","@"
 		Local id$=Ident( tag )
 		While tag And tag[0]=Asc(".")
@@ -332,6 +336,12 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		Return String.FromDouble( (Double Ptr p)[0] )
 	Case Asc("t")
 		Return String.FromSizet( (Size_T Ptr p)[0] )
+?win32
+	Case Asc("W")
+		Return String.FromWParam( (WParam Ptr p)[0] )
+	Case Asc("X")
+		Return String.FromLParam( (LParam Ptr p)[0] )
+?
 	Case Asc("$")
 		p=(Byte Ptr Ptr p)[0]
 		Return DebugEscapeString( bmx_debugger_DebugDecl_StringFromAddress(p) )

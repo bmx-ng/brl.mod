@@ -67,6 +67,13 @@ char*	bbStringToCString( BBString *str );
 BBChar*	bbStringToWString( BBString *str );
 char*	bbStringToUTF8String( BBString *str );
 
+#ifdef _WIN32
+WPARAM  bbStringToWParam( BBString *str );
+LPARAM  bbStringToLParam( BBString *str );
+BBString* bbStringFromWParam( WPARAM n );
+BBString* bbStringFromLParam( LPARAM n );
+#endif
+
 BBArray*	bbStringSplit( BBString *str,BBString *sep );
 BBString*	bbStringJoin( BBString *sep,BBArray *bits );
 

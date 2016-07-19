@@ -70,7 +70,14 @@ BBClass bbStringClass={
 	bbStringFromUInt,
 	bbStringToULong,
 	bbStringFromULong
-
+	
+#ifdef _WIN32	
+	,
+	bbStringToWParam,
+	bbStringFromWParam,
+	bbStringToLParam,
+	bbStringFromLParam
+#endif
 };
 
 BBString bbEmptyString={
@@ -579,6 +586,105 @@ double bbStringToDouble( BBString *t ){
 	bbMemFree( p );
 	return n;
 }
+
+#ifdef _WIN32
+WPARAM bbStringToWParam( BBString *t ){
+	int i=0;
+	WPARAM n=0;
+	
+	while( i<t->length && isspace(t->buf[i]) ) ++i;
+	if( i==t->length ) return 0;
+	
+	if( t->buf[i]=='+' ) ++i;
+	else if( t->buf[i]=='-' ) ++i;
+	if( i==t->length ) return 0;
+
+	if( t->buf[i]=='%' ){
+		for( ++i;i<t->length;++i ){
+			int c=t->buf[i];
+			if( c!='0' && c!='1' ) break;
+			n=n*2+(c-'0');
+		}
+	}else if( t->buf[i]=='$' ){
+		for( ++i;i<t->length;++i ){
+			int c=toupper(t->buf[i]);
+			if( !isxdigit(c) ) break;
+			if( c>='A' ) c-=('A'-'0'-10);
+			n=n*16+(c-'0');
+		}
+	}else{
+		for( ;i<t->length;++i ){
+			int c=t->buf[i];
+			if( !isdigit(c) ) break;
+			n=n*10+(c-'0');
+		}
+	}
+	return n;
+}
+
+BBString *bbStringFromWParam( WPARAM n ){
+	char buf[64];
+
+#ifdef __x86_64__
+	sprintf(buf, "%llu", n);
+#else
+	sprintf(buf, "%u", n);
+#endif
+
+	return bbStringFromBytes( buf, strlen(buf) );
+}
+
+LPARAM bbStringToLParam( BBString *t ){
+	int i=0,neg=0;
+	LPARAM n=0;
+	
+	while( i<t->length && isspace(t->buf[i]) ) ++i;
+	if( i==t->length ) return 0;
+	
+	if( t->buf[i]=='+' ) ++i;
+	else if( neg=(t->buf[i]=='-') ) ++i;
+	if( i==t->length ) return 0;
+
+	if( t->buf[i]=='%' ){
+		for( ++i;i<t->length;++i ){
+			int c=t->buf[i];
+			if( c!='0' && c!='1' ) break;
+			n=n*2+(c-'0');
+		}
+	}else if( t->buf[i]=='$' ){
+		for( ++i;i<t->length;++i ){
+			int c=toupper(t->buf[i]);
+			if( !isxdigit(c) ) break;
+			if( c>='A' ) c-=('A'-'0'-10);
+			n=n*16+(c-'0');
+		}
+	}else{
+		for( ;i<t->length;++i ){
+			int c=t->buf[i];
+			if( !isdigit(c) ) break;
+			n=n*10+(c-'0');
+		}
+	}
+	return neg ? -n : n;
+}
+
+BBString *bbStringFromLParam( LPARAM n ){
+	char buf[64];
+
+#ifdef __x86_64__
+	sprintf(buf, "%lld", n);
+#else
+	sprintf(buf, "%d", n);
+#endif
+
+	return bbStringFromBytes( buf, strlen(buf) );
+}
+
+
+#endif
+
+
+
 
 BBString *bbStringToLower( BBString *str ){
 	int k;

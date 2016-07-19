@@ -61,6 +61,11 @@ String^Object{
 	-ToULong:ULong()="bbStringToULong"
 	+FromULong:String( ulongValue:ULong )="bbStringFromULong"
 
+	-ToWParam:WParam()="bbStringToWParam"
+	+FromWParam:String( wparamValue:WParam )="bbStringFromWParam"
+	-ToLParam:LParam()="bbStringToLParam"
+	+FromLParam:String( lparamValue:LParam )="bbStringFromLParam"
+
 }AF="bbStringClass"
 
 ___Array^Object{

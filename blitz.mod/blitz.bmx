@@ -1003,3 +1003,13 @@ bbdoc: End a user defined Interface declaration
 keyword: "EndInterface"
 End Rem
 
+Rem
+bbdoc: WPARAM Type
+keyword: "WParam"
+End Rem
+
+Rem
+bbdoc: LPARAM Type
+keyword: "LParam"
+End Rem
+
