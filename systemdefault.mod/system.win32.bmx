@@ -24,7 +24,7 @@ Function bbSystemRequestFile$( text$,exts$,defext,save,file$,dir$ )
 Function bbSystemRequestDir$( text$,dir$ )
 Function bbOpenURL( url$ )
 
-Function bbSystemEmitOSEvent( hwnd:Byte Ptr,msg,wparam:Byte Ptr,lparam:Byte Ptr,source:Object )
+Function bbSystemEmitOSEvent( hwnd:Byte Ptr,msg,wparam:WParam,lparam:LParam,source:Object )
 
 Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet ),syncInfo:Object,asyncRet )
 Function bbSystemStartAsyncOp( asyncOp( asyncInfo ),asyncInfo,syncOp( syncInfo:Object,asyncRet ),syncInfo:Object )

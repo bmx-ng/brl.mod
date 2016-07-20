@@ -30,10 +30,10 @@ Global _autoRelease:TList
 Global _d3dOccQuery:IDirect3DQuery9
 
 Type TD3D9AutoRelease
-	Field unk:IUnknown
+	Field unk:IUnknown_
 End Type
 
-Function D3D9WndProc:Byte Ptr( hwnd:Byte Ptr,msg:UInt,wp:Byte Ptr,lp:Byte Ptr ) "win32"
+Function D3D9WndProc:Byte Ptr( hwnd:Byte Ptr,msg:UInt,wp:WParam,lp:LParam) "win32"
 
 	bbSystemEmitOSEvent hwnd,msg,wp,lp,Null
 	
@@ -50,7 +50,7 @@ End Function
 
 Function OpenD3DDevice:Int( hwnd:Byte Ptr,width:Int,height:Int,depth:Int,hertz:Int,flags:Int)
 	If _d3dDevRefs
-		If Not _presentParams.GetWindowed() Return False
+		If Not _presentParams.Windowed Return False
 		If depth<>0 Return False
 		_d3dDevRefs:+1
 		Return True
@@ -59,23 +59,23 @@ Function OpenD3DDevice:Int( hwnd:Byte Ptr,width:Int,height:Int,depth:Int,hertz:I
 	Local windowed:Int=(depth=0)
 	Local fullscreen:Int=(depth<>0)	
 
-	Local pp:D3DPRESENT_PARAMETERS=New D3DPRESENT_PARAMETERS
-	pp.SetBackBufferWidth(width)
-	pp.SetBackBufferHeight(height)
-	pp.SetBackBufferCount(1)
-	pp.SetBackBufferFormat((D3DFMT_X8R8G8B8 * fullscreen) + (D3DFMT_UNKNOWN * windowed))
-	pp.SetMultiSampleType(D3DMULTISAMPLE_NONE)
-	pp.SetSwapEffect((D3DSWAPEFFECT_DISCARD * fullscreen) + (D3DSWAPEFFECT_COPY * windowed))
-	pp.SethDeviceWindow(hwnd)
-	pp.SetWindowed(windowed)
-	pp.SetFlags(D3DPRESENTFLAG_LOCKABLE_BACKBUFFER)
-	pp.SetFullScreen_RefreshRateInHz(hertz * fullscreen)
-	pp.SetPresentationInterval(D3DPRESENT_INTERVAL_ONE)	'IMMEDIATE
+	Local pp:D3DPRESENT_PARAMETERS
+	pp.BackBufferWidth = width
+	pp.BackBufferHeight = height
+	pp.BackBufferCount = 1
+	pp.BackBufferFormat = (D3DFMT_X8R8G8B8 * fullscreen) + (D3DFMT_UNKNOWN * windowed)
+	pp.MultiSampleType = D3DMULTISAMPLE_NONE
+	pp.SwapEffect = (D3DSWAPEFFECT_DISCARD * fullscreen) + (D3DSWAPEFFECT_COPY * windowed)
+	pp.hDeviceWindow = hwnd
+	pp.Windowed = windowed
+	pp.Flags = D3DPRESENTFLAG_LOCKABLE_BACKBUFFER
+	pp.FullScreen_RefreshRateInHz = hertz * fullscreen
+	pp.PresentationInterval = D3DPRESENT_INTERVAL_ONE	'IMMEDIATE
 	
 	Local cflags:Int=D3DCREATE_FPU_PRESERVE
 	
-	_d3dDev = New IDirect3DDevice9
-	
+	'_d3dDev' = New IDirect3DDevice9
+
 	'OK, try hardware vertex processing...
 	Local tflags:Int=D3DCREATE_PUREDEVICE|D3DCREATE_HARDWARE_VERTEXPROCESSING|cflags
 	If _d3d.CreateDevice( 0,D3DDEVTYPE_HAL,hwnd,tflags,pp,_d3dDev )<0
@@ -83,7 +83,7 @@ Function OpenD3DDevice:Int( hwnd:Byte Ptr,width:Int,height:Int,depth:Int,hertz:I
 		'Failed! Try mixed vertex processing...
 		tflags=D3DCREATE_MIXED_VERTEXPROCESSING|cflags
 		If _d3d.CreateDevice( 0,D3DDEVTYPE_HAL,hwnd,tflags,pp,_d3dDev )<0
-	
+
 			'Failed! Try software vertex processing...	
 			tflags=D3DCREATE_SOFTWARE_VERTEXPROCESSING|cflags
 			If _d3d.CreateDevice( 0,D3DDEVTYPE_HAL,hwnd,tflags,pp,_d3dDev )<0
@@ -103,7 +103,7 @@ Function OpenD3DDevice:Int( hwnd:Byte Ptr,width:Int,height:Int,depth:Int,hertz:I
 
 	'Occlusion Query
 	If Not _d3dOccQuery
-		_d3dOccQuery = New IDirect3DQuery9
+		'_d3dOccQuery = New IDirect3DQuery9
 		If _d3ddev.CreateQuery(9,_d3dOccQuery)<0 '9 hardcoded for D3DQUERYTYPE_OCCLUSION
 			DebugLog "Cannot create Occlussion Query!"
 			_d3dOccQuery = Null
@@ -128,18 +128,19 @@ Function CloseD3DDevice()
 
 		_d3dDev.Release_
 		_d3dDev=Null
-		_presentParams=Null
+'		_presentParams=null
 	EndIf
 End Function
 
 Function ResetD3DDevice()
 	If _d3dOccQuery
 		_d3dOccQuery.Release_
+		_d3dOccQuery = Null
 	Else
-		_d3dOccQuery = New IDirect3DQuery9
+		'_d3dOccQuery' = New IDirect3DQuery9
 	End If
 	
-	If _d3dDev.Reset( _presentParams )<0
+	If _d3dDev.Reset( _presentParams)<0
 		Throw "_d3dDev.Reset failed"
 	EndIf
 
@@ -205,7 +206,7 @@ Type TD3D9Graphics Extends TGraphics
 			width=rect[2]-rect[0]
 			height=rect[3]-rect[1]
 		EndIf
-		
+
 		If Not OpenD3DDevice( hwnd,width,height,depth,hertz,flags )
 			DestroyWindow hwnd
 			Return Null
@@ -231,9 +232,9 @@ Type TD3D9Graphics Extends TGraphics
 			GetClientRect _hwnd,rect
 			_width=rect[2]-rect[0]
 			_height=rect[3]-rect[1]
-			If _width>_presentParams.GetBackBufferWidth() Or _height>_presentParams.GetBackBufferHeight()
-				_presentParams.SetBackBufferWidth(Max( _width,_presentParams.GetBackBufferWidth()) )
-				_presentParams.SetBackBufferHeight(Max( _height,_presentParams.GetBackbufferHeight()) )
+			If _width>_presentParams.BackBufferWidth Or _height>_presentParams.BackBufferHeight
+				_presentParams.BackBufferWidth = Max( _width,_presentParams.BackBufferWidth) 
+				_presentParams.BackBufferHeight = Max( _height,_presentParams.BackbufferHeight) 
 				ResetD3DDevice
 			EndIf
 		EndIf
@@ -245,8 +246,8 @@ Type TD3D9Graphics Extends TGraphics
 		Local reset:Int
 
 		If sync sync=D3DPRESENT_INTERVAL_ONE Else sync=D3DPRESENT_INTERVAL_IMMEDIATE
-		If sync<>_presentParams.GetPresentationInterval()
-			_presentParams.SetPresentationInterval(sync)
+		If sync<>_presentParams.PresentationInterval
+			_presentParams.PresentationInterval = sync
 			reset=True
 		EndIf
 		
@@ -299,13 +300,13 @@ Type TD3D9Graphics Extends TGraphics
 		_hwnd=0
 	End Method
 
-	Method AutoRelease( unk:IUnknown )
+	Method AutoRelease( unk:IUnknown_ )
 		Local t:TD3D9AutoRelease=New TD3D9AutoRelease
 		t.unk=unk
 		_autoRelease.AddLast t
 	End Method
 	
-	Method ReleaseNow( unk:IUnknown )
+	Method ReleaseNow( unk:IUnknown_ )
 		For Local t:TD3D9AutoRelease=EachIn _autoRelease
 			If t.unk=unk
 				unk.Release_
@@ -329,7 +330,7 @@ End Type
 Type TD3D9GraphicsDriver Extends TGraphicsDriver
 
 	Method Create:TD3D9GraphicsDriver()
-	
+
 		'create d3d9
 		'If Not d3d9Lib Return Null
 		
@@ -337,8 +338,8 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		If Not _d3d Return Null
 
 		'get caps
-		_d3dCaps=New D3DCAPS9
-		If _d3d.GetDeviceCaps( D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,_d3dCaps )<0
+		'_d3dCaps=New D3DCAPS9
+		If _d3d.GetDeviceCaps( D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,_d3dCaps)<0
 			_d3d.Release_
 			_d3d=Null
 			Return Null
@@ -348,16 +349,17 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		Local n:Int=_d3d.GetAdapterModeCount( D3DADAPTER_DEFAULT,D3DFMT_X8R8G8B8 )
 		_modes=New TGraphicsMode[n]
 		Local j:Int
-		Local d3dmode:D3DDISPLAYMODE = New D3DDISPLAYMODE
+
+		Local d3dmode:D3DDISPLAYMODE' = New D3DDISPLAYMODE
 		For Local i:Int=0 Until n
-			If _d3d.EnumAdapterModes( D3DADAPTER_DEFAULT,D3DFMT_X8R8G8B8,i,d3dmode )<0
+			If _d3d.EnumAdapterModes( D3DADAPTER_DEFAULT,D3DFMT_X8R8G8B8,i,d3dmode)<0
 				Continue
 			EndIf
-			
+
 			Local Mode:TGraphicsMode=New TGraphicsMode
-			Mode.width=d3dmode.GetWidth()
-			Mode.height=d3dmode.GetHeight()
-			Mode.hertz=d3dmode.GetRefreshRate()
+			Mode.width=d3dmode.Width
+			Mode.height=d3dmode.Height
+			Mode.hertz=d3dmode.RefreshRate
 			Mode.depth=32
 			_modes[j]=Mode
 			j:+1
