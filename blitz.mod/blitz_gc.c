@@ -61,6 +61,7 @@ void bbGCStartup( void *spTop ){
 #endif
 */
 	GC_INIT();
+	GC_allow_register_threads();
 	GC_set_warn_proc( gc_warn_proc );
 }
 
