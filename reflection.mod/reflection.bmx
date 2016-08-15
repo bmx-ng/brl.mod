@@ -104,7 +104,7 @@ Function _Get:Object( p:Byte Ptr,typeId:TTypeId )
 	Case ULongTypeId
 		Return String.FromULong( (ULong Ptr p)[0] )
 	Case SizetTypeId
-		Return String.FromSizet( (size_t Ptr p)[0] )
+		Return String.FromSizet( (Size_T Ptr p)[0] )
 	Case FloatTypeId
 		Return String.FromFloat( (Float Ptr p)[0] )
 	Case DoubleTypeId
@@ -136,7 +136,7 @@ Function _Push:Byte Ptr( sp:Byte Ptr,typeId:TTypeId,value:Object )
 		(ULong Ptr sp)[0]=value.ToString().ToULong()
 		Return sp+8
 	Case SizetTypeId
-		(size_t Ptr sp)[0]=value.ToString().ToSizet()
+		(Size_T Ptr sp)[0]=value.ToString().ToSizet()
 ?Not ptr64
 		Return sp+4
 ?ptr64
@@ -191,7 +191,7 @@ Function _Assign( p:Byte Ptr,typeId:TTypeId,value:Object )
 	Case ULongTypeId
 		(ULong Ptr p)[0]=value.ToString().ToULong()
 	Case SizetTypeId
-		(size_t Ptr p)[0]=value.ToString().ToSizet()
+		(Size_T Ptr p)[0]=value.ToString().ToSizet()
 	Case FloatTypeId
 		(Float Ptr p)[0]=value.ToString().ToFloat()
 	Case DoubleTypeId
@@ -1272,7 +1272,7 @@ Type TConstant Extends TMember
 	Rem
 	bbdoc: Get constant value as @size_t
 	EndRem	
-	Method GetSizet:size_t()
+	Method GetSizet:Size_T()
 		Return GetString().ToSizet()
 	EndMethod
 
@@ -1334,7 +1334,7 @@ Type TField Extends TMember
 	Rem
 	bbdoc: Get size_t field value
 	End Rem
-	Method GetSizet:size_t( obj:Object )
+	Method GetSizet:Size_T( obj:Object )
 		Return GetString( obj ).ToSizet()
 	End Method
 	
@@ -1442,7 +1442,7 @@ Type TGlobal Extends TMember
 	Rem
 	bbdoc: Get size_t global value
 	End Rem
-	Method GetSizet:size_t()
+	Method GetSizet:Size_T()
 		Return GetString().ToSizet()
 	End Method
 	
@@ -1491,7 +1491,7 @@ Type TGlobal Extends TMember
 	Rem
 	bbdoc: Set size_t global value
 	End Rem
-	Method SetSizet(value:size_t )
+	Method SetSizet(value:Size_T )
 		SetString String.FromSizet( value )
 	End Method
 	
@@ -1587,6 +1587,10 @@ Type TMethod Extends TMember
 	End Rem
 	Method ArgTypes:TTypeId[]()
 		Return _argTypes
+	End Method
+
+	Method ReturnType:TTypeId()
+		Return _typeId
 	End Method
 
 	Rem
@@ -2247,9 +2251,9 @@ Type TTypeId
 					EndIf
 					If retType
 						If bbDebugDeclKind(p) = 6 Then ' method
-							_methods.AddLast New TMethod.Init(id, retType, meta, Self, bbDebugDeclVarAddress(p), argTypes)
+							_methods.AddLast New TMethod.Init(id, TypeIdForTag(ty), meta, Self, bbDebugDeclVarAddress(p), argTypes)
 						Else ' function
-							_functions.AddLast New TFunction.Init(id, retType, meta, Self, bbDebugDeclVarAddress(p), argTypes)
+							_functions.AddLast New TFunction.Init(id, TypeIdForTag(ty), meta, Self, bbDebugDeclVarAddress(p), argTypes)
 						End If
 					EndIf
 				EndIf
