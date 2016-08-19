@@ -591,7 +591,8 @@ Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],
 		Next
 	End If
 	'If Int Ptr(sp)>Int Ptr(q)+8 Throw "ERROR"
-	Select typeId
+	Local retType:TTypeId = typeId._retType
+	Select retType
 	Case ByteTypeId,ShortTypeId,IntTypeId
 		Select argTypes.length
 			Case 0
@@ -832,7 +833,7 @@ Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],
 				f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
 		End Select
 	Default
-		If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
+		If retType.ExtendsType(PointerTypeId) Or retType.ExtendsType(FunctionTypeId) Then
 ?Not ptr64
 			Select argTypes.length
 				Case 0
@@ -1590,7 +1591,7 @@ Type TMethod Extends TMember
 	End Method
 
 	Method ReturnType:TTypeId()
-		Return _typeId
+		Return _typeId._retType
 	End Method
 
 	Rem
