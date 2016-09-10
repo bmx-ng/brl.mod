@@ -148,31 +148,48 @@ int bbGLGraphicsGraphicsModes( int *modes,int count ){
 	int i=0,n=0,sz;
 	CFArrayRef displayModeArray;
 
-	displayModeArray=CGDisplayAvailableModes( kCGDirectMainDisplay );
+	displayModeArray = CGDisplayCopyAllDisplayModes(kCGDirectMainDisplay, NULL);
 	sz=CFArrayGetCount( displayModeArray );
 	
 	while( i<sz && n<count ){
 
-		CFNumberRef number;
-		CFDictionaryRef displayMode;
+		CGDisplayModeRef displayMode;
 		int width,height,depth,hertz;
+		CFStringRef format;
 
-		displayMode=(CFDictionaryRef)CFArrayGetValueAtIndex( displayModeArray,i++ );
+		displayMode=(CGDisplayModeRef)CFArrayGetValueAtIndex( displayModeArray,i++ );
+		format = CGDisplayModeCopyPixelEncoding(displayMode);
+		width = CGDisplayModeGetWidth(displayMode);
+		height = CGDisplayModeGetHeight(displayMode);
+		hertz = (CGDisplayModeGetRefreshRate(displayMode) + 0.5);
 
-		number=CFDictionaryGetValue( displayMode,kCGDisplayBitsPerPixel );
-		CFNumberGetValue( number,kCFNumberLongType,&depth );
-
-		if( depth<16 ) continue;
-
-		number=CFDictionaryGetValue( displayMode,kCGDisplayWidth );
-		CFNumberGetValue( number,kCFNumberLongType,&width );
-
-		number=CFDictionaryGetValue( displayMode,kCGDisplayHeight );
-		CFNumberGetValue( number,kCFNumberLongType,&height );
-
-		number=CFDictionaryGetValue( displayMode,kCGDisplayRefreshRate );
-		CFNumberGetValue( number,kCFNumberLongType,&hertz );
-
+		if (CFStringCompare(format, CFSTR(IO32BitDirectPixels), kCFCompareCaseInsensitive) == kCFCompareEqualTo) {
+			depth = 32;
+		} else if (CFStringCompare(format, CFSTR(IO16BitDirectPixels), kCFCompareCaseInsensitive) == kCFCompareEqualTo) {
+			depth = 16;
+		} else if (CFStringCompare(format, CFSTR(kIO30BitDirectPixels), kCFCompareCaseInsensitive) == kCFCompareEqualTo) {
+			depth = 30;
+		} else if (CFStringCompare(format, CFSTR(IO8BitIndexedPixels), kCFCompareCaseInsensitive) == kCFCompareEqualTo) {
+			depth = 8;
+		} else {
+			depth = 0;
+		}
+		
+		CFRelease(format);
+		
+		if (hertz == 0) {
+		
+			CVDisplayLinkRef link = NULL;
+			CVDisplayLinkCreateWithCGDisplay(kCGDirectMainDisplay, &link);
+			
+			if (link != NULL) {
+				CVTime time = CVDisplayLinkGetNominalOutputVideoRefreshPeriod(link);
+				if ((time.flags & kCVTimeIsIndefinite) == 0 && time.timeValue != 0) {
+					hertz = (long) ((time.timeScale / (double) time.timeValue) + 0.5);
+				}
+			}
+		}
+		
 		*modes++=width;
 		*modes++=height;
 		*modes++=depth;
