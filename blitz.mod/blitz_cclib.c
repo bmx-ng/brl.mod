@@ -2,14 +2,6 @@
 #include "blitz.h"
 #include <math.h>
 
-float bbPOSNANf = 0.0/0.0;
-double bbPOSNANd = 0.0/0.0;
-float bbNEGNANf = -0.0/0.0;
-double bbNEGNANd = -0.0/0.0;
-float bbPOSINFf = 1.0/0.0;
-double bbPOSINFd = 1.0/0.0;
-float bbNEGINFf = -1.0/0.0;
-double bbNEGINFd = -1.0/0.0;
 
 int bbIntAbs( int x ){
 	return x>=0 ? x : -x;

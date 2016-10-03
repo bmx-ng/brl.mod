@@ -9,14 +9,14 @@
 extern "C"{
 #endif
 
-extern float bbPOSNANf;
-extern double bbPOSNANd;
-extern float bbNEGNANf;
-extern double bbNEGNANd;
-extern float bbPOSINFf;
-extern double bbPOSINFd;
-extern float bbNEGINFf;
-extern double bbNEGINFd;
+#define bbPOSNANf (0.0f/0.0f)
+#define bbPOSNANd (0.0/0.0)
+#define bbNEGNANf (-0.0f/0.0f)
+#define bbNEGNANd (-0.0/0.0)
+#define bbPOSINFf (1.0f/0.0f)
+#define bbPOSINFd (1.0/0.0)
+#define bbNEGINFf (-1.0f/0.0f)
+#define bbNEGINFd (-1.0/0.0)
 
 int		bbIntAbs( int x );
 int		bbIntSgn( int x );
