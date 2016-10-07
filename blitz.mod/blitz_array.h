@@ -24,7 +24,7 @@ struct BBArray{
 	unsigned int    size;       // total size minus this header
 	unsigned short  data_size;  // size of data element
 	unsigned short  data_start; // start offset of data
-	unsigned int    scales[1];  // [dims]
+	int    scales[1];  // [dims]
 };
 
 extern		BBClass bbArrayClass;
