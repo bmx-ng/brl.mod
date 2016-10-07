@@ -42,7 +42,7 @@ Type TLink
 
 	Field _value:Object
 	Field _succ:TLink,_pred:TLink
-	Field _iterHold:Int, _remove:Int
+	Field _removed:Int
 	
 	Rem
 	bbdoc: Returns the Object associated with this Link.
@@ -72,11 +72,9 @@ Type TLink
 		_value=Null
 		_succ._pred=_pred
 		_pred._succ=_succ
-		_remove = True
-		If Not _iterHold
-			_pred=Null
-			_succ=Null
-		End If
+		_removed = True
+		_pred=Null
+		_succ=Null
 	End Method
 
 End Type
@@ -98,7 +96,7 @@ Type TListEnum
 	Field _list:TList
 
 	Method HasNext()
-		Local has:Int = _link._value<>_link
+		Local has:Int = _link._value<>_link And Not _link._removed
 		If Not has Then
 ?Threaded
 			LockMutex(_mutex)
@@ -122,22 +120,7 @@ Type TListEnum
 ?
 		Local value:Object=_link._value
 		Assert value<>_link
-		
-		Local tmp:TLink = _link
-		
 		_link=_link._succ
-		
-		If _link Then
-			_link._iterHold :+ 1
-		End If
-		
-		tmp._iterHold :- 1
-		
-		If tmp._remove And tmp._iterHold <= 0 Then
-			tmp._pred=Null
-			tmp._succ=Null
-		End If
-		
 		Return value
 	End Method
 
@@ -179,7 +162,6 @@ Type TList
 	End Rem
 	Method Clear()
 		While _head._succ<>_head
-			_head._iterHold = 0
 			_head._succ.Remove
 		Wend
 ?ngcmod
