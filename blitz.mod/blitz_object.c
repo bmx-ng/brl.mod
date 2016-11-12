@@ -25,7 +25,7 @@ BBClass bbObjectClass={
 	bbObjectSendMessage,
 	0,             //interface
 	0,             //extra
-	0,             //obj_size
+	0              //obj_size
 };
 
 BBObject bbNullObject={
@@ -146,7 +146,7 @@ BBObject * bbInterfaceDowncast(BBOBJECT o, BBINTERFACE ifc) {
 
 	BBCLASS superclas = o->clas;
 
-	do {
+	while (superclas) {
 		BBCLASS clas = superclas;
 		superclas = clas->super;
 
@@ -160,7 +160,7 @@ BBObject * bbInterfaceDowncast(BBOBJECT o, BBINTERFACE ifc) {
 				offsets++;
 			}
 		}
-	} while (superclas);
+	}
 
 	return &bbNullObject;
 }
@@ -170,7 +170,7 @@ void * bbObjectInterface(BBOBJECT o, BBINTERFACE ifc) {
 
 	BBCLASS superclas = o->clas;
 
-	do {
+	while (superclas) {
 		BBCLASS clas = superclas;
 		superclas = clas->super;
 
@@ -184,7 +184,7 @@ void * bbObjectInterface(BBOBJECT o, BBINTERFACE ifc) {
 				offsets++;
 			}
 		}
-	} while (superclas);
+	}
 
 	return &bbNullObject;
 }
