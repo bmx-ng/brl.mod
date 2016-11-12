@@ -133,7 +133,7 @@ Type TList
 
 	Field _head:TLink
 	
-	Field _count:Int
+	Field _count:Int = -1
 ?ngcmod
 	Field _modCount:Int
 ?
@@ -235,7 +235,8 @@ Type TList
 		If IsEmpty() Return
 		Local value:Object=_head._succ._value
 		_head._succ.remove
-		_count :- 1
+		'reset cached count
+		_count = -1
 ?ngcmod
 		_modCount :+ 1
 ?
@@ -250,7 +251,8 @@ Type TList
 		If IsEmpty() Return
 		Local value:Object=_head._pred._value
 		_head._pred.remove
-		_count :- 1
+		'reset cached count
+		_count = -1
 ?ngcmod
 		_modCount :+ 1
 ?
@@ -282,7 +284,8 @@ Type TList
 		link._pred=succ._pred
 		link._pred._succ=link
 		succ._pred=link
-		_count :+ 1
+		'reset cached count
+		_count = -1
 ?ngcmod
 		_modCount :+ 1
 ?
@@ -300,7 +303,8 @@ Type TList
 		link._succ=pred._succ
 		link._succ._pred=link
 		pred._succ=link
-		_count :+ 1
+		'reset cached count
+		_count = -1
 ?ngcmod
 		_modCount :+ 1
 ?
@@ -338,6 +342,15 @@ Type TList
 	returns: The numbers of objects in @list.
 	end rem
 	Method Count()
+		'cache count if not done yet
+		if _count = -1
+			_count = 0
+			Local link:TLink=_head._succ
+			While link<>_head
+				_count:+1
+				link=link._succ
+			Wend
+		endif		
 		Return _count
 	End Method
 
@@ -349,7 +362,8 @@ Type TList
 		Local link:TLink=FindLink( value )
 		If Not link Return False
 		link.Remove
-		_count :- 1
+		'reset cached count
+		_count = -1
 ?ngcmod
 		_modCount :+ 1
 ?
