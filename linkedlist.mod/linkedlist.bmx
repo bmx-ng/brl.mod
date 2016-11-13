@@ -90,9 +90,6 @@ Type TListEnum
 ?
 
 	Field _link:TLink
-?ngcmod
-	Field _expectedModCount:Int
-?
 	Field _list:TList
 
 	Method HasNext()
@@ -105,8 +102,6 @@ Type TListEnum
 
 			_link = Null
 			_list = Null
-?ngcmod
-			_expectedModCount = 0
 ?Threaded
 			UnlockMutex(_mutex)
 ?
@@ -115,9 +110,6 @@ Type TListEnum
 	End Method
 
 	Method NextObject:Object()
-?ngcmod
-		Assert _expectedModCount = _list._modCount, "TList Concurrent Modification"
-?
 		Local value:Object=_link._value
 		Assert value<>_link
 		_link=_link._succ
@@ -133,10 +125,7 @@ Type TList
 
 	Field _head:TLink
 	
-	Field _count:Int
-?ngcmod
-	Field _modCount:Int
-?
+	Field _count:Int = -1
 	
 	Method _pad()
 	End Method
@@ -164,9 +153,7 @@ Type TList
 		While _head._succ<>_head
 			_head._succ.Remove
 		Wend
-?ngcmod
-		_modCount :+ 1
-?
+
 		_count = 0
 	End Method
 
@@ -235,10 +222,9 @@ Type TList
 		If IsEmpty() Return
 		Local value:Object=_head._succ._value
 		_head._succ.remove
-		_count :- 1
-?ngcmod
-		_modCount :+ 1
-?
+		If _count > -1 Then
+			_count :- 1
+		End If
 		Return value
 	End Method
 
@@ -250,10 +236,9 @@ Type TList
 		If IsEmpty() Return
 		Local value:Object=_head._pred._value
 		_head._pred.remove
-		_count :- 1
-?ngcmod
-		_modCount :+ 1
-?
+		If _count > -1 Then
+			_count :- 1
+		End If
 		Return value
 	End Method
 
@@ -282,10 +267,9 @@ Type TList
 		link._pred=succ._pred
 		link._pred._succ=link
 		succ._pred=link
-		_count :+ 1
-?ngcmod
-		_modCount :+ 1
-?
+		If _count > -1 Then
+			_count :+ 1
+		End If
 		Return link
 	End Method
 
@@ -300,10 +284,9 @@ Type TList
 		link._succ=pred._succ
 		link._succ._pred=link
 		pred._succ=link
-		_count :+ 1
-?ngcmod
-		_modCount :+ 1
-?
+		If _count > -1 Then
+			_count :+ 1
+		End If
 		Return link
 	End Method
 
@@ -338,6 +321,15 @@ Type TList
 	returns: The numbers of objects in @list.
 	end rem
 	Method Count()
+		If _count = -1 Then
+			_count = 0
+			Local link:TLink=_head._succ
+			While link<>_head
+				_count:+1
+				link=link._succ
+			Wend
+		End If
+
 		Return _count
 	End Method
 
@@ -349,10 +341,9 @@ Type TList
 		Local link:TLink=FindLink( value )
 		If Not link Return False
 		link.Remove
-		_count :- 1
-?ngcmod
-		_modCount :+ 1
-?
+		If _count > -1 Then
+			_count :- 1
+		End If
 		Return True
 	End Method
 	
@@ -366,10 +357,6 @@ Type TList
 		Local c:Int = list._count
 		list._count = _count
 		_count = c
-?ngcmod
-		_modCount :+ 1
-		list._modCount :+ 1
-?
 	End Method
 	
 	Rem
@@ -377,6 +364,7 @@ Type TList
 	End Rem
 	Method Copy:TList()
 		Local list:TList=New TList
+		list._count = 0
 		Local link:TLink=_head._succ
 		While link<>_head
 			list.AddLast link._value
@@ -397,9 +385,6 @@ Type TList
 			pred=succ
 			succ=link
 		Until pred=_head
-?ngcmod
-		_modCount :+ 1
-?
 	End Method
 	
 	Rem
@@ -407,6 +392,7 @@ Type TList
 	End Rem
 	Method Reversed:TList()
 		Local list:TList=New TList
+		list._count = 0
 		Local link:TLink=_head._succ
 		While link<>_head
 			list.AddFirst link._value
@@ -474,22 +460,12 @@ Type TList
 			_head._pred=tail
 
 			If merges<=1 Then
-?ngcmod
-				If modded Then
-					_modCount :+ 1
-				End If
-?
 				Return
 			End If
 
 			insize:*2
 		Forever
 		
-?ngcmod
-		If modded Then
-			_modCount :+ 1
-		End If
-?
 	End Method
 		
 	Method ObjectEnumerator:TListEnum()
@@ -505,9 +481,6 @@ Type TList
 		End If
 		enum._link=_head._succ
 		enum._list = Self
-?ngcmod
-		enum._expectedModCount = _modCount
-?
 		Return enum
 	End Method
 
