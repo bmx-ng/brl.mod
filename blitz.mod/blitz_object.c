@@ -227,3 +227,9 @@ BBDebugScope * bbObjectStructInfo( char * name ) {
 	
 	return 0;
 }
+
+BBObject * bbNullObjectTest( BBObject *o ) {
+	if (o == &bbNullObject) brl_blitz_NullObjectError();
+	return o;
+}
+
