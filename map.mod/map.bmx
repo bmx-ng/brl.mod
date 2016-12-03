@@ -293,7 +293,10 @@ Type TMap
 	
 	Method Copy:TMap()
 		Local map:TMap=New TMap
-		map._root=_root.Copy( nil )
+		'avoid copying an empty map (_root = nil there), else it borks "eachin"
+		if _root <> nil
+			map._root=_root.Copy( nil )
+		endif
 		Return map
 	End Method
 
