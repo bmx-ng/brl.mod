@@ -750,6 +750,16 @@ keyword: "EndType"
 End Rem
 
 Rem
+bbdoc: Begin a user defined Struct declaration
+keyword: "Struct"
+End Rem
+
+Rem
+bbdoc: End a user defined Struct declaration
+keyword: "EndStruct"
+End Rem
+
+Rem
 bbdoc: Specify user defined Type supertype
 keyword: "Extends"
 End Rem
@@ -810,8 +820,13 @@ keyword: "Public"
 End Rem
 
 Rem
-bbdoc: Private makes a Constant, Global variable or Function only accessible from within the current source file
+bbdoc: Private makes a Constant, Global variable or Function only accessible from within the current source file, or a Type member only accessible from within that Type.
 keyword: "Private"
+End Rem
+
+Rem
+bbdoc: Protected makes a Type member accessible only from within that Type or its sub-Types.
+keyword: "Protected"
 End Rem
 
 Rem
