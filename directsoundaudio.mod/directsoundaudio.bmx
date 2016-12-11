@@ -54,7 +54,7 @@ Type TBuf
 
 End Type
 
-Function DSASS( n,t$="DirectSound" )
+Function DSASS( n:Int,t$="DirectSound" )
 	If n>=0 Return
 	Throw t+" failed ("+(n & 65535)+")"
 End Function
@@ -110,7 +110,7 @@ Type TDirectSoundSound Extends TSound
 		
 		If CLOG WriteStdout "Created DirectSound buffer~n"
 		
-		Local ptr1:Byte Ptr,bytes1,ptr2:Byte Ptr,bytes2
+		Local ptr1:Byte Ptr,bytes1:Int,ptr2:Byte Ptr,bytes2:Int
 		DSASS bmx_directsound_IDirectSoundBuffer_lock(buf, 0,size,Varptr ptr1,Varptr bytes1,Varptr ptr2,Varptr bytes2,0 ),"Lock SoundBuffer"
 		MemCopy ptr1,sample.samples,size
 		DSASS bmx_directsound_IDirectSoundBuffer_unlock(buf, ptr1,bytes1,ptr2,bytes2),"Unlock SoundBuffer"
@@ -128,7 +128,7 @@ Type TDirectSoundSound Extends TSound
 		Return t
 	End Function
 	
-	Field _seq,_buffer:Byte Ptr,_hertz,_loop,_bufs:TBuf
+	Field _seq:Int,_buffer:Byte Ptr,_hertz:Int,_loop:Int,_bufs:TBuf
 	
 End Type
 
@@ -189,7 +189,7 @@ Type TDirectSoundChannel Extends TChannel
 	End Method
 	
 	Method Playing:Int()
-		If Not _buf Or _seq<>_buf._seq Return
+		If Not _buf Or _seq<>_buf._seq Return False
 		Return _buf.Playing()
 	End Method
 
