@@ -33,16 +33,16 @@ Private
 
 Extern
 
-Function bbObjectNew:Object( class:Byte Ptr )
+Function bbObjectNew:Object( class:Byte Ptr )="BBObject * bbObjectNew(BBClass *)!"
 ?Not ptr64
-Function bbObjectRegisteredTypes:Int Ptr( count Var )
-Function bbObjectRegisteredInterfaces:Int Ptr( count Var )
+Function bbObjectRegisteredTypes:Int Ptr( count Var )="BBClass** bbObjectRegisteredTypes(int *)!"
+Function bbObjectRegisteredInterfaces:Int Ptr( count Var )="BBInterface** bbObjectRegisteredInterfaces(int *)!"
 ?ptr64
-Function bbObjectRegisteredTypes:Long Ptr( count Var )
-Function bbObjectRegisteredInterfaces:Long Ptr( count Var )
+Function bbObjectRegisteredTypes:Long Ptr( count Var )="BBClass** bbObjectRegisteredTypes(int *)!"
+Function bbObjectRegisteredInterfaces:Long Ptr( count Var )="BBInterface** bbObjectRegisteredInterfaces(int *)!"
 ?
 
-Function bbArrayNew1D:Object( typeTag:Byte Ptr,length )
+Function bbArrayNew1D:Object( typeTag:Byte Ptr,length )="BBArray* bbArrayNew1D(const char *,int )!"
 
 
 Function bbRefArrayClass:Byte Ptr()
