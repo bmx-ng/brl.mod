@@ -10,11 +10,11 @@ Private
 Extern "Win32"
 Const SW_SHOW:Int=5
 Const SW_RESTORE:Int=9
-Function IsIconic:Int( hwnd:Byte Ptr )
-Function GetForegroundWindow:Byte Ptr()
-Function SetForegroundWindow:Int( hwnd:Byte Ptr )
-Function ShowWindow:Int( hwnd:Byte Ptr,cmdShow:Int )
-Function GetCurrentThreadId:Int()
+Function IsIconic:Int( hwnd:Byte Ptr )="WINBOOL IsIconic( HWND )!"
+Function GetForegroundWindow:Byte Ptr()="HWND GetForegroundWindow()!"
+Function SetForegroundWindow:Int( hwnd:Byte Ptr )="WINBOOL SetForegroundWindow( HWND )!"
+Function ShowWindow:Int( hwnd:Byte Ptr,cmdShow:Int )="WINBOOL ShowWindow( HWND ,int )!"
+Function GetCurrentThreadId:Int()="DWORD GetCurrentThreadId()!"
 End Extern
 ?
 
