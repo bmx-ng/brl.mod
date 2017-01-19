@@ -96,7 +96,11 @@ End Rem
 Function PollSystem()
 	If _busy Return
 	_busy=True
-	Driver.Poll
+	If Driver Then
+		Driver.Poll
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 	_busy=False
 End Function
 
@@ -116,7 +120,11 @@ End Rem
 Function WaitSystem()
 	If _busy Return
 	_busy=True
-	Driver.Wait
+	If Driver Then
+		Driver.Wait
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 	_busy=False
 End Function
 
@@ -178,21 +186,33 @@ about:
 the current window or graphics display.
 End Rem
 Function MoveMouse( x,y )
-	Driver.MoveMouse x,y
+	If Driver Then
+		Driver.MoveMouse x,y
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 Rem
 bbdoc: Make the mouse pointer visible
 End Rem
 Function ShowMouse()
-	Driver.SetMouseVisible True
+	If Driver Then
+		Driver.SetMouseVisible True
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 Rem
 bbdoc: Make the mouse pointer invisible
 End Rem
 Function HideMouse()
-	Driver.SetMouseVisible False
+	If Driver Then
+		Driver.SetMouseVisible False
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 Rem
@@ -204,7 +224,11 @@ The optional @serious flag can be used to indicate a 'critical' event.
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
 Function Notify( text$,serious=False )
-	Driver.Notify text,serious
+	If Driver Then
+		Driver.Notify text,serious
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 Rem
@@ -218,7 +242,11 @@ False is returned.
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
 Function Confirm( text$,serious=False )
-	Return Driver.Confirm( text,serious )
+	If Driver Then
+		Return Driver.Confirm( text,serious )
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 Rem
@@ -232,7 +260,11 @@ selects NO, then #Proceed returns 0. Otherwise, #Proceed returns -1.
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
 Function Proceed( text$,serious=False )
-	Return Driver.Proceed( text,serious )
+	If Driver Then
+		Return Driver.Proceed( text,serious )
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 Rem
@@ -251,7 +283,11 @@ that begin with a "group:" and separated by a semicolon.
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
 Function RequestFile$( text$,extensions$="",save_flag=False,initial_path$="" )
-	Return Driver.RequestFile( text,extensions,save_flag,initial_path )
+	If Driver Then
+		Return Driver.RequestFile( text,extensions,save_flag,initial_path )
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 Rem
@@ -265,7 +301,11 @@ about:
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
 Function RequestDir$( text$,initial_path$="" )
-	Return Driver.RequestDir( text,initial_path )
+	If Driver Then
+		Return Driver.RequestDir( text,initial_path )
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 Rem
@@ -273,23 +313,27 @@ bbdoc: Opens a URL with the system's default web browser.
 about: Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
 Function OpenURL( url$ )
-	Local dev$,anchor$
-
-	dev=url[..5].toLower()
-	If dev<>"http:" And dev<>"file:" And url[..6].ToLower()<>"https:"
-		Local h=url.find("#")
-		If h>-1
-			anchor=url[h..]
-			url=url[..h]
+	If Driver Then
+		Local dev$,anchor$
+	
+		dev=url[..5].toLower()
+		If dev<>"http:" And dev<>"file:" And url[..6].ToLower()<>"https:"
+			Local h=url.find("#")
+			If h>-1
+				anchor=url[h..]
+				url=url[..h]
+			EndIf
+			Local f$=RealPath(url)
+			If FileType(f) 
+				url="file:"+f +anchor
+			Else
+				url="http:"+url+anchor
+			EndIf
 		EndIf
-		Local f$=RealPath(url)
-		If FileType(f) 
-			url="file:"+f +anchor
-		Else
-			url="http:"+url+anchor
-		EndIf
-	EndIf
-	Return Driver.OpenURL( url )
+		Return Driver.OpenURL( url )
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 
@@ -298,7 +342,11 @@ bbdoc: Get desktop width
 returns: Width of the desktop, in pixels
 End Rem
 Function DesktopWidth()
-	Return Driver.DesktopWidth()
+	If Driver Then
+		Return Driver.DesktopWidth()
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 Rem
@@ -306,7 +354,11 @@ bbdoc: Get desktop height
 returns: Height of the desktop, in pixels
 End Rem
 Function DesktopHeight()
-	Return Driver.DesktopHeight()
+	If Driver Then
+		Return Driver.DesktopHeight()
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 Rem
@@ -318,7 +370,11 @@ The depth of the desktop is the number of bits per pixel.
 Note that on some platforms this function may return 0 if the desktop depth cannot be determined.
 End Rem
 Function DesktopDepth()
-	Return Driver.DesktopDepth()
+	If Driver Then
+		Return Driver.DesktopDepth()
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 Rem
@@ -328,7 +384,11 @@ about:
 Note that on some platforms this function may return 0 if the desktop refresh rate cannot be determined.
 End Rem
 Function DesktopHertz()
-	Return Driver.DesktopHertz()
+	If Driver Then
+		Return Driver.DesktopHertz()
+	Else
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
 End Function
 
 'End Extern
