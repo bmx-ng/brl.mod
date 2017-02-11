@@ -102,7 +102,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned sho
 	case 'k':size=sizeof(BBFLOAT128);break;
 	case 'm':size=sizeof(BBDOUBLE128);break;
 	#endif
-	case '#':size=data_size;flags=0;break; // extern structs
+	case '@':size=data_size;flags=0;break; // structs
 	}
 	size*=length;
 
@@ -301,6 +301,20 @@ BBArray *bbArrayFromData( const char *type,int length,void *data ){
 	if( length<=0 ) return &bbEmptyArray;
 	
 	arr=allocateArray( type,1,&length,0 );
+
+	memcpy( BBARRAYDATA( arr,1 ),data,arr->size );
+
+	return arr;
+}
+
+BBArray *bbArrayFromDataStruct( const char *type,int length,void *data, unsigned short data_size ){
+
+	int k;
+	BBArray *arr;
+
+	if( length<=0 ) return &bbEmptyArray;
+	
+	arr=allocateArray( type,1,&length, data_size );
 
 	memcpy( BBARRAYDATA( arr,1 ),data,arr->size );
 

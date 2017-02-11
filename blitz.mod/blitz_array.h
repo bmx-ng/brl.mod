@@ -48,6 +48,7 @@ void*	bbArrayIndex( BBArray *, int, int );
 
 BBArray*	bbArrayNew1DStruct( const char *type,int length, unsigned short data_size );
 BBArray*	bbArrayNewStruct( const char *type,int dims, unsigned short data_size,... );
+BBArray*	bbArrayFromDataStruct( const char *type,int length,void *data, unsigned short data_size );
 
 #ifdef __cplusplus
 }
