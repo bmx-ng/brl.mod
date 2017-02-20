@@ -1911,8 +1911,10 @@ Type TTypeId
 	about: Returns a list of all functions in type hierarchy
 	End Rem
 	Method EnumFunctions:TList( list:TList=Null )
-		Function compareFunction:Int( a:TFunction, b:TFunction)
-			Return a.Name().Compare(b.Name())
+		Function compareFunction:Int( a:Object, b:Object)
+			If TFunction(a) And TFunction(b) Then
+				Return TFunction(a).Name().Compare(TFunction(b).Name())
+			End If
 		EndFunction
 
 		If Not list list=New TList
