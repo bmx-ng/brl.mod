@@ -39,8 +39,8 @@ Function Driver:TAudioDriver()
 	Return _driver
 End Function
 
-Function Shutdown:Int()
-	If Not _driver Return 0
+Function Shutdown()
+	If Not _driver Return
 	_driver.Shutdown
 	_driver=Null
 End Function
