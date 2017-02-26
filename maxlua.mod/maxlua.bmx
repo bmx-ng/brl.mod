@@ -27,12 +27,16 @@ Function lua_boxobject( L:Byte Ptr,obj:Object )
 Function lua_unboxobject:Object( L:Byte Ptr,index )
 Function lua_pushlightobject( L:Byte Ptr,obj:Object )
 Function lua_tolightobject:Object( L:Byte Ptr,index )
-Function lua_gcobject( L:Byte Ptr )
+Function lua_gcobject:Int( L:Byte Ptr )
 
 End Extern
 
-Function LuaState:Byte Ptr()
+Function LuaState:Byte Ptr(reset:Int = False)
 	Global _luaState:Byte Ptr
+	If reset And _luaState Then
+		lua_close(_luaState)
+		_luaState = Null
+	End If
 	If Not _luaState
 		_luaState=luaL_newstate()
 		luaL_openlibs _luaState
@@ -452,4 +456,13 @@ Once registered, the object can be accessed from within Lua scripts using the @n
 End Rem
 Function LuaRegisterObject( obj:Object,name$ )
 	lua_registerobject LuaState(),obj,name
+End Function
+
+Function LuaDeregisterObject(name:String)
+	lua_pushnil(LuaState())
+	lua_setglobal(LuaState(), name)
+End Function
+
+Function LuaShutdown()
+	LuaState(True)
 End Function
