@@ -119,7 +119,7 @@ Function Ident$( tag$ Var )
 End Function
 
 Function TypeName$( tag$ Var )
-
+	
 	Local t$=tag[..1]
 	tag=tag[1..]
 
@@ -205,7 +205,7 @@ End Function
 'Const DEBUGDECL_KIND=0
 'Const DEBUGDECL_NAME=1
 'Const DEBUGDECL_TYPE=2
-Const DEBUGDECL_ADDR:Int=3
+'Const DEBUGDECL_ADDR:Int=3
 
 'DEBUGDECL_KIND values
 Const DEBUGDECLKIND_END:Int=0
@@ -356,13 +356,10 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		Local s$=String.FromWString( Short Ptr p )
 		Return DebugEscapeString( s )
 	Case Asc("*"),Asc("?"),Asc("#")
-		Local deref$
 ?Not ptr64
-		If tag=Asc("*") deref = DebugDerefPointer(decl,Int Ptr p)
-		Return "$"+ToHex( (Int Ptr p)[0] )+deref
+		Return "$"+ToHex( (Int Ptr p)[0] )
 ?ptr64
-		If tag=Asc("*") deref = DebugDerefPointer(decl,Long Ptr p)
-		Return "$"+ToHex( (Long Ptr p)[0] )+deref
+		Return "$"+ToHex( (Long Ptr p)[0] )
 ?
 	Case Asc("(")
 		p=(Byte Ptr Ptr p)[0]
@@ -412,6 +409,7 @@ Function DebugScopeKind$( scope:Int Ptr )
 	DebugError "Invalid scope kind"
 End Function
 
+Rem
 ?ptr64
 Function DebugDerefPointer$(decl:Int Ptr, pointer:Long Ptr)
 ?Not ptr64
@@ -499,6 +497,7 @@ Function DebugDerefPointer$(decl:Int Ptr, pointer:Int Ptr)
 	
 	Return ""
 EndFunction
+End Rem
 
 'Function DebugScopeDecls:Int Ptr[]( scope:Int Ptr )
 '	Local n,p:Int Ptr=scope+DEBUGSCOPE_DECLS
@@ -597,28 +596,23 @@ Function WriteDebug( t$ )
 End Function
 
 Function DumpScope( scope:Byte Ptr, inst:Byte Ptr )
-
 	Local decl:Byte Ptr=bmx_debugger_DebugScopeDecl(scope)
-	
-	Local kind$=DebugScopeKind( scope ),name$=DebugScopeName( scope )
+	Local kind$=DebugScopeKind( scope )
+	Local name$=DebugScopeName( scope )
 	
 	If Not name name="<local>"
 	
 	WriteDebug kind+" "+name+"~n"
-
 	While bmx_debugger_DebugDeclKind(decl)<>DEBUGDECLKIND_END
-
 		Select bmx_debugger_DebugDeclKind(decl)
 		Case DEBUGDECLKIND_TYPEMETHOD,DEBUGDECLKIND_TYPEFUNCTION
 			decl = bmx_debugger_DebugDeclNext(decl)
 			Continue
 		End Select
-
 		Local kind$=DebugDeclKind( decl )
 		Local name$=DebugDeclname( decl )
 		Local tipe$=DebugDeclType( decl )
 		Local value$=DebugDeclValue( decl, inst )
-		
 		WriteDebug kind+" "+name+":"+tipe+"="+value+"~n"
 
 		decl = bmx_debugger_DebugDeclNext(decl)
