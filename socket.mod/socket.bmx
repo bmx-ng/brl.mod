@@ -61,9 +61,9 @@ Type TSocket
 		If _socket<0 Return
 		If _autoClose closesocket_ _socket
 		_socket=-1
-		_localIp=-1
+		_localIp=""
 		_localPort=-1
-		_remoteIp=-1
+		_remoteIp=""
 		_remotePort=-1
 	End Method
 	
@@ -75,15 +75,14 @@ Type TSocket
 		Return False
 	End Method		
 	
-	Method Bind( localPort )
-		If bind_( _socket,AF_INET_,localPort )<0 Return False
+	Method Bind( localPort, family:Int = AF_INET_ )
+		If bind_( _socket,family,localPort )<0 Return False
 		UpdateLocalName
 		Return True
 	End Method
 	
-	Method Connect( remoteIp,remotePort )
-		Local addr=htonl_( remoteIp )
-		If connect_( _socket,Varptr addr,AF_INET_,4,remotePort )<0 Return False
+	Method Connect( addrInfo:TAddrInfo )
+		If connect_( _socket, addrInfo.infoPtr )<0 Return False
 		UpdateLocalName
 		UpdateRemoteName
 		Return True
@@ -116,7 +115,7 @@ Type TSocket
 		Return _socket
 	End Method
 	
-	Method LocalIp()
+	Method LocalIp:String()
 		Return _localIp
 	End Method
 	
@@ -124,7 +123,7 @@ Type TSocket
 		Return _localPort
 	End Method
 	
-	Method RemoteIp()
+	Method RemoteIp:String()
 		Return _remoteIp
 	End Method
 	
@@ -164,20 +163,20 @@ Type TSocket
 		Return t
 	End Function
 	
-	Function CreateUDP:TSocket()
-		Local socket=socket_( AF_INET_,SOCK_DGRAM_,0 )
+	Function CreateUDP:TSocket(family:Int = AF_INET_)
+		Local socket=socket_( family,SOCK_DGRAM_,0 )
 		If socket>=0 Return Create( socket,True )
 	End Function
 	
-	Function CreateTCP:TSocket()
-		Local socket=socket_( AF_INET_,SOCK_STREAM_,0 )
+	Function CreateTCP:TSocket(family:Int = AF_INET_)
+		Local socket=socket_( family,SOCK_STREAM_,0 )
 		If socket>=0 Return Create( socket,True )
 	End Function
 	
 	Field _socket,_autoClose
 	
-	Field _localIp,_localPort
-	Field _remoteIp,_remotePort
+	Field _localIp:String,_localPort
+	Field _remoteIp:String,_remotePort
 	
 End Type
 
@@ -218,8 +217,8 @@ about:
 If @localPort is 0, a new local port will be allocated. If @localPort is not 0,
 #BindSocket will fail if there is already an application bound to @localPort.
 End Rem
-Function BindSocket( socket:TSocket,localPort )
-	Return socket.Bind( localPort )
+Function BindSocket( socket:TSocket, localPort, family:Int = AF_INET_)
+	Return socket.Bind( localPort, family )
 End Function
 
 Rem
@@ -232,8 +231,8 @@ ip address could not be reached.
 In the case of TCP sockets, #ConnectSocket will also fail if there is
 no application listening at the remote port.
 End Rem
-Function ConnectSocket( socket:TSocket,remoteIp,remotePort )
-	Return socket.Connect( remoteIp,remotePort )
+Function ConnectSocket( socket:TSocket, addrInfo:TAddrInfo )
+	Return socket.Connect( addrInfo )
 End Function
 
 Rem
@@ -280,7 +279,7 @@ End Function
 Rem
 bbdoc: Get local ip of a socket 
 End Rem
-Function SocketLocalIP( socket:TSocket )
+Function SocketLocalIP:String( socket:TSocket )
 	Return socket.LocalIP()
 End Function
 
@@ -294,7 +293,7 @@ End Function
 Rem
 bbdoc: Get remote ip of a socket 
 End Rem
-Function SocketRemoteIP( socket:TSocket )
+Function SocketRemoteIP:String( socket:TSocket )
 	Return socket.RemoteIP()
 End Function
 
@@ -309,37 +308,40 @@ Rem
 bbdoc: Convert an ip address to a dotted string
 returns: Dotted string version of ip address
 End Rem
-Function DottedIP$( ip )
+Function DottedIP$( ip:Int )
 	Return (ip Shr 24)+"."+(ip Shr 16 & 255)+"."+(ip Shr 8 & 255 )+"."+(ip & 255)
+End Function
+
+Rem
+bbdoc: Converts an IP address string into a binary representation.
+about: For AF_INET_, @dst should be an Int or 32-bit (4 bytes) in size.
+For AF_INET6_, @dst should be 128-bits (16 bytes) in size.
+End Rem
+Function InetPton:Int(family:Int, src:String, dst:Byte Ptr)
+	Return inet_pton_(family, src, dst)
 End Function
 
 Rem
 bbdoc: Convert a host name to an ip address
 returns: Host ip address, or 0 if host not found
 End Rem
-Function HostIp( HostName$,index=0 )
+Function HostIp:String( HostName$, index:Int=0, family:Int = AF_UNSPEC_ )
 	If index<0 Return
-	Local ips[]=HostIps( HostName )
-	If index<ips.length Return ips[index]
-	Return 
+	Local ips:String[]=HostIps( HostName, family )
+	If index < ips.length Then
+		Return ips[index]
+	End If
 End Function
 
 Rem
 bbdoc: Get all ip addresses for a host name
 returns: Array of host ips, or Null if host not found
 End Rem
-Function HostIps:Int[]( HostName$ )
-	Local addr_type,addr_len
-	Local addrs:Byte Ptr Ptr=gethostbyname_( HostName,addr_type,addr_len )
-	If addrs=Null Or addr_type<>AF_INET_ Or addr_len<>4 Return
-	Local n
-	While addrs[n]
-		n:+1
-	Wend
-	Local ips[n]
-	For Local i=0 Until n
-		Local p:Byte Ptr=addrs[i]
-		ips[i]=p[0] Shl 24 | p[1] Shl 16 | p[2] Shl 8 | p[3]
+Function HostIps:String[]( HostName$, family:Int = AF_UNSPEC_ )
+	Local addr:TAddrInfo[] = AddrInfo(HostName, , family)
+	Local ips:String[] = New String[addr.length]
+	For Local i:Int = 0 Until addr.length
+		ips[i] = addr[i].HostIp()
 	Next
 	Return ips
 End Function
@@ -348,8 +350,17 @@ Rem
 bbdoc: Convert a host ip address to a name
 returns: Name of host, or Null if host not found
 End Rem
-Function HostName$( HostIp )
-	Local addr=htonl_( HostIp )
-	Local p:Byte Ptr=gethostbyaddr_( Varptr addr,4,AF_INET_ )
-	If p Return String.FromCString(p)
+Function HostName$( HostIp:String, family:Int = AF_UNSPEC_ )
+	Local addr:TAddrInfo[] = AddrInfo(HostIp, , family)
+	If addr Then
+		Return addr[0].HostName()
+	End If
 End Function
+
+Rem
+bbdoc: Returns an array of TAddrInfo objects.
+End Rem
+Function AddrInfo:TAddrInfo[](host:String, service:String = "http", family:Int = AF_UNSPEC_)
+	Return getaddrinfo_(host, service, family)
+End Function
+

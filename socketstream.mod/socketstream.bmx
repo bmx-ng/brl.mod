@@ -23,11 +23,11 @@ Import BRL.Stream
 Type TSocketStream Extends TStream
 
 	Method Read:Long( buf:Byte Ptr,count:Long )
-		Return _socket.Recv( buf,size_t(count) )
+		Return _socket.Recv( buf,Size_T(count) )
 	End Method
 
 	Method Write:Long( buf:Byte Ptr,count:Long )
-		Return _socket.Send( buf,size_t(count) )
+		Return _socket.Send( buf,Size_T(count) )
 	End Method
 
 	Method Eof()
@@ -54,13 +54,15 @@ Type TSocketStream Extends TStream
 		Return t
 	End Function
 	
-	Function CreateClient:TSocketStream( remoteHost$,remotePort )
-		Local remoteIp=HostIp( remoteHost )
-		If Not remoteIp Return
+	Function CreateClient:TSocketStream( remoteHost$,remotePort, family:Int = AF_INET_ )
+		Local addrInfo:TAddrInfo[] = AddrInfo(remoteHost, family)
+		'Local remoteIp:String=HostIp( remoteHost, family )
+		'If Not remoteIp Return
+		If Not addrInfo Return
 		
 		Local socket:TSocket=TSocket.CreateTCP()
 		If socket
-			If socket.Connect( remoteIp,remotePort ) 
+			If socket.Connect( addrInfo[0] ) 
 				Return Create( socket,True )
 			EndIf
 			socket.Close
