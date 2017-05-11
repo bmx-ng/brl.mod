@@ -828,9 +828,7 @@ A GNet host must be listening (see #GNetListen) at the specified address and por
 connection to succeed.
 End Rem
 Function GNetConnect( host:TGNetHost,address$,port,timeout_ms=10000 )
-	Local ip:Int
-	InetPton(AF_INET_, address, Varptr ip)
-	Return host.Connect( ip,port,timeout_ms )
+	Return host.Connect( DottedIPToInt(HostIp(address, AF_INET_)),port,timeout_ms )
 End Function
 
 Rem

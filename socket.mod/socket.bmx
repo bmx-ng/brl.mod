@@ -313,6 +313,20 @@ Function DottedIP$( ip:Int )
 End Function
 
 Rem
+bbdoc: Converts a dotted IPv4 string to an ip address.
+returns: An integer version of an ip address.
+End Rem
+Function DottedIPToInt:Int(addr:String)
+	Local parts:String[] = addr.Split(".")
+	Local num:Long
+	For Local i:Int = 0 Until parts.length
+		Local power:Int = 3 - i
+		num :+ (parts[i].ToInt() Mod 256) * (256 ^ power)
+	Next
+	Return num
+End Function
+
+Rem
 bbdoc: Converts an IP address string into a binary representation.
 about: For AF_INET_, @dst should be an Int or 32-bit (4 bytes) in size.
 For AF_INET6_, @dst should be 128-bits (16 bytes) in size.
