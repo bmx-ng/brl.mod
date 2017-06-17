@@ -256,24 +256,39 @@ Type TBank
 	returns: A new TBank object with an initial size of @size
 	End Rem
 	Function Create:TBank( size:Size_T )
-		'Assert size>=0 Else "Illegal bank size"
 		Local bank:TBank=New TBank
 		bank._buf=MemAlloc( size )
 		bank._size=size
 		bank._capacity=size
 		Return bank
 	End Function
+
+	Rem
+	bbdoc: Create a bank
+	returns: A new TBank object with an initial size of @size
+	End Rem
+	Function Create:TBank( size:Int )
+		Assert size>=0 Else "Illegal bank size"
+		Return Create(Size_T(size))
+	End Function
 	
 	Rem
 	bbdoc: Create a bank from an existing block of memory
 	End Rem
 	Function CreateStatic:TBank( buf:Byte Ptr,size:Size_T )
-		'Assert size>=0 Else "Illegal bank size"
 		Local bank:TBank=New TBank
 		bank._buf=buf
 		bank._size=size
 		bank._capacity=-1
 		Return bank
+	End Function
+
+	Rem
+	bbdoc: Create a bank from an existing block of memory
+	End Rem
+	Function CreateStatic:TBank( buf:Byte Ptr,size:Int )
+		Assert size>=0 Else "Illegal bank size"
+		Return CreateStatic(buf, Size_T(size))
 	End Function
 
 End Type
@@ -286,7 +301,7 @@ about:
 can be used for storage of binary data using the various Poke and
 Peek commands. 
 End Rem
-Function CreateBank:TBank( size:Size_T=0 )
+Function CreateBank:TBank( size:Int=0 )
 	Return TBank.Create( size )
 End Function
 
@@ -297,7 +312,7 @@ about:
 The memory referenced by a static bank is not released when the bank is deleted.
 A static bank cannot be resized.
 End Rem
-Function CreateStaticBank:TBank( buf:Byte Ptr,size:Size_T )
+Function CreateStaticBank:TBank( buf:Byte Ptr,size:Int )
 	Return TBank.CreateStatic( buf,size )
 End Function
 
