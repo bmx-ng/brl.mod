@@ -934,6 +934,10 @@ Function AutoImageFlags( flags )
 	gc.auto_imageflags=flags
 End Function
 
+Function GetAutoImageFlags:Int()
+	Return gc.auto_imageflags
+End Function
+
 Rem
 bbdoc: Set an image's handle to its center
 End Rem
@@ -1388,7 +1392,7 @@ Function CollideSpans(polys:TList,count,y)
 	width=endx-startx
 	If width<=0 Return 0
 	If width>Len(LineBuffer) LineBuffer=New Int[width]
-	MemClear LineBuffer,width*4
+	MemClear LineBuffer,Size_T(width*4)
 	For p=EachIn polys
 		src=p.texture
 		If src

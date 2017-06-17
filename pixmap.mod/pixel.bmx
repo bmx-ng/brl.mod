@@ -48,7 +48,7 @@ Global BitsPerPixel[]=			[0,8,8,24,24,32,32, 4,4,4,4,4,4]
 Global ColorBitsPerPixel[]=		[0,0,0,24,24,24,24, 8,8,8,0,0,0]
 
 Function CopyPixels( in_buf:Byte Ptr,out_buf:Byte Ptr,format,count )
-	MemCopy out_buf,in_buf,count*BytesPerPixel[format]
+	MemCopy out_buf,in_buf, Size_T(count*BytesPerPixel[format])
 End Function
 
 Function ConvertPixels( in_buf:Byte Ptr,in_format,out_buf:Byte Ptr,out_format,count )

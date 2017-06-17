@@ -46,7 +46,7 @@ Type TRamStream Extends TStream
 	Method Read:Long( buf:Byte Ptr,count:Long )
 		If count<=0 Or _read=False Return 0
 		If _pos+count>_size count=_size-_pos
-		MemCopy buf,_buf+_pos,count
+		MemCopy buf,_buf+_pos,Size_T(count)
 		_pos:+count
 		Return count
 	End Method
@@ -54,7 +54,7 @@ Type TRamStream Extends TStream
 	Method Write:Long( buf:Byte Ptr,count:Long )
 		If count<=0 Or _write=False Return 0
 		If _pos+count>_size count=_size-_pos
-		MemCopy _buf+_pos,buf,count
+		MemCopy _buf+_pos,buf,Size_T(count)
 		_pos:+count
 		Return count
 	End Method

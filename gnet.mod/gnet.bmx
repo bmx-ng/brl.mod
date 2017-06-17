@@ -348,7 +348,7 @@ Type TGNetObject
 				p:+5
 			Case GNET_STRING
 				Local data$=GetString( index )
-				Local n=data.length
+				Local n:Size_T=data.length
 				p[0]=GNET_STRING Shl 5 | index
 				p[1]=n Shr 8
 				p[2]=n Shr 0
@@ -732,7 +732,7 @@ Type TGNetPeer
 		
 		If sz
 			msg.data=New Byte[sz]
-			MemCopy msg.data,buf+2,sz
+			MemCopy msg.data,buf+2,Size_T(sz)
 		EndIf
 ?Debug
 		If msg.state<>2 dprint "RecvMsg id="+msg.id+", state="+msg.state+", size="+sz
@@ -741,8 +741,8 @@ Type TGNetPeer
 	End Method
 	
 	Method SendMsg( msg:TGNetMsg )
-		Local sz=msg.data.length
-		Local buf:Byte Ptr=MemAlloc( sz+2 )
+		Local sz:Int=msg.data.length
+		Local buf:Byte Ptr=MemAlloc( Size_T(sz+2) )
 
 		Local id=msg.id
 		If msg.state=GNET_MESSAGE
@@ -752,7 +752,7 @@ Type TGNetPeer
 		
 		buf[0]=(msg.state Shl 12 | id) Shr 8
 		buf[1]=(msg.state Shl 12 | id) Shr 0
-		If sz MemCopy buf+2,msg.data,sz
+		If sz MemCopy buf+2,msg.data,Size_T(sz)
 ?Debug
 		dprint "SendMsg id="+id+", state="+msg.state+", size="+sz
 ?
