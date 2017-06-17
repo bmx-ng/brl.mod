@@ -339,7 +339,7 @@ Rem
 bbdoc: Allocate memory
 returns: A new block of memory @size bytes long
 End Rem
-Function MemAlloc:Byte Ptr( size:Long )="void* bbMemAlloc( size_t )"
+Function MemAlloc:Byte Ptr( size:Size_T )="void* bbMemAlloc( size_t )"
 
 Rem
 bbdoc: Free allocated memory
@@ -353,22 +353,22 @@ returns: A new block of memory @new_size bytes long
 about: An existing block of memory specified by @mem and @size is copied into a new block
 of memory @new_size bytes long. The existing block is released and the new block is returned. 
 End Rem
-Function MemExtend:Byte Ptr( mem:Byte Ptr,size:Long,new_size:Long )="void* bbMemExtend( void *,size_t ,size_t )"
+Function MemExtend:Byte Ptr( mem:Byte Ptr,size:Size_T,new_size:Size_T )="void* bbMemExtend( void *,size_t ,size_t )"
 
 Rem
 bbdoc: Clear a block of memory to 0
 End Rem
-Function MemClear( mem:Byte Ptr,size:Long )="void bbMemClear( void *,size_t )"
+Function MemClear( mem:Byte Ptr,size:Size_T )="void bbMemClear( void *,size_t )"
 
 Rem
 bbdoc: Copy a non-overlapping block of memory
 End Rem
-Function MemCopy( dst:Byte Ptr,src:Byte Ptr,size:Long )="void bbMemCopy( void *,const void *,size_t )"
+Function MemCopy( dst:Byte Ptr,src:Byte Ptr,size:Size_T )="void bbMemCopy( void *,const void *,size_t )"
 
 Rem
 bbdoc: Copy a potentially overlapping block of memory
 End Rem
-Function MemMove( dst:Byte Ptr,src:Byte Ptr,size:Long )="void bbMemMove( void *,const void *,size_t )"
+Function MemMove( dst:Byte Ptr,src:Byte Ptr,size:Size_T )="void bbMemMove( void *,const void *,size_t )"
 
 Rem
 bbdoc: Set garbage collector mode
