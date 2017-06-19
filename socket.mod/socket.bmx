@@ -80,6 +80,14 @@ Type TSocket
 		UpdateLocalName
 		Return True
 	End Method
+
+	Method Bind:Int( info:TAddrInfo )
+		If bmx_stdc_bind_info( _socket, info.infoPtr ) < 0 Then
+			Return False
+		End If
+		UpdateLocalName
+		Return True
+	End Method
 	
 	Method Connect( addrInfo:TAddrInfo )
 		If connect_( _socket, addrInfo.infoPtr )<0 Return False
@@ -99,6 +107,20 @@ Type TSocket
 		If client>0 Return Create( client )
 	End Method
 	
+	Method Accept:TSocket( storage:TSockaddrStorage, timeout:Int = -1 )
+		If timeout >= 0 Then
+			Local read:Int = _socket
+			If select_( 1,Varptr read,0,Null,0,Null,timeout )<>1 Then
+				Return
+			End If
+		End If
+		
+		Local client:Int = bmx_stdc_accept_(_socket, storage.storagePtr)
+		If client > 0 Then
+			Return Create( client )
+		End If
+	End Method
+	
 	Method ReadAvail()
 		Local n
 		Local t=ioctl_( _socket,FIONREAD,Varptr n )
@@ -109,6 +131,14 @@ Type TSocket
 	Method SetTCPNoDelay( enable )
 		Local flag=enable
 		setsockopt_( _socket,IPPROTO_TCP,TCP_NODELAY,Varptr flag,4 )
+	End Method
+	
+	Method SetSockOpt:Int(level:Int, optname:Int, enable:Int)
+		Local flag:Int = enable
+		If setsockopt_(_socket, level, optname, Varptr flag, 4) < 0 Then
+			Return False
+		End If
+		Return True
 	End Method
 	
 	Method Socket()
@@ -132,32 +162,21 @@ Type TSocket
 	End Method
 	
 	Method UpdateLocalName()
-		Local addr:Byte[16],size=16
-		If getsockname_( _socket,addr,size )<0
-			_localIp=0
-			_localPort=0
-		EndIf
-		_localIp=addr[4] Shl 24 | addr[5] Shl 16 | addr[6] Shl 8 | addr[7]
-		_localPort=addr[2] Shl 8 | addr[3]
+		_localIp = bmx_stdc_getsockname(_socket, _localPort)
 	End Method
 	
 	Method UpdateRemoteName()
-		Local addr:Byte[16],size=16
-		If getpeername_( _socket,addr,size )<0
-			_remoteIp=0
-			_remotePort=0
-			Return
-		EndIf
-		_remoteIp=addr[4] Shl 24 | addr[5] Shl 16 | addr[6] Shl 8 | addr[7]
-		_remotePort=addr[2] Shl 8 | addr[3]
+		_remoteIp = bmx_stdc_getpeername(_socket, _remotePort)
 	End Method
 	
-	Function Create:TSocket( socket,autoClose=True )
-		If socket<0 Return
-		Local addr:Byte[16],size
-		Local t:TSocket=New TSocket
-		t._socket=socket
-		t._autoClose=autoClose
+	Function Create:TSocket( socket:Int, autoClose:Int = True )
+		If socket < 0 Then
+			Return
+		End If
+		Local addr:Byte[16],size:Int
+		Local t:TSocket = New TSocket
+		t._socket = socket
+		t._autoClose = autoClose
 		t.UpdateLocalName
 		t.UpdateRemoteName
 		Return t
@@ -172,7 +191,17 @@ Type TSocket
 		Local socket=socket_( family,SOCK_STREAM_,0 )
 		If socket>=0 Return Create( socket,True )
 	End Function
-	
+
+	Rem
+	bbdoc: 
+	End Rem
+	Function Create:TSocket(info:TAddrInfo)
+		Local socket:Int = socket_( info.family(),info.sockType(),info.protocol() )
+		If socket >= 0 Then
+			Return Create( socket, True )
+		End If
+	End Function
+
 	Field _socket,_autoClose
 	
 	Field _localIp:String,_localPort
@@ -377,4 +406,12 @@ End Rem
 Function AddrInfo:TAddrInfo[](host:String, service:String = "http", family:Int = AF_UNSPEC_)
 	Return getaddrinfo_(host, service, family)
 End Function
+
+Rem
+bbdoc: Returns an array of TAddrInfo objects.
+End Rem
+Function AddrInfo:TAddrInfo[](host:String, service:String, hints:TAddrInfo)
+	Return getaddrinfo_hints(host, service, hints.infoPtr)
+End Function
+
 
