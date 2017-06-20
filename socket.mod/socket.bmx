@@ -6,12 +6,14 @@ bbdoc: Networking/Sockets
 End Rem
 Module BRL.Socket
 
-ModuleInfo "Version: 1.02"
-ModuleInfo "Author: Mark Sibly"
+ModuleInfo "Version: 1.03"
+ModuleInfo "Author: Mark Sibly and Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Added IPV6 support."
 ModuleInfo "History: 1.02 Release"
 ModuleInfo "History: Fixed socket name 0 failing"
 
@@ -45,13 +47,13 @@ End Type
 
 Type TSocket
 
-	Method Send:Size_T( buf:Byte Ptr,count:Size_T,flags=0 )
+	Method Send:Size_T( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
 		Local n:Size_T=send_( _socket,buf,count,flags )
 		If n<0 Return 0
 		Return n
 	End Method
 
-	Method Recv:Size_T( buf:Byte Ptr,count:Size_T,flags=0 )
+	Method Recv:Size_T( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
 		Local n:Size_T=recv_( _socket,buf,count,flags )
 		If n<0 Return 0
 		Return n
@@ -75,7 +77,7 @@ Type TSocket
 		Return False
 	End Method		
 	
-	Method Bind( localPort, family:Int = AF_INET_ )
+	Method Bind:Int( localPort:Int, family:Int = AF_INET_ )
 		If bind_( _socket,family,localPort )<0 Return False
 		UpdateLocalName
 		Return True
@@ -89,25 +91,18 @@ Type TSocket
 		Return True
 	End Method
 	
-	Method Connect( addrInfo:TAddrInfo )
+	Method Connect:Int( addrInfo:TAddrInfo )
 		If connect_( _socket, addrInfo.infoPtr )<0 Return False
 		UpdateLocalName
 		UpdateRemoteName
 		Return True
 	End Method
 	
-	Method Listen( backlog )
+	Method Listen:Int( backlog:Int )
 		Return listen_( _socket,backlog )>=0
 	End Method
 	
-	Method Accept:TSocket( timeout )
-		Local read=_socket
-		If select_( 1,Varptr read,0,Null,0,Null,timeout )<>1 Return
-		Local client=accept_( _socket,Null,Null )
-		If client>0 Return Create( client )
-	End Method
-	
-	Method Accept:TSocket( storage:TSockaddrStorage, timeout:Int = -1 )
+	Method Accept:TSocket( timeout:Int = -1, storage:TSockaddrStorage = Null )
 		If timeout >= 0 Then
 			Local read:Int = _socket
 			If select_( 1,Varptr read,0,Null,0,Null,timeout )<>1 Then
@@ -115,13 +110,20 @@ Type TSocket
 			End If
 		End If
 		
-		Local client:Int = bmx_stdc_accept_(_socket, storage.storagePtr)
+		Local client:Int
+		
+		If storage Then
+			client = bmx_stdc_accept_(_socket, storage.storagePtr)
+		Else
+			client = bmx_stdc_accept_(_socket, Null)
+		End If
+		
 		If client > 0 Then
 			Return Create( client )
 		End If
 	End Method
 	
-	Method ReadAvail()
+	Method ReadAvail:Int()
 		Local n
 		Local t=ioctl_( _socket,FIONREAD,Varptr n )
 		If t<0 Return 0
@@ -141,7 +143,7 @@ Type TSocket
 		Return True
 	End Method
 	
-	Method Socket()
+	Method Socket:Int()
 		Return _socket
 	End Method
 	
@@ -149,7 +151,7 @@ Type TSocket
 		Return _localIp
 	End Method
 	
-	Method LocalPort()
+	Method LocalPort:Int()
 		Return _localPort
 	End Method
 	
@@ -157,7 +159,7 @@ Type TSocket
 		Return _remoteIp
 	End Method
 	
-	Method RemotePort()
+	Method RemotePort:Int()
 		Return _remotePort
 	End Method
 	
@@ -202,10 +204,10 @@ Type TSocket
 		End If
 	End Function
 
-	Field _socket,_autoClose
+	Field _socket:Int,_autoClose:Int
 	
-	Field _localIp:String,_localPort
-	Field _remoteIp:String,_remotePort
+	Field _localIp:String,_localPort:Int
+	Field _remoteIp:String,_remotePort:Int
 	
 End Type
 
