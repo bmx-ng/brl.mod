@@ -135,7 +135,7 @@ Type TD3D9ImageFrame Extends TImageFrame
 			For Local y=0 Until pixmap.height
 				Local src:Byte Ptr=pixmap.pixels+y*pixmap.pitch
 				Local dst:Byte Ptr=lockedrect.pBits+y*lockedrect.Pitch
-				MemCopy dst,src,pixmap.width*4
+				MemCopy dst,src,Size_T(pixmap.width*4)
 			Next
 		
 			dstsurf.UnlockRect
