@@ -454,6 +454,11 @@ returns: The object associated with the integer handle
 End Rem
 Function HandleToObject:Object( handle:Size_T )="bbHandleToObject"
 
+Rem
+bbdoc: Copies an array from the specified @src array, starting at the position @srcPos, to the position @dstPos of the destination array.
+End Rem
+Function ArrayCopy(src:Object, srcPos:Int, dst:Object, dstPos:Int, length:Int)="void bbArrayCopy(BBARRAY, int, BBARRAY, int, int)!"
+
 End Extern
 
 'BlitzMax keyword definitions

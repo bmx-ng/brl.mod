@@ -47,8 +47,10 @@ BBArray*	bbArrayConcat( const char *type,BBArray *x,BBArray *y );
 void*	bbArrayIndex( BBArray *, int, int );
 
 BBArray*	bbArrayNew1DStruct( const char *type,int length, unsigned short data_size );
-BBArray*	bbArrayNewStruct( const char *type,int dims, unsigned short data_size,... );
+BBArray*	bbArrayNewStruct( const char *type,unsigned short data_size, int dims, ... );
 BBArray*	bbArrayFromDataStruct( const char *type,int length,void *data, unsigned short data_size );
+
+void bbArrayCopy(BBArray * srcArr, int srcPos, BBArray * dstArr, int dstPos, int length);
 
 #ifdef __cplusplus
 }
