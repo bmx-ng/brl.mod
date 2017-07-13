@@ -307,7 +307,7 @@ void bbArrayCopy(BBArray * srcArr, int srcPos, BBArray * dstArr, int dstPos, int
 	char * src = (char*)BBARRAYDATA(srcArr, 1) + srcPos * size;
 	char * dst = (char*)BBARRAYDATA(dstArr, 1) + dstPos * size;
 	
-	memcpy(dst, src, length * size);
+	memmove(dst, src, length * size);
 }
 
 BBArray *bbArrayConcat( const char *type,BBArray *x,BBArray *y ){
