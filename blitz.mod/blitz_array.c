@@ -290,7 +290,7 @@ void bbArrayCopy(BBArray * srcArr, int srcPos, BBArray * dstArr, int dstPos, int
 	}
 	
 	if (strcmp(srcArr->type, dstArr->type)) {
-		brl_blitz_ArrayBoundsError();
+		brl_blitz_RuntimeError(bbStringFromCString("Incompatible array element types for copy"));
 	}
 	
 	if (srcPos + length > srcArr->scales[0]) {
