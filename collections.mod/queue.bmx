@@ -2,15 +2,29 @@ SuperStrict
 
 Import "collection.bmx"
 
-
+Rem
+bbdoc: An ordered list of elements.
+End Rem
 Interface IQueue<E> Extends ICollection<E>
 
+	Rem
+	bbdoc: Adds @element to the queue.
+	End Rem
 	Method Add:Int(element:E)
+	Rem
+	bbdoc: Retrieves and removes the element at the head of the queue.
+	End Rem
 	Method Poll:E()
+	Rem
+	bbdoc: Retrieves the element at the head of the queue.
+	End Rem
 	Method Peek:E()	
 
 End Interface
 
+Rem
+bbdoc: A double-ended queue (or deck).
+End Rem
 Interface IDeque<E> Extends IQueue<E>
 
 	Method AddFirst(element:E)
@@ -49,6 +63,10 @@ Type TAbstractQueue<E> Extends TAbstractCollection<E> Implements IQueue<E> Abstr
 
 End Type
 
+Rem
+bbdoc: A resizable array, implementing the IDeque interface.
+about: The TArrayDeque has no capacity restriction, and grows as necessary.
+End Rem
 Type TArrayDeque<E> Extends TAbstractCollection<E> Implements IDeque<E>
 
 	Private
@@ -143,6 +161,9 @@ Type TArrayDeque<E> Extends TAbstractCollection<E> Implements IDeque<E>
 		
 	End Method
 
+	Rem
+	bbdoc: Adds @element to the front of the deque.
+	End Rem
 	Method AddFirst(element:E)
 		head = (head - 1) & (elements.length - 1)
 		elements[head] = element
@@ -151,6 +172,9 @@ Type TArrayDeque<E> Extends TAbstractCollection<E> Implements IDeque<E>
 		End If
 	End Method
 	
+	Rem
+	bbdoc: Adds @element to the end of the deque.
+	End Rem
 	Method AddLast(element:E)
 		elements[tail] = element
 		tail = (tail + 1) & (elements.length - 1)
@@ -159,18 +183,26 @@ Type TArrayDeque<E> Extends TAbstractCollection<E> Implements IDeque<E>
 		End If
 	End Method
 
+	Rem
+	bbdoc: Retrieves and removes the first element from the deque.
+	about: Throws TNoSuchElementException if empty.
+	End Rem
 	Method RemoveFirst:E()
-		Local element:E = PollFirst()
-		' not found? TODO
-		Return element
+		Return PollFirst()
 	End Method
 
+	Rem
+	bbdoc: Retrieves and removes the last element from the deque.
+	about: Throws TNoSuchElementException if empty.
+	End Rem
 	Method RemoveLast:E()
-		Local element:E = PollLast()
-
-		Return element
+		Return PollLast()
 	End Method
 
+	Rem
+	bbdoc: Retrieves and removes the first element from the deque.
+	about: Throws TNoSuchElementException if empty.
+	End Rem
 	Method PollFirst:E()
 		If Not Size() Then
 			Throw New TNoSuchElementException
@@ -185,6 +217,10 @@ Type TArrayDeque<E> Extends TAbstractCollection<E> Implements IDeque<E>
 		Return element
 	End Method
 
+	Rem
+	bbdoc: Retrieves and removes the last element from the deque.
+	about: Throws TNoSuchElementException if empty.
+	End Rem
 	Method PollLast:E()
 		If Not Size() Then
 			Throw New TNoSuchElementException
@@ -198,6 +234,10 @@ Type TArrayDeque<E> Extends TAbstractCollection<E> Implements IDeque<E>
 		Return element
 	End Method
 
+	Rem
+	bbdoc: Retrieves the first element from the deque.
+	about: Throws TNoSuchElementException if empty.
+	End Rem
 	Method PeekFirst:E()
 		If Not Size() Then
 			Throw New TNoSuchElementException
@@ -205,6 +245,10 @@ Type TArrayDeque<E> Extends TAbstractCollection<E> Implements IDeque<E>
 		Return elements[head]
 	End Method
 
+	Rem
+	bbdoc: Retrieves the last element from the deque.
+	about: Throws TNoSuchElementException if empty.
+	End Rem
 	Method PeekLast:E()
 		If Not Size() Then
 			Throw New TNoSuchElementException
@@ -212,6 +256,10 @@ Type TArrayDeque<E> Extends TAbstractCollection<E> Implements IDeque<E>
 		Return elements[(tail - 1) & (elements.length - 1)]
 	End Method
 
+	Rem
+	bbdoc: Removes the first occurrence of @element from the deque.
+	returns: True if the deque contained @element.
+	End Rem
 	Method RemoveFirstOccurrence:Int(element:E)
 		Local mask:Int = elements.length - 1
 		Local index:Int = head
@@ -228,6 +276,10 @@ Type TArrayDeque<E> Extends TAbstractCollection<E> Implements IDeque<E>
 		Return False
 	End Method
 
+	Rem
+	bbdoc: Removes the last occurrence of @element from the deque.
+	returns: True if the deque contained @element.
+	End Rem
 	Method RemoveLastOccurrence:Int(element:E)
 		Local mask:Int = elements.length - 1
 		Local index:Int = (tail - 1) & mask
@@ -244,27 +296,48 @@ Type TArrayDeque<E> Extends TAbstractCollection<E> Implements IDeque<E>
 		Return False
 	End Method
 
+	Rem
+	bbdoc: Adds @element to the end of the deque.
+	End Rem
 	Method Add:Int(element:E)
 		AddLast(element)
 		Return True
 	End Method
 
+	Rem
+	bbdoc: Retrieves and removes the head element from the deque.
+	about: Throws TNoSuchElementException if empty.
+	End Rem
 	Method Poll:E()
 		Return PollFirst()
 	End Method
 
+	Rem
+	bbdoc: Retrieves the head element from the deque.
+	about: Throws TNoSuchElementException if empty.
+	End Rem
 	Method Peek:E()
 		Return PeekFirst()
 	End Method
 
+	Rem
+	bbdoc: Pushes @element onto the head of the stack represented by the deque.
+	End Rem
 	Method Push(element:E)
 		AddFirst(element)
 	End Method
 
+	Rem
+	bbdoc: Pops an element from the head of the stack represented by the deque.
+	about: Throws TNoSuchElementException if empty.
+	End Rem
 	Method Pop:E()
 		Return RemoveFirst()
 	End Method
 
+	Rem
+	bbdoc: Removes the first occurrence of @element from the deque.
+	End Rem
 	Method Remove:Int(element:E)
 		Return RemovefirstOccurrence(element)
 	End Method
@@ -273,6 +346,9 @@ Type TArrayDeque<E> Extends TAbstractCollection<E> Implements IDeque<E>
 		' TODO
 	End Method
 
+	Rem
+	bbdoc: Returns the number of elements in the deque.
+	End Rem
 	Method Size:Int()
 		Return (tail - head) & (elements.length - 1)
 	End Method
@@ -286,16 +362,23 @@ Type TArrayDeque<E> Extends TAbstractCollection<E> Implements IDeque<E>
 	End Method
 
 	Method Equals:Int(o:Object)
+		' TODO
 	End Method
 	
 	Method ToArray:E[]()
 		Return elements[..] ' fixme
 	End Method
 	
+	Rem
+	bbdoc: Returns True if the deque is empty, or False otherwise.
+	End Rem
 	Method IsEmpty:Int()
 		Return head = tail
 	End Method
 	
+	Rem
+	bbdoc: Clears out the contents of the deque.
+	End Rem
 	Method Clear()
 		Local h:Int = head
 		Local t:Int = tail
