@@ -52,15 +52,15 @@ Type TBankStream Extends TStream
 	Method Read:Long( buf:Byte Ptr,count:Long )
 		If count<=0 Or _pos>=_bank.Size() Return 0
 		If _pos+count>_bank.Size() count=_bank.Size()-_pos
-		MemCopy buf,_bank.Buf()+_pos,count
+		MemCopy buf,_bank.Buf()+_pos,Size_T(count)
 		_pos:+count
 		Return count
 	End Method
 
 	Method Write:Long( buf:Byte Ptr,count:Long )
 		If count<=0 Or _pos>_bank.Size() Return 0
-		If _pos+count>_bank.Size() _bank.Resize _pos+count
-		MemCopy _bank.Buf()+_pos,buf,count
+		If _pos+count>_bank.Size() _bank.Resize Size_T(_pos+count)
+		MemCopy _bank.Buf()+_pos,buf,Size_T(count)
 		_pos:+count
 		Return count
 	End Method

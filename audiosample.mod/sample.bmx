@@ -15,7 +15,7 @@ Global BytesPerSample[]=[0,1,2,2,2,4,4]
 Global ChannelsPerSample[]=[0,1,1,1,2,2,2]
 
 Function CopySamples( in_buf:Byte Ptr,out_buf:Byte Ptr,format,count )
-	MemCopy out_buf,in_buf,count*BytesPerSample[format]
+	MemCopy out_buf,in_buf,Size_T(count*BytesPerSample[format])
 End Function
 
 Function ConvertSamples( in_buf:Byte Ptr,in_format,out_buf:Byte Ptr,out_format,count )

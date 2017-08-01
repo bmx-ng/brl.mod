@@ -78,7 +78,7 @@ Type TPixmapLoaderSTB Extends TPixmapLoader
 			If pf
 				pixmap = CreatePixmap( width, height, pf )
 
-				MemCopy(pixmap.pixels, imgPtr, width * height * BytesPerPixel[pf])
+				MemCopy(pixmap.pixels, imgPtr, Size_T(width * height * BytesPerPixel[pf]))
 			End If
 			
 			stbi_image_free(imgPtr)

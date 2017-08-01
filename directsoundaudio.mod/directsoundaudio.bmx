@@ -112,7 +112,7 @@ Type TDirectSoundSound Extends TSound
 		
 		Local ptr1:Byte Ptr,bytes1:Int,ptr2:Byte Ptr,bytes2:Int
 		DSASS bmx_directsound_IDirectSoundBuffer_lock(buf, 0,size,Varptr ptr1,Varptr bytes1,Varptr ptr2,Varptr bytes2,0 ),"Lock SoundBuffer"
-		MemCopy ptr1,sample.samples,size
+		MemCopy ptr1,sample.samples,Size_T(size)
 		DSASS bmx_directsound_IDirectSoundBuffer_unlock(buf, ptr1,bytes1,ptr2,bytes2),"Unlock SoundBuffer"
 
 		Local t:TDirectSoundSound=New TDirectSoundSound
