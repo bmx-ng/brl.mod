@@ -28,7 +28,7 @@ Type TCStandardIO Extends TStream
 		Return feof_( stdin_ )
 	End Method
 	
-	Method Flush:Int()
+	Method Flush()
 		fflush_ stdout_
 	End Method
 
