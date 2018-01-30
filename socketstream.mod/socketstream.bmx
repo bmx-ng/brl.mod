@@ -6,12 +6,14 @@ bbdoc: Streams/Socket streams
 End Rem
 Module BRL.SocketStream
 
-ModuleInfo "Version: 1.06"
+ModuleInfo "Version: 1.07"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.07"
+ModuleInfo "History: Fixed passing incorrect argument to AddrInfo()"
 ModuleInfo "History: 1.06"
 ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.05 Release"
@@ -57,14 +59,12 @@ Type TSocketStream Extends TStream
 	End Function
 	
 	Function CreateClient:TSocketStream( remoteHost$,remotePort:Int, family:Int = AF_INET_ )
-		Local addrInfo:TAddrInfo[] = AddrInfo(remoteHost, family)
-		'Local remoteIp:String=HostIp( remoteHost, family )
-		'If Not remoteIp Return
-		If Not addrInfo Return Null
+		Local AddrInfo:TAddrInfo[] = AddrInfo(remoteHost, remotePort, family)
+		If Not AddrInfo Return Null
 		
 		Local socket:TSocket=TSocket.CreateTCP()
 		If socket
-			If socket.Connect( addrInfo[0] ) 
+			If socket.Connect( AddrInfo[0] ) 
 				Return Create( socket,True )
 			EndIf
 			socket.Close
