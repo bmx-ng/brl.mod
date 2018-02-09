@@ -1,4 +1,4 @@
-Strict
+SuperStrict
 
 Import BRL.Event
 
@@ -11,17 +11,17 @@ Function bbSystemStartup()
 Function bbSystemPoll()
 Function bbSystemWait()
 Function bbSystemIntr()
-Function bbSystemMoveMouse( x,y )
-Function bbSystemSetMouseVisible( visible )
-Function bbSystemNotify( text$,serious )
-Function bbSystemConfirm( text$,serious )
-Function bbSystemProceed( text$,serious )
-Function bbSystemRequestFile$( text$,exts$,save,file$,dir$ )
+Function bbSystemMoveMouse( x:Int,y:Int )
+Function bbSystemSetMouseVisible( visible:Int )
+Function bbSystemNotify( text$,serious:Int )
+Function bbSystemConfirm:Int( text$,serious:Int )
+Function bbSystemProceed:Int( text$,serious:Int )
+Function bbSystemRequestFile$( text$,exts$,save:Int,file$,dir$ )
 Function bbSystemRequestDir$( text$,dir$ )
-Function bbOpenURL( url$ )
+Function bbOpenURL:Int( url$ )
 
-Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet ),syncInfo:Object,asyncRet )
-Function bbSystemStartAsyncOp( asyncOp( asyncInfo ),asyncInfo,syncOp( syncInfo:Object,asyncRet ),syncInfo:Object )
+Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet:Int ),syncInfo:Object,asyncRet:Int )
+Function bbSystemStartAsyncOp( asyncOp( asyncInfo:Int ),asyncInfo:Int,syncOp( syncInfo:Object,asyncRet:Int ),syncInfo:Object )
 
 Function bbSystemDesktopWidth:Int()
 Function bbSystemDesktopHeight:Int()
@@ -32,7 +32,7 @@ End Extern
 
 Private
 
-Function Hook:Object( id,data:Object,context:Object )
+Function Hook:Object( id:Int,data:Object,context:Object )
 	bbSystemIntr
 	Return data
 End Function
@@ -55,31 +55,31 @@ Type TMacOSSystemDriver Extends TSystemDriver
 		bbSystemWait()
 	End Method
 	
-	Method MoveMouse( x,y )
+	Method MoveMouse( x:Int,y:Int )
 		bbSystemMoveMouse x,y
 	End Method
 	
-	Method SetMouseVisible( visible )
+	Method SetMouseVisible( visible:Int )
 		bbSystemSetMouseVisible visible
 	End Method
 	
-	Method Notify( text$,serious )
+	Method Notify( text$,serious:Int )
 		bbSystemNotify text,serious
 	End Method
 	
-	Method Confirm( text$,serious )
-		Return bbSystemConfirm( text,serious )
+	Method Confirm:Int( text$,serious:Int )
+		Return bbSystemConfirm( text,serious)
 	End Method
 	
-	Method Proceed( text$,serious )
+	Method Proceed:Int( text$,serious:Int )
 		Return bbSystemProceed( text,serious )
 	End Method
 
-	Method RequestFile$( text$,exts$,save,path$ )
+	Method RequestFile$( text$,exts$,save:Int,path$ )
 		Local file$,dir$,filter$
 		
 		path=path.Replace( "\","/" )
-		Local i=path.FindLast( "/" )
+		Local i:Int=path.FindLast( "/" )
 		If i<>-1
 			dir=path[..i]
 			file=path[i+1..]
@@ -89,9 +89,9 @@ Type TMacOSSystemDriver Extends TSystemDriver
 		
 		exts=exts.Replace( ";","," )
 		While exts
-			Local p=exts.Find(",")+1
+			Local p:Int=exts.Find(",")+1
 			If p=0 p=exts.length
-			Local q=exts.Find(":")+1
+			Local q:Int=exts.Find(":")+1
 			If q=0 Or q>p q=0
 			filter:+exts[q..p]
 			exts=exts[p..]
@@ -106,9 +106,9 @@ Type TMacOSSystemDriver Extends TSystemDriver
 		Return bbSystemRequestDir( text,dir )
 	End Method
 	
-	Method OpenURL( url$ )
+	Method OpenURL:Int( url$ )
 '		Return system_( "open "" + url.Replace("~q","") + "~q" )
-		bbOpenURL( url )
+		Return bbOpenURL( url )
 	End Method
 
 	Method DesktopWidth:Int()

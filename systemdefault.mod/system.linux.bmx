@@ -1,4 +1,4 @@
-Strict
+SuperStrict
 
 ?Not android
 
@@ -17,15 +17,15 @@ Function bbSystemStartup()
 Function bbSystemPoll()
 Function bbSystemWait()
 
-Function bbSetMouseVisible(visible)
-Function bbMoveMouse(x,y)
+Function bbSetMouseVisible(visible:Int)
+Function bbMoveMouse(x:Int,y:Int)
 Function bbSystemDisplay()
 Function bbSystemEventHandler( callback(xevent:Byte Ptr) )
 
-Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet ),syncInfo:Object,asyncRet )
-Function bbSystemStartAsyncOp( asyncOp( asyncInfo ),asyncInfo,syncOp( syncInfo:Object,asyncRet ),syncInfo:Object )
+Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet:Int ),syncInfo:Object,asyncRet:Int )
+Function bbSystemStartAsyncOp( asyncOp( asyncInfo:Int ),asyncInfo:Int,syncOp( syncInfo:Object,asyncRet:Int ),syncInfo:Object )
 
-Function bbSystemAsyncFD()
+Function bbSystemAsyncFD:Int()
 Function bbSystemFlushAsyncOps()
 
 Function bbSystemDesktopWidth:Int()
@@ -35,10 +35,10 @@ Function bbSystemDesktopHertz:Int()
 
 End Extern
 
-Const XKeyPress=2
-Const XKeyRelease=3
+Const XKeyPress:Int=2
+Const XKeyRelease:Int=3
 
-Function XKeyHandler(keyevent,key,mask)
+Function XKeyHandler(keyevent:Int,key:Int,mask:Int)
 	WriteStdout "XKeyHandler "+keyevent+","+key+","+mask+"~n"
 End Function
 
@@ -60,26 +60,26 @@ Type TLinuxSystemDriver Extends TSystemDriver
 		Throw "simon come here"
 	End Method
 
-	Method SetMouseVisible( visible )
+	Method SetMouseVisible( visible:Int )
 		bbSetMouseVisible(visible)
 	End Method
 
-	Method MoveMouse( x,y )
+	Method MoveMouse( x:Int,y:Int )
 		bbMoveMouse x,y
 	End Method
 
-	Method Notify( text$,serious )
+	Method Notify( text$,serious:Int )
 		WriteStdout text+"~r~n"
 	End Method
 	
-	Method Confirm( text$,serious )
+	Method Confirm:Int( text$,serious:Int )
 		WriteStdout text+" (Yes/No)?"
 		Local t$=ReadStdin().ToLower()
 		If t[..1]="y" Return 1
 		Return 0
 	End Method
 	
-	Method Proceed( text$,serious )
+	Method Proceed:Int( text$,serious:Int )
 		WriteStdout text+" (Yes/No/Cancel)?"
 		Local t$=ReadStdin().ToLower()
 		If t[..1]="y" Return 1
@@ -87,7 +87,7 @@ Type TLinuxSystemDriver Extends TSystemDriver
 		Return -1
 	End Method
 
-	Method RequestFile$( text$,exts$,save,file$ )
+	Method RequestFile$( text$,exts$,save:Int,file$ )
 		WriteStdout "Enter a filename:"
 		Return ReadStdin()
 	End Method
@@ -97,7 +97,7 @@ Type TLinuxSystemDriver Extends TSystemDriver
 		Return ReadStdin()
 	End Method
 
-	Method OpenURL( url$ )
+	Method OpenURL:Int( url$ )
 		If getenv_("KDE_FULL_DESKTOP")
 			system_ "kfmclient exec ~q"+url+"~q"
 		ElseIf getenv_("GNOME_DESKTOP_SESSION_ID")

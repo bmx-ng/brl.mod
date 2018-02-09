@@ -1,21 +1,21 @@
 
-Strict
+SuperStrict
 
 Type TSystemDriver
 
 	Method Poll() Abstract
 	Method Wait() Abstract
 	
-	Method MoveMouse( x,y ) Abstract
-	Method SetMouseVisible( visible ) Abstract
+	Method MoveMouse( x:Int,y:Int ) Abstract
+	Method SetMouseVisible( visible:Int ) Abstract
 	
-	Method Notify( text$,serious ) Abstract
-	Method Confirm( text$,serious ) Abstract
-	Method Proceed( text$,serious ) Abstract
-	Method RequestFile$( text$,exts$,save,file$ ) Abstract
+	Method Notify( text$,serious:Int ) Abstract
+	Method Confirm:Int( text$,serious:Int ) Abstract
+	Method Proceed:Int( text$,serious:Int ) Abstract
+	Method RequestFile$( text$,exts$,save:Int,file$ ) Abstract
 	Method RequestDir$( text$,path$ ) Abstract
 
-	Method OpenURL( url$ ) Abstract	
+	Method OpenURL:Int( url$ ) Abstract	
 
 	Method DesktopWidth:Int() Abstract
 	Method DesktopHeight:Int() Abstract

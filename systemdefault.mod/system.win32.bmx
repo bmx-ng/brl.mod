@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Import BRL.System
 Import "system.win32.c"
@@ -7,27 +7,27 @@ Import "system.win32.c"
 Import "-lshell32"
 Import "-lcomctl32"
 
-Const WM_BBSYNCOP=$7001	'wp=function, lp=arg
+Const WM_BBSYNCOP:Int=$7001	'wp=function, lp=arg
 
 Extern
 
 Function bbSystemStartup()
 Function bbSystemPoll()
 Function bbSystemWait()
-Function bbSystemMoveMouse( x,y )
-Function bbSystemSetMouseVisible( visible )
+Function bbSystemMoveMouse( x:Int,y:Int )
+Function bbSystemSetMouseVisible( visible:Int )
 
-Function bbSystemNotify( text$,serious )
-Function bbSystemConfirm( text$,serious )
-Function bbSystemProceed( text$,serious )
-Function bbSystemRequestFile$( text$,exts$,defext,save,file$,dir$ )
+Function bbSystemNotify( text$,serious:Int )
+Function bbSystemConfirm:Int( text$,serious:Int )
+Function bbSystemProceed:Int( text$,serious:Int )
+Function bbSystemRequestFile$( text$,exts$,defext:Int,save:Int,file$,dir$ )
 Function bbSystemRequestDir$( text$,dir$ )
-Function bbOpenURL( url$ )
+Function bbOpenURL:Int( url$ )
 
-Function bbSystemEmitOSEvent( hwnd:Byte Ptr,msg,wparam:WParam,lparam:LParam,source:Object )
+Function bbSystemEmitOSEvent( hwnd:Byte Ptr,msg:Int,WParam:WParam,LParam:LParam,source:Object )
 
-Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet ),syncInfo:Object,asyncRet )
-Function bbSystemStartAsyncOp( asyncOp( asyncInfo ),asyncInfo,syncOp( syncInfo:Object,asyncRet ),syncInfo:Object )
+Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet:Int ),syncInfo:Object,asyncRet:Int )
+Function bbSystemStartAsyncOp( asyncOp( asyncInfo:Int ),asyncInfo:Int,syncOp( syncInfo:Object,asyncRet:Int ),syncInfo:Object )
 
 Function bbSystemDesktopWidth:Int()
 Function bbSystemDesktopHeight:Int()
@@ -50,32 +50,32 @@ Type TWin32SystemDriver Extends TSystemDriver
 		bbSystemWait()
 	End Method
 	
-	Method MoveMouse( x,y )
+	Method MoveMouse( x:Int,y:Int )
 		bbSystemMoveMouse x,y
 	End Method
 	
-	Method SetMouseVisible( visible )
+	Method SetMouseVisible( visible:Int )
 		bbSystemSetMouseVisible visible
 	End Method
 
-	Method Notify( text$,serious )
+	Method Notify( text$,serious:Int )
 		bbSystemNotify text,serious
 	End Method
 	
-	Method Confirm( text$,serious )
+	Method Confirm:Int( text$,serious:Int )
 		Return bbSystemConfirm( text,serious )
 	End Method
 	
-	Method Proceed( text$,serious )
+	Method Proceed:Int( text$,serious:Int )
 		Return bbSystemProceed( text,serious )
 	End Method
 
-	Method RequestFile$( text$,exts$,save,path$ )
+	Method RequestFile$( text$,exts$,save:Int,path$ )
 		Local file$,dir$
 		
 		path=path.Replace( "/","\" )
 		
-		Local i=path.FindLast( "\" )
+		Local i:Int=path.FindLast( "\" )
 		If i<>-1
 			dir=path[..i]
 			file=path[i+1..]
@@ -85,7 +85,7 @@ Type TWin32SystemDriver Extends TSystemDriver
 
 ' calculate default index of extension in extension list from path name
 
-		Local ext$,defext,p,q
+		Local ext$,defext:Int,p:Int,q:Int
 		p=path.Find(".")
 		If (p>-1)
 			ext=","+path[p+1..].toLower()+","
@@ -94,7 +94,7 @@ Type TWin32SystemDriver Extends TSystemDriver
 			exs=exs.Replace(";",",;")
 			p=exs.find(ext)
 			If p>-1
-				Local q=-1
+				Local q:Int=-1
 				defext=1
 				While True
 					q=exs.find(";",q+1)
@@ -127,8 +127,8 @@ Type TWin32SystemDriver Extends TSystemDriver
 	
 	End Method
 	
-	Method OpenURL( url$ )
-		bbOpenURL( url )
+	Method OpenURL:Int( url$ )
+		Return bbOpenURL( url )
 	End Method
 
 	Method DesktopWidth:Int()
