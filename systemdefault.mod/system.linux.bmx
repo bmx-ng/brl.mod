@@ -121,8 +121,12 @@ Type TLinuxSystemDriver Extends TSystemDriver
 		Return bbSystemDesktopHertz()
 	End Method
 
+	Method Name:String()
+		Return "LinuxSystemDriver"
+	End Method
+	
 End Type
 
-Driver=New TLinuxSystemDriver
+InitSystemDriver(New TLinuxSystemDriver)
 
 ?

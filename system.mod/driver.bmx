@@ -1,8 +1,10 @@
 
 SuperStrict
 
-Type TSystemDriver
+Type TSystemDriver Abstract
 
+	Method Name:String() Abstract
+	
 	Method Poll() Abstract
 	Method Wait() Abstract
 	
@@ -21,7 +23,34 @@ Type TSystemDriver
 	Method DesktopHeight:Int() Abstract
 	Method DesktopDepth:Int() Abstract
 	Method DesktopHertz:Int() Abstract
-	
+
+	Method ToString:String()
+		Return Name()
+	End Method
+
 End Type
 
-Global Driver:TSystemDriver
+Private
+Global _Driver:TSystemDriver
+Public
+
+Rem
+bbdoc: Initialises the BlitzMax system driver.
+about: There can only be one system driver initialised. A second call to this function will result in an exception.
+End Rem
+Function InitSystemDriver(driver:TSystemDriver)
+	If _Driver Throw "Cannot initialise " + driver.ToString() + ". System driver already configured as " + _Driver.ToString()
+	_Driver = driver
+End Function
+
+Rem
+bbdoc: Returns the BlitzMax system driver, or throws an exception if #InitSystemDriver() hasn't been called with one.
+End Rem
+Function SystemDriver:TSystemDriver()
+	If Not _Driver Then
+		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
+	End If
+	Return _Driver
+End Function
+
+

@@ -147,4 +147,8 @@ Type TWin32SystemDriver Extends TSystemDriver
 		Return bbSystemDesktopHertz()
 	End Method
 
+	Method Name:String()
+		Return "Win32SystemDriver"
+	End Method
+	
 End Type

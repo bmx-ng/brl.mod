@@ -127,5 +127,9 @@ Type TMacOSSystemDriver Extends TSystemDriver
 		Return bbSystemDesktopHertz()
 	End Method
 
+	Method Name:String()
+		Return "MacOSSystemDriver "
+	End Method
+
 End Type
 
