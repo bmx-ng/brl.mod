@@ -1,7 +1,7 @@
 
 SuperStrict
 
-Type TSystemDriver Abstract
+Type TSystemDriver
 
 	Method Name:String() Abstract
 	
