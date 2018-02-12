@@ -30,7 +30,7 @@ static const char *appTitleA(){
 	return bbStringToCString( bbAppTitle );
 }
 
-static int keyCode( int wp,int lp ){
+static int keyCode( WPARAM wp,LPARAM lp){
 	switch( ((lp>>17)&0x80)|((lp>>16)&0x7f) ){
 	case 42:return VK_LSHIFT;
 	case 54:return VK_RSHIFT;
