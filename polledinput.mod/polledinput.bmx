@@ -6,12 +6,14 @@ bbdoc: User input/Polled input
 End Rem
 Module BRL.PolledInput
 
-ModuleInfo "Version: 1.02"
+ModuleInfo "Version: 1.03"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Improved Win32 KeyDown support."
 ModuleInfo "History: 1.02"
 ModuleInfo "History: Added SetAutoPoll() function."
 ModuleInfo "History: 1.01 Release"
@@ -20,6 +22,10 @@ ModuleInfo "History: Fixed charQueue bug"
 Import BRL.System
 
 Private
+
+Extern "Win32"
+  Function GetAsyncKeyState:Short(key:Int)="SHORT __stdcall GetAsyncKeyState(int)!"
+End Extern
 
 Global enabled
 Global autoPoll=True
@@ -150,8 +156,12 @@ about:
 See the #{key codes} module for a list of valid keycodes.
 End Rem
 Function KeyDown( key )
+?win32
+	Return (GetAsyncKeyState(key) & $8000) <> 0
+?Not win32
 	If autoPoll PollSystem
 	Return keyStates[key]
+?
 End Function
 
 Rem
