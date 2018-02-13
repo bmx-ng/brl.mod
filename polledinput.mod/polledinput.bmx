@@ -13,7 +13,7 @@ ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
 ModuleInfo "History: 1.03"
-ModuleInfo "History: Improved Win32 KeyDown support."
+ModuleInfo "History: Improved Win32 KeyDown handling."
 ModuleInfo "History: 1.02"
 ModuleInfo "History: Added SetAutoPoll() function."
 ModuleInfo "History: 1.01 Release"
@@ -22,10 +22,6 @@ ModuleInfo "History: Fixed charQueue bug"
 Import BRL.System
 
 Private
-
-Extern "Win32"
-  Function GetAsyncKeyState:Short(key:Int)="SHORT __stdcall GetAsyncKeyState(int)!"
-End Extern
 
 Global enabled
 Global autoPoll=True
@@ -46,10 +42,12 @@ Function Hook:Object( id,data:Object,context:Object )
 	If inputSource And inputSource<>ev.source Return data
 	
 	Select ev.id
-	Case EVENT_KEYDOWN
+	Case EVENT_KEYDOWN, EVENT_KEYREPEAT
 		If Not keyStates[ev.data]
 			keyStates[ev.data]=1
-			keyHits[ev.data]:+1
+			If ev.id <> EVENT_KEYREPEAT
+				keyHits[ev.data]:+1
+			End If
 		EndIf
 	Case EVENT_KEYUP
 		keyStates[ev.data]=0
@@ -156,12 +154,8 @@ about:
 See the #{key codes} module for a list of valid keycodes.
 End Rem
 Function KeyDown( key )
-?win32
-	Return (GetAsyncKeyState(key) & $8000) <> 0
-?Not win32
 	If autoPoll PollSystem
 	Return keyStates[key]
-?
 End Function
 
 Rem
