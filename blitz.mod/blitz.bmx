@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.19"
+ModuleInfo "Version: 1.20"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.20"
+ModuleInfo "History: Update to bdwgc 7.7.0."
 ModuleInfo "History: 1.19"
 ModuleInfo "History: Added interfaces."
 ModuleInfo "History: Added Interface and EndInterface keyword docs"
@@ -124,11 +126,9 @@ Import "bdwgc/mark_rts.c"
 Import "bdwgc/headers.c"
 Import "bdwgc/mark.c"
 Import "bdwgc/obj_map.c"
-Import "bdwgc/pcr_interface.c"
 Import "bdwgc/blacklst.c"
 Import "bdwgc/finalize.c"
 Import "bdwgc/new_hblk.c"
-Import "bdwgc/real_malloc.c"
 Import "bdwgc/dyn_load.c"
 Import "bdwgc/dbg_mlc.c"
 Import "bdwgc/malloc.c"

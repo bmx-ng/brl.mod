@@ -157,8 +157,7 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 #if !defined(GC_NO_OPERATOR_NEW_ARRAY) \
     && !defined(_ENABLE_ARRAYNEW) /* Digimars */ \
     && (defined(__BORLANDC__) && (__BORLANDC__ < 0x450) \
-        || (defined(__GNUC__) && \
-            (__GNUC__ < 2 || __GNUC__ == 2 && __GNUC_MINOR__ < 6)) \
+        || (defined(__GNUC__) && !GC_GNUC_PREREQ(2, 6)) \
         || (defined(_MSC_VER) && _MSC_VER <= 1020) \
         || (defined(__WATCOMC__) && __WATCOMC__ < 1050))
 # define GC_NO_OPERATOR_NEW_ARRAY
@@ -255,8 +254,8 @@ extern "C" {
 #endif
 
 inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
-                          GC_NS_QUALIFY(GCCleanUpFunc) cleanup = 0,
-                          void* clientData = 0);
+                          GC_NS_QUALIFY(GCCleanUpFunc) /* cleanup */ = 0,
+                          void* /* clientData */ = 0);
     // Allocates a collectible or uncollectible object, according to the
     // value of "gcp".
     //
@@ -307,15 +306,19 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   }
 
   // This new operator is used by VC++ in case of Debug builds:
-  inline void* operator new(size_t size, int /* nBlockUse */,
-                            const char* szFileName, int nLine)
-  {
-#   ifndef GC_DEBUG
-      return GC_malloc_uncollectable(size);
-#   else
+# ifdef GC_DEBUG
+    inline void* operator new(size_t size, int /* nBlockUse */,
+                              const char* szFileName, int nLine)
+    {
       return GC_debug_malloc_uncollectable(size, szFileName, nLine);
-#   endif
-  }
+    }
+# else
+    inline void* operator new(size_t size, int /* nBlockUse */,
+                              const char* /* szFileName */, int /* nLine */)
+    {
+      return GC_malloc_uncollectable(size);
+    }
+# endif /* !GC_DEBUG */
 
 # if _MSC_VER > 1020
     // This new operator is used by VC++ 7+ in Debug builds:
@@ -331,8 +334,8 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 #ifdef GC_OPERATOR_NEW_ARRAY
   // The operator new for arrays, identical to the above.
   inline void* operator new[](size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
-                              GC_NS_QUALIFY(GCCleanUpFunc) cleanup = 0,
-                              void* clientData = 0);
+                              GC_NS_QUALIFY(GCCleanUpFunc) /* cleanup */ = 0,
+                              void* /* clientData */ = 0);
 #endif // GC_OPERATOR_NEW_ARRAY
 
 /* Inline implementation */
@@ -416,7 +419,9 @@ inline void gc::operator delete(void* obj)
 
 inline gc_cleanup::~gc_cleanup()
 {
-  GC_register_finalizer_ignore_self(GC_base(this), 0, 0, 0, 0);
+  void* base = GC_base(this);
+  if (0 == base) return; // Non-heap object.
+  GC_register_finalizer_ignore_self(base, 0, 0, 0, 0);
 }
 
 inline void GC_CALLBACK gc_cleanup::cleanup(void* obj, void* displ)
@@ -428,11 +433,12 @@ inline gc_cleanup::gc_cleanup()
 {
   GC_finalization_proc oldProc;
   void* oldData;
-  void* base = GC_base((void*) this);
+  void* this_ptr = (void*)this;
+  void* base = GC_base(this_ptr);
   if (base != 0) {
     // Don't call the debug version, since this is a real base address.
     GC_register_finalizer_ignore_self(base, (GC_finalization_proc) cleanup,
-                                      (void*) ((char*) this - (char*) base),
+                                      (void*)((char*)this_ptr - (char*)base),
                                       &oldProc, &oldData);
     if (oldProc != 0) {
       GC_register_finalizer_ignore_self(base, oldProc, oldData, 0, 0);
@@ -485,13 +491,5 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
     return ::operator new(size, gcp, cleanup, clientData);
   }
 #endif // GC_OPERATOR_NEW_ARRAY
-
-#if defined(__CYGWIN__)
-# include <new> // for delete throw()
-  inline void operator delete(void* p)
-  {
-    GC_FREE(p);
-  }
-#endif // __CYGWIN__
 
 #endif /* GC_CPP_H */
