@@ -6,12 +6,14 @@ bbdoc: BASIC/Reflection
 End Rem
 Module BRL.Reflection
 
-ModuleInfo "Version: 1.05"
+ModuleInfo "Version: 1.06"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.06"
+ModuleInfo "History: Cache lower case memmber names and use map lookup instead of list."
 ModuleInfo "History: 1.05"
 ModuleInfo "History: Added size_t, UInt and ULong primitives."
 ModuleInfo "History: 1.04"
@@ -1210,6 +1212,13 @@ Type TMember
 	Method Name$()
 		Return _name
 	End Method
+	
+	Method NameLower$()
+		If Not _nameLower Then
+			_nameLower = _name.ToLower()
+		End If
+		Return _nameLower
+	End Method
 
 	Rem
 	bbdoc: Get member type
@@ -1226,6 +1235,7 @@ Type TMember
 	End Method
 	
 	Field _name$,_typeId:TTypeId,_meta$
+	Field _nameLower$
 	
 End Type
 
@@ -1764,7 +1774,7 @@ Type TTypeId
 	bbdoc: Get list of constants
 	about: Only returns constants declared in this type, not in super types.
 	End Rem
-	Method Constants:TList()
+	Method Constants:TStringMap()
 		Return _consts
 	End Method	
 	
@@ -1772,7 +1782,7 @@ Type TTypeId
 	bbdoc: Get list of fields
 	about: Only returns fields declared in this type, not in super types.
 	End Rem
-	Method Fields:TList()
+	Method Fields:TStringMap()
 		Return _fields
 	End Method
 
@@ -1780,7 +1790,7 @@ Type TTypeId
 	bbdoc: Get list of globals
 	about: Only returns globals declared in this type, not in super types.
 	End Rem
-	Method Globals:TList()
+	Method Globals:TStringMap()
 		Return _globals
 	End Method
 
@@ -1788,7 +1798,7 @@ Type TTypeId
 	bbdoc: Get list of functions
 	about: Only returns functions declared in this type, not in super types.
 	EndRem
-	Method Functions:TList()
+	Method Functions:TStringMap()
 		Return _functions
 	End Method	
 	
@@ -1796,7 +1806,7 @@ Type TTypeId
 	bbdoc: Get list of methods
 	about: Only returns methods declared in this type, not in super types.
 	End Rem
-	Method Methods:TList()
+	Method Methods:TStringMap()
 		Return _methods
 	End Method
 	
@@ -1813,9 +1823,11 @@ Type TTypeId
 	End Rem
 	Method FindConstant:TConstant( name$ )
 		name=name.ToLower()
-		For Local t:TConstant=EachIn _consts
-			If t.Name().ToLower()=name Return t
-		Next
+		Local t:TConstant = TConstant(_consts.ValueForKey(name))
+		If t Return t
+'		For Local t:TConstant=EachIn _consts
+'			If t.NameLower()=name Return t
+'		Next
 		If _super Return _super.FindConstant( name )
 	End Method	
 	
@@ -1825,9 +1837,8 @@ Type TTypeId
 	End Rem
 	Method FindField:TField( name$ )
 		name=name.ToLower()
-		For Local t:TField=EachIn _fields
-			If t.Name().ToLower()=name Return t
-		Next
+		Local t:TField = TField(_fields.ValueForKey(name))
+		If t Then Return t
 		If _super Return _super.FindField( name )
 	End Method
 
@@ -1837,9 +1848,8 @@ Type TTypeId
 	End Rem
 	Method FindGlobal:TGlobal( name$ )
 		name=name.ToLower()
-		For Local t:TGlobal=EachIn _globals
-			If t.Name().ToLower()=name Return t
-		Next
+		Local t:TGlobal = TGlobal(_globals.ValueForKey(name))
+		If t Then Return t
 		If _super Return _super.FindGlobal( name )
 	End Method
 
@@ -1849,9 +1859,8 @@ Type TTypeId
 	endrem
 	Method FindFunction:TFunction(name:String)
 		name = name.ToLower()
-		For Local t:TFunction = EachIn _functions
-			If t.Name().ToLower() = name Return t
-		Next
+		Local t:TFunction = TFunction(_functions.ValueForKey(name))
+		If t Then Return t
 		If _super Return _super.FindFunction(name)
 	End Method
 	
@@ -1861,9 +1870,8 @@ Type TTypeId
 	End Rem
 	Method FindMethod:TMethod( name$ )
 		name=name.ToLower()
-		For Local t:TMethod=EachIn _methods
-			If t.Name().ToLower()=name Return t
-		Next
+		Local t:TMethod = TMethod(_methods.ValueForKey(name))
+		If t Then Return t
 		If _super Return _super.FindMethod( name )
 	End Method
 
@@ -1874,7 +1882,7 @@ Type TTypeId
 	Method EnumConstants:TList( list:TList=Null )
 		If Not list list=New TList
 		If _super _super.EnumConstants list
-		For Local t:TConstant=EachIn _consts
+		For Local t:TConstant=EachIn _consts.Values()
 			list.AddLast t
 		Next
 		Return list
@@ -1887,7 +1895,7 @@ Type TTypeId
 	Method EnumFields:TList( list:TList=Null )
 		If Not list list=New TList
 		If _super _super.EnumFields list
-		For Local t:TField=EachIn _fields
+		For Local t:TField=EachIn _fields.Values()
 			list.AddLast t
 		Next
 		Return list
@@ -1900,7 +1908,7 @@ Type TTypeId
 	Method EnumGlobals:TList( list:TList=Null )
 		If Not list list=New TList
 		If _super _super.EnumGlobals list
-		For Local t:TField=EachIn _globals
+		For Local t:TField=EachIn _globals.Values()
 			list.AddLast t
 		Next
 		Return list
@@ -1919,7 +1927,7 @@ Type TTypeId
 
 		If Not list list=New TList
 		If _super And _super <> Self Then _super.EnumFunctions list
-		For Local t:TFunction=EachIn _functions
+		For Local t:TFunction=EachIn _functions.Values()
 			list.AddLast t
 		Next
 		
@@ -1943,7 +1951,7 @@ Type TTypeId
 	Method EnumMethods:TList( list:TList=Null )
 		If Not list list=New TList
 		If _super _super.EnumMethods list
-		For Local t:TMethod=EachIn _methods
+		For Local t:TMethod=EachIn _methods.Values()
 			list.AddLast t
 		Next
 		Return list
@@ -2097,11 +2105,11 @@ Type TTypeId
 		_size=size
 		_class=class
 		_super=supor
-		_consts=New TList
-		_fields=New TList
-		_globals=New TList
-		_functions=New TList
-		_methods=New TList
+		_consts=New TStringMap
+		_fields=New TStringMap
+		_globals=New TStringMap
+		_functions=New TStringMap
+		_methods=New TStringMap
 		_nameMap.Insert _name.ToLower(),Self
 		If class _classMap.Insert class,Self
 		Return Self
@@ -2181,11 +2189,11 @@ Type TTypeId
 	
 	Method _Resolve()
 		If _fields Or Not _class Return
-		_consts=New TList
-		_fields=New TList
-		_globals=New TList
-		_functions=New TList
-		_methods=New TList
+		_consts=New TStringMap
+		_fields=New TStringMap
+		_globals=New TStringMap
+		_functions=New TStringMap
+		_methods=New TStringMap
 		_interfaces=New TList
 		
 		If Not _interface Then
@@ -2211,14 +2219,21 @@ Type TTypeId
 			Case 1	'const
 				Local tt:TTypeId = TypeIdFortag(ty)
 				If tt Then
-					_consts.AddLast New TConstant.Init( id, tt, meta, bbDebugDeclConstValue(p))
+					Local t:TConstant = New TConstant.Init( id, tt, meta, bbDebugDeclConstValue(p))
+					_consts.Insert(t.NameLower(), t)
 				EndIf
 			Case 3	'field
 				Local typeId:TTypeId=TypeIdForTag( ty )
-				If typeId _fields.AddLast New TField.Init( id,typeId,meta,bbDebugDeclFieldOffset(p) )
+				If typeId Then
+					Local t:TField = New TField.Init( id,typeId,meta,bbDebugDeclFieldOffset(p) )
+					_fields.Insert(t.NameLower(), t)
+				End If
 			Case 4	'global
 				Local typeId:TTypeId=TypeIdForTag( ty )
-				If typeId _globals.AddLast New TGlobal.Init( id,typeId,meta, bbDebugDeclVarAddress(p) )
+				If typeId Then
+					Local t:TGlobal = New TGlobal.Init( id,typeId,meta, bbDebugDeclVarAddress(p) )
+					_globals.Insert(t.NameLower(), t)
+				End If
 			Case 6, 7	'method/function
 				Local t$[]=ty.Split( ")" )
 				Local retType:TTypeId=TypeIdForTag( t[1] )
@@ -2254,9 +2269,11 @@ Type TTypeId
 					EndIf
 					If retType
 						If bbDebugDeclKind(p) = 6 Then ' method
-							_methods.AddLast New TMethod.Init(id, TypeIdForTag(ty), meta, Self, bbDebugDeclVarAddress(p), argTypes)
+							Local t:TMethod = New TMethod.Init(id, TypeIdForTag(ty), meta, Self, bbDebugDeclVarAddress(p), argTypes)
+							_methods.Insert(t.NameLower(), t)
 						Else ' function
-							_functions.AddLast New TFunction.Init(id, TypeIdForTag(ty), meta, Self, bbDebugDeclVarAddress(p), argTypes)
+							Local t:TFunction = New TFunction.Init(id, TypeIdForTag(ty), meta, Self, bbDebugDeclVarAddress(p), argTypes)
+							_functions.Insert(t.NameLower(), t)
 						End If
 					EndIf
 				EndIf
@@ -2285,11 +2302,11 @@ Type TTypeId
 ?ptr64
 	Field _size=8
 ?
-	Field _consts:TList
-	Field _fields:TList
-	Field _globals:TList
-	Field _functions:TList
-	Field _methods:TList
+	Field _consts:TStringMap
+	Field _fields:TStringMap
+	Field _globals:TStringMap
+	Field _functions:TStringMap
+	Field _methods:TStringMap
 	Field _interfaces:TList
 	Field _super:TTypeId
 	Field _derived:TList
