@@ -84,19 +84,18 @@ End Function
 
 Global dead_texs[],n_dead_texs,dead_tex_seq,n_live_texs
 
+Extern
+	Function bbAtomicAdd:Int( target:Int Ptr,value:Int )="int bbAtomicAdd( int *,int )!"
+End Extern
+
 'Enqueues a texture for deletion, to prevent release textures on wrong thread.
-'
-'Not thread safe, but that's OK because all threads are stopped when TGLImageFrame.Delete()
-'is called, which is what calls us.
-'
 Function DeleteTex( name,seq )
-
 	If seq<>dead_tex_seq Return
+	
+	Local n:Int = bbAtomicAdd(Varptr n_dead_texs, 1)
+	bbAtomicAdd(Varptr n_live_texs, -1)
 
-	dead_texs[n_dead_texs]=name
-	n_dead_texs:+1
-	n_live_texs:-1
-	'
+	dead_texs[n] = name
 End Function
 
 Function _ManageDeadTexArray()
