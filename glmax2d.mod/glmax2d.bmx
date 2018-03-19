@@ -82,7 +82,7 @@ Function Pow2Size( n )
 	Return t
 End Function
 
-Global dead_texs[],n_dead_texs,dead_tex_seq
+Global dead_texs[],n_dead_texs,dead_tex_seq,n_live_texs
 
 'Enqueues a texture for deletion, to prevent release textures on wrong thread.
 '
@@ -93,19 +93,26 @@ Function DeleteTex( name,seq )
 
 	If seq<>dead_tex_seq Return
 
-	'add tex to queue
-	If dead_texs.length=n_dead_texs
-		dead_texs=dead_texs[..n_dead_texs+10]
-	EndIf
 	dead_texs[n_dead_texs]=name
 	n_dead_texs:+1
+	n_live_texs:-1
 	'
+End Function
+
+Function _ManageDeadTexArray()
+	If dead_texs.length <= n_live_texs
+		' expand array so it's large enough to hold all the current live textures.
+		dead_texs=dead_texs[..n_live_texs+20]
+	EndIf
 End Function
 
 Function CreateTex( width,height,flags )
 	'alloc new tex
 	Local name
 	glGenTextures 1,Varptr name
+	
+	n_live_texs :+ 1
+	_ManageDeadTexArray()
 	
 	'flush dead texs
 	If dead_tex_seq=GraphicsSeq
