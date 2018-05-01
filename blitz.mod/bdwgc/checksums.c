@@ -39,18 +39,21 @@ STATIC word GC_faulted[NSUMS] = { 0 };
 
 STATIC size_t GC_n_faulted = 0;
 
-void GC_record_fault(struct hblk * h)
-{
-    word page = ROUNDUP_PAGESIZE((word)h);
+#if defined(MPROTECT_VDB) && !defined(DARWIN)
+  void GC_record_fault(struct hblk * h)
+  {
+    word page = (word)h & ~(GC_page_size - 1);
 
+    GC_ASSERT(GC_page_size != 0);
     if (GC_n_faulted >= NSUMS) ABORT("write fault log overflowed");
     GC_faulted[GC_n_faulted++] = page;
-}
+  }
+#endif
 
 STATIC GC_bool GC_was_faulted(struct hblk *h)
 {
     size_t i;
-    word page = ROUNDUP_PAGESIZE((word)h);
+    word page = (word)h & ~(GC_page_size - 1);
 
     for (i = 0; i < GC_n_faulted; ++i) {
         if (GC_faulted[i] == page) return TRUE;
@@ -76,7 +79,7 @@ STATIC word GC_checksum(struct hblk *h)
   STATIC GC_bool GC_on_free_list(struct hblk *h)
   {
     hdr * hhdr = HDR(h);
-    size_t sz = BYTES_TO_WORDS(hhdr -> hb_sz);
+    word sz = BYTES_TO_WORDS(hhdr -> hb_sz);
     ptr_t p;
 
     if (sz > MAXOBJWORDS) return(FALSE);
@@ -90,8 +93,8 @@ STATIC word GC_checksum(struct hblk *h)
 int GC_n_dirty_errors = 0;
 int GC_n_faulted_dirty_errors = 0;
 int GC_n_changed_errors = 0;
-int GC_n_clean = 0;
-int GC_n_dirty = 0;
+unsigned long GC_n_clean = 0;
+unsigned long GC_n_dirty = 0;
 
 STATIC void GC_update_check_page(struct hblk *h, int index)
 {
@@ -145,11 +148,8 @@ word GC_bytes_in_used_blocks = 0;
 STATIC void GC_add_block(struct hblk *h, word dummy GC_ATTR_UNUSED)
 {
    hdr * hhdr = HDR(h);
-   size_t bytes = hhdr -> hb_sz;
 
-   bytes += HBLKSIZE-1;
-   bytes &= ~(HBLKSIZE-1);
-   GC_bytes_in_used_blocks += bytes;
+   GC_bytes_in_used_blocks += (hhdr->hb_sz + HBLKSIZE-1) & ~(HBLKSIZE-1);
 }
 
 STATIC void GC_check_blocks(void)
@@ -196,14 +196,13 @@ void GC_check_dirty(void)
     }
 out:
     GC_COND_LOG_PRINTF("Checked %lu clean and %lu dirty pages\n",
-                       (unsigned long)GC_n_clean, (unsigned long)GC_n_dirty);
+                       GC_n_clean, GC_n_dirty);
     if (GC_n_dirty_errors > 0) {
         GC_err_printf("Found %d dirty bit errors (%d were faulted)\n",
                       GC_n_dirty_errors, GC_n_faulted_dirty_errors);
     }
     if (GC_n_changed_errors > 0) {
-        GC_err_printf("Found %lu changed bit errors\n",
-                      (unsigned long)GC_n_changed_errors);
+        GC_err_printf("Found %d changed bit errors\n", GC_n_changed_errors);
         GC_err_printf(
                 "These may be benign (provoked by nonpointer changes)\n");
 #       ifdef THREADS

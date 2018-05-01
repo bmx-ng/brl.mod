@@ -6,12 +6,14 @@ bbdoc: User input/Polled input
 End Rem
 Module BRL.PolledInput
 
-ModuleInfo "Version: 1.02"
+ModuleInfo "Version: 1.03"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Improved Win32 KeyDown handling."
 ModuleInfo "History: 1.02"
 ModuleInfo "History: Added SetAutoPoll() function."
 ModuleInfo "History: 1.01 Release"
@@ -40,10 +42,12 @@ Function Hook:Object( id,data:Object,context:Object )
 	If inputSource And inputSource<>ev.source Return data
 	
 	Select ev.id
-	Case EVENT_KEYDOWN
+	Case EVENT_KEYDOWN, EVENT_KEYREPEAT
 		If Not keyStates[ev.data]
 			keyStates[ev.data]=1
-			keyHits[ev.data]:+1
+			If ev.id <> EVENT_KEYREPEAT
+				keyHits[ev.data]:+1
+			End If
 		EndIf
 	Case EVENT_KEYUP
 		keyStates[ev.data]=0

@@ -1,17 +1,21 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Streams/Socket streams
 End Rem
 Module BRL.SocketStream
 
-ModuleInfo "Version: 1.05"
+ModuleInfo "Version: 1.07"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.07"
+ModuleInfo "History: Fixed passing incorrect argument to AddrInfo()"
+ModuleInfo "History: 1.06"
+ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.05 Release"
 ModuleInfo "History: CreateStream port handling fix documented"
 ModuleInfo "History: 1.04 Release"
@@ -30,7 +34,7 @@ Type TSocketStream Extends TStream
 		Return _socket.Send( buf,Size_T(count) )
 	End Method
 
-	Method Eof()
+	Method Eof:Int()
 		If Not _socket Return True
 		If _socket.Connected() Return False
 		Close
@@ -47,22 +51,20 @@ Type TSocketStream Extends TStream
 		Return _socket
 	End Method
 	
-	Function Create:TSocketStream( socket:TSocket,autoClose=True )
+	Function Create:TSocketStream( socket:TSocket,autoClose:Int=True )
 		Local t:TSocketStream=New TSocketStream
 		t._socket=socket
 		t._autoClose=autoClose
 		Return t
 	End Function
 	
-	Function CreateClient:TSocketStream( remoteHost$,remotePort, family:Int = AF_INET_ )
-		Local addrInfo:TAddrInfo[] = AddrInfo(remoteHost, family)
-		'Local remoteIp:String=HostIp( remoteHost, family )
-		'If Not remoteIp Return
-		If Not addrInfo Return
+	Function CreateClient:TSocketStream( remoteHost$,remotePort:Int, family:Int = AF_INET_ )
+		Local AddrInfo:TAddrInfo[] = AddrInfo(remoteHost, remotePort, family)
+		If Not AddrInfo Return Null
 		
 		Local socket:TSocket=TSocket.CreateTCP()
 		If socket
-			If socket.Connect( addrInfo[0] ) 
+			If socket.Connect( AddrInfo[0] ) 
 				Return Create( socket,True )
 			EndIf
 			socket.Close
@@ -70,14 +72,14 @@ Type TSocketStream Extends TStream
 
 	End Function
 	
-	Field _socket:TSocket,_autoClose
+	Field _socket:TSocket,_autoClose:Int
 	
 End Type
 
 Type TSocketStreamFactory Extends TStreamFactory
-	Method CreateStream:TSocketStream( url:Object,proto$,path$,readable,writeable )
+	Method CreateStream:TSocketStream( url:Object,proto$,path$,readable:Int,writeable:Int )
 		If proto$="tcp"
-			Local i=path.Find( ":",0 ),server$,port
+			Local i:Int=path.Find( ":",0 ),server$,port:Int
 			If i>=0 Return TSocketStream.CreateClient( path[..i],Int(path[i+1..]) )
 			Return TSocketStream.CreateClient( path,80 )
 		EndIf
@@ -96,7 +98,7 @@ If @autoClose is true, @socket will be automatically closed when the socket
 stream is closed. Otherwise, it is up to you to somehow close @socket at
 a later time.
 End Rem
-Function CreateSocketStream:TSocketStream( socket:TSocket,autoClose=True )
+Function CreateSocketStream:TSocketStream( socket:TSocket,autoClose:Int=True )
 	Return TSocketStream.Create( socket,autoClose )
 End Function
 

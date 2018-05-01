@@ -78,11 +78,11 @@ Import "system.c"
 
 ?osx
 Import "system.macos.bmx"
-Driver=New TMacOSSystemDriver
+InitSystemDriver(New TMacOSSystemDriver)
 ?Win32
 Import "system.win32.bmx"
 Import "-lcomdlg32"
-Driver=New TWin32SystemDriver
+InitSystemDriver(New TWin32SystemDriver)
 ?Linux
 Import "system.linux.bmx"
 ?

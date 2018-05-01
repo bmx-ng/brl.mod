@@ -25,7 +25,7 @@ end rem
 Type TBank
 
 	Field _buf:Byte Ptr
-	Field _size:Size_T,_capacity:Size_T
+	Field _size:Size_T,_capacity:Size_T,_static:Int
 	Field _locked
 	
 	Method _pad()
@@ -85,13 +85,20 @@ Type TBank
 	Method Capacity:Size_T()
 		Return _capacity
 	End Method
+	
+	Rem
+	bbdoc: Returns True if the bank is static.
+	End Rem
+	Method IsStatic:Int()
+		Return _static
+	End Method
 
 	Rem
 	bbdoc: Resize a bank
 	End Rem
 	Method Resize( size:Size_T )
 		Assert _locked=0 Else "Locked banks cannot be resize"
-		Assert _capacity>=0 Else "Static banks cannot be resized"
+		Assert _static=0 Else "Static banks cannot be resized"
 		If size>_capacity
 			Local n:Size_T=_capacity*3/2
 			If n<size n=size
@@ -279,7 +286,8 @@ Type TBank
 		Local bank:TBank=New TBank
 		bank._buf=buf
 		bank._size=size
-		bank._capacity=-1
+		bank._capacity=size
+		bank._static=True
 		Return bank
 	End Function
 

@@ -6,12 +6,14 @@ bbdoc: Events/Events
 End Rem
 Module BRL.Event
 
-ModuleInfo "Version: 1.06"
+ModuleInfo "Version: 1.07"
 ModuleInfo "Author: Mark Sibly, Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.07"
+ModuleInfo "History: Removed event pool."
 ModuleInfo "History: 1.06"
 ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.05"
@@ -28,18 +30,6 @@ ModuleInfo "History: 1.01 Release"
 ModuleInfo "History: Added EVENT_KEYREPEAT"
 
 Import BRL.Hook
-Import BRL.LinkedList
-?threaded
-Import BRL.Threads
-?
-Private
-
-Global _eventPool:TList = New TList
-?threaded
-Global _eventLock:TMutex = TMutex.Create()
-?
-
-Public
 
 Rem
 bbdoc: Hook id for emitted events
@@ -91,8 +81,6 @@ Type TEvent
 	End Rem
 	Field extra:Object
 	
-	Field usePool:Int
-	
 	Rem
 	bbdoc: Emit this event
 	about:
@@ -101,15 +89,6 @@ Type TEvent
 	End Rem
 	Method Emit()
 		RunHooks EmitEventHook,Self
-?threaded
-		_eventLock.Lock()
-?
-		If usePool Then
-			_eventPool.AddLast Self
-		End If
-?threaded
-		_eventLock.Unlock()
-?
 	End Method
 
 	Rem
@@ -133,19 +112,8 @@ Type TEvent
 	bbdoc: Create an event object
 	returns: A new event object
 	End Rem
-	Function Create:TEvent( id:Int,source:Object=Null,data:Int=0,mods:Int=0,x:Int=0,y:Int=0,extra:Object=Null,usePool:Int = True )
-		Local t:TEvent
-?threaded
-		_eventLock.Lock()
-?
-		If usePool And Not _eventPool.IsEmpty() Then
-			t = TEvent(_eventPool.RemoveFirst())
-		Else
-			t = New TEvent
-		End If
-?threaded
-		_eventLock.Unlock()
-?
+	Function Create:TEvent( id:Int,source:Object=Null,data:Int=0,mods:Int=0,x:Int=0,y:Int=0,extra:Object=Null)
+		Local t:TEvent = New TEvent
 		t.id=id
 		t.source=source
 		t.data=data
@@ -153,7 +121,6 @@ Type TEvent
 		t.x=x
 		t.y=y
 		t.extra=extra
-		t.usePool = usePool
 		Return t
 	End Function
 	
@@ -290,8 +257,8 @@ Rem
 bbdoc: Create an event object
 returns: A new event object
 End Rem
-Function CreateEvent:TEvent( id:Int,source:Object=Null,data:Int=0,mods:Int=0,x:Int=0,y:Int=0,extra:Object=Null,usePool:Int = True )
-	Return TEvent.Create( id,source,data,mods,x,y,extra,usePool )
+Function CreateEvent:TEvent( id:Int,source:Object=Null,data:Int=0,mods:Int=0,x:Int=0,y:Int=0,extra:Object=Null)
+	Return TEvent.Create( id,source,data,mods,x,y,extra)
 End Function
 
 Rem
