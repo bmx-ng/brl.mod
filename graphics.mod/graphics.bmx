@@ -87,6 +87,10 @@ Type TGraphicsDriver
 	
 	Method Flip( sync ) Abstract
 	
+	Method CanResize:Int()
+		Return False
+	End Method
+
 End Type
 
 Private
@@ -280,6 +284,16 @@ Function SetGraphics( g:TGraphics )
 	g.GetSettings _gWidth,_gHeight,_gDepth,_gHertz,_gFlags
 	d.SetGraphics g
 	_graphics=g
+End Function
+
+Rem
+bbdoc: Resize the current graphics object to @width, @height.
+End Rem
+Function GraphicsResize( width:Int, height:Int )
+	If _driver And _driver.CanResize() And _graphics Then
+		_gWidth = width
+		_gHeight = height
+	End If
 End Function
 
 Rem
