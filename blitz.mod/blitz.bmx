@@ -157,7 +157,7 @@ End Extern
 
 Rem
 bbdoc: Exception
-about: Basic exception class that can be extended to create more specific custom exceptions.
+about: Common base class of the built-in exceptions of the language.
 End Rem
 Type TBlitzException
 End Type
@@ -650,7 +650,7 @@ keyword: "Then"
 End Rem
 
 Rem
-bbdoc: Else provides the ability for an If Then construct to execute a second block of code when the If condition is false.
+bbdoc: Else provides the ability for an If-Then construct to execute a second block of code when the If condition is false.
 keyword: "Else"
 End Rem
 
@@ -660,7 +660,7 @@ keyword: "ElseIf"
 End Rem
 
 Rem
-bbdoc: Marks the End of an If Then construct.
+bbdoc: Marks the End of an If-Then construct.
 keyword: "EndIf"
 End Rem
 
@@ -845,7 +845,7 @@ keyword: "Final"
 End Rem
 
 Rem
-bbdoc: Specify constraints on the types that can be used as arguments For a Type parameter defined in a generic declaration
+bbdoc: Specify constraints on the types that can be used as arguments for a type parameter defined in a generic declaration
 keyword: "Where"
 End Rem
 
@@ -870,7 +870,7 @@ keyword: "Super"
 End Rem
 
 Rem
-bbdoc: Release an integer Object handle
+bbdoc: Release an integer object handle
 keyword: "Release"
 End Rem
 
