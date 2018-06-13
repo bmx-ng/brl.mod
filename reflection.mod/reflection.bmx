@@ -164,7 +164,7 @@ Function _Push:Byte Ptr( sp:Byte Ptr,typeId:TTypeId,value:Object )
 				(Long Ptr sp)[0]=value.ToString().ToLong()
 				Return sp+8
 ?
-			EndIf	
+			EndIf
 
 			Local c:Byte Ptr=typeId._class
 			Local t:Byte Ptr=bbRefGetObjectClass( value )
@@ -210,7 +210,7 @@ Function _Assign( p:Byte Ptr,typeId:TTypeId,value:Object )
 				(Long Ptr p)[0]=value.ToString().ToLong()
 ?
 				Return
-			EndIf	
+			EndIf
 
 			Local c:Byte Ptr=typeId._class
 			Local t:Byte Ptr=bbRefGetObjectClass( value )
@@ -1030,12 +1030,12 @@ Function TypeIdForTag:TTypeId( ty$ )
 					i:+1
 					While i < q.Length
 						If q[i] = Asc(",") Then
-							If level = 0 Then 
+							If level = 0 Then
 								Exit
 							End If
 						ElseIf q[i] = Asc(")") Then
 							level :- 1
-						ElseIf q[i] = Asc("(") Then 
+						ElseIf q[i] = Asc("(") Then
 							level :+ 1
 						EndIf
 						i:+1
@@ -1045,7 +1045,7 @@ Function TypeIdForTag:TTypeId( ty$ )
 				End Select
 			Wend
 			If b < q.Length Then args.AddLast q[b..]
-			
+
 			argTypes=New TTypeId[args.Count()]
 
 			i=0
@@ -1212,7 +1212,7 @@ Type TMember
 	Method Name$()
 		Return _name
 	End Method
-	
+
 	Method NameLower$()
 		If Not _nameLower Then
 			_nameLower = _name.ToLower()
@@ -1222,21 +1222,21 @@ Type TMember
 
 	Rem
 	bbdoc: Get member type
-	End Rem	
+	End Rem
 	Method TypeId:TTypeId()
 		Return _typeId
 	End Method
-	
+
 	Rem
 	bbdoc: Get member meta data
 	End Rem
 	Method MetaData$( key$="" )
 		Return ExtractMetaData( _meta,key )
 	End Method
-	
+
 	Field _name$,_typeId:TTypeId,_meta$
 	Field _nameLower$
-	
+
 End Type
 
 Rem
@@ -1268,28 +1268,28 @@ Type TConstant Extends TMember
 
 	Rem
 	bbdoc: Get constant value as @Float
-	EndRem	
+	EndRem
 	Method GetFloat:Int()
 		Return GetString().ToFloat()
 	EndMethod
 
 	Rem
 	bbdoc: Get constant value as @Long
-	EndRem	
+	EndRem
 	Method GetLong:Long()
 		Return GetString().ToLong()
 	EndMethod
 
 	Rem
 	bbdoc: Get constant value as @size_t
-	EndRem	
+	EndRem
 	Method GetSizet:Size_T()
 		Return GetString().ToSizet()
 	EndMethod
 
 	Rem
 	bbdoc: Get constant value as @Double
-	EndRem	
+	EndRem
 	Method GetDouble:Int()
 		Return GetString().ToDouble()
 	EndMethod
@@ -1327,93 +1327,93 @@ Type TField Extends TMember
 	Method Get:Object( obj:Object )
 		Return _Get( bbRefFieldPtr( obj,_index ),_typeId )
 	End Method
-	
+
 	Rem
 	bbdoc: Get int field value
 	End Rem
 	Method GetInt:Int( obj:Object )
 		Return GetString( obj ).ToInt()
 	End Method
-	
+
 	Rem
 	bbdoc: Get long field value
 	End Rem
 	Method GetLong:Long( obj:Object )
 		Return GetString( obj ).ToLong()
 	End Method
-	
+
 	Rem
 	bbdoc: Get size_t field value
 	End Rem
 	Method GetSizet:Size_T( obj:Object )
 		Return GetString( obj ).ToSizet()
 	End Method
-	
+
 	Rem
 	bbdoc: Get float field value
 	End Rem
 	Method GetFloat:Float( obj:Object )
 		Return GetString( obj ).ToFloat()
 	End Method
-	
+
 	Rem
 	bbdoc: Get double field value
 	End Rem
 	Method GetDouble:Double( obj:Object )
 		Return GetString( obj ).ToDouble()
 	End Method
-	
+
 	Rem
 	bbdoc: Get string field value
 	End Rem
 	Method GetString$( obj:Object )
 		Return String( Get( obj ) )
 	End Method
-	
+
 	Rem
 	bbdoc: Set field value
 	End Rem
 	Method Set( obj:Object,value:Object )
 		_Assign bbRefFieldPtr( obj,_index ),_typeId,value
 	End Method
-	
+
 	Rem
 	bbdoc: Set int field value
 	End Rem
 	Method SetInt( obj:Object,value:Int )
 		SetString obj,String.FromInt( value )
 	End Method
-	
+
 	Rem
 	bbdoc: Set long field value
 	End Rem
 	Method SetLong( obj:Object,value:Long )
 		SetString obj,String.FromLong( value )
 	End Method
-	
+
 	Rem
 	bbdoc: Set float field value
 	End Rem
 	Method SetFloat( obj:Object,value:Float )
 		SetString obj,String.FromFloat( value )
 	End Method
-	
+
 	Rem
 	bbdoc: Set double field value
 	End Rem
 	Method SetDouble( obj:Object,value:Double )
 		SetString obj,String.FromDouble( value )
 	End Method
-	
+
 	Rem
 	bbdoc: Set string field value
 	End Rem
 	Method SetString( obj:Object,value$ )
 		Set obj,value
 	End Method
-	
+
 	Field _index
-	
+
 End Type
 
 Rem
@@ -1435,100 +1435,100 @@ Type TGlobal Extends TMember
 	Method Get:Object()
 		Return _Get( _ref,_typeId )
 	End Method
-	
+
 	Rem
 	bbdoc: Get int global value
 	End Rem
 	Method GetInt:Int( )
 		Return GetString().ToInt()
 	End Method
-	
+
 	Rem
 	bbdoc: Get long global value
 	End Rem
 	Method GetLong:Long()
 		Return GetString().ToLong()
 	End Method
-	
+
 	Rem
 	bbdoc: Get size_t global value
 	End Rem
 	Method GetSizet:Size_T()
 		Return GetString().ToSizet()
 	End Method
-	
+
 	Rem
 	bbdoc: Get float global value
 	End Rem
 	Method GetFloat:Float()
 		Return GetString().ToFloat()
 	End Method
-	
+
 	Rem
 	bbdoc: Get double global value
 	End Rem
 	Method GetDouble:Double()
 		Return GetString().ToDouble()
 	End Method
-	
+
 	Rem
 	bbdoc: Get string global value
 	End Rem
 	Method GetString$()
 		Return String( Get() )
 	End Method
-	
+
 	Rem
 	bbdoc: Set global value
 	End Rem
 	Method Set(value:Object )
 		_Assign _ref,_typeId,value
 	End Method
-	
+
 	Rem
 	bbdoc: Set int global value
 	End Rem
 	Method SetInt(value:Int )
 		SetString String.FromInt( value )
 	End Method
-	
+
 	Rem
 	bbdoc: Set long global value
 	End Rem
 	Method SetLong(value:Long )
 		SetString String.FromLong( value )
 	End Method
-	
+
 	Rem
 	bbdoc: Set size_t global value
 	End Rem
 	Method SetSizet(value:Size_T )
 		SetString String.FromSizet( value )
 	End Method
-	
+
 	Rem
 	bbdoc: Set float global value
 	End Rem
 	Method SetFloat(value:Float )
 		SetString String.FromFloat( value )
 	End Method
-	
+
 	Rem
 	bbdoc: Set double global value
 	End Rem
 	Method SetDouble(value:Double )
 		SetString String.FromDouble( value )
 	End Method
-	
+
 	Rem
 	bbdoc: Set string global value
 	End Rem
 	Method SetString(value$ )
 		Set value
 	End Method
-	
+
 	Field _ref:Byte Ptr
-	
+
 End Type
 
 Rem
@@ -1539,7 +1539,7 @@ Type TFunction Extends TMember
 		_name=name
 		_typeId=typeId
 		_meta=meta
-		_selfTypeId=selfTypeId		
+		_selfTypeId=selfTypeId
 		_ref=ref
 		_argTypes=argTypes
 		Return Self
@@ -1551,28 +1551,28 @@ Type TFunction Extends TMember
 	Method ArgTypes:TTypeId[]()
 		Return _argTypes
 	End Method
-	
+
 	Rem
 	bbdoc: Get function return type
 	End Rem
 	Method ReturnType:TTypeId()
 		Return _typeId
 	End Method
-		
+
 	Rem
 	bbdoc: Get function pointer.
 	endrem
 	Method FunctionPtr:Byte Ptr()
 		Return _ref
 	End Method
-	
+
 	Rem
 	bbdoc: Invoke type function
-	endrem	
+	endrem
 	Method Invoke:Object(args:Object[] = Null)
 		Return _CallFunction( _ref, _typeId, args, _argTypes)
 	End Method
-	
+
 	Field _selfTypeId:TTypeId
 	Field _ref:Byte Ptr
 	Field _argTypes:TTypeId[]
@@ -1592,7 +1592,7 @@ Type TMethod Extends TMember
 		_argTypes=argTypes
 		Return Self
 	End Method
-	
+
 	Rem
 	bbdoc: Get method arg types
 	End Rem
@@ -1610,7 +1610,7 @@ Type TMethod Extends TMember
 	Method Invoke:Object( obj:Object,args:Object[] = Null)
 		Return _CallMethod( _ref,_typeId,obj,args,_argTypes )
 	End Method
-	
+
 	Field _selfTypeId:TTypeId
 	Field _ref:Byte Ptr
 	Field _argTypes:TTypeId[]
@@ -1628,21 +1628,21 @@ Type TTypeId
 	Method Name$()
 		Return _name
 	End Method
-	
+
 	Rem
 	bbdoc: Get type meta data
-	End Rem	
+	End Rem
 	Method MetaData$( key$="" )
 		Return ExtractMetaData( _meta,key )
 	End Method
 
 	Rem
 	bbdoc: Get super type
-	End Rem	
+	End Rem
 	Method SuperType:TTypeId()
 		Return _super
 	End Method
-	
+
 	Rem
 	bbdoc: Get array type
 	End Rem
@@ -1668,7 +1668,7 @@ Type TTypeId
 		EndIf
 		Return _arrayType
 	End Method
-	
+
 	Rem
 	bbdoc: Get element type
 	End Rem
@@ -1729,14 +1729,14 @@ Type TTypeId
 		If Not _retType Then Throw "TypeID is not a function type"
 		Return _retType
 	End Method
-		
+
 	Rem
 	bbdoc: Get function argument types
 	End Rem
 	Method ArgTypes:TTypeId[]()
 		If Not _retType Then Throw "TypeID is not a function type"
 		Return _argTypes
-	End Method		
+	End Method
 
 	Rem
 	bbdoc: Determine if type extends a type
@@ -1745,7 +1745,7 @@ Type TTypeId
 		If Self=typeId Return True
 		If _super Return _super.ExtendsType( typeId )
 	End Method
-	
+
 	Rem
 	bbdoc: Get list of derived types
 	End Rem
@@ -1756,28 +1756,28 @@ Type TTypeId
 
 	Rem
 	bbdoc: Create a new object
-	End Rem	
+	End Rem
 	Method NewObject:Object()
 		If Not _class Throw "Unable to create new object"
 		If _interface Throw "Unable to create object from interface"
 		Return bbObjectNew( _class )
 	End Method
-	
+
 	Rem
 	bbdoc: Returns True if this TypeId is an interface.
 	End Rem
 	Method IsInterface:Int()
 		Return _interface <> Null
 	End Method
-	
+
 	Rem
 	bbdoc: Get list of constants
 	about: Only returns constants declared in this type, not in super types.
 	End Rem
 	Method Constants:TStringMap()
 		Return _consts
-	End Method	
-	
+	End Method
+
 	Rem
 	bbdoc: Get list of fields
 	about: Only returns fields declared in this type, not in super types.
@@ -1800,8 +1800,8 @@ Type TTypeId
 	EndRem
 	Method Functions:TStringMap()
 		Return _functions
-	End Method	
-	
+	End Method
+
 	Rem
 	bbdoc: Get list of methods
 	about: Only returns methods declared in this type, not in super types.
@@ -1809,14 +1809,14 @@ Type TTypeId
 	Method Methods:TStringMap()
 		Return _methods
 	End Method
-	
+
 	Rem
 	bbdoc: Get list of implemented interfaces.
 	End Rem
 	Method Interfaces:TList()
 		Return _interfaces
 	End Method
-	
+
 	Rem
 	bbdoc: Find a constant by name
 	about: Searchs type hierarchy for constant called @name.
@@ -1829,8 +1829,8 @@ Type TTypeId
 '			If t.NameLower()=name Return t
 '		Next
 		If _super Return _super.FindConstant( name )
-	End Method	
-	
+	End Method
+
 	Rem
 	bbdoc: Find a field by name
 	about: Searchs type hierarchy for field called @name.
@@ -1863,7 +1863,7 @@ Type TTypeId
 		If t Then Return t
 		If _super Return _super.FindFunction(name)
 	End Method
-	
+
 	Rem
 	bbdoc: Find a method by name
 	about: Searchs type hierarchy for method called @name.
@@ -1878,11 +1878,11 @@ Type TTypeId
 	Rem
 	bbdoc: Enumerate all constants
 	about: Returns a list of all constants in type hierarchy
-	End Rem	
+	End Rem
 	Method EnumConstants:TList( list:TList=Null )
 		If Not list list=New TList
 		If _super _super.EnumConstants list
-		For Local t:TConstant=EachIn _consts.Values()
+		For Local t:TConstant=EachIn _constsList '.Values()
 			list.AddLast t
 		Next
 		Return list
@@ -1891,11 +1891,11 @@ Type TTypeId
 	Rem
 	bbdoc: Enumerate all fields
 	about: Returns a list of all fields in type hierarchy
-	End Rem	
+	End Rem
 	Method EnumFields:TList( list:TList=Null )
 		If Not list list=New TList
 		If _super _super.EnumFields list
-		For Local t:TField=EachIn _fields.Values()
+		For Local t:TField=EachIn _fieldsList '.Values()
 			list.AddLast t
 		Next
 		Return list
@@ -1904,11 +1904,11 @@ Type TTypeId
 	Rem
 	bbdoc: Enumerate all globals
 	about: Returns a list of all globals in type hierarchy
-	End Rem	
+	End Rem
 	Method EnumGlobals:TList( list:TList=Null )
 		If Not list list=New TList
 		If _super _super.EnumGlobals list
-		For Local t:TField=EachIn _globals.Values()
+		For Local t:TField=EachIn _globalsList '.Values()
 			list.AddLast t
 		Next
 		Return list
@@ -1927,15 +1927,15 @@ Type TTypeId
 
 		If Not list list=New TList
 		If _super And _super <> Self Then _super.EnumFunctions list
-		For Local t:TFunction=EachIn _functions.Values()
+		For Local t:TFunction=EachIn _functionsList '.Values()
 			list.AddLast t
 		Next
-		
+
 		' remove overridden functions
 		list.Sort( True, compareFunction)
 		Local prev:TFunction
 		For Local t:TFunction = EachIn list
-			If prev Then				
+			If prev Then
 				If (t.Name().Compare(prev.Name())) = 0 Then list.Remove(prev)
 			EndIf
 			prev = t
@@ -1943,20 +1943,20 @@ Type TTypeId
 
 		Return list
 	End Method
-	
+
 	Rem
 	bbdoc: Enumerate all methods
 	about: Returns a list of all methods in type hierarchy - TO DO: handle overrides!
-	End Rem	
+	End Rem
 	Method EnumMethods:TList( list:TList=Null )
 		If Not list list=New TList
 		If _super _super.EnumMethods list
-		For Local t:TMethod=EachIn _methods.Values()
+		For Local t:TMethod=EachIn _methodsList '.Values()
 			list.AddLast t
 		Next
 		Return list
 	End Method
-	
+
 	Rem
 	bbdoc: Create a new array
 	End Rem
@@ -1973,7 +1973,7 @@ Type TTypeId
 			Return bbRefArrayCreate( tag, dims )
 		End If
 	End Method
-	
+
 	Rem
 	bbdoc: Get array length
 	End Rem
@@ -1981,7 +1981,7 @@ Type TTypeId
 		If Not _elementType Throw "TypeID is not an array type"
 		Return bbRefArrayLength( _array, dim )
 	End Method
-	
+
 	Rem
 	bbdoc: Get the number of dimensions
 	End Rem
@@ -1989,7 +1989,7 @@ Type TTypeId
 		If Not _elementType Throw "TypeID is not an array type"
 		Return bbRefArrayDimensions( _array )
 	End Method
-	
+
 	Rem
 	bbdoc: Get an array element
 	End Rem
@@ -1998,7 +1998,7 @@ Type TTypeId
 		Local p:Byte Ptr=bbRefArrayElementPtr( _elementType._size,_array,index )
 		Return _Get( p,_elementType )
 	End Method
-	
+
 	Rem
 	bbdoc: Set an array element
 	End Rem
@@ -2007,7 +2007,7 @@ Type TTypeId
 		Local p:Byte Ptr=bbRefArrayElementPtr( _elementType._size,_array,index )
 		_Assign p,_elementType,value
 	End Method
-	
+
 	Rem
 	bbdoc: Get Type by name
 	End Rem
@@ -2062,7 +2062,7 @@ Type TTypeId
 
 	Rem
 	bbdoc: Get Type by object
-	End Rem	
+	End Rem
 	Function ForObject:TTypeId( obj:Object )
 		_Update
 		Local class:Byte Ptr=bbRefGetObjectClass( obj )
@@ -2073,7 +2073,7 @@ Type TTypeId
 			Return TTypeId( _classMap.ValueForKey( class ) )
 		EndIf
 	End Function
-	
+
 	Rem
 	bbdoc: Get list of all types
 	End Rem
@@ -2099,7 +2099,7 @@ Type TTypeId
 	End Function
 
 	'***** PRIVATE *****
-	
+
 	Method Init:TTypeId( name$,size,class:Byte Ptr=Null,supor:TTypeId=Null )
 		_name=name
 		_size=size
@@ -2110,11 +2110,17 @@ Type TTypeId
 		_globals=New TStringMap
 		_functions=New TStringMap
 		_methods=New TStringMap
+		_constsList=New TList
+		_fieldsList=New TList
+		_globalsList=New TList
+		_functionsList=New TList
+		_methodsList=New TList
+
 		_nameMap.Insert _name.ToLower(),Self
 		If class _classMap.Insert class,Self
 		Return Self
 	End Method
-	
+
 	Method SetClass:TTypeId( class:Byte Ptr )
 		Local name$=String.FromCString( bbRefClassDebugScopeName(class) )
 		Local meta$
@@ -2147,7 +2153,7 @@ Type TTypeId
 		_interfaceMap.Insert ifc,Self
 		Return Self
 	End Method
-	
+
 	Function _Update()
 		Local count:Int
 ?Not ptr64
@@ -2186,7 +2192,7 @@ Type TTypeId
 			t._Resolve
 		Next
 	End Function
-	
+
 	Method _Resolve()
 		If _fields Or Not _class Return
 		_consts=New TStringMap
@@ -2194,17 +2200,22 @@ Type TTypeId
 		_globals=New TStringMap
 		_functions=New TStringMap
 		_methods=New TStringMap
+		_constsList=New TList
+		_fieldsList=New TList
+		_globalsList=New TList
+		_functionsList=New TList
+		_methodsList=New TList
 		_interfaces=New TList
-		
+
 		If Not _interface Then
 			_super=TTypeId( _classMap.ValueForKey(bbRefClassSuper(_class)))
 		End If
 		If Not _super _super=ObjectTypeId
 		If Not _super._derived _super._derived=New TList
 		_super._derived.AddLast Self
-		
+
 		Local p:Byte Ptr = bbRefClassDebugDecl(_class)
-		
+
 		While bbDebugDeclKind(p)
 			Local id$=String.FromCString( bbDebugDeclName(p) )
 			Local ty$=String.FromCString( bbDebugDeclType(p) )
@@ -2220,18 +2231,21 @@ Type TTypeId
 				Local tt:TTypeId = TypeIdFortag(ty)
 				If tt Then
 					Local t:TConstant = New TConstant.Init( id, tt, meta, bbDebugDeclConstValue(p))
+					_constsList.AddLast(t)
 					_consts.Insert(t.NameLower(), t)
 				EndIf
 			Case 3	'field
 				Local typeId:TTypeId=TypeIdForTag( ty )
 				If typeId Then
 					Local t:TField = New TField.Init( id,typeId,meta,bbDebugDeclFieldOffset(p) )
+					_fieldsList.AddLast(t)
 					_fields.Insert(t.NameLower(), t)
 				End If
 			Case 4	'global
 				Local typeId:TTypeId=TypeIdForTag( ty )
 				If typeId Then
 					Local t:TGlobal = New TGlobal.Init( id,typeId,meta, bbDebugDeclVarAddress(p) )
+					_globalsList.AddLast(t)
 					_globals.Insert(t.NameLower(), t)
 				End If
 			Case 6, 7	'method/function
@@ -2257,10 +2271,10 @@ Type TTypeId
 							End Select
 						Wend
 						If b<q.length args.AddLast q[b..q.length]
-						
+
 						argTypes=New TTypeId[args.Count()]
 
-						i=0						
+						i=0
 						For Local arg$=EachIn args
 							argTypes[i]=TypeIdForTag( arg )
 							If Not argTypes[i] retType=Null
@@ -2270,9 +2284,11 @@ Type TTypeId
 					If retType
 						If bbDebugDeclKind(p) = 6 Then ' method
 							Local t:TMethod = New TMethod.Init(id, TypeIdForTag(ty), meta, Self, bbDebugDeclVarAddress(p), argTypes)
+							_methodsList.AddLast(t)
 							_methods.Insert(t.NameLower(), t)
 						Else ' function
 							Local t:TFunction = New TFunction.Init(id, TypeIdForTag(ty), meta, Self, bbDebugDeclVarAddress(p), argTypes)
+							_functionsList.AddLast(t)
 							_functions.Insert(t.NameLower(), t)
 						End If
 					EndIf
@@ -2291,7 +2307,7 @@ Type TTypeId
 			End If
 		End If
 	End Method
-	
+
 	Field _name$
 	Field _meta$
 	Field _class:Byte Ptr
@@ -2307,20 +2323,25 @@ Type TTypeId
 	Field _globals:TStringMap
 	Field _functions:TStringMap
 	Field _methods:TStringMap
+	Field _constsList:TList
+	Field _fieldsList:TList
+	Field _globalsList:TList
+	Field _functionsList:TList
+	Field _methodsList:TList
 	Field _interfaces:TList
 	Field _super:TTypeId
 	Field _derived:TList
 	Field _arrayType:TTypeId
 	Field _elementType:TTypeId
 	Field _typeTag:Byte Ptr
-	
+
 	Field _pointerType:TTypeId
-	
+
 	Field _functionType:TTypeId
 	Field _argTypes:TTypeId[]
 	Field _retType:TTypeId
-	
+
 	Global _count,_nameMap:TMap=New TMap,_classMap:TPtrMap=New TPtrMap
 	Global _icount:Int, _interfaceMap:TPtrMap=New TPtrMap
-	
+
 End Type
