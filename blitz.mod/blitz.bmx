@@ -845,6 +845,11 @@ keyword: "Final"
 End Rem
 
 Rem
+bbdoc: Denote a field as read only, where the value may only be set in its declaration or in the type constructor
+keyword: "ReadOnly"
+End Rem
+
+Rem
 bbdoc: Specify constraints on the types that can be used as arguments for a type parameter defined in a generic declaration
 keyword: "Where"
 End Rem
