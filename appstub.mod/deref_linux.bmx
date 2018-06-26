@@ -4,9 +4,6 @@ Extern
 End Extern
 
 Function DebugDerefPointerLinux:String(dataSize:Size_T, ptrDepth:Int, pointer:Byte Ptr, buffer:Byte Ptr, res:Int Var)
-	Const derefFailure:String = "{?}"
-	Const derefSymbol:String = "->"
-
 	Local result:String
 
 	pointer = (Byte Ptr Ptr pointer)[0]

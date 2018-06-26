@@ -15,6 +15,9 @@ Include "deref_macos.bmx"
 
 Private
 
+Const derefFailure:String = "{?}"
+Const derefSymbol:String = "->"
+
 ?Win32
 Extern "Win32"
 Const SW_SHOW:Int=5
