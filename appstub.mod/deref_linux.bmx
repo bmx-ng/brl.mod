@@ -22,6 +22,7 @@ Function DebugDerefPointerLinux:String(dataSize:Size_T, ptrDepth:Int, pointer:By
 		result :+ derefSymbol + "$" + ToHex(Int pointer)
 	? Ptr64
 		result :+ derefSymbol + "$" + ToHex(Long pointer)
+	?
 	Next
 
 	Local success:Size_T
