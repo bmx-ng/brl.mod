@@ -173,6 +173,34 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 # define GC_PLACEMENT_DELETE
 #endif
 
+#ifndef GC_NOEXCEPT
+# if defined(__DMC__) || (defined(__BORLANDC__) \
+        && (defined(_RWSTD_NO_EXCEPTIONS) || defined(_RWSTD_NO_EX_SPEC))) \
+     || (defined(_MSC_VER) && defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS) \
+     || (defined(__WATCOMC__) && !defined(_CPPUNWIND))
+#   define GC_NOEXCEPT /* empty */
+#   ifndef GC_NEW_ABORTS_ON_OOM
+#     define GC_NEW_ABORTS_ON_OOM
+#   endif
+# elif __cplusplus >= 201103L
+#   define GC_NOEXCEPT noexcept
+# else
+#   define GC_NOEXCEPT throw()
+# endif
+#endif // !GC_NOEXCEPT
+
+#if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
+# define GC_OP_NEW_OOM_CHECK(obj) \
+                do { if (!(obj)) GC_abort_on_oom(); } while (0)
+#elif defined(GC_INCLUDE_NEW)
+# include <new> // for bad_alloc
+# define GC_OP_NEW_OOM_CHECK(obj) if (obj) {} else throw std::bad_alloc()
+#else
+  // "new" header is not included, so bad_alloc cannot be thrown directly.
+  GC_API void GC_CALL GC_throw_bad_alloc();
+# define GC_OP_NEW_OOM_CHECK(obj) if (obj) {} else GC_throw_bad_alloc()
+#endif // !GC_NEW_ABORTS_ON_OOM && !GC_INCLUDE_NEW
+
 #ifdef GC_NAMESPACE
 namespace boehmgc
 {
@@ -200,25 +228,25 @@ class gc
 public:
   inline void* operator new(size_t size);
   inline void* operator new(size_t size, GCPlacement gcp);
-  inline void* operator new(size_t size, void* p);
+  inline void* operator new(size_t size, void* p) GC_NOEXCEPT;
     // Must be redefined here, since the other overloadings hide
     // the global definition.
-  inline void operator delete(void* obj);
+  inline void operator delete(void* obj) GC_NOEXCEPT;
 
 # ifdef GC_PLACEMENT_DELETE
-    inline void operator delete(void*, GCPlacement);
+    inline void operator delete(void*, GCPlacement) GC_NOEXCEPT;
       // Called if construction fails.
-    inline void operator delete(void*, void*);
+    inline void operator delete(void*, void*) GC_NOEXCEPT;
 # endif // GC_PLACEMENT_DELETE
 
 # ifdef GC_OPERATOR_NEW_ARRAY
     inline void* operator new[](size_t size);
     inline void* operator new[](size_t size, GCPlacement gcp);
-    inline void* operator new[](size_t size, void* p);
-    inline void operator delete[](void* obj);
+    inline void* operator new[](size_t size, void* p) GC_NOEXCEPT;
+    inline void operator delete[](void* obj) GC_NOEXCEPT;
 #   ifdef GC_PLACEMENT_DELETE
-      inline void operator delete[](void*, GCPlacement);
-      inline void operator delete[](void*, void*);
+      inline void operator delete[](void*, GCPlacement) GC_NOEXCEPT;
+      inline void operator delete[](void*, void*) GC_NOEXCEPT;
 #   endif
 # endif // GC_OPERATOR_NEW_ARRAY
 };
@@ -251,6 +279,9 @@ extern "C" {
   // Disable warning that "no matching operator delete found; memory will
   // not be freed if initialization throws an exception"
 # pragma warning(disable:4291)
+  // TODO: "non-member operator new or delete may not be declared inline"
+  // warning is disabled for now.
+# pragma warning(disable:4595)
 #endif
 
 inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
@@ -271,10 +302,11 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 
 #ifdef GC_PLACEMENT_DELETE
   inline void operator delete(void*, GC_NS_QUALIFY(GCPlacement),
-                              GC_NS_QUALIFY(GCCleanUpFunc), void*);
+                              GC_NS_QUALIFY(GCCleanUpFunc),
+                              void*) GC_NOEXCEPT;
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__DMC__)
   // The following ensures that the system default operator new[] does not
   // get undefined, which is what seems to happen on VC++ 6 for some reason
   // if we define a multi-argument operator new[].
@@ -283,13 +315,15 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   // Inlining done to avoid mix up of new and delete operators by VC++ 9 (due
   // to arbitrary ordering during linking).
 
-# if _MSC_VER > 1020
+# ifdef GC_OPERATOR_NEW_ARRAY
     inline void* operator new[](size_t size)
     {
-      return GC_MALLOC_UNCOLLECTABLE(size);
+      void* obj = GC_MALLOC_UNCOLLECTABLE(size);
+      GC_OP_NEW_OOM_CHECK(obj);
+      return obj;
     }
 
-    inline void operator delete[](void* obj)
+    inline void operator delete[](void* obj) GC_NOEXCEPT
     {
       GC_FREE(obj);
     }
@@ -297,10 +331,12 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 
   inline void* operator new(size_t size)
   {
-    return GC_MALLOC_UNCOLLECTABLE(size);
+    void* obj = GC_MALLOC_UNCOLLECTABLE(size);
+    GC_OP_NEW_OOM_CHECK(obj);
+    return obj;
   }
 
-  inline void operator delete(void* obj)
+  inline void operator delete(void* obj) GC_NOEXCEPT
   {
     GC_FREE(obj);
   }
@@ -310,17 +346,21 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
     inline void* operator new(size_t size, int /* nBlockUse */,
                               const char* szFileName, int nLine)
     {
-      return GC_debug_malloc_uncollectable(size, szFileName, nLine);
+      void* obj = GC_debug_malloc_uncollectable(size, szFileName, nLine);
+      GC_OP_NEW_OOM_CHECK(obj);
+      return obj;
     }
 # else
     inline void* operator new(size_t size, int /* nBlockUse */,
                               const char* /* szFileName */, int /* nLine */)
     {
-      return GC_malloc_uncollectable(size);
+      void* obj = GC_malloc_uncollectable(size);
+      GC_OP_NEW_OOM_CHECK(obj);
+      return obj;
     }
 # endif /* !GC_DEBUG */
 
-# if _MSC_VER > 1020
+# ifdef GC_OPERATOR_NEW_ARRAY
     // This new operator is used by VC++ 7+ in Debug builds:
     inline void* operator new[](size_t size, int nBlockUse,
                                 const char* szFileName, int nLine)
@@ -347,40 +387,48 @@ namespace boehmgc
 
 inline void* gc::operator new(size_t size)
 {
-  return GC_MALLOC(size);
+  void* obj = GC_MALLOC(size);
+  GC_OP_NEW_OOM_CHECK(obj);
+  return obj;
 }
 
 inline void* gc::operator new(size_t size, GCPlacement gcp)
 {
+  void* obj;
   switch (gcp) {
   case UseGC:
-    return GC_MALLOC(size);
+    obj = GC_MALLOC(size);
+    break;
   case PointerFreeGC:
-    return GC_MALLOC_ATOMIC(size);
+    obj = GC_MALLOC_ATOMIC(size);
+    break;
 # ifdef GC_ATOMIC_UNCOLLECTABLE
     case PointerFreeNoGC:
-      return GC_MALLOC_ATOMIC_UNCOLLECTABLE(size);
+      obj = GC_MALLOC_ATOMIC_UNCOLLECTABLE(size);
+      break;
 # endif
   case NoGC:
   default:
-    return GC_MALLOC_UNCOLLECTABLE(size);
+    obj = GC_MALLOC_UNCOLLECTABLE(size);
   }
+  GC_OP_NEW_OOM_CHECK(obj);
+  return obj;
 }
 
-inline void* gc::operator new(size_t /* size */, void* p)
+inline void* gc::operator new(size_t /* size */, void* p) GC_NOEXCEPT
 {
   return p;
 }
 
-inline void gc::operator delete(void* obj)
+inline void gc::operator delete(void* obj) GC_NOEXCEPT
 {
   GC_FREE(obj);
 }
 
 #ifdef GC_PLACEMENT_DELETE
-  inline void gc::operator delete(void*, void*) {}
+  inline void gc::operator delete(void*, void*) GC_NOEXCEPT {}
 
-  inline void gc::operator delete(void* p, GCPlacement /* gcp */)
+  inline void gc::operator delete(void* p, GCPlacement /* gcp */) GC_NOEXCEPT
   {
     GC_FREE(p);
   }
@@ -397,20 +445,21 @@ inline void gc::operator delete(void* obj)
     return gc::operator new(size, gcp);
   }
 
-  inline void* gc::operator new[](size_t /* size */, void* p)
+  inline void* gc::operator new[](size_t /* size */, void* p) GC_NOEXCEPT
   {
     return p;
   }
 
-  inline void gc::operator delete[](void* obj)
+  inline void gc::operator delete[](void* obj) GC_NOEXCEPT
   {
     gc::operator delete(obj);
   }
 
 # ifdef GC_PLACEMENT_DELETE
-    inline void gc::operator delete[](void*, void*) {}
+    inline void gc::operator delete[](void*, void*) GC_NOEXCEPT {}
 
-    inline void gc::operator delete[](void* p, GCPlacement /* gcp */)
+    inline void gc::operator delete[](void* p,
+                                      GCPlacement /* gcp */) GC_NOEXCEPT
     {
       gc::operator delete(p);
     }
@@ -458,26 +507,30 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
   switch (gcp) {
   case GC_NS_QUALIFY(UseGC):
     obj = GC_MALLOC(size);
-    if (cleanup != 0) {
+    if (cleanup != 0 && obj != 0) {
       GC_REGISTER_FINALIZER_IGNORE_SELF(obj, cleanup, clientData, 0, 0);
     }
-    return obj;
+    break;
   case GC_NS_QUALIFY(PointerFreeGC):
-    return GC_MALLOC_ATOMIC(size);
+    obj = GC_MALLOC_ATOMIC(size);
+    break;
 # ifdef GC_ATOMIC_UNCOLLECTABLE
     case GC_NS_QUALIFY(PointerFreeNoGC):
-      return GC_MALLOC_ATOMIC_UNCOLLECTABLE(size);
+      obj = GC_MALLOC_ATOMIC_UNCOLLECTABLE(size);
+      break;
 # endif
   case GC_NS_QUALIFY(NoGC):
   default:
-    return GC_MALLOC_UNCOLLECTABLE(size);
+    obj = GC_MALLOC_UNCOLLECTABLE(size);
   }
+  GC_OP_NEW_OOM_CHECK(obj);
+  return obj;
 }
 
 #ifdef GC_PLACEMENT_DELETE
   inline void operator delete(void* p, GC_NS_QUALIFY(GCPlacement) /* gcp */,
                               GC_NS_QUALIFY(GCCleanUpFunc) /* cleanup */,
-                              void* /* clientData */)
+                              void* /* clientData */) GC_NOEXCEPT
   {
     GC_FREE(p);
   }

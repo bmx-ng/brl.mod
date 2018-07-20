@@ -183,7 +183,7 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
       /* virtually guaranteed to be dominated by the time it    */
       /* takes to scan the roots.                               */
       {
-        register int i;
+        int i;
         struct roots * old = NULL; /* initialized to prevent warning. */
 
         for (i = 0; i < n_root_sets; i++) {
@@ -236,12 +236,18 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
         struct roots * old = (struct roots *)GC_roots_present(b);
 
         if (old != 0) {
-          if ((word)e <= (word)old->r_end)
+          if ((word)e <= (word)old->r_end) {
+            old -> r_tmp &= tmp;
             return; /* already there */
-          /* else extend */
-          GC_root_size += e - old -> r_end;
-          old -> r_end = e;
-          return;
+          }
+          if (old -> r_tmp == tmp || !tmp) {
+            /* Extend the existing root. */
+            GC_root_size += e - old -> r_end;
+            old -> r_end = e;
+            old -> r_tmp = tmp;
+            return;
+          }
+          b = old -> r_end;
         }
       }
 #   endif
@@ -317,6 +323,9 @@ STATIC void GC_remove_root_at_pos(int i)
 STATIC void GC_remove_tmp_roots(void)
 {
     int i;
+#   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
+      int old_n_roots = n_root_sets;
+#   endif
 
     for (i = 0; i < n_root_sets; ) {
         if (GC_static_roots[i].r_tmp) {
@@ -326,7 +335,8 @@ STATIC void GC_remove_tmp_roots(void)
         }
     }
 #   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
-      GC_rebuild_root_index();
+      if (n_root_sets < old_n_roots)
+        GC_rebuild_root_index();
 #   endif
 }
 #endif
@@ -352,17 +362,100 @@ STATIC void GC_remove_tmp_roots(void)
   STATIC void GC_remove_roots_inner(ptr_t b, ptr_t e)
   {
     int i;
+    GC_bool rebuild = FALSE;
+
     for (i = 0; i < n_root_sets; ) {
         if ((word)GC_static_roots[i].r_start >= (word)b
             && (word)GC_static_roots[i].r_end <= (word)e) {
             GC_remove_root_at_pos(i);
+            rebuild = TRUE;
         } else {
             i++;
         }
     }
-    GC_rebuild_root_index();
+    if (rebuild)
+        GC_rebuild_root_index();
   }
 #endif /* !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) */
+
+#ifdef USE_PROC_FOR_LIBRARIES
+  /* Remove given range from every static root which intersects with    */
+  /* the range.  It is assumed GC_remove_tmp_roots is called before     */
+  /* this function is called repeatedly by GC_register_map_entries.     */
+  GC_INNER void GC_remove_roots_subregion(ptr_t b, ptr_t e)
+  {
+    int i;
+    GC_bool rebuild = FALSE;
+
+    GC_ASSERT(I_HOLD_LOCK());
+    GC_ASSERT((word)b % sizeof(word) == 0 && (word)e % sizeof(word) == 0);
+    for (i = 0; i < n_root_sets; i++) {
+      ptr_t r_start, r_end;
+
+      if (GC_static_roots[i].r_tmp) {
+        /* The remaining roots are skipped as they are all temporary. */
+#       ifdef GC_ASSERTIONS
+          int j;
+          for (j = i + 1; j < n_root_sets; j++) {
+            GC_ASSERT(GC_static_roots[j].r_tmp);
+          }
+#       endif
+        break;
+      }
+      r_start = GC_static_roots[i].r_start;
+      r_end = GC_static_roots[i].r_end;
+      if (!EXPECT((word)e <= (word)r_start || (word)r_end <= (word)b, TRUE)) {
+#       ifdef DEBUG_ADD_DEL_ROOTS
+          GC_log_printf("Removing %p .. %p from root section %d (%p .. %p)\n",
+                        (void *)b, (void *)e,
+                        i, (void *)r_start, (void *)r_end);
+#       endif
+        if ((word)r_start < (word)b) {
+          GC_root_size -= r_end - b;
+          GC_static_roots[i].r_end = b;
+          /* No need to rebuild as hash does not use r_end value. */
+          if ((word)e < (word)r_end) {
+            int j;
+
+            if (rebuild) {
+              GC_rebuild_root_index();
+              rebuild = FALSE;
+            }
+            GC_add_roots_inner(e, r_end, FALSE); /* updates n_root_sets */
+            for (j = i + 1; j < n_root_sets; j++)
+              if (GC_static_roots[j].r_tmp)
+                break;
+            if (j < n_root_sets-1 && !GC_static_roots[n_root_sets-1].r_tmp) {
+              /* Exchange the roots to have all temporary ones at the end. */
+              ptr_t tmp_r_start = GC_static_roots[j].r_start;
+              ptr_t tmp_r_end = GC_static_roots[j].r_end;
+
+              GC_static_roots[j].r_start =
+                                GC_static_roots[n_root_sets-1].r_start;
+              GC_static_roots[j].r_end = GC_static_roots[n_root_sets-1].r_end;
+              GC_static_roots[j].r_tmp = FALSE;
+              GC_static_roots[n_root_sets-1].r_start = tmp_r_start;
+              GC_static_roots[n_root_sets-1].r_end = tmp_r_end;
+              GC_static_roots[n_root_sets-1].r_tmp = TRUE;
+              rebuild = TRUE;
+            }
+          }
+        } else {
+          if ((word)e < (word)r_end) {
+            GC_root_size -= e - r_start;
+            GC_static_roots[i].r_start = e;
+          } else {
+            GC_remove_root_at_pos(i);
+            i--;
+          }
+          rebuild = TRUE;
+        }
+      }
+    }
+    if (rebuild)
+      GC_rebuild_root_index();
+  }
+#endif /* USE_PROC_FOR_LIBRARIES */
 
 #if !defined(NO_DEBUGGING)
   /* For the debugging purpose only.                                    */
@@ -371,7 +464,7 @@ STATIC void GC_remove_tmp_roots(void)
   GC_API int GC_CALL GC_is_tmp_root(void *p)
   {
     static int last_root_set = MAX_ROOT_SETS;
-    register int i;
+    int i;
 
     if (last_root_set < n_root_sets
         && (word)p >= (word)GC_static_roots[last_root_set].r_start
@@ -499,10 +592,6 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
 }
 
 #if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
-  /* GC_mark_local does not handle memory protection faults yet.  So,   */
-  /* the static data regions are scanned immediately by GC_push_roots.  */
-  GC_INNER void GC_push_conditional_eager(void *bottom, void *top,
-                                          GC_bool all);
 # define GC_PUSH_CONDITIONAL(b, t, all) \
                 (GC_parallel \
                     ? GC_push_conditional_eager(b, t, all) \
@@ -585,11 +674,6 @@ GC_INNER void GC_push_all_stack_sections(ptr_t lo, ptr_t hi,
 }
 
 #else /* !THREADS */
-
-# ifdef TRACE_BUF
-    /* Defined in mark.c.       */
-    void GC_add_trace_entry(char *kind, word arg1, word arg2);
-# endif
 
                         /* Similar to GC_push_all_eager, but only the   */
                         /* part hotter than cold_gc_frame is scanned    */

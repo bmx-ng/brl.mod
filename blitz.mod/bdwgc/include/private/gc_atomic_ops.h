@@ -61,15 +61,23 @@
 # define AO_HAVE_or
 
 # define AO_load(p) __atomic_load_n(p, __ATOMIC_RELAXED)
+# define AO_HAVE_load
 # define AO_load_acquire(p) __atomic_load_n(p, __ATOMIC_ACQUIRE)
 # define AO_HAVE_load_acquire
 # define AO_load_acquire_read(p) AO_load_acquire(p)
 # define AO_HAVE_load_acquire_read
 
 # define AO_store(p, v) __atomic_store_n(p, v, __ATOMIC_RELAXED)
+# define AO_HAVE_store
 # define AO_store_release(p, v) __atomic_store_n(p, v, __ATOMIC_RELEASE)
 # define AO_HAVE_store_release
 # define AO_store_release_write(p, v) AO_store_release(p, v)
+# define AO_HAVE_store_release_write
+
+# define AO_char_load(p) __atomic_load_n(p, __ATOMIC_RELAXED)
+# define AO_HAVE_char_load
+# define AO_char_store(p, v) __atomic_store_n(p, v, __ATOMIC_RELAXED)
+# define AO_HAVE_char_store
 
 # ifdef AO_REQUIRE_CAS
     AO_INLINE int
@@ -101,6 +109,10 @@
   /* only if AO_REQUIRE_CAS is defined (or if the corresponding         */
   /* AO_HAVE_x macro is defined).  x86/x64 targets have AO_nop_full,    */
   /* AO_load_acquire, AO_store_release, at least.                       */
+# if !defined(AO_HAVE_load) || !defined(AO_HAVE_store)
+#   error AO_load or AO_store is missing; probably old version of atomic_ops
+# endif
+
 #endif /* !GC_BUILTIN_ATOMIC */
 
 #endif /* GC_ATOMIC_OPS_H */

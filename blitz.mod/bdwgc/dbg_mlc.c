@@ -90,7 +90,12 @@
   GC_INNER void GC_store_back_pointer(ptr_t source, ptr_t dest)
   {
     if (GC_HAS_DEBUG_INFO(dest)) {
-      ((oh *)dest) -> oh_back_ptr = HIDE_BACK_PTR(source);
+#     ifdef PARALLEL_MARK
+        AO_store((volatile AO_t *)&((oh *)dest)->oh_back_ptr,
+                 (AO_t)HIDE_BACK_PTR(source));
+#     else
+        ((oh *)dest) -> oh_back_ptr = HIDE_BACK_PTR(source);
+#     endif
     }
   }
 
@@ -119,7 +124,7 @@
       if (!hdr) ABORT("Invalid GC_get_back_ptr_info argument");
 #   endif
     if (!GC_HAS_DEBUG_INFO((ptr_t) hdr)) return GC_NO_SPACE;
-    bp = GC_REVEAL_POINTER(hdr -> oh_back_ptr);
+    bp = (ptr_t)GC_REVEAL_POINTER(hdr -> oh_back_ptr);
     if (MARKED_FOR_FINALIZATION == bp) return GC_FINALIZER_REFD;
     if (MARKED_FROM_REGISTER == bp) return GC_REFD_FROM_REG;
     if (NOT_MARKED == bp) return GC_UNREFERENCED;
@@ -190,7 +195,7 @@
     ptr_t result;
     ptr_t base;
     do {
-      result = GC_generate_random_heap_address();
+      result = (ptr_t)GC_generate_random_heap_address();
       base = (ptr_t)GC_base(result);
     } while (NULL == base || !GC_is_marked(base));
     return result;
@@ -205,7 +210,7 @@
     size_t offset;
     void *base;
 
-    GC_print_heap_obj(GC_base(current));
+    GC_print_heap_obj((ptr_t)GC_base(current));
 
     for (i = 0; ; ++i) {
       source = GC_get_back_ptr_info(current, &base, &offset);
@@ -231,7 +236,7 @@
         case GC_REFD_FROM_HEAP:
           GC_err_printf("offset %ld in object:\n", (long)offset);
           /* Take GC_base(base) to get real base, i.e. header. */
-          GC_print_heap_obj(GC_base(base));
+          GC_print_heap_obj((ptr_t)GC_base(base));
           break;
         default:
           GC_err_printf("INTERNAL ERROR: UNEXPECTED SOURCE!!!!\n");
@@ -267,13 +272,12 @@
 # define CROSSES_HBLK(p, sz) \
         (((word)((p) + sizeof(oh) + (sz) - 1) ^ (word)(p)) >= HBLKSIZE)
 
-/* Store debugging info into p.  Return displaced pointer.         */
-/* This version assumes we do hold the allocation lock.            */
-STATIC void *GC_store_debug_info_inner(void *p, word sz GC_ATTR_UNUSED,
-                                       const char *string, int linenum)
+GC_INNER void *GC_store_debug_info_inner(void *p, word sz GC_ATTR_UNUSED,
+                                         const char *string, int linenum)
 {
     word * result = (word *)((oh *)p + 1);
 
+    GC_ASSERT(I_HOLD_LOCK());
     GC_ASSERT(GC_size(p) >= sizeof(oh) + sz);
     GC_ASSERT(!(SMALL_OBJ(sz) && CROSSES_HBLK((ptr_t)p, sz)));
 #   ifdef KEEP_BACK_PTRS
@@ -293,14 +297,24 @@ STATIC void *GC_store_debug_info_inner(void *p, word sz GC_ATTR_UNUSED,
     return result;
 }
 
-GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *string,
-                                   int linenum)
+/* Check the allocation is successful, store debugging info into p,     */
+/* start the debugging mode (if not yet), and return displaced pointer. */
+static void *store_debug_info(void *p, size_t lb,
+                              const char *fn, GC_EXTRA_PARAMS)
 {
-    ptr_t result;
+    void *result;
     DCL_LOCK_STATE;
 
+    if (NULL == p) {
+        GC_err_printf("%s(%lu) returning NULL (%s:%d)\n",
+                      fn, (unsigned long)lb, s, i);
+        return NULL;
+    }
     LOCK();
-    result = (ptr_t)GC_store_debug_info_inner(p, sz, string, linenum);
+    if (!GC_debugging_started)
+        GC_start_debugging_inner();
+    ADD_CALL_CHAIN(p, ra);
+    result = GC_store_debug_info_inner(p, (word)lb, s, i);
     UNLOCK();
     return result;
 }
@@ -392,9 +406,6 @@ STATIC void GC_print_obj(ptr_t p)
               kind_str = "ATOMIC_UNCOLLECTABLE";
               break;
 #         endif
-          case STUBBORN:
-            kind_str = "STUBBORN";
-            break;
           default:
             kind_str = NULL;
                 /* The alternative is to use snprintf(buffer) but it is */
@@ -480,20 +491,6 @@ GC_INNER void GC_start_debugging_inner(void)
   GC_register_displacement_inner((word)sizeof(oh));
 }
 
-#ifdef THREADS
-  STATIC void GC_start_debugging(void)
-  {
-    DCL_LOCK_STATE;
-
-    LOCK();
-    if (!GC_debugging_started)
-      GC_start_debugging_inner();
-    UNLOCK();
-  }
-#else
-# define GC_start_debugging GC_start_debugging_inner
-#endif /* !THREADS */
-
 size_t GC_debug_header_size = sizeof(oh);
 
 GC_API void GC_CALL GC_debug_register_displacement(size_t offset)
@@ -541,16 +538,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc(size_t lb,
         GC_caller_func_offset(ra, &s, &i);
       }
 #   endif
-    if (result == 0) {
-        GC_err_printf("GC_debug_malloc(%lu) returning NULL (%s:%d)\n",
-                      (unsigned long)lb, s, i);
-        return(0);
-    }
-    if (!GC_debugging_started) {
-        GC_start_debugging();
-    }
-    ADD_CALL_CHAIN(result, ra);
-    return GC_store_debug_info((ptr_t)result, (word)lb, s, i);
+    return store_debug_info(result, lb, "GC_debug_malloc", OPT_RA s, i);
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL
@@ -558,16 +546,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 {
     void * result = GC_malloc_ignore_off_page(SIZET_SAT_ADD(lb, DEBUG_BYTES));
 
-    if (result == 0) {
-        GC_err_printf("GC_debug_malloc_ignore_off_page(%lu)"
-                      " returning NULL (%s:%d)\n", (unsigned long)lb, s, i);
-        return(0);
-    }
-    if (!GC_debugging_started) {
-        GC_start_debugging();
-    }
-    ADD_CALL_CHAIN(result, ra);
-    return GC_store_debug_info((ptr_t)result, (word)lb, s, i);
+    return store_debug_info(result, lb, "GC_debug_malloc_ignore_off_page",
+                            OPT_RA s, i);
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL
@@ -576,47 +556,30 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     void * result = GC_malloc_atomic_ignore_off_page(
                                 SIZET_SAT_ADD(lb, DEBUG_BYTES));
 
-    if (result == 0) {
-        GC_err_printf("GC_debug_malloc_atomic_ignore_off_page(%lu)"
-                      " returning NULL (%s:%d)\n", (unsigned long)lb, s, i);
-        return(0);
-    }
-    if (!GC_debugging_started) {
-        GC_start_debugging();
-    }
-    ADD_CALL_CHAIN(result, ra);
-    return GC_store_debug_info((ptr_t)result, (word)lb, s, i);
+    return store_debug_info(result, lb,
+                            "GC_debug_malloc_atomic_ignore_off_page",
+                            OPT_RA s, i);
 }
 
 STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
 {
     void * result = GC_generic_malloc(SIZET_SAT_ADD(lb, DEBUG_BYTES), knd);
 
-    if (NULL == result) {
-        GC_err_printf(
-                "GC_debug_generic_malloc(%lu, %d) returning NULL (%s:%d)\n",
-                (unsigned long)lb, knd, s, i);
-        return NULL;
-    }
-    if (!GC_debugging_started) {
-        GC_start_debugging();
-    }
-    ADD_CALL_CHAIN(result, ra);
-    return GC_store_debug_info((ptr_t)result, (word)lb, s, i);
+    return store_debug_info(result, lb, "GC_debug_generic_malloc",
+                            OPT_RA s, i);
 }
 
 #ifdef DBG_HDRS_ALL
   /* An allocation function for internal use.  Normally internally      */
   /* allocated objects do not have debug information.  But in this      */
   /* case, we need to make sure that all objects have debug headers.    */
-  /* We assume debugging was started in collector initialization, and   */
-  /* we already hold the GC lock.                                       */
   GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k)
   {
-    void * result = GC_generic_malloc_inner(
-                                SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    void * result;
 
-    if (result == 0) {
+    GC_ASSERT(I_HOLD_LOCK());
+    result = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    if (NULL == result) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);
@@ -631,10 +594,12 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   GC_INNER void * GC_debug_generic_malloc_inner_ignore_off_page(size_t lb,
                                                                 int k)
   {
-    void * result = GC_generic_malloc_inner_ignore_off_page(
-                                SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    void * result;
 
-    if (result == 0) {
+    GC_ASSERT(I_HOLD_LOCK());
+    result = GC_generic_malloc_inner_ignore_off_page(
+                                SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    if (NULL == result) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);
@@ -647,85 +612,38 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   }
 #endif /* DBG_HDRS_ALL */
 
-#ifdef STUBBORN_ALLOC
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_stubborn(size_t lb,
-                                                        GC_EXTRA_PARAMS)
-  {
-    void * result = GC_malloc_stubborn(SIZET_SAT_ADD(lb, DEBUG_BYTES));
+GC_API void * GC_CALL GC_debug_malloc_stubborn(size_t lb, GC_EXTRA_PARAMS)
+{
+    return GC_debug_malloc(lb, OPT_RA s, i);
+}
 
-    if (result == 0) {
-        GC_err_printf("GC_debug_malloc_stubborn(%lu)"
-                      " returning NULL (%s:%d)\n", (unsigned long)lb, s, i);
-        return(0);
-    }
-    if (!GC_debugging_started) {
-        GC_start_debugging();
-    }
-    ADD_CALL_CHAIN(result, ra);
-    return GC_store_debug_info((ptr_t)result, (word)lb, s, i);
-  }
+GC_API void GC_CALL GC_debug_change_stubborn(
+                                const void * p GC_ATTR_UNUSED) {}
 
-  GC_API void GC_CALL GC_debug_change_stubborn(const void *p)
-  {
+GC_API void GC_CALL GC_debug_end_stubborn_change(const void *p)
+{
     const void * q = GC_base_C(p);
-    hdr * hhdr;
 
-    if (q == 0) {
-        ABORT_ARG1("GC_debug_change_stubborn: bad arg", ": %p", p);
-    }
-    hhdr = HDR(q);
-    if (hhdr -> hb_obj_kind != STUBBORN) {
-        ABORT_ARG1("GC_debug_change_stubborn: arg not stubborn", ": %p", p);
-    }
-    GC_change_stubborn(q);
-  }
-
-  GC_API void GC_CALL GC_debug_end_stubborn_change(const void *p)
-  {
-    const void * q = GC_base_C(p);
-    hdr * hhdr;
-
-    if (q == 0) {
+    if (NULL == q) {
         ABORT_ARG1("GC_debug_end_stubborn_change: bad arg", ": %p", p);
     }
-    hhdr = HDR(q);
-    if (hhdr -> hb_obj_kind != STUBBORN) {
-        ABORT_ARG1("GC_debug_end_stubborn_change: arg not stubborn",
-                   ": %p", p);
-    }
     GC_end_stubborn_change(q);
-  }
+}
 
-#else /* !STUBBORN_ALLOC */
-
-  GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_stubborn(size_t lb,
-                                                        GC_EXTRA_PARAMS)
-  {
-    return GC_debug_malloc(lb, OPT_RA s, i);
-  }
-
-  GC_API void GC_CALL GC_debug_change_stubborn(
-                                const void * p GC_ATTR_UNUSED) {}
-
-  GC_API void GC_CALL GC_debug_end_stubborn_change(
-                                const void * p GC_ATTR_UNUSED) {}
-#endif /* !STUBBORN_ALLOC */
+GC_API void GC_CALL GC_debug_ptr_store_and_dirty(void *p, const void *q)
+{
+    *(void **)GC_is_visible(p) = GC_is_valid_displacement((void *)q);
+    GC_debug_end_stubborn_change(p);
+    REACHABLE_AFTER_DIRTY(q);
+}
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_atomic(size_t lb,
                                                             GC_EXTRA_PARAMS)
 {
     void * result = GC_malloc_atomic(SIZET_SAT_ADD(lb, DEBUG_BYTES));
 
-    if (result == 0) {
-        GC_err_printf("GC_debug_malloc_atomic(%lu) returning NULL (%s:%d)\n",
-                      (unsigned long)lb, s, i);
-        return(0);
-    }
-    if (!GC_debugging_started) {
-        GC_start_debugging();
-    }
-    ADD_CALL_CHAIN(result, ra);
-    return GC_store_debug_info((ptr_t)result, (word)lb, s, i);
+    return store_debug_info(result, lb, "GC_debug_malloc_atomic",
+                            OPT_RA s, i);
 }
 
 GC_API GC_ATTR_MALLOC char * GC_CALL GC_debug_strdup(const char *str,
@@ -796,16 +714,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
     void * result = GC_malloc_uncollectable(
                                 SIZET_SAT_ADD(lb, UNCOLLECTABLE_DEBUG_BYTES));
 
-    if (result == 0) {
-        GC_err_printf("GC_debug_malloc_uncollectable(%lu)"
-                      " returning NULL (%s:%d)\n", (unsigned long)lb, s, i);
-        return(0);
-    }
-    if (!GC_debugging_started) {
-        GC_start_debugging();
-    }
-    ADD_CALL_CHAIN(result, ra);
-    return GC_store_debug_info((ptr_t)result, (word)lb, s, i);
+    return store_debug_info(result, lb, "GC_debug_malloc_uncollectable",
+                            OPT_RA s, i);
 }
 
 #ifdef GC_ATOMIC_UNCOLLECTABLE
@@ -815,16 +725,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_malloc_uncollectable(size_t lb,
     void * result = GC_malloc_atomic_uncollectable(
                                 SIZET_SAT_ADD(lb, UNCOLLECTABLE_DEBUG_BYTES));
 
-    if (result == 0) {
-        GC_err_printf("GC_debug_malloc_atomic_uncollectable(%lu)"
-                      " returning NULL (%s:%d)\n", (unsigned long)lb, s, i);
-        return(0);
-    }
-    if (!GC_debugging_started) {
-        GC_start_debugging();
-    }
-    ADD_CALL_CHAIN(result, ra);
-    return GC_store_debug_info((ptr_t)result, (word)lb, s, i);
+    return store_debug_info(result, lb,
+                            "GC_debug_malloc_atomic_uncollectable",
+                            OPT_RA s, i);
   }
 #endif /* GC_ATOMIC_UNCOLLECTABLE */
 
@@ -896,11 +799,17 @@ GC_API void GC_CALL GC_debug_free(void * p)
         GC_free(base);
       } else {
         word i;
-        word obj_sz = BYTES_TO_WORDS(hhdr->hb_sz - sizeof(oh));
+        word sz = hhdr -> hb_sz;
+        word obj_sz = BYTES_TO_WORDS(sz - sizeof(oh));
 
         for (i = 0; i < obj_sz; ++i)
           ((word *)p)[i] = GC_FREED_MEM_MARKER;
-        GC_ASSERT((word *)p + i == (word *)(base + hhdr -> hb_sz));
+        GC_ASSERT((word *)p + i == (word *)(base + sz));
+        /* Update the counter even though the real deallocation */
+        /* is deferred.                                         */
+        LOCK();
+        GC_bytes_freed += sz;
+        UNLOCK();
       }
     } /* !GC_find_leak */
 }
@@ -952,11 +861,6 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
     }
     hhdr = HDR(base);
     switch (hhdr -> hb_obj_kind) {
-#    ifdef STUBBORN_ALLOC
-      case STUBBORN:
-        result = GC_debug_malloc_stubborn(lb, OPT_RA s, i);
-        break;
-#    endif
       case NORMAL:
         result = GC_debug_malloc(lb, OPT_RA s, i);
         break;
@@ -994,10 +898,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_debug_generic_or_special_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
 {
     switch (knd) {
-#     ifdef STUBBORN_ALLOC
-        case STUBBORN:
-            return GC_debug_malloc_stubborn(lb, OPT_RA s, i);
-#     endif
         case PTRFREE:
             return GC_debug_malloc_atomic(lb, OPT_RA s, i);
         case NORMAL:

@@ -22,6 +22,7 @@ int SDL_main( int argc,char *argv[] ){
 	return 0;
 }
 
+#ifndef __EMSCRIPTEN__
 size_t bmx_process_vm_readv(size_t dataSize, void * pointer, void * buffer) {
 
 	struct iovec local;
@@ -38,3 +39,4 @@ size_t bmx_process_vm_readv(size_t dataSize, void * pointer, void * buffer) {
 	
 	return result;
 }
+#endif

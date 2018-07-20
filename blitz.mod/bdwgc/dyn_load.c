@@ -131,7 +131,10 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
       };
 #   endif
 # else
+    EXTERN_C_BEGIN      /* Workaround missing extern "C" around _DYNAMIC */
+                        /* symbol in link.h of some Linux hosts.         */
 #   include <link.h>
+    EXTERN_C_END
 # endif
 #endif
 
@@ -161,10 +164,13 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
 #if defined(SOLARISDL) && !defined(USE_PROC_FOR_LIBRARIES)
 
-STATIC struct link_map *
-GC_FirstDLOpenedLinkMap(void)
-{
-    extern ElfW(Dyn) _DYNAMIC;
+  EXTERN_C_BEGIN
+  extern ElfW(Dyn) _DYNAMIC;
+  EXTERN_C_END
+
+  STATIC struct link_map *
+  GC_FirstDLOpenedLinkMap(void)
+  {
     ElfW(Dyn) *dp;
     static struct link_map * cachedResult = 0;
     static ElfW(Dyn) *dynStructureAddr = 0;
@@ -202,7 +208,7 @@ GC_FirstDLOpenedLinkMap(void)
         }
     }
     return cachedResult;
-}
+  }
 
 #endif /* SOLARISDL ... */
 
@@ -240,11 +246,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
               {
                 if( !(p->p_flags & PF_W) ) break;
                 start = ((char *)(p->p_vaddr)) + offset;
-                GC_add_roots_inner(
-                  start,
-                  start + p->p_memsz,
-                  TRUE
-                );
+                GC_add_roots_inner(start, start + p->p_memsz, TRUE);
               }
               break;
             default:
@@ -303,7 +305,7 @@ static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
     }
 }
 
-STATIC word GC_register_map_entries(char *maps)
+STATIC void GC_register_map_entries(char *maps)
 {
     char *prot;
     char *buf_ptr = maps;
@@ -321,7 +323,8 @@ STATIC word GC_register_map_entries(char *maps)
     for (;;) {
         buf_ptr = GC_parse_map_entry(buf_ptr, &start, &end, &prot,
                                      &maj_dev, 0);
-        if (buf_ptr == NULL) return 1;
+        if (NULL == buf_ptr)
+            break;
         if (prot[1] == 'w') {
             /* This is a writable mapping.  Add it to           */
             /* the root set unless it is already otherwise      */
@@ -360,7 +363,7 @@ STATIC word GC_register_map_entries(char *maps)
             if ((word)end <= (word)least_ha
                 || (word)start >= (word)greatest_ha) {
               /* The easy case; just trace entire segment */
-              GC_add_roots_inner((char *)start, (char *)end, TRUE);
+              GC_add_roots_inner(start, end, TRUE);
               continue;
             }
             /* Add sections that don't belong to us. */
@@ -378,23 +381,29 @@ STATIC word GC_register_map_entries(char *maps)
                      && (word)GC_our_memory[i].hs_start < (word)end
                      && (word)start < (word)end) {
                   if ((word)start < (word)GC_our_memory[i].hs_start)
-                    GC_add_roots_inner((char *)start,
+                    GC_add_roots_inner(start,
                                        GC_our_memory[i].hs_start, TRUE);
                   start = GC_our_memory[i].hs_start
                           + GC_our_memory[i].hs_bytes;
                   ++i;
               }
               if ((word)start < (word)end)
-                  GC_add_roots_inner((char *)start, (char *)end, TRUE);
+                  GC_add_roots_inner(start, end, TRUE);
+        } else if (prot[0] == '-' && prot[1] == '-' && prot[2] == '-') {
+            /* Even roots added statically might disappear partially    */
+            /* (e.g. the roots added by INCLUDE_LINUX_THREAD_DESCR).    */
+            GC_remove_roots_subregion(start, end);
         }
     }
-    return 1;
 }
 
 GC_INNER void GC_register_dynamic_libraries(void)
 {
-    if (!GC_register_map_entries(GC_get_maps()))
+    char *maps = GC_get_maps();
+
+    if (NULL == maps)
         ABORT("Failed to read /proc for library registration");
+    GC_register_map_entries(maps);
 }
 
 /* We now take care of the main data segment ourselves: */
@@ -419,12 +428,16 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 # endif
 # ifdef HOST_ANDROID
     /* Android headers might have no such definition for some targets.  */
-    int dl_iterate_phdr(int (*cb)(struct dl_phdr_info *, size_t, void *),
-                        void *data);
+    EXTERN_C_BEGIN
+    extern int dl_iterate_phdr(int (*cb)(struct dl_phdr_info *,
+                                         size_t, void *),
+                               void *data);
+    EXTERN_C_END
 # endif
 #endif /* __GLIBC__ >= 2 || HOST_ANDROID */
 
-#if (defined(FREEBSD) && __FreeBSD__ >= 7) || defined(__DragonFly__)
+#if defined(__DragonFly__) || defined(__FreeBSD_kernel__) \
+    || (defined(FREEBSD) && __FreeBSD__ >= 7)
   /* On the FreeBSD system, any target system at major version 7 shall   */
   /* have dl_iterate_phdr; therefore, we need not make it weak as below. */
 # ifndef HAVE_DL_ITERATE_PHDR
@@ -435,7 +448,9 @@ GC_INNER GC_bool GC_register_main_static_data(void)
   /* We have the header files for a glibc that includes dl_iterate_phdr.*/
   /* It may still not be available in the library on the target system. */
   /* Thus we also treat it as a weak symbol.                            */
+  EXTERN_C_BEGIN
 # pragma weak dl_iterate_phdr
+  EXTERN_C_END
 #endif
 
 #if defined(HAVE_DL_ITERATE_PHDR)
@@ -602,8 +617,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
       }
 #   endif
   } else {
-      char *datastart;
-      char *dataend;
+      ptr_t datastart, dataend;
 #     ifdef DATASTART_IS_FUNC
         static ptr_t datastart_cached = (ptr_t)(word)-1;
 
@@ -611,7 +625,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
         if (datastart_cached == (ptr_t)(word)-1) {
           datastart_cached = DATASTART;
         }
-        datastart = (char *)datastart_cached;
+        datastart = datastart_cached;
 #     else
         datastart = DATASTART;
 #     endif
@@ -622,7 +636,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
           if (dataend_cached == 0) {
             dataend_cached = DATAEND;
           }
-          dataend = (char *)dataend_cached;
+          dataend = dataend_cached;
         }
 #     else
         dataend = DATAEND;
@@ -682,10 +696,12 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 
 #endif /* !HAVE_DL_ITERATE_PHDR */
 
+EXTERN_C_BEGIN
 #ifdef __GNUC__
 # pragma weak _DYNAMIC
 #endif
 extern ElfW(Dyn) _DYNAMIC[];
+EXTERN_C_END
 
 STATIC struct link_map *
 GC_FirstDLOpenedLinkMap(void)
@@ -875,7 +891,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
                                         /* Known irrelevant map entries */
             static int n_irr = 0;
             struct stat buf;
-            register int j;
+            int j;
 
             for (j = 0; j < n_irr; j++) {
                 if (map_irr[j] == start) goto irrelevant;
@@ -1016,7 +1032,9 @@ GC_INNER void GC_register_dynamic_libraries(void)
             protect = buf.Protect;
             if (buf.State == MEM_COMMIT
                 && (protect == PAGE_EXECUTE_READWRITE
-                    || protect == PAGE_READWRITE)
+                    || protect == PAGE_EXECUTE_WRITECOPY
+                    || protect == PAGE_READWRITE
+                    || protect == PAGE_WRITECOPY)
                 && (buf.Type == MEM_IMAGE
 #                   ifdef GC_REGISTER_MEM_PRIVATE
                       || (protect == PAGE_READWRITE && buf.Type == MEM_PRIVATE)
@@ -1051,9 +1069,11 @@ GC_INNER void GC_register_dynamic_libraries(void)
 
 #include <loader.h>
 
+EXTERN_C_BEGIN
 extern char *sys_errlist[];
 extern int sys_nerr;
 extern int errno;
+EXTERN_C_END
 
 GC_INNER void GC_register_dynamic_libraries(void)
 {
@@ -1139,8 +1159,10 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #include <errno.h>
 #include <dl.h>
 
+EXTERN_C_BEGIN
 extern char *sys_errlist[];
 extern int sys_nerr;
+EXTERN_C_END
 
 GC_INNER void GC_register_dynamic_libraries(void)
 {
@@ -1247,7 +1269,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 /*#define DARWIN_DEBUG*/
 
 /* Writable sections generally available on Darwin.     */
-STATIC const struct {
+STATIC const struct dyld_sections_s {
     const char *seg;
     const char *sect;
 } GC_dyld_sections[] = {
@@ -1355,8 +1377,10 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
     }
   }
 
-# ifdef DARWIN_DEBUG
+# if defined(DARWIN_DEBUG) && !defined(NO_DEBUGGING)
+    LOCK();
     GC_print_static_roots();
+    UNLOCK();
 # endif
 }
 
@@ -1367,6 +1391,9 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
   unsigned long start, end;
   unsigned i, j;
   const struct GC_MACH_SECTION *sec;
+# if defined(DARWIN_DEBUG) && !defined(NO_DEBUGGING)
+    DCL_LOCK_STATE;
+# endif
 
   for (i = 0; i < sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]); i++) {
     sec = GC_GETSECTBYNAME(hdr, GC_dyld_sections[i].seg,
@@ -1408,8 +1435,10 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
     }
   }
 
-# ifdef DARWIN_DEBUG
+# if defined(DARWIN_DEBUG) && !defined(NO_DEBUGGING)
+    LOCK();
     GC_print_static_roots();
+    UNLOCK();
 # endif
 }
 
@@ -1527,8 +1556,8 @@ GC_INNER GC_bool GC_register_main_static_data(void)
       for (q = p -> lf_ls; q != NIL; q = q -> ls_next) {
         if ((q -> ls_flags & PCR_IL_SegFlags_Traced_MASK)
             == PCR_IL_SegFlags_Traced_on) {
-          GC_add_roots_inner((char *)(q -> ls_addr),
-                             (char *)(q -> ls_addr) + q -> ls_bytes, TRUE);
+          GC_add_roots_inner((ptr_t)q->ls_addr,
+                             (ptr_t)q->ls_addr + q->ls_bytes, TRUE);
         }
       }
     }

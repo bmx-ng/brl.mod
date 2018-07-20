@@ -36,10 +36,7 @@
 # include "dbg_mlc.h" /* for oh type */
 #endif
 
-/* Note: never put extern "C" around an #include.                       */
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 /* We use the allocation lock to protect thread-related data structures. */
 
@@ -143,21 +140,23 @@ typedef struct GC_Thread_Rep {
 # define THREAD_TABLE_SZ 256    /* Power of 2 (for speed). */
 #endif
 
-#define THREAD_TABLE_INDEX(id) \
+#if CPP_WORDSZ == 64
+# define THREAD_TABLE_INDEX(id) \
+    (int)(((((NUMERIC_THREAD_ID(id) >> 8) ^ NUMERIC_THREAD_ID(id)) >> 16) \
+          ^ ((NUMERIC_THREAD_ID(id) >> 8) ^ NUMERIC_THREAD_ID(id))) \
+         % THREAD_TABLE_SZ)
+#else
+# define THREAD_TABLE_INDEX(id) \
                 (int)(((NUMERIC_THREAD_ID(id) >> 16) \
                        ^ (NUMERIC_THREAD_ID(id) >> 8) \
                        ^ NUMERIC_THREAD_ID(id)) % THREAD_TABLE_SZ)
+#endif
 
 GC_EXTERN volatile GC_thread GC_threads[THREAD_TABLE_SZ];
 
 GC_EXTERN GC_bool GC_thr_initialized;
 
 GC_INNER GC_thread GC_lookup_thread(pthread_t id);
-
-GC_EXTERN GC_bool GC_in_thread_creation;
-        /* We may currently be in thread creation or destruction.       */
-        /* Only set to TRUE while allocation lock is held.              */
-        /* When set, it is OK to run GC from unknown thread.            */
 
 #ifdef NACL
   GC_EXTERN __thread GC_thread GC_nacl_gc_thread_self;
@@ -175,15 +174,16 @@ GC_EXTERN GC_bool GC_in_thread_creation;
 # define GC_INNER_PTHRSTART GC_INNER
 #endif
 
+GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
+                                        struct GC_stack_base *sb, void *arg);
+
 GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
                                         void *(**pstart)(void *),
                                         void **pstart_arg,
                                         struct GC_stack_base *sb, void *arg);
 GC_INNER_PTHRSTART void GC_thread_exit_proc(void *);
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 #endif /* GC_PTHREADS && !GC_WIN32_THREADS */
 

@@ -48,9 +48,7 @@
 # include "gc_priv.h"
 #endif
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 /* The real declarations of the following is in gc_priv.h, so that      */
 /* we can avoid scanning the following table.                           */
@@ -123,20 +121,23 @@ GC_EXTERN size_t GC_mark_stack_size;
 GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 
 /* Push the object obj with corresponding heap block header hhdr onto   */
-/* the mark stack.                                                      */
-#define PUSH_OBJ(obj, hhdr, mark_stack_top, mark_stack_limit) \
-  do { \
-    register word _descr = (hhdr) -> hb_descr; \
-    GC_ASSERT(!HBLK_IS_FREE(hhdr)); \
-    if (_descr != 0) { \
-        mark_stack_top++; \
-        if ((word)mark_stack_top >= (word)(mark_stack_limit)) { \
-          mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top); \
-        } \
-        mark_stack_top -> mse_start = (obj); \
-        mark_stack_top -> mse_descr.w = _descr; \
-    } \
-  } while (0)
+/* the mark stack.  Returns the updated mark_stack_top value.           */
+GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr,  mse * mark_stack_top,
+                            mse * mark_stack_limit)
+{
+  word descr = hhdr -> hb_descr;
+
+  GC_ASSERT(!HBLK_IS_FREE(hhdr));
+  if (descr != 0) {
+    mark_stack_top++;
+    if ((word)mark_stack_top >= (word)mark_stack_limit) {
+      mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top);
+    }
+    mark_stack_top -> mse_start = obj;
+    mark_stack_top -> mse_descr.w = descr;
+  }
+  return mark_stack_top;
+}
 
 /* Push the contents of current onto the mark stack if it is a valid    */
 /* ptr to a currently unmarked object.  Mark it.                        */
@@ -150,21 +151,45 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 
 /* Set mark bit, exit (using "break" statement) if it is already set.   */
 #ifdef USE_MARK_BYTES
-  /* There is a race here, and we may set                               */
-  /* the bit twice in the concurrent case.  This can result in the      */
-  /* object being pushed twice.  But that's only a performance issue.   */
-# define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
-    { /* cannot use do-while(0) here */ \
-        char * mark_byte_addr = (char *)hhdr -> hb_marks + (bit_no); \
+# if defined(PARALLEL_MARK) && defined(AO_HAVE_char_store) \
+     && !defined(AO_USE_PTHREAD_DEFS)
+    /* There is a race here, and we may set the bit twice in the        */
+    /* concurrent case.  This can result in the object being pushed     */
+    /* twice.  But that is only a performance issue.                    */
+#   define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
+      { /* cannot use do-while(0) here */ \
+        volatile unsigned char * mark_byte_addr = \
+                        (unsigned char *)(hhdr)->hb_marks + (bit_no); \
+        /* Unordered atomic load and store are sufficient here. */ \
+        if (AO_char_load(mark_byte_addr) != 0) \
+          break; /* go to the enclosing loop end */ \
+        AO_char_store(mark_byte_addr, 1); \
+      }
+# else
+#   define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
+      { /* cannot use do-while(0) here */ \
+        char * mark_byte_addr = (char *)(hhdr)->hb_marks + (bit_no); \
         if (*mark_byte_addr != 0) break; /* go to the enclosing loop end */ \
         *mark_byte_addr = 1; \
-    }
+      }
+# endif /* !PARALLEL_MARK */
 #else
 # ifdef PARALLEL_MARK
     /* This is used only if we explicitly set USE_MARK_BITS.            */
     /* The following may fail to exit even if the bit was already set.  */
     /* For our uses, that's benign:                                     */
-#   define OR_WORD_EXIT_IF_SET(addr, bits) \
+#   ifdef THREAD_SANITIZER
+#     define OR_WORD_EXIT_IF_SET(addr, bits) \
+        { /* cannot use do-while(0) here */ \
+          if (!((word)AO_load((volatile AO_t *)(addr)) & (bits))) { \
+                /* Atomic load is just to avoid TSan false positive. */ \
+            AO_or((volatile AO_t *)(addr), (AO_t)(bits)); \
+          } else { \
+            break; /* go to the enclosing loop end */ \
+          } \
+        }
+#   else
+#     define OR_WORD_EXIT_IF_SET(addr, bits) \
         { /* cannot use do-while(0) here */ \
           if (!(*(addr) & (bits))) { \
             AO_or((volatile AO_t *)(addr), (AO_t)(bits)); \
@@ -172,6 +197,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
             break; /* go to the enclosing loop end */ \
           } \
         }
+#   endif /* !THREAD_SANITIZER */
 # else
 #   define OR_WORD_EXIT_IF_SET(addr, bits) \
         { /* cannot use do-while(0) here */ \
@@ -184,7 +210,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 # endif /* !PARALLEL_MARK */
 # define SET_MARK_BIT_EXIT_IF_SET(hhdr, bit_no) \
     { /* cannot use do-while(0) here */ \
-        word * mark_word_addr = hhdr -> hb_marks + divWORDSZ(bit_no); \
+        word * mark_word_addr = (hhdr)->hb_marks + divWORDSZ(bit_no); \
         OR_WORD_EXIT_IF_SET(mark_word_addr, \
                 (word)1 << modWORDSZ(bit_no)); /* contains "break" */ \
     }
@@ -293,7 +319,8 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
                       (unsigned)GC_gc_no, (void *)base, (void *)(source))); \
     INCR_MARKS(hhdr); \
     GC_STORE_BACK_PTR((ptr_t)(source), base); \
-    PUSH_OBJ(base, hhdr, mark_stack_top, mark_stack_limit); \
+    mark_stack_top = GC_push_obj(base, hhdr, mark_stack_top, \
+                                 mark_stack_limit); \
   } while (0)
 #endif /* MARK_BIT_PER_GRANULE */
 
@@ -302,14 +329,10 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
                            source, hhdr, do_offset_check) \
   do { \
     size_t displ = HBLKDISPL(current); /* Displacement in block; in bytes. */\
-    unsigned32 low_prod, high_prod; \
+    unsigned32 high_prod; \
     unsigned32 inv_sz = hhdr -> hb_inv_sz; \
-    ptr_t base = (ptr_t)(current); \
-    LONG_MULT(high_prod, low_prod, (unsigned32)displ, inv_sz); \
-    /* product is > and within sz_in_bytes of displ * sz_in_bytes * 2**32 */ \
-    if (EXPECT(low_prod >> 16 != 0, FALSE)) { \
-      /* FIXME: fails if offset is a multiple of HBLKSIZE which becomes 0 */ \
-        if (inv_sz == LARGE_INV_SZ) { \
+    ptr_t base; \
+    if (EXPECT(inv_sz == LARGE_INV_SZ, FALSE)) { \
           size_t obj_displ; \
           base = (ptr_t)(hhdr -> hb_block); \
           obj_displ = (ptr_t)(current) - base; \
@@ -325,8 +348,13 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
           } \
           GC_ASSERT(hhdr -> hb_sz > HBLKSIZE || \
                     hhdr -> hb_block == HBLKPTR(current)); \
-          GC_ASSERT((word)hhdr->hb_block < (word)(current)); \
-        } else { \
+          GC_ASSERT((word)(hhdr)->hb_block <= (word)(current)); \
+          high_prod = 0; \
+    } else { \
+        unsigned32 low_prod; \
+        base = (ptr_t)(current); \
+        LONG_MULT(high_prod, low_prod, (unsigned32)displ, inv_sz); \
+        if ((low_prod >> 16) != 0) { \
           size_t obj_displ; \
           /* Accurate enough if HBLKSIZE <= 2**15.      */ \
           GC_STATIC_ASSERT(HBLKSIZE <= (1 << 15)); \
@@ -351,7 +379,8 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
                       (unsigned)GC_gc_no, (void *)base, (void *)(source))); \
     INCR_MARKS(hhdr); \
     GC_STORE_BACK_PTR((ptr_t)(source), base); \
-    PUSH_OBJ(base, hhdr, mark_stack_top, mark_stack_limit); \
+    mark_stack_top = GC_push_obj(base, hhdr, mark_stack_top, \
+                                 mark_stack_limit); \
   } while (0)
 #endif /* MARK_BIT_PER_OBJ */
 
@@ -482,8 +511,6 @@ typedef int mark_state_t;       /* Current state of marking, as follows:*/
 
 GC_EXTERN mark_state_t GC_mark_state;
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 #endif  /* GC_PMARK_H */
