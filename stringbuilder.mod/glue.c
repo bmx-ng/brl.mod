@@ -563,6 +563,16 @@ void bmx_stringbuilder_append_sizet(struct MaxStringBuilder * buf, BBSIZET value
 
 #endif
 
+void bmx_stringbuilder_append_shorts(struct MaxStringBuilder * buf, short * shorts, int length) {
+	if (length > 0) {
+		bmx_stringbuilder_resize(buf, buf->count + length);
+		BBChar * p = buf->buffer + buf->count;
+		memcpy(p, shorts, length * sizeof(BBChar));
+		
+		buf->count += length;
+	}	
+}
+
 BBString * bmx_stringbuilder_left(struct MaxStringBuilder * buf, int length) {
 	if (length <= 0) {
 		return &bbEmptyString;
