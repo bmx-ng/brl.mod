@@ -250,8 +250,8 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	
 	//bbGCStackTop=ebp+28;
 	
-	bbThreadStartup();
 	bbGCStartup();
+	bbThreadStartup();
 
 	if( GetVersionEx( &os ) ){
 		if( os.dwPlatformId==VER_PLATFORM_WIN32_NT ){
@@ -323,8 +323,8 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	
 	bbGCStackTop=ebp+28;
 	
-	bbThreadStartup();
 	bbGCStartup();
+	bbThreadStartup();
 	
 	getcwd( buf,PATH_MAX );
 	bbLaunchDir=bbStringFromUTF8String( buf );
@@ -361,8 +361,8 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	bbGCStackTop=&argc;
 //#endif
 
-	bbThreadStartup();
 	bbGCStartup();
+	bbThreadStartup();
 	
 	getcwd( buf,PATH_MAX );
 	bbLaunchDir=bbStringFromUTF8String( buf );
