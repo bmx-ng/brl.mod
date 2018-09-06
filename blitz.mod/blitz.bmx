@@ -71,6 +71,8 @@ ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE"
 ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE"
 ?musl
 ModuleInfo "CC_OPTS: -DNO_GETCONTEXT"
+?nx
+ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE -DNN_BUILD_TARGET_PLATFORM_NX"
 ?
 
 ?debug
@@ -148,7 +150,9 @@ Import "bdwgc/gc_dlopen.c"
 Import "bdwgc/backgraph.c"
 Import "bdwgc/win32_threads.c"
 Import "bdwgc/thread_local_alloc.c"	'bdwgc only? not gc6.7
-
+?nx
+Import "blitz_nx.c"
+?
 Import "tree/tree.c"
 
 Extern

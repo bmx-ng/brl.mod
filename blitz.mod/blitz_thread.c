@@ -201,6 +201,11 @@ void bbThreadUnregister( BBThread * thread ) {
 	BB_UNLOCK
 }
 
+//#elif __SWITCH__
+
+// TODO
+
+
 //***** POSIX threads *****
 #else
 
@@ -211,6 +216,8 @@ void bbThreadUnregister( BBThread * thread ) {
 #define MUTEX_RECURSIVE 1
 #elif __APPLE__
 #define MUTEX_RECURSIVE 2
+#elif __SWITCH__
+#define MUTEX_RECURSIVE 1
 #endif
 
 pthread_mutexattr_t _bb_mutexattr;

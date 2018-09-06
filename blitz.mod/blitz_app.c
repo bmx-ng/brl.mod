@@ -232,6 +232,62 @@ int bbIsMainThread(){
 //	return pthread_self()==_mainThread;
 }
 
+#elif __SWITCH__
+
+#include <unistd.h>
+//#include <pthread.h>
+#include <limits.h>
+#include <signal.h>
+#include <sys/time.h>
+//#include <sys/sysinfo.h>
+#include <switch.h>
+
+static int base_time;
+//static pthread_t _mainThread;
+
+static void startup(){
+//	struct sysinfo info;
+	
+	//_mainThread=pthread_self();
+
+	// TODO : appears as "undefined" when linking... need this for millisecs support.
+	//sysinfo( &info );
+	base_time=0;//bbMilliSecs()-info.uptime*1000;
+}
+
+//***** ThreadSafe! *****
+void bbDelay( int millis ){
+	int i,e;
+	
+	if( millis<0 ) return;
+
+	e=bbMilliSecs()+millis;
+	
+	for( i=0;;++i ){
+		int t=e-bbMilliSecs();
+		if( t<=0 ){
+			if( !i ) usleep( 0 );	//always sleep at least once.
+			break;
+		}
+		usleep( t*1000 );
+	}
+}
+
+//***** ThreadSafe! *****
+int bbMilliSecs(){
+	int t;
+	struct timeval tv;
+	gettimeofday(&tv,0);
+	t=tv.tv_sec*1000;
+	t+=tv.tv_usec/1000;
+	return t-base_time;
+}
+
+int bbIsMainThread(){
+	return 1;
+//	return pthread_self()==_mainThread;
+}
+
 #endif
 
 void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
@@ -384,6 +440,11 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	}
 	
 	chdir( bbTmpUTF8String( bbAppDir ) );
+
+#elif __SWITCH__
+
+//	bbThreadStartup();
+	bbGCStartup();
 	
 #endif
 

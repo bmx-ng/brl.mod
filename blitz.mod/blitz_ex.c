@@ -36,6 +36,18 @@ void setExStack( BBExStack *st ){
 	TlsSetValue( exKey(),st );
 }
 
+#elif __SWITCH__
+
+BBExStack *getExStack(){
+	// TODO
+	//return (BBExStack*)pthread_getspecific( exKey() );
+	return NULL;
+}
+
+void setExStack( BBExStack *st ){
+	//pthread_setspecific( exKey(),st );
+}
+
 #else
 
 #include <pthread.h>

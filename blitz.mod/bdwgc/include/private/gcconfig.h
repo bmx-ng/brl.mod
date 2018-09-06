@@ -2305,10 +2305,10 @@ EXTERN_C_BEGIN
 #     define DYNAMIC_LOADING
 #   endif
 #   ifdef NINTENDO_SWITCH
-      extern int __bss_end[];
+      extern int __bss_end__[];
 #     define NO_HANDLE_FORK
 #     define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
-#     define DATAEND (ptr_t)(&__bss_end)
+#     define DATAEND (ptr_t)(&__bss_end__)
       void *switch_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
 #   endif
@@ -3246,9 +3246,9 @@ EXTERN_C_BEGIN
 #   error --> inconsistent configuration
 # endif
 #endif /* !CPPCHECK */
-
+//|| defined(NINTENDO_SWITCH) 
 #if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
-    || defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
+    || defined(NN_PLATFORM_CTR) \
     || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
     || defined(SN_TARGET_PSP2)
 # define THREADS
@@ -3582,9 +3582,9 @@ EXTERN_C_BEGIN
 # elif defined(SN_TARGET_PSP2)
     void *psp2_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)psp2_get_mem(bytes)
-# elif defined(NINTENDO_SWITCH)
-    void *switch_get_mem(size_t bytes);
-#   define GET_MEM(bytes) (struct hblk*)switch_get_mem(bytes)
+//# elif defined(NINTENDO_SWITCH)
+//    void *switch_get_mem(size_t bytes);
+//#   define GET_MEM(bytes) (struct hblk*)switch_get_mem(bytes)
 # elif defined(HAIKU)
     ptr_t GC_haiku_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)GC_haiku_get_mem(bytes)

@@ -2104,13 +2104,13 @@ void GC_register_data_segments(void)
 # endif /* !MSWIN32 && !MSWINCE */
 # endif /* !OS2 */
 
+//&& !defined(NINTENDO_SWITCH) 
 /*
  * Auxiliary routines for obtaining memory from OS.
  */
-
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
      && !defined(USE_WINALLOC) && !defined(MACOS) && !defined(DOS4GW) \
-     && !defined(NINTENDO_SWITCH) && !defined(NONSTOP) \
+     && !defined(NONSTOP) \
      && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PS3) \
      && !defined(SN_TARGET_PSP2) && !defined(RTEMS) && !defined(__CC_ARM)
 

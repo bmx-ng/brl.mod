@@ -1689,6 +1689,9 @@ GC_API void GC_CALL GC_enable_incremental(void)
 # elif defined(NINTENDO_SWITCH)
     int switch_log_write(const char* text, int length);
 #   define WRITE(level, buf, len) switch_log_write(buf, len)
+# define GC_stdout 0
+# define GC_stderr 0
+# define GC_log 0
 
 #else
 # if !defined(AMIGA) && !defined(MSWIN_XBOX1) && !defined(SN_TARGET_ORBIS) \

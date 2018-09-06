@@ -27,6 +27,23 @@ typedef HANDLE bb_sem_t;
 #define bb_sem_wait(SEMPTR) WaitForSingleObject(*(SEMPTR),INFINITE)
 #define bb_sem_post(SEMPTR) ReleaseSemaphore(*(SEMPTR),1,0)
 
+#elif __SWITCH__
+#include<switch/kernel/mutex.h>
+#include<switch/kernel/semaphore.h>
+
+typedef Mutex bb_mutex_t;
+#define bb_mutex_init(MUTPTR) (mutexInit(MUTPTR),1)
+#define bb_mutex_destroy(MUTPTR)
+#define bb_mutex_lock(MUTPTR) mutexLock(MUTPTR)
+#define bb_mutex_unlock(MUTPTR) mutexUnlock(MUTPTR)
+#define bb_mutex_trylock(MUTPTR) (mutexTryLock(MUTPTR)!=0)
+
+typedef Semaphore bb_sem_t;
+#define bb_sem_init(SEMPTR,COUNT) (semaphoreInit( (SEMPTR), (COUNT) ), 1)
+#define bb_sem_destroy(SEMPTR)
+#define bb_sem_wait(SEMPTR) semaphoreWait( (SEMPTR) )
+#define bb_sem_post(SEMPTR) semaphoreSignal( (SEMPTR) )
+
 #else
 
 #include <pthread.h>

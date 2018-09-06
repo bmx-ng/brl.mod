@@ -527,7 +527,8 @@ EXTERN_C_BEGIN
                                    PCR_allSigsBlocked, \
                                    PCR_waitForever)
 # else
-#   if defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
+//|| defined(NINTENDO_SWITCH) 
+#   if defined(NN_PLATFORM_CTR) \
        || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS)
       GC_INNER void GC_stop_world(void);
       GC_INNER void GC_start_world(void);
