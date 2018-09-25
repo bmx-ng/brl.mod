@@ -30,13 +30,14 @@ typedef HANDLE bb_sem_t;
 #elif __SWITCH__
 #include<switch/kernel/mutex.h>
 #include<switch/kernel/semaphore.h>
+#include <threads.h>
 
-typedef Mutex bb_mutex_t;
-#define bb_mutex_init(MUTPTR) (mutexInit(MUTPTR),1)
+typedef mtx_t bb_mutex_t;
+#define bb_mutex_init(MUTPTR) (mtx_init(MUTPTR,mtx_recursive),1)
 #define bb_mutex_destroy(MUTPTR)
-#define bb_mutex_lock(MUTPTR) mutexLock(MUTPTR)
-#define bb_mutex_unlock(MUTPTR) mutexUnlock(MUTPTR)
-#define bb_mutex_trylock(MUTPTR) (mutexTryLock(MUTPTR)!=0)
+#define bb_mutex_lock(MUTPTR) mtx_lock(MUTPTR)
+#define bb_mutex_unlock(MUTPTR) mtx_unlock(MUTPTR)
+#define bb_mutex_trylock(MUTPTR) (mtx_trylock(MUTPTR)!=0)
 
 typedef Semaphore bb_sem_t;
 #define bb_sem_init(SEMPTR,COUNT) (semaphoreInit( (SEMPTR), (COUNT) ), 1)
@@ -103,6 +104,8 @@ struct BBThread{
 #ifdef _WIN32
 	HANDLE handle;
 	DWORD id;
+#elif __SWITCH__
+	thrd_t handle;
 #else
 	pthread_t handle;
 #endif

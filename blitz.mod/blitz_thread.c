@@ -201,10 +201,89 @@ void bbThreadUnregister( BBThread * thread ) {
 	BB_UNLOCK
 }
 
-//#elif __SWITCH__
+#elif __SWITCH__
 
-// TODO
+static __thread BBThread * bbThread;
 
+void bbThreadStartup() {
+
+	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
+	
+	thread->proc=0;
+	thread->detached=0;
+	thread->handle=thrd_current();
+
+	bbThread = thread;
+
+	thread->succ=threads;
+	threads=thread;
+	mainThread=thread;
+}
+
+static int threadProc( void *p ){
+	BBThread *thread = p;
+	
+	bbThread = thread;
+	
+	BB_LOCK
+	addThread( thread );
+	BB_UNLOCK
+	
+#ifdef DEBUG_THREADS
+	printf( "Thread %p added\n",thread );fflush( stdout );
+#endif
+	
+	void *ret=thread->proc( thread->data[0] );
+	
+	BB_LOCK
+	removeThread( thread );
+	BB_UNLOCK
+	
+#ifdef DEBUG_THREADS
+	printf( "Thread %p removed\n",thread );fflush( stdout );
+#endif
+	
+	return ret;
+}
+
+BBThread * bbThreadCreate( BBThreadProc proc,BBObject *data ) {
+	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
+	memset( thread->data,0,sizeof(thread->data) );
+	
+	thread->proc=proc;
+	thread->data[0]=data;
+	thread->detached=0;
+	if( thrd_create( &thread->handle,threadProc,thread ) == thrd_success ){
+		_bbNeedsLock=1;
+		return thread;
+	}
+	GC_FREE( thread );
+	return 0;
+}
+
+void bbThreadDetach( BBThread *thread ) {
+	thread->detached=1;
+//	thrd_detach( thread->handle );
+}
+
+BBObject * bbThreadWait( BBThread *thread ) {
+	BBObject *p=0;
+	thread->detached=1;
+	thrd_join( thread->handle,&p );
+	return p;
+}
+
+BBThread * bbThreadGetMain() {
+	return mainThread;
+}
+
+BBThread * bbThreadGetCurrent() {
+	return bbThread;
+}
+
+int bbThreadResume( BBThread *thread ) {
+	return 0;
+}
 
 //***** POSIX threads *****
 #else

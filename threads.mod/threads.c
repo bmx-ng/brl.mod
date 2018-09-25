@@ -123,6 +123,31 @@ void threads_BroadcastCond( BBCond *cond ){
 	}
 }
 
+#elif __SWITCH__
+
+cnd_t *threads_CreateCond(){
+	cnd_t *cond=malloc( sizeof(cnd_t) );
+	if( cnd_init( cond )==thrd_success ) return cond;
+	free( cond );
+	return 0;
+}
+
+void threads_CloseCond( cnd_t *cond ){
+	free( cond );
+}
+
+void threads_WaitCond( cnd_t *cond,bb_mutex_t *mutex ){
+	cnd_wait( cond,mutex );
+}
+
+void threads_SignalCond( cnd_t *cond ){
+	cnd_signal( cond );
+}
+
+void threads_BroadcastCond( cnd_t *cond ){
+	cnd_broadcast( cond );
+}
+
 #else
 
 pthread_cond_t *threads_CreateCond(){
