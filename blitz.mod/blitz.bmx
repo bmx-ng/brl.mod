@@ -855,6 +855,11 @@ keyword: "ReadOnly"
 End Rem
 
 Rem
+bbdoc: Denote a function for export to a shared library. The generated function name will not be mangled.
+keyword: "Export"
+End Rem
+
+Rem
 bbdoc: Specify constraints on the types that can be used as arguments for a type parameter defined in a generic declaration
 keyword: "Where"
 End Rem
