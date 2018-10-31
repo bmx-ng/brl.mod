@@ -5,7 +5,7 @@
 typedef struct AsyncOp{
 	BBSyncOp syncOp;
 	BBObject *syncInfo;
-	int asyncRet;
+	size_t asyncRet;
 	BBAsyncOp asyncOp;
 	int asyncInfo;
 }AsyncOp;
@@ -513,7 +513,7 @@ static DWORD WINAPI asyncOpThread( void *t ){
 	PostThreadMessage( mainThreadId,WM_BBRESERVED1,0,(LPARAM)p );
 }
 
-void bbSystemPostSyncOp( BBSyncOp syncOp,BBObject *syncInfo,int asyncRet ){
+void bbSystemPostSyncOp( BBSyncOp syncOp,BBObject *syncInfo,size_t asyncRet ){
 	AsyncOp *p=(AsyncOp*)malloc( sizeof( AsyncOp ) );
 	p->asyncOp=0;
 	p->asyncRet=asyncRet;

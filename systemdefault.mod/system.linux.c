@@ -21,7 +21,7 @@ typedef struct AsyncOp{
 	struct AsyncOp *succ;
 	BBSyncOp syncOp;
 	BBObject *syncInfo;
-	int asyncRet;
+	size_t asyncRet;
 	BBAsyncOp asyncOp;
 	int asyncInfo;
 }AsyncOp;
@@ -349,7 +349,7 @@ void *asyncOpThread( void *t ){
 	return 0;
 }
 
-void bbSystemPostSyncOp( BBSyncOp syncOp,BBObject *syncInfo,int asyncRet ){
+void bbSystemPostSyncOp( BBSyncOp syncOp,BBObject *syncInfo,size_t asyncRet ){
 	AsyncOp *p=(AsyncOp*)malloc( sizeof( AsyncOp ) );
 	p->asyncOp=0;
 	p->asyncRet=asyncRet;
