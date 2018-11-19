@@ -13,6 +13,8 @@ PHANDLE brl_timerdefault_TDefaultTimer__GetHandle(BBObject *bbTimer);
 static PHANDLE timers[MAX_TIMERS];
 static int n_timers;
 
+static HANDLE timerQueue;
+
 static void timerSyncOp( BBObject *bbTimer,PHANDLE timer ){
 	int i;
 	for( i=0;i<n_timers && timer!=timers[i];++i ) {}
@@ -26,9 +28,12 @@ static void __stdcall timerProc( PVOID user, BOOLEAN t ){
 void * bbTimerStart( float hertz,BBObject *bbTimer ){
 	PHANDLE timer;
 	
+	if (timerQueue == NULL)
+		timerQueue = CreateTimerQueue();
+	
 	if( n_timers==MAX_TIMERS ) return 0;
 	
-	if ( !CreateTimerQueueTimer(&timer, NULL, timerProc, (PVOID)bbTimer, 0, 1000.0/hertz, 0 ) ) return 0;
+	if ( !CreateTimerQueueTimer(&timer, timerQueue, timerProc, (PVOID)bbTimer, 0, 1000.0/hertz, WT_EXECUTELONGFUNCTION ) ) return 0;
 	
 	BBRETAIN( bbTimer );
 	
@@ -44,7 +49,7 @@ void bbTimerStop( void* t,BBObject *bbTimer ){
 	if( i==n_timers ) return;
 
 	timers[i]=timers[--n_timers];
-	DeleteTimerQueueTimer(NULL, timer, NULL);
+	DeleteTimerQueueTimer(timerQueue, timer, NULL);
 
 	BBRELEASE( bbTimer );
 }
