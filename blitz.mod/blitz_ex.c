@@ -137,7 +137,11 @@ void bbExThrow( BBObject *p ){
 	
 	--st->ex_sp;
 	st->ex_sp->ex = p;
+#ifndef __APPLE__
 	longjmp(st->ex_sp->buf, st->ex_sp->jmp_status);
+#else
+	_longjmp(st->ex_sp->buf, st->ex_sp->jmp_status);
+#endif
 }
 
 void bbExThrowCString( const char *p ){
