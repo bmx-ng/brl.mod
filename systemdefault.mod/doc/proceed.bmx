@@ -1,5 +1,7 @@
 ' proceed.bmx
 
-result=Proceed("Are you sure you want to continue?")
+SuperStrict
 
-print result
+Local result:Int = Proceed("Are you sure you want to continue?")
+
+Print result

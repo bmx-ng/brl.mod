@@ -4,8 +4,10 @@ End Rem
 
 ' testtimer.bmx
 
-for i=1 to 10
-	print frame
-	frame:+1
-	delay 100
-next
+SuperStrict
+
+For i:Int = 1 To 10
+	Print i
+	i:+1
+	Delay 100
+Next
