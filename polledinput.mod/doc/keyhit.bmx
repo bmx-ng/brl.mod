@@ -5,9 +5,11 @@
 ' and exits when it detects the ESCAPE key has
 ' been pressed
 
-graphics 640,480
-while not keyhit(KEY_ESCAPE)
-	cls
-	if keyhit(KEY_SPACE) drawoval 0,0,640,480
-	flip
-wend
+SuperStrict
+
+Graphics 640,480
+While Not KeyHit(KEY_ESCAPE)
+	Cls
+	If KeyHit(KEY_SPACE) DrawOval 0,0,640,480
+	Flip
+Wend

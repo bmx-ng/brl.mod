@@ -1,3 +1,4 @@
+SuperStrict
 
 Graphics 640,480,0
 

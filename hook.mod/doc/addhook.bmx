@@ -1,7 +1,8 @@
+SuperStrict
 
 'This function will be automagically called every Flip
-Function MyHook:Object( id,data:Object,context:Object )
-	Global count
+Function MyHook:Object( id:Int,data:Object,context:Object )
+	Global count:Int
 	
 	count:+1
 	If count Mod 10=0 Print "Flips="+count

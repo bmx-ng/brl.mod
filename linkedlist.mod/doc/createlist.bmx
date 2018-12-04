@@ -1,17 +1,19 @@
 ' createlist.bmx
 
+SuperStrict
+
 ' create a list to hold some objects
 
-list:TList=createlist()
+Local list:TList=CreateList()
 
 ' add some string objects to the list
 
-listaddlast list,"one"
-listaddlast list,"two"
-listaddlast list,"three"
+ListAddLast list,"one"
+ListAddLast list,"two"
+ListAddLast list,"three"
 
 ' enumerate all the strings in the list
 
-for a$=eachin list
-	print a$
-next
+For Local a:String = EachIn list
+	Print a
+Next

@@ -19,4 +19,3 @@ Print "Estimated area = " + ( 4.0 * Double(inpoints)/Double(totalpoints) )
 Print
 Print "    Exact area = " + Pi     '  4 * Pi/4, compare with estimate
 
-End

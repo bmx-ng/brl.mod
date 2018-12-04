@@ -2,6 +2,8 @@ Rem
 Cosine of x
 End Rem
 
-for d=0 to 360 step 45
-	print "Cos("+d+")="+cos(d)
-next
+SuperStrict
+
+For Local d:Int = 0 To 360 Step 45
+	Print "Cos("+d+")="+Cos(d)
+Next

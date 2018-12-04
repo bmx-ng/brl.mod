@@ -1,6 +1,11 @@
 ' defdata.bmx
 
-ReadData name$
+SuperStrict
+
+Local name:String
+Local age:Int, skill:Int
+
+ReadData name
 ReadData age,skill
 
 Print "name="+name+" age="+age+" skill="+skill

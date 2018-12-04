@@ -2,9 +2,11 @@ Rem
 Const defines the preceeding variable declaration as constant.
 End Rem
 
-Const ON=TRUE
-Const OFF=FALSE
+SuperStrict
 
-Const TWOPI#=2*PI
+Const ON:Int=True
+Const OFF:Int=False
 
-print TWOPI
+Const TWOPI:Float=2*Pi
+
+Print TWOPI

@@ -5,6 +5,8 @@
 ' and exits when it detects the ESCAPE key has
 ' been pressed
 
+SuperStrict
+
 Graphics 640,480
 While Not KeyHit(KEY_ESCAPE)
 	Cls
