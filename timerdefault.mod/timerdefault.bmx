@@ -81,11 +81,7 @@ Type TDefaultTimer Extends TTimer
 	'Field _cycle:TTimer	'no longer used...see history
 	Field _event:TEvent
 	Field _handle:Byte Ptr
-?win32
-	Function _GetHandle:Byte Ptr(timer:TDefaultTimer) { nomangle }
-		Return timer._handle
-	End Function
-?
+
 End Type
 
 Type TDefaultTimerFactory Extends TTimerFactory
