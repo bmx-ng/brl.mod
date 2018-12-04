@@ -2,11 +2,13 @@ Rem
 EndType marks the end of a BlitzMax custom type.
 End Rem
 
+SuperStrict
+
 Type TVector
-	Field	x,y,z
+	Field x:Int,y:Int,z:Int
 End Type
 
-Local a:TVector=new TVector
+Local a:TVector=New TVector
 
 a.x=10
 a.y=20

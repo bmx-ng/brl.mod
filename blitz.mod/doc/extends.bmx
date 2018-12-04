@@ -2,18 +2,20 @@ Rem
 Extends is used in a BlitzMax Type declaration to derive the Type from a specified base class.
 End Rem
 
+SuperStrict
+
 Type TShape
-	Field	xpos,ypos
+	Field xpos:Int,ypos:Int
 	Method Draw() Abstract
 End Type
 
-Type TCircle extends TShape
-	Field	radius
+Type TCircle Extends TShape
+	Field radius:Int
 	
-	Function Create:TCircle(x,y,r)
-		local c:TCircle=new TCircle
+	Function Create:TCircle(x:Int,y:Int,r:Int)
+		Local c:TCircle=New TCircle
 		c.xpos=x;c.ypos=y;c.radius=r
-		return c
+		Return c
 	End Function
 	
 	Method Draw()
@@ -21,13 +23,13 @@ Type TCircle extends TShape
 	End Method
 End Type
 
-Type TRect extends TShape
-	Field	width,height
+Type TRect Extends TShape
+	Field width:Int,height:Int
 	
-	Function Create:TRect(x,y,w,h)
-		local r:TRect=new TRect
+	Function Create:TRect(x:Int,y:Int,w:Int,h:Int)
+		Local r:TRect=New TRect
 		r.xpos=x;r.ypos=y;r.width=w;r.height=h
-		return r
+		Return r
 	End Function
 	
 	Method Draw()
@@ -35,20 +37,20 @@ Type TRect extends TShape
 	End Method
 End Type
 
-local 	shapelist:TShape[4]
-local	shape:TShape
+Local shapelist:TShape[4]
+Local shape:TShape
 
 shapelist[0]=TCircle.Create(200,50,50)
 shapelist[1]=TRect.Create(300,50,40,40)
 shapelist[2]=TCircle.Create(400,50,50)
 shapelist[3]=TRect.Create(200,180,250,20)
 
-graphics 640,480
-while not keyhit(KEY_ESCAPE)
-	cls
-	for shape=eachin shapelist
+Graphics 640,480
+While Not KeyHit(KEY_ESCAPE)
+	Cls
+	For shape=EachIn shapelist
 		shape.draw
-	next
-	flip
-wend
-end
+	Next
+	Flip
+Wend
+End

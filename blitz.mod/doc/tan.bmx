@@ -2,6 +2,8 @@ Rem
 Tangent of x degrees
 End Rem
 
-for d=0 to 360 step 45
-	print "Tan("+d+")="+float(Tan(d))
-next
+SuperStrict
+
+For Local d:Int = 0 To 360 Step 45
+	Print "Tan("+d+")="+Float(Tan(d))
+Next

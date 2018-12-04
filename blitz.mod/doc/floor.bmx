@@ -2,6 +2,8 @@ Rem
 Floor(x!) returns the largest integral value not greater than x
 End Rem
 
-for i!=-1 to 1 step .2
-	print "Floor("+i+")="+Floor(i)
-next
+SuperStrict
+
+For Local i:Double = -1 To 1 Step .2
+	Print "Floor("+i+")="+Floor(i)
+Next

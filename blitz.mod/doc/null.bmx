@@ -2,12 +2,14 @@ Rem
 Null is a BlitzMax Constant representing an empty Object reference.
 End Rem
 
+SuperStrict
+
 Type mytype
-	Field	atypevariable
+	Field atypevariable:Int
 End Type
 
 Global a:mytype
 
-if a=null Print "a is uninitialized"
-a=new mytype
-if a<>null Print "a is initialized"
+If a=Null Print "a is uninitialized"
+a=New mytype
+If a<>Null Print "a is initialized"

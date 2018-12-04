@@ -1,8 +1,12 @@
 ' restoredata.bmx
 
-For i=1 To 5
+SuperStrict
+
+Local name:String, age:Int, skill:Int
+
+For Local i:Int = 1 To 5
 	RestoreData mydata	'reset the data pointer everly loop so we don't read past the end
-	ReadData name$,age,skill
+	ReadData name,age,skill
 	Print "name="+name+" age="+age+" skill="+skill
 Next
 

@@ -4,6 +4,8 @@ End Rem
 
 ' count backwards from 10 to 0
 
-For i=10 to 0 step -1
+SuperStrict
+
+For Local i:Int = 10 To 0 Step -1
 	Print i
 Next

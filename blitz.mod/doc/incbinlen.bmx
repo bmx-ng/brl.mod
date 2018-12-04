@@ -2,11 +2,13 @@ Rem
 IncBinLen returns the size in bytes of the specified embedded binary file.
 End Rem
 
-incbin "incbinlen.bmx"
+SuperStrict
 
-local p:byte ptr=IncBinPtr("incbinlen.bmx")
-local bytes=incbinlen("incbinlen.bmx")
+Incbin "incbinlen.bmx"
 
-local s$=StringFromBytes(p,bytes)
+Local p:Byte Ptr = IncbinPtr("incbinlen.bmx")
+Local bytes:Int = IncbinLen("incbinlen.bmx")
 
-Print "StringFromBytes(p,bytes)="+s$
+Local s:String=String.FromBytes(p,bytes)
+
+Print "StringFromBytes(p,bytes)="+s

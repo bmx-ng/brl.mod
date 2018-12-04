@@ -2,6 +2,8 @@ Rem
 Sin:Double( x:Double )
 End Rem
 
-for d=0 to 360 step 45
-	print "Sin("+d+")="+sin(d)
-next
+SuperStrict
+
+For Local d:Int = 0 To 360 Step 45
+	Print "Sin("+d+")="+Sin(d)
+Next
