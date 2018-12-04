@@ -1,3 +1,3 @@
 ' filetime.bmx
 
-print filetime("filetime.bmx")
+Print FileTime("filetime.bmx")

@@ -1,3 +1,4 @@
 ' stripslash.bmx
+SuperStrict
 
-print stripslash("mypath/")	'prints mypath
+Print StripSlash("mypath/")	'prints mypath

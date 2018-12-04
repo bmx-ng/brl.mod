@@ -1,4 +1,5 @@
 ' deletefile.bmx
+SuperStrict
 
-success=deletefile("myfile")
-if not success runtimeerror "error deleting file"
+Local success:Int = DeleteFile("myfile")
+If Not success RuntimeError "error deleting file"

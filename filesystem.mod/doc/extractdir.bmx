@@ -1,3 +1,3 @@
 ' extractdir.bmx
 
-print extractdir("mypath/myfile.bmx")	'prints mypath
+Print ExtractDir("mypath/myfile.bmx")	'prints mypath

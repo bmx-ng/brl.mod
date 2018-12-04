@@ -1,3 +1,3 @@
 ' stripall.bmx
 
-print stripall("mypath/myfile.bmx")	'prints myfile
+Print StripAll("mypath/myfile.bmx")	'prints myfile

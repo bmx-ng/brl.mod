@@ -1,11 +1,11 @@
 ' changedir.bmx
 
-print "CurrentDir()="+currentdir()
+Print "CurrentDir()="+CurrentDir()
 
 ' change current folder to the parent folder
 
-changedir ".."
+ChangeDir ".."
 
 ' print new CurrentDir()
 
-print "CurrentDir()="+currentdir()
+Print "CurrentDir()="+CurrentDir()
