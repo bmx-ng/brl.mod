@@ -1,12 +1,14 @@
 ' setchannelvolume.bmx
 
-timer=CreateTimer(20)
+SuperStrict
 
-sound = LoadSound ("shoot.wav")
+Local timer:TTimer = CreateTimer(20)
 
-For volume#=.1 To 2 Step .05
+Local sound:TSound = LoadSound ("shoot.wav")
+
+For Local volume#=.1 To 2 Step .05
 	WaitTimer timer
-	channel=CueSound(sound)
+	Local channel:TChannel = CueSound(sound)
 	SetChannelVolume channel,volume
 	ResumeChannel channel
 Next

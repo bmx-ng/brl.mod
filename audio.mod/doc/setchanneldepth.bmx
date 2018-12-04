@@ -1,15 +1,17 @@
 ' setchanneldepth.bmx
 
+SuperStrict
+
 Graphics 640, 480
 
-channel = AllocChannel ()
-sound = LoadSound ("shoot.wav") ' Use a short sample...
+Local channel:TChannel = AllocChannel ()
+Local sound:TSound = LoadSound ("shoot.wav") ' Use a short sample...
 
 Repeat
 	If MouseHit(1) PlaySound sound,channel
 	
-	pan# = MouseX () / (640 / 2.0) - 1
-	depth# = MouseY () / (480 /2.0) -1
+	Local pan# = MouseX () / (640 / 2.0) - 1
+	Local depth# = MouseY () / (480 /2.0) -1
 	
 	SetChannelPan channel,pan
 	SetChannelDepth channel,depth

@@ -2,10 +2,12 @@ Rem
 StopChannel example
 End Rem
 
-sound=LoadSound("shoot.wav",true)
-channel=PlaySound(sound)
+SuperStrict
 
-print "channel="+channel
+Local sound:TSound = LoadSound("shoot.wav",True)
+Local channel:TChannel = PlaySound(sound)
+
+Print "channel="+channel
 
 Input "Press return key to stop sound"
 
