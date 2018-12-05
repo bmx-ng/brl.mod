@@ -1,3 +1,5 @@
 ' stripdir.bmx
 
-Print StripDir("mypath/myfile.bmx")	'prints myfile.bmx
+SuperStrict
+
+Print StripDir("mypath/myfile.bmx")	' prints myfile.bmx

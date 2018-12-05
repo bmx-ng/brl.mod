@@ -1,3 +1,5 @@
 ' extractext.bmx
 
-Print ExtractExt("mypath/myfile.bmx")	'prints bmx
+SuperStrict
+
+Print ExtractExt("mypath/myfile.bmx")	' prints bmx
