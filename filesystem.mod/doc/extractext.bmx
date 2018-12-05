@@ -1,3 +1,3 @@
 ' extractext.bmx
 
-print extractext("mypath/myfile.bmx")	'prints bmx
+Print ExtractExt("mypath/myfile.bmx")	'prints bmx

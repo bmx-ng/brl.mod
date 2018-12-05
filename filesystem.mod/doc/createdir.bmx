@@ -1,4 +1,5 @@
 ' createdir.bmx
+SuperStrict
 
-success=createdir("myfolder")
-if not success runtimeerror "error creating directory"
+Local success:Int = CreateDir("myfolder")
+If Not success RuntimeError "error creating directory"

@@ -1,3 +1,3 @@
 ' stripext.bmx
 
-print stripext("mypath/myfile.bmx")	'prints mypath/myfile
+Print StripExt("mypath/myfile.bmx")	'prints mypath/myfile

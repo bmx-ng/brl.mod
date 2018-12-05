@@ -1,4 +1,4 @@
 ' deletedir.bmx
-
-success=deletedir("myfolder")
-if not success runtimeerror "error deleting directory"
+SuperStrict
+Local success:Int = DeleteDir("myfolder")
+If Not success RuntimeError "error deleting directory"

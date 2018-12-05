@@ -1,11 +1,12 @@
 ' readdir.bmx
+SuperStrict
 
-dir=ReadDir(CurrentDir())
+Local dir:Byte Ptr = ReadDir(CurrentDir())
 
 If Not dir RuntimeError "failed to read current directory"
 
 Repeat
-	t$=NextFile( dir )
+	Local t:String = NextFile( dir )
 	If t="" Exit
 	If t="." Or t=".." Continue
 	Print t	
