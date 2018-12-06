@@ -1,15 +1,9 @@
-'inverse cosine example
+Rem
+Inverse Cosine of x
+End Rem
 
 SuperStrict
 
-For Local x:Double = - 1 To 1 Step 0.5
-	Print "Arccos("+x+")="+ACos(x)+" degrees"
+For Local d:Double = -1.0 To 1.0 Step 0.125
+	Print "ACos("+d+")="+ACos(d)
 Next
-
-' ===================
-' Output
-' Arccos(-1.0000000000000000)=180.00000000000000 degrees
-' Arccos(-0.50000000000000000)=120.00000000000001 degrees
-' Arccos(0.00000000000000000)=90.000000000000000 degrees
-' Arccos(0.50000000000000000)=60.000000000000007 degrees
-' Arccos(1.0000000000000000)=0.00000000000000000 degrees

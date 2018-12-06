@@ -1,15 +1,9 @@
-'Inverse Tangent example
+Rem
+ATan returns the Inverse Tangent of x
+End Rem
 
 SuperStrict
 
-For Local x:Double = -1 To 1 Step 0.5
-	Print "ATan("+x+")="+ATan(x)+" degrees"
+For Local d:Double = -1.0 To 1.0 Step 0.125
+	Print "ATan("+d+")="+ATan(d)
 Next
-
-' ===================
-' Output
-' ATan(-1.0000000000000000)=-45.000000000000000 degrees
-' ATan(-0.50000000000000000)=-26.565051177077990 degrees
-' ATan(0.00000000000000000)=0.00000000000000000 degrees
-' ATan(0.50000000000000000)=26.565051177077990 degrees
-' ATan(1.0000000000000000)=45.000000000000000 degrees

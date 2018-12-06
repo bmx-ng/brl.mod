@@ -1,18 +1,19 @@
-'atan2 is a two-argument function that computes the arctangent of y / x 
-'given y And x, but with a range of ( - p,p].
+Rem
+ATan2 returns the Inverse Tangent of two variables
+End Rem
 
 SuperStrict
 
-Graphics 640 , 480
-Local x:Float
-Local y:Float
-Repeat
-	
+Function Angle:Double(x0:Double,y0:Double,x1:Double,y1:Double)
+	Return ATan2(y1-y0,x1-x0)
+End Function
+
+Graphics 640,480
+While Not KeyHit(KEY_ESCAPE)
 	Cls
-	x = MouseX()
-	y = MouseY()
-	DrawLine 320, 240, x, y
-	DrawText "Angle to mouse cursor=" + ATan2(y-240,x-320),10,10
+	Local x:Float = MouseX()
+	Local y:Float = MouseY()
+	DrawLine 320,240,x,y
+	DrawText "Angle="+Angle(320,240,x,y),20,20
 	Flip
-	
-Until KeyDown(KEY_ESCAPE) Or AppTerminate()
+Wend

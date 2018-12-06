@@ -1,15 +1,9 @@
+Rem
+Tangent of x degrees
+End Rem
+
 SuperStrict
 
-For Local x:Double = 0 To 180 Step 30
-	Print "Tan("+x+" degrees)="+Tan(x)
+For Local d:Int = 0 To 360 Step 45
+	Print "Tan("+d+")="+Float(Tan(d))
 Next
-
-' ===================
-' Output
-' Tan(0.00000000000000000 degrees)=0.00000000000000000
-' Tan(30.000000000000000 degrees)=0.57735026918962573
-' Tan(60.000000000000000 degrees)=1.7320508075688767
-' Tan(90.000000000000000 degrees)=16331778728383844.
-' Tan(120.00000000000000 degrees)=-1.7320508075688783
-' Tan(150.00000000000000 degrees)=-0.57735026918962573
-' Tan(180.00000000000000 degrees)=-1.2246063538223773e-016
