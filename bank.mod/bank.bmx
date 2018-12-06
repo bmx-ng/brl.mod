@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Miscellaneous/Banks
@@ -26,7 +26,7 @@ Type TBank
 
 	Field _buf:Byte Ptr
 	Field _size:Size_T,_capacity:Size_T,_static:Int
-	Field _locked
+	Field _locked:Int
 	
 	Method _pad()
 	End Method
@@ -96,6 +96,13 @@ Type TBank
 	Rem
 	bbdoc: Resize a bank
 	End Rem
+	Method Resize( size:Int )
+		Resize(Size_T(size))
+	End Method
+	
+	Rem
+	bbdoc: Resize a bank
+	End Rem
 	Method Resize( size:Size_T )
 		Assert _locked=0 Else "Locked banks cannot be resize"
 		Assert _static=0 Else "Static banks cannot be resized"
@@ -131,7 +138,15 @@ Type TBank
 	bbdoc: Peek a byte from a bank
 	returns: The byte value at the specified byte offset within the bank
 	End Rem
-	Method PeekByte( offset:Size_T )
+	Method PeekByte:Int( offset:Int )
+		Return PeekByte(Size_T(offset))
+	End Method
+	
+	Rem
+	bbdoc: Peek a byte from a bank
+	returns: The byte value at the specified byte offset within the bank
+	End Rem
+	Method PeekByte:Int( offset:Size_T )
 		Assert offset>=0 And offset<_size Else "Illegal bank offset"
 		Return _buf[offset]
 	End Method
@@ -139,7 +154,14 @@ Type TBank
 	Rem
 	bbdoc: Poke a byte into a bank
 	End Rem
-	Method PokeByte( offset:Size_T,value )
+	Method PokeByte( offset:Int,value:Int )
+		PokeByte(Size_T(offset), value)
+	End Method
+	
+	Rem
+	bbdoc: Poke a byte into a bank
+	End Rem
+	Method PokeByte( offset:Size_T,value:Int )
 		Assert offset>=0 And offset<_size Else "Illegal bank offset"
 		_buf[offset]=value
 	End Method
@@ -148,7 +170,15 @@ Type TBank
 	bbdoc: Peek a short from a bank
 	returns: The short value at the specified byte offset within the bank
 	End Rem
-	Method PeekShort( offset:Size_T )
+	Method PeekShort:Int( offset:Int )
+		Return PeekShort(Size_T(offset))
+	End Method
+	
+	Rem
+	bbdoc: Peek a short from a bank
+	returns: The short value at the specified byte offset within the bank
+	End Rem
+	Method PeekShort:Int( offset:Size_T )
 		Assert offset>=0 And offset<_size-1 Else "Illegal bank offset"
 		Return (Short Ptr(_buf+offset))[0]
 	End Method
@@ -156,7 +186,14 @@ Type TBank
 	Rem
 	bbdoc: Poke a short into a bank
 	End Rem
-	Method PokeShort( offset:Size_T,value )
+	Method PokeShort( offset:Int,value:Int )
+		PokeShort(Size_T(offset), value)
+	End Method
+	
+	Rem
+	bbdoc: Poke a short into a bank
+	End Rem
+	Method PokeShort( offset:Size_T,value:Int )
 		Assert offset>=0 And offset<_size-1 Else "Illegal bank offset"
 		(Short Ptr(_buf+offset))[0]=value
 	End Method
@@ -165,7 +202,15 @@ Type TBank
 	bbdoc: Peek an int from a bank
 	returns: The int value at the specified byte offset within the bank
 	End Rem
-	Method PeekInt( offset:Size_T )
+	Method PeekInt:Int( offset:Int )
+		Return PeekInt(Size_T(offset))
+	End Method
+	
+	Rem
+	bbdoc: Peek an int from a bank
+	returns: The int value at the specified byte offset within the bank
+	End Rem
+	Method PeekInt:Int( offset:Size_T )
 		Assert offset>=0 And offset<_size-3 Else "Illegal bank offset"
 		Return (Int Ptr(_buf+offset))[0]
 	End Method
@@ -173,11 +218,26 @@ Type TBank
 	Rem
 	bbdoc: Poke an int into a bank
 	End Rem
-	Method PokeInt( offset:Size_T,value )
+	Method PokeInt( offset:Int,value:Int )
+		PokeInt(Size_T(offset), value)
+	End Method
+	
+	Rem
+	bbdoc: Poke an int into a bank
+	End Rem
+	Method PokeInt( offset:Size_T,value:Int )
 		Assert offset>=0 And offset<_size-3 Else "Illegal bank offset"
 		(Int Ptr(_buf+offset))[0]=value
 	End Method
 
+	Rem
+	bbdoc: Peek a long from a bank
+	returns: The long value at the specified byte offset within the bank
+	End Rem
+	Method PeekLong:Long( offset:Int )
+		Return PeekLong(Size_T(offset))
+	End Method
+	
 	Rem
 	bbdoc: Peek a long from a bank
 	returns: The long value at the specified byte offset within the bank
@@ -190,6 +250,13 @@ Type TBank
 	Rem
 	bbdoc: Poke a long value into a bank
 	End Rem
+	Method PokeLong( offset:Int,value:Long )
+		PokeLong(Size_T(offset), value)
+	End Method
+	
+	Rem
+	bbdoc: Poke a long value into a bank
+	End Rem
 	Method PokeLong( offset:Size_T,value:Long )
 		Assert offset>=0 And offset<_size-7 Else "Illegal bank offset"
 		(Long Ptr(_buf+offset))[0]=value
@@ -199,7 +266,15 @@ Type TBank
 	bbdoc: Peek a float from a bank
 	returns: The float value at the specified byte offset within the bank
 	End Rem
-	Method PeekFloat#( offset:Size_T )
+	Method PeekFloat:Float( offset:Int )
+		Return PeekFloat(Size_T(offset))
+	End Method
+	
+	Rem
+	bbdoc: Peek a float from a bank
+	returns: The float value at the specified byte offset within the bank
+	End Rem
+	Method PeekFloat:Float( offset:Size_T )
 		Assert offset>=0 And offset<_size-3 Else "Illegal bank offset"
 		Return (Float Ptr(_buf+offset))[0]
 	End Method
@@ -207,7 +282,14 @@ Type TBank
 	Rem
 	bbdoc: Poke a float value into a bank
 	End Rem
-	Method PokeFloat( offset:Size_T,value# )
+	Method PokeFloat( offset:Int,value:Float )
+		PokeFloat(Size_T(offset), value)
+	End Method
+	
+	Rem
+	bbdoc: Poke a float value into a bank
+	End Rem
+	Method PokeFloat( offset:Size_T,value:Float )
 		Assert offset>=0 And offset<_size-3 Else "Illegal bank offset"
 		(Float Ptr(_buf+offset))[0]=value
 	End Method
@@ -216,7 +298,15 @@ Type TBank
 	bbdoc: Peek a double from a bank
 	returns: The double value at the specified byte offset within the bank
 	End Rem
-	Method PeekDouble!( offset:Size_T )
+	Method PeekDouble:Double( offset:Int )
+		Return PeekDouble(Size_T(offset))
+	End Method
+	
+	Rem
+	bbdoc: Peek a double from a bank
+	returns: The double value at the specified byte offset within the bank
+	End Rem
+	Method PeekDouble:Double( offset:Size_T )
 		Assert offset>=0 And offset<_size-7 Else "Illegal bank offset"
 		Return (Double Ptr(_buf+offset))[0]
 	End Method
@@ -224,7 +314,14 @@ Type TBank
 	Rem
 	bbdoc: Poke a double value into a bank
 	End Rem
-	Method PokeDouble( offset:Size_T,value! )
+	Method PokeDouble( offset:Int,value:Double )
+		PokeDouble(Size_T(offset), value)
+	End Method
+	
+	Rem
+	bbdoc: Poke a double value into a bank
+	End Rem
+	Method PokeDouble( offset:Size_T,value:Double )
 		Assert offset>=0 And offset<_size-7 Else "Illegal bank offset"
 		(Double Ptr(_buf+offset))[0]=value
 	End Method
@@ -234,9 +331,9 @@ Type TBank
 	about:
 	Return True if successful, otherwise False.
 	end rem
-	Method Save( url:Object )
+	Method Save:Int( url:Object )
 		Local stream:TStream=WriteStream( url )
-		If Not stream Return
+		If Not stream Return False
 		Local n:Long=stream.WriteBytes( _buf,_size )
 		stream.Close
 		Return True
@@ -250,7 +347,7 @@ Type TBank
 	end rem
 	Function Load:TBank( url:Object )
 		Local stream:TStream=ReadStream( url )
-		If Not stream Return
+		If Not stream Return Null
 		Local data:Byte[]=LoadByteArray( stream )
 		Local bank:TBank=Create( Size_T(data.length) )
 		MemCopy bank.Buf(),data,Size_T(data.length)
@@ -342,7 +439,7 @@ about:
 #SaveBank writes it's entire contents to a @url. If the @url is a file path a new
 file is created.
 end rem
-Function SaveBank( bank:TBank,url:Object )
+Function SaveBank:Int( bank:TBank,url:Object )
 	Return bank.Save( url )
 End Function
 
@@ -433,110 +530,270 @@ returns: The byte value at the specified byte offset within the bank
 about:
 A byte is an unsigned 8 bit value with a range of 0..255.
 End Rem
-Function PeekByte( bank:TBank,offset:Size_T )
+Function PeekByte:Int( bank:TBank,offset:Int )
+	Return PeekByte(bank, Size_T(offset))
+End Function
+
+Rem
+bbdoc: Peek a byte from a bank
+returns: The byte value at the specified byte offset within the bank
+about:
+A byte is an unsigned 8 bit value with a range of 0..255.
+End Rem
+Function PeekByte:Int( bank:TBank,offset:Size_T )
 	Return bank.PeekByte( offset )
 End Function
 
 Rem
 bbdoc: Poke a byte into a bank
 End Rem
-Function PokeByte( bank:TBank,offset:Size_T,value )
+Function PokeByte( bank:TBank,offset:Int,value:Int )
+	PokeByte(bank, Size_T(offset), value)
+End Function
+
+Rem
+bbdoc: Poke a byte into a bank
+End Rem
+Function PokeByte( bank:TBank,offset:Size_T,value:Int )
 	bank.PokeByte offset,value
 End Function
 
 Rem
-bbdoc: Peek a short from a bank
+bbdoc: Reads an unsigned short value (2 bytes) from a bank, at a given address.
 returns: The short value at the specified byte offset within the bank
 about:
-A short is an unsigned 16 bit (2 bytes) value with a range of 0..65535.
+Take notice not to exceed the boundaries of the bank.
+
+> A short value should not be read from the last possible byte address of the bank.
 End Rem
-Function PeekShort( bank:TBank,offset:Size_T )
+Function PeekShort:Int( bank:TBank,offset:Int )
+	Return PeekShort(bank, Size_T(offset))
+End Function
+
+Rem
+bbdoc: Reads an unsigned short value (2 bytes) from a bank, at a given address.
+returns: The short value at the specified byte offset within the bank
+about:
+Take notice not to exceed the boundaries of the bank.
+
+> A short value should not be read from the last possible byte address of the bank.
+End Rem
+Function PeekShort:Int( bank:TBank,offset:Size_T )
 	Return bank.PeekShort( offset )
 End Function
 
 Rem
-bbdoc: Poke a short into a bank
+bbdoc: Writes an unsigned short value (2 bytes) into a bank, at a given address.
 about:
-An short is an unsigned 16 bit value that requires 2 bytes of storage.
+Take notice not to exceed the boundaries of the bank.
+
+> A short value should not be poked at the last possible byte address of the bank.
 End Rem
-Function PokeShort( bank:TBank,offset:Size_T,value )
+Function PokeShort( bank:TBank,offset:Int,value:Int )
+	PokeShort(bank, Size_T(offset), value)
+End Function
+
+Rem
+bbdoc: Writes an unsigned short value (2 bytes) into a bank, at a given address.
+about:
+Take notice not to exceed the boundaries of the bank.
+
+> A short value should not be poked at the last possible byte address of the bank.
+End Rem
+Function PokeShort( bank:TBank,offset:Size_T,value:Int )
 	bank.PokeShort offset,value
 End Function
 
 Rem
-bbdoc: Peek an int from a bank
+bbdoc: Reads a signed int value (4 bytes) from a bank, at a given address.
 returns: The int value at the specified byte offset within the bank
 about:
-An int is a signed 32 bit value (4 bytes).
+Take notice not to exceed the boundaries of the bank.
+
+> An int value should not be read from the last possible byte or short address of the bank.
 End Rem
-Function PeekInt( bank:TBank,offset:Size_T )
+Function PeekInt:Int( bank:TBank,offset:Int )
+	Return PeekInt(bank, Size_T(offset))
+End Function
+
+Rem
+bbdoc: Reads a signed int value (4 bytes) from a bank, at a given address.
+returns: The int value at the specified byte offset within the bank
+about:
+Take notice not to exceed the boundaries of the bank.
+
+> An int value should not be read from the last possible byte or short address of the bank.
+End Rem
+Function PeekInt:Int( bank:TBank,offset:Size_T )
 	Return bank.PeekInt( offset )
 End Function
 
 Rem
-bbdoc: Poke an int into a bank
+bbdoc: Writes a signed int value (4 bytes) into a bank, at a given address.
 about:
-An int is a signed 32 bit value that requires 4 bytes of storage.
+Take notice not to exceed the boundaries of the bank.
+
+> An int value should not be poked at the last possible byte or short address of the bank.
 End Rem
-Function PokeInt( bank:TBank,offset:Size_T,value )
+Function PokeInt( bank:TBank,offset:Int,value:Int )
+	PokeInt(bank, Size_T(offset), value)
+End Function
+
+Rem
+bbdoc: Writes a signed int value (4 bytes) into a bank, at a given address.
+about:
+Take notice not to exceed the boundaries of the bank.
+
+> An int value should not be poked at the last possible byte or short address of the bank.
+End Rem
+Function PokeInt( bank:TBank,offset:Size_T,value:Int )
 	bank.PokeInt offset,value
 End Function
 
 Rem
-bbdoc: Peek a long integer from a bank
+bbdoc: Reads a signed long value (8 bytes) from a bank, at a given address.
 returns: The long integer value at the specified byte offset within the bank
 about:
-A long is a 64 bit integer that requires 8 bytes of memory.
+Take notice not to exceed the boundaries of the bank.
+
+> A long value should not be read from the last possible byte, short or int address of the bank.
+End Rem
+Function PeekLong:Long( bank:TBank,offset:Int )
+	Return PeekLong(bank, Size_T(offset))
+End Function
+
+Rem
+bbdoc: Reads a signed long value (8 bytes) from a bank, at a given address.
+returns: The long integer value at the specified byte offset within the bank
+about:
+Take notice not to exceed the boundaries of the bank.
+
+> A long value should not be read from the last possible byte, short or int address of the bank.
 End Rem
 Function PeekLong:Long( bank:TBank,offset:Size_T )
 	Return bank.PeekLong( offset )
 End Function
 
 Rem
-bbdoc: Poke a long integer int into a bank
+bbdoc: Writes a signed long value (8 bytes) into a bank, at a given address.
 about:
-A long is a 64 bit integer that requires 8 bytes of storage.
+Take notice not to exceed the boundaries of the bank.
+
+> A long value should not be poked at the last possible byte, short or int address of the bank.
+End Rem
+Function PokeLong( bank:TBank,offset:Int,value:Long )
+	PokeLong(bank, Size_T(offset), value)
+End Function
+
+Rem
+bbdoc: Writes a signed long value (8 bytes) into a bank, at a given address.
+about:
+Take notice not to exceed the boundaries of the bank.
+
+> A long value should not be poked at the last possible byte, short or int address of the bank.
 End Rem
 Function PokeLong( bank:TBank,offset:Size_T,value:Long )
 	bank.PokeLong offset,value
 End Function
 
 Rem
-bbdoc: Peek a float from a bank
+bbdoc: Reads a signed float value (4 bytes) from a bank, at a given address.
 returns: The float value at the specified byte offset within the bank
 about:
-A float requires 4 bytes of storage
+Take notice not to exceed the boundaries of the bank.
+
+> A float value should not be read from the last possible byte or short address of the bank.
 End Rem
-Function PeekFloat#( bank:TBank,offset:Size_T )
+Function PeekFloat:Float( bank:TBank,offset:Int )
+	Return PeekFloat(bank, Size_T(offset))
+End Function
+
+Rem
+bbdoc: Reads a signed float value (4 bytes) from a bank, at a given address.
+returns: The float value at the specified byte offset within the bank
+about:
+Take notice not to exceed the boundaries of the bank.
+
+> A float value should not be read from the last possible byte or short address of the bank.
+End Rem
+Function PeekFloat:Float( bank:TBank,offset:Size_T )
 	Return bank.PeekFloat( offset )
 End Function
 
 Rem
-bbdoc: Poke a float into a bank
+bbdoc: Writes a signed float value (4 bytes) into a bank, at a given address.
 about:
-A float requires 4 bytes of storage
+Take notice not to exceed the boundaries of the bank.
+
+> A float value should not be poked at the last possible byte or short address of the bank.
 End Rem
-Function PokeFloat( bank:TBank,offset:Size_T,value# )
+Function PokeFloat( bank:TBank,offset:Int,value:Float )
+	PokeFloat(bank, Size_T(offset), value)
+End Function
+
+Rem
+bbdoc: Writes a signed float value (4 bytes) into a bank, at a given address.
+about:
+Take notice not to exceed the boundaries of the bank.
+
+> A float value should not be poked at the last possible byte or short address of the bank.
+End Rem
+Function PokeFloat( bank:TBank,offset:Size_T,value:Float )
 	bank.PokeFloat offset,value
 End Function
 
 Rem
-bbdoc: Peek a double from a bank
+bbdoc: Reads a signed double value (8 bytes) from a bank, at a given address.
 returns: The double value at the specified byte offset within the bank
 about:
-A double requires 8 bytes of storage
+Take notice not to exceed the boundaries of the bank.
+
+> A double value should not be read from the last possible byte, short, int or long address of the bank.
 End Rem
-Function PeekDouble!( bank:TBank,offset:Size_T )
+Function PeekDouble:Double( bank:TBank,offset:Int )
+	Return PeekDouble(bank, Size_T(offset))
+End Function
+
+Rem
+bbdoc: Reads a signed double value (8 bytes) from a bank, at a given address.
+returns: The double value at the specified byte offset within the bank
+about:
+Take notice not to exceed the boundaries of the bank.
+
+> A double value should not be read from the last possible byte, short, int or long address of the bank.
+End Rem
+Function PeekDouble:Double( bank:TBank,offset:Size_T )
 	Return bank.PeekDouble( offset )
 End Function
 
 Rem
-bbdoc: Poke a double into a bank
+bbdoc: Writes a signed double value (8 bytes) into a bank, at a given address.
 about:
-A double requires 8 bytes of storage
+Take notice not to exceed the boundaries of the bank.
+
+> A double value should not be poked at the last possible byte, short, int or float address of the bank.
 End Rem
-Function PokeDouble( bank:TBank,offset:Size_T,value! )
+Function PokeDouble( bank:TBank,offset:Int,value:Double )
+	PokeDouble(bank, Size_T(offset), value)
+End Function
+
+Rem
+bbdoc: Writes a signed double value (8 bytes) into a bank, at a given address.
+about:
+Take notice not to exceed the boundaries of the bank.
+
+> A double value should not be poked at the last possible byte, short, int or float address of the bank.
+End Rem
+Function PokeDouble( bank:TBank,offset:Size_T,value:Double )
 	bank.PokeDouble offset,value
+End Function
+
+Rem
+bbdoc: Read bytes from a Stream to a Bank
+returns: The number of bytes successfully read from the Stream
+End Rem
+Function ReadBank:Long( bank:TBank,stream:TStream,offset:Int,count:Long )
+	Return ReadBank(bank, stream, Size_T(offset), count)
 End Function
 
 Rem
@@ -545,6 +802,14 @@ returns: The number of bytes successfully read from the Stream
 End Rem
 Function ReadBank:Long( bank:TBank,stream:TStream,offset:Size_T,count:Long )
 	Return bank.Read( stream,offset,count )
+End Function
+
+Rem
+bbdoc: Write bytes from a Bank To a Stream
+returns: The number of bytes successfully written to the Stream
+end rem
+Function WriteBank:Long( bank:TBank,stream:TStream,offset:Int,count:Long )
+	Return WriteBank(bank, stream, Size_T(offset), count)
 End Function
 
 Rem
