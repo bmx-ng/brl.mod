@@ -15,4 +15,3 @@ glClear GL_COLOR_BUFFER_BIT
 GLDrawText "'Raw' OpenGL Graphics! Hit any key...",0,0
 Flip
 WaitKey
-
