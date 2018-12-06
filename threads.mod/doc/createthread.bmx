@@ -1,10 +1,10 @@
 
 'Make sure to have 'Threaded build' enabled!
 '
-Strict
+SuperStrict
 
 'Custom print that shows which thread is doing the printing
-Function MyPrint( t$ )
+Function MyPrint( t:String )
 	If CurrentThread()=MainThread() 
 		Print "Main thread: "+t
 	Else
@@ -19,7 +19,7 @@ Function MyThread:Object( data:Object )
 	Myprint data.ToString()
 
 	'do some work
-	For Local i=1 To 1000
+	For Local i:Int = 1 To 1000
 		MyPrint "i="+i
 	Next
 	
@@ -35,4 +35,3 @@ Local thread:TThread=CreateThread( MyThread,"Data passed to child thread." )
 
 'wait for thread to finish and print value returned from thread
 MyPrint WaitThread( Thread ).ToString()
-
