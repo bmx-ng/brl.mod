@@ -8,7 +8,9 @@ Local channel:TChannel = AllocChannel ()
 Local sound:TSound = LoadSound ("shoot.wav") ' Use a short sample...
 
 Repeat
-	If MouseHit(1) PlaySound sound,channel
+	If MouseHit(1) Then
+		PlaySound sound,channel
+	End If
 	
 	Local pan# = MouseX () / (GraphicsWidth () / 2.0) - 1
 	Local vol# = 1 - MouseY () / 480.0

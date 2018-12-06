@@ -1,6 +1,4 @@
-Rem
-CueSound example
-End Rem
+' CueSound example
 
 SuperStrict
 

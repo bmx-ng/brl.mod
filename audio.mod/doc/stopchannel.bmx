@@ -1,13 +1,9 @@
-Rem
-StopChannel example
-End Rem
+' StopChannel example
 
 SuperStrict
 
 Local sound:TSound = LoadSound("shoot.wav",True)
 Local channel:TChannel = PlaySound(sound)
-
-Print "channel="+channel
 
 Input "Press return key to stop sound"
 
