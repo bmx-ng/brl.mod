@@ -273,6 +273,26 @@ Type TxmlDoc Extends TxmlBase
 	End Function
 
 	Rem
+	bbdoc: Parses an XML document from a String or TStream and builds a tree.
+	returns: The resulting document tree.
+	End Rem
+	Function readDoc:TxmlDoc(doc:Object)
+		If String(doc) Then
+			Local txt:String = String(doc)
+	
+			' strip utf8 BOM		
+			If txt[..3] = BOM_UTF8 Then
+				txt = txt[3..]
+			End If
+			
+			Return TxmlDoc._create(bmx_mxmlLoadString(txt))
+		
+		Else If TStream(doc) Then
+			Return parseFile(doc)
+		End If
+	End Function
+	
+	Rem
 	bbdoc: Sets the root element of the document.
 	returns: The old root element if any was found.
 	End Rem

@@ -224,3 +224,75 @@ mxml_node_t * bmx_mxmlGetPrevSibling(mxml_node_t * node) {
 int bmx_mxmlSaveStream(mxml_node_t * node, BBObject * stream) {
 	return mxmlSaveStream(node, bmx_mxml_stream_write, stream, NULL);
 }
+
+struct _string_buf {
+	BBString * txt;
+	int txtOffset;
+	char padding[2];
+	int padCount;
+};
+
+// direct string to utf-8 stream
+static int bmx_mxml_string_read(void * ctxt, void *buf, unsigned int length) {
+	struct _string_buf * data = (struct _string_buf*)ctxt;
+
+	int txtLength = data->txt->length;
+	int count = 0;
+	
+	unsigned short *p = data->txt->buf + data->txtOffset;
+	char *q = buf;
+	char *a = data->padding;
+	
+	while (data->txtOffset < txtLength && count < length) {
+		
+		while (data->padCount > 0) {
+			*q++ = a[--data->padCount];
+			count++;
+		}
+		
+		unsigned int c=*p++;
+		if( c<0x80 ){
+			*q++ = c;
+			count++;
+		}else if( c<0x800 ){
+			*q++ = 0xc0|(c>>6);
+			if (++count < length) {
+				*q++ = 0x80|(c&0x3f);
+				count++;
+			} else {
+				data->padding[data->padCount++] = 0x80|(c&0x3f);
+				continue;
+			}
+		}else{
+			*q++ = 0xe0|(c>>12);
+			if (++count < length) {
+				*q++ = 0x80|((c>>6)&0x3f);
+				
+				if (++count < length) {
+					*q++ = 0x80|(c&0x3f);
+					count++;
+				} else {
+					data->padding[data->padCount++] = 0x80|(c&0x3f);
+					continue;
+				}
+			} else {
+				data->padding[1] = 0x80|((c>>6)&0x3f);
+				data->padding[0] = 0x80|(c&0x3f);
+				data->padCount = 2;
+				continue;
+			}
+		}
+		data->txtOffset++;
+	}
+	return count;
+}
+
+mxml_node_t * bmx_mxmlLoadString(BBString * txt) {
+	if (txt == &bbEmptyString) {
+		return NULL;
+	}
+	
+	struct _string_buf buf = {txt = txt};
+
+	return mxmlLoadStream(NULL, bmx_mxml_string_read, &buf, NULL);
+}

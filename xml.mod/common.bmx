@@ -26,6 +26,7 @@ Extern
 	Function bmx_mxmlNewXML:Byte Ptr(version:String)
 	Function bmx_mxmlNewElement:Byte Ptr(parent:Byte Ptr, name:String)
 	Function bmx_mxmlDelete(handle:Byte Ptr)
+	Function bmx_mxmlLoadString:Byte Ptr(txt:String)
 
 	Function bmx_mxmlSetRootElement:Byte Ptr(handle:Byte Ptr, root:Byte Ptr)
 	Function bmx_mxmlAdd(parent:Byte Ptr, _where:Int, child:Byte Ptr, node:Byte Ptr)
@@ -73,3 +74,5 @@ Const MXML_OPAQUE:Int = 2
 Const MXML_REAL:Int = 3
 Const MXML_TEXT:Int = 4
 Const MXML_CUSTOM:Int = 5
+
+Const BOM_UTF8:String = Chr(239) + Chr(187) + Chr(191)
