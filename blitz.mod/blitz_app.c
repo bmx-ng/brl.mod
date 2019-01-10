@@ -471,5 +471,8 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 
 void bbLibStartup(){
 
+	bbGCStartup();
+	bbThreadStartup();
+
 	startup();
 }

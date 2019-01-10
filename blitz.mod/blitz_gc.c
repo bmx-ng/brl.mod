@@ -62,7 +62,9 @@ void bbGCStartup( void *spTop ){
 */
 	GC_INIT();
 #if !defined(__EMSCRIPTEN__) && !defined(__SWITCH__)
+#ifdef GC_THREADS
 	GC_allow_register_threads();
+#endif
 #endif
 	GC_set_warn_proc( gc_warn_proc );
 }
