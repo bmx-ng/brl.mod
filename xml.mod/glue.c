@@ -20,12 +20,69 @@ limitations under the License.
 extern int brl_xml__xmlstream_read(void *, void *, unsigned int);
 extern int brl_xml__xmlstream_write(void *, const void *, unsigned int);
 
+mxml_node_t * bmx_mxmlGetFirstChild(mxml_node_t * node);
+
 static int bmx_mxml_stream_read(void * ctxt, void *buf, unsigned int length) {
 	return brl_xml__xmlstream_read(ctxt, buf, length);
 }
 
 static int bmx_mxml_stream_write(void * ctxt, const void *buf, unsigned int length) {
 	return brl_xml__xmlstream_write(ctxt, buf, length);
+}
+
+struct whitespace_t {
+	char buf[4096];
+	int spaces;
+};
+
+static int bmx_mxml_getDepth(mxml_node_t * node) {
+	int count = 0;
+	while (node = mxmlGetParent(node)) {
+		count++;
+	}
+	return count;
+}
+
+static const char * bmx_mxml_whitspace_cb(mxml_node_t * node, int where, void * ctxt) {
+	struct whitespace_t * ws = (struct whitespace_t*)ctxt;
+	
+	if (ws) {
+		int depth = bmx_mxml_getDepth(node);
+
+		if (depth > 0) {
+		
+			ws->buf[0] = '\n';
+			depth--;
+			
+			if (depth > 2047) {
+				depth = 2047;
+			}
+			
+			if (ws->spaces < depth) {
+				char * q = 1 + ws->buf + ws->spaces * 2;
+				for (int i = ws->spaces; i < depth; i++) {
+					*q++ = ' ';
+					*q++ = ' ';
+				}
+			}
+			
+			ws->buf[1 + depth * 2] = 0;
+			ws->spaces = depth;
+
+			switch(where) {
+				case MXML_WS_BEFORE_OPEN:
+					return ws->buf;
+				case MXML_WS_BEFORE_CLOSE:
+					if (bmx_mxmlGetFirstChild(node) != NULL) {
+						return ws->buf;
+					}
+				break;
+				
+			}
+		}
+	}
+	
+	return NULL;
 }
 
 mxml_node_t * bmx_mxmlNewXML(BBString * version) {
@@ -82,8 +139,13 @@ BBString * bmx_mxmlGetElement(mxml_node_t * node) {
 	return &bbEmptyString;
 }
 
-int bmx_mxmlSaveStdout(mxml_node_t * node) {
-	return mxmlSaveFile(node, stdout, MXML_NO_CALLBACK);
+int bmx_mxmlSaveStdout(mxml_node_t * node, int format) {
+	if (!format) {
+		return mxmlSaveFile(node, stdout, MXML_NO_CALLBACK, NULL);
+	} else {
+		struct whitespace_t ws = {};
+		return mxmlSaveFile(node, stdout, bmx_mxml_whitspace_cb, &ws);
+	}
 }
 
 void bmx_mxmlSetContent(mxml_node_t * node, BBString * content) {
@@ -105,9 +167,9 @@ void bmx_mxmlSetContent(mxml_node_t * node, BBString * content) {
 
 BBString * bmx_mxmlSaveString(mxml_node_t * node) {
 	char tmp[1];
-	int size = mxmlSaveString(node, tmp, 1, MXML_NO_CALLBACK);
+	int size = mxmlSaveString(node, tmp, 1, MXML_NO_CALLBACK, NULL);
 	char * buf = bbMemAlloc(size);
-	mxmlSaveString(node, buf, size, MXML_NO_CALLBACK);
+	mxmlSaveString(node, buf, size, MXML_NO_CALLBACK, NULL);
 	buf[size-1] = 0;
 	BBString * s = bbStringFromUTF8String(buf);
 	bbMemFree(buf);
@@ -221,8 +283,13 @@ mxml_node_t * bmx_mxmlGetPrevSibling(mxml_node_t * node) {
 	return n;
 }
 
-int bmx_mxmlSaveStream(mxml_node_t * node, BBObject * stream) {
-	return mxmlSaveStream(node, bmx_mxml_stream_write, stream, NULL);
+int bmx_mxmlSaveStream(mxml_node_t * node, BBObject * stream, int format) {
+	if (!format) {
+		return mxmlSaveStream(node, bmx_mxml_stream_write, stream, NULL, NULL);
+	} else {
+		struct whitespace_t ws = {};
+		return mxmlSaveStream(node, bmx_mxml_stream_write, stream, bmx_mxml_whitspace_cb, &ws);
+	}
 }
 
 struct _string_buf {
@@ -295,4 +362,8 @@ mxml_node_t * bmx_mxmlLoadString(BBString * txt) {
 	struct _string_buf buf = {txt = txt};
 
 	return mxmlLoadStream(NULL, bmx_mxml_string_read, &buf, NULL);
+}
+
+void bmx_mxmlSetWrapMargin(int column) {
+	mxmlSetWrapMargin(column);
 }

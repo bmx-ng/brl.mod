@@ -9,4 +9,6 @@
     <headline>This is the headline</headline>
     <para>This is the body text.</para>
   </body>
+  <empty1/>
+  <empty2></empty2>
 </story>

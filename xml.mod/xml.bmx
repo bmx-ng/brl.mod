@@ -28,6 +28,9 @@ ModuleInfo "History: Initial Release."
 
 Import "common.bmx"
 
+' disable wrapping
+bmx_mxmlSetWrapMargin(0)
+
 Rem
 bbdoc: 
 End Rem
@@ -311,14 +314,14 @@ Type TxmlDoc Extends TxmlBase
 	bbdoc: Dumps an XML document to a file.
 	returns: True on success, or Fales otherwise.
 	End Rem
-	Method saveFile:Int(file:Object, autoClose:Int = True)
+	Method saveFile:Int(file:Object, autoClose:Int = True, format:Int = False)
 
 		Local filename:String = String(file)
 		Local created:Int
 		
 		If filename Then
 			If filename = "-" Then
-				Return bmx_mxmlSaveStdout(nodePtr)
+				Return bmx_mxmlSaveStdout(nodePtr, format)
 			Else
 				file = WriteStream(filename)
 				created = True
@@ -327,7 +330,7 @@ Type TxmlDoc Extends TxmlBase
 		
 		If TStream(file) Then
 			Try
-				Return bmx_mxmlSaveStream(nodePtr, TStream(file)) = 0
+				Return bmx_mxmlSaveStream(nodePtr, TStream(file), format) = 0
 			Finally
 				If created Or autoClose Then
 					TStream(file).Close()
