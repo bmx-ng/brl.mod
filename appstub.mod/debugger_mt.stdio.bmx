@@ -460,7 +460,7 @@ Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
 		Default          dataSize = 0 ' cannot dereference this
 	EndSelect
 
-	Local buffer:Byte Ptr = MemAlloc(Max(dataSize, SizeOf(Byte Ptr Null)))
+	Local buffer:Byte Ptr = MemAlloc(Size_T(Max(dataSize, SizeOf(Byte Ptr Null))))
 	(Byte Ptr Ptr buffer)[0] = Null
 	
 	Local res:Int
