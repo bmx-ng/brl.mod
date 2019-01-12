@@ -155,6 +155,8 @@ Import "blitz_nx.c"
 ?
 Import "tree/tree.c"
 
+Include "builtin.bmx"
+
 Extern
 Global OnDebugStop()="bbOnDebugStop"
 Global OnDebugLog( message$ )="bbOnDebugLog"
@@ -1054,18 +1056,6 @@ End Rem
 Rem
 bbdoc: Numeric 'sign' unary operator
 keyword: "Sgn"
-End Rem
-
-Rem
-bbdoc: Numeric 'minimum' builtin function
-returns: The lesser of the two numeric arguments
-keyword: "Min"
-End Rem
-
-Rem
-bbdoc: Numeric 'maximum' builtin function
-returns: The larger of the two numeric arguments
-keyword: "Max"
 End Rem
 
 Rem
