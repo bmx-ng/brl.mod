@@ -1044,18 +1044,8 @@ keyword: "Len"
 End Rem
 
 Rem
-bbdoc: Numeric 'absolute value' unary operator
-keyword: "Abs"
-End Rem
-
-Rem
 bbdoc: Numeric 'modulus' or 'remainder' binary operator
 keyword: "Mod"
-End Rem
-
-Rem
-bbdoc: Numeric 'sign' unary operator
-keyword: "Sgn"
 End Rem
 
 Rem

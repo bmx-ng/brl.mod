@@ -180,3 +180,68 @@ Function Min:Size_T(a:Size_T, b:Size_T)
 	End If
 	Return a
 End Function
+
+Extern
+	Function bbIntAbs:Int(a:Int)
+	Function bbFloatAbs:Double(a:Double)
+	Function bbLongAbs:Long(a:Long)
+	Function bbIntSgn:Int(a:Int)
+	Function bbFloatSgn:Int(a:Double)="double bbFloatSgn(double)!"
+	Function bbLongSgn:Int(a:Long)="BBInt64 bbLongSgn(BBInt64)!"
+End Extern
+
+Rem
+bbdoc: Returns the absolute value of the #Int argument.
+End Rem
+Function Abs:Int(a:Int)
+	Return bbIntAbs(a)
+End Function
+
+Rem
+bbdoc: Returns the absolute value of the #Float argument.
+End Rem
+Function Abs:Float(a:Float)
+	Return bbFloatAbs(Double(a))
+End Function
+
+Rem
+bbdoc: Returns the absolute value of the #Double argument.
+End Rem
+Function Abs:Double(a:Double)
+	Return bbFloatAbs(a)
+End Function
+
+Rem
+bbdoc: Returns the absolute value of the #Long argument.
+End Rem
+Function Abs:Long(a:Long)
+	Return bbLongAbs(a)
+End Function
+
+Rem
+bbdoc: Returns the sign of the #Int argument.
+End Rem
+Function Sgn:Int(a:Int)
+	Return bbIntSgn(a)
+End Function
+
+Rem
+bbdoc: Returns the sign of the #Float argument.
+End Rem
+Function Sgn:Float(a:Float)
+	Return bbFloatSgn(Double(a))
+End Function
+
+Rem
+bbdoc: Returns the sign of the #Double argument.
+End Rem
+Function Sgn:Double(a:Double)
+	Return bbFloatSgn(a)
+End Function
+
+Rem
+bbdoc: Returns the sign of the #Long argument.
+End Rem
+Function Sgn:Long(a:Long)
+	Return bbLongSgn(a)
+End Function
