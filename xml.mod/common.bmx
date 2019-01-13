@@ -50,7 +50,7 @@ Extern
 	Function bmx_mxmlGetPrevSibling:Byte Ptr(handle:Byte Ptr)
 	
 	Function bmx_mxmlSaveStdout:Int(handle:Byte Ptr, format:Int)
-	Function bmx_mxmlSaveString:String(handle:Byte Ptr)
+	Function bmx_mxmlSaveString:String(handle:Byte Ptr, format:Int)
 	Function bmx_mxmlSaveStream:Int(handle:Byte Ptr, stream:TStream, format:Int)
 	
 	Function bmx_mxmlSetWrapMargin(column:Int)

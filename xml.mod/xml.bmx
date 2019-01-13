@@ -49,9 +49,16 @@ Type TxmlBase Abstract
 	bbdoc: Returns a string representation of the element.
 	End Rem
 	Method ToString:String()
-		Return bmx_mxmlSaveString(nodePtr)
+		Return bmx_mxmlSaveString(nodePtr, False)
 	End Method
-	
+
+	Rem
+	bbdoc: Returns a string representation of the element, optionally formatting the output.
+	End Rem
+	Method ToStringFormat:String(format:Int = False)
+		Return bmx_mxmlSaveString(nodePtr, format)
+	End Method
+
 End Type
 
 Rem

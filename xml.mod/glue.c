@@ -165,11 +165,16 @@ void bmx_mxmlSetContent(mxml_node_t * node, BBString * content) {
 	bbMemFree(c);
 }
 
-BBString * bmx_mxmlSaveString(mxml_node_t * node) {
+BBString * bmx_mxmlSaveString(mxml_node_t * node, int format) {
+	mxml_save_cb_t cb = MXML_NO_CALLBACK;
+	if (format) {
+		cb = bmx_mxml_whitspace_cb;
+	}
+	struct whitespace_t ws = {};
 	char tmp[1];
-	int size = mxmlSaveString(node, tmp, 1, MXML_NO_CALLBACK, NULL);
+	int size = mxmlSaveString(node, tmp, 1, cb, &ws);
 	char * buf = bbMemAlloc(size);
-	mxmlSaveString(node, buf, size, MXML_NO_CALLBACK, NULL);
+	mxmlSaveString(node, buf, size, cb, &ws);
 	buf[size-1] = 0;
 	BBString * s = bbStringFromUTF8String(buf);
 	bbMemFree(buf);
