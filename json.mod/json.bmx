@@ -185,21 +185,24 @@ Type TJSONArray Extends TJSON
 	End Method
 	
 	Rem
-	bbdoc: 
+	bbdoc: Replaces the element in array at position index with value.
+	returns: 0 on success and -1 on error.
 	End Rem
 	Method Set:Int(index:Int, value:TJSON)
 		Return bmx_json_array_set(jsonPtr, index, value.jsonPtr)
 	End Method
 
 	Rem
-	bbdoc: 
+	bbdoc: Appends value to the end of array, growing the size of array by 1.
+	returns: 0 on success and -1 on error.
 	End Rem
 	Method Append:Int(value:TJSON)
 		Return bmx_json_array_append(jsonPtr, value.jsonPtr)
 	End Method
 
 	Rem
-	bbdoc: 
+	bbdoc: Inserts @value to array at position @index, shifting the elements at index and after it one position towards the end of the array. 
+	returns: 0 on success and -1 on error.
 	End Rem
 	Method Insert:Int(index:Int, value:TJSON)
 		Return bmx_json_array_insert(jsonPtr, index, value.jsonPtr)
@@ -287,7 +290,107 @@ Type TJSONObject Extends TJSON
 	End Method
 	
 	Rem
-	bbdoc: Deletes key from the object if it exists.
+	bbdoc: Sets the value of key To the #String value.
+	returns: 0 on success and -1 on error.
+	about: If there already is a value for key, it is replaced by the new value. 
+	End Rem
+	Method Set:Int(key:String, value:String)
+		Local v:TJSONString = New TJSONString.Create(value)
+		Return bmx_json_object_set_nocheck(jsonPtr, key, v.jsonPtr)
+	End Method
+	
+	Rem
+	bbdoc: Sets the value of key to the #Int value.
+	returns: 0 on success and -1 on error.
+	about: If there already is a value for key, it is replaced by the new value. 
+	End Rem
+	Method Set:Int(key:String, value:Int)
+		Local v:TJSONInteger = New TJSONInteger.Create(value)
+		Return bmx_json_object_set_nocheck(jsonPtr, key, v.jsonPtr)
+	End Method
+
+	Rem
+	bbdoc: Sets the value of key to the #Short value.
+	returns: 0 on success and -1 on error.
+	about: If there already is a value for key, it is replaced by the new value. 
+	End Rem
+	Method Set:Int(key:String, value:Short)
+		Local v:TJSONInteger = New TJSONInteger.Create(value)
+		Return bmx_json_object_set_nocheck(jsonPtr, key, v.jsonPtr)
+	End Method
+
+	Rem
+	bbdoc: Sets the value of key to the #Byte value.
+	returns: 0 on success and -1 on error.
+	about: If there already is a value for key, it is replaced by the new value. 
+	End Rem
+	Method Set:Int(key:String, value:Byte)
+		Local v:TJSONInteger = New TJSONInteger.Create(value)
+		Return bmx_json_object_set_nocheck(jsonPtr, key, v.jsonPtr)
+	End Method
+
+	Rem
+	bbdoc: Sets the value of key to the #Long value.
+	returns: 0 on success and -1 on error.
+	about: If there already is a value for key, it is replaced by the new value. 
+	End Rem
+	Method Set:Int(key:String, value:Long)
+		Local v:TJSONInteger = New TJSONInteger.Create(value)
+		Return bmx_json_object_set_nocheck(jsonPtr, key, v.jsonPtr)
+	End Method
+
+	Rem
+	bbdoc: Sets the value of key to the #UInt value.
+	returns: 0 on success and -1 on error.
+	about: If there already is a value for key, it is replaced by the new value. 
+	End Rem
+	Method Set:Int(key:String, value:UInt)
+		Local v:TJSONInteger = New TJSONInteger.Create(value)
+		Return bmx_json_object_set_nocheck(jsonPtr, key, v.jsonPtr)
+	End Method
+
+	Rem
+	bbdoc: Sets the value of key to the #ULong value.
+	returns: 0 on success and -1 on error.
+	about: If there already is a value for key, it is replaced by the new value. 
+	End Rem
+	Method Set:Int(key:String, value:ULong)
+		Local v:TJSONInteger = New TJSONInteger.Create(Long(value))
+		Return bmx_json_object_set_nocheck(jsonPtr, key, v.jsonPtr)
+	End Method
+
+	Rem
+	bbdoc: Sets the value of key to the #Size_t value.
+	returns: 0 on success and -1 on error.
+	about: If there already is a value for key, it is replaced by the new value. 
+	End Rem
+	Method Set:Int(key:String, value:Size_T)
+		Local v:TJSONInteger = New TJSONInteger.Create(Long(value))
+		Return bmx_json_object_set_nocheck(jsonPtr, key, v.jsonPtr)
+	End Method
+
+	Rem
+	bbdoc: Sets the value of key to the #Float value.
+	returns: 0 on success and -1 on error.
+	about: If there already is a value for key, it is replaced by the new value. 
+	End Rem
+	Method Set:Int(key:String, value:Float)
+		Local v:TJSONReal = New TJSONReal.Create(value)
+		Return bmx_json_object_set_nocheck(jsonPtr, key, v.jsonPtr)
+	End Method
+
+	Rem
+	bbdoc: Sets the value of key to the #Double value.
+	returns: 0 on success and -1 on error.
+	about: If there already is a value for key, it is replaced by the new value. 
+	End Rem
+	Method Set:Int(key:String, value:Double)
+		Local v:TJSONReal = New TJSONReal.Create(value)
+		Return bmx_json_object_set_nocheck(jsonPtr, key, v.jsonPtr)
+	End Method
+	
+	Rem
+	bbdoc: Deletes key from the Object If it exists.
 	returns: 0 on success, or -1 if key was not found. 
 	End Rem
 	Method Del:Int(key:String)
@@ -405,6 +508,9 @@ Type TJSONString Extends TJSON
 		Return Self
 	End Method
 	
+	Rem
+	bbdoc: Returns the associated value of the string.
+	End Rem
 	Method Value:String()
 		Return bmx_json_string_value(jsonPtr)
 	End Method
@@ -423,8 +529,59 @@ bbdoc: a JSON integer.
 End Rem
 Type TJSONInteger Extends JSONNumber
 
+	Rem
+	bbdoc: Creates an instance of #TJSONInteger with @v.
+	End Rem
 	Method Create:TJSONInteger(v:Long)
 		jsonPtr = bmx_json_integer(v)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Creates an instance of #TJSONInteger with @v.
+	End Rem
+	Method Create:TJSONInteger(v:Byte)
+		jsonPtr = bmx_json_integer(v)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Creates an instance of #TJSONInteger with @v.
+	End Rem
+	Method Create:TJSONInteger(v:Short)
+		jsonPtr = bmx_json_integer(v)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Creates an instance of #TJSONInteger with @v.
+	End Rem
+	Method Create:TJSONInteger(v:Int)
+		jsonPtr = bmx_json_integer(v)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Creates an instance of #TJSONInteger with @v.
+	End Rem
+	Method Create:TJSONInteger(v:UInt)
+		jsonPtr = bmx_json_integer(v)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Creates an instance of #TJSONInteger with @v.
+	End Rem
+	Method Create:TJSONInteger(v:ULong)
+		jsonPtr = bmx_json_integer(Long(v))
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Creates an instance of #TJSONInteger with @v.
+	End Rem
+	Method Create:TJSONInteger(v:Size_T)
+		jsonPtr = bmx_json_integer(Long(v))
 		Return Self
 	End Method
 
@@ -444,7 +601,55 @@ Type TJSONInteger Extends JSONNumber
 	Method Set:Int(v:Long)
 		Return bmx_json_integer_set(jsonPtr, v)
 	End Method
-	
+
+	Rem
+	bbdoc: Sets the associated value of integer to @v.
+	about: Returns 0 on success, -1 otherwise.
+	End Rem
+	Method Set:Int(v:Byte)
+		Return bmx_json_integer_set(jsonPtr, v)
+	End Method
+
+	Rem
+	bbdoc: Sets the associated value of integer to @v.
+	about: Returns 0 on success, -1 otherwise.
+	End Rem
+	Method Set:Int(v:Short)
+		Return bmx_json_integer_set(jsonPtr, v)
+	End Method
+
+	Rem
+	bbdoc: Sets the associated value of integer to @v.
+	about: Returns 0 on success, -1 otherwise.
+	End Rem
+	Method Set:Int(v:Int)
+		Return bmx_json_integer_set(jsonPtr, v)
+	End Method
+
+	Rem
+	bbdoc: Sets the associated value of integer to @v.
+	about: Returns 0 on success, -1 otherwise.
+	End Rem
+	Method Set:Int(v:UInt)
+		Return bmx_json_integer_set(jsonPtr, v)
+	End Method
+
+	Rem
+	bbdoc: Sets the associated value of integer to @v.
+	about: Returns 0 on success, -1 otherwise.
+	End Rem
+	Method Set:Int(v:ULong)
+		Return bmx_json_integer_set(jsonPtr, Long(v))
+	End Method
+
+	Rem
+	bbdoc: Sets the associated value of integer to @v.
+	about: Returns 0 on success, -1 otherwise.
+	End Rem
+	Method Set:Int(v:Size_T)
+		Return bmx_json_integer_set(jsonPtr, Long(v))
+	End Method
+
 End Type
 
 Rem
@@ -452,7 +657,18 @@ bbdoc: A JSON real number.
 End Rem
 Type TJSONReal Extends JSONNumber
 
+	Rem
+	bbdoc: Creates an instance of #TJSONReal with @v.
+	End Rem
 	Method Create:TJSONReal(v:Double)
+		jsonPtr = json_real(v)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Creates an instance of #TJSONReal with @v.
+	End Rem
+	Method Create:TJSONReal(v:Float)
 		jsonPtr = json_real(v)
 		Return Self
 	End Method
@@ -469,6 +685,14 @@ Type TJSONReal Extends JSONNumber
 	about: Returns 0 on success, -1 otherwise.
 	End Rem
 	Method Set:Int(v:Double)
+		Return json_real_set(jsonPtr, v)
+	End Method
+
+	Rem
+	bbdoc: Sets the associated value of real to @v.
+	about: Returns 0 on success, -1 otherwise.
+	End Rem
+	Method Set:Int(v:Float)
 		Return json_real_set(jsonPtr, v)
 	End Method
 
