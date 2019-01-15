@@ -106,7 +106,7 @@ Type TLinuxVolume Extends TVolume
 			
 			While m
 				Local mntent:TMntent = New TMntent
-				MemCopy mntent,m,SizeOf TMntent
+				MemCopy mntent,m,Size_T(SizeOf TMntent)
 			
 				If Not volumes Then
 					volumes = New TList
@@ -204,7 +204,7 @@ Type TLinuxVolume Extends TVolume
 			If pwdptr Then
 			
 				Local pwd:TPasswdEntry = New TPasswdEntry
-				MemCopy pwd, pwdptr, SizeOf pwd
+				MemCopy pwd, pwdptr, Size_T(SizeOf pwd)
 
 				dir = String.FromUTF8String(pwd.pw_dir)
 			
