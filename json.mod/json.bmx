@@ -520,14 +520,14 @@ End Type
 Rem
 bbdoc: Base type for JSON number types.
 End Rem
-Type JSONNumber Extends TJSON
+Type TJSONNumber Extends TJSON
 
 End Type
 
 Rem
 bbdoc: a JSON integer.
 End Rem
-Type TJSONInteger Extends JSONNumber
+Type TJSONInteger Extends TJSONNumber
 
 	Rem
 	bbdoc: Creates an instance of #TJSONInteger with @v.
@@ -655,7 +655,7 @@ End Type
 Rem
 bbdoc: A JSON real number.
 End Rem
-Type TJSONReal Extends JSONNumber
+Type TJSONReal Extends TJSONNumber
 
 	Rem
 	bbdoc: Creates an instance of #TJSONReal with @v.
