@@ -232,8 +232,8 @@ main (int argc, char *argv[])
 #endif
 
 
-
-#include "blitz.h"
+#include <sys/statvfs.h>
+#include "brl.mod/blitz.mod/blitz.h"
 
 BBString * bmx_userdirlookup(BBString * type) {
 
@@ -250,5 +250,14 @@ BBString * bmx_userdirlookup(BBString * type) {
 	return dir;
 }
 
+int bmx_volumes_volspace_refresh(BBString * vol, BBInt64 * _size, BBInt64 * _free) {
+	struct statvfs buf;
+	char * v = bbStringToUTF8String(vol);
+	int res = statvfs(v, &buf);
+	bbMemFree(v);
+	*_size = buf.f_frsize * buf.f_blocks;
+	*_free = buf.f_frsize * buf.f_bavail;
+	return res;
+}
 
 

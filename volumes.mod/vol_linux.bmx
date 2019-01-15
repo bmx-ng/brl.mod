@@ -21,7 +21,6 @@
 SuperStrict
 
 Import brl.LinkedList
-Import BRL.Blitz
 Import Pub.Stdc
 
 Import "main.bmx"
@@ -37,6 +36,7 @@ Extern
 	Function _getpwuid:Byte Ptr(uid:Int) = "getpwuid"
 	
 	Function bmx_userdirlookup:String(dirType:String)
+	Function bmx_volumes_volspace_refresh:Int(vol:String, _size:Long Ptr, _free:Long Ptr)
 End Extern
 
 Type Tmntent
@@ -251,6 +251,9 @@ Type TVolSpace
 	Field vol:String
 	Field svfs:TStatvfs = New TStatvfs
 	
+	Field _size:Long
+	Field _free:Long
+	
 	Function GetDiskSpace:TVolSpace(vol:String)
 		Local this:TVolSpace = New TVolSpace
 		
@@ -263,18 +266,14 @@ Type TVolSpace
 	End Function
 	
 	Method refresh:Int()
-		Return _statvfs(vol, svfs)
+		Return bmx_volumes_volspace_refresh(vol, Varptr _size, Varptr _free)
 	End Method
 	
 	Method size:Long()
-		If svfs Then
-			Return Long(svfs.f_frsize) * Long(svfs.f_blocks)
-		End If
+		Return _size
 	End Method
 	
 	Method free:Long()
-		If svfs Then
-			Return Long(svfs.f_frsize) * Long(svfs.f_bavail)
-		End If
+		Return _free
 	End Method
 End Type
