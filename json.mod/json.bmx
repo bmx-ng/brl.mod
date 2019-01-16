@@ -232,9 +232,6 @@ Type TJSONArray Extends TJSON
 
 End Type
 
-Rem
-bbdoc: Enumerator Object use by TJSONArray in order to implement Eachin support. 
-End Rem
 Type TJSONArrayEnum
 
 	Field array:TJSONArray
@@ -473,9 +470,6 @@ Type TJSONObject Extends TJSON
 
 End Type
 
-Rem
-bbdoc: Enumerator Object use by TJSONArray in order to implement Eachin support. 
-End Rem
 Type TJSONObjectEnum
 
 	Field obj:TJSONObject
