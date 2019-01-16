@@ -65,8 +65,10 @@ Function Invoke( L:Byte Ptr )
 	Local tys:TTypeId[]=meth.ArgTypes(),args:Object[tys.length]
 	For Local i=0 Until args.length
 		Select tys[i]
-		Case IntTypeId, ShortTypeId, ByteTypeId, LongTypeId
-			args[i]=String.FromInt( lua_tointeger( L,i+1 ) )
+		Case IntTypeId, ShortTypeId, ByteTypeId
+			args[i]=String.FromInt( Int(lua_tointeger( L,i+1 )) )
+		Case LongTypeId
+			args[i]=String.FromLong( lua_tointeger( L,i+1 ) )
 		Case FloatTypeId
 			args[i]=String.FromFloat( Float(lua_tonumber( L,i+1 )) )
 		Case DoubleTypeId
@@ -139,8 +141,10 @@ Function NewIndex( L:Byte Ptr )
 	Local fld:TField=typeId.FindField( ident )
 	If fld
 		Select fld.TypeId()
-		Case IntTypeId, ShortTypeId, ByteTypeId, LongTypeId
-			fld.SetInt obj,lua_tointeger( L,3 )
+		Case IntTypeId, ShortTypeId, ByteTypeId
+			fld.SetInt obj,Int(lua_tointeger( L,3 ))
+		Case LongTypeId
+			fld.SetLong obj,lua_tointeger( L,3 )
 		Case FloatTypeId
 			fld.SetFloat obj,Float(lua_tonumber( L,3 ))
 		Case DoubleTypeId
