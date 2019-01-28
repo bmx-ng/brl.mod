@@ -317,8 +317,17 @@ BBArray *bbArrayConcat( const char *type,BBArray *x,BBArray *y ){
 	int length=x->scales[0]+y->scales[0];
 	
 	if( length<=0 ) return &bbEmptyArray;
+	
+	int data_size = x->data_size != 0 ? x->data_size : y->data_size;
 
-	arr=allocateArray( type,1,&length,x->data_size );
+	// both arrays are empty?
+	if (data_size == 0) return &bbEmptyArray;
+
+	if (x->data_size > 0 && y->data_size > 0 && strcmp(x->type, y->type)) {
+		brl_blitz_RuntimeError(bbStringFromCString("Incompatible array element types for concatenation"));
+	}
+
+	arr=allocateArray( type,1,&length, data_size );
 	
 	data=(char*)BBARRAYDATA( arr,1 );
 	
