@@ -323,7 +323,7 @@ BBArray *bbArrayConcat( const char *type,BBArray *x,BBArray *y ){
 	// both arrays are empty?
 	if (data_size == 0) return &bbEmptyArray;
 
-	if (x->data_size > 0 && y->data_size > 0 && strcmp(x->type, y->type)) {
+	if (x->data_size > 0 && y->data_size > 0 && x->data_size != y->data_size) {
 		brl_blitz_RuntimeError(bbStringFromCString("Incompatible array element types for concatenation"));
 	}
 
