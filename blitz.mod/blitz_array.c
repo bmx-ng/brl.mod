@@ -112,6 +112,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned sho
 	}
 	
 	size = arrayCellSize(type, data_size, &flags);
+	int base_size = size;
 	size*=length;
 
 	arr=(BBArray*)bbGCAllocObject( BBARRAYSIZE(size,dims),&bbArrayClass,flags );
@@ -119,7 +120,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned sho
 	arr->type=type;
 	arr->dims=dims;
 	arr->size=size;
-	arr->data_size = data_size;
+	arr->data_size = base_size;
 	arr->data_start = (offsetof(BBArray, scales) + dims * sizeof(int)+0x0f) & ~0x0f; // 16-byte aligned
 	
 	len=lens;
