@@ -162,6 +162,23 @@ Type TPtrMap
 		Return nodeenum
 	End Method
 
+	Rem
+	bbdoc: Finds a value given a @key using index syntax.
+	returns: The value associated with @key.
+	about: If the map does not contain @key, a #Null object is returned.
+	End Rem
+	Method Operator[]:Object(key:Byte Ptr)
+		Return bmx_map_ptrmap_valueforkey(key, Varptr _root)
+	End Method
+	
+	Rem
+	bbdoc: Inserts a key/value pair into the map using index syntax.
+	about: If the map already contains @key, its value is overwritten with @value. 
+	End Rem
+	Method Operator[]=(key:Byte Ptr, value:Object)
+		bmx_map_ptrmap_insert(key, value, Varptr _root)
+	End Method
+
 	Field _root:Byte Ptr
 	
 ?ngcmod
