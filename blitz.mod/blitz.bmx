@@ -892,17 +892,17 @@ keyword: "Release"
 End Rem
 
 Rem
-bbdoc: Make a type, constant, global variable or function accessible from outside the current source file (default)
+bbdoc: Make types, constants, global variables, functions or type members accessible from outside the current source file (default)
 keyword: "Public"
 End Rem
 
 Rem
-bbdoc: Make a type, constant, global variable or function only accessible from within the current source file, or make a type member only accessible from within that type.
+bbdoc: Make types, constants, global variables, functions or type members only accessible from within the current source file.
 keyword: "Private"
 End Rem
 
 Rem
-bbdoc: Make a type member accessible only from within that type and from its subtypes.
+bbdoc: Make type members only accessible from within the current source file and within subtypes.
 keyword: "Protected"
 End Rem
 
