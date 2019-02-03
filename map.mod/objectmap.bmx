@@ -108,12 +108,14 @@ Type TObjectMap
 	End Method
 	
 	Method ObjectEnumerator:TObjectNodeEnumerator()
-		Local nodeenum:TObjectNodeEnumerator=New TObjectNodeEnumerator
-		nodeenum._node=_FirstNode()
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
+		Local nodeenum:TObjectNodeEnumerator
+		If Not isEmpty() Then
+			nodeenum = New TObjectNodeEnumerator
+			nodeenum._node=_FirstNode()
+			nodeenum._map = Self
+		Else
+			nodeenum = New TObjectEmptyEnumerator
+		End If
 		Return nodeenum
 	End Method
 

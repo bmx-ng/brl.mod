@@ -153,12 +153,14 @@ Type TPtrMap
 	about: The object returned by #ObjectEnumerator can be used with #EachIn to iterate through the nodes in the map.
 	End Rem
 	Method ObjectEnumerator:TPtrNodeEnumerator()
-		Local nodeenum:TPtrNodeEnumerator=New TPtrNodeEnumerator
-		nodeenum._node=_FirstNode()
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
+		Local nodeenum:TPtrNodeEnumerator
+		If Not isEmpty() Then
+			nodeenum = New TPtrNodeEnumerator
+			nodeenum._node=_FirstNode()
+			nodeenum._map = Self
+		Else
+			nodeenum = New TPtrEmptyEnumerator
+		End If
 		Return nodeenum
 	End Method
 

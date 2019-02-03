@@ -153,12 +153,14 @@ Type TIntMap
 	about: The object returned by #ObjectEnumerator can be used with #EachIn to iterate through the nodes in the map.
 	End Rem
 	Method ObjectEnumerator:TIntNodeEnumerator()
-		Local nodeenum:TIntNodeEnumerator=New TIntNodeEnumerator
-		nodeenum._node=_FirstNode()
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
+		Local nodeenum:TIntNodeEnumerator
+		If Not isEmpty() Then
+			nodeenum = New TIntNodeEnumerator
+			nodeenum._node=_FirstNode()
+			nodeenum._map = Self
+		Else
+			nodeenum=New TIntEmptyEnumerator
+		End If
 		Return nodeenum
 	End Method
 

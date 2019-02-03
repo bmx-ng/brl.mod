@@ -153,12 +153,14 @@ Type TStringMap
 	about: The object returned by #ObjectEnumerator can be used with #EachIn to iterate through the nodes in the map.
 	End Rem
 	Method ObjectEnumerator:TStringNodeEnumerator()
-		Local nodeenum:TStringNodeEnumerator=New TStringNodeEnumerator
-		nodeenum._node=_FirstNode()
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
+		Local nodeenum:TStringNodeEnumerator
+		If Not isEmpty() Then
+			nodeenum = New TStringNodeEnumerator
+			nodeenum._node=_FirstNode()
+			nodeenum._map = Self
+		Else
+			nodeenum = New TStringEmptyEnumerator
+		End If
 		Return nodeenum
 	End Method
 	
