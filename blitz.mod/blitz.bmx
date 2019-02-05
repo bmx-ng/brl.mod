@@ -453,7 +453,7 @@ about:
 This function will have no effect if the garbage collector has been
 suspended due to #GCSuspend.
 End Rem
-Function GCCollectALittle:Int()="bbGCCollectAlittle"
+Function GCCollectALittle:Int()="bbGCCollectALittle"
 
 Rem
 bbdoc: Memory allocated by application
