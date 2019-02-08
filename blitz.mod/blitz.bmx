@@ -475,6 +475,16 @@ End Rem
 Function GCLeave()="bbGCLeave"
 
 Rem
+bbdoc: Retains a reference to the specified #Object, preventing it from being collected.
+End Rem
+Function GCRetain(obj:Object)="bbGCRetain"
+
+Rem
+bbdoc: Releases a reference from the specified #Object.
+End Rem
+Function GCRelease(obj:Object)="bbGCRelease"
+
+Rem
 bbdoc: Convert object to integer handle
 returns: An integer object handle
 about:
