@@ -506,6 +506,18 @@ Function ArrayCopy(src:Object, srcPos:Int, dst:Object, dstPos:Int, length:Int)="
 
 End Extern
 
+Rem
+bbdoc: Provides a mechanism for releasing resources.
+End Rem
+Interface IDisposable
+
+	Rem
+	bbdoc: Performs application-defined tasks associated with freeing, releasing, or resetting resources.
+	End Rem
+	Method Dispose()
+
+End Interface
+
 'BlitzMax keyword definitions
 
 Rem
