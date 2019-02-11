@@ -884,6 +884,12 @@ keyword: "Export"
 End Rem
 
 Rem
+bbdoc: Indicates that a method declaration is intended to override a method declaration in a supertype.
+about: Use of #Override on a method that does not override a method will result in a compilation error.
+keyword: "Override"
+End Rem
+
+Rem
 bbdoc: Specify constraints on the types that can be used as arguments for a type parameter defined in a generic declaration
 keyword: "Where"
 End Rem
