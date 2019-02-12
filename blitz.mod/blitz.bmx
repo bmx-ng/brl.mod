@@ -485,6 +485,24 @@ End Rem
 Function GCRelease(obj:Object)="bbGCRelease"
 
 Rem
+bbdoc: Returns #True if the current thread is registered with the garbage collector.
+End Rem
+Function GCThreadIsRegistered:Int()="bbGCThreadIsRegistered"
+
+Rem
+bbdoc: Registers the current thread with the garbage collector.
+returns: 0 on success, 1 if the thread was already registered, or -1 if threads are not supported.
+End Rem
+Function GCRegisterMyThread:Int()="bbGCRegisterMyThread"
+
+Rem
+bbdoc: Unregisters the previously registered current thread.
+about: Note, that any memory allocated by the garbage collector from the current thread will no longer be
+accessible after the thread is unregistered.
+End Rem
+Function GCUnregisterMyThread:Int()="bbGCUnregisterMyThread"
+
+Rem
 bbdoc: Convert object to integer handle
 returns: An integer object handle
 about:
