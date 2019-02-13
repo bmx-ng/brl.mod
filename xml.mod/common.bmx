@@ -17,6 +17,7 @@ SuperStrict
 Import Pub.mxml
 Import brl.stream
 Import brl.linkedlist
+Import brl.stringbuilder
 
 Import "glue.c"
 
@@ -54,6 +55,7 @@ Extern
 	Function bmx_mxmlSaveStream:Int(handle:Byte Ptr, stream:TStream, format:Int)
 	
 	Function bmx_mxmlSetWrapMargin(column:Int)
+	Function bmx_mxmlGetContent:String(handle:Byte Ptr)
 End Extern
 
 Rem

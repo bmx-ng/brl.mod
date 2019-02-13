@@ -245,6 +245,25 @@ Type TxmlNode Extends TxmlBase
 	Method previousSibling:TxmlNode()
 		Return TxmlNode._create(bmx_mxmlGetPrevSibling(nodePtr))
 	End Method
+	
+	Rem
+	bbdoc: Reads the value of a node.
+	returns: The node content.
+	End Rem
+	Method getContent:String()
+		Local sb:TStringBuilder = New TStringBuilder()
+		sb.Append(bmx_mxmlGetContent(nodePtr))
+		
+		Local n:Byte Ptr = bmx_mxmlWalkNext(nodePtr, nodePtr, MXML_DESCEND)
+		While n
+			If bmx_mxmlGetType(n) = MXML_OPAQUE Then
+				sb.Append(bmx_mxmlGetContent(n))
+			End If
+			n = bmx_mxmlWalkNext(n, nodePtr, MXML_DESCEND)
+		Wend
+		
+		Return sb.ToString()
+	End Method
 
 	Rem
 	bbdoc: Frees a node and all of its children.
