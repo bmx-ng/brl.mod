@@ -475,6 +475,34 @@ End Rem
 Function GCLeave()="bbGCLeave"
 
 Rem
+bbdoc: Retains a reference to the specified #Object, preventing it from being collected.
+End Rem
+Function GCRetain(obj:Object)="bbGCRetain"
+
+Rem
+bbdoc: Releases a reference from the specified #Object.
+End Rem
+Function GCRelease(obj:Object)="bbGCRelease"
+
+Rem
+bbdoc: Returns #True if the current thread is registered with the garbage collector.
+End Rem
+Function GCThreadIsRegistered:Int()="bbGCThreadIsRegistered"
+
+Rem
+bbdoc: Registers the current thread with the garbage collector.
+returns: 0 on success, 1 if the thread was already registered, or -1 if threads are not supported.
+End Rem
+Function GCRegisterMyThread:Int()="bbGCRegisterMyThread"
+
+Rem
+bbdoc: Unregisters the previously registered current thread.
+about: Note, that any memory allocated by the garbage collector from the current thread will no longer be
+accessible after the thread is unregistered.
+End Rem
+Function GCUnregisterMyThread:Int()="bbGCUnregisterMyThread"
+
+Rem
 bbdoc: Convert object to integer handle
 returns: An integer object handle
 about:
@@ -495,6 +523,18 @@ End Rem
 Function ArrayCopy(src:Object, srcPos:Int, dst:Object, dstPos:Int, length:Int)="void bbArrayCopy(BBARRAY, int, BBARRAY, int, int)!"
 
 End Extern
+
+Rem
+bbdoc: Provides a mechanism for releasing resources.
+End Rem
+Interface IDisposable
+
+	Rem
+	bbdoc: Performs application-defined tasks associated with freeing, releasing, or resetting resources.
+	End Rem
+	Method Dispose()
+
+End Interface
 
 'BlitzMax keyword definitions
 
@@ -859,6 +899,12 @@ End Rem
 Rem
 bbdoc: Denote a function for export to a shared library. The generated function name will not be mangled.
 keyword: "Export"
+End Rem
+
+Rem
+bbdoc: Indicates that a method declaration is intended to override a method declaration in a supertype.
+about: Use of #Override on a method that does not override a method will result in a compilation error.
+keyword: "Override"
 End Rem
 
 Rem
