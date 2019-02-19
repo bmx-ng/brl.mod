@@ -23,6 +23,7 @@ typedef struct BBArray	BBArray;
 typedef struct BBInterfaceTable BBInterfaceTable;
 typedef struct BBInterface BBInterface;
 typedef struct BBInterfaceOffsets BBInterfaceOffsets;
+typedef struct BBEnum BBEnum;
 
 typedef unsigned char	BBBYTE;
 typedef unsigned short	BBSHORT;
@@ -62,6 +63,7 @@ extern const char *bbDoubleTypeTag;	//"d"
 extern const char *bbStringTypeTag;	//"$"
 extern const char *bbObjectTypeTag;	//":Object"
 extern const char *bbBytePtrTypeTag;//"*b"
+extern const char *bbEnumTypeTag;   //"/"
 
 struct bbDataDef { 
 	char * type; 

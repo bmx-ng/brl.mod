@@ -92,6 +92,7 @@ static int arrayCellSize(const char * type, unsigned short data_size, int * flag
 		case 'm':size=sizeof(BBDOUBLE128);break;
 		#endif
 		case '@':size=data_size;*flags=0;break; // structs
+		case '/':size=data_size;*flags=0;break; // enums
 	}
 
 	return size;
