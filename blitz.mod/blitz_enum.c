@@ -25,65 +25,42 @@ BBArray * bbEnumValues(BBEnum * bbEnum) {
 	return values;
 }
 
-BBString * bbEnumToString_b(BBEnum * bbEnum, BBBYTE ordinal) {
-	BBBYTE * value = (BBBYTE*)bbEnum->values;
-	for (int i = 0; i < bbEnum->length; i++) {
-		if (*value++ == ordinal)
-			return bbEnum->names[i];
+static BBString * bbAppend(BBString * x, BBString * y) {
+	int n = x != &bbEmptyString;
+	int len=x->length+y->length + n;
+    BBString *t=bbStringNew(len);
+    memcpy( t->buf,x->buf,x->length*sizeof(BBChar) );
+	if (n) {
+		t->buf[x->length] = '|';
 	}
-	return &bbEmptyString;
+    memcpy( t->buf+x->length+n,y->buf,y->length*sizeof(BBChar) );
+	return t;
 }
 
-BBString * bbEnumToString_s(BBEnum * bbEnum, BBSHORT ordinal) {
-	BBSHORT * value = (BBSHORT*)bbEnum->values;
-	for (int i = 0; i < bbEnum->length; i++) {
-		if (*value++ == ordinal)
-			return bbEnum->names[i];
-	}
-	return &bbEmptyString;
+#define ENUM_TO_STRING(type,chr)\
+BBString * bbEnumToString_##chr(BBEnum * bbEnum, type ordinal) {\
+	type * value = (type*)bbEnum->values;\
+	int flags = bbEnum->flags;\
+	BBString * val = &bbEmptyString;\
+	for (int i = 0; i < bbEnum->length; i++) {\
+		if (flags) {\
+			type v = *value++;\
+			if (v == ordinal || (v & ordinal && v == (v & ordinal))) {\
+				val = bbAppend(val, bbEnum->names[i]);\
+			}\
+		} else {\
+			if (*value++ == ordinal) {\
+				return bbEnum->names[i];\
+			}\
+		}\
+	}\
+	return val;\
 }
 
-BBString * bbEnumToString_i(BBEnum * bbEnum, BBINT ordinal) {
-	BBINT * value = (BBINT*)bbEnum->values;
-	for (int i = 0; i < bbEnum->length; i++) {
-		if (*value++ == ordinal)
-			return bbEnum->names[i];
-	}
-	return &bbEmptyString;
-}
-
-BBString * bbEnumToString_u(BBEnum * bbEnum, BBUINT ordinal) {
-	BBUINT * value = (BBUINT*)bbEnum->values;
-	for (int i = 0; i < bbEnum->length; i++) {
-		if (*value++ == ordinal)
-			return bbEnum->names[i];
-	}
-	return &bbEmptyString;
-}
-
-BBString * bbEnumToString_l(BBEnum * bbEnum, BBLONG ordinal) {
-	BBLONG * value = (BBLONG*)bbEnum->values;
-	for (int i = 0; i < bbEnum->length; i++) {
-		if (*value++ == ordinal)
-			return bbEnum->names[i];
-	}
-	return &bbEmptyString;
-}
-
-BBString * bbEnumToString_y(BBEnum * bbEnum, BBULONG ordinal) {
-	BBULONG * value = (BBULONG*)bbEnum->values;
-	for (int i = 0; i < bbEnum->length; i++) {
-		if (*value++ == ordinal)
-			return bbEnum->names[i];
-	}
-	return &bbEmptyString;
-}
-
-BBString * bbEnumToString_t(BBEnum * bbEnum, BBSIZET ordinal) {
-	BBSIZET * value = (BBSIZET*)bbEnum->values;
-	for (int i = 0; i < bbEnum->length; i++) {
-		if (*value++ == ordinal)
-			return bbEnum->names[i];
-	}
-	return &bbEmptyString;
-}
+ENUM_TO_STRING(BBBYTE,b)
+ENUM_TO_STRING(BBSHORT,s)
+ENUM_TO_STRING(BBINT,i)
+ENUM_TO_STRING(BBUINT,u)
+ENUM_TO_STRING(BBLONG,l)
+ENUM_TO_STRING(BBULONG,y)
+ENUM_TO_STRING(BBSIZET,t)
