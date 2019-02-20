@@ -472,16 +472,16 @@ Type TList
 ?Threaded
 			LockMutex(TListEnum._mutex)
 ?
-		Local enum:TListEnum=TListEnum(TListEnum._pool.RemoveFirst())
+		Local enumeration:TListEnum=TListEnum(TListEnum._pool.RemoveFirst())
 ?Threaded
 			UnlockMutex(TListEnum._mutex)
 ?
-		If Not enum Then
-			enum = New TListEnum
+		If Not enumeration Then
+			enumeration = New TListEnum
 		End If
-		enum._link=_head._succ
-		enum._list = Self
-		Return enum
+		enumeration._link=_head._succ
+		enumeration._list = Self
+		Return enumeration
 	End Method
 
 	Rem
