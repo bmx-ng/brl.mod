@@ -37,7 +37,9 @@ struct BBDebugDecl{
 		BBString*    const_value;
 		unsigned int field_offset;
 		void*        var_address;
+		size_t       struct_size;
 	};
+	void           (*reflection_wrapper)(void**);
 };
 
 enum{

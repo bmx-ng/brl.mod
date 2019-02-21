@@ -8,7 +8,15 @@ static void bbArrayFree( BBObject *o );
 static BBDebugScope debugScope={
 	BBDEBUGSCOPE_USERTYPE,
 	"Array",
-	BBDEBUGDECL_END
+	{
+		{
+			BBDEBUGDECL_END,
+			"",
+			"",
+			.var_address=(void*)0,
+			(void (*)(void**))0
+		}
+	}
 };
 
 BBClass bbArrayClass={

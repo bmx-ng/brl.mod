@@ -464,7 +464,7 @@ End Extern
 'BlitzMax keyword definitions
 
 Rem
-bbdoc: Set strict mode
+bbdoc: Set Strict mode (default in BlitzMax-NG)
 about:
 See the <a href=../../../../doc/bmxlang/compatibility.html>BlitzMax Language Reference</a> for more information on Strict mode programming.
 keyword: "Strict"
@@ -501,101 +501,113 @@ keyword: "False"
 End Rem
 
 Rem
-bbdoc: Constant Pi value: 3.1415926535897932384626433832795
+bbdoc: Constant pi value: 3.1415926535897932384626433832795
 keyword: "Pi"
 End Rem
 
 Rem
-bbdoc: Get Default Null value
+bbdoc: Get Null value (implicit default value for types)
 keyword: "Null"
 End Rem
 
 Rem
-bbdoc: Unsigned 8 bit integer Type
+bbdoc: Unsigned 8 bit integer type
 keyword: "Byte"
 End Rem
 
 Rem
-bbdoc: Unsigned 16 bit integer Type
+bbdoc: Unsigned 16 bit integer type
 keyword: "Short"
 End Rem
 
 Rem
-bbdoc: Signed 32 bit integer Type
+bbdoc: Signed 32 bit integer type
 keyword: "Int"
 End Rem
 
 Rem
-bbdoc: Unsigned 32 bit integer Type
+bbdoc: Unsigned 32 bit integer type
 keyword: "UInt"
 End Rem
 
 Rem
-bbdoc: Signed 64 bit integer Type
+bbdoc: Signed 64 bit integer type
 keyword: "Long"
 End Rem
 
 Rem
-bbdoc: Unsigned 64 bit integer Type
+bbdoc: Unsigned 64 bit integer type
 keyword: "ULong"
 End Rem
 
 Rem
-bbdoc: Unsigned 32/64 bit integer Type
+bbdoc: Unsigned 32/64 bit integer type
 keyword: "Size_T"
 End Rem
 
 Rem
-bbdoc: 128 bit integer intrinsic Type
+bbdoc: Signed 32/64 bit LPARAM WinAPI type
+keyword: "LParam"
+about: Only available on Windows.
+End Rem
+
+Rem
+bbdoc: Unsigned 32/64 bit WPARAM WinAPI type
+keyword: "WParam"
+about: Only available on Windows.
+End Rem
+
+Rem
+bbdoc: 32 bit floating point type
+keyword: "Float"
+End Rem
+
+Rem
+bbdoc: 64 bit floating point type
+keyword: "Double"
+End Rem
+
+Rem
+bbdoc: 128 bit integer intrinsic type
 about: Only available on x64.
 keyword: "Int128"
 End Rem
 
 Rem
-bbdoc: 32 bit Floating point Type
-keyword: "Float"
-End Rem
-
-Rem
-bbdoc: 64 bit floating point Type
-keyword: "Double"
-End Rem
-
-Rem
-bbdoc: 128 bit floating point intrinsic Type
-about: Only available on x64.
-keyword: "Float128"
-End Rem
-
-Rem
-bbdoc: 64 bit floating point intrinsic Type
+bbdoc: 64 bit floating point intrinsic type
 about: Only available on x64.
 keyword: "Float64"
 End Rem
 
 Rem
-bbdoc: 128 bit double intrinsic Type
+bbdoc: 128 bit floating point intrinsic type
+about: Only available on x64.
+keyword: "Float128"
+End Rem
+
+Rem
+bbdoc: 128 bit floating point intrinsic type
 about: Only available on x64.
 keyword: "Double128"
 End Rem
 
 Rem
-bbdoc: String Type
+bbdoc: String type
 keyword: "String"
 End Rem
 
 Rem
-bbdoc: Object Type
+bbdoc: Object type
 keyword: "Object"
 End Rem
 
 Rem
-bbdoc: Composite Type specifier for 'by reference' types
+bbdoc: Composite type specifier for 'by reference' types
 keyword: "Var"
 End Rem
 
 Rem
-bbdoc: Composite Type specifier for pointer types
+bbdoc: Composite type specifier for pointer types
 keyword: "Ptr"
 End Rem
 
@@ -610,7 +622,7 @@ keyword: "Then"
 End Rem
 
 Rem
-bbdoc: Else provides the ability For an If Then construct to execute a second block of code when the If condition is False.
+bbdoc: Else provides the ability for an If ... Then construct to execute a second block of code when the If condition is false.
 keyword: "Else"
 End Rem
 
@@ -650,7 +662,7 @@ keyword: "EachIn"
 End Rem
 
 Rem
-bbdoc: Execute a block of code While a condition is True
+bbdoc: Execute a block of code while a condition is true
 keyword: "While"
 End Rem
 
@@ -665,7 +677,7 @@ keyword: "EndWhile"
 End Rem
 
 Rem
-bbdoc: Execute a block of code Until a termination condition is met, or Forever
+bbdoc: Execute a block of code until a termination condition is met, or forever
 keyword: "Repeat"
 End Rem
 
@@ -675,7 +687,7 @@ keyword: "Until"
 End Rem
 
 Rem
-bbdoc: Continue a Repeat block Forever
+bbdoc: Continue a Repeat block forever
 keyword: "Forever"
 End Rem
 
@@ -715,103 +727,113 @@ keyword: "Const"
 End Rem
 
 Rem
-bbdoc: Declare a Local variable
+bbdoc: Declare a local variable
 keyword: "Local"
 End Rem
 
 Rem
-bbdoc: Declare a Global variable
+bbdoc: Declare a global variable
 keyword: "Global"
 End Rem
 
 Rem
-bbdoc: Declare a Field variable
+bbdoc: Declare a field variable
 keyword: "Field"
 End Rem
 
 Rem
-bbdoc: Begin a Function declaration
+bbdoc: Begin a function declaration
 keyword: "Function"
 End Rem
 
 Rem
-bbdoc: End a Function declaration
+bbdoc: End a function declaration
 keyword: "EndFunction"
 End Rem
 
 Rem
-bbdoc: Return from a Function
-keyword: "Return"
-End Rem
-
-Rem
-bbdoc: Begin a user defined Type declaration
-keyword: "Type"
-End Rem
-
-Rem
-bbdoc: End a user defined Type declaration
-keyword: "EndType"
-End Rem
-
-Rem
-bbdoc: Begin a user defined Struct declaration
-keyword: "Struct"
-End Rem
-
-Rem
-bbdoc: End a user defined Struct declaration
-keyword: "EndStruct"
-End Rem
-
-Rem
-bbdoc: Specify user defined Type supertype
-keyword: "Extends"
-End Rem
-
-Rem
-bbdoc: Specify user defined Interface(s)
-keyword: "Implements"
-End Rem
-
-Rem
-bbdoc: Begin a Method declaration
+bbdoc: Begin a method declaration
 keyword: "Method"
 End Rem
 
 Rem
-bbdoc: End a Method declaration
+bbdoc: End a method declaration
 keyword: "EndMethod"
 End Rem
 
 Rem
-bbdoc: Denote a Type or Method as Abstract
+bbdoc: Return from a method or function
+keyword: "Return"
+End Rem
+
+Rem
+bbdoc: Begin a user defined class declaration
+keyword: "Type"
+End Rem
+
+Rem
+bbdoc: End a user defined class declaration
+keyword: "EndType"
+End Rem
+
+Rem
+bbdoc: Begin a user defined interface declaration
+keyword: "Interface"
+End Rem
+
+Rem
+bbdoc: End a user defined interface declaration
+keyword: "EndInterface"
+End Rem
+
+Rem
+bbdoc: Begin a user defined structure declaration
+keyword: "Struct"
+End Rem
+
+Rem
+bbdoc: End a user defined structure declaration
+keyword: "EndStruct"
+End Rem
+
+Rem
+bbdoc: Specify supertype(s) of a user defined type
+keyword: "Extends"
+End Rem
+
+Rem
+bbdoc: Specify implemented interface(s) of a user defined type
+keyword: "Implements"
+End Rem
+
+Rem
+bbdoc: Denote a class, function or method as abstract
 keyword: "Abstract"
 End Rem
 
 Rem
-bbdoc: Denote a Type or Method as Final
+bbdoc: Denote a class, function or mMethod as final
 keyword: "Final"
 End Rem
 
 Rem
-bbdoc: Create an instance of a user defined Type
+bbdoc: Create an instance of a user defined type or specify a custom constructor
 keyword: "New"
 End Rem
 
 Rem
-bbdoc: Reference to this Method's Object instance
+bbdoc: Specify a custom finalizer
+keyword: "Delete"
+End Rem
+
+Rem
+bbdoc: Reference to this method's type instance
 keyword: "Self"
 End Rem
 
 Rem
-bbdoc: Reference to the Super Type Object instance
+bbdoc: Reference to the supertype instance
 keyword: "Super"
-End Rem
-
-Rem
-bbdoc: Reserved for future expansion
-keyword: "Delete"
 End Rem
 
 Rem
@@ -820,39 +842,39 @@ keyword: "Release"
 End Rem
 
 Rem
-bbdoc: Public makes a Constant, Global variable or Function accessible from outside the current source file (Default)
+bbdoc: Make a type, constant, global variable or function accessible from outside the current source file (default)
 keyword: "Public"
 End Rem
 
 Rem
-bbdoc: Private makes a Constant, Global variable or Function only accessible from within the current source file, or a Type member only accessible from within that Type.
+bbdoc: Make a type, constant, global variable or function only accessible from within the current source file, or make a type member only accessible from within that type.
 keyword: "Private"
 End Rem
 
 Rem
-bbdoc: Protected makes a Type member accessible only from within that Type or its sub-Types.
+bbdoc: Make a type member accessible only from within that type and from its subtypes.
 keyword: "Protected"
 End Rem
 
 Rem
-bbdoc: Extern marks the beginning of an external list of Function declarations
+bbdoc: Begin an Extern section (a list of imported external declarations)
 keyword: "Extern"
 End Rem
 
 Rem
-bbdoc: EndExtern marks the End of an Extern section
+bbdoc: End an Extern section
 keyword: "EndExtern"
 End Rem
 
 Rem
-bbdoc: Declare Module scope and identifier
+bbdoc: Declare module scope and identifier
 about:
 See the <a href=../../../../doc/bmxlang/modules.html>BlitzMax Language Reference</a> for more information on BlitzMax Modules.
 keyword: "Module"
 End Rem
 
 Rem
-bbdoc: Define Module properties
+bbdoc: Define module properties
 keyword: "ModuleInfo"
 End Rem
 
@@ -877,17 +899,17 @@ keyword: "Include"
 End Rem
 
 Rem
-bbdoc: Framework builds the BlitzMax application with only the Module specified rather than all modules installed.
+bbdoc: Framework builds the BlitzMax application with only the module(s) specified rather than the standard set of modules.
 keyword: "Framework"
 End Rem
 
 Rem
-bbdoc: Import declarations from a Module or source file
+bbdoc: Import declarations from a module or source file
 keyword: "Import"
 End Rem
 
 Rem
-bbdoc: Throw a RuntimeError if a condition is False
+bbdoc: Throw a RuntimeError if a condition is false
 keyword: "Assert"
 End Rem
 
@@ -907,12 +929,12 @@ keyword: "EndTry"
 End Rem
 
 Rem
-bbdoc: Catch an exception Object in a Try block
+bbdoc: Catch an exception object in a Try block
 keyword: "Catch"
 End Rem
 
 Rem
-bbdoc: Throw an exception Object to the enclosing Try block
+bbdoc: Throw an exception object to the enclosing Try block
 keyword: "Throw"
 End Rem
 
@@ -1013,23 +1035,5 @@ bbdoc: Create a string of length 1 with a character code
 keyword: "Chr"
 End Rem
 
-Rem
-bbdoc: Begin a user defined Interface declaration
-keyword: "Interface"
-End Rem
 
-Rem
-bbdoc: End a user defined Interface declaration
-keyword: "EndInterface"
-End Rem
-
-Rem
-bbdoc: WPARAM Type
-keyword: "WParam"
-End Rem
-
-Rem
-bbdoc: LPARAM Type
-keyword: "LParam"
-End Rem
 
