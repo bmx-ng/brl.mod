@@ -64,3 +64,49 @@ ENUM_TO_STRING(BBUINT,u)
 ENUM_TO_STRING(BBLONG,l)
 ENUM_TO_STRING(BBULONG,y)
 ENUM_TO_STRING(BBSIZET,t)
+
+struct enum_info_node {
+	struct avl_root link;
+	BBEnum * bbEnum;
+};
+
+static struct avl_root *enum_info_root = 0;
+
+static int enum_info_node_compare(const void *x, const void *y) {
+
+        struct enum_info_node * node_x = (struct enum_info_node *)x;
+        struct enum_info_node * node_y = (struct enum_info_node *)y;
+
+        return strcmp(node_x->bbEnum->atype, node_y->bbEnum->atype);
+}
+
+void bbEnumRegister( BBEnum *p, BBDebugScope *s ) {
+	bbObjectRegisterEnum(s);
+
+	struct enum_info_node * node = (struct enum_info_node *)malloc(sizeof(struct enum_info_node));
+	node->bbEnum = p;
+	
+	struct enum_info_node * old_node = (struct enum_info_node *)avl_map(&node->link, enum_info_node_compare, &enum_info_root);
+	if (&node->link != &old_node->link) {
+		// this object already exists here...
+		// delete the new node, since we don't need it
+		// note : should never happen as enums should only ever be registered once.
+		free(node);
+	}
+}
+
+BBEnum * bbEnumGetInfo( char * name ) {
+	// create something to look up
+	struct enum_info_node node;
+	BBEnum bbEnum;
+	bbEnum.atype = name;
+	node.bbEnum = &bbEnum;
+	
+	struct enum_info_node * found = (struct enum_info_node *)tree_search(&node, enum_info_node_compare, enum_info_root);
+
+	if (found) {
+		return found->bbEnum;
+	}
+	
+	return 0;
+}

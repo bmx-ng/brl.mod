@@ -27,6 +27,9 @@ BBString * bbEnumToString_l(BBEnum * bbEnum, BBLONG ordinal);
 BBString * bbEnumToString_y(BBEnum * bbEnum, BBULONG ordinal);
 BBString * bbEnumToString_t(BBEnum * bbEnum, BBSIZET ordinal);
 
+void bbEnumRegister(BBEnum * bbEnum, BBDebugScope *p);
+BBEnum * bbEnumGetInfo( char * name );
+
 #ifdef __cplusplus
 }
 #endif
