@@ -28,32 +28,51 @@
  */
 # ifdef THREADS
 
-#  if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
-#    include "atomic_ops.h"
+#  if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
+      && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+#    include "gc_atomic_ops.h"
 #  endif
 
 #  ifdef PCR
 #    include <base/PCR_Base.h>
 #    include <th/PCR_Th.h>
+#  endif
+
+#  ifdef __cplusplus
+     extern "C" {
+#  endif
+
+#  ifdef PCR
      GC_EXTERN PCR_Th_ML GC_allocate_ml;
-#    define DCL_LOCK_STATE \
+#    if defined(CPPCHECK)
+#      define DCL_LOCK_STATE /* empty */
+#    else
+#      define DCL_LOCK_STATE \
          PCR_ERes GC_fastLockRes; PCR_sigset_t GC_old_sig_mask
+#    endif
 #    define UNCOND_LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml)
 #    define UNCOND_UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
 #  endif
 
 #  if (!defined(AO_HAVE_test_and_set_acquire) || defined(GC_RTEMS_PTHREADS) \
-       || defined(SN_TARGET_PS3) || defined(GC_WIN32_THREADS) \
-       || defined(LINT2)) && defined(GC_PTHREADS)
+       || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
+       || defined(GC_WIN32_THREADS) || defined(LINT2)) && defined(GC_PTHREADS)
 #    define USE_PTHREAD_LOCKS
+#    undef USE_SPIN_LOCK
 #  endif
 
 #  if defined(GC_WIN32_THREADS) && !defined(USE_PTHREAD_LOCKS)
+#    ifdef __cplusplus
+       } /* extern "C" */
+#    endif
 #    ifndef WIN32_LEAN_AND_MEAN
 #      define WIN32_LEAN_AND_MEAN 1
 #    endif
 #    define NOSERVICE
 #    include <windows.h>
+#    ifdef __cplusplus
+       extern "C" {
+#    endif
 #    define NO_THREAD (DWORD)(-1)
      GC_EXTERN CRITICAL_SECTION GC_allocate_ml;
 #    ifdef GC_ASSERTIONS
@@ -62,8 +81,12 @@
 #      define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
 #      define I_HOLD_LOCK() (!GC_need_to_lock \
                            || GC_lock_holder == GetCurrentThreadId())
-#      define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
+#      ifdef THREAD_SANITIZER
+#        define I_DONT_HOLD_LOCK() TRUE /* Conservatively say yes */
+#      else
+#        define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
                            || GC_lock_holder != GetCurrentThreadId())
+#      endif
 #      define UNCOND_LOCK() \
                 { GC_ASSERT(I_DONT_HOLD_LOCK()); \
                   EnterCriticalSection(&GC_allocate_ml); \
@@ -76,8 +99,13 @@
 #      define UNCOND_UNLOCK() LeaveCriticalSection(&GC_allocate_ml)
 #    endif /* !GC_ASSERTIONS */
 #  elif defined(GC_PTHREADS)
+#    ifdef __cplusplus
+       } /* extern "C" */
+#    endif
 #    include <pthread.h>
-
+#    ifdef __cplusplus
+       extern "C" {
+#    endif
      /* Posix allows pthread_t to be a struct, though it rarely is.     */
      /* Unfortunately, we need to use a pthread_t to index a data       */
      /* structure.  It also helps if comparisons don't involve a        */
@@ -112,11 +140,31 @@
 #    define NO_THREAD ((unsigned long)(-1l))
                 /* != NUMERIC_THREAD_ID(pthread_self()) for any thread */
 
-#    if !defined(THREAD_LOCAL_ALLOC) && !defined(USE_PTHREAD_LOCKS)
+#    ifdef SN_TARGET_PSP2
+#      ifdef __cplusplus
+         } /* extern "C" */
+#      endif
+#      include "psp2-support.h"
+#      ifdef __cplusplus
+         extern "C" {
+#      endif
+       GC_EXTERN WapiMutex GC_allocate_ml_PSP2;
+#      define UNCOND_LOCK() { int res; GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                              res = PSP2_MutexLock(&GC_allocate_ml_PSP2); \
+                              GC_ASSERT(0 == res); (void)res; \
+                              SET_LOCK_HOLDER(); }
+#      define UNCOND_UNLOCK() { int res; GC_ASSERT(I_HOLD_LOCK()); \
+                              UNSET_LOCK_HOLDER(); \
+                              res = PSP2_MutexUnlock(&GC_allocate_ml_PSP2); \
+                              GC_ASSERT(0 == res); (void)res; }
+
+#    elif (!defined(THREAD_LOCAL_ALLOC) || defined(USE_SPIN_LOCK)) \
+          && !defined(USE_PTHREAD_LOCKS)
       /* In the THREAD_LOCAL_ALLOC case, the allocation lock tends to   */
       /* be held for long periods, if it is held at all.  Thus spinning */
       /* and sleeping for fixed periods are likely to result in         */
       /* significant wasted time.  We thus rely mostly on queued locks. */
+#     undef USE_SPIN_LOCK
 #     define USE_SPIN_LOCK
       GC_EXTERN volatile AO_TS_t GC_allocate_lock;
       GC_INNER void GC_lock(void);
@@ -133,8 +181,7 @@
                 AO_CLEAR(&GC_allocate_lock); }
 #     else
 #        define UNCOND_LOCK() \
-              { GC_ASSERT(I_DONT_HOLD_LOCK()); \
-                if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
+              { if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
                   GC_lock(); }
 #        define UNCOND_UNLOCK() AO_CLEAR(&GC_allocate_lock)
 #     endif /* !GC_ASSERTIONS */
@@ -144,7 +191,13 @@
 #      endif
 #    endif /* THREAD_LOCAL_ALLOC || USE_PTHREAD_LOCKS */
 #    ifdef USE_PTHREAD_LOCKS
+#      ifdef __cplusplus
+         } /* extern "C" */
+#      endif
 #      include <pthread.h>
+#      ifdef __cplusplus
+         extern "C" {
+#      endif
        GC_EXTERN pthread_mutex_t GC_allocate_ml;
 #      ifdef GC_ASSERTIONS
 #        define UNCOND_LOCK() { GC_ASSERT(I_DONT_HOLD_LOCK()); \
@@ -154,11 +207,7 @@
                   pthread_mutex_unlock(&GC_allocate_ml); }
 #      else /* !GC_ASSERTIONS */
 #        if defined(NO_PTHREAD_TRYLOCK)
-#          ifdef USE_SPIN_LOCK
-#            define UNCOND_LOCK() GC_lock()
-#          else
-#            define UNCOND_LOCK() pthread_mutex_lock(&GC_allocate_ml)
-#          endif
+#          define UNCOND_LOCK() pthread_mutex_lock(&GC_allocate_ml)
 #        else
 #          define UNCOND_LOCK() \
               { if (0 != pthread_mutex_trylock(&GC_allocate_ml)) \
@@ -175,23 +224,47 @@
 #      define I_HOLD_LOCK() \
                 (!GC_need_to_lock \
                  || GC_lock_holder == NUMERIC_THREAD_ID(pthread_self()))
-#      ifndef NUMERIC_THREAD_ID_UNIQUE
-#        define I_DONT_HOLD_LOCK() 1  /* Conservatively say yes */
+#      if !defined(NUMERIC_THREAD_ID_UNIQUE) || defined(THREAD_SANITIZER)
+#        define I_DONT_HOLD_LOCK() TRUE /* Conservatively say yes */
 #      else
 #        define I_DONT_HOLD_LOCK() \
                 (!GC_need_to_lock \
                  || GC_lock_holder != NUMERIC_THREAD_ID(pthread_self()))
 #      endif
 #    endif /* GC_ASSERTIONS */
-     GC_EXTERN volatile GC_bool GC_collecting;
-#    define ENTER_GC() GC_collecting = 1;
-#    define EXIT_GC() GC_collecting = 0;
+#    ifndef GC_WIN32_THREADS
+       GC_EXTERN volatile GC_bool GC_collecting;
+#      define ENTER_GC() (void)(GC_collecting = TRUE)
+#      define EXIT_GC() (void)(GC_collecting = FALSE)
+#    endif
      GC_INNER void GC_lock(void);
-#  endif /* GC_PTHREADS with linux_threads.c implementation */
-#  ifdef GC_ALWAYS_MULTITHREADED
+#  endif /* GC_PTHREADS */
+#  if defined(GC_ALWAYS_MULTITHREADED) \
+      && (defined(USE_PTHREAD_LOCKS) || defined(USE_SPIN_LOCK))
 #    define GC_need_to_lock TRUE
+#    define set_need_to_lock() (void)0
 #  else
+#    if defined(GC_ALWAYS_MULTITHREADED) && !defined(CPPCHECK)
+#      error Runtime initialization of GC lock is needed!
+#    endif
+#    undef GC_ALWAYS_MULTITHREADED
      GC_EXTERN GC_bool GC_need_to_lock;
+#    ifdef THREAD_SANITIZER
+        /* To workaround TSan false positive (e.g., when                */
+        /* GC_pthread_create is called from multiple threads in         */
+        /* parallel), do not set GC_need_to_lock if it is already set.  */
+#       define set_need_to_lock() \
+                (void)(*(GC_bool volatile *)&GC_need_to_lock \
+                        ? FALSE \
+                        : (GC_need_to_lock = TRUE))
+#    else
+#       define set_need_to_lock() (void)(GC_need_to_lock = TRUE)
+                                        /* We are multi-threaded now.   */
+#    endif
+#  endif
+
+#  ifdef __cplusplus
+     } /* extern "C" */
 #  endif
 
 # else /* !THREADS */
@@ -207,7 +280,8 @@
 # endif /* !THREADS */
 
 #if defined(UNCOND_LOCK) && !defined(LOCK)
-# if defined(LINT2) || defined(GC_ALWAYS_MULTITHREADED)
+# if (defined(LINT2) && defined(USE_PTHREAD_LOCKS)) \
+     || defined(GC_ALWAYS_MULTITHREADED)
     /* Instruct code analysis tools not to care about GC_need_to_lock   */
     /* influence to LOCK/UNLOCK semantic.                               */
 #   define LOCK() UNCOND_LOCK()

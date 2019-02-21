@@ -101,10 +101,10 @@ typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
                | (proc_index)) << GC_DS_TAG_BITS) | GC_DS_PROC)
 #define GC_DS_PER_OBJECT 3  /* The real descriptor is at the            */
                         /* byte displacement from the beginning of the  */
-                        /* object given by descr & ~DS_TAGS             */
+                        /* object given by descr & ~GC_DS_TAGS.         */
                         /* If the descriptor is negative, the real      */
                         /* descriptor is at (*<object_start>) -         */
-                        /* (descr & ~DS_TAGS) - GC_INDIR_PER_OBJ_BIAS   */
+                        /* (descr&~GC_DS_TAGS) - GC_INDIR_PER_OBJ_BIAS  */
                         /* The latter alternative can be used if each   */
                         /* object contains a type descriptor in the     */
                         /* first word.                                  */
@@ -204,6 +204,11 @@ GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
                                 /* first page of the resulting object   */
                                 /* are ignored.                         */
 
+/* Generalized version of GC_malloc_[atomic_]uncollectable.     */
+GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
+                                        GC_generic_malloc_uncollectable(
+                                            size_t /* lb */, int /* knd */);
+
 /* Same as above but primary for allocating an object of the same kind  */
 /* as an existing one (kind obtained by GC_get_kind_and_size).          */
 /* Not suitable for GCJ and typed-malloc kinds.                         */
@@ -276,9 +281,9 @@ GC_API void GC_CALL GC_set_mark_bit(const void *) GC_ATTR_NONNULL(1);
 /* (GC_push_conditional pushes either all or only dirty pages depending */
 /* on the third argument.)  GC_push_all_eager also ensures that stack   */
 /* is scanned immediately, not just scheduled for scanning.             */
-GC_API void GC_CALL GC_push_all(char * /* bottom */, char * /* top */);
-GC_API void GC_CALL GC_push_all_eager(char * /* bottom */, char * /* top */);
-GC_API void GC_CALL GC_push_conditional(char * /* bottom */, char * /* top */,
+GC_API void GC_CALL GC_push_all(void * /* bottom */, void * /* top */);
+GC_API void GC_CALL GC_push_all_eager(void * /* bottom */, void * /* top */);
+GC_API void GC_CALL GC_push_conditional(void * /* bottom */, void * /* top */,
                                         int /* bool all */);
 GC_API void GC_CALL GC_push_finalizer_structures(void);
 
@@ -300,8 +305,13 @@ GC_API void GC_CALL GC_enumerate_reachable_objects_inner(
                                 GC_reachable_object_proc,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
 
+GC_API int GC_CALL GC_is_tmp_root(void *);
+
+GC_API void GC_CALL GC_print_trace(GC_word /* gc_no */);
+GC_API void GC_CALL GC_print_trace_inner(GC_word /* gc_no */);
+
 #ifdef __cplusplus
-  } /* end of extern "C" */
+  } /* extern "C" */
 #endif
 
 #endif /* GC_MARK_H */

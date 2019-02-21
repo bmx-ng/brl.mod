@@ -54,8 +54,6 @@ int GC_gcj_debug_kind = 0;
 
 GC_INNER ptr_t * GC_gcjobjfreelist = NULL;
 
-STATIC ptr_t * GC_gcjdebugobjfreelist = NULL;
-
 STATIC struct GC_ms_entry * GC_gcj_fake_mark_proc(word * addr GC_ATTR_UNUSED,
                         struct GC_ms_entry *mark_stack_ptr,
                         struct GC_ms_entry * mark_stack_limit GC_ATTR_UNUSED,
@@ -101,7 +99,7 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
         /* Use a simple length-based descriptor, thus forcing a fully   */
         /* conservative scan.                                           */
         GC_gcj_kind = GC_new_kind_inner((void **)GC_gcjobjfreelist,
-                                        (0 | GC_DS_LENGTH),
+                                        /* 0 | */ GC_DS_LENGTH,
                                         TRUE, TRUE);
       } else {
         GC_gcj_kind = GC_new_kind_inner(
@@ -114,11 +112,8 @@ GC_API void GC_CALL GC_init_gcj_malloc(int mp_index,
     /* Set up object kind for objects that require mark proc call.      */
       if (ignore_gcj_info) {
         GC_gcj_debug_kind = GC_gcj_kind;
-        GC_gcjdebugobjfreelist = GC_gcjobjfreelist;
       } else {
-        GC_gcjdebugobjfreelist = (ptr_t *)GC_new_free_list_inner();
-        GC_gcj_debug_kind = GC_new_kind_inner(
-                                (void **)GC_gcjdebugobjfreelist,
+        GC_gcj_debug_kind = GC_new_kind_inner(GC_new_free_list_inner(),
                                 GC_MAKE_PROC(mp_index,
                                              1 /* allocated with debug info */),
                                 FALSE, TRUE);
@@ -164,12 +159,12 @@ static void maybe_finalize(void)
 #endif
 {
     ptr_t op;
-    word lg;
     DCL_LOCK_STATE;
 
     GC_DBG_COLLECT_AT_MALLOC(lb);
     if(SMALL_OBJ(lb)) {
-        lg = GC_size_map[lb];
+        word lg = GC_size_map[lb];
+
         LOCK();
         op = GC_gcjobjfreelist[lg];
         if(EXPECT(0 == op, FALSE)) {
@@ -181,8 +176,8 @@ static void maybe_finalize(void)
                 return((*oom_fn)(lb));
             }
         } else {
-            GC_gcjobjfreelist[lg] = obj_link(op);
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
+            GC_gcjobjfreelist[lg] = (ptr_t)obj_link(op);
+            GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
         }
         *(void **)op = ptr_to_struct_containing_descr;
         GC_ASSERT(((void **)op)[1] == 0);
@@ -214,7 +209,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
     /* confuse the backtrace.                                   */
     LOCK();
     maybe_finalize();
-    result = GC_generic_malloc_inner(lb + DEBUG_BYTES, GC_gcj_debug_kind);
+    result = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES),
+                                     GC_gcj_debug_kind);
     if (result == 0) {
         GC_oom_func oom_fn = GC_oom_fn;
         UNLOCK();
@@ -223,12 +219,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_debug_gcj_malloc(size_t lb,
         return((*oom_fn)(lb));
     }
     *((void **)((ptr_t)result + sizeof(oh))) = ptr_to_struct_containing_descr;
-    UNLOCK();
     if (!GC_debugging_started) {
-        GC_start_debugging();
+        GC_start_debugging_inner();
     }
+    UNLOCK();
     ADD_CALL_CHAIN(result, ra);
-    return (GC_store_debug_info(result, (word)lb, s, i));
+    return GC_store_debug_info((ptr_t)result, (word)lb, s, i);
 }
 
 /* There is no THREAD_LOCAL_ALLOC for GC_gcj_malloc_ignore_off_page().  */
@@ -236,12 +232,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
                                      void * ptr_to_struct_containing_descr)
 {
     ptr_t op;
-    word lg;
     DCL_LOCK_STATE;
 
     GC_DBG_COLLECT_AT_MALLOC(lb);
     if(SMALL_OBJ(lb)) {
-        lg = GC_size_map[lb];
+        word lg = GC_size_map[lb];
+
         LOCK();
         op = GC_gcjobjfreelist[lg];
         if (EXPECT(0 == op, FALSE)) {
@@ -253,8 +249,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc_ignore_off_page(size_t lb,
                 return((*oom_fn)(lb));
             }
         } else {
-            GC_gcjobjfreelist[lg] = obj_link(op);
-            GC_bytes_allocd += GRANULES_TO_BYTES(lg);
+            GC_gcjobjfreelist[lg] = (ptr_t)obj_link(op);
+            GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
         }
     } else {
         LOCK();

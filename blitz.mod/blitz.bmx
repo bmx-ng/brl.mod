@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.19"
+ModuleInfo "Version: 1.20"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.20"
+ModuleInfo "History: Update to bdwgc 7.7.0."
 ModuleInfo "History: 1.19"
 ModuleInfo "History: Added interfaces."
 ModuleInfo "History: Added Interface and EndInterface keyword docs"
@@ -124,11 +126,9 @@ Import "bdwgc/mark_rts.c"
 Import "bdwgc/headers.c"
 Import "bdwgc/mark.c"
 Import "bdwgc/obj_map.c"
-Import "bdwgc/pcr_interface.c"
 Import "bdwgc/blacklst.c"
 Import "bdwgc/finalize.c"
 Import "bdwgc/new_hblk.c"
-Import "bdwgc/real_malloc.c"
 Import "bdwgc/dyn_load.c"
 Import "bdwgc/dbg_mlc.c"
 Import "bdwgc/malloc.c"
@@ -155,39 +155,67 @@ Global OnDebugStop()="bbOnDebugStop"
 Global OnDebugLog( message$ )="bbOnDebugLog"
 End Extern
 
+Rem
+bbdoc: Exception
+about: Basic exception class that can be extended to create more specific custom exceptions.
+End Rem
 Type TBlitzException
 End Type
 
+Rem
+bbdoc: Null object exception
+about: Thrown when a field or method of a Null object is accessed. (only in debug mode)
+End Rem
 Type TNullObjectException Extends TBlitzException
 	Method ToString$()
 		Return "Attempt to access field or method of Null object"
 	End Method
 End Type
 
+Rem
+bbdoc: Null method exception
+about: Thrown when an abstract method is called.
+End Rem
 Type TNullMethodException Extends TBlitzException
 	Method ToString$()
 		Return "Attempt to call abstract method"
 	End Method
 End Type
 
+Rem
+bbdoc: Null function exception
+about: Thrown when an uninitialized function pointer is called.
+End Rem
 Type TNullFunctionException Extends TBlitzException
 	Method ToString$()
 		Return "Attempt to call uninitialized function pointer"
 	End Method
 End Type
 
+Rem
+bbdoc: Null method exception
+about: Thrown when an array element with an index outside the valid range of the array (0 to array.length-1) is accessed. (only in debug mode)
+End Rem
 Type TArrayBoundsException Extends TBlitzException
 	Method ToString$()
 		Return "Attempt to index array element beyond array length"
 	End Method
 End Type
 
+Rem
+bbdoc: Out of data exception
+about: Thrown when #ReadData is used but not enough data is left to read. (only in debug mode)
+End Rem
 Type TOutOfDataException Extends TBlitzException
 	Method ToString$()
 		Return "Attempt to read beyond end of data"
 	End Method
 End Type
 
+Rem
+bbdoc: Runtime exception
+about: Thrown by #RuntimeError.
+End Rem
 Type TRuntimeException Extends TBlitzException
 	Field error$
 	Method ToString$()
@@ -222,7 +250,7 @@ End Function
 
 Rem
 bbdoc: Generate a runtime error
-about: Throws a TRuntimeException.
+about: Throws a #TRuntimeException.
 End Rem
 Function RuntimeError( message$ )
 	Throw TRuntimeException.Create( message )
@@ -267,7 +295,7 @@ about: The #AppTitle global variable is used by various commands when a
 default application title is required - for example, when opening simple 
 windows or requesters.<br>
 <br>
-Initially, #AppTitle is set the value "BlitzMax Application". However, you may change
+Initially, #AppTitle is set to the value "BlitzMax Application". However, you may change
 #AppTitle at any time with a simple assignment.
 End Rem
 Global AppTitle$="bbAppTitle"
@@ -506,7 +534,7 @@ keyword: "Pi"
 End Rem
 
 Rem
-bbdoc: Get Null value (implicit default value for types)
+bbdoc: Get Null value (default value for types)
 keyword: "Null"
 End Rem
 
@@ -622,7 +650,7 @@ keyword: "Then"
 End Rem
 
 Rem
-bbdoc: Else provides the ability for an If ... Then construct to execute a second block of code when the If condition is false.
+bbdoc: Else provides the ability for an If Then construct to execute a second block of code when the If condition is false.
 keyword: "Else"
 End Rem
 
@@ -632,7 +660,7 @@ keyword: "ElseIf"
 End Rem
 
 Rem
-bbdoc: Marks the End of an If Then block.
+bbdoc: Marks the End of an If Then construct.
 keyword: "EndIf"
 End Rem
 
@@ -812,12 +840,17 @@ keyword: "Abstract"
 End Rem
 
 Rem
-bbdoc: Denote a class, function or mMethod as final
+bbdoc: Denote a class, function or method as final
 keyword: "Final"
 End Rem
 
 Rem
-bbdoc: Create an instance of a user defined type or specify a custom constructor
+bbdoc: Specify constraints on the types that can be used as arguments For a Type parameter defined in a generic declaration
+keyword: "Where"
+End Rem
+
+Rem
+bbdoc: Create an instance of a user defined type, or specify a custom constructor
 keyword: "New"
 End Rem
 
@@ -832,7 +865,7 @@ keyword: "Self"
 End Rem
 
 Rem
-bbdoc: Reference to the supertype instance
+bbdoc: Reference to the super type instance
 keyword: "Super"
 End Rem
 
@@ -924,13 +957,18 @@ keyword: "Try"
 End Rem
 
 Rem
-bbdoc: End declaration of a Try block
-keyword: "EndTry"
+bbdoc: Catch an exception object in a Try block
+keyword: "Catch"
 End Rem
 
 Rem
-bbdoc: Catch an exception object in a Try block
-keyword: "Catch"
+bbdoc: Execute a block of code upon exiting a Try or Catch block
+keyword: "Finally"
+End Rem
+
+Rem
+bbdoc: End declaration of a Try block
+keyword: "EndTry"
 End Rem
 
 Rem
@@ -939,7 +977,7 @@ keyword: "Throw"
 End Rem
 
 Rem
-bbdoc: Define class BASIC style data
+bbdoc: Define classic BASIC style data
 keyword: "DefData"
 End Rem
 
@@ -984,7 +1022,7 @@ keyword: "Sar"
 End Rem
 
 Rem
-bbdoc: Number of characters in a String or elements in an array
+bbdoc: Number of characters in a string or elements in an array
 keyword: "Len"
 End Rem
 

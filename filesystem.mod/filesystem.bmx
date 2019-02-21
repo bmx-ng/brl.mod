@@ -12,6 +12,8 @@ ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.11"
+ModuleInfo "History: Added optional parameter timetype to FileTime"
 ModuleInfo "History: 1.10"
 ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.09 Release"
@@ -31,6 +33,7 @@ Import Pub.StdC
 Import BRL.BankStream
 
 Const FILETYPE_NONE:Int=0,FILETYPE_FILE:Int=1,FILETYPE_DIR:Int=2
+Const FILETIME_MODIFIED:Int=0,FILETIME_CREATED:Int=1
 
 Private
 
@@ -210,11 +213,15 @@ Rem
 bbdoc: Get file time
 returns: The time the file at @path was last modified 
 End Rem
-Function FileTime:Int( path$ )
+Function FileTime:Int( path$, timetype:Int=FILETIME_MODIFIED )
 	FixPath path
 	Local Mode:Int,size:Long,mtime:Int,ctime:Int
 	If stat_( path,Mode,size,mtime,ctime ) Return 0
-	Return mtime
+	If(timetype = FILETIME_CREATED)
+		Return ctime
+	Else
+		Return mtime
+	EndIf
 End Function
 
 Rem
