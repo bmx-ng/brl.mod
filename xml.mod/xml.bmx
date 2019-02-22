@@ -263,6 +263,14 @@ Type TxmlNode Extends TxmlBase
 		
 		Return sb.ToString()
 	End Method
+	
+	Rem
+	bbdoc: Finds an element of the given @element name, attribute or attribute/value.
+	returns: A node or Null if no match was found.
+	End Rem
+	Method findElement:TxmlNode(element:String = "", attr:String = "", value:String = "")
+		Return TxmlNode._create(bmx_mxmlFindElement(nodePtr, element, attr, value))
+	End Method
 
 	Rem
 	bbdoc: Frees a node and all of its children.
