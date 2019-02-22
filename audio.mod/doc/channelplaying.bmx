@@ -1,10 +1,12 @@
 ' channelplaying.bmx
 
-sound = LoadSound ("shoot.wav")
+SuperStrict
+
+Local sound:TSound = LoadSound ("shoot.wav")
 
 Input "Hit return to begin channelplaying test, use ctrl-C to exit"
 
-channel=playsound (sound)
-while true
-	print "ChannelPlaying(channel)="+ChannelPlaying(channel)
-wend
+Local channel:TChannel = PlaySound (sound)
+While True
+	Print "ChannelPlaying(channel)="+ChannelPlaying(channel)
+Wend

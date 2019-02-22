@@ -2,14 +2,16 @@ Rem
 Method marks the beginning of a BlitzMax custom type member function.
 End Rem
 
-Type TPoint
-	field	x,y
+SuperStrict
 
-	Method ToString$()
-		return x+","+y
+Type TPoint
+	Field x:Int,y:Int
+
+	Method ToString:String()
+		Return x+","+y
 	End Method
 End Type
 
-a:TPoint=new TPoint
-print a.ToString()
+Local a:TPoint=New TPoint
+Print a.ToString()
 	

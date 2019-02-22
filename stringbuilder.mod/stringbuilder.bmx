@@ -1,4 +1,4 @@
-' Copyright (c) 2016 Bruce A Henderson
+' Copyright (c) 2018 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.04"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2016 Bruce A Henderson"
+ModuleInfo "Copyright: 2018 Bruce A Henderson"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Added shorts appender."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Added overloaded constructor for providing instance specific initial capacity."
 ModuleInfo "History: 1.02"
@@ -248,6 +250,14 @@ Public
 	End Rem
 	Method AppendUTF8String:TStringBuilder(chars:Byte Ptr)
 		bmx_stringbuilder_append_utf8string(buffer, chars)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends an array of shorts onto the string builder.
+	End Rem
+	Method AppendShorts:TStringBuilder(shorts:Short Ptr, length:Int)
+		bmx_stringbuilder_append_shorts(buffer, shorts, length)
 		Return Self
 	End Method
 	

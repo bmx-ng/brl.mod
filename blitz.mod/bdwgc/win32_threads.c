@@ -79,7 +79,6 @@
 #if (defined(GC_DLL) || defined(GC_INSIDE_DLL)) \
         && !defined(GC_NO_THREADS_DISCOVERY) && !defined(MSWINCE) \
         && !defined(THREAD_LOCAL_ALLOC) && !defined(GC_PTHREADS)
-# include "private/gc_atomic_ops.h"
 
   /* This code operates in two distinct modes, depending on     */
   /* the setting of GC_win32_dll_threads.                       */
@@ -347,6 +346,7 @@ STATIC GC_thread GC_new_thread(DWORD id)
   if (!EXPECT(first_thread_used, TRUE)) {
     result = &first_thread;
     first_thread_used = TRUE;
+    GC_ASSERT(NULL == GC_threads[hv]);
   } else {
     GC_ASSERT(!GC_win32_dll_threads);
     result = (struct GC_Thread_Rep *)
@@ -360,6 +360,8 @@ STATIC GC_thread GC_new_thread(DWORD id)
     GC_ASSERT(result -> flags == 0);
 # endif
   GC_ASSERT(result -> thread_blocked_sp == NULL);
+  if (EXPECT(result != &first_thread, TRUE))
+    GC_dirty(result);
   return(result);
 }
 
@@ -390,7 +392,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
   /* The following should be a no-op according to the win32     */
   /* documentation.  There is empirical evidence that it        */
   /* isn't.             - HB                                    */
-# if defined(MPROTECT_VDB)
+# if defined(MPROTECT_VDB) && !defined(CYGWIN32)
     if (GC_incremental
 #       ifdef GWW_VDB
           && !GC_gww_dirty_init()
@@ -415,7 +417,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
       /* variants.                                                      */
                   /* cast away volatile qualifier */
       for (i = 0;
-           InterlockedExchange((void*)&dll_thread_table[i].tm.in_use, 1) != 0;
+           InterlockedExchange((word*)&dll_thread_table[i].tm.in_use, 1) != 0;
            i++) {
         /* Compare-and-swap would make this cleaner, but that's not     */
         /* supported before Windows 98 and NT 4.0.  In Windows 2000,    */
@@ -670,8 +672,8 @@ STATIC void GC_delete_gc_thread_no_free(GC_vthread t)
     DWORD id = ((GC_thread)t) -> id;
                 /* Cast away volatile qualifier, since we have lock.    */
     int hv = THREAD_TABLE_INDEX(id);
-    register GC_thread p = GC_threads[hv];
-    register GC_thread prev = 0;
+    GC_thread p = GC_threads[hv];
+    GC_thread prev = NULL;
 
     GC_ASSERT(I_HOLD_LOCK());
     while (p != (GC_thread)t) {
@@ -681,7 +683,9 @@ STATIC void GC_delete_gc_thread_no_free(GC_vthread t)
     if (prev == 0) {
       GC_threads[hv] = p -> tm.next;
     } else {
+      GC_ASSERT(prev != &first_thread);
       prev -> tm.next = p -> tm.next;
+      GC_dirty(prev);
     }
   }
 }
@@ -704,8 +708,8 @@ STATIC void GC_delete_thread(DWORD id)
     }
   } else {
     int hv = THREAD_TABLE_INDEX(id);
-    register GC_thread p = GC_threads[hv];
-    register GC_thread prev = 0;
+    GC_thread p = GC_threads[hv];
+    GC_thread prev = NULL;
 
     GC_ASSERT(I_HOLD_LOCK());
     while (p -> id != id) {
@@ -718,9 +722,11 @@ STATIC void GC_delete_thread(DWORD id)
     if (prev == 0) {
       GC_threads[hv] = p -> tm.next;
     } else {
+      GC_ASSERT(prev != &first_thread);
       prev -> tm.next = p -> tm.next;
+      GC_dirty(prev);
     }
-    if (p != &first_thread) {
+    if (EXPECT(p != &first_thread, TRUE)) {
       GC_INTERNAL_FREE(p);
     }
   }
@@ -2202,6 +2208,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
     /* This is probably pointless, since an uncaught exception is       */
     /* supposed to result in the process being killed.                  */
 #   ifndef __GNUC__
+      ret = NULL; /* to suppress "might be uninitialized" compiler warning */
       __try
 #   endif
     {
@@ -2259,6 +2266,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
       /* set up thread arguments */
       args -> start = lpStartAddress;
       args -> param = lpParameter;
+      GC_dirty(args);
+      REACHABLE_AFTER_DIRTY(lpParameter);
 
       set_need_to_lock();
       thread_h = CreateThread(lpThreadAttributes, dwStackSize, GC_win32_start,
@@ -2311,6 +2320,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         /* set up thread arguments */
         args -> start = (LPTHREAD_START_ROUTINE)start_address;
         args -> param = arglist;
+        GC_dirty(args);
+        REACHABLE_AFTER_DIRTY(arglist);
 
         set_need_to_lock();
         thread_h = _beginthreadex(security, stack_size,
@@ -2535,7 +2546,9 @@ GC_INNER void GC_thr_init(void)
   GC_API int GC_pthread_join(pthread_t pthread_id, void **retval)
   {
     int result;
-    GC_thread t;
+#   ifndef GC_WIN32_PTHREADS
+      GC_thread t;
+#   endif
     DCL_LOCK_STATE;
 
     GC_ASSERT(!GC_win32_dll_threads);
@@ -2558,7 +2571,7 @@ GC_INNER void GC_thr_init(void)
     if (0 == result) {
 #     ifdef GC_WIN32_PTHREADS
         /* pthreads-win32 and winpthreads id are unique (not recycled). */
-        t = GC_lookup_pthread(pthread_id);
+        GC_thread t = GC_lookup_pthread(pthread_id);
         if (NULL == t) ABORT("Thread not registered");
 #     endif
 
@@ -2603,6 +2616,8 @@ GC_INNER void GC_thr_init(void)
 
       si -> start_routine = start_routine;
       si -> arg = arg;
+      GC_dirty(si);
+      REACHABLE_AFTER_DIRTY(arg);
       if (attr != 0 &&
           pthread_attr_getdetachstate(attr, &si->detached)
           == PTHREAD_CREATE_DETACHED) {
@@ -2650,6 +2665,7 @@ GC_INNER void GC_thr_init(void)
     /* we don't need to hold the allocation lock during pthread_create. */
     me = GC_register_my_thread_inner(sb, thread_id);
     SET_PTHREAD_MAP_CACHE(pthread_id, thread_id);
+    GC_ASSERT(me != &first_thread);
     me -> pthread_id = pthread_id;
     if (si->detached) me -> flags |= DETACHED;
     UNLOCK();
@@ -2662,6 +2678,7 @@ GC_INNER void GC_thr_init(void)
     pthread_cleanup_push(GC_thread_exit_proc, (void *)me);
     result = (*start)(start_arg);
     me -> status = result;
+    GC_dirty(me);
     pthread_cleanup_pop(1);
 
 #   ifdef DEBUG_THREADS
@@ -2760,7 +2777,6 @@ GC_INNER void GC_thr_init(void)
                          LPVOID reserved GC_ATTR_UNUSED)
   {
       DWORD thread_id;
-      static int entry_count = 0;
 
       /* Note that GC_use_threads_discovery should be called by the     */
       /* client application at start-up to activate automatic thread    */
@@ -2778,8 +2794,6 @@ GC_INNER void GC_thr_init(void)
             break;
           }
 #       endif
-        GC_ASSERT(entry_count == 0 || parallel_initialized);
-        ++entry_count;
         /* FALLTHRU */
        case DLL_PROCESS_ATTACH:
         /* This may run with the collector uninitialized. */
@@ -2898,10 +2912,6 @@ GC_INNER void GC_init_parallel(void)
   }
 
 # if defined(GC_ASSERTIONS)
-    void GC_check_tls_for(GC_tlfs p);
-#   if defined(USE_CUSTOM_SPECIFIC)
-      void GC_check_tsd_marks(tsd *key);
-#   endif
     /* Check that all thread-local free-lists are completely marked.    */
     /* also check that thread-specific-data structures are marked.      */
     void GC_check_tls(void)

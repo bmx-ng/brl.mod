@@ -21,6 +21,9 @@ void		bbExThrowCString( const char *p );
 void		bbExLeave();
 BBObject*   bbExObject();
 
+BBObject* bbExCatchAndReenter();
+BBObject* bbExCatch();
+
 //void	_bbExEnter( void *_cpu_state );
 //void*	_bbExThrow( void *_cpu_state,void *p );
 

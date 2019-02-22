@@ -2,8 +2,10 @@ Rem
 Specifies a BlitzMax collection type whose values are assigned sequentially to the For iterator.
 End Rem
 
-Local a[]=[0,5,12,13,20]
+SuperStrict
 
-for b=eachin a
-	print b
-next
+Local a:Int[]=[0,5,12,13,20]
+
+For Local b:Int = EachIn a
+	Print b
+Next

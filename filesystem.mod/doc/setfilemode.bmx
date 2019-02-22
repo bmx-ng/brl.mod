@@ -1,17 +1,14 @@
 ' setfilemode.bmx
+SuperStrict
 
 ' the following makes this source file readonly
-
-writebits=%010010010
+Local writebits:Int = %010010010
 
 ' read the file mode
-
-mode=filemode("setfilemode.bmx")
+Local mode:Int = FileMode("setfilemode.bmx")
 
 'mask out the write bits to make readonly
-
-mode=mode & ~writebits
+mode = mode & ~writebits
 
 'set the new file mode
-
-setfilemode("setfilemode.bmx",mode)	
+SetFileMode("setfilemode.bmx",mode)	

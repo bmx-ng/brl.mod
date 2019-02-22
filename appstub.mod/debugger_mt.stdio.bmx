@@ -4,7 +4,19 @@ Import "debugger.stdio.glue.c"
 
 NoDebug
 
+?win32
+Include "deref_win32.bmx"
+?linux
+Include "deref_linux.bmx"
+?macos
+Include "deref_macos.bmx"
+?
+
+
 Private
+
+Const derefFailure:String = "{?}"
+Const derefSymbol:String = "->"
 
 ?Win32
 Extern "Win32"
@@ -425,13 +437,6 @@ Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
 	
 	Local result:String = ""
 	
-	
-	? Win32
-	Extern "Win32"
-		Function GetCurrentProcess:Byte Ptr() = "HANDLE GetCurrentProcess(void)!"
-		Function ReadProcessMemory:Int(hProcess:Byte Ptr, lpBaseAddress:Byte Ptr, lpBuffer:Byte Ptr, nSize:Size_T, lpNumberOfBytesRead:Size_T Ptr) = "BOOL ReadProcessMemory(HANDLE, LPCVOID, LPVOID, SIZE_T, SIZE_T*)!"
-	End Extern
-	
 	Local dataSize:Size_T
 	Select dataType
  		Case "Byte"      dataSize = SizeOf(Byte Null)
@@ -443,7 +448,7 @@ Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
 		Case "Size_T"    dataSize = SizeOf(Size_T Null)
 		Case "Float"     dataSize = SizeOf(Float Null)
 		Case "Double"    dataSize = SizeOf(Double Null)
-	? Win32 And Ptr64
+	? Ptr64
 		Case "Float64"   dataSize = SizeOf(Float64 Null)
 		Case "Float128"  dataSize = SizeOf(Float128 Null)
 		Case "Double128" dataSize = SizeOf(Double128 Null)
@@ -451,40 +456,26 @@ Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
 	? Win32	
 		Case "WParam"    dataSize = SizeOf(WParam Null)
 		Case "LParam"    dataSize = SizeOf(LParam Null)
+	?
 		Default          dataSize = 0 ' cannot dereference this
 	EndSelect
-	
-	Local processHandle:Byte Ptr = GetCurrentProcess()
-	Local buffer:Byte Ptr = MemAlloc(Max(dataSize, SizeOf(Byte Ptr Null)))
+
+	Local buffer:Byte Ptr = MemAlloc(Size_T(Max(dataSize, SizeOf(Byte Ptr Null))))
 	(Byte Ptr Ptr buffer)[0] = Null
 	
-	pointer = (Byte Ptr Ptr pointer)[0]
-	For Local i:Int = 1 To ptrDepth - 1
-		Local success:Int = ReadProcessMemory(processHandle, pointer, buffer, Size_T SizeOf(Byte Ptr Null), Null)
-		If Not success Then
-			MemFree buffer
-			result :+ derefSymbol + derefFailure
-			Return result
-		End If
-		pointer = (Byte Ptr Ptr buffer)[0]
-	? Win32 And Not Ptr64
-		result :+ derefSymbol + "$" + ToHex(Int pointer)
-	? Win32 And Ptr64
-		result :+ derefSymbol + "$" + ToHex(Long pointer)
-	? Win32
-	Next
-	
-	Local success:Int
-	If dataSize > 0 Then
-		success = ReadProcessMemory:Int(processHandle, pointer, buffer, dataSize, Null)
-	Else
-		success = False
-	End If
-	If Not success Then
-		MemFree buffer
-		result :+ derefSymbol + derefFailure
+	Local res:Int
+	?win32
+	result = DebugDerefPointerWin32(dataSize, ptrDepth, pointer, buffer, res)
+	?linux
+	result = DebugDerefPointerLinux(dataSize, ptrDepth, pointer, buffer, res)
+	?macos
+	result = DebugDerefPointerMacos(dataSize, ptrDepth, pointer, buffer, res)
+	?
+
+	If Not res Then
 		Return result
 	End If
+
 	Local value:String
 	Select dataType
  		Case "Byte"      value = String((Byte   Ptr buffer)[0])
@@ -496,7 +487,7 @@ Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
 		Case "Size_T"    value = String((Size_T Ptr buffer)[0])
 		Case "Float"     value = String((Float  Ptr buffer)[0])
 		Case "Double"    value = String((Double Ptr buffer)[0])
-	? Win32 And Ptr64
+	? Ptr64
 		Case "Float64"   value = String((Float  Ptr buffer)[0]) + "," + ..
 		                         String((Float  Ptr buffer)[1])
 		Case "Float128"  value = String((Float  Ptr buffer)[0]) + "," + ..
@@ -512,6 +503,7 @@ Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
 	? Win32	
 		Case "WParam"    value = String((WParam Ptr buffer)[0])
 		Case "LParam"    value = String((LParam Ptr buffer)[0])
+	?
 		Default
 			MemFree buffer
 			result :+ derefSymbol + derefFailure
@@ -520,7 +512,6 @@ Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
 	MemFree buffer
 	result :+ derefSymbol + "{" + value + "}"
 	?
-	
 	
 	Return result
 EndFunction

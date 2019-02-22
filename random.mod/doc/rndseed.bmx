@@ -1,20 +1,22 @@
 ' RndSeed.bmx and SeedRnd.bmx ( one example for both )
 ' Get/Set random number seed.
 
+SuperStrict
+
 SeedRnd MilliSecs()
 
-seed=RndSeed()
+local seed:int = RndSeed()
 
 Print "Initial seed="+seed
 
-For k=1 To 10
-Print Rand(10)
+For local k:int = 1 To 10
+	Print Rand(10)
 Next
 
 Print "Restoring seed"
 
 SeedRnd seed
 
-For k=1 To 10
-Print Rand(10)
+For local k:int = 1 To 10
+	Print Rand(10)
 Next

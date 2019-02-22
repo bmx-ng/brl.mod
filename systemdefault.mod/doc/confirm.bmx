@@ -1,5 +1,7 @@
 ' confirm.bmx
 
-result=Confirm("Are you sure?")
+SuperStrict
 
-print result
+Local result:Int = Confirm("Are you sure?")
+
+Print result

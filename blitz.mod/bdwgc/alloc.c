@@ -32,13 +32,12 @@
  * The call GC_allocobj(i,k) ensures that the freelist for
  * kind k objects of size i points to a non-empty
  * free list. It returns a pointer to the first entry on the free list.
- * If not using thread-local allocation, GC_allocobj may be called to
- * allocate an object of small size lb (and NORMAL kind) as follows
+ * In a single-threaded world, GC_allocobj may be called to allocate
+ * an object of small size lb (and NORMAL kind) as follows
  * (GC_generic_malloc_inner is a wrapper over GC_allocobj which also
  * fills in GC_size_map if needed):
  *
  *   lg = GC_size_map[lb];
- *   LOCK();
  *   op = GC_objfreelist[lg];
  *   if (NULL == op) {
  *     op = GC_generic_malloc_inner(lb, NORMAL);
@@ -46,7 +45,6 @@
  *     GC_objfreelist[lg] = obj_link(op);
  *     GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
  *   }
- *   UNLOCK();
  *
  * Note that this is very fast if the free list is non-empty; it should
  * only involve the execution of 4 or 5 simple instructions.
@@ -117,6 +115,9 @@ STATIC GC_bool GC_need_full_gc = FALSE;
 STATIC word GC_used_heap_size_after_full = 0;
 
 /* GC_copyright symbol is externally visible. */
+EXTERN_C_BEGIN
+extern const char * const GC_copyright[];
+EXTERN_C_END
 const char * const GC_copyright[] =
 {"Copyright 1988,1989 Hans-J. Boehm and Alan J. Demers ",
 "Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
@@ -129,6 +130,9 @@ const char * const GC_copyright[] =
 /* Version macros are now defined in gc_version.h, which is included by */
 /* gc.h, which is included by gc_priv.h.                                */
 #ifndef GC_NO_VERSION_VAR
+  EXTERN_C_BEGIN
+  extern const unsigned GC_version;
+  EXTERN_C_END
   const unsigned GC_version = ((GC_VERSION_MAJOR << 16) |
                         (GC_VERSION_MINOR << 8) | GC_VERSION_MICRO);
 #endif
@@ -226,6 +230,20 @@ GC_API GC_stop_func GC_CALL GC_get_stop_func(void)
   GC_INNER word GC_total_stacksize = 0; /* updated on every push_all_stacks */
 #endif
 
+static size_t min_bytes_allocd_minimum = 1;
+                        /* The lowest value returned by min_bytes_allocd(). */
+
+GC_API void GC_CALL GC_set_min_bytes_allocd(size_t value)
+{
+    GC_ASSERT(value > 0);
+    min_bytes_allocd_minimum = value;
+}
+
+GC_API size_t GC_CALL GC_get_min_bytes_allocd(void)
+{
+    return min_bytes_allocd_minimum;
+}
+
 /* Return the minimum number of bytes that must be allocated between    */
 /* collections to amortize the collection cost.  Should be non-zero.    */
 static word min_bytes_allocd(void)
@@ -266,7 +284,8 @@ static word min_bytes_allocd(void)
     if (GC_incremental) {
       result /= 2;
     }
-    return result > 0 ? result : 1;
+    return result > min_bytes_allocd_minimum
+            ? result : min_bytes_allocd_minimum;
 }
 
 STATIC word GC_non_gc_bytes_at_gc = 0;
@@ -550,7 +569,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 
 /*
  * Perform n units of garbage collection work.  A unit is intended to touch
- * roughly GC_RATE pages.  Every once in a while, we do more than that.
+ * roughly GC_rate pages.  Every once in a while, we do more than that.
  * This needs to be a fairly large number with our current incremental
  * GC strategy, since otherwise we allocate too much during GC, and the
  * cleanup gets expensive.
@@ -558,6 +577,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 #ifndef GC_RATE
 # define GC_RATE 10
 #endif
+
 #ifndef MAX_PRIOR_ATTEMPTS
 # define MAX_PRIOR_ATTEMPTS 1
 #endif
@@ -569,16 +589,45 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
 STATIC int GC_deficit = 0;/* The number of extra calls to GC_mark_some  */
                           /* that we have made.                         */
 
+STATIC int GC_rate = GC_RATE;
+
+GC_API void GC_CALL GC_set_rate(int value)
+{
+    GC_ASSERT(value > 0);
+    GC_rate = value;
+}
+
+GC_API int GC_CALL GC_get_rate(void)
+{
+    return GC_rate;
+}
+
+static int max_prior_attempts = MAX_PRIOR_ATTEMPTS;
+
+GC_API void GC_CALL GC_set_max_prior_attempts(int value)
+{
+    GC_ASSERT(value >= 0);
+    max_prior_attempts = value;
+}
+
+GC_API int GC_CALL GC_get_max_prior_attempts(void)
+{
+    return max_prior_attempts;
+}
+
 GC_INNER void GC_collect_a_little_inner(int n)
 {
     IF_CANCEL(int cancel_state;)
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (GC_dont_gc) return;
+
     DISABLE_CANCEL(cancel_state);
     if (GC_incremental && GC_collection_in_progress()) {
         int i;
+        int max_deficit = GC_rate * n;
 
-        for (i = GC_deficit; i < GC_RATE*n; i++) {
+        for (i = GC_deficit; i < max_deficit; i++) {
             if (GC_mark_some((ptr_t)0)) {
                 /* Need to finish a collection */
 #               ifdef SAVE_CALL_CHAIN
@@ -588,7 +637,7 @@ GC_INNER void GC_collect_a_little_inner(int n)
                     if (GC_parallel)
                       GC_wait_for_reclaim();
 #               endif
-                if (GC_n_attempts < MAX_PRIOR_ATTEMPTS
+                if (GC_n_attempts < max_prior_attempts
                     && GC_time_limit != GC_TIME_UNLIMITED) {
 #                 ifndef NO_CLOCK
                     GET_TIME(GC_start_time);
@@ -606,8 +655,11 @@ GC_INNER void GC_collect_a_little_inner(int n)
                 break;
             }
         }
-        if (GC_deficit > 0) GC_deficit -= GC_RATE*n;
-        if (GC_deficit < 0) GC_deficit = 0;
+        if (GC_deficit > 0) {
+            GC_deficit -= max_deficit;
+            if (GC_deficit < 0)
+                GC_deficit = 0;
+        }
     } else {
         GC_maybe_gc();
     }
@@ -653,7 +705,7 @@ GC_API int GC_CALL GC_collect_a_little(void)
 #endif
 
 /*
- * Assumes lock is held.  We stop the world and mark from all roots.
+ * We stop the world and mark from all roots.
  * If stop_func() ever returns TRUE, we may fail and return FALSE.
  * Increment GC_gc_no if we succeed.
  */
@@ -664,6 +716,7 @@ STATIC GC_bool GC_stopped_mark(GC_stop_func stop_func)
       CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
 #   endif
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   if !defined(REDIRECT_MALLOC) && defined(USE_WINALLOC)
         GC_add_current_malloc_heap();
 #   endif
@@ -942,6 +995,7 @@ STATIC void GC_finish_collection(void)
       CLOCK_TYPE finalize_time = 0;
 #   endif
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   if defined(GC_ASSERTIONS) \
        && defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
         /* Check that we marked some of our own data.           */
@@ -988,10 +1042,6 @@ STATIC void GC_finish_collection(void)
 #   ifndef GC_NO_FINALIZATION
       GC_finalize();
 #   endif
-#   ifdef STUBBORN_ALLOC
-      GC_clean_changing_list();
-#   endif
-
 #   ifndef NO_CLOCK
       if (GC_print_stats)
         GET_TIME(finalize_time);
@@ -1456,7 +1506,6 @@ GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
  * Make sure the object free list for size gran (in granules) is not empty.
  * Return a pointer to the first object on the free list.
  * The object MUST BE REMOVED FROM THE FREE LIST BY THE CALLER.
- * Assumes we hold the allocator lock.
  */
 GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
 {
@@ -1464,6 +1513,7 @@ GC_INNER ptr_t GC_allocobj(size_t gran, int kind)
     GC_bool tried_minor = FALSE;
     GC_bool retry = FALSE;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (gran == 0) return(0);
 
     while (*flh == 0) {

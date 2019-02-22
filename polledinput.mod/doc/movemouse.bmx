@@ -4,7 +4,9 @@
 ' by locking the mouse to the center of the screen and reporting
 ' MouseXSpeed and MouseYSpeed variables 
 
-Global MouseXSpeed,MouseYSpeed
+SuperStrict
+
+Global MouseXSpeed:Int,MouseYSpeed:Int
 
 Function SampleMouse()
 	MouseXSpeed=MouseX()-320

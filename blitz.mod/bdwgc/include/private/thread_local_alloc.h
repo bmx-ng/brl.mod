@@ -34,10 +34,7 @@
 
 #include <stdlib.h>
 
-/* Note: never put extern "C" around an #include.               */
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 #if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_WIN32_SPECIFIC) \
     && !defined(USE_WIN32_COMPILER_TLS) && !defined(USE_COMPILER_TLS) \
@@ -58,13 +55,16 @@
 # elif (defined(LINUX) && !defined(ARM32) && !defined(AVR32) \
          && GC_GNUC_PREREQ(3, 3) \
          && !(defined(__clang__) && defined(HOST_ANDROID))) \
+       || (defined(FREEBSD) && defined(__GLIBC__) /* kFreeBSD */ \
+            && GC_GNUC_PREREQ(4, 4)) \
        || (defined(HOST_ANDROID) && defined(ARM32) \
             && (GC_GNUC_PREREQ(4, 6) || GC_CLANG_PREREQ_FULL(3, 8, 256229)))
 #   define USE_COMPILER_TLS
 # elif defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) \
        || defined(GC_AIX_THREADS) || defined(GC_DARWIN_THREADS) \
        || defined(GC_FREEBSD_THREADS) || defined(GC_NETBSD_THREADS) \
-       || defined(GC_LINUX_THREADS) || defined(GC_RTEMS_PTHREADS)
+       || defined(GC_LINUX_THREADS) || defined(GC_HAIKU_THREADS) \
+       || defined(GC_RTEMS_PTHREADS)
 #   define USE_PTHREAD_SPECIFIC
 # elif defined(GC_HPUX_THREADS)
 #   ifdef __GNUC__
@@ -133,17 +133,13 @@ typedef struct thread_local_freelists {
 # define GC_remove_specific_after_fork(key, t) (void)0
   typedef void * GC_key_t;
 #elif defined(USE_WIN32_SPECIFIC)
-# ifdef __cplusplus
-    } /* extern "C" */
-# endif
 # ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN 1
 # endif
 # define NOSERVICE
+  EXTERN_C_END
 # include <windows.h>
-# ifdef __cplusplus
-    extern "C" {
-# endif
+  EXTERN_C_BEGIN
 # define GC_getspecific TlsGetValue
 # define GC_setspecific(key, v) !TlsSetValue(key, v)
         /* We assume 0 == success, msft does the opposite.      */
@@ -158,13 +154,9 @@ typedef struct thread_local_freelists {
 # define GC_remove_specific_after_fork(key, t) (void)0
   typedef DWORD GC_key_t;
 #elif defined(USE_CUSTOM_SPECIFIC)
-# ifdef __cplusplus
-    } /* extern "C" */
-# endif
+  EXTERN_C_END
 # include "private/specific.h"
-# ifdef __cplusplus
-    extern "C" {
-# endif
+  EXTERN_C_BEGIN
 #else
 # error implement me
 #endif
@@ -184,6 +176,14 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p);
 /* we take care of an individual thread freelist structure.     */
 GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p);
 
+#ifdef GC_ASSERTIONS
+  GC_bool GC_is_thread_tsd_valid(void *tsd);
+  void GC_check_tls_for(GC_tlfs p);
+# if defined(USE_CUSTOM_SPECIFIC)
+    void GC_check_tsd_marks(tsd *key);
+# endif
+#endif /* GC_ASSERTIONS */
+
 #ifndef GC_ATTR_TLS_FAST
 # define GC_ATTR_TLS_FAST /* empty */
 #endif
@@ -199,9 +199,7 @@ extern
 /* for cleanup on thread exit.  But the thread support layer makes sure */
 /* that GC_thread_key is traced, if necessary.                          */
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 #endif /* THREAD_LOCAL_ALLOC */
 

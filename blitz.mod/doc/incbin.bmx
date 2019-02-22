@@ -5,6 +5,8 @@ End Rem
 
 ' code snippet from demos/firepaint/firepaint.bmx
 
+SuperStrict
+
 Incbin "stars.png"
 
-Local stars=LoadImage( "incbin::stars.png" )
+Local stars:TImage = LoadImage( "incbin::stars.png" )

@@ -1,4 +1,5 @@
 ' currentdir.bmx
+SuperStrict
 
-cd$=currentdir()
-print "CurrentDir()="+cd$
+Local cd:String = CurrentDir()
+Print "CurrentDir()="+cd

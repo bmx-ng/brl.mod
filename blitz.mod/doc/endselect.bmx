@@ -2,9 +2,10 @@ Rem
 EndSelect marks the end of a Select block.
 End Rem
 
+SuperStrict
 SeedRnd MilliSecs()
 
-a=Rand(5)
+Local a:Int = Rand(5)
 
 Select a
 	Case 1 Print "one"

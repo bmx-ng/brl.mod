@@ -61,7 +61,7 @@ static NSWindow *keyWin;
 typedef struct AsyncOp{
 	BBAsyncOp asyncOp;
 	int asyncInfo;
-	int asyncRet;
+	size_t asyncRet;
 	BBSyncOp syncOp;
 	BBObject *syncInfo;
 }AsyncOp;
@@ -611,7 +611,7 @@ int bbOpenURL( BBString *bburl ){
 	return res;
 }
 
-void bbSystemPostSyncOp( BBSyncOp syncOp,BBObject *syncInfo,int asyncRet ){
+void bbSystemPostSyncOp( BBSyncOp syncOp,BBObject *syncInfo,size_t asyncRet ){
 	AsyncOp *p=(AsyncOp*)malloc( sizeof(AsyncOp) );
 	NSEvent *event=appDefEvent( BB_RESERVEDEVENTSUBTYPE1,(NSInteger)p,0 );
 	p->asyncOp=0;

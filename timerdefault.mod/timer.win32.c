@@ -17,7 +17,7 @@ static void timerSyncOp( BBObject *bbTimer,int timer ){
 	if( i<n_timers ) brl_timerdefault__TimerFired( bbTimer );
 }
 
-static void __stdcall timerProc( UINT timer,UINT msg,DWORD user,DWORD u1,DWORD u2 ){
+static void __stdcall timerProc( UINT timer,UINT msg,DWORD_PTR user,DWORD_PTR u1,DWORD_PTR u2 ){
 	bbSystemPostSyncOp( timerSyncOp,(BBObject*)user,timer );
 }
 
@@ -26,7 +26,7 @@ void * bbTimerStart( float hertz,BBObject *bbTimer ){
 	
 	if( n_timers==MAX_TIMERS ) return 0;
 	
-	timer=(int)timeSetEvent( 1000.0/hertz,0,timerProc,(DWORD)bbTimer,TIME_PERIODIC );
+	timer=(int)timeSetEvent( 1000.0/hertz,0,timerProc,(DWORD_PTR)bbTimer,TIME_PERIODIC );
 	if( !timer ) return 0;
 	
 	BBRETAIN( bbTimer );

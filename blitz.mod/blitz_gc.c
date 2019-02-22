@@ -61,7 +61,11 @@ void bbGCStartup( void *spTop ){
 #endif
 */
 	GC_INIT();
+#if !defined(__EMSCRIPTEN__) && !defined(__SWITCH__)
+#ifdef GC_THREADS
 	GC_allow_register_threads();
+#endif
+#endif
 	GC_set_warn_proc( gc_warn_proc );
 }
 
@@ -185,4 +189,30 @@ void bbGCRelease( BBObject *p ) {
 			GC_FREE(found);
 		}
 	}
+}
+
+int bbGCThreadIsRegistered() {
+#ifdef GC_THREADS
+	return GC_thread_is_registered();
+#else
+	return 0;
+#endif
+}
+
+int bbGCRegisterMyThread() {
+#ifdef GC_THREADS
+	struct GC_stack_base stackBase;
+	GC_get_stack_base(&stackBase);
+	return GC_register_my_thread(&stackBase);
+#else
+	return -1;
+#endif
+}
+
+int bbGCUnregisterMyThread() {
+#ifdef GC_THREADS
+	return GC_unregister_my_thread();
+#else
+	return -1;
+#endif
 }

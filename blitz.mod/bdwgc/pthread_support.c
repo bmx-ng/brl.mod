@@ -287,11 +287,6 @@ STATIC int GC_nprocs = 1;
   }
 
 # if defined(GC_ASSERTIONS)
-    void GC_check_tls_for(GC_tlfs p);
-#   if defined(USE_CUSTOM_SPECIFIC)
-      void GC_check_tsd_marks(tsd *key);
-#   endif
-
     /* Check that all thread-local free-lists are completely marked.    */
     /* Also check that thread-specific-data structures are marked.      */
     void GC_check_tls(void)
@@ -527,6 +522,7 @@ void GC_push_thread_structures(void)
 #endif /* DEBUG_THREADS */
 
 /* It may not be safe to allocate when we register the first thread.    */
+/* As "next" and "status" fields are unused, no need to push this.      */
 static struct GC_Thread_Rep first_thread;
 
 /* Add a thread to GC_threads.  We assume it wasn't already there.      */
@@ -549,6 +545,7 @@ STATIC GC_thread GC_new_thread(pthread_t id)
     if (!EXPECT(first_thread_used, TRUE)) {
         result = &first_thread;
         first_thread_used = TRUE;
+        GC_ASSERT(NULL == GC_threads[hv]);
 #       if defined(THREAD_SANITIZER) && defined(CPPCHECK)
           GC_noop1(result->dummy[0]);
 #       endif
@@ -568,6 +565,8 @@ STATIC GC_thread GC_new_thread(pthread_t id)
       GC_nacl_initialize_gc_thread();
 #   endif
     GC_ASSERT(result -> flags == 0 && result -> thread_blocked == 0);
+    if (EXPECT(result != &first_thread, TRUE))
+      GC_dirty(result);
     return(result);
 }
 
@@ -577,8 +576,8 @@ STATIC GC_thread GC_new_thread(pthread_t id)
 STATIC void GC_delete_thread(pthread_t id)
 {
     int hv = THREAD_TABLE_INDEX(id);
-    register GC_thread p = GC_threads[hv];
-    register GC_thread prev = 0;
+    GC_thread p = GC_threads[hv];
+    GC_thread prev = NULL;
 
 #   ifdef DEBUG_THREADS
       GC_log_printf("Deleting thread %p, n_threads = %d\n",
@@ -598,7 +597,9 @@ STATIC void GC_delete_thread(pthread_t id)
     if (prev == 0) {
         GC_threads[hv] = p -> next;
     } else {
+        GC_ASSERT(prev != &first_thread);
         prev -> next = p -> next;
+        GC_dirty(prev);
     }
     if (p != &first_thread) {
 #     ifdef GC_DARWIN_THREADS
@@ -616,8 +617,8 @@ STATIC void GC_delete_gc_thread(GC_thread t)
 {
     pthread_t id = t -> id;
     int hv = THREAD_TABLE_INDEX(id);
-    register GC_thread p = GC_threads[hv];
-    register GC_thread prev = 0;
+    GC_thread p = GC_threads[hv];
+    GC_thread prev = NULL;
 
     GC_ASSERT(I_HOLD_LOCK());
     while (p != t) {
@@ -627,7 +628,9 @@ STATIC void GC_delete_gc_thread(GC_thread t)
     if (prev == 0) {
         GC_threads[hv] = p -> next;
     } else {
+        GC_ASSERT(prev != &first_thread);
         prev -> next = p -> next;
+        GC_dirty(prev);
     }
 #   ifdef GC_DARWIN_THREADS
         mach_port_deallocate(mach_task_self(), p->stop_info.mach_thread);
@@ -1170,8 +1173,6 @@ static void fork_child_proc(void)
 
 #ifdef INCLUDE_LINUX_THREAD_DESCR
   __thread int GC_dummy_thread_local;
-  GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr,
-                                        ptr_t *startp, ptr_t *endp);
 #endif
 
 #ifdef PARALLEL_MARK
@@ -1510,7 +1511,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
                 "Called GC_unregister_my_thread on %p, gc_thread = %p\n",
                 (void *)self, (void *)me);
 #   endif
-    GC_ASSERT(me->id == self);
+    GC_ASSERT(THREAD_EQUAL(me->id, self));
     GC_unregister_my_thread_inner(me);
     RESTORE_CANCEL(cancel_state);
     UNLOCK();
@@ -1726,6 +1727,11 @@ GC_API int GC_CALL GC_register_my_thread(const struct GC_stack_base *sb)
     } else if ((me -> flags & FINISHED) != 0) {
         /* This code is executed when a thread is registered from the   */
         /* client thread key destructor.                                */
+#       ifdef GC_DARWIN_THREADS
+          /* Reinitialize mach_thread to avoid thread_suspend fail      */
+          /* with MACH_SEND_INVALID_DEST error.                         */
+          me -> stop_info.mach_thread = mach_thread_self();
+#       endif
         GC_record_stack_base(me, sb);
         me -> flags &= ~FINISHED; /* but not DETACHED */
 #       ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
@@ -1786,12 +1792,9 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     return me;
 }
 
-GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
-                                        struct GC_stack_base *sb, void *arg);
-                                        /* defined in pthread_start.c   */
-
-STATIC void * GC_start_routine(void * arg)
-{
+#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+  STATIC void * GC_start_routine(void * arg)
+  {
 #   ifdef INCLUDE_LINUX_THREAD_DESCR
       struct GC_stack_base sb;
 
@@ -1811,9 +1814,8 @@ STATIC void * GC_start_routine(void * arg)
 #   else
       return GC_call_with_stack_base(GC_inner_start_routine, arg);
 #   endif
-}
+  }
 
-#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
   GC_API int WRAP_FUNC(pthread_create)(pthread_t *new_thread,
                        GC_PTHREAD_CREATE_CONST pthread_attr_t *attr,
                        void *(*start_routine)(void *), void *arg)
@@ -1908,6 +1910,10 @@ STATIC void * GC_start_routine(void * arg)
         DISABLE_CANCEL(cancel_state);
                 /* pthread_create is not a cancellation point. */
         while (0 != sem_wait(&(si -> registered))) {
+#           if defined(GC_HAIKU_THREADS)
+              /* To workaround some bug in Haiku semaphores. */
+              if (EACCES == errno) continue;
+#           endif
             if (EINTR != errno) ABORT("sem_wait failed");
         }
         RESTORE_CANCEL(cancel_state);
@@ -2009,16 +2015,12 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
 
 #endif /* !USE_SPIN_LOCK || ... */
 
-#if defined(THREAD_SANITIZER) \
-    && (defined(USE_SPIN_LOCK) || !defined(NO_PTHREAD_TRYLOCK))
+#ifdef AO_HAVE_char_load
+# define is_collecting() \
+                ((GC_bool)AO_char_load((unsigned char *)&GC_collecting))
+#else
   /* GC_collecting is a hint, a potential data race between     */
   /* GC_lock() and ENTER/EXIT_GC() is OK to ignore.             */
-  GC_ATTR_NO_SANITIZE_THREAD
-  static GC_bool is_collecting(void)
-  {
-    return GC_collecting;
-  }
-#else
 # define is_collecting() GC_collecting
 #endif
 
@@ -2032,25 +2034,14 @@ GC_INNER volatile AO_TS_t GC_allocate_lock = AO_TS_INITIALIZER;
 
 # define low_spin_max 30 /* spin cycles if we suspect uniprocessor  */
 # define high_spin_max SPIN_MAX /* spin cycles for multiprocessor   */
-  static unsigned spin_max = low_spin_max;
-  static unsigned last_spins = 0;
 
-  /* A potential data race between threads invoking GC_lock which reads */
-  /* and updates spin_max and last_spins could be ignored because these */
-  /* variables are hints only.  (Atomic getters and setters are avoided */
-  /* here for performance reasons.)                                     */
-  GC_ATTR_NO_SANITIZE_THREAD
-  static void set_last_spins_and_high_spin_max(unsigned new_last_spins)
-  {
-    last_spins = new_last_spins;
-    spin_max = high_spin_max;
-  }
-
-  GC_ATTR_NO_SANITIZE_THREAD
-  static void reset_spin_max(void)
-  {
-    spin_max = low_spin_max;
-  }
+  static volatile AO_t spin_max = low_spin_max;
+  static volatile AO_t last_spins = 0;
+                                /* A potential data race between        */
+                                /* threads invoking GC_lock which reads */
+                                /* and updates spin_max and last_spins  */
+                                /* could be ignored because these       */
+                                /* variables are hints only.            */
 
 GC_INNER void GC_lock(void)
 {
@@ -2061,8 +2052,8 @@ GC_INNER void GC_lock(void)
     if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {
         return;
     }
-    my_spin_max = spin_max;
-    my_last_spins = last_spins;
+    my_spin_max = (unsigned)AO_load(&spin_max);
+    my_last_spins = (unsigned)AO_load(&last_spins);
     for (i = 0; i < my_spin_max; i++) {
         if (is_collecting() || GC_nprocs == 1)
           goto yield;
@@ -2077,12 +2068,13 @@ GC_INNER void GC_lock(void)
              * against the other process with which we were contending.
              * Thus it makes sense to spin longer the next time.
              */
-            set_last_spins_and_high_spin_max(i);
+            AO_store(&last_spins, (AO_t)i);
+            AO_store(&spin_max, (AO_t)high_spin_max);
             return;
         }
     }
     /* We are probably being scheduled against the other process.  Sleep. */
-    reset_spin_max();
+    AO_store(&spin_max, (AO_t)low_spin_max);
 yield:
     for (i = 0;; ++i) {
         if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_CLEAR) {
@@ -2283,10 +2275,13 @@ GC_INNER void GC_notify_all_marker(void)
 
 #ifdef PTHREAD_REGISTER_CANCEL_WEAK_STUBS
   /* Workaround "undefined reference" linkage errors on some targets. */
-  void __pthread_register_cancel() __attribute__((__weak__));
-  void __pthread_unregister_cancel() __attribute__((__weak__));
-  void __pthread_register_cancel() {}
-  void __pthread_unregister_cancel() {}
+  EXTERN_C_BEGIN
+  extern void __pthread_register_cancel(void) __attribute__((__weak__));
+  extern void __pthread_unregister_cancel(void) __attribute__((__weak__));
+  EXTERN_C_END
+
+  void __pthread_register_cancel(void) {}
+  void __pthread_unregister_cancel(void) {}
 #endif
 
 #endif /* GC_PTHREADS */

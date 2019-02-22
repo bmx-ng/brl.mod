@@ -399,7 +399,6 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
 
 #             ifdef ENABLE_DISCLAIM
                 if (EXPECT(hhdr->hb_flags & HAS_DISCLAIM, 0)) {
-                  struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
                   if ((*ok->ok_disclaim_proc)(hbp)) {
                     /* Not disclaimed => resurrect the object. */
                     set_mark_bit_from_hdr(hhdr, 0);
@@ -486,13 +485,13 @@ struct Print_stats
 
 /* Return the number of set mark bits in the given header.      */
 /* Remains externally visible as used by GNU GCJ currently.     */
-int GC_n_set_marks(hdr *hhdr)
+unsigned GC_n_set_marks(hdr *hhdr)
 {
-    int result = 0;
-    int i;
+    unsigned result = 0;
+    word i;
     word sz = hhdr -> hb_sz;
-    int offset = (int)MARK_BIT_OFFSET(sz);
-    int limit = (int)FINAL_MARK_BIT(sz);
+    word offset = MARK_BIT_OFFSET(sz);
+    word limit = FINAL_MARK_BIT(sz);
 
     for (i = 0; i < limit; i += offset) {
         result += hhdr -> hb_marks[i];
@@ -504,10 +503,10 @@ int GC_n_set_marks(hdr *hhdr)
 #else
 
 /* Number of set bits in a word.  Not performance critical.     */
-static int set_bits(word n)
+static unsigned set_bits(word n)
 {
     word m = n;
-    int result = 0;
+    unsigned result = 0;
 
     while (m > 0) {
         if (m & 1) result++;
@@ -516,13 +515,13 @@ static int set_bits(word n)
     return(result);
 }
 
-int GC_n_set_marks(hdr *hhdr)
+unsigned GC_n_set_marks(hdr *hhdr)
 {
-    int result = 0;
-    int i;
-    int n_mark_words;
+    unsigned result = 0;
+    word i;
+    word n_mark_words;
 #   ifdef MARK_BIT_PER_OBJ
-      int n_objs = (int)HBLK_OBJS(hhdr -> hb_sz);
+      word n_objs = HBLK_OBJS(hhdr -> hb_sz);
 
       if (0 == n_objs) n_objs = 1;
       n_mark_words = divWORDSZ(n_objs + WORDSZ - 1);
@@ -538,7 +537,7 @@ int GC_n_set_marks(hdr *hhdr)
 #   else
       result += set_bits(hhdr -> hb_marks[n_mark_words - 1]);
 #   endif
-    return(result - 1);
+    return result; /* the number of set bits excluding the one past the end */
 }
 
 #endif /* !USE_MARK_BYTES  */
@@ -738,7 +737,8 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
                 }
                 hhdr = HDR(hbp);
                 *rlh = hhdr -> hb_next;
-                if (!ignore_old || hhdr -> hb_last_reclaimed == GC_gc_no - 1) {
+                if (!ignore_old
+                    || (word)hhdr->hb_last_reclaimed == GC_gc_no - 1) {
                     /* It's likely we'll need it this time, too */
                     /* It's been touched recently, so this      */
                     /* shouldn't trigger paging.                */

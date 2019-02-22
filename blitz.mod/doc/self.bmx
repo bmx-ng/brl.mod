@@ -2,27 +2,29 @@ Rem
 Self is used in BlitzMax Methods to reference the invoking variable.
 End Rem
 
+SuperStrict
+
 Type MyClass
-	Global	count	
-	Field	id
+	Global count:Int
+	Field id:Int
 	
-	Method new()
+	Method New()
 		id=count
 		count:+1
-		ClassList.AddLast(self)	'adds this new instance to a global list		
+		ClassList.AddLast(Self)	'adds this new instance to a global list		
 	End Method
 End Type
 
 Global ClassList:TList
 
-classlist=new TList
+classlist=New TList
 
-local c:MyClass
+Local c:MyClass
 
-c=new MyClass
-c=new MyClass
-c=new MyClass
+c=New MyClass
+c=New MyClass
+c=New MyClass
 
-for c=eachin ClassList
-	print c.id
-next
+For c=EachIn ClassList
+	Print c.id
+Next

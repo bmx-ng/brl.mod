@@ -5,6 +5,8 @@
 ' floats listed as 3 pairs of x,y
 ' coordinates
 
+SuperStrict
+
 Local tri#[]=[0.0,0.0,100.0,100.0,0.0,100.0]
 
 Graphics 640,480

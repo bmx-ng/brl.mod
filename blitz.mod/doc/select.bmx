@@ -2,7 +2,9 @@ Rem
 Select begins a block featuring a sequence of multiple comparisons with a single value.
 End Rem
 
-a=Int( Input("Enter Your Country Code ") )
+SuperStrict
+
+Local a:Int = Int( Input("Enter Your Country Code ") )
 
 Select a
 	Case 1

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2016 Bruce A Henderson
+  Copyright (c) 2018 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -562,6 +562,16 @@ void bmx_stringbuilder_append_sizet(struct MaxStringBuilder * buf, BBSIZET value
 }
 
 #endif
+
+void bmx_stringbuilder_append_shorts(struct MaxStringBuilder * buf, short * shorts, int length) {
+	if (length > 0) {
+		bmx_stringbuilder_resize(buf, buf->count + length);
+		BBChar * p = buf->buffer + buf->count;
+		memcpy(p, shorts, length * sizeof(BBChar));
+		
+		buf->count += length;
+	}	
+}
 
 BBString * bmx_stringbuilder_left(struct MaxStringBuilder * buf, int length) {
 	if (length <= 0) {

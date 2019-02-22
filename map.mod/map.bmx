@@ -6,12 +6,14 @@ bbdoc: Data structures/Maps
 End Rem
 Module BRL.Map
 
-ModuleInfo "Version: 1.08"
+ModuleInfo "Version: 1.09"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.09"
+ModuleInfo "History: Added index operator overloads to maps."
 ModuleInfo "History: 1.08"
 ModuleInfo "History: Added TStringMap."
 ModuleInfo "History: (Debug) Assertion on modification during iteration."
@@ -186,6 +188,9 @@ End Type
 
 '***** PUBLIC *****
 
+Rem
+bbdoc: An key/value (Object/Object) map backed by a Red/Black tree.
+End Rem
 Type TMap
 
 ?Not Threaded
@@ -193,6 +198,10 @@ Type TMap
 		Clear
 	End Method
 ?
+	Rem
+	bbdoc: Clears the map.
+	about: Removes all keys and values.
+	End Rem
 	Method Clear()
 		If _root=nil Return
 		_root.Clear
@@ -202,10 +211,18 @@ Type TMap
 ?
 	End Method
 	
+	Rem
+	bbdoc: Checks if the map is empty.
+	about: #True if @map is empty, otherwise #False.
+	End Rem
 	Method IsEmpty()
 		Return _root=nil
 	End Method
 	
+	Rem
+	bbdoc: Inserts a key/value pair into the map.
+	about: If the map already contains @key, its value is overwritten with @value. 
+	End Rem
 	Method Insert( key:Object,value:Object )
 
 		Assert key Else "Can't insert Null key into map"
@@ -248,15 +265,28 @@ Type TMap
 		_InsertFixup node
 	End Method
 	
+	Rem
+	bbdoc: Checks if the map contains @key.
+	returns: #True if the map contains @key.
+	End Rem
 	Method Contains( key:Object )
 		Return _FindNode( key )<>nil
 	End Method
 
+	Rem
+	bbdoc: Finds a value given a @key.
+	returns: The value associated with @key.
+	about: If the map does not contain @key, a #Null object is returned.
+	End Rem
 	Method ValueForKey:Object( key:Object )
 		Local node:TNode=_FindNode( key )
 		If node<>nil Return node._value
 	End Method
 	
+	Rem
+	bbdoc: Remove a key/value pair from the map.
+	returns: #True if @key was removed, or #False otherwise.
+	End Rem
 	Method Remove( key:Object )
 		Local node:TNode=_FindNode( key )
 		If node=nil Return 0
@@ -267,6 +297,11 @@ Type TMap
 		Return 1
 	End Method
 	
+	Rem
+	bbdoc: Gets the map keys.
+	returns: An enumeration object
+	about: The object returned by #Keys can be used with #EachIn to iterate through the keys in the map.
+	End Rem
 	Method Keys:TMapEnumerator()
 		Local nodeenum:TNodeEnumerator=New TKeyEnumerator
 		nodeenum._node=_FirstNode()
@@ -279,6 +314,11 @@ Type TMap
 		Return mapenum
 	End Method
 	
+	Rem
+	bbdoc: Get the map values.
+	returns: An enumeration object.
+	about: The object returned by #Values can be used with #EachIn to iterate through the values in the map.
+	End Rem
 	Method Values:TMapEnumerator()
 		Local nodeenum:TNodeEnumerator=New TValueEnumerator
 		nodeenum._node=_FirstNode()
@@ -291,15 +331,22 @@ Type TMap
 		Return mapenum
 	End Method
 	
+	Rem
+	bbdoc: Returns a copy the contents of this map.
+	End Rem
 	Method Copy:TMap()
 		Local map:TMap=New TMap
 		'avoid copying an empty map (_root = nil there), else it borks "eachin"
-		if _root <> nil
+		If _root <> nil
 			map._root=_root.Copy( nil )
-		endif
+		EndIf
 		Return map
 	End Method
 
+	Rem
+	bbdoc: Returns a node enumeration Object.
+	about: The object returned by #ObjectEnumerator can be used with #EachIn to iterate through the nodes in the map.
+	End Rem
 	Method ObjectEnumerator:TNodeEnumerator()
 		Local nodeenum:TNodeEnumerator=New TNodeEnumerator
 		nodeenum._node=_FirstNode()
@@ -519,7 +566,24 @@ Type TMap
 		Wend
 		node._color=BLACK
 	End Method
+
+	Rem
+	bbdoc: Finds a value given a @key using index syntax.
+	returns: The value associated with @key.
+	about: If the map does not contain @key, a #Null object is returned.
+	End Rem
+	Method Operator[]:Object(key:Object)
+		Return ValueForKey(key)
+	End Method
 	
+	Rem
+	bbdoc: Inserts a key/value pair into the map using index syntax.
+	about: If the map already contains @key, its value is overwritten with @value. 
+	End Rem
+	Method Operator[]=(key:Object, value:Object)
+		Insert(key, value)
+	End Method
+
 	Const RED=-1,BLACK=1
 	
 	Field _root:TNode=nil
@@ -530,7 +594,7 @@ Type TMap
 End Type
 
 Rem
-bbdoc: Create a map
+bbdoc: Creates a map
 returns: A new map object
 End Rem
 Function CreateMap:TMap()
@@ -538,7 +602,7 @@ Function CreateMap:TMap()
 End Function
 
 Rem
-bbdoc: Clear a map
+bbdoc: Clears a map
 about:
 #ClearMap removes all keys and values from @map
 End Rem
@@ -547,7 +611,7 @@ Function ClearMap( map:TMap )
 End Function
 
 Rem
-bbdoc: Check if a map is empty
+bbdoc: Checks if a map is empty
 returns: True if @map is empty, otherwise false
 End Rem
 Function MapIsEmpty( map:TMap )
@@ -555,7 +619,7 @@ Function MapIsEmpty( map:TMap )
 End Function
 
 Rem
-bbdoc: Insert a key/value pair into a map
+bbdoc: Inserts a key/value pair into a map
 about:
 If @map already contained @key, it's value is overwritten with @value. 
 End Rem
@@ -564,7 +628,7 @@ Function MapInsert( map:TMap,key:Object,value:Object )
 End Function
 
 Rem
-bbdoc: Find a value given a key
+bbdoc: Finds a value given a key
 returns: The value associated with @key
 about:
 If @map does not contain @key, a #Null object is returned.
@@ -574,7 +638,7 @@ Function MapValueForKey:Object( map:TMap,key:Object )
 End Function
 
 Rem
-bbdoc: Check if a map contains a key
+bbdoc: Checks if a map contains a key
 returns: True if @map contains @key
 End Rem
 Function MapContains( map:TMap,key:Object )
@@ -582,14 +646,14 @@ Function MapContains( map:TMap,key:Object )
 End Function
 
 Rem
-bbdoc: Remove a key/value pair from a map
+bbdoc: Removes a key/value pair from a map
 End Rem
 Function MapRemove( map:TMap,key:Object )
 	map.Remove key
 End Function
 
 Rem
-bbdoc: Get map keys
+bbdoc: Gets map keys
 returns: An iterator object
 about:
 The object returned by #MapKeys can be used with #EachIn to iterate through 
@@ -600,7 +664,7 @@ Function MapKeys:TMapEnumerator( map:TMap )
 End Function
 
 Rem
-bbdoc: Get map values
+bbdoc: Gets map values
 returns: An iterator object
 about:
 The object returned by #MapValues can be used with #EachIn to iterate through 
@@ -611,7 +675,7 @@ Function MapValues:TMapEnumerator( map:TMap )
 End Function
 
 Rem
-bbdoc: Copy a map
+bbdoc: Copies a map
 returns: A copy of @map
 End Rem
 Function CopyMap:TMap( map:TMap )

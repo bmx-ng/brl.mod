@@ -1,9 +1,9 @@
-Rem
-CueSound example
-End Rem
+' CueSound example
 
-sound=LoadSound("shoot.wav")
-channel=CueSound(sound)
+SuperStrict
+
+Local sound:TSound = LoadSound("shoot.wav")
+Local channel:TChannel = CueSound(sound)
 
 Input "Press return key to play cued sound"
 

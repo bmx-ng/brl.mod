@@ -2,6 +2,8 @@ Rem
 Extern marks the beginning of an external list of function declarations.
 End Rem
 
+SuperStrict
+
 Extern 
 	Function puts( str$z )
 	Function my_puts( str$z )="puts"

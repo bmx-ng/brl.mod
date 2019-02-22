@@ -2,10 +2,12 @@ Rem
 Public makes a variable, function or method accessible from outside the current source file (default).
 End Rem
 
+SuperStrict
+
 Public
 
-Global	Score,Lives,Health
+Global Score:Int,Lives:Int,Health:Int
 
 Private
 
-Global	posx,posy,posz
+Global posx:Int,posy:Int,posz:Int

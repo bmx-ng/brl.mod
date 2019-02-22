@@ -106,10 +106,6 @@ STATIC size_t GC_avail_descr = 0;       /* Next available slot.         */
 STATIC int GC_typed_mark_proc_index = 0; /* Indices of my mark          */
 STATIC int GC_array_mark_proc_index = 0; /* procedures.                 */
 
-#if defined(GC_FORCE_INCLUDE_ATOMIC_OPS) || defined(GC_BUILTIN_ATOMIC)
-# include "private/gc_atomic_ops.h"
-#endif
-
 #ifdef AO_HAVE_load_acquire
   STATIC volatile AO_t GC_explicit_typing_initialized = FALSE;
 #else
@@ -141,7 +137,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
         word ed_size = GC_ed_size;
 
         if (ed_size == 0) {
-            GC_ASSERT((word)&GC_ext_descriptors % sizeof(word) == 0);
+            GC_ASSERT((word)(&GC_ext_descriptors) % sizeof(word) == 0);
             GC_push_typed_structures = GC_push_typed_structures_proc;
             UNLOCK();
             new_size = ED_INITIAL_SIZE;
@@ -329,6 +325,9 @@ GC_make_sequence_descriptor(complex_descriptor *first,
         result -> sd_tag = SEQUENCE_TAG;
         result -> sd_first = first;
         result -> sd_second = second;
+        GC_dirty(result);
+        REACHABLE_AFTER_DIRTY(first);
+        REACHABLE_AFTER_DIRTY(second);
     }
     return((complex_descriptor *)result);
 }
@@ -427,15 +426,15 @@ STATIC word GC_descr_obj_size(complex_descriptor *d)
 STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
                                         mse *msp, mse *msl)
 {
-    register ptr_t current = (ptr_t) addr;
-    register word nelements;
-    register word sz;
-    register word i;
+    ptr_t current = (ptr_t)addr;
+    word nelements;
+    word sz;
+    word i;
 
     switch(d -> TAG) {
       case LEAF_TAG:
         {
-          register GC_descr descr = d -> ld.ld_descriptor;
+          GC_descr descr = d -> ld.ld_descriptor;
 
           nelements = d -> ld.ld_nelements;
           if (msl - msp <= (ptrdiff_t)nelements) return(0);
@@ -450,7 +449,7 @@ STATIC mse * GC_push_complex_descriptor(word *addr, complex_descriptor *d,
         }
       case ARRAY_TAG:
         {
-          register complex_descriptor *descr = d -> ad.ad_element_descr;
+          complex_descriptor *descr = d -> ad.ad_element_descr;
 
           nelements = d -> ad.ad_nelements;
           sz = GC_descr_obj_size(descr);
@@ -606,6 +605,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     /* the former might be updated asynchronously.                      */
     lg = BYTES_TO_GRANULES(GC_size(op));
     op[GRANULES_TO_WORDS(lg) - 1] = d;
+    GC_dirty(op + GRANULES_TO_WORDS(lg) - 1);
+    REACHABLE_AFTER_DIRTY(d);
     return op;
 }
 
@@ -625,8 +626,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
     if (SMALL_OBJ(lb)) {
         GC_DBG_COLLECT_AT_MALLOC(lb);
-        lg = GC_size_map[lb];
         LOCK();
+        lg = GC_size_map[lb];
         op = GC_eobjfreelist[lg];
         if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
@@ -640,15 +641,15 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
             GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
             UNLOCK();
         }
-        ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
-   } else {
-       op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
-       if (op != NULL) {
-         lg = BYTES_TO_GRANULES(GC_size(op));
-         ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
-       }
-   }
-   return op;
+    } else {
+        op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
+        if (NULL == op) return NULL;
+        lg = BYTES_TO_GRANULES(GC_size(op));
+    }
+    ((word *)op)[GRANULES_TO_WORDS(lg) - 1] = d;
+    GC_dirty(op + GRANULES_TO_WORDS(lg) - 1);
+    REACHABLE_AFTER_DIRTY(d);
+    return op;
 }
 
 GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
@@ -701,6 +702,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
         size_t lw = GRANULES_TO_WORDS(lg);
 
         op[lw - 1] = (word)complex_descr;
+        GC_dirty(op + lw - 1);
+        REACHABLE_AFTER_DIRTY(complex_descr);
+
         /* Make sure the descriptor is cleared once there is any danger */
         /* it may have been collected.                                  */
         if (EXPECT(GC_general_register_disappearing_link(

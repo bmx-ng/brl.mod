@@ -2,16 +2,18 @@ Rem
 Float is a 32 bit floating point BlitzMax primitive type.
 End Rem
 
-Local a:float
+SuperStrict
+
+Local a:Float
 
 a=1
 
-for i=1 to 8
-	print a
+For Local i:Int = 1 To 8
+	Print a
 	a=a*0.1
-next
+Next
 
-for i=1 to 8
+For Local i:Int = 1 To 8
 	a=a*10
-	print a
-next
+	Print a
+Next

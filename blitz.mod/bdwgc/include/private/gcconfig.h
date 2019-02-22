@@ -37,8 +37,14 @@
 /* around #includes.  Types and macros do not need such wrapping, only  */
 /* the declared global data and functions.                              */
 #ifdef __cplusplus
-  extern "C" {
+# define EXTERN_C_BEGIN extern "C" {
+# define EXTERN_C_END } /* extern "C" */
+#else
+# define EXTERN_C_BEGIN /* empty */
+# define EXTERN_C_END /* empty */
 #endif
+
+EXTERN_C_BEGIN
 
 /* Convenient internal macro to test version of Clang.  */
 #if defined(__clang__) && defined(__clang_major__)
@@ -125,13 +131,9 @@
 /* And one for Darwin: */
 # if defined(macosx) || (defined(__APPLE__) && defined(__MACH__))
 #   define DARWIN
-#   ifdef __cplusplus
-      } /* extern "C" */
-#   endif
+    EXTERN_C_END
 #   include <TargetConditionals.h>
-#   ifdef __cplusplus
-      extern "C" {
-#   endif
+    EXTERN_C_BEGIN
 # endif
 
 /* Determine the machine type: */
@@ -147,7 +149,7 @@
 # if defined(__aarch64__)
 #    define AARCH64
 #    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD) \
-        && !defined(NN_BUILD_TARGET_PLATFORM_NX)
+        && !defined(NETBSD) && !defined(NN_BUILD_TARGET_PLATFORM_NX)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -159,7 +161,6 @@
 #    elif !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
           && !defined(OPENBSD) && !defined(DARWIN) && !defined(_WIN32) \
           && !defined(__CEGCC__) && !defined(NN_PLATFORM_CTR) \
-          && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
           && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2) \
           && !defined(SYMBIAN)
 #      define NOSYS
@@ -199,6 +200,10 @@
 # endif
 # if defined(NETBSD) && (defined(__arm32__) || defined(__arm__))
 #    define ARM32
+#    define mach_type_known
+# endif
+# if defined(NETBSD) && defined(__aarch64__)
+#    define AARCH64
 #    define mach_type_known
 # endif
 # if defined(NETBSD) && defined(__sh__)
@@ -276,13 +281,9 @@
 # endif
 # if (defined(sun) || defined(__sun)) && (defined(sparc) || defined(__sparc))
             /* Test for SunOS 5.x */
-#   ifdef __cplusplus
-      } /* extern "C" */
-#   endif
+    EXTERN_C_END
 #   include <errno.h>
-#   ifdef __cplusplus
-      extern "C" {
-#   endif
+    EXTERN_C_BEGIN
 #   define SPARC
 #   define SOLARIS
 #   define mach_type_known
@@ -335,7 +336,7 @@
 #    define HAIKU
 #    define mach_type_known
 # endif
-# if defined(__HAIKU__) && defined(__amd64__)
+# if defined(__HAIKU__) && (defined(__amd64__) || defined(__x86_64__))
 #    define X86_64
 #    define HAIKU
 #    define mach_type_known
@@ -549,7 +550,9 @@
 #     ifdef _XBOX_ONE
 #       define MSWIN_XBOX1
 #     else
-#       define MSWIN32  /* or Win64 */
+#       ifndef MSWIN32
+#         define MSWIN32 /* or Win64 */
+#       endif
 #       if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
 #         define MSWINRT_FLAVOR
 #       endif
@@ -648,6 +651,10 @@
 #   else
 #     define TILEPRO
 #   endif
+#   define mach_type_known
+# endif
+# if defined(__riscv) && defined(LINUX)
+#   define RISCV
 #   define mach_type_known
 # endif
 
@@ -922,13 +929,9 @@
 #       define MPROTECT_VDB
 #       ifdef __ELF__
 #         define DYNAMIC_LOADING
-#         ifdef __cplusplus
-            } /* extern "C" */
-#         endif
+          EXTERN_C_END
 #         include <features.h>
-#         ifdef __cplusplus
-            extern "C" {
-#         endif
+          EXTERN_C_BEGIN
 #         if defined(__GLIBC__) && __GLIBC__ >= 2
 #           define SEARCH_FOR_DATA_START
 #         else /* !GLIBC2 */
@@ -959,13 +962,9 @@
 #   endif
 #   ifdef MACOS
 #     ifndef __LOWMEM__
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <LowMem.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
 #     endif
 #     define OS_TYPE "MACOS"
                 /* see os_dep.c for details of global data segments. */
@@ -987,13 +986,9 @@
 #   ifdef MACOS
 #     define ALIGNMENT 2  /* Still necessary?  Could it be 4?   */
 #     ifndef __LOWMEM__
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <LowMem.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
 #     endif
 #     define OS_TYPE "MACOS"
                         /* see os_dep.c for details of global data segments. */
@@ -1047,13 +1042,9 @@
 #     define DATAEND   ((ptr_t)get_end())
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
-#     ifdef __cplusplus
-        } /* extern "C" */
-#     endif
+      EXTERN_C_END
 #     include <unistd.h>
-#     ifdef __cplusplus
-        extern "C" {
-#     endif
+      EXTERN_C_BEGIN
 #     define GETPAGESIZE() (unsigned)getpagesize()
 #     if defined(USE_PPC_PREFETCH) && defined(__GNUC__)
         /* The performance impact of prefetches is untested */
@@ -1070,14 +1061,10 @@
 #     define OS_TYPE "OPENBSD"
 #     define ALIGNMENT 4
 #     ifndef GC_OPENBSD_THREADS
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
         /* USRSTACK is defined in <machine/vmparam.h> but that is       */
         /* protected by _KERNEL in <uvm/uvm_param.h> file.              */
 #       ifdef USRSTACK
@@ -1253,14 +1240,10 @@
         /* Apparently USRSTACK is defined to be USERLIMIT, but in some  */
         /* installations that's undefined.  We work around this with a  */
         /* gross hack:                                                  */
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <sys/vmparam.h>
 #       include <unistd.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
 #       ifdef USERLIMIT
           /* This should work everywhere, but doesn't.  */
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
@@ -1305,14 +1288,10 @@
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
 #       ifdef USRSTACK
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
 #       else
@@ -1378,13 +1357,9 @@
 #   endif
 #   ifdef HAIKU
 #     define OS_TYPE "HAIKU"
-#     ifdef __cplusplus
-        } /* extern "C" */
-#     endif
+      EXTERN_C_END
 #     include <OS.h>
-#     ifdef __cplusplus
-        extern "C" {
-#     endif
+      EXTERN_C_BEGIN
 #     define GETPAGESIZE() (unsigned)B_PAGE_SIZE
       extern int etext[];
 #     define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
@@ -1406,13 +1381,9 @@
         /* Apparently USRSTACK is defined to be USERLIMIT, but in some  */
         /* installations that's undefined.  We work around this with a  */
         /* gross hack:                                                  */
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <sys/vmparam.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
 #       ifdef USERLIMIT
           /* This should work everywhere, but doesn't.  */
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
@@ -1465,13 +1436,9 @@
 #       define DATAEND ((ptr_t)(&_end))
 #       define STACK_GROWS_DOWN
 #       define HEURISTIC2
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <unistd.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
 #       define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 #       define DYNAMIC_LOADING
 #       ifndef USE_MMAP
@@ -1495,13 +1462,9 @@
                 /* thus allowing the heap to grow to ~3GB               */
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
-#           ifdef __cplusplus
-              } /* extern "C" */
-#           endif
+            EXTERN_C_END
 #           include <features.h>
-#           ifdef __cplusplus
-              extern "C" {
-#           endif
+            EXTERN_C_BEGIN
 #            if defined(__GLIBC__) && __GLIBC__ >= 2 \
                 || defined(HOST_ANDROID) || defined(HOST_TIZEN)
 #                define SEARCH_FOR_DATA_START
@@ -1557,13 +1520,9 @@
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* Workaround lock elision implementation for some glibc.     */
 #         define GLIBC_2_19_TSX_BUG
-#         ifdef __cplusplus
-            } /* extern "C" */
-#         endif
+          EXTERN_C_END
 #         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
-#         ifdef __cplusplus
-            extern "C" {
-#         endif
+          EXTERN_C_BEGIN
 #       endif
 #   endif
 #   ifdef CYGWIN32
@@ -1598,13 +1557,9 @@
 #   endif
 #   ifdef DJGPP
 #       define OS_TYPE "DJGPP"
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include "stubinfo.h"
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
         extern int etext[];
         extern int _stklen;
         extern int __djgpp_stack_limit;
@@ -1616,14 +1571,10 @@
 #   ifdef OPENBSD
 #       define OS_TYPE "OPENBSD"
 #       ifndef GC_OPENBSD_THREADS
-#         ifdef __cplusplus
-            } /* extern "C" */
-#         endif
+          EXTERN_C_END
 #         include <sys/param.h>
 #         include <uvm/uvm_extern.h>
-#         ifdef __cplusplus
-            extern "C" {
-#         endif
+          EXTERN_C_BEGIN
 #         ifdef USRSTACK
 #           define STACKBOTTOM ((ptr_t)USRSTACK)
 #         else
@@ -1685,13 +1636,9 @@
 #   endif
 #   ifdef RTEMS
 #       define OS_TYPE "RTEMS"
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <sys/unistd.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
         extern int etext[];
         extern int end[];
         void *rtems_get_stack_bottom(void);
@@ -1743,13 +1690,9 @@
 #     define STACKBOTTOM ((ptr_t)0xc0000000)
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
-#     ifdef __cplusplus
-        } /* extern "C" */
-#     endif
+      EXTERN_C_END
 #     include <unistd.h>
-#     ifdef __cplusplus
-        extern "C" {
-#     endif
+      EXTERN_C_BEGIN
 #     define GETPAGESIZE() (unsigned)getpagesize()
       /* There seems to be some issues with trylock hanging on darwin.  */
       /* This should be looked into some more.                          */
@@ -1877,14 +1820,10 @@
 #     define OS_TYPE "OPENBSD"
 #     define ALIGNMENT 4
 #     ifndef GC_OPENBSD_THREADS
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
 #       ifdef USRSTACK
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
 #       else
@@ -1995,13 +1934,9 @@
 #       define STACKBOTTOM ((ptr_t)environ)
 #     endif
 #     define DYNAMIC_LOADING
-#     ifdef __cplusplus
-        } /* extern "C" */
-#     endif
+      EXTERN_C_END
 #     include <unistd.h>
-#     ifdef __cplusplus
-        extern "C" {
-#     endif
+      EXTERN_C_BEGIN
 #     define GETPAGESIZE() (unsigned)sysconf(_SC_PAGE_SIZE)
 #     ifndef __GNUC__
 #       define PREFETCH(x)  do { \
@@ -2021,14 +1956,10 @@
 #  ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
 #       ifdef USRSTACK
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
 #       else
@@ -2061,14 +1992,10 @@
 #       define OS_TYPE "OPENBSD"
 #       define ELF_CLASS ELFCLASS64
 #       ifndef GC_OPENBSD_THREADS
-#         ifdef __cplusplus
-            } /* extern "C" */
-#         endif
+          EXTERN_C_END
 #         include <sys/param.h>
 #         include <uvm/uvm_extern.h>
-#         ifdef __cplusplus
-            extern "C" {
-#         endif
+          EXTERN_C_BEGIN
 #         ifdef USRSTACK
 #           define STACKBOTTOM ((ptr_t)USRSTACK)
 #         else
@@ -2169,13 +2096,9 @@
 #       define STACKBOTTOM ((ptr_t)environ)
 #       define HPUX_STACKBOTTOM
 #       define DYNAMIC_LOADING
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <unistd.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
 #       define GETPAGESIZE() (unsigned)sysconf(_SC_PAGE_SIZE)
         /* The following was empirically determined, and is probably    */
         /* not very robust.                                             */
@@ -2220,13 +2143,9 @@
 #           define CLEAR_DOUBLE(x) \
               __asm__ ("        stf.spill       [%0]=f0": : "r"((void *)(x)))
 #         else
-#           ifdef __cplusplus
-              } /* extern "C" */
-#           endif
+            EXTERN_C_END
 #           include <ia64intrin.h>
-#           ifdef __cplusplus
-              extern "C" {
-#           endif
+            EXTERN_C_BEGIN
 #           define PREFETCH(x) __lfetch(__lfhint_none, (x))
 #           define GC_PREFETCH_FOR_WRITE(x) __lfetch(__lfhint_nta, (x))
 #           define CLEAR_DOUBLE(x) __stf_spill((void *)(x), 0)
@@ -2353,13 +2272,9 @@
 #     define STACKBOTTOM ((ptr_t)0x16fdfffff)
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
-#     ifdef __cplusplus
-        } /* extern "C" */
-#     endif
+      EXTERN_C_END
 #     include <unistd.h>
-#     ifdef __cplusplus
-        extern "C" {
-#     endif
+      EXTERN_C_BEGIN
 #     define GETPAGESIZE() (unsigned)getpagesize()
       /* FIXME: There seems to be some issues with trylock hanging on   */
       /* darwin. This should be looked into some more.                  */
@@ -2380,6 +2295,22 @@
       extern char etext[];
 #     define DATASTART GC_FreeBSDGetDataStart(0x1000, (ptr_t)etext)
 #     define DATASTART_USES_BSDGETDATASTART
+#   endif
+#   ifdef NETBSD
+#     define OS_TYPE "NETBSD"
+#     define HEURISTIC2
+      extern ptr_t GC_data_start;
+#     define DATASTART GC_data_start
+#     define ELF_CLASS ELFCLASS64
+#     define DYNAMIC_LOADING
+#   endif
+#   ifdef NINTENDO_SWITCH
+      extern int __bss_end__[];
+#     define NO_HANDLE_FORK
+#     define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
+#     define DATAEND (ptr_t)(&__bss_end__)
+      void *switch_get_stack_bottom(void);
+#     define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.   */
@@ -2417,17 +2348,13 @@
 #       define STACK_GRAN 0x10000000
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
-#           ifdef __cplusplus
-              } /* extern "C" */
-#           endif
+            EXTERN_C_END
 #           include <features.h>
-#           ifdef __cplusplus
-              extern "C" {
-#           endif
-#            if defined(__GLIBC__) && __GLIBC__ >= 2 \
+            EXTERN_C_BEGIN
+#           if defined(__GLIBC__) && __GLIBC__ >= 2 \
                 || defined(HOST_ANDROID) || defined(HOST_TIZEN)
 #                define SEARCH_FOR_DATA_START
-#            else
+#           else
                  extern char **__environ;
 #                define DATASTART ((ptr_t)(&__environ))
                               /* hideous kludge: __environ is the first */
@@ -2438,12 +2365,12 @@
                               /* would include .rodata, which may       */
                               /* contain large read-only data tables    */
                               /* that we'd rather not scan.             */
-#            endif
-             extern int _end[];
-#            define DATAEND ((ptr_t)(_end))
+#           endif
+            extern int _end[];
+#           define DATAEND ((ptr_t)(_end))
 #       else
-             extern int etext[];
-#            define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
+            extern int etext[];
+#           define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       endif
 #   endif
 #   ifdef MSWINCE
@@ -2478,13 +2405,9 @@
 #     define STACKBOTTOM ((ptr_t)0x30000000)
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
-#     ifdef __cplusplus
-        } /* extern "C" */
-#     endif
+      EXTERN_C_END
 #     include <unistd.h>
-#     ifdef __cplusplus
-        extern "C" {
-#     endif
+      EXTERN_C_BEGIN
 #     define GETPAGESIZE() (unsigned)getpagesize()
       /* FIXME: There seems to be some issues with trylock hanging on   */
       /* darwin. This should be looked into some more.                  */
@@ -2496,14 +2419,10 @@
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
 #       ifdef USRSTACK
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
 #       else
@@ -2530,14 +2449,6 @@
 #     define DATAEND (ptr_t)(Image$$ZI$$ZI$$Limit)
       void *n3ds_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)n3ds_get_stack_bottom())
-#   endif
-#   ifdef NINTENDO_SWITCH
-      extern int __bss_end[];
-#     define NO_HANDLE_FORK
-#     define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
-#     define DATAEND (ptr_t)(&__bss_end)
-      void *switch_get_stack_bottom(void);
-#     define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
@@ -2586,14 +2497,10 @@
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <sys/param.h>
 #       include <uvm/uvm_extern.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
 #       ifdef USRSTACK
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
 #       else
@@ -2661,13 +2568,9 @@
 #   ifdef SN_TARGET_ORBIS
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
-#     ifdef __cplusplus
-        } /* extern "C" */
-#     endif
+      EXTERN_C_END
 #     include <pthread.h>
-#     ifdef __cplusplus
-        extern "C" {
-#     endif
+      EXTERN_C_BEGIN
       void *ps4_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)ps4_get_stack_bottom())
 #   endif
@@ -2675,14 +2578,10 @@
 #       define OS_TYPE "OPENBSD"
 #       define ELF_CLASS ELFCLASS64
 #       ifndef GC_OPENBSD_THREADS
-#         ifdef __cplusplus
-            } /* extern "C" */
-#         endif
+          EXTERN_C_END
 #         include <sys/param.h>
 #         include <uvm/uvm_extern.h>
-#         ifdef __cplusplus
-            extern "C" {
-#         endif
+          EXTERN_C_BEGIN
 #         ifdef USRSTACK
 #           define STACKBOTTOM ((ptr_t)USRSTACK)
 #         else
@@ -2707,13 +2606,9 @@
 #       endif
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
-#           ifdef __cplusplus
-              } /* extern "C" */
-#           endif
+            EXTERN_C_END
 #           include <features.h>
-#           ifdef __cplusplus
-              extern "C" {
-#           endif
+            EXTERN_C_BEGIN
 #           define SEARCH_FOR_DATA_START
             extern int _end[];
 #           define DATAEND ((ptr_t)(_end))
@@ -2731,13 +2626,9 @@
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* Workaround lock elision implementation for some glibc.     */
 #         define GLIBC_2_19_TSX_BUG
-#         ifdef __cplusplus
-            } /* extern "C" */
-#         endif
+          EXTERN_C_END
 #         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
-#         ifdef __cplusplus
-            extern "C" {
-#         endif
+          EXTERN_C_BEGIN
 #       endif
 #   endif
 #   ifdef DARWIN
@@ -2753,13 +2644,9 @@
 #     define STACKBOTTOM ((ptr_t)0x7fff5fc00000)
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
-#     ifdef __cplusplus
-        } /* extern "C" */
-#     endif
+      EXTERN_C_END
 #     include <unistd.h>
-#     ifdef __cplusplus
-        extern "C" {
-#     endif
+      EXTERN_C_BEGIN
 #     define GETPAGESIZE() (unsigned)getpagesize()
       /* There seems to be some issues with trylock hanging on darwin.  */
       /* This should be looked into some more.                          */
@@ -2805,16 +2692,12 @@
 #   endif
 #   ifdef HAIKU
 #     define OS_TYPE "HAIKU"
-#     ifdef __cplusplus
-        } /* extern "C" */
-#     endif
+      EXTERN_C_END
 #     include <OS.h>
-#     ifdef __cplusplus
-        extern "C" {
-#     endif
+      EXTERN_C_BEGIN
 #     define GETPAGESIZE() (unsigned)B_PAGE_SIZE
-      extern int etext[];
-#     define DATASTART ((ptr_t)((((word)etext) + 0xfff) & ~0xfff))
+#     define HEURISTIC2
+#     define SEARCH_FOR_DATA_START
 #     define DYNAMIC_LOADING
 #     define MPROTECT_VDB
 #   endif
@@ -2834,13 +2717,9 @@
         /* Apparently USRSTACK is defined to be USERLIMIT, but in some  */
         /* installations that's undefined.  We work around this with a  */
         /* gross hack:                                                  */
-#       ifdef __cplusplus
-          } /* extern "C" */
-#       endif
+        EXTERN_C_END
 #       include <sys/vmparam.h>
-#       ifdef __cplusplus
-          extern "C" {
-#       endif
+        EXTERN_C_BEGIN
 #       ifdef USERLIMIT
           /* This should work everywhere, but doesn't.  */
 #         define STACKBOTTOM ((ptr_t)USRSTACK)
@@ -2915,22 +2794,18 @@
 #       define MPROTECT_VDB
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
-#           ifdef __cplusplus
-              } /* extern "C" */
-#           endif
+            EXTERN_C_END
 #           include <features.h>
-#           ifdef __cplusplus
-              extern "C" {
+            EXTERN_C_BEGIN
+#           if defined(__GLIBC__) && __GLIBC__ >= 2
+#               define SEARCH_FOR_DATA_START
+#           else
+#               error --> unknown Hexagon libc configuration
 #           endif
-#            if defined(__GLIBC__) && __GLIBC__ >= 2
-#                define SEARCH_FOR_DATA_START
-#            else
-#                error --> unknown Hexagon libc configuration
-#            endif
-             extern int _end[];
-#            define DATAEND ((ptr_t)(_end))
+            extern int _end[];
+#           define DATAEND ((ptr_t)(_end))
 #       elif !defined(CPPCHECK)
-#            error --> bad Hexagon Linux configuration
+#           error --> bad Hexagon Linux configuration
 #       endif
 #   else
 #       error --> unknown Hexagon OS configuration
@@ -2969,6 +2844,19 @@
 #     define DYNAMIC_LOADING
 #   endif
 # endif
+
+# ifdef RISCV
+#   define MACH_TYPE "RISC-V"
+#   define CPP_WORDSZ __riscv_xlen /* 32 or 64 */
+#   define ALIGNMENT (CPP_WORDSZ/8)
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)__data_start)
+#     define LINUX_STACKBOTTOM
+#     define DYNAMIC_LOADING
+#   endif
+# endif /* RISCV */
 
 #if defined(__GLIBC__) && !defined(DONT_USE_LIBC_PRIVATES)
   /* Use glibc's stack-end marker. */
@@ -3048,26 +2936,18 @@
 
 #if (defined(SVR4) || defined(HOST_ANDROID) || defined(HOST_TIZEN)) \
     && !defined(GETPAGESIZE)
-# ifdef __cplusplus
-    } /* extern "C" */
-# endif
+  EXTERN_C_END
 # include <unistd.h>
-# ifdef __cplusplus
-    extern "C" {
-# endif
+  EXTERN_C_BEGIN
 # define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 #endif
 
 #ifndef GETPAGESIZE
 # if defined(SOLARIS) || defined(IRIX5) || defined(LINUX) \
      || defined(NETBSD) || defined(FREEBSD) || defined(HPUX)
-#   ifdef __cplusplus
-      } /* extern "C" */
-#   endif
+    EXTERN_C_END
 #   include <unistd.h>
-#   ifdef __cplusplus
-      extern "C" {
-#   endif
+    EXTERN_C_BEGIN
 # endif
 # define GETPAGESIZE() (unsigned)getpagesize()
 #endif
@@ -3108,6 +2988,10 @@
 # define GC_EXPLICIT_SIGNALS_UNBLOCK
 #endif
 
+#if !defined(NO_SIGNALS_UNBLOCK_IN_MAIN) && defined(GC_NO_PTHREAD_SIGMASK)
+# define NO_SIGNALS_UNBLOCK_IN_MAIN
+#endif
+
 #if !defined(NO_MARKER_SPECIAL_SIGMASK) \
     && (defined(NACL) || defined(GC_WIN32_PTHREADS))
   /* Either there is no pthread_sigmask(), or GC marker thread cannot   */
@@ -3124,13 +3008,9 @@
 #endif
 
 #ifdef GC_OPENBSD_THREADS
-# ifdef __cplusplus
-    } /* extern "C" */
-# endif
+  EXTERN_C_END
 # include <sys/param.h>
-# ifdef __cplusplus
-    extern "C" {
-# endif
+  EXTERN_C_BEGIN
   /* Prior to 5.2 release, OpenBSD had user threads and required        */
   /* special handling.                                                  */
 # if OpenBSD < 201211
@@ -3206,7 +3086,8 @@
 # define MUNMAP_THRESHOLD 2
 #endif
 
-#if defined(GC_DISABLE_INCREMENTAL) || defined(MANUAL_VDB)
+#if defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB) \
+    || defined(MANUAL_VDB)
 # undef GWW_VDB
 # undef MPROTECT_VDB
 # undef PCR_VDB
@@ -3257,15 +3138,16 @@
 #endif
 
 #if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
-    && !defined(GWW_VDB) && !defined(MANUAL_VDB) \
+    && !defined(GWW_VDB) && !defined(DEFAULT_VDB) && !defined(MANUAL_VDB) \
     && !defined(GC_DISABLE_INCREMENTAL)
 # define DEFAULT_VDB
 #endif
 
-#if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HURD) \
-                             || defined(OPENBSD) || defined(ARM32) \
-                             || defined(MIPS) || defined(AVR32) \
-                             || defined(OR1K) || defined(NIOS2))) \
+#if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HAIKU) \
+                             || defined(HURD) || defined(OPENBSD) \
+                             || defined(ARM32) \
+                             || defined(AVR32) || defined(MIPS) \
+                             || defined(NIOS2) || defined(OR1K))) \
      || (defined(LINUX) && !defined(__gnu_linux__)) \
      || (defined(RTEMS) && defined(I386)) || defined(HOST_ANDROID)) \
     && !defined(NO_GETCONTEXT)
@@ -3364,9 +3246,9 @@
 #   error --> inconsistent configuration
 # endif
 #endif /* !CPPCHECK */
-
+//|| defined(NINTENDO_SWITCH) 
 #if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
-    || defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
+    || defined(NN_PLATFORM_CTR) \
     || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
     || defined(SN_TARGET_PSP2)
 # define THREADS
@@ -3700,20 +3582,18 @@
 # elif defined(SN_TARGET_PSP2)
     void *psp2_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)psp2_get_mem(bytes)
-# elif defined(NINTENDO_SWITCH)
-    void *switch_get_mem(size_t bytes);
-#   define GET_MEM(bytes) (struct hblk*)switch_get_mem(bytes)
+//# elif defined(NINTENDO_SWITCH)
+//    void *switch_get_mem(size_t bytes);
+//#   define GET_MEM(bytes) (struct hblk*)switch_get_mem(bytes)
 # elif defined(HAIKU)
     ptr_t GC_haiku_get_mem(size_t bytes);
-#   define GET_MEM(bytes) (struct  hblk*)GC_haiku_get_mem(bytes)
+#   define GET_MEM(bytes) (struct hblk*)GC_haiku_get_mem(bytes)
 # else
     ptr_t GC_unix_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_unix_get_mem(bytes)
 # endif
 #endif /* GC_PRIVATE_H */
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 #endif /* GCCONFIG_H */

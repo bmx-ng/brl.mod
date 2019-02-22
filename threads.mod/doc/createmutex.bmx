@@ -1,7 +1,7 @@
 
 'Make sure to have 'Threaded build' enabled!
 '
-Strict
+SuperStrict
 
 'a global list that multiple threads want to modify
 Global list:TList=New TList
@@ -11,7 +11,7 @@ Global listMutex:TMutex=CreateMutex()
 
 Function MyThread:Object( data:Object )
 
-	For Local item=1 To 10
+	For Local item:Int = 1 To 10
 		'simulate 'other' processing...
 		Delay Rand( 10,50 )
 
@@ -30,14 +30,14 @@ End Function
 Local threads:TThread[10]
 
 'Create worker threads
-For Local i=0 Until 10
+For Local i:Int = 0 Until 10
 	threads[i]=CreateThread( MyThread,String( i+1 ) )
 Next
 
 Print "Waiting for worker threads..."
 
 'Wait for worker threads to finish
-For Local i=0 Until 10
+For Local i:Int = 0 Until 10
 	WaitThread threads[i]
 Next
 
@@ -46,8 +46,7 @@ Next
 'Note: We don't really have to lock the mutex here, as there are no other threads running.
 'Still, it's a good habit to get into.
 LockMutex listMutex
-For Local t$=EachIn list
+For Local t:String = EachIn list
 	Print t
 Next
 UnlockMutex listMutex
-

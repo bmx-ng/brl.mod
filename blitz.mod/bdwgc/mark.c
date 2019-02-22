@@ -40,8 +40,7 @@ void GC_noop6(word arg1 GC_ATTR_UNUSED, word arg2 GC_ATTR_UNUSED,
               word arg5 GC_ATTR_UNUSED, word arg6 GC_ATTR_UNUSED)
 {
   /* Avoid GC_noop6 calls to be optimized away. */
-# if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) \
-     || defined(PARALLEL_MARK)
+# ifdef AO_CLEAR
     AO_compiler_barrier(); /* to serve as a special side-effect */
 # else
     GC_noop1(0);
@@ -83,18 +82,7 @@ GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
                 /* 0 | */ GC_DS_LENGTH, FALSE /* add length to descr */, FALSE
                 /*, */ OK_DISCLAIM_INITZ },
 # endif
-# ifdef STUBBORN_ALLOC
-              { (void **)&GC_sobjfreelist[0], 0,
-                /* 0 | */ GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
-                /*, */ OK_DISCLAIM_INITZ },
-# endif
 };
-
-# ifdef STUBBORN_ALLOC
-#   define GC_N_KINDS_INITIAL_VALUE (STUBBORN+1)
-# else
-#   define GC_N_KINDS_INITIAL_VALUE STUBBORN
-# endif
 
 GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
 
@@ -108,7 +96,7 @@ GC_INNER unsigned GC_n_kinds = GC_N_KINDS_INITIAL_VALUE;
                 /* let it grow dynamically.                             */
 # endif
 
-#if !defined(GC_DISABLE_INCREMENTAL) || defined(STUBBORN_ALLOC)
+#if !defined(GC_DISABLE_INCREMENTAL)
   STATIC word GC_n_rescuing_pages = 0;
                                 /* Number of dirty pages we marked from */
                                 /* excludes ptrfree pages, etc.         */
@@ -188,7 +176,7 @@ GC_INNER void GC_set_hdr_marks(hdr *hhdr)
  */
 static void clear_marks_for_block(struct hblk *h, word dummy GC_ATTR_UNUSED)
 {
-    register hdr * hhdr = HDR(h);
+    hdr * hhdr = HDR(h);
 
     if (IS_UNCOLLECTABLE(hhdr -> hb_obj_kind)) return;
         /* Mark bit for these is cleared only once the object is        */
@@ -256,14 +244,11 @@ GC_INNER void GC_clear_marks(void)
     scan_ptr = 0;
 }
 
-#ifdef CHECKSUMS
-  void GC_check_dirty(void);
-#endif
-
 /* Initiate a garbage collection.  Initiates a full collection if the   */
 /* mark state is invalid.                                               */
 GC_INNER void GC_initiate_gc(void)
 {
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifndef GC_DISABLE_INCREMENTAL
         if (GC_incremental) {
 #         ifdef CHECKSUMS
@@ -273,13 +258,10 @@ GC_INNER void GC_initiate_gc(void)
 #         endif
         }
 #   endif
-#   ifdef STUBBORN_ALLOC
-        GC_read_changed();
-#   endif
 #   ifdef CHECKSUMS
         if (GC_incremental) GC_check_dirty();
 #   endif
-#   if !defined(GC_DISABLE_INCREMENTAL) || defined(STUBBORN_ALLOC)
+#   if !defined(GC_DISABLE_INCREMENTAL)
         GC_n_rescuing_pages = 0;
 #   endif
     if (GC_mark_state == MS_NONE) {
@@ -344,8 +326,7 @@ static void alloc_mark_stack(size_t);
             } else {
                 scan_ptr = GC_push_next_marked_dirty(scan_ptr);
                 if (scan_ptr == 0) {
-#                 if !defined(GC_DISABLE_INCREMENTAL) \
-                     || defined(STUBBORN_ALLOC)
+#                 if !defined(GC_DISABLE_INCREMENTAL)
                     GC_COND_LOG_PRINTF("Marked from %lu dirty pages\n",
                                        (unsigned long)GC_n_rescuing_pages);
 #                 endif
@@ -486,12 +467,6 @@ static void alloc_mark_stack(size_t);
         }
     }
 # endif /* __GNUC__ && MSWIN32 */
-
-#if defined(GC_WIN32_THREADS) && !defined(GC_PTHREADS)
-  GC_INNER GC_bool GC_started_thread_while_stopped(void);
-  /* In win32_threads.c.  Did we invalidate mark phase with an  */
-  /* unexpected thread start?                                   */
-#endif
 
   GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame)
   {
@@ -1336,11 +1311,10 @@ static void alloc_mark_stack(size_t n)
         } else {
           WARN("Failed to grow mark stack to %" WARN_PRIdPTR " frames\n", n);
         }
+    } else if (NULL == new_stack) {
+        GC_err_printf("No space for mark stack\n");
+        EXIT();
     } else {
-        if (new_stack == 0) {
-            GC_err_printf("No space for mark stack\n");
-            EXIT();
-        }
         GC_mark_stack = new_stack;
         GC_mark_stack_size = n;
         GC_mark_stack_limit = new_stack + n;
@@ -1408,6 +1382,11 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
         return;
     }
     if ((*dirty_fn)(h-1)) {
+        if ((word)(GC_mark_stack_top - GC_mark_stack)
+            > 3 * GC_mark_stack_size / 4) {
+            GC_push_all(bottom, top);
+            return;
+        }
         GC_push_all(bottom, h);
     }
 
@@ -1427,9 +1406,6 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 
     if ((ptr_t)h != top && (*dirty_fn)(h)) {
        GC_push_all(h, top);
-    }
-    if ((word)GC_mark_stack_top >= (word)GC_mark_stack_limit) {
-        ABORT("Unexpected mark stack overflow");
     }
   }
 
@@ -1488,10 +1464,6 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
     return mark_stack_ptr;
 }
 
-#if defined(MANUAL_VDB) && defined(THREADS)
-  void GC_dirty(ptr_t p);
-#endif
-
 /* Mark and push (i.e. gray) a single object p onto the main    */
 /* mark stack.  Consider p to be valid if it is an interior     */
 /* pointer.                                                     */
@@ -1522,10 +1494,10 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
         GC_ADD_TO_BLACK_LIST_NORMAL(p, source);
         return;
     }
-#   if defined(MANUAL_VDB) && defined(THREADS)
+#   ifdef THREADS
       /* Pointer is on the stack.  We may have dirtied the object       */
-      /* it points to, but not yet have called GC_dirty();              */
-      GC_dirty(p);      /* Implicitly affects entire object.            */
+      /* it points to, but have not called GC_dirty yet.                */
+      GC_dirty(p); /* entire object */
 #   endif
     PUSH_CONTENTS_HDR(r, GC_mark_stack_top, GC_mark_stack_limit,
                       source, hhdr, FALSE);
@@ -1604,10 +1576,10 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
-    register word *p;
-    register word *lim;
-    register ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
-    register ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
+    REGISTER word *p;
+    REGISTER word *lim;
+    REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+    REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
 #   define GC_greatest_plausible_heap_addr greatest_ha
 #   define GC_least_plausible_heap_addr least_ha
 
@@ -1617,7 +1589,8 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
       lim = t - 1 /* longword */;
       for (p = b; (word)p <= (word)lim;
            p = (word *)(((ptr_t)p) + ALIGNMENT)) {
-        register word q = *p;
+        REGISTER word q = *p;
+
         GC_PUSH_ONE_STACK(q, p);
       }
 #   undef GC_greatest_plausible_heap_addr
@@ -1649,10 +1622,10 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
   {
     word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
     word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
-    register word *p;
-    register word *lim;
-    register ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
-    register ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
+    REGISTER word *p;
+    REGISTER word *lim;
+    REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
+    REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
 #   define GC_greatest_plausible_heap_addr greatest_ha
 #   define GC_least_plausible_heap_addr least_ha
 
@@ -1662,7 +1635,8 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 
     lim = t - 1;
     for (p = b; (word)p <= (word)lim; p = (word *)((ptr_t)p + ALIGNMENT)) {
-      register word q = *p;
+      REGISTER word q = *p;
+
       GC_PUSH_ONE_HEAP(q, p, GC_mark_stack_top);
     }
 #   undef GC_greatest_plausible_heap_addr
@@ -1878,7 +1852,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     /* Some quick shortcuts: */
         if ((/* 0 | */ GC_DS_LENGTH) == descr) return;
         if (GC_block_empty(hhdr)/* nothing marked */) return;
-#   if !defined(GC_DISABLE_INCREMENTAL) || defined(STUBBORN_ALLOC)
+#   if !defined(GC_DISABLE_INCREMENTAL)
       GC_n_rescuing_pages++;
 #   endif
     GC_objects_are_marked = TRUE;
@@ -1903,15 +1877,18 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
          break;
 #     endif
 #    endif
+#   else
+     case 1: /* to suppress "switch statement contains no case" warning */
 #   endif
      default:
       GC_mark_stack_top_reg = GC_mark_stack_top;
       for (p = h -> hb_body, bit_no = 0; (word)p <= (word)lim;
            p += sz, bit_no += MARK_BIT_OFFSET(sz)) {
-         if (mark_bit_from_hdr(hhdr, bit_no)) {
-           /* Mark from fields inside the object */
-             PUSH_OBJ(p, hhdr, GC_mark_stack_top_reg, mark_stack_limit);
-         }
+        if (mark_bit_from_hdr(hhdr, bit_no)) {
+          /* Mark from fields inside the object. */
+          GC_mark_stack_top_reg = GC_push_obj(p, hhdr, GC_mark_stack_top_reg,
+                                              mark_stack_limit);
+        }
       }
       GC_mark_stack_top = GC_mark_stack_top_reg;
     }
@@ -1939,7 +1916,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     if ((/* 0 | */ GC_DS_LENGTH) == descr)
         return;
 
-#   if !defined(GC_DISABLE_INCREMENTAL) || defined(STUBBORN_ALLOC)
+#   if !defined(GC_DISABLE_INCREMENTAL)
       GC_n_rescuing_pages++;
 #   endif
     GC_objects_are_marked = TRUE;
@@ -1950,8 +1927,9 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 
     GC_mark_stack_top_reg = GC_mark_stack_top;
     for (p = h -> hb_body; (word)p <= (word)lim; p += sz)
-        if ((*(word *)p & 0x3) != 0)
-            PUSH_OBJ(p, hhdr, GC_mark_stack_top_reg, mark_stack_limit);
+      if ((*(word *)p & 0x3) != 0)
+        GC_mark_stack_top_reg = GC_push_obj(p, hhdr, GC_mark_stack_top_reg,
+                                            mark_stack_limit);
     GC_mark_stack_top = GC_mark_stack_top_reg;
   }
 #endif /* ENABLE_DISCLAIM */
@@ -2012,15 +1990,8 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
             if (NULL == h) ABORT("Bad HDR() definition");
 #         endif
         }
-#       ifdef STUBBORN_ALLOC
-          if (hhdr -> hb_obj_kind == STUBBORN) {
-            if (GC_page_was_changed(h) && GC_block_was_dirty(h, hhdr))
-                break;
-          } else
-#       endif
-        /* else */ {
-          if (GC_block_was_dirty(h, hhdr)) break;
-        }
+        if (GC_block_was_dirty(h, hhdr))
+          break;
         h += OBJ_SZ_TO_BLOCKS(hhdr -> hb_sz);
         hhdr = HDR(h);
     }

@@ -1,11 +1,11 @@
 ' onend.bmx
 
+SuperStrict
+
 Function cleanup()
-Print "cleaning up"
+	Print "cleaning up"
 End Function
 
 OnEnd cleanup
 Print "program running"
 End	'the cleanup function will be called at this time
-
-

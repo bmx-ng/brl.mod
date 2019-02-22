@@ -9,9 +9,9 @@
 #include <brl.mod/keycodes.mod/keycodes.h>	//keycode enums
 
 typedef int (*BBAsyncOp)( int asyncInfo );
-typedef void (*BBSyncOp)( BBObject *syncInfo,int asyncRet );
+typedef void (*BBSyncOp)( BBObject *syncInfo,size_t asyncRet );
 
-void bbSystemPostSyncOp( BBSyncOp syncOp,BBObject *syncInfo,int asyncRet );
+void bbSystemPostSyncOp( BBSyncOp syncOp,BBObject *syncInfo,size_t asyncRet );
 void bbSystemStartAsyncOp( BBAsyncOp asyncOp,int asyncInfo,BBSyncOp syncOp,BBObject *syncInfo );
 
 #ifdef __cplusplus

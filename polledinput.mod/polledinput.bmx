@@ -73,7 +73,7 @@ Function Hook:Object( id,data:Object,context:Object )
 		FlushMouse
 		suspended=True
 	Case EVENT_APPRESUME
-		FlushKeys
+		FlushKeys(False)
 		FlushMouse
 		suspended=False
 	Case EVENT_APPTERMINATE
@@ -183,14 +183,20 @@ about:
 #FlushKeys resets the state of all keys to 'off', and resets the character queue
 used by #GetChar.
 End Rem
-Function FlushKeys()
+Function FlushKeys(resetStates:Int = True)
 	PollSystem
 	charGet=0
 	charPut=0
-	For Local i=0 Until 256
-		keyStates[i]=0
-		keyHits[i]=0
-	Next
+	If resetStates Then
+		For Local i=0 Until 256
+			keyStates[i]=0
+			keyHits[i]=0
+		Next
+	Else
+		For Local i=0 Until 256
+			keyHits[i]=0
+		Next
+	End If
 End Function
 
 Rem

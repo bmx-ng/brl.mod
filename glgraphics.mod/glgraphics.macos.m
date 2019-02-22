@@ -344,6 +344,8 @@ void bbGLGraphicsSetGraphics( BBGLContext *context ){
 	_currentContext=context;
 }
 
+static int updated;
+
 void bbGLGraphicsFlip( int sync ){
 	if( !_currentContext ) return;
 	
@@ -357,4 +359,10 @@ void bbGLGraphicsFlip( int sync ){
 	}
 	
 	[_currentContext->glContext flushBuffer];
+
+	// update the context, at least once - mojave needs this or nothing is rendered.
+	if (!updated) {
+		updated = 1;
+		[_currentContext->glContext update];
+	}
 }

@@ -2,4 +2,8 @@ Rem
 Marks the end of a For section.
 End Rem
 
-For i=1 to 5;print i;Next
+SuperStrict
+
+For Local i:Int = 1 To 5
+	Print i
+Next

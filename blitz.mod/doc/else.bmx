@@ -2,7 +2,9 @@ Rem
 Else provides the ability for an If Then construct to execute a second block of code when the If condition is false.
 End Rem
 
-i=3
+SuperStrict
+
+Local i:Int = 3
 
 If i<5 Print "i<5" Else Print "i>=5"	' single line If Else
 

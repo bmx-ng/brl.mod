@@ -20,7 +20,7 @@ extern void bbDelay( int millis );
 
 extern void brl_timerdefault__TimerFired( BBObject *bbTimer );
 
-static void timerSyncOp( BBObject *user,int ret ){
+static void timerSyncOp( BBObject *user,size_t ret ){
 	BBTimer *timer=(BBTimer*)ret;
 
 	++timer->gets;	
@@ -49,10 +49,10 @@ static void *timerProc( void *data ){
 		bbDelay( time-bbMilliSecs() );
 
 		++timer->puts;
-		bbSystemPostSyncOp( timerSyncOp,&bbNullObject,(int)timer );
+		bbSystemPostSyncOp( timerSyncOp,&bbNullObject,(size_t)timer );
 	}
 
-	bbSystemPostSyncOp( timerSyncOp,&bbNullObject,(int)timer );
+	bbSystemPostSyncOp( timerSyncOp,&bbNullObject,(size_t)timer );
 }
 
 BBTimer *bbTimerStart( float hertz,BBObject *bbTimer ){

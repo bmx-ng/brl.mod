@@ -58,6 +58,9 @@ void		bbGCSuspend();
 void		bbGCResume();
 void		bbGCRetain( BBObject *p );
 void		bbGCRelease( BBObject *p );
+int			bbGCThreadIsRegistered();
+int			bbGCRegisterMyThread();
+int			bbGCUnregisterMyThread();
 
 // BBRETAIN/BBRELEASE should be used to prevent an object from garbage collection.
 //

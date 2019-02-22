@@ -4,6 +4,8 @@ End Rem
 
 ' print 5 times table
 
-For i=1 to 12
+SuperStrict
+
+For Local i:Int = 1 To 12
 	Print "5*"+i+"="+5*i
 Next

@@ -79,7 +79,7 @@
 GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 
 GC_INNER GC_bool GC_debugging_started = FALSE;
-        /* defined here so we don't have to load debug_malloc.o */
+                /* defined here so we don't have to load dbg_mlc.o */
 
 ptr_t GC_stackbottom = 0;
 
@@ -295,7 +295,11 @@ STATIC void GC_init_size_map(void)
     /* Clear the stack up to about limit.  Return arg.  This function   */
     /* is not static because it could also be erroneously defined in .S */
     /* file, so this error would be caught by the linker.               */
-    void *GC_clear_stack_inner(void *arg, ptr_t limit)
+    void *GC_clear_stack_inner(void *arg,
+#                           if defined(__APPLE_CC__) && !GC_CLANG_PREREQ(6, 0)
+                               volatile /* to workaround some bug */
+#                           endif
+                               ptr_t limit)
     {
 #     define CLEAR_SIZE 213 /* granularity */
       volatile word dummy[CLEAR_SIZE];
@@ -756,7 +760,13 @@ GC_API int GC_CALL GC_is_init_called(void)
   STATIC void GC_exit_check(void)
   {
     if (GC_find_leak && !skip_gc_atexit) {
-      GC_gcollect();
+#     if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+        GC_in_thread_creation = TRUE; /* OK to collect from unknown thread. */
+        GC_gcollect();
+        GC_in_thread_creation = FALSE;
+#     else
+        GC_gcollect();
+#     endif
     }
   }
 #endif
@@ -825,6 +835,11 @@ GC_API int GC_CALL GC_is_init_called(void)
   }
 #endif /* MSWIN32 */
 
+#if defined(THREADS) && defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
+  static void callee_saves_pushed_dummy_fn(ptr_t data GC_ATTR_UNUSED,
+                                           void * context GC_ATTR_UNUSED) {}
+#endif
+
 STATIC word GC_parse_mem_size_arg(const char *str)
 {
   word result = 0; /* bad value */
@@ -867,6 +882,9 @@ GC_API void GC_CALL GC_init(void)
     /* LOCK(); -- no longer does anything this early. */
     word initial_heap_sz;
     IF_CANCEL(int cancel_state;)
+#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+      DCL_LOCK_STATE;
+#   endif
 
     if (EXPECT(GC_is_initialized, TRUE)) return;
 #   ifdef REDIRECT_MALLOC
@@ -1277,33 +1295,34 @@ GC_API void GC_CALL GC_init(void)
       GC_pcr_install();
 #   endif
     GC_is_initialized = TRUE;
+#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+        LOCK(); /* just to set GC_lock_holder */
+#   endif
 #   if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-#       if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-          DCL_LOCK_STATE;
-          LOCK(); /* just to set GC_lock_holder */
-          GC_thr_init();
-          UNLOCK();
-#       else
-          GC_thr_init();
-#       endif
+        GC_thr_init();
 #       ifdef PARALLEL_MARK
           /* Actually start helper threads.     */
+#         if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+            UNLOCK();
+#         endif
           GC_start_mark_threads_inner();
+#         if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+            LOCK();
+#         endif
 #       endif
 #   endif
     COND_DUMP;
     /* Get black list set up and/or incremental GC started */
-      if (!GC_dont_precollect || GC_incremental) {
-#       if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
-          LOCK();
-          GC_gcollect_inner();
-          UNLOCK();
-#       else
-          GC_gcollect_inner();
-#       endif
-      }
-#   ifdef STUBBORN_ALLOC
-        GC_stubborn_init();
+    if (!GC_dont_precollect || GC_incremental) {
+        GC_gcollect_inner();
+    }
+#   if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+        UNLOCK();
+#   endif
+#   if defined(THREADS) && defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
+      /* Ensure getcontext_works is set to avoid potential data race.   */
+      if (GC_dont_gc || GC_dont_precollect)
+        GC_with_callee_saves_pushed(callee_saves_pushed_dummy_fn, NULL);
 #   endif
 #   ifndef DONT_USE_ATEXIT
       if (GC_find_leak) {
@@ -1670,6 +1689,9 @@ GC_API void GC_CALL GC_enable_incremental(void)
 # elif defined(NINTENDO_SWITCH)
     int switch_log_write(const char* text, int length);
 #   define WRITE(level, buf, len) switch_log_write(buf, len)
+# define GC_stdout 0
+# define GC_stderr 0
+# define GC_log 0
 
 #else
 # if !defined(AMIGA) && !defined(MSWIN_XBOX1) && !defined(SN_TARGET_ORBIS) \
@@ -1984,7 +2006,12 @@ GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
     unsigned result = GC_n_kinds;
 
     GC_ASSERT(adjust == FALSE || adjust == TRUE);
-    GC_ASSERT(clear == FALSE || clear == TRUE);
+    /* If an object is not needed to be cleared (when moved to the      */
+    /* free list) then its descriptor should be zero to denote          */
+    /* a pointer-free object (and, as a consequence, the size of the    */
+    /* object should not be added to the descriptor template).          */
+    GC_ASSERT(clear == TRUE
+              || (descr == 0 && adjust == FALSE && clear == FALSE));
     if (result < MAXOBJKINDS) {
       GC_n_kinds++;
       GC_obj_kinds[result].ok_freelist = fl;
@@ -2181,7 +2208,11 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 #if !defined(NO_DEBUGGING)
   GC_API void GC_CALL GC_dump(void)
   {
+    DCL_LOCK_STATE;
+
+    LOCK();
     GC_dump_named(NULL);
+    UNLOCK();
   }
 
   GC_API void GC_CALL GC_dump_named(const char *name)
@@ -2493,4 +2524,10 @@ GC_API void GC_CALL GC_set_force_unmap_on_gcollect(int value)
 GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void)
 {
     return (int)GC_force_unmap_on_gcollect;
+}
+
+GC_API void GC_CALL GC_abort_on_oom(void)
+{
+    GC_err_printf("Insufficient memory for the allocation\n");
+    EXIT();
 }

@@ -12,7 +12,7 @@ Object^Null{
 
 String^Object{
 
-	.length:Int
+	@length:Int
 
 	-ToString:String()="bbStringToString"
 	-Compare:Int(otherObject:Object)="bbStringCompare"
@@ -70,10 +70,10 @@ String^Object{
 
 ___Array^Object{
 
-	.elementTypeEncoding:Byte Ptr
-	.numberOfDimensions:Int
-	.sizeMinusHeader:Int
-	.length:Int
+	@elementTypeEncoding:Byte Ptr
+	@numberOfDimensions:Int
+	@sizeMinusHeader:Int
+	@length:Int
 	
 	-Sort( ascending=1 )="bbArraySort"
 	-Dimensions:Int[]()="bbArrayDimensions"

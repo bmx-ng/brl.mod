@@ -7,7 +7,9 @@ is an instance of TImage or an instance of a &Type derived
 from TImage.
 End Rem
 
+SuperStrict
+
 Function IsImage(obj:Object)
-	If TImage(obj) return True
+	If TImage(obj) Return True
 	Return False
 End Function

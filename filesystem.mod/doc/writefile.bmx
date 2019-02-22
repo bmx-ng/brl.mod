@@ -1,9 +1,10 @@
 ' writefile.bmx
+SuperStrict
 
-file=writefile("test.txt")
+Local file:TStream = WriteFile("test.txt")
 
-if not file runtimeerror "failed to open test.txt file" 
+If Not file Then RuntimeError "failed to open test.txt file" 
 
-writeline file,"hello world"
+WriteLine file,"hello world"
 
-closestream file
+CloseStream file

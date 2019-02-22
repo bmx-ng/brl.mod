@@ -36,6 +36,18 @@ void setExStack( BBExStack *st ){
 	TlsSetValue( exKey(),st );
 }
 
+#elif __SWITCH__
+
+BBExStack *getExStack(){
+	// TODO
+	//return (BBExStack*)pthread_getspecific( exKey() );
+	return NULL;
+}
+
+void setExStack( BBExStack *st ){
+	//pthread_setspecific( exKey(),st );
+}
+
 #else
 
 #include <pthread.h>
@@ -125,7 +137,11 @@ void bbExThrow( BBObject *p ){
 	
 	--st->ex_sp;
 	st->ex_sp->ex = p;
+#ifndef __APPLE__
 	longjmp(st->ex_sp->buf, st->ex_sp->jmp_status);
+#else
+	_longjmp(st->ex_sp->buf, st->ex_sp->jmp_status);
+#endif
 }
 
 void bbExThrowCString( const char *p ){

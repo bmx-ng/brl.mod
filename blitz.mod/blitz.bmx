@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.20"
+ModuleInfo "Version: 1.21"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
-
+'
+ModuleInfo "History: 1.21"
+ModuleInfo "History: Update to bdwgc 7.7.0.d76816e"
 ModuleInfo "History: 1.20"
 ModuleInfo "History: Update to bdwgc 7.7.0."
 ModuleInfo "History: 1.19"
@@ -69,6 +71,8 @@ ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE"
 ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE"
 ?musl
 ModuleInfo "CC_OPTS: -DNO_GETCONTEXT"
+?nx
+ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE -DNN_BUILD_TARGET_PLATFORM_NX"
 ?
 
 ?debug
@@ -132,7 +136,6 @@ Import "bdwgc/new_hblk.c"
 Import "bdwgc/dyn_load.c"
 Import "bdwgc/dbg_mlc.c"
 Import "bdwgc/malloc.c"
-Import "bdwgc/stubborn.c"
 Import "bdwgc/checksums.c"
 Import "bdwgc/pthread_start.c"
 Import "bdwgc/pthread_support.c"
@@ -147,8 +150,12 @@ Import "bdwgc/gc_dlopen.c"
 Import "bdwgc/backgraph.c"
 Import "bdwgc/win32_threads.c"
 Import "bdwgc/thread_local_alloc.c"	'bdwgc only? not gc6.7
-
+?nx
+Import "blitz_nx.c"
+?
 Import "tree/tree.c"
+
+Include "builtin.bmx"
 
 Extern
 Global OnDebugStop()="bbOnDebugStop"
@@ -157,7 +164,7 @@ End Extern
 
 Rem
 bbdoc: Exception
-about: Basic exception class that can be extended to create more specific custom exceptions.
+about: Common base class of the built-in exceptions of the language.
 End Rem
 Type TBlitzException
 End Type
@@ -446,7 +453,7 @@ about:
 This function will have no effect if the garbage collector has been
 suspended due to #GCSuspend.
 End Rem
-Function GCCollectALittle:Int()="bbGCCollectAlittle"
+Function GCCollectALittle:Int()="bbGCCollectALittle"
 
 Rem
 bbdoc: Memory allocated by application
@@ -466,6 +473,34 @@ Rem
 bbdoc: Private: do not use
 End Rem
 Function GCLeave()="bbGCLeave"
+
+Rem
+bbdoc: Retains a reference to the specified #Object, preventing it from being collected.
+End Rem
+Function GCRetain(obj:Object)="bbGCRetain"
+
+Rem
+bbdoc: Releases a reference from the specified #Object.
+End Rem
+Function GCRelease(obj:Object)="bbGCRelease"
+
+Rem
+bbdoc: Returns #True if the current thread is registered with the garbage collector.
+End Rem
+Function GCThreadIsRegistered:Int()="bbGCThreadIsRegistered"
+
+Rem
+bbdoc: Registers the current thread with the garbage collector.
+returns: 0 on success, 1 if the thread was already registered, or -1 if threads are not supported.
+End Rem
+Function GCRegisterMyThread:Int()="bbGCRegisterMyThread"
+
+Rem
+bbdoc: Unregisters the previously registered current thread.
+about: Note, that any memory allocated by the garbage collector from the current thread will no longer be
+accessible after the thread is unregistered.
+End Rem
+Function GCUnregisterMyThread:Int()="bbGCUnregisterMyThread"
 
 Rem
 bbdoc: Convert object to integer handle
@@ -488,6 +523,18 @@ End Rem
 Function ArrayCopy(src:Object, srcPos:Int, dst:Object, dstPos:Int, length:Int)="void bbArrayCopy(BBARRAY, int, BBARRAY, int, int)!"
 
 End Extern
+
+Rem
+bbdoc: Provides a mechanism for releasing resources.
+End Rem
+Interface IDisposable
+
+	Rem
+	bbdoc: Performs application-defined tasks associated with freeing, releasing, or resetting resources.
+	End Rem
+	Method Dispose()
+
+End Interface
 
 'BlitzMax keyword definitions
 
@@ -650,7 +697,7 @@ keyword: "Then"
 End Rem
 
 Rem
-bbdoc: Else provides the ability for an If Then construct to execute a second block of code when the If condition is false.
+bbdoc: Else provides the ability for an If-Then construct to execute a second block of code when the If condition is false.
 keyword: "Else"
 End Rem
 
@@ -660,7 +707,7 @@ keyword: "ElseIf"
 End Rem
 
 Rem
-bbdoc: Marks the End of an If Then construct.
+bbdoc: Marks the End of an If-Then construct.
 keyword: "EndIf"
 End Rem
 
@@ -845,7 +892,23 @@ keyword: "Final"
 End Rem
 
 Rem
-bbdoc: Specify constraints on the types that can be used as arguments For a Type parameter defined in a generic declaration
+bbdoc: Denote a field as read only, where the value may only be set in its declaration or in the type constructor
+keyword: "ReadOnly"
+End Rem
+
+Rem
+bbdoc: Denote a function for export to a shared library. The generated function name will not be mangled.
+keyword: "Export"
+End Rem
+
+Rem
+bbdoc: Indicates that a method declaration is intended to override a method declaration in a supertype.
+about: Use of #Override on a method that does not override a method will result in a compilation error.
+keyword: "Override"
+End Rem
+
+Rem
+bbdoc: Specify constraints on the types that can be used as arguments for a type parameter defined in a generic declaration
 keyword: "Where"
 End Rem
 
@@ -870,22 +933,22 @@ keyword: "Super"
 End Rem
 
 Rem
-bbdoc: Release an integer Object handle
+bbdoc: Release an integer object handle
 keyword: "Release"
 End Rem
 
 Rem
-bbdoc: Make a type, constant, global variable or function accessible from outside the current source file (default)
+bbdoc: Make types, constants, global variables, functions or type members accessible from outside the current source file (default)
 keyword: "Public"
 End Rem
 
 Rem
-bbdoc: Make a type, constant, global variable or function only accessible from within the current source file, or make a type member only accessible from within that type.
+bbdoc: Make types, constants, global variables, functions or type members only accessible from within the current source file.
 keyword: "Private"
 End Rem
 
 Rem
-bbdoc: Make a type member accessible only from within that type and from its subtypes.
+bbdoc: Make type members only accessible from within the current source file and within subtypes.
 keyword: "Protected"
 End Rem
 
@@ -1027,30 +1090,8 @@ keyword: "Len"
 End Rem
 
 Rem
-bbdoc: Numeric 'absolute value' unary operator
-keyword: "Abs"
-End Rem
-
-Rem
 bbdoc: Numeric 'modulus' or 'remainder' binary operator
 keyword: "Mod"
-End Rem
-
-Rem
-bbdoc: Numeric 'sign' unary operator
-keyword: "Sgn"
-End Rem
-
-Rem
-bbdoc: Numeric 'minimum' builtin function
-returns: The lesser of the two numeric arguments
-keyword: "Min"
-End Rem
-
-Rem
-bbdoc: Numeric 'maximum' builtin function
-returns: The larger of the two numeric arguments
-keyword: "Max"
 End Rem
 
 Rem

@@ -2,14 +2,16 @@ Rem
 Final stops methods from being redefined in super classes.
 End Rem
 
+SuperStrict
+
 Type T1
-	Method ToString$() Final
-		return "T1"
-	end method
+	Method ToString:String() Final
+		Return "T1"
+	End Method
 End Type
 
-Type T2 extends T1
-	method ToString$()	'compile time error "Final methods cannot be overridden"
-		return "T2"
-	end method
+Type T2 Extends T1
+	Method ToString:String()	'compile time error "Final methods cannot be overridden"
+		Return "T2"
+	End Method
 End Type

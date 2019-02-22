@@ -157,6 +157,15 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* The corresponding variable definition must start with GC_INNER.    */
 #endif /* !GC_INNER */
 
+#ifdef __cplusplus
+  /* Register storage specifier is deprecated in C++11. */
+# define REGISTER /* empty */
+#else
+  /* Used only for several local variables in the performance-critical  */
+  /* functions.  Should not be used for new code.                       */
+# define REGISTER register
+#endif
+
 #ifndef HEADERS_H
 # include "gc_hdrs.h"
 #endif
@@ -241,6 +250,10 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define GC_API_PRIV GC_API
 #endif
 
+#if defined(THREADS) && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+# include "gc_atomic_ops.h"
+#endif
+
 #ifndef GC_LOCKS_H
 # include "gc_locks.h"
 #endif
@@ -281,10 +294,6 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 /*                               */
 /*********************************/
 
-/* #define STUBBORN_ALLOC */
-                    /* Enable stubborn allocation, and thus a limited   */
-                    /* form of incremental collection w/o dirty bits.   */
-
 /* #define ALL_INTERIOR_POINTERS */
                     /* Forces all pointers into the interior of an      */
                     /* object to be considered valid.  Also causes the  */
@@ -313,10 +322,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                     /* This is now really controlled at startup,        */
                     /* through GC_all_interior_pointers.                */
 
-/* Note: never put extern "C" around an #include.                       */
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 #ifndef GC_NO_FINALIZATION
 # define GC_INVOKE_FINALIZERS() GC_notify_or_invoke_finalizers()
@@ -407,9 +413,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   GC_INNER void GC_print_callers(struct callinfo info[NFRAMES]);
 #endif
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 /*********************************/
 /*                               */
@@ -447,14 +451,10 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define MS_TIME_DIFF(a,b) ((long)((a)-(b)))
 #elif defined(NN_PLATFORM_CTR)
 # define CLOCK_TYPE long long
-# ifdef __cplusplus
-    extern "C" {
-# endif
+  EXTERN_C_BEGIN
   CLOCK_TYPE n3ds_get_system_tick(void);
   CLOCK_TYPE n3ds_convert_tick_to_ms(CLOCK_TYPE tick);
-# ifdef __cplusplus
-    } /* extern "C" */
-# endif
+  EXTERN_C_END
 # define GET_TIME(x) (void)(x = n3ds_get_system_tick())
 # define MS_TIME_DIFF(a,b) ((long)n3ds_convert_tick_to_ms((a)-(b)))
 #else /* !BSD_TIME && !NN_PLATFORM_CTR && !MSWIN32 && !MSWINCE */
@@ -512,9 +512,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # include "th/PCR_ThCtl.h"
 #endif
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 /*
  * Stop and restart mutator threads.
@@ -529,7 +527,8 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
                                    PCR_allSigsBlocked, \
                                    PCR_waitForever)
 # else
-#   if defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
+//|| defined(NINTENDO_SWITCH) 
+#   if defined(NN_PLATFORM_CTR) \
        || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS)
       GC_INNER void GC_stop_world(void);
       GC_INNER void GC_start_world(void);
@@ -592,17 +591,18 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 /* should match their format specifiers.                                */
 #define ABORT_ARG1(C_msg, C_fmt, arg1) \
                 do { \
-                  GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt, arg1); \
+                  GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt "\n", arg1); \
                   ABORT(C_msg); \
                 } while (0)
 #define ABORT_ARG2(C_msg, C_fmt, arg1, arg2) \
                 do { \
-                  GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt, arg1, arg2); \
+                  GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt "\n", arg1, arg2); \
                   ABORT(C_msg); \
                 } while (0)
 #define ABORT_ARG3(C_msg, C_fmt, arg1, arg2, arg3) \
                 do { \
-                  GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt, arg1, arg2, arg3); \
+                  GC_INFOLOG_PRINTF(C_msg /* + */ C_fmt "\n", \
+                                    arg1, arg2, arg3); \
                   ABORT(C_msg); \
                 } while (0)
 
@@ -659,9 +659,7 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # define GETENV(name) getenv(name)
 #endif
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 #if defined(DARWIN)
 # include <mach/thread_status.h>
@@ -744,24 +742,15 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # endif
 #endif /* DARWIN */
 
-#ifdef PARALLEL_MARK
-# include "gc_atomic_ops.h"
-# define counter_t volatile AO_t
-#else
-  typedef size_t counter_t;
-# if defined(THREADS) && (defined(MPROTECT_VDB) || defined(THREAD_SANITIZER) \
-                || (defined(GC_ASSERTIONS) && defined(THREAD_LOCAL_ALLOC)))
-#   include "gc_atomic_ops.h"
-# endif
-#endif /* !PARALLEL_MARK */
-
 #include "../gc_tiny_fl.h"
 
 #include <setjmp.h>
 
-#ifdef __cplusplus
-  extern "C" {
+#if __STDC_VERSION__ >= 201112L
+# include <assert.h> /* for static_assert */
 #endif
+
+EXTERN_C_BEGIN
 
 /*********************************/
 /*                               */
@@ -1080,7 +1069,8 @@ struct hblkhdr {
                                 /* mod BYTES_TO_GRANULES(hb_sz), except */
                                 /* for large blocks.  See GC_obj_map.   */
 #   endif
-    counter_t hb_n_marks;       /* Number of set mark bits, excluding   */
+#   ifdef PARALLEL_MARK
+      volatile AO_t hb_n_marks; /* Number of set mark bits, excluding   */
                                 /* the one always set at the end.       */
                                 /* Currently it is concurrently         */
                                 /* updated and hence only approximate.  */
@@ -1098,8 +1088,10 @@ struct hblkhdr {
                                 /* The count may also be too high if    */
                                 /* multiple mark threads mark the       */
                                 /* same object due to a race.           */
-                                /* Without parallel marking, the count  */
+#   else
+      size_t hb_n_marks;        /* Without parallel marking, the count  */
                                 /* is accurate.                         */
+#   endif
 #   ifdef USE_MARK_BYTES
 #     define MARK_BITS_SZ (MARK_BITS_PER_HBLK + 1)
         /* Unlike the other case, this is in units of bytes.            */
@@ -1353,12 +1345,8 @@ struct _GC_arrays {
 # endif
   size_t _size_map[MAXOBJBYTES+1];
         /* Number of granules to allocate when asked for a certain      */
-        /* number of bytes.                                             */
-# ifdef STUBBORN_ALLOC
-#   define GC_sobjfreelist GC_arrays._sobjfreelist
-    ptr_t _sobjfreelist[MAXOBJGRANULES+1];
-                          /* Free list for immutable objects.   */
-# endif
+        /* number of bytes.  Should be accessed with the allocation     */
+        /* lock held.                                                   */
 # ifdef MARK_BIT_PER_GRANULE
 #   define GC_obj_map GC_arrays._obj_map
     unsigned short * _obj_map[MAXOBJGRANULES + 1];
@@ -1378,16 +1366,6 @@ struct _GC_arrays {
   char _valid_offsets[VALID_OFFSET_SZ];
                                 /* GC_valid_offsets[i] == TRUE ==> i    */
                                 /* is registered as a displacement.     */
-# ifdef STUBBORN_ALLOC
-#   define GC_changed_pages GC_arrays._changed_pages
-    page_hash_table _changed_pages;
-        /* Stubborn object pages that were changes since last call to   */
-        /* GC_read_changed.                                             */
-#   define GC_prev_changed_pages GC_arrays._prev_changed_pages
-    page_hash_table _prev_changed_pages;
-        /* Stubborn object pages that were changes before last call to  */
-        /* GC_read_changed.                                             */
-# endif
 # if defined(PROC_VDB) || defined(MPROTECT_VDB) \
      || defined(GWW_VDB) || defined(MANUAL_VDB)
 #   define GC_grungy_pages GC_arrays._grungy_pages
@@ -1530,11 +1508,11 @@ GC_EXTERN struct obj_kind {
 #define UNCOLLECTABLE 2
 #ifdef GC_ATOMIC_UNCOLLECTABLE
 # define AUNCOLLECTABLE 3
-# define STUBBORN 4
 # define IS_UNCOLLECTABLE(k) (((k) & ~1) == UNCOLLECTABLE)
+# define GC_N_KINDS_INITIAL_VALUE 4
 #else
-# define STUBBORN 3
 # define IS_UNCOLLECTABLE(k) ((k) == UNCOLLECTABLE)
+# define GC_N_KINDS_INITIAL_VALUE 3
 #endif
 
 GC_EXTERN unsigned GC_n_kinds;
@@ -1576,7 +1554,7 @@ GC_EXTERN word GC_black_list_spacing;
 
 #ifdef GC_GCJ_SUPPORT
   extern struct hblk * GC_hblkfreelist[];
-                                        /* Remains visible to GNU GCJ. */
+  extern word GC_free_bytes[];  /* Both remain visible to GNU GCJ.      */
 #endif
 
 #ifdef GC_DISABLE_INCREMENTAL
@@ -1735,6 +1713,13 @@ GC_INNER void GC_push_all_stack(ptr_t b, ptr_t t);
                                     /* As GC_push_all but consider      */
                                     /* interior pointers as valid.      */
 
+#if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)
+  /* GC_mark_local does not handle memory protection faults yet.  So,   */
+  /* the static data regions are scanned immediately by GC_push_roots.  */
+  GC_INNER void GC_push_conditional_eager(void *bottom, void *top,
+                                          GC_bool all);
+#endif
+
   /* In the threads case, we push part of the current thread stack      */
   /* with GC_push_all_eager when we push the registers.  This gets the  */
   /* callee-save registers that may disappear.  The remainder of the    */
@@ -1804,6 +1789,9 @@ GC_INNER void GC_set_fl_marks(ptr_t p);
                                     /* set.  Abort if not.              */
 #endif
 void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp);
+#ifdef USE_PROC_FOR_LIBRARIES
+  GC_INNER void GC_remove_roots_subregion(ptr_t b, ptr_t e);
+#endif
 GC_INNER void GC_exclude_static_roots_inner(void *start, void *finish);
 #if defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
     || defined(CYGWIN32) || defined(PCR)
@@ -1829,7 +1817,10 @@ void GC_register_data_segments(void);
   GC_INNER GC_bool GC_is_static_root(void *p);
                 /* Is the address p in one of the registered static     */
                 /* root sections?                                       */
-#endif
+# ifdef TRACE_BUF
+    void GC_add_trace_entry(char *kind, word arg1, word arg2);
+# endif
+#endif /* !THREADS */
 
 /* Black listing: */
 #ifdef PRINT_BLACK_LIST
@@ -1965,6 +1956,13 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func f);
 #define GC_gcollect_inner() \
                 (void)GC_try_to_collect_inner(GC_never_stop_func)
 
+#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+  GC_EXTERN GC_bool GC_in_thread_creation;
+        /* We may currently be in thread creation or destruction.       */
+        /* Only set to TRUE while allocation lock is held.              */
+        /* When set, it is OK to run GC from unknown thread.            */
+#endif
+
 GC_EXTERN GC_bool GC_is_initialized; /* GC_init() has been run. */
 
 GC_INNER void GC_collect_a_little_inner(int n);
@@ -1985,6 +1983,9 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k);
                                 /* beginning of the object while the    */
                                 /* object is live.                      */
 #endif
+
+GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
+                                      GC_bool ignore_off_page, GC_bool retry);
 
 GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
                                 /* Make the indicated                   */
@@ -2191,23 +2192,23 @@ GC_EXTERN GC_bool GC_print_back_height;
                 /* GC_enable_incremental once more).                    */
 #endif /* !GC_DISABLE_INCREMENTAL */
 
+#ifdef MANUAL_VDB
+  GC_INNER void GC_dirty_inner(const void *p); /* does not require locking */
+# define GC_dirty(p) (GC_incremental ? GC_dirty_inner(p) : (void)0)
+# define REACHABLE_AFTER_DIRTY(p) GC_reachable_here(p)
+#else
+# define GC_dirty(p) (void)(p)
+# define REACHABLE_AFTER_DIRTY(p) (void)(p)
+#endif
+
 /* Same as GC_base but excepts and returns a pointer to const object.   */
 #define GC_base_C(p) ((const void *)GC_base((/* no const */ void *)(p)))
-
-/* Stubborn objects: */
-void GC_read_changed(void); /* Analogous to GC_read_dirty */
-GC_bool GC_page_was_changed(struct hblk * h);
-                                /* Analogous to GC_page_was_dirty */
-void GC_clean_changing_list(void);
-                                /* Collect obsolete changing list entries */
-void GC_stubborn_init(void);
 
 /* Debugging print routines: */
 void GC_print_block_list(void);
 void GC_print_hblkfreelist(void);
 void GC_print_heap_sects(void);
 void GC_print_static_roots(void);
-/* void GC_dump(void); - declared in gc.h */
 
 extern word GC_fo_entries; /* should be visible in extra/MacOS.c */
 
@@ -2350,15 +2351,28 @@ GC_EXTERN signed_word GC_bytes_found;
   GC_EXTERN ptr_t * GC_gcjobjfreelist;
 #endif
 
-#if defined(GWW_VDB) && defined(MPROTECT_VDB)
-  GC_INNER GC_bool GC_gww_dirty_init(void);
-  /* Defined in os_dep.c.  Returns TRUE if GetWriteWatch is available.  */
-  /* May be called repeatedly.                                          */
-#endif
+#ifdef MPROTECT_VDB
+# ifdef GWW_VDB
+    GC_INNER GC_bool GC_gww_dirty_init(void);
+                        /* Returns TRUE if GetWriteWatch is available.  */
+                        /* May be called repeatedly.                    */
+# endif
+# ifdef USE_MUNMAP
+    GC_INNER GC_bool GC_mprotect_dirty_init(void);
+    GC_INNER GC_bool GC_has_unmapped_memory(void);
+# endif
+#endif /* MPROTECT_VDB */
 
 #if defined(CHECKSUMS) || defined(PROC_VDB)
   GC_INNER GC_bool GC_page_was_ever_dirty(struct hblk * h);
                         /* Could the page contain valid heap pointers?  */
+#endif
+
+#ifdef CHECKSUMS
+# if defined(MPROTECT_VDB) && !defined(DARWIN)
+    void GC_record_fault(struct hblk * h);
+# endif
+  void GC_check_dirty(void);
 #endif
 
 GC_INNER void GC_default_print_heap_obj_proc(ptr_t p);
@@ -2374,9 +2388,9 @@ GC_INNER void GC_start_debugging_inner(void);   /* defined in dbg_mlc.c. */
                         /* Should not be called if GC_debugging_started. */
 
 /* Store debugging info into p.  Return displaced pointer.      */
-/* Assumes we don't hold allocation lock.                       */
-GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
-                                   int linenum);
+/* Assumes we hold the allocation lock.                         */
+GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
+                                         int linenum);
 
 #ifdef REDIRECT_MALLOC
 # ifdef GC_LINUX_THREADS
@@ -2405,8 +2419,12 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #ifdef GC_WIN32_THREADS
   GC_INNER void GC_get_next_stack(char *start, char * limit, char **lo,
                                   char **hi);
-# ifdef MPROTECT_VDB
+# if defined(MPROTECT_VDB) && !defined(CYGWIN32)
     GC_INNER void GC_set_write_fault_handler(void);
+# endif
+# if defined(WRAP_MARK_SOME) && !defined(GC_PTHREADS)
+    GC_INNER GC_bool GC_started_thread_while_stopped(void);
+        /* Did we invalidate mark phase with an unexpected thread start? */
 # endif
 #endif /* GC_WIN32_THREADS */
 
@@ -2432,10 +2450,12 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 
 #ifdef SEARCH_FOR_DATA_START
   GC_INNER void GC_init_linux_data_start(void);
+  ptr_t GC_find_limit(ptr_t, GC_bool);
 #endif
 
 #if defined(NETBSD) && defined(__ELF__)
   GC_INNER void GC_init_netbsd_elf(void);
+  ptr_t GC_find_limit(ptr_t, GC_bool);
 #endif
 
 #ifdef UNIX_LIKE
@@ -2447,6 +2467,10 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
     GC_INNER char *GC_parse_map_entry(char *buf_ptr, ptr_t *start, ptr_t *end,
                                       char **prot, unsigned int *maj_dev,
                                       char **mapping_name);
+# endif
+# if defined(IA64) || defined(INCLUDE_LINUX_THREAD_DESCR)
+    GC_INNER GC_bool GC_enclosing_mapping(ptr_t addr,
+                                          ptr_t *startp, ptr_t *endp);
 # endif
   GC_INNER char *GC_get_maps(void); /* from os_dep.c */
 #endif /* NEED_PROC_MAPS */
@@ -2467,8 +2491,11 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #endif
 
 /* Check a compile time assertion at compile time.      */
-#if defined(static_assert) && (__STDC_VERSION__ >= 201112L)
-# define GC_STATIC_ASSERT(expr) static_assert(expr, "")
+#if _MSC_VER >= 1700
+# define GC_STATIC_ASSERT(expr) \
+                static_assert(expr, "static assertion failed: " #expr)
+#elif defined(static_assert) && __STDC_VERSION__ >= 201112L
+# define GC_STATIC_ASSERT(expr) static_assert(expr, #expr)
 #elif defined(mips) && !defined(__GNUC__)
 /* DOB: MIPSPro C gets an internal error taking the sizeof an array type.
    This code works correctly (ugliness is to avoid "unused var" warnings) */
@@ -2496,8 +2523,9 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #ifndef NO_DEBUGGING
   GC_EXTERN GC_bool GC_dump_regularly;
                                 /* Generate regular debugging dumps.    */
-# define COND_DUMP if (EXPECT(GC_dump_regularly, FALSE)) GC_dump(); \
-                        else COND_DUMP_CHECKS
+# define COND_DUMP if (EXPECT(GC_dump_regularly, FALSE)) { \
+                        GC_dump_named(NULL); \
+                   } else COND_DUMP_CHECKS
 #else
 # define COND_DUMP COND_DUMP_CHECKS
 #endif
@@ -2584,13 +2612,9 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #if (defined(UNIX_LIKE) || (defined(NEED_FIND_LIMIT) && defined(CYGWIN32))) \
     && !defined(GC_NO_SIGSETJMP)
 # if defined(SUNOS5SIGS) && !defined(FREEBSD) && !defined(LINUX)
-#   ifdef __cplusplus
-      } /* extern "C" */
-#   endif
+    EXTERN_C_END
 #   include <sys/siginfo.h>
-#   ifdef __cplusplus
-      extern "C" {
-#   endif
+    EXTERN_C_BEGIN
 # endif
   /* Define SETJMP and friends to be the version that restores  */
   /* the signal mask.                                           */
@@ -2609,27 +2633,17 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 
 /* Do we need the GC_find_limit machinery to find the end of a  */
 /* data segment.                                                */
-#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START)
-# define NEED_FIND_LIMIT
-#endif
-
-#if !defined(STACKBOTTOM) && defined(HEURISTIC2)
-# define NEED_FIND_LIMIT
-#endif
-
-#if (defined(SVR4) || defined(AUX) || defined(DGUX) \
-    || (defined(LINUX) && defined(SPARC))) && !defined(PCR)
+#if defined(HEURISTIC2) || defined(SEARCH_FOR_DATA_START) \
+    || (!defined(STACKBOTTOM) && defined(HEURISTIC2)) \
+    || ((defined(SVR4) || defined(AIX) || defined(DGUX) \
+         || (defined(LINUX) && defined(SPARC))) && !defined(PCR))
 # define NEED_FIND_LIMIT
 #endif
 
 #if defined(DATASTART_USES_BSDGETDATASTART)
-# ifdef __cplusplus
-    } /* extern "C" */
-# endif
+  EXTERN_C_END
 # include <machine/trap.h>
-# ifdef __cplusplus
-    extern "C" {
-# endif
+  EXTERN_C_BEGIN
 # if !defined(PCR)
 #   define NEED_FIND_LIMIT
 # endif
@@ -2688,8 +2702,6 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define ASSERT_CANCEL_DISABLED() (void)0
 #endif /* !CANCEL_SAFE */
 
-#ifdef __cplusplus
-  } /* extern "C" */
-#endif
+EXTERN_C_END
 
 #endif /* GC_PRIVATE_H */

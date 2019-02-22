@@ -1,4 +1,4 @@
-' Copyright (c) 2016 Bruce A Henderson
+' Copyright (c) 2018 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -63,6 +63,7 @@ Extern
 	Function bmx_stringbuilder_append_ulong(buffer:Byte Ptr, value:ULong)
 	Function bmx_stringbuilder_append_sizet(buffer:Byte Ptr, value:Size_T)
 ?
+	Function bmx_stringbuilder_append_shorts(buffer:Byte Ptr, shorts:Short Ptr, length:Int)
 	Function bmx_stringbuilder_left:String(buffer:Byte Ptr, length:Int)
 	Function bmx_stringbuilder_right:String(buffer:Byte Ptr, length:Int)
 	

@@ -3,6 +3,8 @@ The Module keyword advises the BlitzMax program maker BMK to create a code
 module from the source file.
 End Rem
 
+SuperStrict
+
 Module PUB.Sequencer
 
 ModuleInfo "Framework: Audio Sequencer for use with FreeAudio"
