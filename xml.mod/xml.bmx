@@ -208,7 +208,7 @@ Type TxmlNode Extends TxmlBase
 			If bmx_mxmlGetType(n) = MXML_ELEMENT Then
 				list.AddLast(TxmlNode._create(n))
 			End If
-			n = bmx_mxmlWalkNext(n, nodePtr, MXML_DESCEND)
+			n = bmx_mxmlWalkNext(n, nodePtr, MXML_NO_DESCEND)
 		Wend
 		
 		Return list
