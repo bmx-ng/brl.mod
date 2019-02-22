@@ -273,7 +273,7 @@ Type TxmlNode Extends TxmlBase
 	End Method
 
 	Rem
-	bbdoc: Finds an element fitting to the given path. Wildcards ("*") allowed.
+	bbdoc: Finds the first value (child) node using an XPath. Asterisks * act as wildcards.
 	returns: A node or Null if no match was found.
 	End Rem
 	Method findPath:TxmlNode(path:String)
