@@ -252,7 +252,6 @@ Type TxmlNode Extends TxmlBase
 	End Rem
 	Method getContent:String()
 		Local sb:TStringBuilder = New TStringBuilder()
-		sb.Append(bmx_mxmlGetContent(nodePtr))
 		
 		Local n:Byte Ptr = bmx_mxmlWalkNext(nodePtr, nodePtr, MXML_DESCEND)
 		While n
