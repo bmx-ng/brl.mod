@@ -32,7 +32,7 @@ Import "common.bmx"
 bmx_mxmlSetWrapMargin(0)
 
 Rem
-bbdoc: 
+bbdoc:
 End Rem
 Type TxmlBase Abstract
 
@@ -44,7 +44,7 @@ Type TxmlBase Abstract
 	Method getName:String()
 		Return bmx_mxmlGetElement(nodePtr)
 	End Method
-	
+
 	Rem
 	bbdoc: Returns a string representation of the element.
 	End Rem
@@ -128,42 +128,42 @@ Type TxmlNode Extends TxmlBase
 	Method addContent(content:String)
 		bmx_mxmlAddContent(nodePtr, content)
 	End Method
-	
+
 	Rem
 	bbdoc: Replaces the content of a node.
 	End Rem
 	Method setContent(content:String)
 		bmx_mxmlSetContent(nodePtr, content)
 	End Method
-	
+
 	Rem
 	bbdoc: Sets (or resets) the name of the node.
 	End Rem
 	Method setName(name:String)
 		bmx_mxmlSetElement(nodePtr, name)
 	End Method
-	
+
 	Rem
 	bbdoc: Creates a new attribute.
 	End Rem
 	Method addAttribute(name:String, value:String = "")
 		setAttribute(name, value)
 	End Method
-	
+
 	Rem
 	bbdoc: Sets (or resets) an attribute carried by the node.
 	End Rem
 	Method setAttribute(name:String, value:String = "")
 		bmx_mxmlElementSetAttr(nodePtr, name, value)
 	End Method
-	
+
 	Rem
 	bbdoc: Provides the value of the attribute with the specified qualified name.
 	End Rem
 	Method getAttribute:String(name:String)
 		Return bmx_mxmlElementGetAttr(nodePtr, name)
 	End Method
-	
+
 	Rem
 	bbdoc: Returns the list of node attributes.
 	returns: The list of attributes.
@@ -180,14 +180,14 @@ Type TxmlNode Extends TxmlBase
 		End If
 		Return list
 	End Method
-	
+
 	Rem
 	bbdoc: Remove an attribute carried by the node.
 	End Rem
 	Method unsetAttribute(name:String)
 		bmx_mxmlElementDeleteAttr(nodePtr, name)
 	End Method
-	
+
 	Rem
 	bbdoc: Search an attribute associated to the node
 	returns: the attribute or Null if not found.
@@ -195,22 +195,22 @@ Type TxmlNode Extends TxmlBase
 	Method hasAttribute:Int(name:String)
 		Return bmx_mxmlElementHasAttr(nodePtr, name)
 	End Method
-	
+
 	Rem
 	bbdoc: Returns a list of child nodes.
 	End Rem
 	Method getChildren:TList()
 		Local list:TList = New TList
-		
+
 		Local n:Byte Ptr = bmx_mxmlWalkNext(nodePtr, nodePtr, MXML_DESCEND)
-		
+
 		While n
 			If bmx_mxmlGetType(n) = MXML_ELEMENT Then
 				list.AddLast(TxmlNode._create(n))
 			End If
 			n = bmx_mxmlWalkNext(n, nodePtr, MXML_NO_DESCEND)
 		Wend
-		
+
 		Return list
 	End Method
 
@@ -237,7 +237,7 @@ Type TxmlNode Extends TxmlBase
 	Method nextSibling:TxmlNode()
 		Return TxmlNode._create(bmx_mxmlGetNextSibling(nodePtr))
 	End Method
-	
+
 	Rem
 	bbdoc: Get the previous sibling node
 	returns: The previous node or Null if there are none.
@@ -245,14 +245,14 @@ Type TxmlNode Extends TxmlBase
 	Method previousSibling:TxmlNode()
 		Return TxmlNode._create(bmx_mxmlGetPrevSibling(nodePtr))
 	End Method
-	
+
 	Rem
 	bbdoc: Reads the value of a node.
 	returns: The node content.
 	End Rem
 	Method getContent:String()
 		Local sb:TStringBuilder = New TStringBuilder()
-		
+
 		Local n:Byte Ptr = bmx_mxmlWalkNext(nodePtr, nodePtr, MXML_DESCEND)
 		While n
 			If bmx_mxmlGetType(n) = MXML_OPAQUE Then
@@ -260,16 +260,24 @@ Type TxmlNode Extends TxmlBase
 			End If
 			n = bmx_mxmlWalkNext(n, nodePtr, MXML_DESCEND)
 		Wend
-		
+
 		Return sb.ToString()
 	End Method
-	
+
 	Rem
 	bbdoc: Finds an element of the given @element name, attribute or attribute/value.
 	returns: A node or Null if no match was found.
 	End Rem
 	Method findElement:TxmlNode(element:String = "", attr:String = "", value:String = "")
 		Return TxmlNode._create(bmx_mxmlFindElement(nodePtr, element, attr, value))
+	End Method
+
+	Rem
+	bbdoc: Finds an element fitting to the given path. Wildcards ("*") allowed.
+	returns: A node or Null if no match was found.
+	End Rem
+	Method findPath:TxmlNode(path:String)
+		Return TxmlNode._create(bmx_mxmlFindPath(nodePtr, path))
 	End Method
 
 	Rem
@@ -281,7 +289,7 @@ Type TxmlNode Extends TxmlBase
 			nodePtr = Null
 		End If
 	End Method
-	
+
 End Type
 
 Rem
@@ -315,19 +323,19 @@ Type TxmlDoc Extends TxmlBase
 	Function readDoc:TxmlDoc(doc:Object)
 		If String(doc) Then
 			Local txt:String = String(doc)
-	
-			' strip utf8 BOM		
+
+			' strip utf8 BOM
 			If txt[..3] = BOM_UTF8 Then
 				txt = txt[3..]
 			End If
-			
+
 			Return TxmlDoc._create(bmx_mxmlLoadString(txt))
-		
+
 		Else If TStream(doc) Then
 			Return parseFile(doc)
 		End If
 	End Function
-	
+
 	Rem
 	bbdoc: Sets the root element of the document.
 	returns: The old root element if any was found.
@@ -335,14 +343,14 @@ Type TxmlDoc Extends TxmlBase
 	Method setRootElement:TxmlNode(root:TxmlNode)
 		Return TxmlNode._create(bmx_mxmlSetRootElement(nodePtr, root.nodePtr))
 	End Method
-	
+
 	Rem
 	bbdoc: Returns the root element of the document.
 	End Rem
 	Method getRootElement:TxmlNode()
 		Return TxmlNode._create(bmx_mxmlGetRootElement(nodePtr))
 	End Method
-	
+
 	Rem
 	bbdoc: Dumps an XML document to a file.
 	returns: True on success, or Fales otherwise.
@@ -351,16 +359,16 @@ Type TxmlDoc Extends TxmlBase
 
 		Local filename:String = String(file)
 		Local created:Int
-		
+
 		If filename Then
 			If filename = "-" Then
 				Return bmx_mxmlSaveStdout(nodePtr, format)
 			Else
 				file = WriteStream(filename)
 				created = True
-			End If		
+			End If
 		End If
-		
+
 		If TStream(file) Then
 			Try
 				Return bmx_mxmlSaveStream(nodePtr, TStream(file), format) = 0
@@ -370,7 +378,7 @@ Type TxmlDoc Extends TxmlBase
 				End If
 			End Try
 		End If
-		
+
 		Return False
 	End Method
 
@@ -379,15 +387,15 @@ Type TxmlDoc Extends TxmlBase
 	returns: The resulting document tree or Null if error.
 	End Rem
 	Function parseFile:TxmlDoc(file:Object)
-		
+
 		Local filename:String = String(file)
 		Local opened:Int
-		
+
 		If filename Then
 			file = ReadStream(filename)
 			opened = True
 		End If
-		
+
 		If TStream(file) Then
 			Local doc:TxmlDoc
 			Try
@@ -399,7 +407,7 @@ Type TxmlDoc Extends TxmlBase
 			End Try
 			Return doc
 		End If
-		
+
 		Return Null
 	End Function
 
@@ -412,7 +420,7 @@ Type TxmlDoc Extends TxmlBase
 			nodePtr = Null
 		End If
 	End Method
-	
+
 End Type
 
 Private
@@ -436,11 +444,11 @@ Type TxmlAttribute
 		Self.name = name
 		Self.value = value
 	End Method
-	
+
 	Method getName:String()
 		Return name
 	End Method
-	
+
 	Method getValue:String()
 		Return value
 	End Method

@@ -12,7 +12,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-*/ 
+*/
 
 #include "pub.mod/mxml.mod/mxml/mxml.h"
 #include "brl.mod/blitz.mod/blitz.h"
@@ -45,19 +45,19 @@ static int bmx_mxml_getDepth(mxml_node_t * node) {
 
 static const char * bmx_mxml_whitspace_cb(mxml_node_t * node, int where, void * ctxt) {
 	struct whitespace_t * ws = (struct whitespace_t*)ctxt;
-	
+
 	if (ws) {
 		int depth = bmx_mxml_getDepth(node);
 
 		if (depth > 0) {
-		
+
 			ws->buf[0] = '\n';
 			depth--;
-			
+
 			if (depth > 2047) {
 				depth = 2047;
 			}
-			
+
 			if (ws->spaces < depth) {
 				char * q = 1 + ws->buf + ws->spaces * 2;
 				for (int i = ws->spaces; i < depth; i++) {
@@ -65,7 +65,7 @@ static const char * bmx_mxml_whitspace_cb(mxml_node_t * node, int where, void * 
 					*q++ = ' ';
 				}
 			}
-			
+
 			ws->buf[1 + depth * 2] = 0;
 			ws->spaces = depth;
 
@@ -77,11 +77,11 @@ static const char * bmx_mxml_whitspace_cb(mxml_node_t * node, int where, void * 
 						return ws->buf;
 					}
 				break;
-				
+
 			}
 		}
 	}
-	
+
 	return NULL;
 }
 
@@ -135,7 +135,7 @@ BBString * bmx_mxmlGetElement(mxml_node_t * node) {
 	if (n) {
 		return bbStringFromUTF8String(n);
 	}
-	
+
 	return &bbEmptyString;
 }
 
@@ -310,18 +310,18 @@ static int bmx_mxml_string_read(void * ctxt, void *buf, unsigned int length) {
 
 	int txtLength = data->txt->length;
 	int count = 0;
-	
+
 	unsigned short *p = data->txt->buf + data->txtOffset;
 	char *q = buf;
 	char *a = data->padding;
-	
+
 	while (data->txtOffset < txtLength && count < length) {
-		
+
 		while (data->padCount > 0) {
 			*q++ = a[--data->padCount];
 			count++;
 		}
-		
+
 		unsigned int c=*p++;
 		if( c<0x80 ){
 			*q++ = c;
@@ -339,7 +339,7 @@ static int bmx_mxml_string_read(void * ctxt, void *buf, unsigned int length) {
 			*q++ = 0xe0|(c>>12);
 			if (++count < length) {
 				*q++ = 0x80|((c>>6)&0x3f);
-				
+
 				if (++count < length) {
 					*q++ = 0x80|(c&0x3f);
 					count++;
@@ -363,7 +363,7 @@ mxml_node_t * bmx_mxmlLoadString(BBString * txt) {
 	if (txt == &bbEmptyString) {
 		return NULL;
 	}
-	
+
 	struct _string_buf buf = {txt = txt};
 
 	return mxmlLoadStream(NULL, bmx_mxml_string_read, &buf, MXML_OPAQUE_CALLBACK);
@@ -386,7 +386,7 @@ mxml_node_t * bmx_mxmlFindElement(mxml_node_t * node, BBString * element, BBStri
 	char * e = 0;
 	char * a = 0;
 	char * v = 0;
-	
+
 	if (element != &bbEmptyString) {
 		e = bbStringToUTF8String(element);
 	}
@@ -396,12 +396,26 @@ mxml_node_t * bmx_mxmlFindElement(mxml_node_t * node, BBString * element, BBStri
 	if (value != &bbEmptyString) {
 		v = bbStringToUTF8String(value);
 	}
-	
+
 	mxml_node_t * result = mxmlFindElement(node, node, e, a, v, MXML_DESCEND);
-	
+
 	bbMemFree(v);
 	bbMemFree(a);
 	bbMemFree(e);
-	
+
+	return result;
+}
+
+mxml_node_t * bmx_mxmlFindPath( mxml_node_t * node, BBString * path) {
+	char * p = 0;
+
+	if (path != &bbEmptyString) {
+		p = bbStringToUTF8String(path);
+	}
+
+	mxml_node_t * result = mxmlFindPath(node, p);
+
+	bbMemFree(p);
+
 	return result;
 }
