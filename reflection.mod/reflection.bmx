@@ -159,7 +159,7 @@ Function _Get:Object(p:Byte Ptr, typeId:TTypeId)
 					Return String.FromSizeT((Size_T Ptr p)[0])
 				Case typeId.IsStruct()
 					Return New TBoxedStruct(typeId, p)
-				Case typeId._class
+				Case typeId._class <> Null
 					Return bbRefGetObject(p)
 				Default
 					Throw "Unable to get value of this type"
