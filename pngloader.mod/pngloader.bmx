@@ -225,7 +225,7 @@ Private
 
 Type TPixmapLoaderPNG Extends TPixmapLoader
 
-	Method LoadPixmap:TPixmap( stream:TStream )
+	Method LoadPixmap:TPixmap( stream:TStream ) Override
 	
 		Return LoadPixmapPNG( stream )
 	

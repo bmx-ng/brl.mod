@@ -69,7 +69,7 @@ Type TGraphicsMode
 
 	Field width,height,depth,hertz
 	
-	Method ToString$()
+	Method ToString$() Override
 		Return width+","+height+","+depth+" "+hertz+"Hz"
 	End Method
 

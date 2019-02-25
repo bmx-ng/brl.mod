@@ -35,18 +35,18 @@ End Function
 
 Type TDefaultTimer Extends TTimer
 
-	Method Ticks:Int()
+	Method Ticks:Int() Override
 		Return _ticks
 	End Method
 	
-	Method Stop()
+	Method Stop() Override
 		If Not _handle Return
 		bbTimerStop _handle,Self
 		_handle=0
 		_event=Null
 	End Method
 	
-	Method Fire()
+	Method Fire() Override
 		If Not _handle Return
 		_ticks:+1
 		If _event
@@ -56,7 +56,7 @@ Type TDefaultTimer Extends TTimer
 		EndIf
 	End Method
 
-	Method Wait:Int()
+	Method Wait:Int() Override
 		If Not _handle Return 0
 		Local n:Int
 		Repeat
@@ -67,7 +67,7 @@ Type TDefaultTimer Extends TTimer
 		Return n
 	End Method
 	
-	Function Create:TTimer( hertz#,event:TEvent=Null )
+	Function Create:TTimer( hertz#,event:TEvent=Null ) Override
 		Local t:TDefaultTimer =New TDefaultTimer
 		Local handle:Byte Ptr=bbTimerStart( hertz,t )
 		If Not handle Return Null
@@ -86,11 +86,11 @@ End Type
 
 Type TDefaultTimerFactory Extends TTimerFactory
 	
-	Method GetName:String()
+	Method GetName:String() Override
 		Return "DefaultTimer"
 	End Method
 	
-	Method Create:TTimer(hertz#,event:TEvent=Null)
+	Method Create:TTimer(hertz#,event:TEvent=Null) Override
 		Return TDefaultTimer.Create( hertz,event )
 	End Method
 		

@@ -117,11 +117,11 @@ Type TNode Extends TKeyValue
 		Return t
 	End Method
 	
-	Method Key:Object()
+	Method Key:Object() Override
 		Return _key
 	End Method
 	
-	Method Value:Object()
+	Method Value:Object() Override
 		Return _value
 	End Method
 
@@ -158,7 +158,7 @@ Type TNodeEnumerator
 End Type
 
 Type TKeyEnumerator Extends TNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
 ?
@@ -169,7 +169,7 @@ Type TKeyEnumerator Extends TNodeEnumerator
 End Type
 
 Type TValueEnumerator Extends TNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
 ?

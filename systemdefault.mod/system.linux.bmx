@@ -48,11 +48,11 @@ Type TLinuxSystemDriver Extends TSystemDriver
 		bbSystemStartup
 	End Method
 
-	Method Poll()
+	Method Poll() Override
 		bbSystemPoll()
 	End Method
 	
-	Method Wait()
+	Method Wait() Override
 		bbSystemWait()
 	End Method
 
@@ -60,44 +60,44 @@ Type TLinuxSystemDriver Extends TSystemDriver
 		Throw "simon come here"
 	End Method
 
-	Method SetMouseVisible( visible:Int )
+	Method SetMouseVisible( visible:Int ) Override
 		bbSetMouseVisible(visible)
 	End Method
 
-	Method MoveMouse( x:Int,y:Int )
+	Method MoveMouse( x:Int,y:Int ) Override
 		bbMoveMouse x,y
 	End Method
 
-	Method Notify( text$,serious:Int )
-		WriteStdout text+"~r~n"
+	Method Notify( Text$,serious:Int ) Override
+		WriteStdout Text+"~r~n"
 	End Method
 	
-	Method Confirm:Int( text$,serious:Int )
-		WriteStdout text+" (Yes/No)?"
+	Method Confirm:Int( Text$,serious:Int ) Override
+		WriteStdout Text+" (Yes/No)?"
 		Local t$=ReadStdin().ToLower()
 		If t[..1]="y" Return 1
 		Return 0
 	End Method
 	
-	Method Proceed:Int( text$,serious:Int )
-		WriteStdout text+" (Yes/No/Cancel)?"
+	Method Proceed:Int( Text$,serious:Int ) Override
+		WriteStdout Text+" (Yes/No/Cancel)?"
 		Local t$=ReadStdin().ToLower()
 		If t[..1]="y" Return 1
 		If t[..1]="n" Return 0
 		Return -1
 	End Method
 
-	Method RequestFile$( text$,exts$,save:Int,file$ )
+	Method RequestFile$( Text$,exts$,save:Int,file$ ) Override
 		WriteStdout "Enter a filename:"
 		Return ReadStdin()
 	End Method
 	
-	Method RequestDir$( text$,path$ )
+	Method RequestDir$( Text$,path$ ) Override
 		WriteStdout "Enter a directory name:"
 		Return ReadStdin()
 	End Method
 
-	Method OpenURL:Int( url$ )
+	Method OpenURL:Int( url$ ) Override
 		If getenv_("KDE_FULL_DESKTOP")
 			system_ "kfmclient exec ~q"+url+"~q"
 		ElseIf getenv_("GNOME_DESKTOP_SESSION_ID")
@@ -105,23 +105,23 @@ Type TLinuxSystemDriver Extends TSystemDriver
 		EndIf
 	End Method
 
-	Method DesktopWidth:Int()
+	Method DesktopWidth:Int() Override
 		Return bbSystemDesktopWidth()
 	End Method
 	
-	Method DesktopHeight:Int()
+	Method DesktopHeight:Int() Override
 		Return bbSystemDesktopHeight()
 	End Method
 	
-	Method DesktopDepth:Int()
+	Method DesktopDepth:Int() Override
 		Return bbSystemDesktopDepth()
 	End Method
 	
-	Method DesktopHertz:Int()
+	Method DesktopHertz:Int() Override
 		Return bbSystemDesktopHertz()
 	End Method
 
-	Method Name:String()
+	Method Name:String() Override
 		Return "LinuxSystemDriver"
 	End Method
 	

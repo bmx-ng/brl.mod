@@ -184,7 +184,7 @@ Type TD3D9ImageFrame Extends TImageFrame
 		Return Self
 	End Method
 	
-	Method Draw( x0#,y0#,x1#,y1#,tx#,ty#,sx#,sy#,sw#,sh# )
+	Method Draw( x0#,y0#,x1#,y1#,tx#,ty#,sx#,sy#,sw#,sh# ) Override
 		Local u0#=sx * _uscale
 		Local v0#=sy * _vscale
 		Local u1#=(sx+sw) * _uscale
@@ -241,7 +241,7 @@ End Type
 
 Type TD3D9Max2DDriver Extends TMax2dDriver
 
-	Method ToString$()
+	Method ToString$() Override
 		Return "DirectX9"
 	End Method
 
@@ -259,22 +259,22 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 
 	'***** TGraphicsDriver *****
-	Method GraphicsModes:TGraphicsMode[]()
+	Method GraphicsModes:TGraphicsMode[]() Override
 		Return D3D9GraphicsDriver().GraphicsModes()
 	End Method
 	
-	Method AttachGraphics:TGraphics( widget:Byte Ptr,flags )
+	Method AttachGraphics:TGraphics( widget:Byte Ptr,flags ) Override
 		Local g:TD3D9Graphics=D3D9GraphicsDriver().AttachGraphics( widget,flags )
 		If g Return TMax2DGraphics.Create( g,Self )
 	End Method
 	
-	Method CreateGraphics:TGraphics( width,height,depth,hertz,flags )
+	Method CreateGraphics:TGraphics( width,height,depth,hertz,flags ) Override
 		Local g:TD3D9Graphics=D3D9GraphicsDriver().CreateGraphics( width,height,depth,hertz,flags )
 		If Not g Return Null
 		Return TMax2DGraphics.Create( g,Self )
 	End Method
 	
-	Method SetGraphics( g:TGraphics )
+	Method SetGraphics( g:TGraphics ) Override
 
 		If Not g
 			If _d3dDev
@@ -308,7 +308,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		
 	End Method
 	
-	Method Flip( sync )
+	Method Flip( sync ) Override
 		_d3dDev.EndScene
 		If D3D9GraphicsDriver().Flip( sync )
 			_d3dDev.BeginScene
@@ -366,11 +366,11 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 
 	'***** TMax2DDriver *****
-	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags )
+	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags ) Override
 		Return New TD3D9ImageFrame.Create( pixmap,flags )
 	End Method
 	
-	Method SetBlend( blend )
+	Method SetBlend( blend ) Override
 		If blend=_active_blend Return
 		Select blend
 		Case SOLIDBLEND
@@ -398,7 +398,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_active_blend=blend
 	End Method
 	
-	Method SetAlpha( alpha# )
+	Method SetAlpha( alpha# ) Override
 		alpha=Max(Min(alpha,1),0)
 		_color=(Int(255*alpha) Shl 24)|(_color&$ffffff)
 		_iverts[3]=_color
@@ -407,7 +407,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_iverts[21]=_color
 	End Method
 	
-	Method SetColor( red,green,blue )
+	Method SetColor( red,green,blue ) Override
 		red=Max(Min(red,255),0)
 		green=Max(Min(green,255),0)
 		blue=Max(Min(blue,255),0)
@@ -418,14 +418,14 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_iverts[21]=_color
 	End Method
 	
-	Method SetClsColor( red,green,blue )
+	Method SetClsColor( red,green,blue ) Override
 		red=Max(Min(red,255),0)
 		green=Max(Min(green,255),0)
 		blue=Max(Min(blue,255),0)
 		_clscolor=$ff000000|(red Shl 16)|(green Shl 8)|blue
 	End Method
 	
-	Method SetViewport( x,y,width,height )
+	Method SetViewport( x,y,width,height ) Override
 		If x=0 And y=0 And width=_gw And height=_gh 'GraphicsWidth() And height=GraphicsHeight()
 			_d3dDev.SetRenderState D3DRS_SCISSORTESTENABLE,False
 		Else
@@ -435,29 +435,29 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		EndIf
 	End Method
 	
-	Method SetTransform( xx#,xy#,yx#,yy# )
+	Method SetTransform( xx#,xy#,yx#,yy# ) Override
 		_ix=xx
 		_iy=xy
 		_jx=yx
 		_jy=yy		
 	End Method
 	
-	Method SetLineWidth( width# )
+	Method SetLineWidth( width# ) Override
 		_lineWidth=width
 	End Method
 	
-	Method Cls()
+	Method Cls() Override
 		_d3dDev.Clear 0,Null,D3DCLEAR_TARGET,_clscolor,0,0
 	End Method
 	
-	Method Plot( x#,y# )
+	Method Plot( x#,y# ) Override
 		_fverts[0]=x+.5
 		_fverts[1]=y+.5
 		DisableTex
 		_d3dDev.DrawPrimitiveUP D3DPT_POINTLIST,1,_fverts,24
 	End Method
 	
-	Method DrawLine( x0#,y0#,x1#,y1#,tx#,ty# )
+	Method DrawLine( x0#,y0#,x1#,y1#,tx#,ty# ) Override
 		Local lx0# = x0*_ix + y0*_iy + tx
 		Local ly0# = x0*_jx + y0*_jy + ty
 		Local lx1# = x1*_ix + y1*_iy + tx
@@ -495,7 +495,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_d3dDev.DrawPrimitiveUP D3DPT_TRIANGLESTRIP,2,_fverts,24
 	End Method
 	
-	Method DrawRect( x0#,y0#,x1#,y1#,tx#,ty# )
+	Method DrawRect( x0#,y0#,x1#,y1#,tx#,ty# ) Override
 		_fverts[0]  = x0*_ix + y0*_iy + tx
 		_fverts[1]  = x0*_jx + y0*_jy + ty
 		_fverts[6]  = x1*_ix + y0*_iy + tx
@@ -508,7 +508,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_d3dDev.DrawPrimitiveUP D3DPT_TRIANGLESTRIP,2,_fverts,24
 	End Method
 	
-	Method DrawOval( x0#,y0#,x1#,y1#,tx#,ty# )
+	Method DrawOval( x0#,y0#,x1#,y1#,tx#,ty# ) Override
 		Local xr#=(x1-x0)*.5
 		Local yr#=(y1-y0)*.5
 		Local segs=Abs(xr)+Abs(yr)
@@ -529,7 +529,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_d3dDev.DrawPrimitiveUP D3DPT_TRIANGLEFAN,segs-2,fverts,24
 	End Method
 	
-	Method DrawPoly( verts#[],handlex#,handley#,tx#,ty# )
+	Method DrawPoly( verts#[],handlex#,handley#,tx#,ty# ) Override
 		If verts.length<6 Or (verts.length&1) Return
 		Local segs=verts.length/2
 		Local fverts#[segs*6]
@@ -546,7 +546,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 		
 	'GetDC/BitBlt MUCH faster than locking backbuffer!	
-	Method DrawPixmap( pixmap:TPixmap,x,y )
+	Method DrawPixmap( pixmap:TPixmap,x,y ) Override
 		Local width=pixmap.width,height=pixmap.height
 	
 		Local dstsurf:IDirect3DSurface9' = New IDirect3DSurface9
@@ -577,7 +577,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 
 	'GetDC/BitBlt MUCH faster than locking backbuffer!	
-	Method GrabPixmap:TPixmap( x,y,width,height )
+	Method GrabPixmap:TPixmap( x,y,width,height ) Override
 	
 		Local srcsurf:IDirect3DSurface9
 		If _d3dDev.GetRenderTarget( 0,srcsurf )<0
@@ -626,7 +626,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		Return pixmap
 	End Method
 	
-	Method SetResolution( width#,height# )
+	Method SetResolution( width#,height# ) Override
 		Local matrix#[]=[..
 		2.0/width,0.0,0.0,0.0,..
 		 0.0,-2.0/height,0.0,0.0,..

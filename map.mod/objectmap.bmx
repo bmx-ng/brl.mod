@@ -184,7 +184,7 @@ Type TObjectNodeEnumerator
 End Type
 
 Type TObjectKeyEnumerator Extends TObjectNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TObjectMap Concurrent Modification"
 ?
@@ -195,7 +195,7 @@ Type TObjectKeyEnumerator Extends TObjectNodeEnumerator
 End Type
 
 Type TObjectValueEnumerator Extends TObjectNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TObjectMap Concurrent Modification"
 ?
@@ -213,7 +213,7 @@ Type TObjectMapEnumerator
 End Type
 
 Type TObjectEmptyEnumerator Extends TObjectNodeEnumerator
-	Method HasNext()
+	Method HasNext() Override
 		_map = Null
 		Return False
 	End Method

@@ -48,7 +48,7 @@ Type TxmlBase Abstract
 	Rem
 	bbdoc: Returns a string representation of the element.
 	End Rem
-	Method ToString:String()
+	Method ToString:String() Override
 		Return bmx_mxmlSaveString(nodePtr, False)
 	End Method
 

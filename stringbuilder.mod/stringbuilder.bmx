@@ -448,7 +448,7 @@ Public
 	Rem
 	bbdoc: Converts the string builder to a String.
 	End Rem	
-	Method ToString:String()
+	Method ToString:String() Override
 		Return bmx_stringbuilder_tostring(buffer)
 	End Method
 
