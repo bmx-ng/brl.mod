@@ -54,17 +54,17 @@ ModuleInfo "History: 1.04 Release"
 ModuleInfo "History: Fixed C Compiler warnings"
 
 ?win32
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG"
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?osx
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG"
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?linuxx86
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?linuxx64
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?raspberrypi
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?android
-ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DATOMIC_UNCOLLECTABLE"
 ?emscripten
 ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE"
 ?ios
@@ -444,7 +444,7 @@ about:
 This function will have no effect if the garbage collector has been
 suspended due to #GCSuspend.
 End Rem
-Function GCCollect:Int()="bbGCCollect"
+Function GCCollect:Size_T()="bbGCCollect"
 
 Rem
 bbdoc: Run garbage collector, collecting a little
@@ -462,7 +462,7 @@ about:
 This function only returns 'managed memory'. This includes all objects, strings and
 arrays in use by the application.
 End Rem
-Function GCMemAlloced:Int()="bbGCMemAlloced"
+Function GCMemAlloced:Size_T()="bbGCMemAlloced"
 
 Rem
 bbdoc: Private: do not use
