@@ -26,22 +26,22 @@ Import BRL.Stream
 
 Type TSocketStream Extends TStream
 
-	Method Read:Long( buf:Byte Ptr,count:Long )
+	Method Read:Long( buf:Byte Ptr,count:Long ) Override
 		Return _socket.Recv( buf,Size_T(count) )
 	End Method
 
-	Method Write:Long( buf:Byte Ptr,count:Long )
+	Method Write:Long( buf:Byte Ptr,count:Long ) Override
 		Return _socket.Send( buf,Size_T(count) )
 	End Method
 
-	Method Eof:Int()
+	Method Eof:Int() Override
 		If Not _socket Return True
 		If _socket.Connected() Return False
 		Close
 		Return True
 	End Method
 
-	Method Close()
+	Method Close() Override
 		If Not _socket Return
 		If _autoClose _socket.Close
 		_socket=Null
@@ -77,7 +77,7 @@ Type TSocketStream Extends TStream
 End Type
 
 Type TSocketStreamFactory Extends TStreamFactory
-	Method CreateStream:TSocketStream( url:Object,proto$,path$,readable:Int,writeable:Int )
+	Method CreateStream:TSocketStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Override
 		If proto$="tcp"
 			Local i:Int=path.Find( ":",0 ),server$,port:Int
 			If i>=0 Return TSocketStream.CreateClient( path[..i],Int(path[i+1..]) )

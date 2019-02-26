@@ -53,7 +53,7 @@ Type TFreeAudioSound Extends TSound
 		If CLOG WriteStdout "Deleted FreeAudio sound "+Long(fa_sound)+"~n"
 	End Method
 
-	Method Play:TFreeAudioChannel( alloced_channel:TChannel )
+	Method Play:TFreeAudioChannel( alloced_channel:TChannel ) Override
 		Local channel:TFreeAudioChannel,fa_channel:Int
 		If alloced_channel
 			channel=TFreeAudioChannel( alloced_channel )
@@ -66,7 +66,7 @@ Type TFreeAudioSound Extends TSound
 		Return TFreeAudioChannel.CreateWithChannel( fa_channel )
 	End Method
 	
-	Method Cue:TFreeAudioChannel( alloced_channel:TChannel )
+	Method Cue:TFreeAudioChannel( alloced_channel:TChannel ) Override
 		Local channel:TFreeAudioChannel,fa_channel:Int
 		If alloced_channel
 			channel=TFreeAudioChannel( alloced_channel )
@@ -96,32 +96,32 @@ Type TFreeAudioChannel Extends TChannel
 		If fa_channel fa_FreeChannel fa_channel
 	End Method
 
-	Method Stop()
+	Method Stop() Override
 		fa_StopChannel fa_channel
 		fa_channel=0
 	End Method
 	
-	Method SetPaused( paused:Int )
+	Method SetPaused( paused:Int ) Override
 		fa_SetChannelPaused fa_channel,paused
 	End Method
 	
-	Method SetVolume( volume# )
+	Method SetVolume( volume# ) Override
 		fa_SetChannelVolume fa_channel,volume
 	End Method
 	
-	Method SetPan( pan# )
+	Method SetPan( pan# ) Override
 		fa_SetChannelPan fa_channel,pan
 	End Method
 	
-	Method SetDepth( depth# )
+	Method SetDepth( depth# ) Override
 		fa_SetChannelDepth fa_channel,depth
 	End Method
 	
-	Method SetRate( rate# )
+	Method SetRate( rate# ) Override
 		fa_SetChannelRate fa_channel,rate
 	End Method
 	
-	Method Playing:Int()
+	Method Playing:Int() Override
 		Local status:Int=fa_ChannelStatus( fa_channel ) 
 		If status=FA_CHANNELSTATUS_FREE Return False
 		If status&FA_CHANNELSTATUS_STOPPED Return False
@@ -143,11 +143,11 @@ End Type
 
 Type TFreeAudioAudioDriver Extends TAudioDriver
 
-	Method Name$()
+	Method Name$() Override
 		Return _name
 	End Method
 	
-	Method Startup:Int()
+	Method Startup:Int() Override
 		If _mode<>-1 Return fa_Init( _mode )<>-1
 		If fa_Init( 0 )<>-1 Return True
 ?Not MacOS
@@ -155,11 +155,11 @@ Type TFreeAudioAudioDriver Extends TAudioDriver
 ?
 	End Method
 	
-	Method Shutdown()
+	Method Shutdown() Override
 		fa_Close
 	End Method
 
-	Method CreateSound:TFreeAudioSound( sample:TAudioSample,flags:Int )
+	Method CreateSound:TFreeAudioSound( sample:TAudioSample,flags:Int ) Override
 		Local channels:Int,bits:Int
 
 		Select sample.format
@@ -185,7 +185,7 @@ Type TFreeAudioAudioDriver Extends TAudioDriver
 		Return TFreeAudioSound.CreateWithSound( fa_sound,sample )
 	End Method
 	
-	Method AllocChannel:TFreeAudioChannel()
+	Method AllocChannel:TFreeAudioChannel() Override
 		Local fa_channel:Int=fa_AllocChannel()
 		If fa_channel Return TFreeAudioChannel.CreateWithChannel( fa_channel )
 	End Method

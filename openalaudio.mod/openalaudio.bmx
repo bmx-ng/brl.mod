@@ -120,13 +120,13 @@ Type TOpenALSound Extends TSound
 		If CLOG WriteStdout "Deleted OpenAL buffer "+_buffer+"~n"
 	End Method
 
-	Method Play:TOpenALChannel( alloced_channel:TChannel=Null )
+	Method Play:TOpenALChannel( alloced_channel:TChannel=Null ) Override
 		Local t:TOpenALChannel=Cue( alloced_channel )
 		t.SetPaused False
 		Return t
 	End Method
 
-	Method Cue:TOpenALChannel( alloced_channel:TChannel=Null )
+	Method Cue:TOpenALChannel( alloced_channel:TChannel=Null ) Override
 		Local t:TOpenALChannel=TOpenALChannel( alloced_channel )
 		If t
 			Assert t._static
@@ -203,7 +203,7 @@ Type TOpenALChannel Extends TChannel
 
 	End Method
 
-	Method Stop()
+	Method Stop() Override
 		If _seq<>_source._seq Return
 	
 		_source._seq:+1
@@ -219,7 +219,7 @@ Type TOpenALChannel Extends TChannel
 		EndIf
 	End Method
 	
-	Method SetPaused( paused:Int )
+	Method SetPaused( paused:Int ) Override
 		If _seq<>_source._seq Return
 
 		If paused
@@ -229,36 +229,36 @@ Type TOpenALChannel Extends TChannel
 		EndIf
 	End Method
 	
-	Method SetVolume( volume# )
+	Method SetVolume( volume# ) Override
 		If _seq<>_source._seq Return
 
 		alSourcef _source._id,AL_GAIN,volume
 	End Method
 	
-	Method SetPan( pan# )
+	Method SetPan( pan# ) Override
 		If _seq<>_source._seq Return
 
 		pan:*90
 		alSource3f _source._id,AL_POSITION,Float(Sin(pan)),0,Float(-Cos(pan))
 	End Method
 	
-	Method SetDepth( depth# )
+	Method SetDepth( depth# ) Override
 		If _seq<>_source._seq Return
 	End Method
 	
-	Method SetRate( rate# )
+	Method SetRate( rate# ) Override
 		If _seq<>_source._seq Return
 
 		alSourcef _source._id,AL_PITCH,rate
 	End Method
 	
-	Method Playing:Int()
+	Method Playing:Int() Override
 		If _seq<>_source._seq Return False
 
 		Return _source.Playing()
 	End Method
 
-	Method Cue( sound:TOpenALSound )	
+	Method Cue( sound:TOpenALSound )
 		If _seq<>_source._seq Return
 
 		_source._sound=sound
@@ -325,11 +325,11 @@ End Type
 
 Type TOpenALAudioDriver Extends TAudioDriver
 
-	Method Name$()
+	Method Name$() Override
 		Return _name
 	End Method
 	
-	Method Startup:Int()
+	Method Startup:Int() Override
 		_device=0
 		If _devname
 			_device=alcOpenDevice( _devname )
@@ -353,17 +353,17 @@ Type TOpenALAudioDriver Extends TAudioDriver
 		EndIf
 	End Method
 	
-	Method Shutdown()
+	Method Shutdown() Override
 		_sources=Null
 		alcDestroyContext _context
 		alcCloseDevice _device
 	End Method
 
-	Method CreateSound:TOpenALSound( sample:TAudioSample,flags:Int )
+	Method CreateSound:TOpenALSound( sample:TAudioSample,flags:Int ) Override
 		Return TOpenALSound.Create( sample,flags )
 	End Method
 	
-	Method AllocChannel:TOpenALChannel()
+	Method AllocChannel:TOpenALChannel() Override
 		Return TOpenALChannel.Create( True )
 	End Method
 	

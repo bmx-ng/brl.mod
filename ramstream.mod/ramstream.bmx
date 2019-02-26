@@ -18,15 +18,15 @@ Type TRamStream Extends TStream
 
 	Field _pos:Long,_size:Long,_buf:Byte Ptr,_read,_write
 
-	Method Pos:Long()
+	Method Pos:Long() Override
 		Return _pos
 	End Method
 
-	Method Size:Long()
+	Method Size:Long() Override
 		Return _size
 	End Method
 
-	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ )
+	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ ) Override
 		If whence = SEEK_SET_ Then
 			If pos<0 pos=0 Else If pos>_size pos=_size
 		ElseIf whence = SEEK_END_ Then
@@ -43,7 +43,7 @@ Type TRamStream Extends TStream
 		Return _pos
 	End Method
 
-	Method Read:Long( buf:Byte Ptr,count:Long )
+	Method Read:Long( buf:Byte Ptr,count:Long ) Override
 		If count<=0 Or _read=False Return 0
 		If _pos+count>_size count=_size-_pos
 		MemCopy buf,_buf+_pos,Size_T(count)
@@ -51,7 +51,7 @@ Type TRamStream Extends TStream
 		Return count
 	End Method
 
-	Method Write:Long( buf:Byte Ptr,count:Long )
+	Method Write:Long( buf:Byte Ptr,count:Long ) Override
 		If count<=0 Or _write=False Return 0
 		If _pos+count>_size count=_size-_pos
 		MemCopy _buf+_pos,buf,Size_T(count)
@@ -85,7 +85,7 @@ Function CreateRamStream:TRamStream( ram:Byte Ptr,size:Long,readable,writeable )
 End Function
 
 Type TRamStreamFactory Extends TStreamFactory
-	Method CreateStream:TRamStream( url:Object,proto$,path$,readable,writeable )
+	Method CreateStream:TRamStream( url:Object,proto$,path$,readable,writeable ) Override
 		If proto="incbin" And writeable=False
 			Local buf:Byte Ptr=IncbinPtr( path )
 			If Not buf Return

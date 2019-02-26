@@ -258,7 +258,7 @@ End Type
 
 Type TIntKeyEnumerator Extends TIntNodeEnumerator
 	Field _key:TIntKey = New TIntKey
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TIntMap Concurrent Modification"
 ?
@@ -270,7 +270,7 @@ Type TIntKeyEnumerator Extends TIntNodeEnumerator
 End Type
 
 Type TIntValueEnumerator Extends TIntNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TIntMap Concurrent Modification"
 ?
@@ -288,7 +288,7 @@ Type TIntMapEnumerator
 End Type
 
 Type TIntEmptyEnumerator Extends TIntNodeEnumerator
-	Method HasNext()
+	Method HasNext() Override
 		_map = Null
 		Return False
 	End Method

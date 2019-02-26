@@ -44,7 +44,7 @@ Type TTextStream Extends TStreamWrapper
 	Const UTF16BE:Int=3
 	Const UTF16LE:Int=4
 
-	Method Read:Long( buf:Byte Ptr,count:Long )
+	Method Read:Long( buf:Byte Ptr,count:Long ) Override
 		For Local i:Long=0 Until count
 			If _bufcount=32 _FlushRead
 			Local hi:Int=_ReadByte()
@@ -57,7 +57,7 @@ Type TTextStream Extends TStreamWrapper
 		Return count
 	End Method
 	
-	Method Write:Long( buf:Byte Ptr,count:Long )
+	Method Write:Long( buf:Byte Ptr,count:Long ) Override
 		For Local i:Long=0 Until count
 			Local hi:Int=buf[i] Shr 4
 			Local lo:Int=buf[i] & $f
@@ -71,67 +71,67 @@ Type TTextStream Extends TStreamWrapper
 		Return count
 	End Method
 	
-	Method ReadByte:Int()
+	Method ReadByte:Int() Override
 		_FlushRead
 		Return Int( ReadLine() )
 	End Method
 	
-	Method WriteByte( n:Int )
+	Method WriteByte( n:Int ) Override
 		_FlushWrite
 		WriteLine n
 	End Method
 	
-	Method ReadShort:Int()
+	Method ReadShort:Int() Override
 		_FlushRead
 		Return Int( ReadLine() )
 	End Method
 	
-	Method WriteShort( n:Int )
+	Method WriteShort( n:Int ) Override
 		_FlushWrite
 		WriteLine n
 	End Method
 	
-	Method ReadInt:Int()
+	Method ReadInt:Int() Override
 		_FlushRead
 		Return Int( ReadLine() )
 	End Method
 	
-	Method WriteInt( n:Int )
+	Method WriteInt( n:Int ) Override
 		_FlushWrite
 		WriteLine n
 	End Method
 	
-	Method ReadLong:Long()
+	Method ReadLong:Long() Override
 		_FlushRead
 		Return Long( ReadLine() )
 	End Method
 	
-	Method WriteLong( n:Long )
+	Method WriteLong( n:Long ) Override
 		_FlushWrite
 		WriteLine n
 	End Method
 	
-	Method ReadFloat:Float()
+	Method ReadFloat:Float() Override
 		_FlushRead
 		Return Float( ReadLine() )
 	End Method
 	
-	Method WriteFloat( n:Float )
+	Method WriteFloat( n:Float ) Override
 		_FlushWrite
 		WriteLine n
 	End Method
 	
-	Method ReadDouble:Double()
+	Method ReadDouble:Double() Override
 		_FlushRead
 		Return Double( ReadLine() )
 	End Method
 	
-	Method WriteDouble( n:Double )
+	Method WriteDouble( n:Double ) Override
 		_FlushWrite
 		WriteLine n
 	End Method
 	
-	Method ReadLine$()
+	Method ReadLine$() Override
 		_FlushRead
 		Local buf:Short[1024],i:Int
 		While Not Eof()
@@ -158,13 +158,13 @@ Type TTextStream Extends TStreamWrapper
 		Return String.FromShorts( buf,i )
 	End Method
 	
-	Method WriteLine:Int( str$ )
+	Method WriteLine:Int( str$ ) Override
 		_FlushWrite
 		WriteString str
 		WriteString "~r~n"
 	End Method
 	
-	Method ReadString$( length:Int )
+	Method ReadString$( length:Int ) Override
 		_FlushRead
 		Local buf:Short[length]
 		For Local i:Int=0 Until length
@@ -173,7 +173,7 @@ Type TTextStream Extends TStreamWrapper
 		Return String.FromShorts(buf,length)
 	End Method
 	
-	Method WriteString( str$ )
+	Method WriteString( str$ ) Override
 		_FlushWrite
 		For Local i:Int=0 Until str.length
 			WriteChar str[i]
@@ -263,7 +263,7 @@ End Type
 	
 Type TTextStreamFactory Extends TStreamFactory
 
-	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeable:Int )
+	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Override
 		Local encoding:Int
 		Select proto$
 		Case "latin1"

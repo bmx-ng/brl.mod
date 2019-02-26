@@ -194,7 +194,7 @@ Type TMacVolume Extends TVolume
 	End Function
 
 
-	Method Refresh()
+	Method Refresh() Override
 	
 		If Not vs Then
 			Return
@@ -212,7 +212,7 @@ Type TMacVolume Extends TVolume
 
 	End Method
 
-	Method ListVolumes:TList()
+	Method ListVolumes:TList() Override
 		Local volumes:TList
 
 		' temp buffer for array of structs
@@ -249,7 +249,7 @@ Type TMacVolume Extends TVolume
 		Return volumes
 	End Method
 	
-	Method GetVolumeFreeSpace:Long(vol:String)
+	Method GetVolumeFreeSpace:Long(vol:String) Override
 	
 		Local _vs:TVolSpace = TVolSpace.GetDiskSpace(vol)
 		
@@ -260,7 +260,7 @@ Type TMacVolume Extends TVolume
 		Return 0
 	End Method
 	
-	Method GetVolumeSize:Long(vol:String)
+	Method GetVolumeSize:Long(vol:String) Override
 	
 		Local _vs:TVolSpace = TVolSpace.GetDiskSpace(vol)
 
@@ -271,7 +271,7 @@ Type TMacVolume Extends TVolume
 		Return 0
 	End Method
 
-	Method GetVolumeInfo:TVolume(vol:String)
+	Method GetVolumeInfo:TVolume(vol:String) Override
 		Local volume:TMacVolume = New TMacVolume
 
 
@@ -291,7 +291,7 @@ Type TMacVolume Extends TVolume
 		Return volume
 	End Method
 	
-	Method GetPath:String(folderType:Int, flags:Int = 0)
+	Method GetPath:String(folderType:Int, flags:Int = 0) Override
 		Local buf:Byte[1024],ref:Byte[80]
 		
 		If flags Then
@@ -304,23 +304,23 @@ Type TMacVolume Extends TVolume
 		Return String.FromUTF8String( buf )
 	End Method
 
-	Method GetUserHomeDir:String()
+	Method GetUserHomeDir:String() Override
 		Return GetPath(kCurrentUserFolderType)
 	End Method
 	
-	Method GetUserDesktopDir:String()
+	Method GetUserDesktopDir:String() Override
 		Return GetPath(kDesktopFolderType)
 	End Method
 	
-	Method GetUserAppDir:String()
+	Method GetUserAppDir:String() Override
 		Return GetPath(kApplicationSupportFolderType)
 	End Method
 	
-	Method GetUserDocumentsDir:String()
+	Method GetUserDocumentsDir:String() Override
 		Return GetPath(kDocumentsFolderType)
 	End Method
 
-	Method GetCustomDir:String(dirType:Int, flags:Int = 0)
+	Method GetCustomDir:String(dirType:Int, flags:Int = 0) Override
 		If dirType < 0 And dirType > -10 Then
 			Select dirType
 				Case DT_SHAREDUSERDATA

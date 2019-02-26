@@ -162,7 +162,7 @@ Type TThreadPoolExecutor Extends TExecutor
 	Rem
 	bbdoc: Executes the given command at some time in the future.
 	End Rem
-	Method execute(command:TRunnable)
+	Method execute(command:TRunnable) Override
 		If Not isShutdown Then
 			jobQueue.Lock()
 			jobQueue.Add(command)
