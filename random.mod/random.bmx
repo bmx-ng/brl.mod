@@ -19,8 +19,17 @@ ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.05 Release"
 ModuleInfo "History: Fixed Rand() with negative min value bug"
 
+? Threaded
+Import BRL.Threads
+?
+
 Private
 Const RND_A:Int=48271,RND_M:Int=2147483647,RND_Q:Int=44488,RND_R:Int=3399
+Global LastNewMs:Int = MilliSecs()
+Global SimultaneousNewCount:Int = 0
+? Threaded
+Global NewRandomMutex:TMutex = TMutex.Create()
+?
 Global GlobalRandom:TRandom = New TRandom
 Public
 
@@ -42,7 +51,36 @@ Type TRandom
 	bbdoc: Create a new random number generator
 	End Rem
 	Method New()
-		SeedRnd MilliSecs()
+		? Threaded
+		NewRandomMutex.Lock
+		?
+		Local currentMs:Int = MilliSecs()
+		Local auxSeed:Int
+		If currentMs = LastNewMs Then
+			SimultaneousNewCount :+ 1
+			auxSeed = SimultaneousNewCount
+		Else
+			LastNewMs = currentMs
+			SimultaneousNewCount = 0
+			auxSeed = 0
+		End If
+		? Threaded
+		NewRandomMutex.Unlock
+		?
+		
+		Function ReverseBits:Int(i:Int)
+			If i = 0 Then Return 0
+			Local r:Int
+			For Local b:Int = 0 Until 8 * SizeOf i
+				r :Shl 1
+				r :| i & 1
+				i :Shr 1
+			Next
+			Return r
+		End Function
+		' left-shift before reversing because SeedRnd ignores the most significant bit
+		Local seed:Int = currentMs ~ ReverseBits(auxSeed Shl 1)
+		SeedRnd seed
 	End Method
 	
 	Rem
