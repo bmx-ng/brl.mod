@@ -192,7 +192,7 @@ Type TLinuxVolume Extends TVolume
 
 	End Method
 	
-	Method getHome:String() Override
+	Method getHome:String()
 		Local dir:String = String.FromUTF8String(getenv_("HOME"))
 		
 		' HOME not set?
