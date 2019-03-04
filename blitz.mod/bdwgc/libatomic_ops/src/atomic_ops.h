@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003-2011 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 2008-2018 Ivan Maidanski
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -329,11 +330,14 @@
 #   include "atomic_ops/sysdeps/gcc/avr32.h"
 # elif defined(__hexagon__)
 #   include "atomic_ops/sysdeps/gcc/hexagon.h"
+# elif defined(__nios2__)
+#   include "atomic_ops/sysdeps/gcc/generic.h"
+#   define AO_CAN_EMUL_CAS
 # elif defined(__riscv)
 #   include "atomic_ops/sysdeps/gcc/riscv.h"
 # elif defined(__tile__)
 #   include "atomic_ops/sysdeps/gcc/tile.h"
-# else /* __nios2__, etc. */
+# else /* etc. */
 #   include "atomic_ops/sysdeps/gcc/generic.h"
 # endif
 #endif /* __GNUC__ && !AO_USE_PTHREAD_DEFS */
@@ -379,7 +383,7 @@
 
 #if defined(_MSC_VER) || defined(__DMC__) || defined(__BORLANDC__) \
         || (defined(__WATCOMC__) && defined(__NT__))
-# if defined(_AMD64_) || defined(_M_X64)
+# if defined(_AMD64_) || defined(_M_X64) || defined(_M_ARM64)
 #   include "atomic_ops/sysdeps/msftc/x86_64.h"
 # elif defined(_M_IX86) || defined(x86)
 #   include "atomic_ops/sysdeps/msftc/x86.h"
@@ -417,11 +421,11 @@
 
 /* The most common way to clear a test-and-set location         */
 /* at the end of a critical section.                            */
-#if AO_AO_TS_T && !defined(AO_HAVE_CLEAR)
+#if defined(AO_AO_TS_T) && !defined(AO_HAVE_CLEAR)
 # define AO_CLEAR(addr) AO_store_release((AO_TS_t *)(addr), AO_TS_CLEAR)
 # define AO_HAVE_CLEAR
 #endif
-#if AO_CHAR_TS_T && !defined(AO_HAVE_CLEAR)
+#if defined(AO_CHAR_TS_T) && !defined(AO_HAVE_CLEAR)
 # define AO_CLEAR(addr) AO_char_store_release((AO_TS_t *)(addr), AO_TS_CLEAR)
 # define AO_HAVE_CLEAR
 #endif

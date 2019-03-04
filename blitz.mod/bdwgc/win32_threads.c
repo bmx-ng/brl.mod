@@ -168,7 +168,7 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 
 STATIC DWORD GC_main_thread = 0;
 
-#define ADDR_LIMIT ((ptr_t)(word)-1)
+#define ADDR_LIMIT ((ptr_t)GC_WORD_MAX)
 
 struct GC_Thread_Rep {
   union {
@@ -179,6 +179,11 @@ struct GC_Thread_Rep {
                         /* entries have invalid ids of          */
                         /* zero and zero stack fields.          */
                         /* Used only with GC_win32_dll_threads. */
+      LONG long_in_use; /* The same but of the type that        */
+                        /* matches the first argument of        */
+                        /* InterlockedExchange(); volatile is   */
+                        /* omitted because the ancient version  */
+                        /* of the prototype lacks the qualifier.*/
 #   endif
     struct GC_Thread_Rep * next;
                         /* Hash table link without              */
@@ -365,7 +370,7 @@ STATIC GC_thread GC_new_thread(DWORD id)
   return(result);
 }
 
-STATIC GC_bool GC_in_thread_creation = FALSE;
+GC_INNER GC_bool GC_in_thread_creation = FALSE;
                                 /* Protected by allocation lock. */
 
 GC_INLINE void GC_record_stack_base(GC_vthread me,
@@ -393,7 +398,7 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
   /* documentation.  There is empirical evidence that it        */
   /* isn't.             - HB                                    */
 # if defined(MPROTECT_VDB) && !defined(CYGWIN32)
-    if (GC_incremental
+    if (GC_auto_incremental
 #       ifdef GWW_VDB
           && !GC_gww_dirty_init()
 #       endif
@@ -415,9 +420,8 @@ STATIC GC_thread GC_register_my_thread_inner(const struct GC_stack_base *sb,
       /* around code that doesn't call back into the system libraries   */
       /* might be OK.  But this hasn't been tested across all win32     */
       /* variants.                                                      */
-                  /* cast away volatile qualifier */
       for (i = 0;
-           InterlockedExchange((word*)&dll_thread_table[i].tm.in_use, 1) != 0;
+           InterlockedExchange(&dll_thread_table[i].tm.long_in_use, 1) != 0;
            i++) {
         /* Compare-and-swap would make this cleaner, but that's not     */
         /* supported before Windows 98 and NT 4.0.  In Windows 2000,    */
@@ -622,7 +626,8 @@ GC_API void GC_CALL GC_register_altstack(void *stack GC_ATTR_UNUSED,
 /* lock may be required for fault handling.                             */
 #if defined(MPROTECT_VDB)
 # define UNPROTECT_THREAD(t) \
-    if (!GC_win32_dll_threads && GC_incremental && t != &first_thread) { \
+    if (!GC_win32_dll_threads && GC_auto_incremental \
+        && t != &first_thread) { \
       GC_ASSERT(SMALL_OBJ(GC_size(t))); \
       GC_remove_protection(HBLKPTR(t), 1, FALSE); \
     } else (void)0
@@ -918,7 +923,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     UNLOCK();
     client_data = fn(client_data);
     /* Prevent treating the above as a tail call.       */
-    GC_noop1((word)(&stacksect));
+    GC_noop1(COVERT_DATAFLOW(&stacksect));
     return client_data; /* result */
   }
 
@@ -1028,12 +1033,14 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     STATIC void GC_remove_all_threads_but_me(void)
     {
       int hv;
-      GC_thread p, next, me = NULL;
+      GC_thread me = NULL;
       DWORD thread_id;
       pthread_t pthread_id = pthread_self(); /* same as in parent */
 
       GC_ASSERT(!GC_win32_dll_threads);
       for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
+        GC_thread p, next;
+
         for (p = GC_threads[hv]; 0 != p; p = next) {
           next = p -> tm.next;
           if (THREAD_EQUAL(p -> pthread_id, pthread_id)
@@ -1185,15 +1192,7 @@ STATIC void GC_suspend(GC_thread t)
       return;
     }
 # endif
-# if defined(MPROTECT_VDB)
-    /* Acquire the spin lock we use to update dirty bits.       */
-    /* Threads shouldn't get stopped holding it.  But we may    */
-    /* acquire and release it in the UNPROTECT_THREAD call.     */
-    while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET) {
-      /* empty */
-    }
-# endif
-
+  GC_acquire_dirty_lock();
 # ifdef MSWINCE
     /* SuspendThread() will fail if thread is running kernel code.      */
     while (SuspendThread(THREAD_HANDLE(t)) == (DWORD)-1)
@@ -1203,9 +1202,7 @@ STATIC void GC_suspend(GC_thread t)
       ABORT("SuspendThread failed");
 # endif /* !MSWINCE */
   t -> suspended = (unsigned char)TRUE;
-# if defined(MPROTECT_VDB)
-    AO_CLEAR(&GC_fault_handler_lock);
-# endif
+  GC_release_dirty_lock();
   if (GC_on_thread_event)
     GC_on_thread_event(GC_EVENT_THREAD_SUSPENDED, THREAD_HANDLE(t));
 }
@@ -1389,6 +1386,10 @@ static GC_bool may_be_in_stack(ptr_t s)
           && !(last_info.Protect & PAGE_GUARD);
 }
 
+#if defined(I386)
+  static BOOL isWow64;  /* Is running 32-bit code on Win64?     */
+#endif
+
 STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
 {
   ptr_t sp, stack_min;
@@ -1402,7 +1403,22 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
               /* Use saved sp value for blocked threads. */
     /* For unblocked threads call GetThreadContext().   */
     CONTEXT context;
-    context.ContextFlags = CONTEXT_INTEGER|CONTEXT_CONTROL;
+#   if defined(I386)
+#     ifndef CONTEXT_EXCEPTION_ACTIVE
+#       define CONTEXT_EXCEPTION_ACTIVE    0x08000000
+#       define CONTEXT_EXCEPTION_REQUEST   0x40000000
+#       define CONTEXT_EXCEPTION_REPORTING 0x80000000
+#     endif
+
+      if (isWow64) {
+        context.ContextFlags = CONTEXT_INTEGER | CONTEXT_CONTROL
+                                | CONTEXT_EXCEPTION_REQUEST
+                                | CONTEXT_SEGMENTS;
+      } else
+#   endif
+    /* else */ {
+      context.ContextFlags = CONTEXT_INTEGER | CONTEXT_CONTROL;
+    }
     if (!GetThreadContext(THREAD_HANDLE(thread), &context))
       ABORT("GetThreadContext failed");
 
@@ -1414,7 +1430,45 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
 #   define PUSH4(r1,r2,r3,r4) (PUSH2(r1,r2), PUSH2(r3,r4))
 #   if defined(I386)
       PUSH4(Edi,Esi,Ebx,Edx), PUSH2(Ecx,Eax), PUSH1(Ebp);
-      sp = (ptr_t)context.Esp;
+      /* WoW64 workaround. */
+      if (isWow64
+          && (context.ContextFlags & CONTEXT_EXCEPTION_REPORTING) != 0
+          && (context.ContextFlags & (CONTEXT_EXCEPTION_ACTIVE
+                                      /* | CONTEXT_SERVICE_ACTIVE */)) != 0) {
+        LDT_ENTRY selector;
+        PNT_TIB tib;
+
+        if (!GetThreadSelectorEntry(THREAD_HANDLE(thread), context.SegFs,
+                                    &selector))
+          ABORT("GetThreadSelectorEntry failed");
+        tib = (PNT_TIB)(selector.BaseLow
+                        | (selector.HighWord.Bits.BaseMid << 16)
+                        | (selector.HighWord.Bits.BaseHi << 24));
+        /* GetThreadContext() might return stale register values, so    */
+        /* we scan the entire stack region (down to the stack limit).   */
+        /* There is no 100% guarantee that all the registers are pushed */
+        /* but we do our best (the proper solution would be to fix it   */
+        /* inside Windows OS).                                          */
+        sp = (ptr_t)tib->StackLimit;
+#       ifdef DEBUG_THREADS
+          GC_log_printf("TIB stack limit/base: %p .. %p\n",
+                        (void *)tib->StackLimit, (void *)tib->StackBase);
+#       endif
+        GC_ASSERT(!((word)thread->stack_base
+                    COOLER_THAN (word)tib->StackBase));
+      } else {
+#       ifdef DEBUG_THREADS
+          {
+            static GC_bool logged;
+            if (isWow64 && !logged
+                && (context.ContextFlags & CONTEXT_EXCEPTION_REPORTING) == 0) {
+              GC_log_printf("CONTEXT_EXCEPTION_REQUEST not supported\n");
+              logged = TRUE;
+            }
+          }
+#       endif
+        sp = (ptr_t)context.Esp;
+      }
 #   elif defined(X86_64)
       PUSH4(Rax,Rcx,Rdx,Rbx); PUSH2(Rbp, Rsi); PUSH1(Rdi);
       PUSH4(R8, R9, R10, R11); PUSH4(R12, R13, R14, R15);
@@ -1422,6 +1476,12 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
 #   elif defined(ARM32)
       PUSH4(R0,R1,R2,R3),PUSH4(R4,R5,R6,R7),PUSH4(R8,R9,R10,R11);
       PUSH1(R12);
+      sp = (ptr_t)context.Sp;
+#   elif defined(AARCH64)
+      PUSH4(X0,X1,X2,X3),PUSH4(X4,X5,X6,X7),PUSH4(X8,X9,X10,X11);
+      PUSH4(X12,X13,X14,X15),PUSH4(X16,X17,X18,X19),PUSH4(X20,X21,X22,X23);
+      PUSH4(X24,X25,X26,X27),PUSH1(X28);
+      PUSH1(Lr);
       sp = (ptr_t)context.Sp;
 #   elif defined(SHx)
       PUSH4(R0,R1,R2,R3), PUSH4(R4,R5,R6,R7), PUSH4(R8,R9,R10,R11);
@@ -1446,7 +1506,7 @@ STATIC word GC_push_stack_for(GC_thread thread, DWORD me)
       PUSH4(IntT10,IntT11,IntT12,IntAt);
       sp = (ptr_t)context.IntSp;
 #   elif !defined(CPPCHECK)
-#     error "architecture is not supported"
+#     error Architecture is not supported
 #   endif
   } /* ! current thread */
 
@@ -1743,7 +1803,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
   {
     word my_mark_no = 0;
 
-    if ((word)id == (word)-1) return 0; /* to make compiler happy */
+    if ((word)id == GC_WORD_MAX) return 0; /* to prevent a compiler warning */
     marker_sp[(word)id] = GC_approx_sp();
 #   ifdef IA64
       marker_bsp[(word)id] = GC_save_regs_in_stack();
@@ -2441,6 +2501,20 @@ GC_INNER void GC_thr_init(void)
 #     endif
       /* else */ if (GC_handle_fork != -1)
         ABORT("pthread_atfork failed");
+    }
+# endif
+
+# if defined(I386)
+    /* Set isWow64 flag. */
+    {
+      HMODULE hK32 = GetModuleHandle(TEXT("kernel32.dll"));
+      if (hK32) {
+        FARPROC pfn = GetProcAddress(hK32, "IsWow64Process");
+        if (pfn
+            && !(*(BOOL (WINAPI*)(HANDLE, BOOL*))pfn)(GetCurrentProcess(),
+                                                      &isWow64))
+          isWow64 = FALSE; /* IsWow64Process failed */
+      }
     }
 # endif
 

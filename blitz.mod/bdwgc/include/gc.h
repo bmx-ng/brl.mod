@@ -5,6 +5,7 @@
  * Copyright 1999 by Hewlett-Packard Company.  All rights reserved.
  * Copyright (C) 2007 Free Software Foundation, Inc
  * Copyright (c) 2000-2011 by Hewlett-Packard Development Company.
+ * Copyright (c) 2009-2018 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -160,7 +161,7 @@ GC_API GC_on_collection_event_proc GC_CALL GC_get_on_collection_event(void);
                         /* Both the supplied setter and the getter      */
                         /* acquire the GC lock (to avoid data races).   */
 
-#ifdef GC_THREADS
+#if defined(GC_THREADS) || (defined(GC_BUILD) && defined(NN_PLATFORM_CTR))
   typedef void (GC_CALLBACK * GC_on_thread_event_proc)(GC_EventType,
                                                 void * /* thread_id */);
                         /* Invoked when a thread is suspended or        */
@@ -524,8 +525,8 @@ GC_API GC_ATTR_DEPRECATED void GC_CALL GC_change_stubborn(const void *);
 
 /* Inform the collector that the object has been changed.               */
 /* Only non-NULL pointer stores into the object are considered to be    */
-/* changes.  Matters only if the library has been compiled with         */
-/* MANUAL_VDB defined (otherwise the function does nothing).            */
+/* changes.  Matters only if the incremental collection is enabled in   */
+/* the manual VDB mode (otherwise the function does nothing).           */
 /* Should be followed typically by GC_reachable_here called for each    */
 /* of the stored pointers.                                              */
 GC_API void GC_CALL GC_end_stubborn_change(const void *) GC_ATTR_NONNULL(1);
@@ -802,6 +803,18 @@ GC_API int GC_CALL GC_is_disabled(void);
 /* calls nest.  Garbage collection is enabled if the number of calls to */
 /* both functions is equal.                                             */
 GC_API void GC_CALL GC_enable(void);
+
+/* Select whether to use the manual VDB mode for the incremental        */
+/* collection.  Has no effect if called after enabling the incremental  */
+/* collection.  The default value is off unless the collector is        */
+/* compiled with MANUAL_VDB defined.  The manual VDB mode should be     */
+/* used only if the client has the appropriate GC_END_STUBBORN_CHANGE   */
+/* and GC_reachable_here (or, alternatively, GC_PTR_STORE_AND_DIRTY)    */
+/* calls (to ensure proper write barriers).  Both the setter and getter */
+/* are not synchronized, and are defined only if the library has been   */
+/* compiled without SMALL_CONFIG.                                       */
+GC_API void GC_CALL GC_set_manual_vdb_allowed(int);
+GC_API int GC_CALL GC_get_manual_vdb_allowed(void);
 
 /* Enable incremental/generational collection.  Not advisable unless    */
 /* dirty bits are available or most heap objects are pointer-free       */
@@ -1315,7 +1328,12 @@ GC_API int GC_CALL GC_invoke_finalizers(void);
                 __asm__ __volatile__(" " : : "X"(ptr) : "memory")
 #else
   GC_API void GC_CALL GC_noop1(GC_word);
-# define GC_reachable_here(ptr) GC_noop1((GC_word)(ptr))
+# ifdef LINT2
+#   define GC_reachable_here(ptr) GC_noop1(~(GC_word)(ptr)^(~(GC_word)0))
+                /* The expression matches the one of COVERT_DATAFLOW(). */
+# else
+#   define GC_reachable_here(ptr) GC_noop1((GC_word)(ptr))
+# endif
 #endif
 
 /* GC_set_warn_proc can be used to redirect or filter warning messages. */
@@ -1355,6 +1373,7 @@ GC_API void GC_CALL GC_abort_on_oom(void);
 /* that finalization code will arrange for hidden pointers to   */
 /* disappear.  Otherwise objects can be accessed after they     */
 /* have been collected.                                         */
+/* Should not be used in the leak-finding mode.                 */
 /* Note that putting pointers in atomic objects or in           */
 /* non-pointer slots of "typed" objects is equivalent to        */
 /* disguising them in this way, and may have other advantages.  */
@@ -1502,6 +1521,10 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
   /* be called inside a GC callback function (except for                */
   /* GC_call_with_stack_base() one).                                    */
   GC_API int GC_CALL GC_unregister_my_thread(void);
+
+  /* Stop/start the world explicitly.  Not recommended for general use. */
+  GC_API void GC_CALL GC_stop_world_external(void);
+  GC_API void GC_CALL GC_start_world_external(void);
 #endif /* GC_THREADS */
 
 /* Wrapper for functions that are likely to block (or, at least, do not */
@@ -1621,7 +1644,7 @@ GC_API void GC_CALL GC_dump_finalization(void);
 #else /* !GC_DEBUG || !__GNUC__ */
   /* We can't do this right without typeof, which ANSI decided was not    */
   /* sufficiently useful.  Without it we resort to the non-debug version. */
-  /* FIXME: This should eventually support C++0x decltype.                */
+  /* TODO: This should eventually support C++0x decltype. */
 # define GC_PTR_ADD(x, n) ((x)+(n))
 # define GC_PRE_INCR(x, n) ((x) += (n))
 # define GC_POST_INCR(x) ((x)++)
@@ -1862,7 +1885,7 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
     extern int _data_start__[], _data_end__[], _bss_start__[], _bss_end__[];
 #   define GC_DATASTART ((GC_word)_data_start__ < (GC_word)_bss_start__ \
                          ? (void *)_data_start__ : (void *)_bss_start__)
-#  define GC_DATAEND ((GC_word)_data_end__ > (GC_word)_bss_end__ \
+#   define GC_DATAEND ((GC_word)_data_end__ > (GC_word)_bss_end__ \
                       ? (void *)_data_end__ : (void *)_bss_end__)
 # endif /* !__x86_64__ */
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND); \
@@ -1874,34 +1897,16 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 # define GC_DATAEND ((void *)((ulong)_end))
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND)
 #elif (defined(HOST_ANDROID) || defined(__ANDROID__)) \
-      && !defined(GC_NOT_DLL) && defined(IGNORE_DYNAMIC_LOADING)
-  /* It causes the entire binary section of memory be pushed as a root. */
-  /* This might be a bad idea though because on some Android devices    */
-  /* some of the binary data might become unmapped thus causing SIGSEGV */
-  /* with code SEGV_MAPERR.                                             */
-# pragma weak _etext
-# pragma weak __data_start
+      && defined(IGNORE_DYNAMIC_LOADING)
+  /* This is ugly but seems the only way to register data roots of the  */
+  /* client shared library if the GC dynamic loading support is off.    */
 # pragma weak __dso_handle
-  extern int _etext[], __data_start[], __dso_handle[];
-# pragma weak __end__
-  extern int __end__[], _end[];
-  /* Explicitly register caller static data roots.  Workaround for      */
-  /* __data_start: NDK "gold" linker might miss it or place it          */
-  /* incorrectly, __dso_handle is an alternative data start reference.  */
-  /* Workaround for _end: NDK Clang 3.5+ does not place it at correct   */
-  /* offset (as of NDK r10e) but "bfd" linker provides __end__ symbol   */
-  /* that could be used instead.                                        */
-# define GC_INIT_CONF_ROOTS \
-                (void)((GC_word)__data_start < (GC_word)_etext \
-                        && (GC_word)_etext < (GC_word)__dso_handle \
-                        ? (__end__ != 0 \
-                            ? (GC_add_roots(__dso_handle, __end__), 0) \
-                            : (GC_word)__dso_handle < (GC_word)_end \
-                            ? (GC_add_roots(__dso_handle, _end), 0) : 0) \
-                        : __data_start != 0 ? (__end__ != 0 \
-                            ? (GC_add_roots(__data_start, __end__), 0) \
-                            : (GC_word)__data_start < (GC_word)_end \
-                            ? (GC_add_roots(__data_start, _end), 0) : 0) : 0)
+  extern int __dso_handle[];
+  GC_API void * GC_CALL GC_find_limit(void * /* start */, int /* up */);
+# define GC_INIT_CONF_ROOTS (void)(__dso_handle != 0 \
+                                   ? (GC_add_roots(__dso_handle, \
+                                            GC_find_limit(__dso_handle, \
+                                                          1 /*up*/)), 0) : 0)
 #else
 # define GC_INIT_CONF_ROOTS /* empty */
 #endif
