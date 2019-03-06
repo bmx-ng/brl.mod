@@ -287,6 +287,9 @@ bbdoc: Application directory
 about: The #AppDir global variable contains the fully qualified directory of the currently
 executing application. An application's initial current directory is also set to #AppDir
 when an application starts.
+
+In a compiled DLL, the #AppDir global variable will instead contain the fully qualified
+directory of the DLL.
 End Rem
 Global AppDir$="bbAppDir"
 
@@ -294,6 +297,9 @@ Rem
 bbdoc: Application file name
 about: The #AppFile global variable contains the fully qualified file name of the currently
 executing application.
+
+In a compiled DLL, the #AppFile global variable will instead contain the fully qualified
+file name of the DLL.
 End Rem
 Global AppFile$="bbAppFile"
 
