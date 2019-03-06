@@ -37,6 +37,7 @@ ModuleInfo "History: Added checks to prevent invalid textures deletes"
 
 Import BRL.Max2D
 Import BRL.GLGraphics
+Import BRL.Threads
 
 Private
 
