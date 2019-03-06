@@ -115,6 +115,22 @@ void bmx_debugger_DebugDecl_ArrayDeclFree(struct BBDebugDecl * decl) {
 	free(decl);
 }
 
+BBString * bmx_debugger_DebugEnumDeclValue(struct BBDebugDecl * decl, void * val) {
+	BBEnum * bbEnum = bbEnumGetInfo(decl->type_tag);
+
+	switch( bbEnum->type[0] ){
+		case 'b': return bbEnumToString_b(bbEnum, *((BBBYTE*)val));
+		case 's': return bbEnumToString_s(bbEnum, *((BBSHORT*)val));
+		case 'i': return bbEnumToString_i(bbEnum, *((BBINT*)val));
+		case 'u': return bbEnumToString_u(bbEnum, *((BBUINT*)val));
+		case 'l': return bbEnumToString_l(bbEnum, *((BBLONG*)val));
+		case 'y': return bbEnumToString_y(bbEnum, *((BBULONG*)val));
+		case 't': return bbEnumToString_t(bbEnum, *((BBSIZET*)val));
+	}
+
+	return &bbEmptyString;
+}
+
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 BBString * bmx_debugger_DebugStmFile(struct BBDebugStm * stmt) {

@@ -94,6 +94,7 @@ Import "blitz_thread.c"
 Import "blitz_ex.c"
 Import "blitz_gc.c"
 Import "blitz_unicode.c"
+Import "blitz_enum.c"
 
 '?Threaded
 'Import "blitz_gc_ms.c"
@@ -869,6 +870,16 @@ End Rem
 Rem
 bbdoc: End a user defined structure declaration
 keyword: "EndStruct"
+End Rem
+
+Rem
+bbdoc: Begin an enumeration declaration
+keyword: "Enum"
+End Rem
+
+Rem
+bbdoc: End an enumeration declaration
+keyword: "EndEnum"
 End Rem
 
 Rem

@@ -38,6 +38,7 @@
 #include "blitz_array.h"
 #include "blitz_handle.h"
 #include "blitz_app.h" 
+#include "blitz_enum.h"
 
 #ifdef __cplusplus
 extern "C"{

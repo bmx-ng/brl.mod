@@ -95,6 +95,14 @@ BBDebugScope * bbObjectStructInfo( char * name );
 
 BBObject * bbNullObjectTest( BBObject *o );
 
+struct enum_node {
+	struct avl_root link;
+	BBDebugScope * scope;
+};
+
+void bbObjectRegisterEnum( BBDebugScope *p );
+BBDebugScope * bbObjectEnumInfo( char * name );
+
 #ifdef __cplusplus
 }
 #endif

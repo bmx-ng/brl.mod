@@ -76,6 +76,7 @@ Extern
 	Function bmx_debugger_ref_brl_blitz_NullFunctionError:Byte Ptr()
 	
 	Function bbObjectStructInfo:Byte Ptr(name:Byte Ptr)="BBDebugScope * bbObjectStructInfo( char * )!"
+	Function bmx_debugger_DebugEnumDeclValue:String(decl:Byte Ptr, val:Byte Ptr)
 End Extern
 
 ?Not ptr64
@@ -172,7 +173,7 @@ Function TypeName$( tag$ Var )
 		Return "WParam"
 	Case "X"
 		Return "LParam"
-	Case ":","?","#","@"
+	Case ":","?","#","@","/"
 		Local id$=Ident( tag )
 		While tag And tag[0]=Asc(".")
 			tag=tag[1..]
@@ -401,6 +402,8 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		Return Float Ptr (Varptr p)[0] + "," + Float Ptr (Varptr p)[1] + "," + Float Ptr (Varptr p)[2] + "," + Float Ptr (Varptr p)[3]
 	Case Asc("m")
 		Return Double Ptr(Varptr p)[0] + "," + Double Ptr (Varptr p)[1]
+	Case Asc("/")
+		Return bmx_debugger_DebugEnumDeclValue(decl, p)
 	Default
 		DebugError "Invalid decl typetag:"+Chr(tag)
 	End Select
