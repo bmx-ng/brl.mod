@@ -463,20 +463,62 @@ Function ArgTypesIdentical:Int(m1:TMethod, m2:TMethod)
 	Return TypeListsIdentical(m1.ArgTypes(), m2.ArgTypes())
 End Function
 
-Function NameAndArgTypesIdentical:Int(f1:TFunction, f2:TFunction)
+Function NamesAndArgTypesIdentical:Int(f1:TFunction, f2:TFunction)
 	Return f1.Name().ToLower() = f2.Name().ToLower() And ArgTypesIdentical(f1, f2)
 End Function
 
-Function NameAndArgTypesIdentical:Int(m1:TMethod, m2:TMethod)
+Function NamesAndArgTypesIdentical:Int(m1:TMethod, m2:TMethod)
 	Return m1.Name().ToLower() = m2.Name().ToLower() And ArgTypesIdentical(m1, m2)
 End Function
 
 Function SignaturesIdentical:Int(f1:TFunction, f2:TFunction)
-	Return NameAndArgTypesIdentical(f1, f2) And f1.ReturnType() = f2.ReturnType()
+	Return NamesAndArgTypesIdentical(f1, f2) And f1.ReturnType() = f2.ReturnType()
 End Function
 
 Function SignaturesIdentical:Int(m1:TMethod, m2:TMethod)
-	Return NameAndArgTypesIdentical(m1, m2) And m1.ReturnType() = m2.ReturnType()
+	Return NamesAndArgTypesIdentical(m1, m2) And m1.ReturnType() = m2.ReturnType()
+End Function
+
+Function AddFunctionsToList(tid:TTypeId, list:TList, initialLastLink:TLink, funcNameLower:String = "")
+	Local insertPos:TLink = initialLastLink.NextLink()
+	If Not insertPos Then insertPos = list._head
+	' go through every function defined in the type described by tid
+	#AddFunctionsLoop
+	For Local func:TFunction = EachIn tid._functions
+		' skip it if it has the wrong name
+		If funcNameLower And funcNameLower <> func.Name().ToLower() Then Continue
+		' check if it's overridden by something that was already in the list
+		Local overrideCheckLink:TLink = insertPos
+		If overrideCheckLink <> list._head Then 
+			While overrideCheckLink
+				Local func2:TFunction = TFunction(overrideCheckLink.Value())
+				If NamesAndArgTypesIdentical(func, func2) Then Continue AddFunctionsLoop ' if so, skip it
+				overrideCheckLink = overrideCheckLink.NextLink()
+			Wend
+		End If
+		list.InsertBeforeLink func, insertPos ' otherwise, add it to the list
+	Next
+End Function
+
+Function AddMethodsToList(tid:TTypeId, list:TList, initialLastLink:TLink, methNameLower:String = "")
+	Local insertPos:TLink = initialLastLink.NextLink()
+	If Not insertPos Then insertPos = list._head
+	' go through every method defined in the type described by tid
+	#AddMethodsLoop
+	For Local meth:TMethod = EachIn tid._methods
+		' skip it if it has the wrong name
+		If methNameLower And methNameLower <> meth.Name().ToLower() Then Continue
+		' check if it's overridden by something that was already in the list
+		Local overrideCheckLink:TLink = insertPos
+		If overrideCheckLink <> list._head Then 
+			While overrideCheckLink
+				Local meth2:TMethod = TMethod(overrideCheckLink.Value())
+				If NamesAndArgTypesIdentical(meth, meth2) Then Continue AddMethodsLoop ' if so, skip it
+				overrideCheckLink = overrideCheckLink.NextLink()
+			Wend
+		End If
+		list.InsertBeforeLink meth, insertPos ' otherwise, add it to the list
+	Next
 End Function
 
 
@@ -1239,7 +1281,7 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Rem
-	bbdoc: Get list of implemented interfaces (of a class) or super interfaces (of an interface).
+	bbdoc: Get list of implemented interfaces of a class, or super interfaces of an interface.
 	End Rem
 	Method Interfaces:TList(list:TList = Null)
 		If Not list Then list = New TList
@@ -1248,6 +1290,26 @@ Type TTypeId Extends TMember
 				list.AddLast i
 			Next
 		End If
+		Return list
+	End Method
+	
+	Method TypeHierarchy:TList()
+		Local list:TList = New TList
+		
+		If Self.IsInterface() Then
+			list.AddFirst Self
+		Else
+			Local tid:TTypeId = Self
+			While tid
+				list.AddFirst tid
+				tid = tid.SuperType()
+			Wend
+		End If
+		Local insertPos:TLink = list.FirstLink()
+		For Local tid:TTypeId = EachIn Self.Interfaces()
+			list.InsertBeforeLink tid, insertPos
+		Next
+		
 		Return list
 	End Method
 	
@@ -1475,7 +1537,7 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Rem
-	bbdoc: Determine if this TypeId represents a structure.
+	bbdoc: Determine if this TypeId represents a struct.
 	End Rem
 	Method IsStruct:Int()
 		Return _struct <> Null
@@ -1487,9 +1549,11 @@ Type TTypeId Extends TMember
 	End Rem
 	Method Constants:TList(list:TList = Null)
 		If Not list Then list = New TList
-		For Local c:TConstant = EachIn _consts
-			list.AddLast c
+		
+		For Local cons:TConstant = EachIn _consts
+			list.AddLast cons
 		Next
+		
 		Return list
 	End Method	
 	
@@ -1499,9 +1563,11 @@ Type TTypeId Extends TMember
 	End Rem
 	Method Fields:TList(list:TList = Null)
 		If Not list Then list = New TList
-		For Local f:TField = EachIn _fields
-			list.AddLast f
+		
+		For Local fld:TField = EachIn _fields
+			list.AddLast fld
 		Next
+		
 		Return list
 	End Method
 	
@@ -1511,9 +1577,11 @@ Type TTypeId Extends TMember
 	End Rem
 	Method Globals:TList(list:TList = Null)
 		If Not list Then list = New TList
-		For Local g:TGlobal = EachIn _globals
-			list.AddLast g
+		
+		For Local glob:TGlobal = EachIn _globals
+			list.AddLast glob
 		Next
+		
 		Return list
 	End Method
 
@@ -1524,13 +1592,9 @@ Type TTypeId Extends TMember
 	Method Functions:TList(list:TList = Null)
 		If Not list Then list = New TList
 		
-		If IsInterface() Or IsStruct() Then
-			' nothing to see here, move along
-		Else
-			For Local func:TFunction = EachIn _functions
-				list.AddLast func
-			Next
-		End If
+		For Local func:TFunction = EachIn _functions
+			list.AddLast func
+		Next
 		
 		Return list
 	End Method	
@@ -1542,23 +1606,9 @@ Type TTypeId Extends TMember
 	Method Methods:TList(list:TList = Null)
 		If Not list Then list = New TList
 		
-		If IsInterface() Then
-			Local superIfcMethods:TList = New TList
-			#AddMethods
-			For Local meth:TMethod = EachIn _methods
-				' do not add the method to the result list if it comes from one of the super interfaces
-				For Local superIfc:TTypeId = EachIn _interfaces
-					For Local superIfcMeth:TMethod = EachIn superIfc._methods
-						If meth._ref = superIfcMeth._ref Then Continue AddMethods
-					Next
-				Next
-				list.AddLast meth
-			Next
-		Else
-			For Local meth:TMethod = EachIn _methods
-				list.AddLast meth
-			Next
-		End If
+		For Local meth:TMethod = EachIn _methods
+			list.AddLast meth
+		Next
 		
 		Return list
 	End Method
@@ -1569,10 +1619,12 @@ Type TTypeId Extends TMember
 	End Rem
 	Method FindConstant:TConstant(name:String)
 		name = name.ToLower()
-		For Local t:TConstant = EachIn _consts
-			If t.Name().ToLower() = name Return t
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local cons:TConstant = EachIn _consts
+				If cons.Name().ToLower() = name Then Return cons
+			Next
 		Next
-		If _super Return _super.FindConstant(name)
 	End Method	
 	
 	Rem
@@ -1581,10 +1633,12 @@ Type TTypeId Extends TMember
 	End Rem
 	Method FindField:TField(name:String)
 		name = name.ToLower()
-		For Local t:TField = EachIn _fields
-			If t.Name().ToLower() = name Return t
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local fld:TField = EachIn _fields
+				If fld.Name().ToLower() = name Then Return fld
+			Next
 		Next
-		If _super Return _super.FindField(name)
 	End Method
 	
 	Rem
@@ -1593,36 +1647,42 @@ Type TTypeId Extends TMember
 	End Rem
 	Method FindGlobal:TGlobal(name:String)
 		name = name.ToLower()
-		For Local t:TGlobal = EachIn _globals
-			If t.Name().ToLower() = name Return t
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local glob:TGlobal = EachIn _globals
+				If glob.Name().ToLower() = name Then Return glob
+			Next
 		Next
-		If _super Return _super.FindGlobal(name)
 	End Method
 	
 	Rem
 	bbdoc: Find a function by name
 	about: Searches type hierarchy for a function called @name.<br>
-	In the case of a tie between multiple overloads of the function, the one declared in the most derived type will be returned. If there is still a tie, the overload declared first in code will be returned.
-	EndRem
+	If the function is overloaded, the first overload declared in the most derived type will be returned.
+	End Rem
 	Method FindFunction:TFunction(name:String)
 		name = name.ToLower()
-		For Local t:TFunction = EachIn _functions
-			If t.Name().ToLower() = name Return t
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local func:TFunction = EachIn _functions
+				If func.Name().ToLower() = name Then Return func
+			Next
 		Next
-		If _super Return _super.FindFunction(name)
 	End Method
 	
 	Rem
 	bbdoc: Find a specific overload of a function by name and parameter list
 	about: Searches type hierarchy for a function called @name with the specified argument types.<br>
 	This can be used to find a specific overload of a function.
-	EndRem
+	End Rem
 	Method FindFunction:TFunction(name:String, argTypes:TTypeId[])
 		name = name.ToLower()
-		For Local t:TFunction = EachIn _functions
-			If t.Name().ToLower() = name And TypeListsIdentical(t.ArgTypes(), argTypes) Return t
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local func:TFunction = EachIn _functions
+				If func.Name().ToLower() = name And TypeListsIdentical(func.ArgTypes(), argTypes) Then Return func
+			Next
 		Next
-		If _super Return _super.FindFunction(name)
 	End Method
 	
 	Rem
@@ -1632,44 +1692,17 @@ Type TTypeId Extends TMember
 	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
 	End Rem
 	Method FindFunctions:TList(name:String, list:TList = Null)
+		name = name.ToLower()
 		If Not list Then list = New TList
 		
-		name = name.ToLower()
-		If IsInterface() Or IsStruct() Then
-			' nothing to see here, move along
-		Else
-			Local initialLastLinkL:TLink = list.LastLink()
-			If Not initialLastLinkL Then initialLastLinkL = list._head
-			' start by looking at this type
-			Local tid:TTypeId = Self
-			Repeat
-				Local firstNewLinkL:TLink = initialLastLinkL.NextLink()
-				Local link:TLink = tid._functions.LastLink()
-				#AddFunctions
-				While link
-					' go through every function defined in the type
-					Local func:TFunction = TFunction(link.Value())
-					link = link.PrevLink()
-					
-					' check name
-					If func.Name().ToLower() <> name Then Continue AddFunctions
-					
-					' check if it's overridden by something we already added to the result list
-					Local linkL:TLink = firstNewLinkL
-					While linkL
-						Local funcL:TFunction = TFunction(linkL.Value())
-						linkL = linkL.NextLink()
-						If ArgTypesIdentical(func, funcL) Then Continue AddFunctions ' if so, skip it
-					Wend
-					
-					list.InsertAfterLink func, initialLastLinkL ' otherwise, add it to the result list
-				Wend
-				
-				' repeat with super type
-				If (Not tid._super) Or tid._super = tid Then Exit
-				tid = tid._super
-			Forever
-		End If
+		' list might be non-empty => retrieve the last link
+		Local initialLastLink:TLink = list.LastLink()
+		If Not initialLastLink Then initialLastLink = list._head
+		
+		' add the functions
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			AddFunctionsToList tid, list, initialLastLink, name
+		Next
 		
 		Return list
 	End Method
@@ -1677,27 +1710,31 @@ Type TTypeId Extends TMember
 	Rem
 	bbdoc: Find a method by name
 	about: Searches type hierarchy for a method called @name.<br>
-	In the case of a tie between multiple overloads of the method, the one declared in the most derived type will be returned. If there is still a tie, the overload declared first in code will be returned.
+	If the method is overloaded, the first overload declared in the most derived type will be returned.
 	End Rem
 	Method FindMethod:TMethod(name:String)
 		name = name.ToLower()
-		For Local t:TMethod = EachIn _methods
-			If t.Name().ToLower() = name Return t
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local meth:TMethod = EachIn _methods
+				If meth.Name().ToLower() = name Then Return meth
+			Next
 		Next
-		If _super Return _super.FindMethod(name)
+		Return Null
 	End Method
 	
 	Rem
 	bbdoc: Find a specific overload of a method by name and parameter list
 	about: Searches type hierarchy for a method called @name with the specified argument types.<br>
 	This can be used to find a specific overload of a method.
-	EndRem
+	End Rem
 	Method FindMethod:TMethod(name:String, argTypes:TTypeId[])
 		name = name.ToLower()
-		For Local t:TMethod = EachIn _methods
-			If t.Name().ToLower() = name And TypeListsIdentical(t.ArgTypes(), argTypes) Return t
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local meth:TMethod = EachIn _methods
+				If meth.Name().ToLower() = name And TypeListsIdentical(meth.ArgTypes(), argTypes) Then Return meth
+			Next
 		Next
-		If _super Return _super.FindMethod(name)
+		Return Null
 	End Method
 	
 	Rem
@@ -1707,45 +1744,17 @@ Type TTypeId Extends TMember
 	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
 	End Rem
 	Method FindMethods:TList(name:String, list:TList = Null)
+		name = name.ToLower()
 		If Not list Then list = New TList
 		
-		name = name.ToLower()
-		If IsInterface() Or IsStruct() Then
-			For Local meth:TMethod = EachIn _methods
-				If meth.Name().ToLower() = name Then list.AddLast meth
-			Next
-		Else
-			Local initialLastLinkL:TLink = list.LastLink()
-			If Not initialLastLinkL Then initialLastLinkL = list._head
-			' start by looking at this type
-			Local tid:TTypeId = Self
-			Repeat
-				Local firstNewLinkL:TLink = initialLastLinkL.NextLink()
-				Local link:TLink = tid._methods.LastLink()
-				#AddMethods
-				While link
-					' go through every method defined in the type
-					Local meth:TMethod = TMethod(link.Value())
-					link = link.PrevLink()
-					
-					' check name
-					If meth.Name().ToLower() <> name Then Continue AddMethods
-					
-					' check if it's overridden by something we already added to the result list
-					Local linkL:TLink = firstNewLinkL
-					While linkL
-						Local methL:TMethod = TMethod(linkL.Value())
-						linkL = linkL.NextLink()
-						If ArgTypesIdentical(meth, methL) Then Continue AddMethods ' if so, skip it
-					Wend
-					list.InsertAfterLink meth, initialLastLinkL ' otherwise, add it to the result list
-				Wend
-				
-				' repeat with super type
-				If (Not tid._super) Or tid._super = tid Then Exit
-				tid = tid._super
-			Forever
-		End If
+		' list might be non-empty => retrieve the last link
+		Local initialLastLink:TLink = list.LastLink()
+		If Not initialLastLink Then initialLastLink = list._head
+		
+		' add the methods
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			AddMethodsToList tid, list, initialLastLink, name
+		Next
 		
 		Return list
 	End Method
@@ -1757,13 +1766,13 @@ Type TTypeId Extends TMember
 	End Rem
 	Method EnumConstants:TList(list:TList = Null)
 		If Not list Then list = New TList
-		For Local i:TTypeId = EachIn _interfaces
-			i.EnumConstants list
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy()
+			For Local cons:TConstant = EachIn _consts
+				list.AddLast cons
+			Next
 		Next
-		If _super Then _super.EnumConstants list
-		For Local t:TConstant = EachIn _consts
-			list.AddLast t
-		Next
+		
 		Return list
 	End Method
 	
@@ -1773,11 +1782,14 @@ Type TTypeId Extends TMember
 	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
 	End Rem
 	Method EnumFields:TList(list:TList = Null)
-		If Not list list = New TList
-		If _super _super.EnumFields list
-		For Local t:TField = EachIn _fields
-			list.AddLast t
+		If Not list Then list = New TList
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy()
+			For Local fld:TField = EachIn _fields
+				list.AddLast fld
+			Next
 		Next
+		
 		Return list
 	End Method
 	
@@ -1787,11 +1799,14 @@ Type TTypeId Extends TMember
 	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
 	End Rem
 	Method EnumGlobals:TList(list:TList = Null)
-		If Not list list = New TList
-		If _super _super.EnumGlobals list
-		For Local t:TField = EachIn _globals
-			list.AddLast t
+		If Not list Then list = New TList
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy()
+			For Local glob:TGlobal = EachIn _globals
+				list.AddLast glob
+			Next
 		Next
+		
 		Return list
 	End Method
 	
@@ -1803,38 +1818,14 @@ Type TTypeId Extends TMember
 	Method EnumFunctions:TList(list:TList = Null)
 		If Not list Then list = New TList
 		
-		If IsInterface() Or IsStruct() Then
-			' nothing to see here, move along
-		Else
-			Local initialLastLinkL:TLink = list.LastLink()
-			If Not initialLastLinkL Then initialLastLinkL = list._head
-			' start by looking at this type
-			Local tid:TTypeId = Self
-			Repeat
-				Local firstNewLinkL:TLink = initialLastLinkL.NextLink()
-				Local link:TLink = tid._functions.LastLink()
-				#AddFunctions
-				While link
-					' go through every function defined in the type
-					Local func:TFunction = TFunction(link.Value())
-					link = link.PrevLink()
-					
-					' check if it's overridden by something we already added to the result list
-					Local linkL:TLink = firstNewLinkL
-					While linkL
-						Local funcL:TFunction = TFunction(linkL.Value())
-						linkL = linkL.NextLink()
-						If NameAndArgTypesIdentical(func, funcL) Then Continue AddFunctions ' if so, skip it
-					Wend
-					
-					list.InsertAfterLink func, initialLastLinkL ' otherwise, add it to the result list
-				Wend
-				
-				' repeat with super type
-				If (Not tid._super) Or tid._super = tid Then Exit
-				tid = tid._super
-			Forever
-		End If
+		' list might be non-empty => retrieve the last link
+		Local initialLastLink:TLink = list.LastLink()
+		If Not initialLastLink Then initialLastLink = list._head
+		
+		' add the functions
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			AddFunctionsToList tid, list, initialLastLink
+		Next
 		
 		Return list
 	End Method
@@ -1847,39 +1838,14 @@ Type TTypeId Extends TMember
 	Method EnumMethods:TList(list:TList = Null)
 		If Not list Then list = New TList
 		
-		If IsInterface() Or IsStruct() Then
-			For Local meth:TMethod = EachIn _methods
-				list.AddLast meth
-			Next
-		Else
-			Local initialLastLinkL:TLink = list.LastLink()
-			If Not initialLastLinkL Then initialLastLinkL = list._head
-			' start by looking at this type
-			Local tid:TTypeId = Self
-			Repeat
-				Local firstNewLinkL:TLink = initialLastLinkL.NextLink()
-				Local link:TLink = tid._methods.LastLink()
-				#AddMethods
-				While link
-					' go through every method defined in the type
-					Local meth:TMethod = TMethod(link.Value())
-					link = link.PrevLink()
-					
-					' check if it's overridden by something we already added to the result list
-					Local linkL:TLink = firstNewLinkL
-					While linkL
-						Local methL:TMethod = TMethod(linkL.Value())
-						linkL = linkL.NextLink()
-						If NameAndArgTypesIdentical(meth, methL) Then Continue AddMethods ' if so, skip it
-					Wend
-					list.InsertAfterLink meth, initialLastLinkL ' otherwise, add it to the result list
-				Wend
-				
-				' repeat with super type
-				If (Not tid._super) Or tid._super = tid Then Exit
-				tid = tid._super
-			Forever
-		End If
+		' list might be non-empty => retrieve the last link
+		Local initialLastLink:TLink = list.LastLink()
+		If Not initialLastLink Then initialLastLink = list._head
+		
+		' add the methods
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			AddMethodsToList tid, list, initialLastLink
+		Next
 		
 		Return list
 	End Method
