@@ -4,12 +4,8 @@
 
 
 
-void* bbRefFieldPtr(BBObject* obj, int index) {
-	return (char*)obj + index;
-}
-
-void* bbRefMethodPtr(BBObject* obj, int index) {
-	return *((void**)((char*)obj->clas + index));
+void* bbRefObjectFieldPtr(BBObject* obj, size_t offset) {
+	return (char*)obj + offset;
 }
 
 void* bbRefArrayElementPtr(size_t sz, BBArray* array, int index) {
@@ -76,7 +72,7 @@ BBString* bbDebugDeclConstValue(BBDebugDecl* decl) {
 	return decl->const_value;
 }
 
-int bbDebugDeclFieldOffset(BBDebugDecl* decl) {
+size_t bbDebugDeclFieldOffset(BBDebugDecl* decl) {
 	return decl->field_offset;
 }
 

@@ -55,8 +55,7 @@ Extern
 	Function bbRefArrayTypeTag$(array:Object)
 	Function bbRefArrayDimensions:Int(array:Object)
 	
-	Function bbRefFieldPtr:Byte Ptr(obj:Object, index:Int)
-	Function bbRefMethodPtr:Byte Ptr(obj:Object, index:Int)
+	Function bbRefObjectFieldPtr:Byte Ptr(obj:Object, offset:Size_T)
 	Function bbRefArrayElementPtr:Byte Ptr(sz:Size_T, _array:Object, index:Int)
 	
 	Function bbRefGetObject:Object(p:Byte Ptr)
@@ -86,7 +85,7 @@ Extern
 	Function bbDebugDeclName:Byte Ptr(decl:Byte Ptr)
 	Function bbDebugDeclType:Byte Ptr(decl:Byte Ptr)
 	Function bbDebugDeclConstValue:String(decl:Byte Ptr)
-	Function bbDebugDeclFieldOffset:Int(decl:Byte Ptr)
+	Function bbDebugDeclFieldOffset:Size_T(decl:Byte Ptr)
 	Function bbDebugDeclVarAddress:Byte Ptr(decl:Byte Ptr)
 	Function bbDebugDeclStructSize:Size_T(decl:Byte Ptr)
 	Function bbDebugDeclReflectionWrapper:Byte Ptr(decl:Byte Ptr)
@@ -104,8 +103,8 @@ End Extern
 
 Type TBoxedStruct Final
 	
-	Field _dataPtr:Byte Ptr
-	Field _typeId:TTypeId
+	Field ReadOnly dataPtr:Byte Ptr
+	Field ReadOnly typeId:TTypeId
 	
 	Private
 	
@@ -114,26 +113,26 @@ Type TBoxedStruct Final
 	Public
 	
 	Method New(structType:TTypeId)
-		_typeId = structType
-		_dataPtr = MemAlloc(Size_T _typeId._size)
+		typeId = structType
+		dataPtr = MemAlloc(Size_T typeId._size)
 	End Method
 	
 	Method New(structType:TTypeId, structPtr:Byte Ptr)
 		New(structType)
-		MemCopy _dataPtr, structPtr, Size_T _typeId._size
+		MemCopy dataPtr, structPtr, Size_T typeId._size
 	End Method
 	
 	Method Delete()
-		MemFree _dataPtr
+		MemFree dataPtr
 	End Method
 	
 	Method Unbox(targetStructPtr:Byte Ptr)
-		MemCopy targetStructPtr, _dataPtr, Size_T _typeId._size
+		MemCopy targetStructPtr, dataPtr, Size_T typeId._size
 	End Method
 	
 	Method ToString:String()
-		' forward call to the struct's ToString method if defined
-		If _typeId._toString Then Return _typeId._toString(_dataPtr) Else Return Super.ToString()
+		' forward call to the struct's ToString method if it exists
+		If typeId._toString Then Return typeId._toString(dataPtr) Else Return Super.ToString()
 	End Method
 	
 End Type
@@ -187,7 +186,7 @@ Function _Assign(p:Byte Ptr, typeId:TTypeId, value:Object)
 						Return
 					Case typeId.IsStruct()
 						Local box:TBoxedStruct = TBoxedStruct(value)
-						If Not box Or box._typeId <> typeId Then Throw "Unable to assign object of incompatible type"
+						If Not box Or box.typeId <> typeId Then Throw "Unable to assign object of incompatible type"
 						box.Unbox p
 						Return
 					Case typeId.IsInterface()
@@ -245,6 +244,16 @@ Function _Invoke:Object(reflectionWrapper(buf:Byte Ptr Ptr), retType:TTypeId, ar
 	reflectionWrapper bufPtr
 	
 	If retType <> VoidTypeId Then Return _Get(bufPtr, retType)
+End Function
+
+
+Function GetFieldPtr:Byte Ptr(obj:Object, offset:Size_T)
+	Local box:TBoxedStruct = TBoxedStruct(obj)
+	If box Then
+		Return box.dataPtr + offset
+	Else
+		Return bbRefObjectFieldPtr(obj, offset)
+	End If
 End Function
 
 
@@ -781,12 +790,12 @@ Type TField Extends TMember
 	
 	Private
 	
-	Method Init:TField(name$, typeId:TTypeId, modifiers%, meta$, index%)
+	Method Init:TField(name$, typeId:TTypeId, modifiers%, meta$, offset:Size_T)
 		_name = name
 		_typeId = typeId
 		_modifiers = modifiers
 		_meta = meta
-		_index = index
+		_offset = offset
 		Return Self
 	End Method
 	
@@ -803,7 +812,7 @@ Type TField Extends TMember
 	bbdoc: Get field value
 	End Rem
 	Method Get:Object(obj:Object)
-		Return _Get(bbRefFieldPtr(obj, _index), _typeId)
+		Return _Get(GetFieldPtr(obj, _offset), _typeId)
 	End Method
 	
 	Rem
@@ -861,14 +870,14 @@ Type TField Extends TMember
 	EndRem
 	Method GetStruct(obj:Object, targetPtr:Byte Ptr)
 		If Not _typeId.IsStruct Then Throw "Field does not have a struct type"
-		MemCopy targetPtr, bbRefFieldPtr(obj, _index), Size_T _typeId._size
+		MemCopy targetPtr, GetFieldPtr(obj, _offset), Size_T _typeId._size
 	EndMethod
 	
 	Rem
-	bbdoc: Set field value
+	bbdoc: Set Field value
 	End Rem
 	Method Set(obj:Object, value:Object)
-		_Assign bbRefFieldPtr(obj, _index), _typeId, value
+		_Assign GetFieldPtr(obj, _offset), _typeId, value
 	End Method
 	
 	Rem
@@ -895,7 +904,7 @@ Type TField Extends TMember
 	Rem
 	bbdoc: Set field value from @Size_T
 	End Rem
-	Method SetSizeT(obj:Object, value:Size_T )
+	Method SetSizeT(obj:Object, value:Size_T)
 		SetString obj, String.FromSizeT(value)
 	End Method
 	
@@ -926,7 +935,7 @@ Type TField Extends TMember
 	EndRem
 	Method SetStruct(obj:Object, structPtr:Byte Ptr)
 		If Not _typeId.IsStruct Then Throw "Field does not have a struct type"
-		MemCopy bbRefFieldPtr(obj, _index), structPtr, Size_T _typeId._size
+		MemCopy GetFieldPtr(obj, _offset), structPtr, Size_T _typeId._size
 	EndMethod
 	
 	Rem
@@ -938,10 +947,10 @@ Type TField Extends TMember
 		If args.Length <> _typeId.argTypes.Length Then Throw "Function invoked with wrong number of arguments"
 		Throw "Not implemented yet"
 		'TODO
-'		Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T bbRefFieldPtr(obj, _index))] + args, _invokeBufferSize)
+'		Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T GetFieldPtr(obj, _offset))] + args, _invokeBufferSize)
 	End Method
 	
-	Field _index%
+	Field _offset:Size_T
 	
 End Type
 
@@ -1244,11 +1253,11 @@ Type TMethod Extends TMember
 	End Rem
 	Method Invoke:Object(obj:Object, args:Object[] = Null)
 		If Not obj Then Throw "Unable to invoke method on Null object"
-		If _selfTypeId._elementType And _selfTypeId._elementType.IsStruct() Then
+		If _selfTypeId._elementType And _selfTypeId._elementType.IsStruct() Then ' method on struct type
 			Local box:TBoxedStruct = TBoxedStruct(obj)
-			If (Not box) Or box._typeId <> _selfTypeId._elementType Then Throw "Unable to invoke method on this object"
-			If args.Length <> _typeId.argTypes.Length Then Throw "Method invoked with wrong number of arguments"	
-			Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T box._dataPtr)] + args, _invokeBufferSize)
+			If (Not box) Or box.typeId <> _selfTypeId._elementType Then Throw "Unable to invoke method on this object"
+			If args.Length <> _typeId.argTypes.Length Then Throw "Method invoked with wrong number of arguments"
+			Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T box.dataPtr)] + args, _invokeBufferSize)
 		Else
 			If args.Length <> _typeId.argTypes.Length Then Throw "Method invoked with wrong number of arguments"
 			Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [obj] + args, _invokeBufferSize)
@@ -1516,7 +1525,7 @@ Type TTypeId Extends TMember
 		If Not _struct Then Throw "Type ID is not a struct type"
 		Local box:TBoxedStruct = TBoxedStruct(obj)
 		If Not box Then Throw "Object does not contain a struct instance"
-		If box._typeID <> Self Then Throw "Struct instance in object does not match type ID"
+		If box.typeId <> Self Then Throw "Struct instance in object does not match type ID"
 		box.Unbox targetPtr
 	End Method
 	
@@ -2008,7 +2017,7 @@ Type TTypeId Extends TMember
 	Function ForObject:TTypeId(obj:Object)
 		_Update
 		Local box:TBoxedStruct = TBoxedStruct(obj)
-		If box Then Return box._typeId
+		If box Then Return box.typeId
 		Local class:Byte Ptr = bbRefGetObjectClass(obj)
 		If class = ArrayTypeId._class
 			If Not bbRefArrayLength(obj) Return ArrayTypeId
