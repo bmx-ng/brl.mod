@@ -157,6 +157,7 @@ static void _initWndClass(){
 		wc.hInstance=GetModuleHandle(0);
 		wc.lpszClassName=CLASS_NAMEW;
 		wc.hCursor=(HCURSOR)LoadCursor( 0,IDC_ARROW );
+		wc.hIcon = bbAppIcon(wc.hInstance);
 		wc.hbrBackground=0;
 		if( !RegisterClassExW( &wc ) ) exit( -1 );
 	}else{
@@ -166,6 +167,7 @@ static void _initWndClass(){
 		wc.hInstance=GetModuleHandle(0);
 		wc.lpszClassName=CLASS_NAME;
 		wc.hCursor=(HCURSOR)LoadCursor( 0,IDC_ARROW );
+		wc.hIcon = bbAppIcon(wc.hInstance);
 		wc.hbrBackground=0;
 		if( !RegisterClassEx( &wc ) ) exit( -1 );
 	}

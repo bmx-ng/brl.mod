@@ -141,6 +141,10 @@ void bbGetAppFileDir(wchar_t * buf) {
 	}
 }
 
+HICON bbAppIcon(HINSTANCE hInstance) {
+	return LoadIcon(hInstance, MAKEINTRESOURCE (101));
+}
+
 #elif __linux
 
 #include <unistd.h>

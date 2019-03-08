@@ -9,6 +9,9 @@ Import BRL.LinkedList
 Import brl.systemdefault
 
 Private
+Extern
+	Function bbAppIcon:Byte Ptr(inst:Byte Ptr)="HICON bbAppIcon(HINSTANCE)!"
+End Extern
 
 Global _wndClass$="BBDX9Device Window Class"
 
@@ -373,6 +376,7 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		wndclass.SethInstance(GetModuleHandleW( Null ))
 		wndclass.SetlpfnWndProc(D3D9WndProc)
 		wndclass.SethCursor(LoadCursorW( Null,Short Ptr IDC_ARROW ))
+		wndClass.SethIcon(bbAppIcon(GetModuleHandleW( Null )))
 		wndclass.SetlpszClassName(name)
 		RegisterClassW wndclass.classPtr
 		MemFree name

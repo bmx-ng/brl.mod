@@ -35,6 +35,10 @@ int		bbIsMainThread();
 
 void		bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 );
 
+#ifdef _WIN32
+HICON bbAppIcon(HINSTANCE hInstance);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
