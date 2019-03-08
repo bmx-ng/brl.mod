@@ -327,7 +327,6 @@ Function TypeIdForTag:TTypeId(ty$)
 			ty = ty[ty.Find("]") + 1..]
 			Local id:TTypeId = TypeIdForTag(ty)
 			If id Then
-				id._arrayTypes = Null
 				id = id.ArrayType(dims)
 			End If
 			Return id
@@ -340,7 +339,6 @@ Function TypeIdForTag:TTypeId(ty$)
 			ty = ty[1..]
 			Local id:TTypeId = TypeIdForTag(ty)
 			If id Then
-				id._pointerType = Null
 				id = id.PointerType()
 			EndIf
 			Return id
