@@ -28,7 +28,7 @@ Public
 
 Type TAudioSampleLoaderWAV Extends TAudioSampleLoader
 
-	Method LoadAudioSample:TAudioSample( stream:TStream )
+	Method LoadAudioSample:TAudioSample( stream:TStream ) Override
 	
 		stream=LittleEndianStream(stream)
 		

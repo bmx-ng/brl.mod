@@ -112,7 +112,7 @@ End Function
 Private
 
 Type TPixmapLoaderJPG Extends TPixmapLoader
-	Method LoadPixmap:TPixmap( stream:TStream )
+	Method LoadPixmap:TPixmap( stream:TStream ) Override
 		Return LoadPixmapJPeg( stream )
 	End Method
 End Type

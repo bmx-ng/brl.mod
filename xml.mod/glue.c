@@ -381,3 +381,27 @@ BBString * bmx_mxmlGetContent(mxml_node_t * node) {
 	}
 	return bbStringFromUTF8String(txt);
 }
+
+mxml_node_t * bmx_mxmlFindElement(mxml_node_t * node, BBString * element, BBString * attr, BBString * value) {
+	char * e = 0;
+	char * a = 0;
+	char * v = 0;
+	
+	if (element != &bbEmptyString) {
+		e = bbStringToUTF8String(element);
+	}
+	if (attr != &bbEmptyString) {
+		a = bbStringToUTF8String(attr);
+	}
+	if (value != &bbEmptyString) {
+		v = bbStringToUTF8String(value);
+	}
+	
+	mxml_node_t * result = mxmlFindElement(node, node, e, a, v, MXML_DESCEND);
+	
+	bbMemFree(v);
+	bbMemFree(a);
+	bbMemFree(e);
+	
+	return result;
+}

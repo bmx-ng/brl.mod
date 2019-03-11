@@ -48,7 +48,7 @@ Type TxmlBase Abstract
 	Rem
 	bbdoc: Returns a string representation of the element.
 	End Rem
-	Method ToString:String()
+	Method ToString:String() Override
 		Return bmx_mxmlSaveString(nodePtr, False)
 	End Method
 
@@ -262,6 +262,14 @@ Type TxmlNode Extends TxmlBase
 		Wend
 		
 		Return sb.ToString()
+	End Method
+	
+	Rem
+	bbdoc: Finds an element of the given @element name, attribute or attribute/value.
+	returns: A node or Null if no match was found.
+	End Rem
+	Method findElement:TxmlNode(element:String = "", attr:String = "", value:String = "")
+		Return TxmlNode._create(bmx_mxmlFindElement(nodePtr, element, attr, value))
 	End Method
 
 	Rem

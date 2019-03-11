@@ -246,7 +246,7 @@ Type TStringNodeEnumerator
 End Type
 
 Type TStringKeyEnumerator Extends TStringNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TStringMap Concurrent Modification"
 ?
@@ -257,7 +257,7 @@ Type TStringKeyEnumerator Extends TStringNodeEnumerator
 End Type
 
 Type TStringValueEnumerator Extends TStringNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TStringMap Concurrent Modification"
 ?
@@ -275,7 +275,7 @@ Type TStringMapEnumerator
 End Type
 
 Type TStringEmptyEnumerator Extends TStringNodeEnumerator
-	Method HasNext()
+	Method HasNext() Override
 		_map = Null
 		Return False
 	End Method

@@ -225,9 +225,9 @@ Type TJSONArray Extends TJSON
 	End Method
 
 	Method ObjectEnumerator:TJSONArrayEnum()
-		Local enum:TJSONArrayEnum =New TJSONArrayEnum
-		enum.array = Self
-		Return enum
+		Local enumeration:TJSONArrayEnum =New TJSONArrayEnum
+		enumeration.array = Self
+		Return enumeration
 	End Method
 
 End Type
@@ -429,10 +429,10 @@ Type TJSONObject Extends TJSON
 	End Method
 
 	Method ObjectEnumerator:TJSONObjectEnum()
-		Local enum:TJSONObjectEnum =New TJSONObjectEnum
-		enum.obj = Self
-		enum.objectIter = json_object_iter(jsonPtr)
-		Return enum
+		Local enumeration:TJSONObjectEnum =New TJSONObjectEnum
+		enumeration.obj = Self
+		enumeration.objectIter = json_object_iter(jsonPtr)
+		Return enumeration
 	End Method
 	
 	Rem

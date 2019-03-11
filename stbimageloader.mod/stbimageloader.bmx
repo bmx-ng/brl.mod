@@ -31,7 +31,7 @@ End Extern
 
 Type TPixmapLoaderSTB Extends TPixmapLoader
 
-	Method LoadPixmap:TPixmap( stream:TStream )
+	Method LoadPixmap:TPixmap( stream:TStream ) Override
 	
 		Local pixmap:TPixmap
 	

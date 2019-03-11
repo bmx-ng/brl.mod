@@ -448,7 +448,7 @@ Public
 	Rem
 	bbdoc: Converts the string builder to a String.
 	End Rem	
-	Method ToString:String()
+	Method ToString:String() Override
 		Return bmx_stringbuilder_tostring(buffer)
 	End Method
 
@@ -492,10 +492,10 @@ Type TSplitBuffer
 	End Method
 
 	Method ObjectEnumerator:TSplitBufferEnum()
-		Local enum:TSplitBufferEnum = New TSplitBufferEnum
-		enum.buffer = Self
-		enum.length = Length()
-		Return enum
+		Local enumeration:TSplitBufferEnum = New TSplitBufferEnum
+		enumeration.buffer = Self
+		enumeration.length = Length()
+		Return enumeration
 	End Method
 
 	Method Delete()

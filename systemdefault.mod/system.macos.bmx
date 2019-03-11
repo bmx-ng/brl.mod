@@ -47,35 +47,35 @@ Type TMacOSSystemDriver Extends TSystemDriver
 		bbSystemStartup
 	End Method
 
-	Method Poll()
+	Method Poll() Override
 		bbSystemPoll()
 	End Method
 	
-	Method Wait()
+	Method Wait() Override
 		bbSystemWait()
 	End Method
 	
-	Method MoveMouse( x:Int,y:Int )
+	Method MoveMouse( x:Int,y:Int ) Override
 		bbSystemMoveMouse x,y
 	End Method
 	
-	Method SetMouseVisible( visible:Int )
+	Method SetMouseVisible( visible:Int ) Override
 		bbSystemSetMouseVisible visible
 	End Method
 	
-	Method Notify( text$,serious:Int )
-		bbSystemNotify text,serious
+	Method Notify( Text$,serious:Int ) Override
+		bbSystemNotify Text,serious
 	End Method
 	
-	Method Confirm:Int( text$,serious:Int )
-		Return bbSystemConfirm( text,serious)
+	Method Confirm:Int( Text$,serious:Int ) Override
+		Return bbSystemConfirm( Text,serious)
 	End Method
 	
-	Method Proceed:Int( text$,serious:Int )
-		Return bbSystemProceed( text,serious )
+	Method Proceed:Int( Text$,serious:Int ) Override
+		Return bbSystemProceed( Text,serious )
 	End Method
 
-	Method RequestFile$( text$,exts$,save:Int,path$ )
+	Method RequestFile$( Text$,exts$,save:Int,path$ ) Override
 		Local file$,dir$,filter$
 		
 		path=path.Replace( "\","/" )
@@ -98,36 +98,36 @@ Type TMacOSSystemDriver Extends TSystemDriver
 		Wend
 		If filter.find("*")>-1 filter=""
 		
-		Return bbSystemRequestFile( text,filter,save,file,dir )
+		Return bbSystemRequestFile( Text,filter,save,file,dir )
 	End Method
 
-	Method RequestDir$( text$,dir$ )
+	Method RequestDir$( Text$,dir$ ) Override
 		dir=dir.Replace( "\","/" )
-		Return bbSystemRequestDir( text,dir )
+		Return bbSystemRequestDir( Text,dir )
 	End Method
 	
-	Method OpenURL:Int( url$ )
+	Method OpenURL:Int( url$ ) Override
 '		Return system_( "open "" + url.Replace("~q","") + "~q" )
 		Return bbOpenURL( url )
 	End Method
 
-	Method DesktopWidth:Int()
+	Method DesktopWidth:Int() Override
 		Return bbSystemDesktopWidth()
 	End Method
 	
-	Method DesktopHeight:Int()
+	Method DesktopHeight:Int() Override
 		Return bbSystemDesktopHeight()
 	End Method
 	
-	Method DesktopDepth:Int()
+	Method DesktopDepth:Int() Override
 		Return bbSystemDesktopDepth()
 	End Method
 	
-	Method DesktopHertz:Int()
+	Method DesktopHertz:Int() Override
 		Return bbSystemDesktopHertz()
 	End Method
 
-	Method Name:String()
+	Method Name:String() Override
 		Return "MacOSSystemDriver "
 	End Method
 

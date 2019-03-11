@@ -379,6 +379,23 @@ STATIC void GC_remove_tmp_roots(void)
 #endif /* !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32) */
 
 #ifdef USE_PROC_FOR_LIBRARIES
+  /* Exchange the elements of the roots table.  Requires rebuild of     */
+  /* the roots index table after the swap.                              */
+  GC_INLINE void swap_static_roots(int i, int j)
+  {
+    ptr_t r_start = GC_static_roots[i].r_start;
+    ptr_t r_end = GC_static_roots[i].r_end;
+    GC_bool r_tmp = GC_static_roots[i].r_tmp;
+
+    GC_static_roots[i].r_start = GC_static_roots[j].r_start;
+    GC_static_roots[i].r_end = GC_static_roots[j].r_end;
+    GC_static_roots[i].r_tmp = GC_static_roots[j].r_tmp;
+    /* No need to swap r_next values.   */
+    GC_static_roots[j].r_start = r_start;
+    GC_static_roots[j].r_end = r_end;
+    GC_static_roots[j].r_tmp = r_tmp;
+  }
+
   /* Remove given range from every static root which intersects with    */
   /* the range.  It is assumed GC_remove_tmp_roots is called before     */
   /* this function is called repeatedly by GC_register_map_entries.     */
@@ -427,16 +444,7 @@ STATIC void GC_remove_tmp_roots(void)
                 break;
             if (j < n_root_sets-1 && !GC_static_roots[n_root_sets-1].r_tmp) {
               /* Exchange the roots to have all temporary ones at the end. */
-              ptr_t tmp_r_start = GC_static_roots[j].r_start;
-              ptr_t tmp_r_end = GC_static_roots[j].r_end;
-
-              GC_static_roots[j].r_start =
-                                GC_static_roots[n_root_sets-1].r_start;
-              GC_static_roots[j].r_end = GC_static_roots[n_root_sets-1].r_end;
-              GC_static_roots[j].r_tmp = FALSE;
-              GC_static_roots[n_root_sets-1].r_start = tmp_r_start;
-              GC_static_roots[n_root_sets-1].r_end = tmp_r_end;
-              GC_static_roots[n_root_sets-1].r_tmp = TRUE;
+              swap_static_roots(j, n_root_sets - 1);
               rebuild = TRUE;
             }
           }
@@ -446,6 +454,16 @@ STATIC void GC_remove_tmp_roots(void)
             GC_static_roots[i].r_start = e;
           } else {
             GC_remove_root_at_pos(i);
+            if (i < n_root_sets - 1 && GC_static_roots[i].r_tmp
+                && !GC_static_roots[i + 1].r_tmp) {
+              int j;
+
+              for (j = i + 2; j < n_root_sets; j++)
+                if (GC_static_roots[j].r_tmp)
+                  break;
+              /* Exchange the roots to have all temporary ones at the end. */
+              swap_static_roots(i, j - 1);
+            }
             i--;
           }
           rebuild = TRUE;
@@ -484,7 +502,8 @@ STATIC void GC_remove_tmp_roots(void)
 GC_INNER ptr_t GC_approx_sp(void)
 {
     volatile word sp;
-#   if defined(CPPCHECK) || (__GNUC__ >= 4) /* GC_GNUC_PREREQ(4, 0) */
+#   if defined(CPPCHECK) || (__GNUC__ >= 4 /* GC_GNUC_PREREQ(4, 0) */ \
+                             && !defined(STACK_NOT_SCANNED))
         /* TODO: Use GC_GNUC_PREREQ after fixing a bug in cppcheck. */
         sp = (word)__builtin_frame_address(0);
 #   else
@@ -685,7 +704,7 @@ GC_INNER void GC_push_all_stack_sections(ptr_t lo, ptr_t hi,
  * register values are not lost.
  * Cold_gc_frame delimits the stack section that must be scanned
  * eagerly.  A zero value indicates that no eager scanning is needed.
- * We don't need to worry about the MANUAL_VDB case here, since this
+ * We don't need to worry about the manual VDB case here, since this
  * is only called in the single-threaded case.  We assume that we
  * cannot collect between an assignment and the corresponding
  * GC_dirty() call.
@@ -768,7 +787,7 @@ STATIC void GC_push_all_stack_part_eager_sections(ptr_t lo, ptr_t hi,
  * In the presence of threads, push enough of the current stack
  * to ensure that callee-save registers saved in collector frames have been
  * seen.
- * FIXME: Merge with per-thread stuff.
+ * TODO: Merge it with per-thread stuff.
  */
 STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
                                   void * context GC_ATTR_UNUSED)

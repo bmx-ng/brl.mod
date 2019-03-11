@@ -258,7 +258,7 @@ End Type
 
 Type TPtrKeyEnumerator Extends TPtrNodeEnumerator
 	Field _key:TPtrKey = New TPtrKey
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
 ?
@@ -270,7 +270,7 @@ Type TPtrKeyEnumerator Extends TPtrNodeEnumerator
 End Type
 
 Type TPtrValueEnumerator Extends TPtrNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
 ?
@@ -288,7 +288,7 @@ Type TPtrMapEnumerator
 End Type
 
 Type TPtrEmptyEnumerator Extends TPtrNodeEnumerator
-	Method HasNext()
+	Method HasNext() Override
 		_map = Null
 		Return False
 	End Method

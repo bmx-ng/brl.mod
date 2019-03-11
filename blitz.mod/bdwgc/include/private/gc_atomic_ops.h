@@ -100,6 +100,11 @@
     } /* extern "C" */
 # endif
 
+# ifndef NO_LOCKFREE_AO_OR
+    /* __atomic_or_fetch is assumed to be lock-free.    */
+#   define HAVE_LOCKFREE_AO_OR 1
+# endif
+
 #else
   /* Fallback to libatomic_ops. */
 # include "atomic_ops.h"
@@ -109,7 +114,7 @@
   /* only if AO_REQUIRE_CAS is defined (or if the corresponding         */
   /* AO_HAVE_x macro is defined).  x86/x64 targets have AO_nop_full,    */
   /* AO_load_acquire, AO_store_release, at least.                       */
-# if !defined(AO_HAVE_load) || !defined(AO_HAVE_store)
+# if (!defined(AO_HAVE_load) || !defined(AO_HAVE_store)) && !defined(CPPCHECK)
 #   error AO_load or AO_store is missing; probably old version of atomic_ops
 # endif
 

@@ -117,8 +117,9 @@ int bbGCValidate( void *q ){
 	return 0;
 }
 
-int bbGCCollect(){
+size_t bbGCCollect(){
 	GC_gcollect();
+	return GC_get_expl_freed_bytes_since_gc();
 }
 
 int bbGCCollectALittle() {
@@ -139,7 +140,7 @@ void bbGCResume(){
 	GC_enable();
 }
 
-int bbGCMemAlloced(){
+size_t bbGCMemAlloced(){
 	return GC_get_heap_size();
 }
 

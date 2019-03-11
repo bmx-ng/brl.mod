@@ -45,17 +45,17 @@ Type TFreeTypeGlyph Extends TGlyph
 	Field _pixmap:TPixmap
 	Field _advance#,_x:Int,_y:Int,_w:Int,_h:Int
 	
-	Method Pixels:TPixmap()
+	Method Pixels:TPixmap() Override
 		If _pixmap Return _pixmap
 		
 		Return _pixmap
 	End Method
 	
-	Method Advance#()
+	Method Advance#() Override
 		Return _advance
 	End Method
 	
-	Method GetRect( x:Int Var,y:Int Var,w:Int Var,h:Int Var )
+	Method GetRect( x:Int Var,y:Int Var,w:Int Var,h:Int Var ) Override
 		x=_x
 		y=_y
 		w=_w
@@ -78,23 +78,23 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 		MemFree _buf
 	End Method
 
-	Method Style:Int()
+	Method Style:Int() Override
 		Return _style
 	End Method
 
-	Method Height:Int()
+	Method Height:Int() Override
 		Return _height
 	End Method
 	
-	Method CountGlyphs:Int()
+	Method CountGlyphs:Int() Override
 		Return _glyphs.length
 	End Method
 	
-	Method CharToGlyph:Int( char:Int )
+	Method CharToGlyph:Int( char:Int ) Override
 		Return FT_Get_Char_Index( _ft_face,char )-1
 	End Method
 	
-	Method LoadGlyph:TFreeTypeGlyph( index:Int )
+	Method LoadGlyph:TFreeTypeGlyph( index:Int ) Override
 	
 		Local glyph:TFreeTypeGlyph=_glyphs[index]
 		If glyph Return glyph
@@ -215,7 +215,7 @@ End Type
 
 Type TFreeTypeFontLoader Extends TFontLoader
 
-	Method LoadFont:TFreeTypeFont( url:Object,size:Int,style:Int )
+	Method LoadFont:TFreeTypeFont( url:Object,size:Int,style:Int ) Override
 	
 		Local src$=String( url )
 		

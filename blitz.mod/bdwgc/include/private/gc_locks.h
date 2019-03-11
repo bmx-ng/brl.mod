@@ -45,11 +45,17 @@
 #    endif
 #    define UNCOND_LOCK() PCR_Th_ML_Acquire(&GC_allocate_ml)
 #    define UNCOND_UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
+#  elif defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH)
+      extern void GC_lock(void);
+      extern void GC_unlock(void);
+#     define UNCOND_LOCK() GC_lock()
+#     define UNCOND_UNLOCK() GC_unlock()
 #  endif
 
 #  if (!defined(AO_HAVE_test_and_set_acquire) || defined(GC_RTEMS_PTHREADS) \
        || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
-       || defined(GC_WIN32_THREADS) || defined(LINT2)) && defined(GC_PTHREADS)
+       || defined(GC_WIN32_THREADS) || defined(BASE_ATOMIC_OPS_EMULATED) \
+       || defined(LINT2)) && defined(GC_PTHREADS)
 #    define USE_PTHREAD_LOCKS
 #    undef USE_SPIN_LOCK
 #  endif

@@ -24,19 +24,19 @@ Import BRL.TextStream
 
 Type TCStandardIO Extends TStream
 
-	Method Eof:Int()
+	Method Eof:Int() Override
 		Return feof_( stdin_ )
 	End Method
 	
-	Method Flush()
+	Method Flush() Override
 		fflush_ stdout_
 	End Method
 
-	Method Read:Long( buf:Byte Ptr,count:Long )
+	Method Read:Long( buf:Byte Ptr,count:Long ) Override
 		Return fread_( buf,1,count,stdin_ )
 	End Method
 
-	Method Write:Long( buf:Byte Ptr,count:Long )
+	Method Write:Long( buf:Byte Ptr,count:Long ) Override
 		Return fwrite_( buf,1,count,stdout_ )
 	End Method
 

@@ -25,12 +25,23 @@
 #ifndef GCCONFIG_H
 #define GCCONFIG_H
 
-# ifndef GC_PRIVATE_H
-    /* Fake ptr_t declaration, just to avoid compilation errors.        */
-    /* This avoids many instances if "ifndef GC_PRIVATE_H" below.       */
-    typedef struct GC_undefined_struct * ptr_t;
-#   include <stddef.h>  /* For size_t etc. */
-# endif
+#ifdef CPPCHECK
+# undef CLOCKS_PER_SEC
+# undef FIXUP_POINTER
+# undef POINTER_MASK
+# undef POINTER_SHIFT
+# undef REDIRECT_REALLOC
+# undef _MAX_PATH
+#endif
+
+#ifndef PTR_T_DEFINED
+  typedef char * ptr_t;
+# define PTR_T_DEFINED
+#endif
+
+#if !defined(sony_news)
+# include <stddef.h> /* For size_t, etc. */
+#endif
 
 /* Note: Only wrap our own declarations, and not the included headers.  */
 /* In this case, wrap our entire file, but temporarily unwrap/rewrap    */
@@ -171,10 +182,9 @@ EXTERN_C_BEGIN
 #    error SUNOS4 no longer supported
 # endif
 # if defined(hp9000s300) && !defined(CPPCHECK)
-#    error M68K based HP machines no longer supported.
+#    error M68K based HP machines no longer supported
 # endif
 # if defined(OPENBSD) && defined(m68k)
-     /* FIXME: Should we remove this case? */
 #    define M68K
 #    define mach_type_known
 # endif
@@ -277,7 +287,7 @@ EXTERN_C_BEGIN
 #    define mach_type_known
 # endif
 # if defined(ibm032) && !defined(CPPCHECK)
-#   error IBM PC/RT no longer supported.
+#   error IBM PC/RT no longer supported
 # endif
 # if (defined(sun) || defined(__sun)) && (defined(sparc) || defined(__sparc))
             /* Test for SunOS 5.x */
@@ -539,11 +549,13 @@ EXTERN_C_BEGIN
 # else
 #   if ((defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300)) \
        || (defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__) \
-           && !defined(SYMBIAN))
-#     if defined(__LP64__) || defined(_WIN64)
+           && !defined(__INTERIX) && !defined(SYMBIAN))
+#     if defined(__LP64__) || defined(_M_X64)
 #       define X86_64
 #     elif defined(_M_ARM)
 #       define ARM32
+#     elif defined(_M_ARM64)
+#       define AARCH64
 #     else /* _M_IX86 */
 #       define I386
 #     endif
@@ -579,6 +591,11 @@ EXTERN_C_BEGIN
 #     define I386
 #   endif
 #   define CYGWIN32
+#   define mach_type_known
+# endif
+# if defined(__INTERIX)
+#   define I386
+#   define INTERIX
 #   define mach_type_known
 # endif
 # if defined(__MINGW32__) && !defined(mach_type_known)
@@ -689,7 +706,7 @@ EXTERN_C_BEGIN
 /* SYSV on an M68K actually means A/UX.                                 */
 /* The distinction in these cases is usually the stack starting address */
 # if !defined(mach_type_known) && !defined(CPPCHECK)
-#   error "The collector has not been ported to this machine/OS combination."
+#   error The collector has not been ported to this machine/OS combination
 # endif
                     /* Mapping is: M68K       ==> Motorola 680X0        */
                     /*             (NEXT, and SYSV (A/UX),              */
@@ -716,6 +733,7 @@ EXTERN_C_BEGIN
                     /*             S390       ==> 390-like machine      */
                     /*                  running LINUX                   */
                     /*             AARCH64    ==> ARM AArch64           */
+                    /*                  (LP64 and ILP32 variants)       */
                     /*             ARM32      ==> Intel StrongARM       */
                     /*             IA64       ==> Intel IPF             */
                     /*                            (e.g. Itanium)        */
@@ -754,7 +772,7 @@ EXTERN_C_BEGIN
  *
  * DATASTART is the beginning of the data segment.
  * On some platforms SEARCH_FOR_DATA_START is defined.
- * SEARCH_FOR_DATASTART will cause GC_data_start to
+ * The latter will cause GC_data_start to
  * be set to an address determined by accessing data backwards from _end
  * until an unmapped page is found.  DATASTART will be defined to be
  * GC_data_start.
@@ -899,7 +917,6 @@ EXTERN_C_BEGIN
 #   define MACH_TYPE "M68K"
 #   define ALIGNMENT 2
 #   ifdef OPENBSD
-        /* FIXME: Should we remove this case? */
 #       define OS_TYPE "OPENBSD"
 #       define HEURISTIC2
 #       ifdef __ELF__
@@ -1180,7 +1197,6 @@ EXTERN_C_BEGIN
 #   define STACK_GRAN 0x10000
 #   define HEURISTIC1
 #   define NO_PTHREAD_GETATTR_NP
-#   define USE_MUNMAP
 #   define USE_MMAP_ANON
 #   define GETPAGESIZE() 65536
 #   define MAX_NACL_GC_THREADS 1024
@@ -1223,7 +1239,7 @@ EXTERN_C_BEGIN
 #       define DATASTART_IS_FUNC
 #       define DATAEND ((ptr_t)(_end))
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
-#         define USE_MMAP
+#         define USE_MMAP 1
             /* Otherwise we now use calloc.  Mmap may result in the     */
             /* heap interleaved with thread stacks, which can result in */
             /* excessive blacklisting.  Sbrk is unusable since it       */
@@ -1269,8 +1285,8 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "LINUX"
 #     ifdef __ELF__
 #       define DYNAMIC_LOADING
-#     else
-#       error --> Linux SPARC a.out not supported
+#     elif !defined(CPPCHECK)
+#       error Linux SPARC a.out not supported
 #     endif
       extern int _end[];
       extern int _etext[];
@@ -1326,11 +1342,13 @@ EXTERN_C_BEGIN
 #       endif
         extern char etext[];
         extern char edata[];
-        extern char end[];
+#       if !defined(CPPCHECK)
+          extern char end[];
+#       endif
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
-        ptr_t GC_find_limit(ptr_t, GC_bool);
-#       define DATAEND GC_find_limit(DATASTART, TRUE)
+        void * GC_find_limit(void *, int);
+#       define DATAEND (ptr_t)GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
 #       define GC_HAVE_DATAREGION2
 #       define DATASTART2 ((ptr_t)(&edata))
@@ -1340,7 +1358,7 @@ EXTERN_C_BEGIN
 
 # ifdef I386
 #   define MACH_TYPE "I386"
-#   if defined(__LP64__) || defined(_WIN64)
+#   if (defined(__LP64__) || defined(_WIN64)) && !defined(CPPCHECK)
 #     error This should be handled as X86_64
 #   else
 #     define CPP_WORDSZ 32
@@ -1400,7 +1418,7 @@ EXTERN_C_BEGIN
 #       endif
 #       define DYNAMIC_LOADING
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
-#         define USE_MMAP
+#         define USE_MMAP 1
             /* Otherwise we now use calloc.  Mmap may result in the     */
             /* heap interleaved with thread stacks, which can result in */
             /* excessive blacklisting.  Sbrk is unusable since it       */
@@ -1442,7 +1460,7 @@ EXTERN_C_BEGIN
 #       define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 #       define DYNAMIC_LOADING
 #       ifndef USE_MMAP
-#         define USE_MMAP
+#         define USE_MMAP 1
 #       endif
 #       define MAP_FAILED (void *) ((word)-1)
 #       define HEAP_START (ptr_t)0x40000000
@@ -1490,7 +1508,7 @@ EXTERN_C_BEGIN
                /* (setjmp is used instead to find data_start).  The bug */
                /* is fixed in Android NDK r8e (so, ok to use sigsetjmp  */
                /* if gcc4.8+, clang3.2+ or Android API level 18+).      */
-#              define GC_NO_SIGSETJMP
+#              define GC_NO_SIGSETJMP 1
 #            endif
 #       else
              extern int etext[];
@@ -1535,6 +1553,18 @@ EXTERN_C_BEGIN
 #         define NEED_FIND_LIMIT
 #         define USE_MMAP_ANON
 #       endif
+#   endif
+#   ifdef INTERIX
+#     define OS_TYPE "INTERIX"
+      extern int _data_start__[];
+      extern int _bss_end__[];
+#     define DATASTART ((ptr_t)_data_start__)
+#     define DATAEND   ((ptr_t)_bss_end__)
+#     define STACKBOTTOM ({ ptr_t rv; \
+                            __asm__ __volatile__ ("movl %%fs:4, %%eax" \
+                                                  : "=a" (rv)); \
+                            rv; })
+#     define USE_MMAP_ANON
 #   endif
 #   ifdef OS2
 #       define OS_TYPE "OS2"
@@ -1640,11 +1670,9 @@ EXTERN_C_BEGIN
 #       include <sys/unistd.h>
         EXTERN_C_BEGIN
         extern int etext[];
-        extern int end[];
         void *rtems_get_stack_bottom(void);
 #       define InitStackBottom rtems_get_stack_bottom()
 #       define DATASTART ((ptr_t)etext)
-#       define DATAEND ((ptr_t)end)
 #       define STACKBOTTOM ((ptr_t)InitStackBottom)
 #       define SIG_SUSPEND SIGUSR1
 #       define SIG_THR_RESTART SIGUSR2
@@ -1679,10 +1707,8 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
-#     define DARWIN_DONT_PARSE_STACK
-#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
-#       define DYNAMIC_LOADING
-#     endif
+#     define DARWIN_DONT_PARSE_STACK 1
+#     define DYNAMIC_LOADING
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default). */
 #     define DATASTART ((ptr_t)get_etext())
@@ -1742,27 +1768,30 @@ EXTERN_C_BEGIN
 #     endif
 #   endif /* Linux */
 #   ifdef EWS4800
-#      define HEURISTIC2
-#      if defined(_MIPS_SZPTR) && (_MIPS_SZPTR == 64)
-         extern int _fdata[], _end[];
-#        define DATASTART ((ptr_t)_fdata)
-#        define DATAEND ((ptr_t)_end)
-#        define CPP_WORDSZ _MIPS_SZPTR
-#        define ALIGNMENT (_MIPS_SZPTR/8)
-#      else
-         extern int etext[], edata[], end[];
-         extern int _DYNAMIC_LINKING[], _gp[];
-#        define DATASTART ((ptr_t)((((word)(etext) + 0x3ffff) & ~0x3ffff) \
-                                   + ((word)(etext) & 0xffff)))
-#        define DATAEND ((ptr_t)(edata))
-#        define GC_HAVE_DATAREGION2
-#        define DATASTART2 (_DYNAMIC_LINKING \
-               ? (ptr_t)(((word)_gp + 0x8000 + 0x3ffff) & ~0x3ffff) \
-               : (ptr_t)edata)
-#        define DATAEND2 ((ptr_t)(end))
-#        define ALIGNMENT 4
-#      endif
-#      define OS_TYPE "EWS4800"
+#     define HEURISTIC2
+#     if defined(_MIPS_SZPTR) && (_MIPS_SZPTR == 64)
+        extern int _fdata[], _end[];
+#       define DATASTART ((ptr_t)_fdata)
+#       define DATAEND ((ptr_t)_end)
+#       define CPP_WORDSZ _MIPS_SZPTR
+#       define ALIGNMENT (_MIPS_SZPTR/8)
+#     else
+        extern int etext[], edata[];
+#       if !defined(CPPCHECK)
+          extern int end[];
+#       endif
+        extern int _DYNAMIC_LINKING[], _gp[];
+#       define DATASTART ((ptr_t)((((word)(etext) + 0x3ffff) & ~0x3ffff) \
+                                  + ((word)(etext) & 0xffff)))
+#       define DATAEND ((ptr_t)(edata))
+#       define GC_HAVE_DATAREGION2
+#       define DATASTART2 (_DYNAMIC_LINKING \
+                ? (ptr_t)(((word)_gp + 0x8000 + 0x3ffff) & ~0x3ffff) \
+                : (ptr_t)edata)
+#       define DATAEND2 ((ptr_t)(end))
+#       define ALIGNMENT 4
+#     endif
+#     define OS_TYPE "EWS4800"
 #   endif
 #   ifdef ULTRIX
 #       define HEURISTIC2
@@ -2021,11 +2050,13 @@ EXTERN_C_BEGIN
 /* Handle unmapped hole alpha*-*-freebsd[45]* puts between etext and edata. */
         extern char etext[];
         extern char edata[];
-        extern char end[];
+#       if !defined(CPPCHECK)
+          extern char end[];
+#       endif
 #       define NEED_FIND_LIMIT
 #       define DATASTART ((ptr_t)(&etext))
-        ptr_t GC_find_limit(ptr_t, GC_bool);
-#       define DATAEND GC_find_limit(DATASTART, TRUE)
+        void * GC_find_limit(void *, int);
+#       define DATAEND (ptr_t)GC_find_limit(DATASTART, TRUE)
 #       define DATAEND_IS_FUNC
 #       define GC_HAVE_DATAREGION2
 #       define DATASTART2 ((ptr_t)(&edata))
@@ -2079,8 +2110,8 @@ EXTERN_C_BEGIN
             /* Requires 8 byte alignment for malloc */
 #         define ALIGNMENT 4
 #       else
-#         ifndef _LP64
-#           error --> unknown ABI
+#         if !defined(_LP64) && !defined(CPPCHECK)
+#           error Unknown ABI
 #         endif
 #         define CPP_WORDSZ 64
             /* Requires 16 byte alignment for malloc */
@@ -2255,18 +2286,20 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
 #     define DYNAMIC_LOADING
-      extern int __data_start[];
+#     if defined(HOST_ANDROID)
+#       define SEARCH_FOR_DATA_START
+#     else
+        extern int __data_start[];
+#       define DATASTART ((ptr_t)__data_start)
+#     endif
       extern int _end[];
-#     define DATASTART ((ptr_t)__data_start)
 #     define DATAEND ((ptr_t)(&_end))
 #   endif
 #   ifdef DARWIN
       /* iOS */
 #     define OS_TYPE "DARWIN"
-#     define DARWIN_DONT_PARSE_STACK
-#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
-#       define DYNAMIC_LOADING
-#     endif
+#     define DARWIN_DONT_PARSE_STACK 1
+#     define DYNAMIC_LOADING
 #     define DATASTART ((ptr_t)get_etext())
 #     define DATAEND   ((ptr_t)get_end())
 #     define STACKBOTTOM ((ptr_t)0x16fdfffff)
@@ -2305,10 +2338,10 @@ EXTERN_C_BEGIN
 #     define DYNAMIC_LOADING
 #   endif
 #   ifdef NINTENDO_SWITCH
-      extern int __bss_end__[];
-#     define NO_HANDLE_FORK
+      extern int __bss_end[];
+#     define NO_HANDLE_FORK 1
 #     define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
-#     define DATAEND (ptr_t)(&__bss_end__)
+#     define DATAEND (ptr_t)(&__bss_end)
       void *switch_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
 #   endif
@@ -2396,10 +2429,8 @@ EXTERN_C_BEGIN
 #   ifdef DARWIN
       /* iOS */
 #     define OS_TYPE "DARWIN"
-#     define DARWIN_DONT_PARSE_STACK
-#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
-#       define DYNAMIC_LOADING
-#     endif
+#     define DARWIN_DONT_PARSE_STACK 1
+#     define DYNAMIC_LOADING
 #     define DATASTART ((ptr_t)get_etext())
 #     define DATAEND   ((ptr_t)get_end())
 #     define STACKBOTTOM ((ptr_t)0x30000000)
@@ -2436,7 +2467,7 @@ EXTERN_C_BEGIN
 #     define DYNAMIC_LOADING
 #   endif
 #   ifdef SN_TARGET_PSP2
-#     define NO_HANDLE_FORK
+#     define NO_HANDLE_FORK 1
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
       void *psp2_get_stack_bottom(void);
@@ -2568,9 +2599,6 @@ EXTERN_C_BEGIN
 #   ifdef SN_TARGET_ORBIS
 #     define DATASTART (ptr_t)ALIGNMENT
 #     define DATAEND (ptr_t)ALIGNMENT
-      EXTERN_C_END
-#     include <pthread.h>
-      EXTERN_C_BEGIN
       void *ps4_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)ps4_get_stack_bottom())
 #   endif
@@ -2617,13 +2645,15 @@ EXTERN_C_BEGIN
 #            define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
 #       endif
 #       if defined(__GLIBC__) && !defined(__UCLIBC__)
+          /* A workaround for GCF (Google Cloud Function) which does    */
+          /* not support mmap() for "/dev/zero".  Should not cause any  */
+          /* harm to other targets.                                     */
+#         define USE_MMAP_ANON
           /* At present, there's a bug in GLibc getcontext() on         */
           /* Linux/x64 (it clears FPU exception mask).  We define this  */
           /* macro to workaround it.                                    */
-          /* FIXME: This seems to be fixed in GLibc v2.14.              */
+          /* TODO: This seems to be fixed in GLibc v2.14.               */
 #         define GETCONTEXT_FPU_EXCMASK_BUG
-#       endif
-#       if defined(__GLIBC__) && !defined(__UCLIBC__)
           /* Workaround lock elision implementation for some glibc.     */
 #         define GLIBC_2_19_TSX_BUG
           EXTERN_C_END
@@ -2633,10 +2663,8 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
-#     define DARWIN_DONT_PARSE_STACK
-#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
-#       define DYNAMIC_LOADING
-#     endif
+#     define DARWIN_DONT_PARSE_STACK 1
+#     define DYNAMIC_LOADING
       /* XXX: see get_end(3), get_etext() and get_end() should not be used. */
       /* These aren't used when dyld support is enabled (it is by default)  */
 #     define DATASTART ((ptr_t)get_etext())
@@ -2736,7 +2764,7 @@ EXTERN_C_BEGIN
 #       endif
 #       define DYNAMIC_LOADING
 #       if !defined(USE_MMAP) && defined(REDIRECT_MALLOC)
-#         define USE_MMAP
+#         define USE_MMAP 1
             /* Otherwise we now use calloc.  Mmap may result in the     */
             /* heap interleaved with thread stacks, which can result in */
             /* excessive blacklisting.  Sbrk is unusable since it       */
@@ -2756,7 +2784,7 @@ EXTERN_C_BEGIN
 #     define STACKBOTTOM ((ptr_t)durango_get_stack_bottom())
 #     define GETPAGESIZE() 4096
 #     ifndef USE_MMAP
-#       define USE_MMAP
+#       define USE_MMAP 1
 #     endif
       /* The following is from sys/mman.h:  */
 #     define PROT_NONE  0
@@ -2800,15 +2828,15 @@ EXTERN_C_BEGIN
 #           if defined(__GLIBC__) && __GLIBC__ >= 2
 #               define SEARCH_FOR_DATA_START
 #           else
-#               error --> unknown Hexagon libc configuration
+#               error Unknown Hexagon libc configuration
 #           endif
             extern int _end[];
 #           define DATAEND ((ptr_t)(_end))
 #       elif !defined(CPPCHECK)
-#           error --> bad Hexagon Linux configuration
+#           error Bad Hexagon Linux configuration
 #       endif
 #   else
-#       error --> unknown Hexagon OS configuration
+#       error Unknown Hexagon OS configuration
 #   endif
 # endif
 
@@ -2874,7 +2902,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(USE_MMAP_ANON) && !defined(USE_MMAP)
-#   define USE_MMAP
+#   define USE_MMAP 1
 #elif defined(LINUX) && defined(USE_MMAP)
     /* The kernel may do a somewhat better job merging mappings etc.    */
     /* with anonymous mappings.                                         */
@@ -2920,14 +2948,17 @@ EXTERN_C_BEGIN
 #endif
 
 #ifndef DATAEND
-  extern int end[];
+# if !defined(CPPCHECK)
+    extern int end[];
+# endif
 # define DATAEND ((ptr_t)(end))
 #endif
 
 /* Workaround for Android NDK clang 3.5+ (as of NDK r10e) which does    */
 /* not provide correct _end symbol.  Unfortunately, alternate __end__   */
 /* symbol is provided only by NDK "bfd" linker.                         */
-#if defined(HOST_ANDROID) && defined(__clang__)
+#if defined(HOST_ANDROID) && defined(__clang__) \
+    && !defined(BROKEN_UUENDUU_SYM)
 # undef DATAEND
 # pragma weak __end__
   extern int __end__[];
@@ -3028,14 +3059,12 @@ EXTERN_C_BEGIN
 #if defined(CPPCHECK)
 # undef CPP_WORDSZ
 # define CPP_WORDSZ (__SIZEOF_POINTER__ * 8)
-#endif
-
-#if CPP_WORDSZ != 32 && CPP_WORDSZ != 64
-# error --> bad word size
+#elif CPP_WORDSZ != 32 && CPP_WORDSZ != 64
+#   error Bad word size
 #endif
 
 #if !defined(ALIGNMENT) && !defined(CPPCHECK)
-# error --> undefined ALIGNMENT
+# error Undefined ALIGNMENT
 #endif
 
 #ifdef PCR
@@ -3050,7 +3079,7 @@ EXTERN_C_BEGIN
 
 #if !defined(STACKBOTTOM) && (defined(ECOS) || defined(NOSYS)) \
     && !defined(CPPCHECK)
-# error --> undefined STACKBOTTOM
+# error Undefined STACKBOTTOM
 #endif
 
 #ifdef IGNORE_DYNAMIC_LOADING
@@ -3064,7 +3093,7 @@ EXTERN_C_BEGIN
 
 #if (defined(MSWIN32) || defined(MSWINCE)) && !defined(USE_WINALLOC)
   /* USE_WINALLOC is only an option for Cygwin. */
-# define USE_WINALLOC
+# define USE_WINALLOC 1
 #endif
 
 #ifdef USE_WINALLOC
@@ -3086,8 +3115,7 @@ EXTERN_C_BEGIN
 # define MUNMAP_THRESHOLD 2
 #endif
 
-#if defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB) \
-    || defined(MANUAL_VDB)
+#if defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB)
 # undef GWW_VDB
 # undef MPROTECT_VDB
 # undef PCR_VDB
@@ -3101,6 +3129,12 @@ EXTERN_C_BEGIN
 #ifdef USE_GLOBAL_ALLOC
   /* Cannot pass MEM_WRITE_WATCH to GlobalAlloc().      */
 # undef GWW_VDB
+#endif
+
+#if defined(BASE_ATOMIC_OPS_EMULATED)
+  /* GC_write_fault_handler() cannot use lock-based atomic primitives   */
+  /* as this could lead to a deadlock.                                  */
+# undef MPROTECT_VDB
 #endif
 
 #if defined(USE_MUNMAP) && defined(GWW_VDB)
@@ -3138,7 +3172,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if !defined(PCR_VDB) && !defined(PROC_VDB) && !defined(MPROTECT_VDB) \
-    && !defined(GWW_VDB) && !defined(DEFAULT_VDB) && !defined(MANUAL_VDB) \
+    && !defined(GWW_VDB) && !defined(DEFAULT_VDB) \
     && !defined(GC_DISABLE_INCREMENTAL)
 # define DEFAULT_VDB
 #endif
@@ -3151,7 +3185,7 @@ EXTERN_C_BEGIN
      || (defined(LINUX) && !defined(__gnu_linux__)) \
      || (defined(RTEMS) && defined(I386)) || defined(HOST_ANDROID)) \
     && !defined(NO_GETCONTEXT)
-# define NO_GETCONTEXT
+# define NO_GETCONTEXT 1
 #endif
 
 #ifndef PREFETCH
@@ -3217,45 +3251,45 @@ EXTERN_C_BEGIN
 #endif
 
 #if !defined(CPPCHECK)
-#if defined(GC_IRIX_THREADS) && !defined(IRIX5)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_LINUX_THREADS) && !defined(LINUX) && !defined(NACL)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_NETBSD_THREADS) && !defined(NETBSD)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_FREEBSD_THREADS) && !defined(FREEBSD)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_SOLARIS_THREADS) && !defined(SOLARIS)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_HPUX_THREADS) && !defined(HPUX)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_AIX_THREADS) && !defined(_AIX)
-# error --> inconsistent configuration
-#endif
-#if defined(GC_WIN32_THREADS) && !defined(CYGWIN32) && !defined(MSWIN32) \
-    && !defined(MSWINCE) && !defined(MSWIN_XBOX1)
-# error --> inconsistent configuration
-#endif
+# if defined(GC_IRIX_THREADS) && !defined(IRIX5)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_LINUX_THREADS) && !defined(LINUX) && !defined(NACL)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_NETBSD_THREADS) && !defined(NETBSD)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_FREEBSD_THREADS) && !defined(FREEBSD)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_SOLARIS_THREADS) && !defined(SOLARIS)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_HPUX_THREADS) && !defined(HPUX)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_AIX_THREADS) && !defined(_AIX)
+#   error Inconsistent configuration
+# endif
+# if defined(GC_WIN32_THREADS) && !defined(CYGWIN32) && !defined(MSWIN32) \
+     && !defined(MSWINCE) && !defined(MSWIN_XBOX1)
+#   error Inconsistent configuration
+# endif
 # if defined(GC_WIN32_PTHREADS) && defined(CYGWIN32)
-#   error --> inconsistent configuration
+#   error Inconsistent configuration
 # endif
 #endif /* !CPPCHECK */
-//|| defined(NINTENDO_SWITCH) 
+
 #if defined(PCR) || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS) \
-    || defined(NN_PLATFORM_CTR) \
-    || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
-    || defined(SN_TARGET_PSP2)
+    || ((defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
+         || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
+         || defined(SN_TARGET_PSP2)) && defined(GC_THREADS))
 # define THREADS
 #endif
 
 #if defined(PARALLEL_MARK) && !defined(THREADS) && !defined(CPPCHECK)
-# error "invalid config - PARALLEL_MARK requires GC_THREADS"
+# error Invalid config: PARALLEL_MARK requires GC_THREADS
 #endif
 
 #if (((defined(MSWIN32) || defined(MSWINCE)) && !defined(__GNUC__)) \
@@ -3457,11 +3491,11 @@ EXTERN_C_BEGIN
         || (defined(SOLARIS) && (!defined(_XOPEN_SOURCE) \
                                  || defined(__EXTENSIONS__))) \
         || defined(LINUX)) && !defined(HAVE_DLADDR)
-# define HAVE_DLADDR
+# define HAVE_DLADDR 1
 #endif
 
 #if defined(MAKE_BACK_GRAPH) && !defined(DBG_HDRS_ALL)
-# define DBG_HDRS_ALL
+# define DBG_HDRS_ALL 1
 #endif
 
 #if defined(POINTER_MASK) && !defined(POINTER_SHIFT)
@@ -3473,11 +3507,7 @@ EXTERN_C_BEGIN
 #endif
 
 #if !defined(FIXUP_POINTER) && defined(POINTER_MASK)
-# if defined(CPPCHECK)
-#   define FIXUP_POINTER(p) (p = (p) << 4) /* e.g. */
-# else
-#   define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
-# endif
+# define FIXUP_POINTER(p) (p = ((p) & POINTER_MASK) << POINTER_SHIFT)
 #endif
 
 #if defined(FIXUP_POINTER)
@@ -3492,21 +3522,19 @@ EXTERN_C_BEGIN
 
 /* Some static sanity tests.    */
 #if !defined(CPPCHECK)
-#if defined(MARK_BIT_PER_GRANULE) && defined(MARK_BIT_PER_OBJ)
-# error Define only one of MARK_BIT_PER_GRANULE and MARK_BIT_PER_OBJ.
-#endif
-
-#if defined(STACK_GROWS_UP) && defined(STACK_GROWS_DOWN)
-# error "Only one of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd."
-#endif
-#if !defined(STACK_GROWS_UP) && !defined(STACK_GROWS_DOWN)
-# error "One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defd."
-#endif
-
-#if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \
+# if defined(MARK_BIT_PER_GRANULE) && defined(MARK_BIT_PER_OBJ)
+#   error Define only one of MARK_BIT_PER_GRANULE and MARK_BIT_PER_OBJ
+# endif
+# if defined(STACK_GROWS_UP) && defined(STACK_GROWS_DOWN)
+#   error Only one of STACK_GROWS_UP and STACK_GROWS_DOWN should be defined
+# endif
+# if !defined(STACK_GROWS_UP) && !defined(STACK_GROWS_DOWN)
+#   error One of STACK_GROWS_UP and STACK_GROWS_DOWN should be defined
+# endif
+# if defined(REDIRECT_MALLOC) && defined(THREADS) && !defined(LINUX) \
      && !defined(REDIRECT_MALLOC_IN_HEADER)
-# error "REDIRECT_MALLOC with THREADS works at most on Linux."
-#endif
+#   error REDIRECT_MALLOC with THREADS works at most on Linux
+# endif
 #endif /* !CPPCHECK */
 
 #ifdef GC_PRIVATE_H
@@ -3547,8 +3575,8 @@ EXTERN_C_BEGIN
                                                           GC_page_size)) \
                                   + GC_page_size - 1)
 # elif defined(MSWIN_XBOX1)
-    void *durango_get_mem(size_t bytes, size_t page_size);
-#   define GET_MEM(bytes) (struct hblk *)durango_get_mem(bytes, 0)
+    ptr_t GC_durango_get_mem(size_t bytes);
+#   define GET_MEM(bytes) (struct hblk *)GC_durango_get_mem(bytes)
 # elif defined(MSWIN32) || defined(CYGWIN32)
     ptr_t GC_win32_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk *)GC_win32_get_mem(bytes)
@@ -3582,9 +3610,9 @@ EXTERN_C_BEGIN
 # elif defined(SN_TARGET_PSP2)
     void *psp2_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)psp2_get_mem(bytes)
-//# elif defined(NINTENDO_SWITCH)
-//    void *switch_get_mem(size_t bytes);
-//#   define GET_MEM(bytes) (struct hblk*)switch_get_mem(bytes)
+# elif defined(NINTENDO_SWITCH)
+    void *switch_get_mem(size_t bytes);
+#   define GET_MEM(bytes) (struct hblk*)switch_get_mem(bytes)
 # elif defined(HAIKU)
     ptr_t GC_haiku_get_mem(size_t bytes);
 #   define GET_MEM(bytes) (struct hblk*)GC_haiku_get_mem(bytes)

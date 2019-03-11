@@ -2,12 +2,7 @@
 
 IN NEW CODE, PLEASE USE C11 OR C++14 STANDARD ATOMICS INSTEAD OF THIS PACKAGE.
 
-[![Travis-CI build status](https://travis-ci.org/ivmai/libatomic_ops.svg?branch=master)](https://travis-ci.org/ivmai/libatomic_ops)
-[![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/ivmai/libatomic_ops?branch=master&svg=true)](https://ci.appveyor.com/project/ivmai/libatomic-ops)
-[![Coveralls test coverage status](https://coveralls.io/repos/ivmai/libatomic_ops/badge.png?branch=master)](https://coveralls.io/github/ivmai/libatomic_ops)
-[![Coverity Scan build status](https://scan.coverity.com/projects/10809/badge.svg)](https://scan.coverity.com/projects/ivmai-libatomic_ops)
-
-This is version 7.7.0 (next release development) of libatomic_ops.
+This is version 7.6.10 of libatomic_ops.
 
 
 ## Download
@@ -101,4 +96,25 @@ GitHub.
 
 ## Copyright & Warranty
 
-See doc/LICENSING.txt file.
+ * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
+ * Copyright (c) 1999-2011 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 2008-2018 Ivan Maidanski
+
+The file armcc/arm_v6.h is also
+
+ * Copyright (c) 2007 by NEC LE-IT.  All rights reserved.
+
+The file gcc/avr32.h is
+
+ * Copyright (c) 2009 Bradley Smith <brad@brad-smith.co.uk>
+
+The file gcc/mips.h is
+
+ * Copyright (c) 2005, 2007 Thiemo Seufer <ths@networkno.de>
+
+The file gcc/sh.h is
+
+ * Copyright (c) 2009 by Takashi YOSHII. All rights reserved.
+
+See doc/LICENSING.txt for the details.

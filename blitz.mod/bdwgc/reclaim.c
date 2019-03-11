@@ -103,7 +103,9 @@ GC_INNER void GC_print_all_errors(void)
     }
     for (i = 0; i < n_leaked; i++) {
         ptr_t p = leaked[i];
-        GC_print_heap_obj(p);
+#       ifndef SKIP_LEAKED_OBJECTS_PRINTING
+          GC_print_heap_obj(p);
+#       endif
         GC_free(p);
     }
 
@@ -133,12 +135,12 @@ GC_INNER GC_bool GC_block_empty(hdr *hhdr)
     return (hhdr -> hb_n_marks == 0);
 }
 
-STATIC GC_bool GC_block_nearly_full(hdr *hhdr)
+STATIC GC_bool GC_block_nearly_full(hdr *hhdr, word sz)
 {
-    return (hhdr -> hb_n_marks > 7 * HBLK_OBJS(hhdr -> hb_sz)/8);
+    return hhdr -> hb_n_marks > HBLK_OBJS(sz) * 7 / 8;
 }
 
-/* FIXME: This should perhaps again be specialized for USE_MARK_BYTES   */
+/* TODO: This should perhaps again be specialized for USE_MARK_BYTES    */
 /* and USE_MARK_BITS cases.                                             */
 
 /*
@@ -154,7 +156,11 @@ STATIC ptr_t GC_reclaim_clear(struct hblk *hbp, hdr *hhdr, word sz,
     signed_word n_bytes_found = 0;
 
     GC_ASSERT(hhdr == GC_find_header((ptr_t)hbp));
-    GC_ASSERT(sz == hhdr -> hb_sz);
+#   ifndef THREADS
+      GC_ASSERT(sz == hhdr -> hb_sz);
+#   else
+      /* Skip the assertion because of a potential race with GC_realloc. */
+#   endif
     GC_ASSERT((sz & (BYTES_PER_WORD-1)) == 0);
     p = (word *)(hbp->hb_body);
     plim = (word *)(hbp->hb_body + HBLKSIZE - sz);
@@ -200,7 +206,9 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
     word *p, *plim;
     signed_word n_bytes_found = 0;
 
-    GC_ASSERT(sz == hhdr -> hb_sz);
+#   ifndef THREADS
+      GC_ASSERT(sz == hhdr -> hb_sz);
+#   endif
     p = (word *)(hbp->hb_body);
     plim = (word *)((ptr_t)hbp + HBLKSIZE - sz);
 
@@ -231,13 +239,16 @@ STATIC ptr_t GC_reclaim_uninit(struct hblk *hbp, hdr *hhdr, word sz,
     struct obj_kind *ok = &GC_obj_kinds[hhdr->hb_obj_kind];
     int (GC_CALLBACK *disclaim)(void *) = ok->ok_disclaim_proc;
 
-    GC_ASSERT(sz == hhdr -> hb_sz);
+#   ifndef THREADS
+      GC_ASSERT(sz == hhdr -> hb_sz);
+#   endif
     p = (word *)(hbp -> hb_body);
     plim = (word *)((ptr_t)p + HBLKSIZE - sz);
 
     while ((word)p <= (word)plim) {
         int marked = mark_bit_from_hdr(hhdr, bit_no);
         if (!marked && (*disclaim)(p)) {
+            set_mark_bit_from_hdr(hhdr, bit_no);
             hhdr -> hb_n_marks++;
             marked = 1;
         }
@@ -278,8 +289,10 @@ STATIC void GC_reclaim_check(struct hblk *hbp, hdr *hhdr, word sz)
 {
     word bit_no;
     ptr_t p, plim;
-    GC_ASSERT(sz == hhdr -> hb_sz);
 
+#   ifndef THREADS
+      GC_ASSERT(sz == hhdr -> hb_sz);
+#   endif
     /* go through all words in block */
     p = hbp->hb_body;
     plim = p + HBLKSIZE - sz;
@@ -337,11 +350,10 @@ GC_INNER ptr_t GC_reclaim_generic(struct hblk * hbp, hdr *hhdr, size_t sz,
  * If entirely empty blocks are to be completely deallocated, then
  * caller should perform that check.
  */
-STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
+STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp, word sz,
                                             GC_bool report_if_found)
 {
     hdr *hhdr = HDR(hbp);
-    word sz = hhdr -> hb_sz;
     struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
     void **flh = &(ok -> ok_freelist[BYTES_TO_GRANULES(sz)]);
 
@@ -387,9 +399,16 @@ STATIC void GC_reclaim_small_nonempty_block(struct hblk *hbp,
 STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
 {
     hdr * hhdr = HDR(hbp);
-    word sz = hhdr -> hb_sz; /* size of objects in current block */
+    word sz;    /* size of objects in current block */
     struct obj_kind * ok = &GC_obj_kinds[hhdr -> hb_obj_kind];
 
+#   ifdef AO_HAVE_load
+        /* Atomic access is used to avoid racing with GC_realloc.       */
+        sz = (word)AO_load((volatile AO_t *)&hhdr->hb_sz);
+#   else
+        /* No race as GC_realloc holds the lock while updating hb_sz.   */
+        sz = hhdr -> hb_sz;
+#   endif
     if( sz > MAXOBJBYTES ) {  /* 1 big object */
         if( !mark_bit_from_hdr(hhdr, 0) ) {
             if (report_if_found) {
@@ -437,7 +456,8 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
           GC_ASSERT(sz * hhdr -> hb_n_marks <= HBLKSIZE);
 #       endif
         if (report_if_found) {
-          GC_reclaim_small_nonempty_block(hbp, TRUE /* report_if_found */);
+          GC_reclaim_small_nonempty_block(hbp, sz,
+                                          TRUE /* report_if_found */);
         } else if (empty) {
 #       ifdef ENABLE_DISCLAIM
           if ((hhdr -> hb_flags & HAS_DISCLAIM) != 0) {
@@ -448,7 +468,7 @@ STATIC void GC_reclaim_block(struct hblk *hbp, word report_if_found)
             GC_bytes_found += HBLKSIZE;
             GC_freehblk(hbp);
           }
-        } else if (GC_find_leak || !GC_block_nearly_full(hhdr)) {
+        } else if (GC_find_leak || !GC_block_nearly_full(hhdr, sz)) {
           /* group of smaller objects, enqueue the real work */
           struct hblk **rlh = ok -> ok_reclaim_list;
 
@@ -695,8 +715,9 @@ GC_INNER void GC_continue_reclaim(word sz /* granules */, int kind)
     while ((hbp = *rlh) != 0) {
         hhdr = HDR(hbp);
         *rlh = hhdr -> hb_next;
-        GC_reclaim_small_nonempty_block(hbp, FALSE);
-        if (*flh != 0) break;
+        GC_reclaim_small_nonempty_block(hbp, hhdr -> hb_sz, FALSE);
+        if (*flh != 0)
+            break;
     }
 }
 
@@ -719,7 +740,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
     struct hblk ** rlp;
     struct hblk ** rlh;
 #   ifndef NO_CLOCK
-      CLOCK_TYPE start_time = 0; /* initialized to prevent warning. */
+      CLOCK_TYPE start_time = CLOCK_TYPE_INITIALIZER;
 
       if (GC_print_stats == VERBOSE)
         GET_TIME(start_time);
@@ -742,7 +763,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
                     /* It's likely we'll need it this time, too */
                     /* It's been touched recently, so this      */
                     /* shouldn't trigger paging.                */
-                    GC_reclaim_small_nonempty_block(hbp, FALSE);
+                    GC_reclaim_small_nonempty_block(hbp, hhdr->hb_sz, FALSE);
                 }
             }
         }
@@ -786,7 +807,7 @@ GC_INNER GC_bool GC_reclaim_all(GC_stop_func stop_func, GC_bool ignore_old)
             while ((hbp = *rlh) != 0) {
                 hhdr = HDR(hbp);
                 *rlh = hhdr->hb_next;
-                GC_reclaim_small_nonempty_block(hbp, FALSE);
+                GC_reclaim_small_nonempty_block(hbp, hhdr->hb_sz, FALSE);
             }
         }
     }

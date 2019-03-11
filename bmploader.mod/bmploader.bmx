@@ -28,7 +28,7 @@ Import BRL.EndianStream
 
 Type TPixmapLoaderBMP Extends TPixmapLoader
 
-	Method LoadPixmap:TPixmap( stream:TStream )
+	Method LoadPixmap:TPixmap( stream:TStream ) Override
 
 		stream=LittleEndianStream( stream )
 				

@@ -54,17 +54,17 @@ ModuleInfo "History: 1.04 Release"
 ModuleInfo "History: Fixed C Compiler warnings"
 
 ?win32
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG"
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?osx
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG"
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?linuxx86
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?linuxx64
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?raspberrypi
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?android
-ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DATOMIC_UNCOLLECTABLE"
 ?emscripten
 ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE"
 ?ios
@@ -94,6 +94,7 @@ Import "blitz_thread.c"
 Import "blitz_ex.c"
 Import "blitz_gc.c"
 Import "blitz_unicode.c"
+Import "blitz_enum.c"
 
 '?Threaded
 'Import "blitz_gc_ms.c"
@@ -174,7 +175,7 @@ bbdoc: Null object exception
 about: Thrown when a field or method of a Null object is accessed. (only in debug mode)
 End Rem
 Type TNullObjectException Extends TBlitzException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Attempt to access field or method of Null object"
 	End Method
 End Type
@@ -184,7 +185,7 @@ bbdoc: Null method exception
 about: Thrown when an abstract method is called.
 End Rem
 Type TNullMethodException Extends TBlitzException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Attempt to call abstract method"
 	End Method
 End Type
@@ -194,7 +195,7 @@ bbdoc: Null function exception
 about: Thrown when an uninitialized function pointer is called.
 End Rem
 Type TNullFunctionException Extends TBlitzException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Attempt to call uninitialized function pointer"
 	End Method
 End Type
@@ -204,7 +205,7 @@ bbdoc: Null method exception
 about: Thrown when an array element with an index outside the valid range of the array (0 to array.length-1) is accessed. (only in debug mode)
 End Rem
 Type TArrayBoundsException Extends TBlitzException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Attempt to index array element beyond array length"
 	End Method
 End Type
@@ -214,7 +215,7 @@ bbdoc: Out of data exception
 about: Thrown when #ReadData is used but not enough data is left to read. (only in debug mode)
 End Rem
 Type TOutOfDataException Extends TBlitzException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Attempt to read beyond end of data"
 	End Method
 End Type
@@ -225,7 +226,7 @@ about: Thrown by #RuntimeError.
 End Rem
 Type TRuntimeException Extends TBlitzException
 	Field error$
-	Method ToString$()
+	Method ToString$() Override
 		Return error
 	End Method
 	Function Create:TRuntimeException( error$ )
@@ -444,7 +445,7 @@ about:
 This function will have no effect if the garbage collector has been
 suspended due to #GCSuspend.
 End Rem
-Function GCCollect:Int()="bbGCCollect"
+Function GCCollect:Size_T()="bbGCCollect"
 
 Rem
 bbdoc: Run garbage collector, collecting a little
@@ -462,7 +463,7 @@ about:
 This function only returns 'managed memory'. This includes all objects, strings and
 arrays in use by the application.
 End Rem
-Function GCMemAlloced:Int()="bbGCMemAlloced"
+Function GCMemAlloced:Size_T()="bbGCMemAlloced"
 
 Rem
 bbdoc: Private: do not use
@@ -482,7 +483,7 @@ Function GCRetain(obj:Object)="bbGCRetain"
 Rem
 bbdoc: Releases a reference from the specified #Object.
 End Rem
-Function GCRelease(obj:Object)="bbGCRelease"
+Function GCRelease(obj:Byte Ptr)="void bbGCRelease(BBObject*)!"
 
 Rem
 bbdoc: Returns #True if the current thread is registered with the garbage collector.
@@ -869,6 +870,16 @@ End Rem
 Rem
 bbdoc: End a user defined structure declaration
 keyword: "EndStruct"
+End Rem
+
+Rem
+bbdoc: Begin an enumeration declaration
+keyword: "Enum"
+End Rem
+
+Rem
+bbdoc: End an enumeration declaration
+keyword: "EndEnum"
 End Rem
 
 Rem

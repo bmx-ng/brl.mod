@@ -39,7 +39,7 @@ static LONG WINAPI unhandledExceptionFilter( EXCEPTION_POINTERS *xinfo ){
 
 #endif
 
-void bbLibStartup();
+void bbLibStartup(wchar_t * buf);
 
 void __bb_brl_appstub_appstub();
 
@@ -58,14 +58,18 @@ int main( int argc,char *argv[] ){
 	return 0;
 }
 
+wchar_t bbLibFile[MAX_PATH];
+
 BOOL WINAPI DllMain( HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved ){
 
 	if( fdwReason!=DLL_PROCESS_ATTACH ) return 1;
+
+	GetModuleFileNameW( hinstDLL,bbLibFile,MAX_PATH );
 
 	return 1;
 }
 
 void bbLibInit() {
-	bbLibStartup();
+	bbLibStartup(bbLibFile);
 	__bb_brl_appstub_appstub();
 }

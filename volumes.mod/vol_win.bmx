@@ -235,7 +235,7 @@ Type TWinVolume Extends TVolume
 		Return this
 	End Function
 
-	Method ListVolumes:TList()
+	Method ListVolumes:TList() Override
 		Local volumes:TMap
 
 		' create buffer
@@ -321,21 +321,21 @@ Type TWinVolume Extends TVolume
 
 	End Method
 	
-	Method GetVolumeFreeSpace:Long(vol:String)
+	Method GetVolumeFreeSpace:Long(vol:String) Override
 
 		Local _vs:TVolSpace = TVolSpace.GetDiskSpace(vol)
 		
 		Return _vs.fb
 	End Method
 
-	Method GetVolumeSize:Long(vol:String)
+	Method GetVolumeSize:Long(vol:String) Override
 
 		Local _vs:TVolSpace = TVolSpace.GetDiskSpace(vol)
 		
 		Return _vs.tb
 	End Method
 	
-	Method GetVolumeInfo:TVolume(vol:String)
+	Method GetVolumeInfo:TVolume(vol:String) Override
 
 		Local Mode:Int = SetErrorMode(SEM_FAILCRITICALERRORS)
 
@@ -368,7 +368,7 @@ Type TWinVolume Extends TVolume
 		Return volume
 	End Method
 
-	Method Refresh()
+	Method Refresh() Override
 		If Not vs Then
 			Return
 		End If
@@ -386,23 +386,23 @@ Type TWinVolume Extends TVolume
 		
 	End Method
 
-	Method GetUserHomeDir:String()
+	Method GetUserHomeDir:String() Override
 		Return _getFolderPath(CSIDL_PROFILE)
 	End Method
 	
-	Method GetUserDesktopDir:String()
+	Method GetUserDesktopDir:String() Override
 		Return _getFolderPath(CSIDL_DESKTOPDIRECTORY)
 	End Method
 	
-	Method GetUserAppDir:String()
+	Method GetUserAppDir:String() Override
 		Return _getFolderPath(CSIDL_APPDATA)
 	End Method
 	
-	Method GetUserDocumentsDir:String()
+	Method GetUserDocumentsDir:String() Override
 		Return _getFolderPath(CSIDL_PERSONAL)
 	End Method
 
-	Method GetCustomDir:String(dirType:Int, flags:Int = 0)
+	Method GetCustomDir:String(dirType:Int, flags:Int = 0) Override
 		If dirType < 0 Then
 			Select dirType
 				Case DT_USERPICTURES

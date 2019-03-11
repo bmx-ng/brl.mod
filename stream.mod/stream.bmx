@@ -49,7 +49,7 @@ bytes. For example, if the stream ReadInt method fails to read 4 bytes, it will 
 a #TStreamReadException.
 End Rem
 Type TStreamReadException Extends TStreamException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Error reading from stream"
 	End Method
 End Type
@@ -62,7 +62,7 @@ bytes. For example, if the stream WriteInt method fails to write 4 bytes, it wil
 a #TStreamWriteException.
 End Rem
 Type TStreamWriteException Extends TStreamException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Error writing to stream"
 	End Method
 End Type
@@ -464,99 +464,99 @@ Type TStreamWrapper Extends TStream
 		_stream=stream
 	End Method
 
-	Method Eof:Int()
+	Method Eof:Int() Override
 		Return _stream.Eof()
 	End Method
 
-	Method Pos:Long()
+	Method Pos:Long() Override
 		Return _stream.Pos()
 	End Method
 
-	Method Size:Long()
+	Method Size:Long() Override
 		Return _stream.Size()
 	End Method
 	
-	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ )
+	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ ) Override
 		Return _stream.Seek( pos, whence )
 	End Method
 
-	Method Flush()
+	Method Flush() Override
 		_stream.Flush
 	End Method
 
-	Method Close()
+	Method Close() Override
 		_stream.Close
 	End Method
 
-	Method Read:Long( buf:Byte Ptr,count:Long )
+	Method Read:Long( buf:Byte Ptr,count:Long ) Override
 		Return _stream.Read( buf,count )
 	End Method
 
-	Method Write:Long( buf:Byte Ptr,count:Long )
+	Method Write:Long( buf:Byte Ptr,count:Long ) Override
 		Return _stream.Write( buf,count )
 	End Method
 	
-	Method ReadByte:Int()
+	Method ReadByte:Int() Override
 		Return _stream.ReadByte()
 	End Method
 	
-	Method WriteByte( n:Int )
+	Method WriteByte( n:Int ) Override
 		_stream.WriteByte n
 	End Method
 	
-	Method ReadShort:Int()
+	Method ReadShort:Int() Override
 		Return _stream.ReadShort()
 	End Method
 	
-	Method WriteShort( n:Int )
+	Method WriteShort( n:Int ) Override
 		_stream.WriteShort n
 	End Method
 	
-	Method ReadInt:Int()
+	Method ReadInt:Int() Override
 		Return _stream.ReadInt()
 	End Method
 	
-	Method WriteInt( n:Int )
+	Method WriteInt( n:Int ) Override
 		_stream.WriteInt n
 	End Method
 	
-	Method ReadFloat:Float()
+	Method ReadFloat:Float() Override
 		Return _stream.ReadFloat()
 	End Method
 	
-	Method WriteFloat( n:Float )
+	Method WriteFloat( n:Float ) Override
 		_stream.WriteFloat n
 	End Method
 	
-	Method ReadDouble:Double()
+	Method ReadDouble:Double() Override
 		Return _stream.ReadDouble()
 	End Method
 	
-	Method WriteDouble( n:Double )
+	Method WriteDouble( n:Double ) Override
 		_stream.WriteDouble n
 	End Method
 	
-	Method ReadLine$()
+	Method ReadLine$() Override
 		Return _stream.ReadLine()
 	End Method
 	
-	Method WriteLine:Int( t$ )
+	Method WriteLine:Int( t$ ) Override
 		Return _stream.WriteLine( t )
 	End Method
 	
-	Method ReadString$( n:Int )
+	Method ReadString$( n:Int ) Override
 		Return _stream.ReadString( n )
 	End Method
 	
-	Method WriteString( t$ )
+	Method WriteString( t$ ) Override
 		_stream.WriteString t
 	End Method
 	
-	Method ReadObject:Object()
+	Method ReadObject:Object() Override
 		Return _stream.ReadObject()
 	End Method
 	
-	Method WriteObject( obj:Object )
+	Method WriteObject( obj:Object ) Override
 		_stream.WriteObject obj
 	End Method
 	
@@ -564,7 +564,7 @@ End Type
 
 Type TStreamStream Extends TStreamWrapper
 
-	Method Close()
+	Method Close() Override
 		SetStream Null
 	End Method
 
@@ -588,22 +588,22 @@ Type TCStream Extends TStream
 	Field _pos:Long,_size:Long,_mode:Int
 	Field _cstream:Byte Ptr
 
-	Method Pos:Long()
+	Method Pos:Long() Override
 		Return _pos
 	End Method
 
-	Method Size:Long()
+	Method Size:Long() Override
 		Return _size
 	End Method
 
-	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ )
+	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ ) Override
 		Assert _cstream Else "Attempt to seek closed stream"
 		fseek_ _cstream,pos,whence
 		_pos=ftell_( _cstream )
 		Return _pos
 	End Method
 
-	Method Read:Long( buf:Byte Ptr,count:Long )
+	Method Read:Long( buf:Byte Ptr,count:Long ) Override
 		Assert _cstream Else "Attempt to read from closed stream"
 		Assert _mode & MODE_READ Else "Attempt to read from write-only stream"
 		count=fread_( buf,1,count,_cstream )	
@@ -611,7 +611,7 @@ Type TCStream Extends TStream
 		Return count
 	End Method
 
-	Method Write:Long( buf:Byte Ptr,count:Long )
+	Method Write:Long( buf:Byte Ptr,count:Long ) Override
 		Assert _cstream Else "Attempt to write to closed stream"
 		Assert _mode & MODE_WRITE Else "Attempt to write to read-only stream"
 		count=fwrite_( buf,1,count,_cstream )
@@ -620,11 +620,11 @@ Type TCStream Extends TStream
 		Return count
 	End Method
 
-	Method Flush()
+	Method Flush() Override
 		If _cstream fflush_ _cstream
 	End Method
 
-	Method Close()
+	Method Close() Override
 		If Not _cstream Return
 		Flush
 		fclose_ _cstream
