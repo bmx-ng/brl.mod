@@ -485,7 +485,10 @@ Type TStreamWrapper Extends TStream
 	End Method
 
 	Method Close() Override
-		_stream.Close
+		If _stream Then
+			_stream.Close
+			_stream = Null
+		End If
 	End Method
 
 	Method Read:Long( buf:Byte Ptr,count:Long ) Override
