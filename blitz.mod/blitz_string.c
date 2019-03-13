@@ -10,7 +10,15 @@ static void bbStringFree( BBObject *o );
 static BBDebugScope debugScope={
 	BBDEBUGSCOPE_USERTYPE,
 	"String",
-	BBDEBUGDECL_END
+	{
+		{
+			BBDEBUGDECL_END,
+			"",
+			"",
+			.var_address=(void*)0,
+			(void (*)(void**))0
+		}
+	}
 };
 
 BBClass bbStringClass={

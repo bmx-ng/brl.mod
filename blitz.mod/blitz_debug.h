@@ -35,9 +35,11 @@ struct BBDebugDecl{
 	const char       *name,*type_tag;
 	union{
 		BBString*    const_value;
-		unsigned int field_offset;
+		size_t       field_offset;
 		void*        var_address;
+		size_t       struct_size;
 	};
+	void           (*reflection_wrapper)(void**);
 };
 
 enum{

@@ -1,19 +1,19 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: BASIC/Reflection
 End Rem
 Module BRL.Reflection
 
-ModuleInfo "Version: 1.06"
+ModuleInfo "Version: 1.05"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
 ModuleInfo "History: 1.06"
-ModuleInfo "History: Cache lower case memmber names and use map lookup instead of list."
+ModuleInfo "History: Added support for BlitzMax-NG features."
 ModuleInfo "History: 1.05"
 ModuleInfo "History: Added size_t, UInt and ULong primitives."
 ModuleInfo "History: 1.04"
@@ -26,2322 +26,2280 @@ ModuleInfo "History: Added Brucey's size fix to GetArrayElement()/SetArrayElemen
 ModuleInfo "History: 1.01 Release"
 ModuleInfo "History: Fixed NewArray using temp type name"
 
+
+
 Import BRL.LinkedList
 Import BRL.Map
-
 Import "reflection.c"
+
+
 
 Private
 
 Extern
-
-Function bbObjectNew:Object( class:Byte Ptr )="BBObject * bbObjectNew(BBClass *)!"
-?Not ptr64
-Function bbObjectRegisteredTypes:Int Ptr( count Var )="BBClass** bbObjectRegisteredTypes(int *)!"
-Function bbObjectRegisteredInterfaces:Int Ptr( count Var )="BBInterface** bbObjectRegisteredInterfaces(int *)!"
-?ptr64
-Function bbObjectRegisteredTypes:Long Ptr( count Var )="BBClass** bbObjectRegisteredTypes(int *)!"
-Function bbObjectRegisteredInterfaces:Long Ptr( count Var )="BBInterface** bbObjectRegisteredInterfaces(int *)!"
-?
-
-Function bbArrayNew1D:Object( typeTag:Byte Ptr,length )="BBArray* bbArrayNew1D(const char *,int )!"
-
-
-Function bbRefArrayClass:Byte Ptr()
-Function bbRefStringClass:Byte Ptr()
-Function bbRefObjectClass:Byte Ptr()
-
-Function bbRefArrayLength( _array:Object, dim:Int = 0 )
-Function bbRefArrayTypeTag$( _array:Object )
-Function bbRefArrayDimensions:Int( _array:Object )
-Function bbRefArrayCreate:Object( typeTag:Byte Ptr,dims:Int[] )
-
-Function bbRefFieldPtr:Byte Ptr( obj:Object,index )
-Function bbRefMethodPtr:Byte Ptr( obj:Object,index )
-Function bbRefArrayElementPtr:Byte Ptr( sz,_array:Object,index )
-
-Function bbRefGetObject:Object( p:Byte Ptr )
-Function bbRefPushObject( p:Byte Ptr,obj:Object )
-Function bbRefInitObject( p:Byte Ptr,obj:Object )
-Function bbRefAssignObject( p:Byte Ptr,obj:Object )
-
-Function bbRefGetObjectClass:Byte Ptr( obj:Object )
-
-Function bbRefGetSuperClass:Byte Ptr( class:Byte Ptr )
-Function bbStringFromRef:String( ref:Byte Ptr )
-Function bbRefArrayNull:Object()
-
-Function bbInterfaceName:Byte Ptr(ifc:Byte Ptr)
-Function bbInterfaceClass:Byte Ptr(ifc:Byte Ptr)
-Function bbObjectImplementsInterfaces:Int(class:Byte Ptr)
-Function bbObjectImplementedCount:Int(class:Byte Ptr)
-Function bbObjectImplementedInterface:Byte Ptr(class:Byte Ptr, index:Int)
-
-Function bbRefClassSuper:Byte Ptr(clas:Byte Ptr)
-Function bbRefClassDebugScope:Byte Ptr(clas:Byte Ptr)
-Function bbRefClassDebugDecl:Byte Ptr(clas:Byte Ptr)
-Function bbRefClassDebugScopeName:Byte Ptr(class:Byte Ptr)
-Function bbDebugDeclKind:Int(decl:Byte Ptr)
-Function bbDebugDeclName:Byte Ptr(decl:Byte Ptr)
-Function bbDebugDeclType:Byte Ptr(decl:Byte Ptr)
-Function bbDebugDeclConstValue:String(decl:Byte Ptr)
-Function bbDebugDeclFieldOffset:Int(decl:Byte Ptr)
-Function bbDebugDeclVarAddress:Byte Ptr(decl:Byte Ptr)
-Function bbDebugDeclNext:Byte Ptr(decl:Byte Ptr)
-
+	Function bbObjectDowncast:Object(o:Object, t:Byte Ptr) = "BBObject* bbObjectDowncast(BBObject*, BBClass*)!"
+	Function bbInterfaceDowncast:Object(o:Object, ifc:Byte Ptr) = "BBObject* bbInterfaceDowncast(BBOBJECT , BBINTERFACE)!"
+	Function bbObjectRegisteredTypes:Byte Ptr Ptr(count:Int Var) = "BBClass** bbObjectRegisteredTypes(int*)!"
+	Function bbObjectRegisteredInterfaces:Byte Ptr Ptr(count:Int Var) = "BBInterface** bbObjectRegisteredInterfaces(int*)!"
+	Function bbObjectRegisteredStructs:Byte Ptr Ptr(count:Int Var) = "BBDebugScope** bbObjectRegisteredStructs(int*)!"
+	Function bbRefArrayClass:Byte Ptr()
+	Function bbRefStringClass:Byte Ptr()
+	Function bbRefObjectClass:Byte Ptr()
+	
+	Function bbObjectNew:Object(class:Byte Ptr) = "BBObject* bbObjectNew(BBClass*)!"
+	Function bbObjectNewNC:Object(class:Byte Ptr) = "BBObject* bbObjectNewNC(BBClass*)!"
+	Function bbArrayNew1D:Object(typeTag:Byte Ptr, length:Int) = "BBArray* bbArrayNew1D(const char*, int)!"
+	Function bbRefArrayCreate:Object(typeTag:Byte Ptr, dims:Int[])
+	
+	Function bbRefArrayLength:Int(array:Object, dim:Int = 0)
+	Function bbRefArrayTypeTag$(array:Object)
+	Function bbRefArrayDimensions:Int(array:Object)
+	
+	Function bbRefObjectFieldPtr:Byte Ptr(obj:Object, offset:Size_T)
+	Function bbRefArrayElementPtr:Byte Ptr(sz:Size_T, _array:Object, index:Int)
+	
+	Function bbRefGetObject:Object(p:Byte Ptr)
+	Function bbRefPushObject(p:Byte Ptr, obj:Object)
+	Function bbRefInitObject(p:Byte Ptr, obj:Object)
+	Function bbRefAssignObject(p:Byte Ptr, obj:Object)
+	
+	Function bbRefGetObjectClass:Byte Ptr(obj:Object)
+	
+	Function bbRefGetSuperClass:Byte Ptr(class:Byte Ptr)
+	Function bbStringFromRef:String(ref:Byte Ptr)
+	Function bbRefArrayNull:Object()
+	
+	Function bbInterfaceName:Byte Ptr(ifc:Byte Ptr)
+	Function bbInterfaceClass:Byte Ptr(ifc:Byte Ptr)
+	Function bbObjectImplementsInterfaces:Int(class:Byte Ptr)
+	Function bbObjectImplementedCount:Int(class:Byte Ptr)
+	Function bbObjectImplementedInterface:Byte Ptr(class:Byte Ptr, index:Int)
+	
+	Function bbRefClassSuper:Byte Ptr(clas:Byte Ptr)
+	Function bbRefClassDebugScope:Byte Ptr(clas:Byte Ptr)
+	Function bbRefClassDebugDecl:Byte Ptr(clas:Byte Ptr)
+	Function bbDebugScopeDecl:Byte Ptr(scope:Byte Ptr)
+	Function bbRefClassDebugScopeName:Byte Ptr(class:Byte Ptr)
+	Function bbDebugScopeName:Byte Ptr(scope:Byte Ptr)
+	Function bbDebugDeclKind:Int(decl:Byte Ptr)
+	Function bbDebugDeclName:Byte Ptr(decl:Byte Ptr)
+	Function bbDebugDeclType:Byte Ptr(decl:Byte Ptr)
+	Function bbDebugDeclConstValue:String(decl:Byte Ptr)
+	Function bbDebugDeclFieldOffset:Size_T(decl:Byte Ptr)
+	Function bbDebugDeclVarAddress:Byte Ptr(decl:Byte Ptr)
+	Function bbDebugDeclStructSize:Size_T(decl:Byte Ptr)
+	Function bbDebugDeclReflectionWrapper:Byte Ptr(decl:Byte Ptr)
+	Function bbDebugDeclNext:Byte Ptr(decl:Byte Ptr)
+	
+	Global DebugScopePtrInt128:Byte Ptr = "debugScopePtrInt128"
+	Global DebugScopePtrFloat64:Byte Ptr = "debugScopePtrFloat64"
+	Global DebugScopePtrFloat128:Byte Ptr = "debugScopePtrFloat128"
+	Global DebugScopePtrDouble128:Byte Ptr = "debugScopePtrDouble128"
 End Extern
 
-Function _Get:Object( p:Byte Ptr,typeId:TTypeId )
+
+
+
+
+Type TBoxedStruct Final
+	
+	Field ReadOnly dataPtr:Byte Ptr
+	Field ReadOnly typeId:TTypeId
+	
+	Private
+	
+	Method New() End Method
+	
+	Public
+	
+	Method New(structType:TTypeId)
+		typeId = structType
+		dataPtr = MemAlloc(Size_T typeId._size)
+	End Method
+	
+	Method New(structType:TTypeId, structPtr:Byte Ptr)
+		New(structType)
+		MemCopy dataPtr, structPtr, Size_T typeId._size
+	End Method
+	
+	Method Delete()
+		MemFree dataPtr
+	End Method
+	
+	Method Unbox(targetStructPtr:Byte Ptr)
+		MemCopy targetStructPtr, dataPtr, Size_T typeId._size
+	End Method
+	
+	Method ToString:String()
+		' forward call to the struct's ToString method if it exists
+		If typeId._toString Then Return typeId._toString(dataPtr) Else Return Super.ToString()
+	End Method
+	
+End Type
+
+
+
+
+
+Function _Get:Object(p:Byte Ptr, typeId:TTypeId)
 	Select typeId
-	Case ByteTypeId
-		Return String.FromInt( (Byte Ptr p)[0] )
-	Case ShortTypeId
-		Return String.FromInt( (Short Ptr p)[0] )
-	Case IntTypeId
-		Return String.FromInt( (Int Ptr p)[0] )
-	Case UIntTypeId
-		Return String.FromUInt( (UInt Ptr p)[0] )
-	Case LongTypeId
-		Return String.FromLong( (Long Ptr p)[0] )
-	Case ULongTypeId
-		Return String.FromULong( (ULong Ptr p)[0] )
-	Case SizetTypeId
-		Return String.FromSizet( (Size_T Ptr p)[0] )
-	Case FloatTypeId
-		Return String.FromFloat( (Float Ptr p)[0] )
-	Case DoubleTypeId
-		Return String.FromDouble( (Double Ptr p)[0] )
-	Default
-		If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
-?Not ptr64
-			Return String.FromInt( (Int Ptr p)[0] )
-?ptr64
-			Return String.FromLong( (Long Ptr p)[0] )
-?
-		EndIf
-		Return bbRefGetObject( p )
+		Case ByteTypeId   Return String.FromInt   ((Byte   Ptr p)[0])
+		Case ShortTypeId  Return String.FromInt   ((Short  Ptr p)[0])
+		Case IntTypeId    Return String.FromInt   ((Int    Ptr p)[0])
+		Case UIntTypeId   Return String.FromUInt  ((UInt   Ptr p)[0])
+		Case LongTypeId   Return String.FromLong  ((Long   Ptr p)[0])
+		Case ULongTypeId  Return String.FromULong ((ULong  Ptr p)[0])
+		Case SizeTTypeId  Return String.FromSizeT ((Size_T Ptr p)[0])
+		Case FloatTypeId  Return String.FromFloat ((Float  Ptr p)[0])
+		Case DoubleTypeId Return String.FromDouble((Double Ptr p)[0])
+		Default
+			Select True
+				Case typeId.ExtendsType(PointerTypeId) Or typeId.ExtendsType(FunctionTypeId)
+					Return String.FromSizeT((Size_T Ptr p)[0])
+				Case typeId.IsStruct()
+					Return New TBoxedStruct(typeId, p)
+				Case typeId._class <> Null
+					Return bbRefGetObject(p)
+				Default
+					Throw "Unable to get value of this type"
+			End Select
 	End Select
 End Function
 
-Function _Push:Byte Ptr( sp:Byte Ptr,typeId:TTypeId,value:Object )
+
+Function _Assign(p:Byte Ptr, typeId:TTypeId, value:Object)
 	Select typeId
-	Case ByteTypeId,ShortTypeId,IntTypeId
-		(Int Ptr sp)[0]=value.ToString().ToInt()
-		Return sp+4
-	Case UIntTypeId
-		(UInt Ptr sp)[0]=value.ToString().ToUInt()
-		Return sp+4
-	Case LongTypeId
-		(Long Ptr sp)[0]=value.ToString().ToLong()
-		Return sp+8
-	Case ULongTypeId
-		(ULong Ptr sp)[0]=value.ToString().ToULong()
-		Return sp+8
-	Case SizetTypeId
-		(Size_T Ptr sp)[0]=value.ToString().ToSizet()
-?Not ptr64
-		Return sp+4
-?ptr64
-		Return sp+8
-?
-	Case FloatTypeId
-		(Float Ptr sp)[0]=value.ToString().ToFloat()
-		Return sp+4
-	Case DoubleTypeId
-		(Double Ptr sp)[0]=value.ToString().ToDouble()
-		Return sp+8
-	Case StringTypeId
-		If Not value value=""
-		bbRefPushObject sp,value
-		Return sp+4
-	Default
-		If value
-			If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
-?Not ptr64
-				(Int Ptr sp)[0]=value.ToString().ToInt()
-				Return sp+4
-?ptr64
-				(Long Ptr sp)[0]=value.ToString().ToLong()
-				Return sp+8
-?
-			EndIf
-
-			Local c:Byte Ptr=typeId._class
-			Local t:Byte Ptr=bbRefGetObjectClass( value )
-			While t And t<>c
-				t=bbRefGetSuperClass( t )
-			Wend
-			If Not t Throw "ERROR"
-		EndIf
-		bbRefPushObject sp,value
-		Return sp+4
-	End Select
-End Function
-
-Function _Assign( p:Byte Ptr,typeId:TTypeId,value:Object )
-	Select typeId
-	Case ByteTypeId
-		(Byte Ptr p)[0]=value.ToString().ToInt()
-	Case ShortTypeId
-		(Short Ptr p)[0]=value.ToString().ToInt()
-	Case IntTypeId
-		(Int Ptr p)[0]=value.ToString().ToInt()
-	Case UIntTypeId
-		(UInt Ptr p)[0]=value.ToString().ToUInt()
-	Case LongTypeId
-		(Long Ptr p)[0]=value.ToString().ToLong()
-	Case ULongTypeId
-		(ULong Ptr p)[0]=value.ToString().ToULong()
-	Case SizetTypeId
-		(Size_T Ptr p)[0]=value.ToString().ToSizet()
-	Case FloatTypeId
-		(Float Ptr p)[0]=value.ToString().ToFloat()
-	Case DoubleTypeId
-		(Double Ptr p)[0]=value.ToString().ToDouble()
-	Case StringTypeId
-		If Not value value=""
-		bbRefAssignObject p,value
-	Default
-		If value
-			If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
-?Not ptr64
-				(Int Ptr p)[0]=value.ToString().ToInt()
-?ptr64
-				(Long Ptr p)[0]=value.ToString().ToLong()
-?
-				Return
-			EndIf
-
-			Local c:Byte Ptr=typeId._class
-			Local t:Byte Ptr=bbRefGetObjectClass( value )
-			While t And t<>c
-				t=bbRefGetSuperClass( t )
-			Wend
-			If Not t Throw "ERROR"
-		Else
-			If typeId.Name().Endswith("]") Then
-				value = bbRefArrayNull()
-			EndIf
-		EndIf
-		bbRefAssignObject p,value
-	End Select
-End Function
-
-Function _CallFunction:Object( p:Byte Ptr,typeId:TTypeId,args:Object[],argTypes:TTypeId[] )
-	Local q:Byte Ptr[10]
-	If args Then
-		For Local i=0 Until args.length
-			_Push( Varptr q[i],argTypes[i],args[i] )
-		Next
-	End If
-
-	Select typeId
-	Case ByteTypeId,ShortTypeId,IntTypeId
-		Select argTypes.length
-			Case 0
-				Local f:Int()=p
-				Return String.FromInt( f() )
-			Case 1
-				Local f:Int(p0:Byte Ptr)=p
-				Return String.FromInt( f(q[0]) )
-			Case 2
-				Local f:Int(p0:Byte Ptr, p1:Byte Ptr)=p
-				Return String.FromInt( f(q[0], q[1]) )
-			Case 3
-				Local f:Int(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return String.FromInt( f(q[0], q[1], q[2]) )
-			Case 4
-				Local f:Int(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return String.FromInt( f(q[0], q[1], q[2], q[3]) )
-			Case 5
-				Local f:Int(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return String.FromInt( f(q[0], q[1], q[2], q[3], q[4]) )
-			Case 6
-				Local f:Int(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return String.FromInt( f(q[0], q[1], q[2], q[3], q[4], q[5]) )
-			Case 7
-				Local f:Int(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return String.FromInt( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
-			Case 8
-				Local f:Int(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return String.FromInt( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
-			Default
-				Local f:Int(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return String.FromInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
-		End Select
-?Not ptr64
-	Case UIntTypeId,SizetTypeId
-?ptr64
-	Case UIntTypeId
-?
-		Select argTypes.length
-			Case 0
-				Local f:UInt()=p
-				Return String.FromUInt( f() )
-			Case 1
-				Local f:UInt(p0:Byte Ptr)=p
-				Return String.FromUInt( f(q[0]) )
-			Case 2
-				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr)=p
-				Return String.FromUInt( f(q[0], q[1]) )
-			Case 3
-				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return String.FromUInt( f(q[0], q[1], q[2]) )
-			Case 4
-				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return String.FromUInt( f(q[0], q[1], q[2], q[3]) )
-			Case 5
-				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return String.FromUInt( f(q[0], q[1], q[2], q[3], q[4]) )
-			Case 6
-				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return String.FromUInt( f(q[0], q[1], q[2], q[3], q[4], q[5]) )
-			Case 7
-				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return String.FromUInt( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
-			Case 8
-				Local f:UInt(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return String.FromUInt( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
-			Default
-				Local f:UInt(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return String.FromUInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
-		End Select
-	Case LongTypeId
-		Select argTypes.length
-			Case 0
-				Local f:Long()=p
-				Return String.Fromlong( f() )
-			Case 1
-				Local f:Long(p0:Byte Ptr)=p
-				Return String.Fromlong( f(q[0]) )
-			Case 2
-				Local f:Long(p0:Byte Ptr, p1:Byte Ptr)=p
-				Return String.Fromlong( f(q[0], q[1]) )
-			Case 3
-				Local f:Long(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return String.Fromlong( f(q[0], q[1], q[2]) )
-			Case 4
-				Local f:Long(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return String.Fromlong( f(q[0], q[1], q[2], q[3]) )
-			Case 5
-				Local f:Long(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return String.Fromlong( f(q[0], q[1], q[2], q[3], q[4]) )
-			Case 6
-				Local f:Long(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return String.Fromlong( f(q[0], q[1], q[2], q[3], q[4], q[5]) )
-			Case 7
-				Local f:Long(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return String.Fromlong( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
-			Case 8
-				Local f:Long(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return String.Fromlong( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
-			Default
-				Local f:Long(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return String.Fromlong( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
-		End Select
-?Not ptr64
-	Case ULongTypeId
-?ptr64
-	Case ULongTypeId,SizetTypeId
-?
-		Select argTypes.length
-			Case 0
-				Local f:ULong()=p
-				Return String.FromULong( f() )
-			Case 1
-				Local f:ULong(p0:Byte Ptr)=p
-				Return String.FromULong( f(q[0]) )
-			Case 2
-				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr)=p
-				Return String.FromULong( f(q[0], q[1]) )
-			Case 3
-				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return String.FromULong( f(q[0], q[1], q[2]) )
-			Case 4
-				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return String.FromULong( f(q[0], q[1], q[2], q[3]) )
-			Case 5
-				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return String.FromULong( f(q[0], q[1], q[2], q[3], q[4]) )
-			Case 6
-				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return String.FromULong( f(q[0], q[1], q[2], q[3], q[4], q[5]) )
-			Case 7
-				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return String.FromULong( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
-			Case 8
-				Local f:ULong(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return String.FromULong( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
-			Default
-				Local f:ULong(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return String.FromULong( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
-		End Select
-	Case FloatTypeId
-		Select argTypes.length
-			Case 0
-				Local f:Float()=p
-				Return String.FromFloat( f() )
-			Case 1
-				Local f:Float(p0:Byte Ptr)=p
-				Return String.FromFloat( f(q[0]) )
-			Case 2
-				Local f:Float(p0:Byte Ptr, p1:Byte Ptr)=p
-				Return String.FromFloat( f(q[0], q[1]) )
-			Case 3
-				Local f:Float(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return String.FromFloat( f(q[0], q[1], q[2]) )
-			Case 4
-				Local f:Float(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return String.FromFloat( f(q[0], q[1], q[2], q[3]) )
-			Case 5
-				Local f:Float(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return String.FromFloat( f(q[0], q[1], q[2], q[3], q[4]) )
-			Case 6
-				Local f:Float(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return String.FromFloat( f(q[0], q[1], q[2], q[3], q[4], q[5]) )
-			Case 7
-				Local f:Float(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return String.FromFloat( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
-			Case 8
-				Local f:Float(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return String.FromFloat( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
-			Default
-				Local f:Float(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return String.FromFloat( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
-		End Select
-	Case DoubleTypeId
-		Select argTypes.length
-			Case 0
-				Local f:Double()=p
-				Return String.FromDouble( f() )
-			Case 1
-				Local f:Double(p0:Byte Ptr)=p
-				Return String.FromDouble( f(q[0]) )
-			Case 2
-				Local f:Double(p0:Byte Ptr, p1:Byte Ptr)=p
-				Return String.FromDouble( f(q[0], q[1]) )
-			Case 3
-				Local f:Double(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return String.FromDouble( f(q[0], q[1], q[2]) )
-			Case 4
-				Local f:Double(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return String.FromDouble( f(q[0], q[1], q[2], q[3]) )
-			Case 5
-				Local f:Double(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return String.FromDouble( f(q[0], q[1], q[2], q[3], q[4]) )
-			Case 6
-				Local f:Double(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return String.FromDouble( f(q[0], q[1], q[2], q[3], q[4], q[5]) )
-			Case 7
-				Local f:Double(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return String.FromDouble( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
-			Case 8
-				Local f:Double(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return String.FromDouble( f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
-			Default
-				Local f:Double(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return String.FromDouble( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
-		End Select
-	Case VoidTypeId
-		Select argTypes.length
-			Case 0
-				Local f()=p
-				f()
-			Case 1
-				Local f(p0:Byte Ptr)=p
-				f(q[0])
-			Case 2
-				Local f(p0:Byte Ptr, p1:Byte Ptr)=p
-				f(q[0], q[1])
-			Case 3
-				Local f(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				f(q[0], q[1], q[2])
-			Case 4
-				Local f(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				f(q[0], q[1], q[2], q[3])
-			Case 5
-				Local f(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				f(q[0], q[1], q[2], q[3], q[4])
-			Case 6
-				Local f(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				f(q[0], q[1], q[2], q[3], q[4], q[5])
-			Case 7
-				Local f(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				f(q[0], q[1], q[2], q[3], q[4], q[5], q[6])
-			Case 8
-				Local f(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7])
-			Default
-				Local f(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
-		End Select
-	Default
-		If typeid.ExtendsType(PointerTypeId) Or typeid.ExtendsType(FunctionTypeId) Then
-?Not ptr64
-			Select argTypes.length
-				Case 0
-					Local f:Byte Ptr()=p
-					Return String.FromInt(Int f())
-				Case 1
-					Local f:Byte Ptr(p0:Byte Ptr)=p
-					Return String.FromInt(Int f(q[0]))
-				Case 2
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr)=p
-					Return String.FromInt(Int f(q[0], q[1]))
-				Case 3
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-					Return String.FromInt(Int f(q[0], q[1], q[2]))
-				Case 4
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-					Return String.FromInt(Int f(q[0], q[1], q[2], q[3]))
-				Case 5
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-					Return String.FromInt(Int f(q[0], q[1], q[2], q[3], q[4]))
-				Case 6
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-					Return String.FromInt(Int f(q[0], q[1], q[2], q[3], q[4], q[5]))
-				Case 7
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-					Return String.FromInt(Int f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]))
-				Case 8
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-					Return String.FromInt(Int f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]))
-				Default
-					Local f:Byte Ptr(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-					Return String.FromInt(Int f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ))
-			End Select
-?ptr64
-			Select argTypes.length
-				Case 0
-					Local f:Byte Ptr()=p
-					Return String.Fromlong(Long f())
-				Case 1
-					Local f:Byte Ptr(p0:Byte Ptr)=p
-					Return String.Fromlong(Long f(q[0]))
-				Case 2
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr)=p
-					Return String.Fromlong(Long f(q[0], q[1]))
-				Case 3
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-					Return String.Fromlong(Long f(q[0], q[1], q[2]))
-				Case 4
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-					Return String.Fromlong(Long f(q[0], q[1], q[2], q[3]))
-				Case 5
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-					Return String.Fromlong(Long f(q[0], q[1], q[2], q[3], q[4]))
-				Case 6
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-					Return String.Fromlong(Long f(q[0], q[1], q[2], q[3], q[4], q[5]))
-				Case 7
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-					Return String.Fromlong(Long f(q[0], q[1], q[2], q[3], q[4], q[5], q[6]))
-				Case 8
-					Local f:Byte Ptr(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-					Return String.Fromlong(Long f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]))
-				Default
-					Local f:Byte Ptr(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-					Return String.Fromlong(Long f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ))
-			End Select
-?
-		Else
-			Select argTypes.length
-				Case 0
-					Local f:Object()=p
-					Return f()
-				Case 1
-					Local f:Object(p0:Byte Ptr)=p
-					Return f(q[0])
-				Case 2
-					Local f:Object(p0:Byte Ptr, p1:Byte Ptr)=p
-					Return f(q[0], q[1])
-				Case 3
-					Local f:Object(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-					Return f(q[0], q[1], q[2])
-				Case 4
-					Local f:Object(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-					Return f(q[0], q[1], q[2], q[3])
-				Case 5
-					Local f:Object(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-					Return f(q[0], q[1], q[2], q[3], q[4])
-				Case 6
-					Local f:Object(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-					Return f(q[0], q[1], q[2], q[3], q[4], q[5])
-				Case 7
-					Local f:Object(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-					Return f(q[0], q[1], q[2], q[3], q[4], q[5], q[6])
-				Case 8
-					Local f:Object(p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-					Return f(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7])
-				Default
-					Local f:Object(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-					Return f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
-			End Select
-		End If
-	End Select
-End Function
-
-Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],argTypes:TTypeId[] )
-	Local q:Byte Ptr[10]',sp:Byte Ptr=q
-	'bbRefPushObject sp,obj
-	'sp:+4
-	'If typeId=LongTypeId sp:+8
-	If args Then
-		For Local i=0 Until args.length
-			'If Int Ptr(sp)>=Int Ptr(q)+8 Throw "ERROR"
-			_Push( Varptr q[i],argTypes[i],args[i] )
-		Next
-	End If
-	'If Int Ptr(sp)>Int Ptr(q)+8 Throw "ERROR"
-	Local retType:TTypeId = typeId._retType
-	Select retType
-	Case ByteTypeId,ShortTypeId,IntTypeId
-		Select argTypes.length
-			Case 0
-				Local f:Int(m:Object)=p
-				Return String.FromInt( f(obj) )
-			Case 1
-				Local f:Int(m:Object, p0:Byte Ptr)=p
-				Return String.FromInt( f(obj, q[0]) )
-			Case 2
-				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
-				Return String.FromInt( f(obj, q[0], q[1]) )
-			Case 3
-				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return String.FromInt( f(obj, q[0], q[1], q[2]) )
-			Case 4
-				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return String.FromInt( f(obj, q[0], q[1], q[2], q[3]) )
-			Case 5
-				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return String.FromInt( f(obj, q[0], q[1], q[2], q[3], q[4]) )
-			Case 6
-				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return String.FromInt( f(obj, q[0], q[1], q[2], q[3], q[4], q[5]) )
-			Case 7
-				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return String.FromInt( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
-			Case 8
-				Local f:Int(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return String.FromInt( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
-			Default
-				Local f:Int(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return String.FromInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
-		End Select
-?Not ptr64
-	Case UIntTypeId,SizetTypeId
-?ptr64
-	Case UIntTypeId
-?
-		Select argTypes.length
-			Case 0
-				Local f:UInt(m:Object)=p
-				Return String.FromUInt( f(obj) )
-			Case 1
-				Local f:UInt(m:Object, p0:Byte Ptr)=p
-				Return String.FromUInt( f(obj, q[0]) )
-			Case 2
-				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
-				Return String.FromUInt( f(obj, q[0], q[1]) )
-			Case 3
-				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return String.FromUInt( f(obj, q[0], q[1], q[2]) )
-			Case 4
-				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return String.FromUInt( f(obj, q[0], q[1], q[2], q[3]) )
-			Case 5
-				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return String.FromUInt( f(obj, q[0], q[1], q[2], q[3], q[4]) )
-			Case 6
-				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return String.FromUInt( f(obj, q[0], q[1], q[2], q[3], q[4], q[5]) )
-			Case 7
-				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return String.FromUInt( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
-			Case 8
-				Local f:UInt(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return String.FromUInt( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
-			Default
-				Local f:UInt(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return String.FromUInt( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
-		End Select
-	Case LongTypeId
-		Select argTypes.length
-			Case 0
-				Local f:Long(m:Object)=p
-				Return String.Fromlong( f(obj) )
-			Case 1
-				Local f:Long(m:Object, p0:Byte Ptr)=p
-				Return String.Fromlong( f(obj, q[0]) )
-			Case 2
-				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
-				Return String.Fromlong( f(obj, q[0], q[1]) )
-			Case 3
-				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return String.Fromlong( f(obj, q[0], q[1], q[2]) )
-			Case 4
-				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return String.Fromlong( f(obj, q[0], q[1], q[2], q[3]) )
-			Case 5
-				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return String.Fromlong( f(obj, q[0], q[1], q[2], q[3], q[4]) )
-			Case 6
-				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return String.Fromlong( f(obj, q[0], q[1], q[2], q[3], q[4], q[5]) )
-			Case 7
-				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return String.Fromlong( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
-			Case 8
-				Local f:Long(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return String.Fromlong( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
-			Default
-				Local f:Long(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return String.Fromlong( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
-		End Select
-?Not ptr64
-	Case ULongTypeId
-?ptr64
-	Case ULongTypeId,SizetTypeId
-?
-		Select argTypes.length
-			Case 0
-				Local f:ULong(m:Object)=p
-				Return String.FromULong( f(obj) )
-			Case 1
-				Local f:ULong(m:Object, p0:Byte Ptr)=p
-				Return String.FromULong( f(obj, q[0]) )
-			Case 2
-				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
-				Return String.FromULong( f(obj, q[0], q[1]) )
-			Case 3
-				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return String.FromULong( f(obj, q[0], q[1], q[2]) )
-			Case 4
-				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return String.FromULong( f(obj, q[0], q[1], q[2], q[3]) )
-			Case 5
-				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return String.FromULong( f(obj, q[0], q[1], q[2], q[3], q[4]) )
-			Case 6
-				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return String.FromULong( f(obj, q[0], q[1], q[2], q[3], q[4], q[5]) )
-			Case 7
-				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return String.FromULong( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
-			Case 8
-				Local f:ULong(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return String.FromULong( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
-			Default
-				Local f:ULong(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return String.FromULong( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
-		End Select
-	Case FloatTypeId
-		Select argTypes.length
-			Case 0
-				Local f:Float(m:Object)=p
-				Return String.FromFloat( f(obj) )
-			Case 1
-				Local f:Float(m:Object, p0:Byte Ptr)=p
-				Return String.FromFloat( f(obj, q[0]) )
-			Case 2
-				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
-				Return String.FromFloat( f(obj, q[0], q[1]) )
-			Case 3
-				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return String.FromFloat( f(obj, q[0], q[1], q[2]) )
-			Case 4
-				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return String.FromFloat( f(obj, q[0], q[1], q[2], q[3]) )
-			Case 5
-				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return String.FromFloat( f(obj, q[0], q[1], q[2], q[3], q[4]) )
-			Case 6
-				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return String.FromFloat( f(obj, q[0], q[1], q[2], q[3], q[4], q[5]) )
-			Case 7
-				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return String.FromFloat( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
-			Case 8
-				Local f:Float(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return String.FromFloat( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
-			Default
-				Local f:Float(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return String.FromFloat( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
-		End Select
-	Case DoubleTypeId
-		Select argTypes.length
-			Case 0
-				Local f:Double(m:Object)=p
-				Return String.FromDouble( f(obj) )
-			Case 1
-				Local f:Double(m:Object, p0:Byte Ptr)=p
-				Return String.FromDouble( f(obj, q[0]) )
-			Case 2
-				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
-				Return String.FromDouble( f(obj, q[0], q[1]) )
-			Case 3
-				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				Return String.FromDouble( f(obj, q[0], q[1], q[2]) )
-			Case 4
-				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				Return String.FromDouble( f(obj, q[0], q[1], q[2], q[3]) )
-			Case 5
-				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				Return String.FromDouble( f(obj, q[0], q[1], q[2], q[3], q[4]) )
-			Case 6
-				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				Return String.FromDouble( f(obj, q[0], q[1], q[2], q[3], q[4], q[5]) )
-			Case 7
-				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				Return String.FromDouble( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]) )
-			Case 8
-				Local f:Double(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				Return String.FromDouble( f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]) )
-			Default
-				Local f:Double(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				Return String.FromDouble( f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ) )
-		End Select
-	Case VoidTypeId
-		Select argTypes.length
-			Case 0
-				Local f(m:Object)=p
-				f(obj)
-			Case 1
-				Local f(m:Object, p0:Byte Ptr)=p
-				f(obj, q[0])
-			Case 2
-				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
-				f(obj, q[0], q[1])
-			Case 3
-				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-				f(obj, q[0], q[1], q[2])
-			Case 4
-				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-				f(obj, q[0], q[1], q[2], q[3])
-			Case 5
-				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-				f(obj, q[0], q[1], q[2], q[3], q[4])
-			Case 6
-				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-				f(obj, q[0], q[1], q[2], q[3], q[4], q[5])
-			Case 7
-				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-				f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6])
-			Case 8
-				Local f(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-				f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7])
-			Default
-				Local f(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-				f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
-		End Select
-	Default
-		If retType.ExtendsType(PointerTypeId) Or retType.ExtendsType(FunctionTypeId) Then
-?Not ptr64
-			Select argTypes.length
-				Case 0
-					Local f:Byte Ptr(m:Object)=p
-					Return String.FromInt(Int f(obj))
-				Case 1
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr)=p
-					Return String.FromInt(Int f(obj, q[0]))
-				Case 2
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
-					Return String.FromInt(Int f(obj, q[0], q[1]))
-				Case 3
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-					Return String.FromInt(Int f(obj, q[0], q[1], q[2]))
-				Case 4
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-					Return String.FromInt(Int f(obj, q[0], q[1], q[2], q[3]))
-				Case 5
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-					Return String.FromInt(Int f(obj, q[0], q[1], q[2], q[3], q[4]))
-				Case 6
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-					Return String.FromInt(Int f(obj, q[0], q[1], q[2], q[3], q[4], q[5]))
-				Case 7
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-					Return String.FromInt(Int f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]))
-				Case 8
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-					Return String.FromInt(Int f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]))
-				Default
-					Local f:Byte Ptr(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-					Return String.FromInt(Int f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ))
-			End Select
-?ptr64
-			Select argTypes.length
-				Case 0
-					Local f:Byte Ptr(m:Object)=p
-					Return String.FromLong(Long f(obj))
-				Case 1
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr)=p
-					Return String.FromLong(Long f(obj, q[0]))
-				Case 2
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
-					Return String.FromLong(Long f(obj, q[0], q[1]))
-				Case 3
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-					Return String.FromLong(Long f(obj, q[0], q[1], q[2]))
-				Case 4
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-					Return String.FromLong(Long f(obj, q[0], q[1], q[2], q[3]))
-				Case 5
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-					Return String.FromLong(Long f(obj, q[0], q[1], q[2], q[3], q[4]))
-				Case 6
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-					Return String.FromLong(Long f(obj, q[0], q[1], q[2], q[3], q[4], q[5]))
-				Case 7
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-					Return String.FromLong(Long f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6]))
-				Case 8
-					Local f:Byte Ptr(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-					Return String.FromLong(Long f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]))
-				Default
-					Local f:Byte Ptr(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-					Return String.FromLong(Long f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] ))
-			End Select
-?
-		Else
-			Select argTypes.length
-				Case 0
-					Local f:Object(m:Object)=p
-					Return f(obj)
-				Case 1
-					Local f:Object(m:Object, p0:Byte Ptr)=p
-					Return f(obj, q[0])
-				Case 2
-					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr)=p
-					Return f(obj, q[0], q[1])
-				Case 3
-					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr)=p
-					Return f(obj, q[0], q[1], q[2])
-				Case 4
-					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr)=p
-					Return f(obj, q[0], q[1], q[2], q[3])
-				Case 5
-					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr)=p
-					Return f(obj, q[0], q[1], q[2], q[3], q[4])
-				Case 6
-					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr)=p
-					Return f(obj, q[0], q[1], q[2], q[3], q[4], q[5])
-				Case 7
-					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr)=p
-					Return f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6])
-				Case 8
-					Local f:Object(m:Object, p0:Byte Ptr, p1:Byte Ptr, p2:Byte Ptr, p3:Byte Ptr, p4:Byte Ptr, p5:Byte Ptr, p6:Byte Ptr, p7:Byte Ptr)=p
-					Return f(obj, q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7])
-				Default
-					Local f:Object(p0:Byte Ptr,p1:Byte Ptr,p2:Byte Ptr,p3:Byte Ptr,p4:Byte Ptr,p5:Byte Ptr,p6:Byte Ptr,p7:Byte Ptr)=p
-					Return f( q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7] )
-			End Select
-		End If
-	End Select
-End Function
-
-Function TypeTagForId$( id:TTypeId )
-	If id.ExtendsType( ArrayTypeId )
-		Return "[]"+TypeTagForId( id.ElementType() )
-	EndIf
-	If id.ExtendsType( PointerTypeId )
-		Return "*"+TypeTagForId(id._elementType)
-	EndIf
-	If id.ExtendsType( FunctionTypeId )
-		Local s:String
-		For Local t:TTypeId = EachIn id._argTypes
-			If s Then s :+ ","
-			s :+ TypeTagForId(t)
-		Next
-		s = "(" + s + ")"
-		If id._retType Then s :+ TypeTagForId(id._retType)
-		Return s
-	EndIf
-	Select id
-	Case ByteTypeId Return "b"
-	Case ShortTypeId Return "s"
-	Case IntTypeId Return "i"
-	Case UIntTypeId Return "u"
-	Case LongTypeId Return "l"
-	Case ULongTypeId Return "y"
-	Case SizetTypeId Return "t"
-	Case FloatTypeId Return "f"
-	Case DoubleTypeId Return "d"
-	Case StringTypeId Return "$"
-	Case PointerTypeId Return "*"
-	Case FunctionTypeId Return "("
-	End Select
-	If id.ExtendsType( ObjectTypeId )
-		Return ":"+id.Name()
-	EndIf
-	Throw "ERROR"
-End Function
-
-Function TypeIdForTag:TTypeId( ty$ )
-	If ty.StartsWith( "[" )
-		Local dims:Int = ty.split(",").length
-		ty=ty[ty.Find("]")+1..]
-		Local id:TTypeId = TypeIdForTag( ty )
-		If id Then
-			id._arrayType = Null
-			id=id.ArrayType(dims)
-		End If
-		Return id
-	EndIf
-	If ty.StartsWith( ":" )
-		ty=ty[1..]
-		Local i=ty.FindLast( "." )
-		If i<>-1 ty=ty[i+1..]
-		Return TTypeId.ForName( ty )
-	EndIf
-	If ty.StartsWith( "*" ) Then
-		ty = ty[1..]
-		Local id:TTypeId = TypeIdForTag( ty )
-		If id Then
-			id._pointerType = Null
-			id = id.PointerType()
-		EndIf
-		Return id
-	EndIf
-	If ty.StartsWith( "(" ) Then
-		Local t:String[]
-		Local idx:Int = ty.FindLast(")")
-		If idx > 0 Then
-			t = [ ty[1..idx], ty[idx+1..] ]
-		Else
-			t = [ ty[1..], "" ]
-		EndIf
-		Local retType:TTypeId=TypeIdForTag( t[1] ), argTypes:TTypeId[]
-		If t[0].length>0 Then
-			Local i:Int,b:Int,q$=t[0], args:TList=New TList
-			While i < q.length
-				Select q[i]
-				Case Asc( "," )
-					args.AddLast q[b..i]
-					i:+1
-					b=i
-				Case Asc( "[" )
-					i:+1
-					While i<q.length And q[i]=Asc(",")
-						i:+1
-					Wend
-				Case Asc( "(" )
-					Local level:Int = 1
-					i:+1
-					While i < q.Length
-						If q[i] = Asc(",") Then
-							If level = 0 Then
-								Exit
-							End If
-						ElseIf q[i] = Asc(")") Then
-							level :- 1
-						ElseIf q[i] = Asc("(") Then
-							level :+ 1
-						EndIf
-						i:+1
-					Wend
-				Default
-					i:+1
+		Case ByteTypeId   If value Then (Byte Ptr   p)[0] = value.ToString().ToInt()    Else (Byte Ptr   p)[0] = Byte   Null
+		Case ShortTypeId  If value Then (Short Ptr  p)[0] = value.ToString().ToInt()    Else (Short Ptr  p)[0] = Short  Null
+		Case IntTypeId    If value Then (Int Ptr    p)[0] = value.ToString().ToInt()    Else (Int Ptr    p)[0] = Int    Null
+		Case UIntTypeId   If value Then (UInt Ptr   p)[0] = value.ToString().ToUInt()   Else (UInt Ptr   p)[0] = UInt   Null
+		Case LongTypeId   If value Then (Long Ptr   p)[0] = value.ToString().ToLong()   Else (Long Ptr   p)[0] = Long   Null
+		Case ULongTypeId  If value Then (ULong Ptr  p)[0] = value.ToString().ToULong()  Else (ULong Ptr  p)[0] = ULong  Null
+		Case SizeTTypeId  If value Then (Size_T Ptr p)[0] = value.ToString().ToSizeT()  Else (Size_T Ptr p)[0] = Size_T Null
+		Case FloatTypeId  If value Then (Float Ptr  p)[0] = value.ToString().ToFloat()  Else (Float Ptr  p)[0] = Float  Null
+		Case DoubleTypeId If value Then (Double Ptr p)[0] = value.ToString().ToDouble() Else (Double Ptr p)[0] = Double Null
+		Default
+			If value
+				Select True
+					Case typeId.ExtendsType(PointerTypeId) Or typeId.ExtendsType(FunctionTypeId)
+						(Size_T Ptr p)[0] = value.ToString().ToSizeT()
+						Return
+					Case typeId.IsStruct()
+						Local box:TBoxedStruct = TBoxedStruct(value)
+						If Not box Or box.typeId <> typeId Then Throw "Unable to assign object of incompatible type"
+						box.Unbox p
+						Return
+					Case typeId.IsInterface()
+						If bbInterfaceDowncast(value, typeId._interface) <> value Then Throw "Unable to assign object of incompatible type"
+					Default
+						If bbObjectDowncast(value, typeId._class) <> value Then Throw "Unable to assign object of incompatible type"
 				End Select
-			Wend
-			If b < q.Length Then args.AddLast q[b..]
-
-			argTypes=New TTypeId[args.Count()]
-
-			i=0
-			For Local s:String = EachIn args
-				argTypes[i]=TypeIdForTag( s )
-				If Not argTypes[i] Then argTypes[i] = ObjectTypeId
-				i:+1
-			Next
-		EndIf
-		If Not retType Then retType = ObjectTypeId
-		retType._functionType = Null
-		Return retType.FunctionType(argTypes)
-	EndIf
-	Select ty
-	Case "b" Return ByteTypeId
-	Case "s" Return ShortTypeId
-	Case "i" Return IntTypeId
-	Case "u" Return UIntTypeId
-	Case "l" Return LongTypeId
-	Case "y" Return ULongTypeId
-	Case "t" Return SizetTypeId
-	Case "f" Return FloatTypeId
-	Case "d" Return DoubleTypeId
-	Case "$" Return StringTypeId
-	Case "*" Return PointerTypeId
-	Case "(" Return FunctionTypeId
-	Case "" Return VoidTypeId
+			Else
+				Select True
+					Case typeId.IsStruct()
+						Throw "Unable to convert Null object to this type"
+					Case typeId.Name().Endswith("]")
+						value = bbRefArrayNull()
+					Case typeId = StringTypeId
+						value = ""
+				End Select
+			EndIf
+			bbRefAssignObject p, value
 	End Select
 End Function
 
-Function ExtractMetaData$( meta$,key$ )
-	If Not key Return meta
-	Local i=0
-	While i<meta.length
-		Local e=meta.Find( "=",i )
-		If e=-1 Throw "Malformed meta data"
-		Local k$=meta[i..e],v$
-		i=e+1
-		If i<meta.length And meta[i]=Asc("~q")
-			i:+1
-			Local e=meta.Find( "~q",i )
-			If e=-1 Throw "Malformed meta data"
-			v=meta[i..e]
-			i=e+1
+
+Function _GetBufferSize:Int(funcTypeId:TTypeId, selfTypeId:TTypeId = Null)
+	Local p:Byte Ptr Ptr = Null
+	For Local t:TTypeId = EachIn [funcTypeId._retType, selfTypeId] + funcTypeId._argTypes
+		p = _AdvanceBufferPointer(p, t)
+	Next
+	Return Int(p)
+End Function
+
+
+Function _AdvanceBufferPointer:Byte Ptr Ptr(p:Byte Ptr Ptr, typeId:TTypeId)
+	If typeId <> VoidTypeId Then
+		If typeId._size <= SizeOf Byte Ptr Null Then
+			p :+ 1
 		Else
-			Local e=meta.Find( " ",i )
-			If e=-1 e=meta.length
-			v=meta[i..e]
-			i=e
+			p :+ typeId._size / (SizeOf Byte Ptr Null) + (typeId._size Mod (SizeOf Byte Ptr Null) <> 0)
+		End If
+	End If
+	Return p
+End Function
+
+
+Function _Invoke:Object(reflectionWrapper(buf:Byte Ptr Ptr), retType:TTypeId, argTypes:TTypeId[], args:Object[], bufferSize:Int)
+	Local buf:Byte Ptr[bufferSize / (SizeOf Byte Ptr Null)]
+	Local bufPtr:Byte Ptr Ptr = Byte Ptr Ptr buf
+	
+	bufPtr = _AdvanceBufferPointer(bufPtr, retType)
+	For Local a:Int = 0 Until argTypes.Length
+		_Assign bufPtr, argTypes[a], args[a]
+		bufPtr = _AdvanceBufferPointer(bufPtr, argTypes[a])
+	Next
+	bufPtr = Byte Ptr Ptr buf
+	
+	reflectionWrapper bufPtr
+	
+	If retType <> VoidTypeId Then Return _Get(bufPtr, retType)
+End Function
+
+
+Function GetFieldPtr:Byte Ptr(obj:Object, offset:Size_T)
+	Local box:TBoxedStruct = TBoxedStruct(obj)
+	If box Then
+		Return box.dataPtr + offset
+	Else
+		Return bbRefObjectFieldPtr(obj, offset)
+	End If
+End Function
+
+
+Function TypeTagForId$(id:TTypeId)
+	' TODO: extern type tags (#, *#)
+	Select id
+		Case ByteTypeId      Return "b"
+		Case ShortTypeId     Return "s"
+		Case IntTypeId       Return "i"
+		Case UIntTypeId      Return "u"
+		Case LongTypeId      Return "l"
+		Case ULongTypeId     Return "y"
+		Case SizeTTypeId     Return "t"
+		Case FloatTypeId     Return "f"
+		Case DoubleTypeId    Return "d"
+		Case StringTypeId    Return "$"
+		Case PointerTypeId   Return "*"
+		Case FunctionTypeId  Return "("
+		Case VoidTypeId      Return ""
+		? Win32
+		Case LParamTypeId    Return "X"
+		Case WParamTypeId    Return "W"
+		? x64
+		Case Int128TypeId    Return "j"
+		Case Float64TypeId   Return "h"
+		Case Float128TypeId  Return "k"
+		Case Double128TypeId Return "m"
+		?
+	End Select
+	Select True
+		Case id.ExtendsType(ArrayTypeId)
+			Return "[]" + TypeTagForId(id._elementType)
+		Case id.ExtendsType(PointerTypeId)
+			Return "*" + TypeTagForId(id._elementType)
+		Case id.ExtendsType(FunctionTypeId)
+			Local s:String
+			For Local t:TTypeId = EachIn id._argTypes
+				If s Then s :+ ", "
+				s :+ TypeTagForId(t)
+			Next
+			s = "(" + s + ")"
+			If id._retType Then s :+ TypeTagForId(id._retType)
+			Return s
+		Case id.ExtendsType(ObjectTypeId)
+			Return ":" + id.Name()
+		Case id.IsStruct()
+			Return "@" + id.Name()
+	End Select
+	Throw "TypeTagForId error"
+End Function
+
+Function TypeIdForTag:TTypeId(ty$)
+	Select ty
+		Case "b" Return ByteTypeId
+		Case "s" Return ShortTypeId
+		Case "i" Return IntTypeId
+		Case "u" Return UIntTypeId
+		Case "l" Return LongTypeId
+		Case "y" Return ULongTypeId
+		Case "t" Return SizetTypeId
+		Case "f" Return FloatTypeId
+		Case "d" Return DoubleTypeId
+		Case "$" Return StringTypeId
+		Case "*" Return PointerTypeId
+		Case "(" Return FunctionTypeId
+		Case ""  Return VoidTypeId
+		? Win32
+		Case "X" Return LParamTypeId
+		Case "W" Return WParamTypeId
+		? x64
+		Case "j" Return Int128TypeId
+		Case "h" Return Float64TypeId
+		Case "k" Return Float128TypeId
+		Case "m" Return Double128TypeId
+		?
+	End Select
+	Select True
+		Case ty.StartsWith("[")
+			Local dims:Int = ty.split(", ").length
+			ty = ty[ty.Find("]") + 1..]
+			Local id:TTypeId = TypeIdForTag(ty)
+			If id Then
+				id = id.ArrayType(dims)
+			End If
+			Return id
+		Case ty.StartsWith(":") Or ty.StartsWith("@")
+			ty = ty[1..]
+			Local i:Int = ty.FindLast(".")
+			If i <> -1 ty = ty[i + 1..]
+			Return TTypeId.ForName(ty)
+		Case ty.StartsWith("*")
+			ty = ty[1..]
+			Local id:TTypeId = TypeIdForTag(ty)
+			If id Then
+				id = id.PointerType()
+			EndIf
+			Return id
+		Case ty.StartsWith("(")
+			Local idx:Int
+			Local p:Int = 1
+			For idx = 1 Until ty.Length
+				If ty[idx] = "("[0] Then p :+ 1 Else If ty[idx] = ")"[0] Then p :- 1
+				If p = 0 Then Exit
+			Next
+			Local t:String[] = [ty[1..idx], ty[idx + 1..]]
+			Local retType:TTypeId = TypeIdForTag(t[1]), argTypes:TTypeId[]
+			If t[0].length > 0 Then
+				Local i:Int
+				Local b:Int
+				Local q:String = t[0]
+				Local args:TList = New TList
+				While i < q.length
+					Select q[i]
+						Case Asc(", ")
+							args.AddLast q[b..i]
+							i :+ 1
+							b = i
+						Case Asc("[")
+							i :+ 1
+							While i < q.length And q[i] = Asc(", ")
+								i :+ 1
+							Wend
+						Case Asc("(")
+							Local level:Int = 1
+							i:+1
+							While i < q.Length
+								If q[i] = Asc(", ") Then
+									If level = 0 Then 
+										Exit
+									End If
+								Else If q[i] = Asc(")") Then
+									level :- 1
+								Else If q[i] = Asc("(") Then 
+									level :+ 1
+								EndIf
+								i :+ 1
+							Wend
+						Default
+							i :+ 1
+					End Select
+				Wend
+				If b < q.Length Then args.AddLast q[b..]
+				
+				argTypes = New TTypeId[args.Count()]
+				
+				i = 0
+				For Local s:String = EachIn args
+					argTypes[i] = TypeIdForTag(s)
+					If Not argTypes[i] Then argTypes[i] = ObjectTypeId
+					i :+ 1
+				Next
+			End If
+			If Not retType Then retType = ObjectTypeId
+			'retType._functionType = Null
+			Return retType.FunctionType(argTypes)
+	End Select
+	Throw "TypeIdForTag error: ~q" + ty + "~q"
+End Function
+
+Const MODIFIER_PROTECTED:Int = $001
+Const MODIFIER_PRIVATE:Int   = $002
+Const MODIFIER_ABSTRACT:Int  = $010
+Const MODIFIER_FINAL:Int     = $020
+Const MODIFIER_READ_ONLY:Int = $100
+
+Function ModifiersForTag:Int(modifierString:String)
+	Local modifiers:Int
+	If modifierString.Contains("P") Then modifiers :| MODIFIER_PRIVATE
+	If modifierString.Contains("Q") Then modifiers :| MODIFIER_PROTECTED
+	If modifierString.Contains("A") Then modifiers :| MODIFIER_ABSTRACT
+	If modifierString.Contains("F") Then modifiers :| MODIFIER_FINAL
+	If modifierString.Contains("R") Then modifiers :| MODIFIER_READ_ONLY
+	Return modifiers
+End Function
+
+Function ExtractMetaData$(meta$, key$)
+	If Not key Return meta
+	Local i:Int = 0
+	While i<meta.length
+		Local e:Int = meta.Find(" = ", i)
+		If e = -1 Throw "Malformed meta data"
+		Local k$ = meta[i..e], v$
+		i = e+1
+		If i<meta.length And meta[i] = Asc("~q")
+			i:+1
+			Local e:Int = meta.Find("~q", i)
+			If e = -1 Throw "Malformed meta data"
+			v = meta[i..e]
+			i = e+1
+		Else
+			Local e:Int = meta.Find(" ", i)
+			If e = -1 e = meta.length
+			v = meta[i..e]
+			i = e
 		EndIf
-		If k=key Return v
-		If i<meta.length And meta[i]=Asc(" ") i:+1
+		If k = key Return v
+		If i<meta.length And meta[i] = Asc(" ") i:+1
 	Wend
 End Function
+
+Function TypeListsIdentical:Int(a1:TTypeId[], a2:TTypeId[])
+	If a1.Length <> a2.Length Then Return False
+	For Local i:Int = 0 Until a1.Length
+		If a1[i] <> a2[i] Then Return False
+	Next
+	Return True
+End Function
+
+Function ArgTypesIdentical:Int(f1:TFunction, f2:TFunction)
+	Return TypeListsIdentical(f1.ArgTypes(), f2.ArgTypes())
+End Function
+
+Function ArgTypesIdentical:Int(m1:TMethod, m2:TMethod)
+	Return TypeListsIdentical(m1.ArgTypes(), m2.ArgTypes())
+End Function
+
+Function NamesAndArgTypesIdentical:Int(f1:TFunction, f2:TFunction)
+	Return f1.Name().ToLower() = f2.Name().ToLower() And ArgTypesIdentical(f1, f2)
+End Function
+
+Function NamesAndArgTypesIdentical:Int(m1:TMethod, m2:TMethod)
+	Return m1.Name().ToLower() = m2.Name().ToLower() And ArgTypesIdentical(m1, m2)
+End Function
+
+Function SignaturesIdentical:Int(f1:TFunction, f2:TFunction)
+	Return NamesAndArgTypesIdentical(f1, f2) And f1.ReturnType() = f2.ReturnType()
+End Function
+
+Function SignaturesIdentical:Int(m1:TMethod, m2:TMethod)
+	Return NamesAndArgTypesIdentical(m1, m2) And m1.ReturnType() = m2.ReturnType()
+End Function
+
+Function AddFunctionsToList(tid:TTypeId, list:TList, initialLastLink:TLink, funcNameLower:String = "")
+	Local insertPos:TLink = initialLastLink.NextLink()
+	If Not insertPos Then insertPos = list._head
+	' go through every function defined in the type described by tid
+	#AddFunctionsLoop
+	For Local func:TFunction = EachIn tid._functions
+		' skip it if it has the wrong name
+		If funcNameLower And funcNameLower <> func.Name().ToLower() Then Continue
+		' check if it's overridden by something that was already in the list
+		Local overrideCheckLink:TLink = insertPos
+		If overrideCheckLink <> list._head Then 
+			While overrideCheckLink
+				Local func2:TFunction = TFunction(overrideCheckLink.Value())
+				If NamesAndArgTypesIdentical(func, func2) Then Continue AddFunctionsLoop ' if so, skip it
+				overrideCheckLink = overrideCheckLink.NextLink()
+			Wend
+		End If
+		list.InsertBeforeLink func, insertPos ' otherwise, add it to the list
+	Next
+End Function
+
+Function AddMethodsToList(tid:TTypeId, list:TList, initialLastLink:TLink, methNameLower:String = "")
+	Local insertPos:TLink = initialLastLink.NextLink()
+	If Not insertPos Then insertPos = list._head
+	' go through every method defined in the type described by tid
+	#AddMethodsLoop
+	For Local meth:TMethod = EachIn tid._methods
+		' skip it if it has the wrong name
+		If methNameLower And methNameLower <> meth.Name().ToLower() Then Continue
+		' check if it's overridden by something that was already in the list
+		Local overrideCheckLink:TLink = insertPos
+		If overrideCheckLink <> list._head Then 
+			While overrideCheckLink
+				Local meth2:TMethod = TMethod(overrideCheckLink.Value())
+				If NamesAndArgTypesIdentical(meth, meth2) Then Continue AddMethodsLoop ' if so, skip it
+				overrideCheckLink = overrideCheckLink.NextLink()
+			Wend
+		End If
+		list.InsertBeforeLink meth, insertPos ' otherwise, add it to the list
+	Next
+End Function
+
+
 
 Public
 
 Rem
-bbdoc: Primitive byte type
+bbdoc: Primitive Byte type ID
 End Rem
-Global ByteTypeId:TTypeId=New TTypeId.Init( "Byte",1 )
+Global ByteTypeId:TTypeId = New TTypeId.Init("Byte", SizeOf Byte Null)
 
 Rem
-bbdoc: Primitive short type
+bbdoc: Primitive Short type ID
 End Rem
-Global ShortTypeId:TTypeId=New TTypeId.Init( "Short",2 )
+Global ShortTypeId:TTypeId = New TTypeId.Init("Short", SizeOf Short Null)
 
 Rem
-bbdoc: Primitive int type
+bbdoc: Primitive Int type ID
 End Rem
-Global IntTypeId:TTypeId=New TTypeId.Init( "Int",4 )
+Global IntTypeId:TTypeId = New TTypeId.Init("Int", SizeOf Int Null)
 
 Rem
-bbdoc: Primitive unsigned int type
+bbdoc: Primitive UInt type ID
 End Rem
-Global UIntTypeId:TTypeId=New TTypeId.Init( "UInt",4 )
+Global UIntTypeId:TTypeId = New TTypeId.Init("UInt", SizeOf UInt Null)
 
 Rem
-bbdoc: Primitive long type
+bbdoc: Primitive Long type ID
 End Rem
-Global LongTypeId:TTypeId=New TTypeId.Init( "Long",8 )
+Global LongTypeId:TTypeId = New TTypeId.Init("Long", SizeOf Long Null)
 
 Rem
-bbdoc: Primitive unsigned long type
+bbdoc: Primitive ULong type ID
 End Rem
-Global ULongTypeId:TTypeId=New TTypeId.Init( "ULong",8 )
+Global ULongTypeId:TTypeId = New TTypeId.Init("ULong", SizeOf ULong Null)
 
 Rem
-bbdoc: Primitive size_t type
+bbdoc: Primitive Size_T type ID
 End Rem
-?Not ptr64
-Global SizetTypeId:TTypeId=New TTypeId.Init( "size_t",4 )
-?ptr64
-Global SizetTypeId:TTypeId=New TTypeId.Init( "size_t",8 )
+Global SizeTTypeId:TTypeId = New TTypeId.Init("Size_T", SizeOf Size_T Null)
+
+Rem
+bbdoc: Primitive Float type ID
+End Rem
+Global FloatTypeId:TTypeId = New TTypeId.Init("Float", SizeOf Float Null)
+
+Rem
+bbdoc: Primitive Double type ID
+End Rem
+Global DoubleTypeId:TTypeId = New TTypeId.Init("Double", SizeOf Double Null)
+
+Rem
+bbdoc: Object type ID
+End Rem
+Global ObjectTypeId:TTypeId = New TTypeId.Init("Object", SizeOf Byte Ptr Null, bbRefObjectClass())
+
+Rem
+bbdoc: String type ID
+End Rem
+Global StringTypeId:TTypeId = New TTypeId.Init("String", SizeOf Byte Ptr Null, bbRefStringClass(), ObjectTypeId)
+
+? Win32
+Rem
+bbdoc: WinAPI LPARAM type ID
+about: Only available on Windows.
+End Rem
+Global LParamTypeId:TTypeId = New TTypeId.Init("LParam", SizeOf LParam Null)
+
+Rem
+bbdoc: WinAPI WPARAM type ID
+about: Only available on Windows.
+End Rem
+Global WParamTypeId:TTypeId = New TTypeId.Init("WParam", SizeOf WParam Null)
+?
+
+? x64
+Rem
+bbdoc: Intrinsic Int128 type ID
+about: Only available on x64.
+End Rem
+Global Int128TypeId:TTypeId = New TTypeId.InitStruct(DebugScopePtrInt128)
+
+Rem
+bbdoc: Intrinsic Float64 type ID
+about: Only available on x64.
+End Rem
+Global Float64TypeId:TTypeId = New TTypeId.InitStruct(DebugScopePtrFloat64)
+
+Rem
+bbdoc: Intrinsic Float128 type ID
+about: Only available on x64.
+End Rem
+Global Float128TypeId:TTypeId = New TTypeId.InitStruct(DebugScopePtrFloat128)
+
+Rem
+bbdoc: Intrinsic Double128 type ID
+about: Only available on x64.
+End Rem
+Global Double128TypeId:TTypeId = New TTypeId.InitStruct(DebugScopePtrDouble128)
 ?
 
 Rem
-bbdoc: Primitive float type
+bbdoc: Primitive void type ID<br>Only used as a function/method return type
 End Rem
-Global FloatTypeId:TTypeId=New TTypeId.Init( "Float",4 )
+Global VoidTypeId:TTypeId = New TTypeId.Init("", 0)
 
 Rem
-bbdoc: Primitive double type
+bbdoc: Mock array base type ID
 End Rem
-Global DoubleTypeId:TTypeId=New TTypeId.Init( "Double",8 )
+Global ArrayTypeId:TTypeId = New TTypeId.Init("Null[]", SizeOf Byte Ptr Null, bbRefArrayClass(), ObjectTypeId)
 
 Rem
-bbdoc: Primitive object type
+bbdoc: Mock pointer base type ID
 End Rem
-?Not ptr64
-Global ObjectTypeId:TTypeId=New TTypeId.Init( "Object",4,bbRefObjectClass() )
-?ptr64
-Global ObjectTypeId:TTypeId=New TTypeId.Init( "Object",8,bbRefObjectClass() )
-?
+Global PointerTypeId:TTypeId = New TTypeId.Init("Ptr", SizeOf Byte Ptr Null)
 
 Rem
-bbdoc: Primitive string type
+bbdoc: Mock function/method base type ID
 End Rem
-?Not ptr64
-Global StringTypeId:TTypeId=New TTypeId.Init( "String",4,bbRefStringClass(),ObjectTypeId )
-?ptr64
-Global StringTypeId:TTypeId=New TTypeId.Init( "String",8,bbRefStringClass(),ObjectTypeId )
-?
+Global FunctionTypeId:TTypeId = New TTypeId.Init("Null()", SizeOf Byte Ptr Null)
+
+
 
 Rem
-bbdoc: Primitive array type
+bbdoc: Type member
+about: Common base type of TField, TGlobal, TConstant, TMethod and TFunction
 End Rem
-?Not ptr64
-Global ArrayTypeId:TTypeId=New TTypeId.Init( "Null[]",4,bbRefArrayClass(),ObjectTypeId )
-?ptr64
-Global ArrayTypeId:TTypeId=New TTypeId.Init( "Null[]",8,bbRefArrayClass(),ObjectTypeId )
-?
-
-' Void Type
-' Only used For Function/Method Return types
-Global VoidTypeId:TTypeId=New TTypeId.Init( "Void",0 )
-
-Rem
-bbdoc: Primitive pointer type
-End Rem
-?Not ptr64
-Global PointerTypeId:TTypeId=New TTypeId.Init( "Ptr",4 )
-?ptr64
-Global PointerTypeId:TTypeId=New TTypeId.Init( "Ptr",8 )
-?
-
-Rem
-bbdoc: Primitive function type
-End Rem
-?Not ptr64
-Global FunctionTypeId:TTypeId=New TTypeId.Init( "Null()",4 )
-?ptr64
-Global FunctionTypeId:TTypeId=New TTypeId.Init( "Null()",8 )
-?
-
-Rem
-bbdoc: Type member - Field Or Method.
-End Rem
-Type TMember
-
+Type TMember Abstract
+	
 	Rem
 	bbdoc: Get member name
 	End Rem
-	Method Name$()
+	Method Name:String()
 		Return _name
 	End Method
-
-	Method NameLower$()
-		If Not _nameLower Then
-			_nameLower = _name.ToLower()
-		End If
-		Return _nameLower
-	End Method
-
+	
 	Rem
 	bbdoc: Get member type
-	End Rem
+	End Rem	
 	Method TypeId:TTypeId()
 		Return _typeId
 	End Method
-
+	
+	Rem
+	bbdoc: Determine if this member has the "Public" access modifier
+	End Rem	
+	Method IsPublic:Int()
+		Return Not (_modifiers & (MODIFIER_PROTECTED | MODIFIER_PRIVATE))
+	End Method
+	
+	Rem
+	bbdoc: Determine if this member has the "Protected" access modifier
+	End Rem	
+	Method IsProtected:Int()
+		Return _modifiers & MODIFIER_PROTECTED
+	End Method
+	
+	Rem
+	bbdoc: Determine if this member has the "Private" access modifier
+	End Rem	
+	Method IsPrivate:Int()
+		Return _modifiers & MODIFIER_PRIVATE
+	End Method
+	
 	Rem
 	bbdoc: Get member meta data
 	End Rem
-	Method MetaData$( key$="" )
-		Return ExtractMetaData( _meta,key )
+	Method MetaData:String(key:String = "")
+		Return ExtractMetaData(_meta, key)
 	End Method
-
-	Field _name$,_typeId:TTypeId,_meta$
-	Field _nameLower$
-
+	
+	Field _name$, _typeId:TTypeId, _meta$, _modifiers%
+	
 End Type
 
+
+
 Rem
-bbdoc: Type constant
+bbdoc: Type member constant
 EndRem
 Type TConstant Extends TMember
-
-	Method Init:TConstant( name:String, typeId:TTypeId, meta:String, str:String)
+	
+	Private
+	
+	Method Init:TConstant(name$, typeId:TTypeId, modifiers%, meta$, str$)
 		_name = name
 		_typeId = typeId
+		_modifiers = modifiers
 		_meta = meta
 		_string = str
 		Return Self
 	EndMethod
-
+	
+	Public
+	
 	Rem
 	bbdoc: Get constant value
+	EndRem
+	Method Get:Object()
+		Return GetString()
+	EndMethod
+	
+	Rem
+	bbdoc: Get constant value as @String
 	EndRem
 	Method GetString:String()
 		Return _string
 	EndMethod
-
+	
 	Rem
 	bbdoc: Get constant value as @Int
 	EndRem
 	Method GetInt:Int()
 		Return GetString().ToInt()
 	EndMethod
-
-	Rem
-	bbdoc: Get constant value as @Float
-	EndRem
-	Method GetFloat:Int()
-		Return GetString().ToFloat()
-	EndMethod
-
+	
 	Rem
 	bbdoc: Get constant value as @Long
-	EndRem
+	EndRem	
 	Method GetLong:Long()
 		Return GetString().ToLong()
 	EndMethod
-
+	
 	Rem
-	bbdoc: Get constant value as @size_t
-	EndRem
-	Method GetSizet:Size_T()
-		Return GetString().ToSizet()
+	bbdoc: Get constant value as @Size_T
+	EndRem	
+	Method GetSizeT:Size_T()
+		Return GetString().ToSizeT()
 	EndMethod
-
+	
+	Rem
+	bbdoc: Get constant value as @Float
+	EndRem	
+	Method GetFloat:Int()
+		Return GetString().ToFloat()
+	EndMethod
+	
 	Rem
 	bbdoc: Get constant value as @Double
-	EndRem
+	EndRem	
 	Method GetDouble:Int()
 		Return GetString().ToDouble()
 	EndMethod
-
+	
 	Rem
 	bbdoc: Get constant value as @{Byte Ptr}
 	EndRem
 	Method GetPointer:Byte Ptr()
-?Not ptr64
-		Return Byte Ptr GetString().ToInt()
-?ptr64
-		Return Byte Ptr GetString().ToLong()
-?
+		Return Byte Ptr GetString().ToSizeT()
 	EndMethod
-
+	
 	Field _string:String
+	
 EndType
 
+
+
 Rem
-bbdoc: Type field
+bbdoc: Type member field
 End Rem
 Type TField Extends TMember
-
-	Method Init:TField( name$,typeId:TTypeId,meta$,index )
-		_name=name
-		_typeId=typeId
-		_meta=meta
-		_index=index
+	
+	Private
+	
+	Method Init:TField(name$, typeId:TTypeId, modifiers%, meta$, offset:Size_T)
+		_name = name
+		_typeId = typeId
+		_modifiers = modifiers
+		_meta = meta
+		_offset = offset
 		Return Self
 	End Method
-
+	
+	Public
+	
+	Rem
+	bbdoc: Determine if field is read-only
+	End Rem	
+	Method IsReadOnly:Int()
+		Return _modifiers & MODIFIER_READ_ONLY
+	End Method
+	
 	Rem
 	bbdoc: Get field value
 	End Rem
-	Method Get:Object( obj:Object )
-		Return _Get( bbRefFieldPtr( obj,_index ),_typeId )
+	Method Get:Object(obj:Object)
+		Return _Get(GetFieldPtr(obj, _offset), _typeId)
 	End Method
-
+	
 	Rem
-	bbdoc: Get int field value
+	bbdoc: Get field value as @String
 	End Rem
-	Method GetInt:Int( obj:Object )
-		Return GetString( obj ).ToInt()
+	Method GetString:String(obj:Object)
+		Return String(Get(obj))
 	End Method
-
+	
 	Rem
-	bbdoc: Get long field value
+	bbdoc: Get field value as @Int
 	End Rem
-	Method GetLong:Long( obj:Object )
-		Return GetString( obj ).ToLong()
+	Method GetInt:Int(obj:Object)
+		Return GetString(obj).ToInt()
 	End Method
-
+	
 	Rem
-	bbdoc: Get size_t field value
+	bbdoc: Get field value as @Long
 	End Rem
-	Method GetSizet:Size_T( obj:Object )
-		Return GetString( obj ).ToSizet()
+	Method GetLong:Long(obj:Object)
+		Return GetString(obj).ToLong()
 	End Method
-
+	
 	Rem
-	bbdoc: Get float field value
+	bbdoc: Get field value as @Size_T
 	End Rem
-	Method GetFloat:Float( obj:Object )
-		Return GetString( obj ).ToFloat()
+	Method GetSizeT:Size_T(obj:Object)
+		Return GetString(obj).ToSizeT()
 	End Method
-
+	
 	Rem
-	bbdoc: Get double field value
+	bbdoc: Get field value as @Float
 	End Rem
-	Method GetDouble:Double( obj:Object )
-		Return GetString( obj ).ToDouble()
+	Method GetFloat:Float(obj:Object)
+		Return GetString(obj).ToFloat()
 	End Method
-
+	
 	Rem
-	bbdoc: Get string field value
+	bbdoc: Get field value as @Double
 	End Rem
-	Method GetString$( obj:Object )
-		Return String( Get( obj ) )
+	Method GetDouble:Double(obj:Object)
+		Return GetString(obj).ToDouble()
 	End Method
-
+	
 	Rem
-	bbdoc: Set field value
-	End Rem
-	Method Set( obj:Object,value:Object )
-		_Assign bbRefFieldPtr( obj,_index ),_typeId,value
-	End Method
-
+	bbdoc: Get field value as @{Byte Ptr}
+	EndRem
+	Method GetPointer:Byte Ptr(obj:Object)
+		Return Byte Ptr GetString(obj).ToSizeT()
+	EndMethod
+	
 	Rem
-	bbdoc: Set int field value
-	End Rem
-	Method SetInt( obj:Object,value:Int )
-		SetString obj,String.FromInt( value )
-	End Method
-
+	bbdoc: Get field value as struct
+	about: @targetPtr must be a pointer to a variable of the correct struct type.
+	EndRem
+	Method GetStruct(obj:Object, targetPtr:Byte Ptr)
+		If Not _typeId.IsStruct Then Throw "Field does not have a struct type"
+		MemCopy targetPtr, GetFieldPtr(obj, _offset), Size_T _typeId._size
+	EndMethod
+	
 	Rem
-	bbdoc: Set long field value
+	bbdoc: Set Field value
 	End Rem
-	Method SetLong( obj:Object,value:Long )
-		SetString obj,String.FromLong( value )
+	Method Set(obj:Object, value:Object)
+		_Assign GetFieldPtr(obj, _offset), _typeId, value
 	End Method
-
+	
 	Rem
-	bbdoc: Set float field value
+	bbdoc: Set field value from @String
 	End Rem
-	Method SetFloat( obj:Object,value:Float )
-		SetString obj,String.FromFloat( value )
+	Method SetString(obj:Object, value:String)
+		Set obj, value
 	End Method
-
+	
 	Rem
-	bbdoc: Set double field value
+	bbdoc: Set field value from @Int
 	End Rem
-	Method SetDouble( obj:Object,value:Double )
-		SetString obj,String.FromDouble( value )
+	Method SetInt(obj:Object, value:Int)
+		SetString obj, String.FromInt(value)
 	End Method
-
+	
 	Rem
-	bbdoc: Set string field value
+	bbdoc: Set Field value from @Long
 	End Rem
-	Method SetString( obj:Object,value$ )
-		Set obj,value
+	Method SetLong(obj:Object, value:Long)
+		SetString obj, String.FromLong(value)
 	End Method
-
-	Field _index
-
+		
+	Rem
+	bbdoc: Set field value from @Size_T
+	End Rem
+	Method SetSizeT(obj:Object, value:Size_T)
+		SetString obj, String.FromSizeT(value)
+	End Method
+	
+	Rem
+	bbdoc: Set field value from @Float
+	End Rem
+	Method SetFloat(obj:Object, value:Float)
+		SetString obj, String.FromFloat(value)
+	End Method
+	
+	Rem
+	bbdoc: Set field value from @Double
+	End Rem
+	Method SetDouble(obj:Object, value:Double)
+		SetString obj, String.FromDouble(value)
+	End Method
+	
+	Rem
+	bbdoc: Set field value from @{Byte Ptr}
+	EndRem
+	Method SetPointer(obj:Object, value:Byte Ptr)
+		SetSizeT obj, Size_T value
+	EndMethod
+	
+	Rem
+	bbdoc: Set field value from struct
+	about: @valuePtr must be a pointer to a variable of the correct struct type.
+	EndRem
+	Method SetStruct(obj:Object, structPtr:Byte Ptr)
+		If Not _typeId.IsStruct Then Throw "Field does not have a struct type"
+		MemCopy GetFieldPtr(obj, _offset), structPtr, Size_T _typeId._size
+	EndMethod
+	
+	Rem
+	bbdoc: Invoke field value
+	about: Field type must be a function pointer.
+	EndRem	
+	Method Invoke:Object(obj:Object, args:Object[] = Null)
+		If Not _typeId.ExtendsType(FunctionTypeId) Then Throw "Value type ID is not a function type"
+		If args.Length <> _typeId.argTypes.Length Then Throw "Function invoked with wrong number of arguments"
+		Throw "Not implemented yet"
+		'TODO
+'		Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T GetFieldPtr(obj, _offset))] + args, _invokeBufferSize)
+	End Method
+	
+	Field _offset:Size_T
+	
 End Type
 
+
+
 Rem
-bbdoc: Type global
+bbdoc: Type member global variable
 End Rem
 Type TGlobal Extends TMember
-
-	Method Init:TGlobal( name$,typeId:TTypeId,meta$,ref:Byte Ptr )
-		_name=name
-		_typeId=typeId
-		_meta=meta
-		_ref=ref
+	
+	Private
+	
+	Method Init:TGlobal(name$, typeId:TTypeId, modifiers%, meta$, ref:Byte Ptr)
+		_name = name
+		_typeId = typeId
+		_modifiers = modifiers
+		_meta = meta
+		_ref = ref
 		Return Self
 	End Method
-
+	
+	Public
+	
 	Rem
 	bbdoc: Get global value
 	End Rem
 	Method Get:Object()
-		Return _Get( _ref,_typeId )
+		Return _Get(_ref, _typeId)
 	End Method
-
+	
 	Rem
-	bbdoc: Get int global value
+	bbdoc: Get global value as @String
 	End Rem
-	Method GetInt:Int( )
+	Method GetString:String()
+		Return String(Get())
+	End Method
+	
+	Rem
+	bbdoc: Get global value as @Int
+	End Rem
+	Method GetInt:Int()
 		Return GetString().ToInt()
 	End Method
-
+	
 	Rem
-	bbdoc: Get long global value
+	bbdoc: Get global value as @Long
 	End Rem
 	Method GetLong:Long()
 		Return GetString().ToLong()
 	End Method
-
+	
 	Rem
-	bbdoc: Get size_t global value
+	bbdoc: Get global value as @Size_T
 	End Rem
-	Method GetSizet:Size_T()
-		Return GetString().ToSizet()
+	Method GetSizeT:Size_T()
+		Return GetString().ToSizeT()
 	End Method
-
+	
 	Rem
-	bbdoc: Get float global value
+	bbdoc: Get global value as @Float
 	End Rem
 	Method GetFloat:Float()
 		Return GetString().ToFloat()
 	End Method
-
+	
 	Rem
-	bbdoc: Get double global value
+	bbdoc: Get global value as @Double
 	End Rem
 	Method GetDouble:Double()
 		Return GetString().ToDouble()
 	End Method
-
+	
 	Rem
-	bbdoc: Get string global value
-	End Rem
-	Method GetString$()
-		Return String( Get() )
-	End Method
-
+	bbdoc: Get global value as @{Byte Ptr}
+	EndRem
+	Method GetPointer:Byte Ptr()
+		Return Byte Ptr GetString().ToSizeT()
+	EndMethod
+	
+	Rem
+	bbdoc: Get global value as struct
+	about: @targetPtr must be a pointer to a variable of the correct struct type.
+	EndRem
+	Method GetStruct(obj:Object, targetPtr:Byte Ptr)
+		If Not _typeId.IsStruct Then Throw "Global does not have a struct type"
+		MemCopy targetPtr, _ref, Size_T _typeId._size
+	EndMethod
+	
 	Rem
 	bbdoc: Set global value
 	End Rem
-	Method Set(value:Object )
-		_Assign _ref,_typeId,value
+	Method Set(value:Object)
+		_Assign _ref, _typeId, value
 	End Method
-
+	
 	Rem
-	bbdoc: Set int global value
+	bbdoc: Set global value from @String
 	End Rem
-	Method SetInt(value:Int )
-		SetString String.FromInt( value )
-	End Method
-
-	Rem
-	bbdoc: Set long global value
-	End Rem
-	Method SetLong(value:Long )
-		SetString String.FromLong( value )
-	End Method
-
-	Rem
-	bbdoc: Set size_t global value
-	End Rem
-	Method SetSizet(value:Size_T )
-		SetString String.FromSizet( value )
-	End Method
-
-	Rem
-	bbdoc: Set float global value
-	End Rem
-	Method SetFloat(value:Float )
-		SetString String.FromFloat( value )
-	End Method
-
-	Rem
-	bbdoc: Set double global value
-	End Rem
-	Method SetDouble(value:Double )
-		SetString String.FromDouble( value )
-	End Method
-
-	Rem
-	bbdoc: Set string global value
-	End Rem
-	Method SetString(value$ )
+	Method SetString(value:String)
 		Set value
 	End Method
-
+	
+	Rem
+	bbdoc: Set global value from @Int
+	End Rem
+	Method SetInt(value:Int)
+		SetString String.FromInt(value)
+	End Method
+	
+	Rem
+	bbdoc: Set global value from @Long
+	End Rem
+	Method SetLong(value:Long)
+		SetString String.FromLong(value)
+	End Method
+	
+	Rem
+	bbdoc: Set global value from @Size_T
+	End Rem
+	Method SetSizeT(value:Size_T)
+		SetString String.FromSizeT(value)
+	End Method
+	
+	Rem
+	bbdoc: Set global value from @Float
+	End Rem
+	Method SetFloat(value:Float)
+		SetString String.FromFloat(value)
+	End Method
+	
+	Rem
+	bbdoc: Set global value from @Double
+	End Rem
+	Method SetDouble(value:Double)
+		SetString String.FromDouble(value)
+	End Method
+	
+	Rem
+	bbdoc: Set global value from @{Byte Ptr}
+	EndRem
+	Method SetPointer(value:Byte Ptr)
+		SetSizeT Size_T value
+	EndMethod
+	
+	Rem
+	bbdoc: Set field value from struct
+	about: @valuePtr must be a pointer to a variable of the correct struct type.
+	EndRem
+	Method SetStruct(obj:Object, valuePtr:Byte Ptr)
+		If Not _typeId.IsStruct Then Throw "Global does not have a struct type"
+		MemCopy _ref, valuePtr, Size_T _typeId._size
+	EndMethod
+	
+	Rem
+	bbdoc: Invoke global value
+	about: Global type must be a function pointer.
+	EndRem	
+	Method Invoke:Object(args:Object[] = Null)
+		If Not _typeId.ExtendsType(FunctionTypeId) Then Throw "Value type ID is not a function type"
+		If args.Length <> _typeId.argTypes.Length Then Throw "Function invoked with wrong number of arguments"
+		' TODO
+		Throw "Not implemented yet"
+'		Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T _ref)] + args, _invokeBufferSize)
+	End Method
+	
 	Field _ref:Byte Ptr
-
+	
 End Type
 
+
+
 Rem
-bbdoc: Type function
-endrem
+bbdoc: Type member function
+EndRem
 Type TFunction Extends TMember
-	Method Init:TFunction(name:String, typeId:TTypeId, meta:String, selfTypeId:TTypeId, ref:Byte Ptr, argTypes:TTypeId[])
-		_name=name
-		_typeId=typeId
-		_meta=meta
-		_selfTypeId=selfTypeId
-		_ref=ref
-		_argTypes=argTypes
+	
+	Private
+	
+	Method Init:TFunction(name$, typeId:TTypeId, modifiers%, meta$, ref:Byte Ptr, invokeRef:Byte Ptr)
+		_name = name
+		_typeId = typeId
+		_modifiers = modifiers
+		_meta = meta
+		_ref = ref
+		_invokeRef = invokeRef
+		_invokeBufferSize = _GetBufferSize(typeId)
 		Return Self
 	End Method
-
+	
+	Public
+	
+	Rem
+	bbdoc: Determine if function is abstract
+	End Rem	
+	Method IsAbstract:Int()
+		Return _modifiers & MODIFIER_ABSTRACT
+	End Method
+	
+	Rem
+	bbdoc: Determine if function is final
+	End Rem	
+	Method IsFinal:Int()
+		Return _modifiers & MODIFIER_FINAL
+	End Method
+	
 	Rem
 	bbdoc: Get function arg types
 	End Rem
 	Method ArgTypes:TTypeId[]()
-		Return _argTypes
+		Return _typeId._argTypes
 	End Method
-
+	
 	Rem
 	bbdoc: Get function return type
 	End Rem
 	Method ReturnType:TTypeId()
-		Return _typeId
+		Return _typeId._retType
 	End Method
-
+	
 	Rem
-	bbdoc: Get function pointer.
-	endrem
+	bbdoc: Get function pointer
+	EndRem
 	Method FunctionPtr:Byte Ptr()
 		Return _ref
 	End Method
-
+	
 	Rem
-	bbdoc: Invoke type function
-	endrem
+	bbdoc: Invoke function
+	EndRem	
 	Method Invoke:Object(args:Object[] = Null)
-		Return _CallFunction( _ref, _typeId, args, _argTypes)
+		If args.Length <> _typeId.argTypes.Length Then Throw "Function invoked with wrong number of arguments"
+		Return _Invoke(_invokeRef, _typeId._retType, _typeId._argTypes, args, _invokeBufferSize)
 	End Method
-
-	Field _selfTypeId:TTypeId
+	
 	Field _ref:Byte Ptr
-	Field _argTypes:TTypeId[]
+	Field _invokeRef:Byte Ptr
+	Field _invokeBufferSize:Int
+	
 EndType
 
 Rem
-bbdoc: Type method
+bbdoc: Type member method
 End Rem
 Type TMethod Extends TMember
-
-	Method Init:TMethod( name$,typeId:TTypeId,meta$,selfTypeId:TTypeId,ref:Byte Ptr,argTypes:TTypeId[] )
-		_name=name
-		_typeId=typeId
-		_meta=meta
-		_selfTypeId=selfTypeId
-		_ref=ref
-		_argTypes=argTypes
+	
+	Private
+	
+	Method Init:TMethod(name$, typeId:TTypeId, modifiers%, meta$, ref:Byte Ptr, invokeRef:Byte Ptr, selfTypeId:TTypeId)
+		_name = name
+		_typeId = typeId
+		_modifiers = modifiers
+		_meta = meta
+		_ref = ref
+		_invokeRef = invokeRef
+		_invokeBufferSize = _GetBufferSize(typeId, selfTypeId)
+		_invokeArgTypes = [selfTypeId]+typeId._argTypes
+		_selfTypeId = selfTypeId
 		Return Self
 	End Method
-
+	
+	Public
+	
+	Rem
+	bbdoc: Determine if method is abstract
+	End Rem	
+	Method IsAbstract:Int()
+		Return _modifiers & MODIFIER_ABSTRACT
+	End Method
+	
+	Rem
+	bbdoc: Determine if method is final
+	End Rem	
+	Method IsFinal:Int()
+		Return _modifiers & MODIFIER_FINAL
+	End Method
+	
 	Rem
 	bbdoc: Get method arg types
 	End Rem
 	Method ArgTypes:TTypeId[]()
-		Return _argTypes
+		Return _typeId._argTypes
 	End Method
-
+	
+	Rem
+	bbdoc: Get method return type
+	End Rem
 	Method ReturnType:TTypeId()
 		Return _typeId._retType
 	End Method
-
+	
+	'Rem
+	'bbdoc: Get function pointer
+	'EndRem
+	Method FunctionPtr:Byte Ptr()
+		Return _ref
+	End Method
+	
 	Rem
 	bbdoc: Invoke method
 	End Rem
-	Method Invoke:Object( obj:Object,args:Object[] = Null)
-		Return _CallMethod( _ref,_typeId,obj,args,_argTypes )
+	Method Invoke:Object(obj:Object, args:Object[] = Null)
+		If Not obj Then Throw "Unable to invoke method on Null object"
+		If _selfTypeId._elementType And _selfTypeId._elementType.IsStruct() Then ' method on struct type
+			Local box:TBoxedStruct = TBoxedStruct(obj)
+			If (Not box) Or box.typeId <> _selfTypeId._elementType Then Throw "Unable to invoke method on this object"
+			If args.Length <> _typeId.argTypes.Length Then Throw "Method invoked with wrong number of arguments"
+			Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T box.dataPtr)] + args, _invokeBufferSize)
+		Else
+			If args.Length <> _typeId.argTypes.Length Then Throw "Method invoked with wrong number of arguments"
+			Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [obj] + args, _invokeBufferSize)
+		End If
 	End Method
-
+	
 	Field _selfTypeId:TTypeId
 	Field _ref:Byte Ptr
-	Field _argTypes:TTypeId[]
-
+	Field _invokeRef:Byte Ptr
+	Field _invokeBufferSize:Int
+	Field _invokeArgTypes:TTypeId[]
+	
 End Type
 
 Rem
-bbdoc: Type id
+bbdoc: Type ID
+about: Represents a type. Type IDs can be compared for equality to find out if two types are equal.
 End Rem
-Type TTypeId
-
-	Rem
-	bbdoc: Get name of type
-	End Rem
-	Method Name$()
-		Return _name
-	End Method
-
-	Rem
-	bbdoc: Get type meta data
-	End Rem
-	Method MetaData$( key$="" )
-		Return ExtractMetaData( _meta,key )
-	End Method
-
+Type TTypeId Extends TMember
+	
 	Rem
 	bbdoc: Get super type
-	End Rem
+	about: When called on an interface type ID, this method will always return @Object.
+	To get the super interfaces extended by an interface, use @Interfaces.
+	End Rem	
 	Method SuperType:TTypeId()
 		Return _super
 	End Method
-
+	
 	Rem
-	bbdoc: Get array type
+	bbdoc: Get list of implemented interfaces of a class, or super interfaces of an interface.
+	End Rem
+	Method Interfaces:TList(list:TList = Null)
+		If Not list Then list = New TList
+		If _interfaces Then
+			For Local i:TTypeId = EachIn _interfaces
+				list.AddLast i
+			Next
+		End If
+		Return list
+	End Method
+	
+	Method TypeHierarchy:TList()
+		Local list:TList = New TList
+		
+		If Self.IsInterface() Then
+			list.AddFirst Self
+		Else
+			Local tid:TTypeId = Self
+			While tid
+				list.AddFirst tid
+				tid = tid.SuperType()
+			Wend
+		End If
+		Local insertPos:TLink = list.FirstLink()
+		For Local tid:TTypeId = EachIn Self.Interfaces()
+			list.InsertBeforeLink tid, insertPos
+		Next
+		
+		Return list
+	End Method
+	
+	Rem
+	bbdoc: Get array type with this element type
 	End Rem
 	Method ArrayType:TTypeId(dims:Int = 1)
-		If Not _arrayType
-			Local dim:String
-			If dims > 1 Then
-				For Local i:Int = 1 Until dims
-					dim :+ ","
-				Next
-			End If
-?Not ptr64
-			_arrayType=New TTypeId.Init( _name+"[" + dim + "]",4,bbRefArrayClass() )
-?ptr64
-			_arrayType=New TTypeId.Init( _name+"[" + dim + "]",8,bbRefArrayClass() )
-?
-			_arrayType._elementType=Self
-			If _super
-				_arrayType._super=_super.ArrayType()
-			Else
-				_arrayType._super=ArrayTypeId
-			EndIf
-		EndIf
-		Return _arrayType
+		If dims <= 0 Then Throw "Number of array dimensions must be positive"
+		' TODO: thread safety
+		If _arrayTypes.Length <= dims Then
+			_arrayTypes = _arrayTypes[..dims + 1]
+		Else If _arrayTypes[dims] Then
+			Return _arrayTypes[dims]
+		End If
+		
+		Local commas:String
+		For Local i:Int = 1 Until dims
+			commas :+ ","
+		Next
+		Local t:TTypeId = New TTypeId.Init(_name + "[" + commas + "]", ArrayTypeId._size, bbRefArrayClass())
+		t._elementType = Self
+		t._dimensions = dims
+		If _super Then
+			t._super = _super.ArrayType()
+		Else
+			t._super = ArrayTypeId
+		End If
+		_arrayTypes[dims] = t
+		Return t
 	End Method
-
+	
 	Rem
 	bbdoc: Get element type
 	End Rem
 	Method ElementType:TTypeId()
+		If Not _elementType Then Throw "Type ID is not an array or pointer type"
 		Return _elementType
 	End Method
-
+	
 	Rem
-	bbdoc: Get pointer type
+	bbdoc: Get number of array dimensions
+	End Rem
+	Method Dimensions:Int()
+		If (Not _elementType) Or (Not _class) Throw "Type ID is not an array type"
+		Return _dimensions
+	End Method
+	
+	Rem
+	bbdoc: Get pointer type with this element type
 	End Rem
 	Method PointerType:TTypeId()
+		' TODO: thread safety
 		If Not _pointerType Then
-?Not ptr64
-			_pointerType = New TTypeId.Init( _name + " Ptr", 4)
-?ptr64
-			_pointerType = New TTypeId.Init( _name + " Ptr", 8)
-?
-			_pointerType._elementType = Self
+			Local t:TTypeId = New TTypeId.Init(_name + " Ptr", PointerTypeId._size)
+			t._elementType = Self
 			If _super Then
-				_pointerType._super = _super.PointerType()
+				t._super = _super.PointerType()
 			Else
-				_pointerType._super = PointerTypeId
+				t._super = PointerTypeId
 			EndIf
+			_pointerType = t
 		EndIf
 		Return _pointerType
 	End Method
-
+	
 	Rem
-	bbdoc: Get function pointer type
+	bbdoc: Get function type with this return type
 	End Rem
-	Method FunctionType:TTypeId( args:TTypeId[]=Null)
-		If Not _functionType Then
-			Local s:String
-			For Local t:TTypeId = EachIn args
-				If s Then s :+ ","
-				s :+ t.Name()
+	Method FunctionType:TTypeId(argTypes:TTypeId[] = Null)
+		' TODO: thread safety
+		If _functionTypes.Length <= argTypes.Length Then
+			_functionTypes = _functionTypes[..argTypes.Length + 1]
+		Else If _functionTypes[argTypes.Length] Then
+			#FindFunctionType
+			For Local t:TTypeId = EachIn _functionTypes[argTypes.Length]
+				For Local a:Int = 0 Until argTypes.Length
+					If t._argTypes[a] <> argTypes[a] Then Continue FindFunctionType
+				Next
+				Return t
 			Next
-?Not ptr64
-			_functionType = New TTypeId.Init( _name + "(" + s + ")", 4)
-?ptr64
-			_functionType = New TTypeId.Init( _name + "(" + s + ")", 8)
-?
-			_functionType._retType = Self
-			_functionType._argTypes = args
-			If _super Then
-				_functionType._super = _super.FunctionType()
-			Else
-				_functionType._super = FunctionTypeId
-			EndIf
-		EndIf
-		Return _functionType
+		End If
+		
+		Local argsStr:String
+		For Local arg:TTypeId = EachIn argTypes
+			If argsStr Then argsStr :+ ", "
+			argsStr :+ arg.Name()
+		Next
+		Local t:TTypeId = New TTypeId.Init(_name + "(" + argsStr + ")", FunctionTypeId._size)
+		t._retType = Self
+		t._argTypes = argTypes
+		'If _super Then
+		'	t._super = _super.FunctionType(argTypes)
+		'Else
+			t._super = FunctionTypeId
+		'EndIf
+		If Not _functionTypes[argTypes.Length] Then _functionTypes[argTypes.Length] = New TList
+		_functionTypes[argTypes.Length].AddLast t
+		Return t
 	End Method
-
+	
 	Rem
 	bbdoc: Get function return type
 	End Rem
 	Method ReturnType:TTypeId()
-		If Not _retType Then Throw "TypeID is not a function type"
+		If Not _retType Then Throw "Type ID is not a function type"
 		Return _retType
 	End Method
-
+		
 	Rem
 	bbdoc: Get function argument types
 	End Rem
 	Method ArgTypes:TTypeId[]()
-		If Not _retType Then Throw "TypeID is not a function type"
+		If Not _retType Then Throw "Type ID is not a function type"
 		Return _argTypes
-	End Method
-
+	End Method		
+	
 	Rem
-	bbdoc: Determine if type extends a type
+	bbdoc: Determine if this type extends, implements, or equals another type
 	End Rem
-	Method ExtendsType( typeId:TTypeId )
-		If Self=typeId Return True
-		If _super Return _super.ExtendsType( typeId )
+	Method ExtendsType:Int(typeId:TTypeId)
+		If Self = typeId Then Return True
+		If _interfaces Then
+			For Local ifc:TTypeId = EachIn _interfaces
+				If ifc = typeId Then Return True
+			Next
+		End If
+		Local superType:TTypeId = _super
+		While superType
+			If superType = typeId Then Return True
+			superType = superType._super
+		Wend
+		Return False
 	End Method
-
+	
 	Rem
 	bbdoc: Get list of derived types
 	End Rem
-	Method DerivedTypes:TList()
-		If Not _derived _derived=New TList
-		Return _derived
+	Method DerivedTypes:TList(list:TList = Null)
+		If Not list Then list = New TList
+		If _derived Then
+			For Local d:TTypeId = EachIn _derived
+				list.AddLast d
+			Next
+		End If
+		Return list
 	End Method
 
 	Rem
 	bbdoc: Create a new object
-	End Rem
+	about: Creates a new instance of this type with the default constructor.
+	Can be used to create objects and struct instances.
+	This method can not be used on array type IDs. To create an array, use @NewArray instead.
+	End Rem	
 	Method NewObject:Object()
-		If Not _class Throw "Unable to create new object"
-		If _interface Throw "Unable to create object from interface"
-		Return bbObjectNew( _class )
+		If _struct Then
+			Return NewObject(_defaultConstructor, Null)
+		Else
+			If Not _class Then Throw "Unable to create instance of this type"
+			If _interface Then Throw "Unable to create instance from interface"
+			If _elementType Then Throw "Unable to create array this way"
+			Return bbObjectNew(_class)
+		End If
 	End Method
-
+	
 	Rem
-	bbdoc: Returns True if this TypeId is an interface.
+	bbdoc: Create a new object with the given constructor
+	about: Creates a new instance of this type by calling @constructor, which must be one of the constructors for this type.
+	To get a list of available constructors, use FindMethods("New").
+	Can be used to create objects and struct instances.
+	This method can not be used on array type IDs. To create an array, use @NewArray instead.<br>
+	End Rem	
+	Method NewObject:Object(constructor:TMethod, args:Object[])
+		If _struct Then
+			Local box:TBoxedStruct = New TBoxedStruct(Self)
+			constructor.Invoke box, args
+			Return box
+		Else
+			If Not _class Then Throw "Unable to create instance of this type"
+			If _interface Then Throw "Unable to create instance from interface"
+			If _elementType Then Throw "Unable to create array this way"
+			' make sure we were actually given a constructor for this class
+			If Not constructor Then Throw "Constructor is Null"
+			If Not _constructors.Contains(constructor) Then Throw "Method is not a constructor of this type"
+			Local o:Object = bbObjectNewNC(_class)
+			constructor.Invoke o, args
+			Return o
+		End If
+	End Method
+	
+	Rem
+	bbdoc: Create an object from a struct instance
+	about: @structPtr must be a pointer to an instance of the struct type referred to be this type ID.
+	returns: A copy of the struct instance, wrapped in an object.
+	End Rem
+	Method StructToObject:Object(structPtr:Byte Ptr)
+		If Not _struct Then Throw "Type ID is not a struct type"
+		Return New TBoxedStruct(Self, structPtr)
+	End Method
+	
+	Rem
+	bbdoc: Retrieve a struct instance from an object
+	about: @targetPtr must be a pointer to a variable of, and @obj contain an instance of, the struct type referred to be this type ID.
+	returns: A copy of the struct instance, wrapped in an object.
+	End Rem
+	Method StructFromObject(targetPtr:Byte Ptr, obj:Object)
+		If Not _struct Then Throw "Type ID is not a struct type"
+		Local box:TBoxedStruct = TBoxedStruct(obj)
+		If Not box Then Throw "Object does not contain a struct instance"
+		If box.typeId <> Self Then Throw "Struct instance in object does not match type ID"
+		box.Unbox targetPtr
+	End Method
+	
+	Rem
+	bbdoc: Determine if this TypeId represents a class.
+	End Rem
+	Method IsClass:Int()
+		Return _class <> Null And _interface = Null
+	End Method
+	
+	Rem
+	bbdoc: Determine if this TypeId represents an interface.
 	End Rem
 	Method IsInterface:Int()
 		Return _interface <> Null
 	End Method
-
+	
+	Rem
+	bbdoc: Determine if this TypeId represents a struct.
+	End Rem
+	Method IsStruct:Int()
+		Return _struct <> Null
+	End Method
+	
 	Rem
 	bbdoc: Get list of constants
 	about: Only returns constants declared in this type, not in super types.
 	End Rem
-	Method Constants:TStringMap()
-		Return _consts
-	End Method
-
+	Method Constants:TList(list:TList = Null)
+		If Not list Then list = New TList
+		
+		For Local cons:TConstant = EachIn _consts
+			list.AddLast cons
+		Next
+		
+		Return list
+	End Method	
+	
 	Rem
 	bbdoc: Get list of fields
 	about: Only returns fields declared in this type, not in super types.
 	End Rem
-	Method Fields:TStringMap()
-		Return _fields
+	Method Fields:TList(list:TList = Null)
+		If Not list Then list = New TList
+		
+		For Local fld:TField = EachIn _fields
+			list.AddLast fld
+		Next
+		
+		Return list
 	End Method
-
+	
 	Rem
 	bbdoc: Get list of globals
 	about: Only returns globals declared in this type, not in super types.
 	End Rem
-	Method Globals:TStringMap()
-		Return _globals
+	Method Globals:TList(list:TList = Null)
+		If Not list Then list = New TList
+		
+		For Local glob:TGlobal = EachIn _globals
+			list.AddLast glob
+		Next
+		
+		Return list
 	End Method
 
 	Rem
 	bbdoc: Get list of functions
 	about: Only returns functions declared in this type, not in super types.
 	EndRem
-	Method Functions:TStringMap()
-		Return _functions
-	End Method
-
+	Method Functions:TList(list:TList = Null)
+		If Not list Then list = New TList
+		
+		For Local func:TFunction = EachIn _functions
+			list.AddLast func
+		Next
+		
+		Return list
+	End Method	
+	
 	Rem
 	bbdoc: Get list of methods
 	about: Only returns methods declared in this type, not in super types.
 	End Rem
-	Method Methods:TStringMap()
-		Return _methods
+	Method Methods:TList(list:TList = Null)
+		If Not list Then list = New TList
+		
+		For Local meth:TMethod = EachIn _methods
+			list.AddLast meth
+		Next
+		
+		Return list
 	End Method
-
-	Rem
-	bbdoc: Get list of implemented interfaces.
-	End Rem
-	Method Interfaces:TList()
-		Return _interfaces
-	End Method
-
+	
 	Rem
 	bbdoc: Find a constant by name
-	about: Searchs type hierarchy for constant called @name.
+	about: Searches type hierarchy for a constant called @name.
 	End Rem
-	Method FindConstant:TConstant( name$ )
-		name=name.ToLower()
-		Local t:TConstant = TConstant(_consts.ValueForKey(name))
-		If t Return t
-'		For Local t:TConstant=EachIn _consts
-'			If t.NameLower()=name Return t
-'		Next
-		If _super Return _super.FindConstant( name )
-	End Method
-
+	Method FindConstant:TConstant(name:String)
+		name = name.ToLower()
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local cons:TConstant = EachIn _consts
+				If cons.Name().ToLower() = name Then Return cons
+			Next
+		Next
+	End Method	
+	
 	Rem
 	bbdoc: Find a field by name
-	about: Searchs type hierarchy for field called @name.
+	about: Searches type hierarchy for a field called @name.
 	End Rem
-	Method FindField:TField( name$ )
-		name=name.ToLower()
-		Local t:TField = TField(_fields.ValueForKey(name))
-		If t Then Return t
-		If _super Return _super.FindField( name )
+	Method FindField:TField(name:String)
+		name = name.ToLower()
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local fld:TField = EachIn _fields
+				If fld.Name().ToLower() = name Then Return fld
+			Next
+		Next
 	End Method
-
+	
 	Rem
 	bbdoc: Find a global by name
-	about: Searchs type hierarchy for global called @name.
+	about: Searches type hierarchy for a global called @name.
 	End Rem
-	Method FindGlobal:TGlobal( name$ )
-		name=name.ToLower()
-		Local t:TGlobal = TGlobal(_globals.ValueForKey(name))
-		If t Then Return t
-		If _super Return _super.FindGlobal( name )
+	Method FindGlobal:TGlobal(name:String)
+		name = name.ToLower()
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local glob:TGlobal = EachIn _globals
+				If glob.Name().ToLower() = name Then Return glob
+			Next
+		Next
 	End Method
-
+	
 	Rem
 	bbdoc: Find a function by name
-	about: Searches type heirarchy for function called @name
-	endrem
+	about: Searches type hierarchy for a function called @name.<br>
+	If the function is overloaded, the first overload declared in the most derived type will be returned.
+	End Rem
 	Method FindFunction:TFunction(name:String)
 		name = name.ToLower()
-		Local t:TFunction = TFunction(_functions.ValueForKey(name))
-		If t Then Return t
-		If _super Return _super.FindFunction(name)
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local func:TFunction = EachIn _functions
+				If func.Name().ToLower() = name Then Return func
+			Next
+		Next
 	End Method
-
+	
+	Rem
+	bbdoc: Find a specific overload of a function by name and parameter list
+	about: Searches type hierarchy for a function called @name with the specified argument types.<br>
+	This can be used to find a specific overload of a function.
+	End Rem
+	Method FindFunction:TFunction(name:String, argTypes:TTypeId[])
+		name = name.ToLower()
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local func:TFunction = EachIn _functions
+				If func.Name().ToLower() = name And TypeListsIdentical(func.ArgTypes(), argTypes) Then Return func
+			Next
+		Next
+	End Method
+	
+	Rem
+	bbdoc: Find all overloads of a function by name
+	about: Searches type hierarchy for a function called @name.<br>
+	Same as @FindFunction, except it returns all overloads of the function.<br>
+	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
+	End Rem
+	Method FindFunctions:TList(name:String, list:TList = Null)
+		name = name.ToLower()
+		If Not list Then list = New TList
+		
+		' list might be non-empty => retrieve the last link
+		Local initialLastLink:TLink = list.LastLink()
+		If Not initialLastLink Then initialLastLink = list._head
+		
+		' add the functions
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			AddFunctionsToList tid, list, initialLastLink, name
+		Next
+		
+		Return list
+	End Method
+	
 	Rem
 	bbdoc: Find a method by name
-	about: Searchs type hierarchy for method called @name.
+	about: Searches type hierarchy for a method called @name.<br>
+	If the method is overloaded, the first overload declared in the most derived type will be returned.
 	End Rem
-	Method FindMethod:TMethod( name$ )
-		name=name.ToLower()
-		Local t:TMethod = TMethod(_methods.ValueForKey(name))
-		If t Then Return t
-		If _super Return _super.FindMethod( name )
+	Method FindMethod:TMethod(name:String)
+		name = name.ToLower()
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local meth:TMethod = EachIn _methods
+				If meth.Name().ToLower() = name Then Return meth
+			Next
+		Next
+		Return Null
 	End Method
-
+	
+	Rem
+	bbdoc: Find a specific overload of a method by name and parameter list
+	about: Searches type hierarchy for a method called @name with the specified argument types.<br>
+	This can be used to find a specific overload of a method.
+	End Rem
+	Method FindMethod:TMethod(name:String, argTypes:TTypeId[])
+		name = name.ToLower()
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			For Local meth:TMethod = EachIn _methods
+				If meth.Name().ToLower() = name And TypeListsIdentical(meth.ArgTypes(), argTypes) Then Return meth
+			Next
+		Next
+		Return Null
+	End Method
+	
+	Rem
+	bbdoc: Find all overloads of a method by name
+	about: Searches type hierarchy for a method called @name.<br>
+	Same as @FindMethod, except it returns all overloads of the method.<br>
+	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
+	End Rem
+	Method FindMethods:TList(name:String, list:TList = Null)
+		name = name.ToLower()
+		If Not list Then list = New TList
+		
+		' list might be non-empty => retrieve the last link
+		Local initialLastLink:TLink = list.LastLink()
+		If Not initialLastLink Then initialLastLink = list._head
+		
+		' add the methods
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			AddMethodsToList tid, list, initialLastLink, name
+		Next
+		
+		Return list
+	End Method
+	
 	Rem
 	bbdoc: Enumerate all constants
-	about: Returns a list of all constants in type hierarchy
+	about: Returns a list of all constants in type hierarchy.<br>
+	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
 	End Rem
-	Method EnumConstants:TList( list:TList=Null )
-		If Not list list=New TList
-		If _super _super.EnumConstants list
-		For Local t:TConstant=EachIn _constsList '.Values()
-			list.AddLast t
+	Method EnumConstants:TList(list:TList = Null)
+		If Not list Then list = New TList
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy()
+			For Local cons:TConstant = EachIn _consts
+				list.AddLast cons
+			Next
 		Next
+		
 		Return list
 	End Method
-
+	
 	Rem
 	bbdoc: Enumerate all fields
-	about: Returns a list of all fields in type hierarchy
+	about: Returns a list of all fields in type hierarchy.<br>
+	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
 	End Rem
-	Method EnumFields:TList( list:TList=Null )
-		If Not list list=New TList
-		If _super _super.EnumFields list
-		For Local t:TField=EachIn _fieldsList '.Values()
-			list.AddLast t
+	Method EnumFields:TList(list:TList = Null)
+		If Not list Then list = New TList
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy()
+			For Local fld:TField = EachIn _fields
+				list.AddLast fld
+			Next
 		Next
+		
 		Return list
 	End Method
-
+	
 	Rem
 	bbdoc: Enumerate all globals
-	about: Returns a list of all globals in type hierarchy
+	about: Returns a list of all globals in type hierarchy.<br>
+	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
 	End Rem
-	Method EnumGlobals:TList( list:TList=Null )
-		If Not list list=New TList
-		If _super _super.EnumGlobals list
-		For Local t:TField=EachIn _globalsList '.Values()
-			list.AddLast t
+	Method EnumGlobals:TList(list:TList = Null)
+		If Not list Then list = New TList
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy()
+			For Local glob:TGlobal = EachIn _globals
+				list.AddLast glob
+			Next
 		Next
+		
 		Return list
 	End Method
-
+	
 	Rem
 	bbdoc: Enumerate all functions
-	about: Returns a list of all functions in type hierarchy
+	about: Returns a list of all functions in type hierarchy, excluding ones that have been overridden.<br>
+	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
 	End Rem
-	Method EnumFunctions:TList( list:TList=Null )
-		Function compareFunction:Int( a:Object, b:Object)
-			If TFunction(a) And TFunction(b) Then
-				Return TFunction(a).Name().Compare(TFunction(b).Name())
-			End If
-		EndFunction
-
-		If Not list list=New TList
-		If _super And _super <> Self Then _super.EnumFunctions list
-		For Local t:TFunction=EachIn _functionsList '.Values()
-			list.AddLast t
+	Method EnumFunctions:TList(list:TList = Null)
+		If Not list Then list = New TList
+		
+		' list might be non-empty => retrieve the last link
+		Local initialLastLink:TLink = list.LastLink()
+		If Not initialLastLink Then initialLastLink = list._head
+		
+		' add the functions
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			AddFunctionsToList tid, list, initialLastLink
 		Next
-
-		' remove overridden functions
-		list.Sort( True, compareFunction)
-		Local prev:TFunction
-		For Local t:TFunction = EachIn list
-			If prev Then
-				If (t.Name().Compare(prev.Name())) = 0 Then list.Remove(prev)
-			EndIf
-			prev = t
-		Next
-
+		
 		Return list
 	End Method
-
+	
 	Rem
 	bbdoc: Enumerate all methods
-	about: Returns a list of all methods in type hierarchy - TO DO: handle overrides!
+	about: Returns a list of all methods in type hierarchy, excluding ones that have been overridden. Does not include unimplemented methods from interfaces implemented by this type.<br>
+	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
 	End Rem
-	Method EnumMethods:TList( list:TList=Null )
-		If Not list list=New TList
-		If _super _super.EnumMethods list
-		For Local t:TMethod=EachIn _methodsList '.Values()
-			list.AddLast t
+	Method EnumMethods:TList(list:TList = Null)
+		If Not list Then list = New TList
+		
+		' list might be non-empty => retrieve the last link
+		Local initialLastLink:TLink = list.LastLink()
+		If Not initialLastLink Then initialLastLink = list._head
+		
+		' add the methods
+		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
+			AddMethodsToList tid, list, initialLastLink
 		Next
+		
 		Return list
 	End Method
-
+	
 	Rem
 	bbdoc: Create a new array
+	about: This method should only be called on an array type ID.<br>
+	If @dims is not specified, this method will create a one-dimensional array with @length elements.
+	Otherwise, @length is ignored and a new array with dimensions as specified by @dims is created.
 	End Rem
-	Method NewArray:Object( length, dims:Int[] = Null )
-		If Not _elementType Throw "TypeID is not an array type"
-		Local tag:Byte Ptr=_elementType._typeTag
+	Method NewArray:Object(length:Int = 0, dims:Int[] = Null)
+		If Self = ArrayTypeId Then Throw "Unable to create array of " + Name() + " type"
+		If (Not _elementType) Or (Not _class) Throw "TypeID is not an array type"
+		Local tag:Byte Ptr = _elementType._typeTag
 		If Not tag
-			tag=TypeTagForId( _elementType ).ToCString()
-			_elementType._typeTag=tag
+			tag = TypeTagForId(_elementType).ToCString()
+			_elementType._typeTag = tag
 		EndIf
 		If Not dims Then
-			Return bbArrayNew1D( tag,length )
+			If _dimensions <> 1 Then Throw "Array dimensions do not match type"
+			Return bbArrayNew1D(tag, length)
 		Else
-			Return bbRefArrayCreate( tag, dims )
+			If _dimensions <> dims.Length Then Throw "Array dimensions do not match type"
+			Return bbRefArrayCreate(tag, dims)
 		End If
 	End Method
-
+	
 	Rem
-	bbdoc: Get array length
+	bbdoc: Get length of an array
 	End Rem
-	Method ArrayLength( _array:Object, dim:Int = 0 )
-		If Not _elementType Throw "TypeID is not an array type"
-		Return bbRefArrayLength( _array, dim )
-	End Method
-
+	Function ArrayLength:Int(_array:Object, dim:Int = 0)
+		Return bbRefArrayLength(_array, dim)
+	End Function
+	
 	Rem
-	bbdoc: Get the number of dimensions
+	bbdoc: Get the number of dimensions of an array
 	End Rem
-	Method ArrayDimensions:Int( _array:Object )
-		If Not _elementType Throw "TypeID is not an array type"
-		Return bbRefArrayDimensions( _array )
-	End Method
-
+	Function ArrayDimensions:Int(_array:Object)
+		Return bbRefArrayDimensions(_array)
+	End Function
+	
 	Rem
 	bbdoc: Get an array element
+	about: This method should only be called on the type ID corresponding to the type of the array.
 	End Rem
-	Method GetArrayElement:Object( _array:Object,index )
-		If Not _elementType Throw "TypeID is not an array type"
-		Local p:Byte Ptr=bbRefArrayElementPtr( _elementType._size,_array,index )
-		Return _Get( p,_elementType )
+	Method GetArrayElement:Object(_array:Object, index:Int)
+		If (Not _elementType) Or (Not _class) Throw "Type ID is not an array type"
+		Local p:Byte Ptr = bbRefArrayElementPtr(Size_T _elementType._size, _array, index)
+		Return _Get(p, _elementType)
 	End Method
-
+	
 	Rem
 	bbdoc: Set an array element
+	about: This method should only be called on the type ID corresponding to the type of the array.
 	End Rem
-	Method SetArrayElement( _array:Object,index,value:Object )
-		If Not _elementType Throw "TypeID is not an array type"
-		Local p:Byte Ptr=bbRefArrayElementPtr( _elementType._size,_array,index )
-		_Assign p,_elementType,value
+	Method SetArrayElement(_array:Object, index:Int, value:Object)
+		If (Not _elementType) Or (Not _class) Throw "Type ID is not an array type"
+		Local p:Byte Ptr = bbRefArrayElementPtr(Size_T _elementType._size, _array, index)
+		_Assign p, _elementType, value
 	End Method
-
+	
 	Rem
-	bbdoc: Get Type by name
+	bbdoc: Size of the type in bytes
+	about: For reference types, such as classes and interfaces, this function will return the size of the reference (equal to the size of PointerTypeId), not that of the underlying type.
 	End Rem
-	Function ForName:TTypeId( name$ )
+	Method Size:Int()
+		Return _size
+	End Method
+	
+	Rem
+	bbdoc: Get type by name
+	End Rem
+	Function ForName:TTypeId(name:String)
 		_Update
-		If name.EndsWith( "]" )
-			' TODO
-			name=name[..name.length-2]
-			Return TTypeId( _nameMap.ValueForKey( name.ToLower() ) ).ArrayType()
-		' pointers
-		ElseIf name.EndsWith( "Ptr" )
-			name=name[..name.length-4].Trim()
-			If Not name Then Return Null
-			Local baseType:TTypeId = ForName( name )
-			If baseType Then
+		Return ForName_(name.ToLower())
+		
+		Function ForName_:TTypeId(name:String)
+			name = name.Trim()
+			If Not name Then
+				Return VoidTypeId
+			Else If name.EndsWith("]")
+				Local b:Int = name.FindLast("[")
+				Local sp:String[] = name[b + 1..name.Length - 1].Split(", ")
+				For Local s:String = EachIn sp
+					If s.Trim() Then Return Null
+				Next
+				Local baseType:TTypeId = ForName_(name[..b])
+				' check for valid array base types
+				If baseType And Not (baseType = ArrayTypeId Or baseType = VoidTypeId Or baseType = FunctionTypeId Or baseType = PointerTypeId) Then
+					Return baseType.ArrayType(sp.Length)
+				Else
+					Return Null
+				End If
+			' pointers
+			Else If name.EndsWith("ptr")
+				Local baseType:TTypeId = ForName_(name[..name.length-4])
 				' check for valid pointer base types
-				Select baseType
-					Case ByteTypeId, ShortTypeId, IntTypeId, LongTypeId, FloatTypeId, DoubleTypeId
-						Return baseType.PointerType()
-					Default
-						If baseType.ExtendsType(PointerTypeId) Then Return baseType.PointerType()
-				EndSelect
-			EndIf
-			Return Null
-		' function pointers
-		ElseIf name.EndsWith( ")" )
-			' check if its in the table already
-			Local t:TTypeId = TTypeId( _nameMap.ValueForKey( name.ToLower() ) )
-			If t Then Return t
-			Local i:Int = name.Find("(")
-			Local ret:TTypeId = ForName( name[..i].Trim())
-			Local typs:TTypeId[]
-			If ret Then
-				Local params:String = name[i+1..name.Length-1].Trim()
-				If params Then
-					Local args:String[] = params.Split(",")
-					If args.Length >= 1 And args[0] Then
-						typs = New TTypeId[args.Length]
-						For Local i:Int = 0 Until args.Length
-							typs[i] = ForName(args[i].Trim())
-							If Not typs[i] Then typs[i] = ObjectTypeId
+				If baseType And Not (baseType._class Or baseType = VoidTypeId Or baseType = FunctionTypeId Or baseType = PointerTypeId) Then
+					Return baseType.PointerType()
+				Else
+					Return Null
+				End If
+			' function pointers
+			Else If name.EndsWith(")")
+				Local i:Int
+				Local depth:Int = 1
+				For i = name.Length - 2 To 0 Step -1
+					Select name[i]
+						Case ")"[0] depth :+ 1 
+						Case "("[0] depth :- 1
+					End Select
+					If depth = 0 Then Exit
+				Next
+				If depth <> 0 Then Return Null ' unbalanced parentheses
+				
+				Local retStr:String = name[..i]
+				Local returnType:TTypeId
+				If Not retStr.Trim() Then returnType = VoidTypeId Else returnType = ForName_(retStr)
+				If returnType Then
+					Local argListStr:String = name[i + 1..name.Length - 1].Trim()
+					If argListStr Then
+						' split parameter list
+						Local argsStr:String[]' = argListStr.Split(", ")
+						Local depthP:Int = 0
+						Local depthB:Int = 0
+						Local i:Int = 0
+						For Local j:Int = 0 Until argListStr.Length
+							Select argListStr[j]
+								Case "("[0] depthP :+ 1
+								Case ")"[0] depthP :- 1
+								Case "["[0] depthB :+ 1
+								Case "]"[0] depthB :- 1
+								Case ", "[0] If depthP = 0 And depthB = 0 Then argsStr :+ [argListStr[i..j]]; i = j + 1
+							End Select
 						Next
-					EndIf
+						If depthP <> 0 Or depthB <> 0 Then Return Null ' unbalanced parentheses
+						argsStr :+ [argListStr[i..]]
+						
+						Local argTypes:TTypeId[argsStr.Length]
+						For Local a:Int = 0 Until argsStr.Length
+							argTypes[a] = ForName_(argsStr[a])
+							If Not argTypes[a] Then Return Null
+						Next
+						
+						'returnType._functionType = Null
+						Return returnType.FunctionType(argTypes)
+					Else
+						Return returnType.FunctionType(Null)
+					End If
+				Else 
+					Return Null
 				EndIf
-				ret._functionType = Null
-				Return ret.FunctionType(typs)
+			Else
+				Return TTypeId(_nameMap.ValueForKey(name))
 			EndIf
-		Else
-			Return TTypeId( _nameMap.ValueForKey( name.ToLower() ) )
-		EndIf
+		End Function
 	End Function
-
+	
 	Rem
-	bbdoc: Get Type by object
-	End Rem
-	Function ForObject:TTypeId( obj:Object )
+	bbdoc: Get type by object
+	End Rem	
+	Function ForObject:TTypeId(obj:Object)
 		_Update
-		Local class:Byte Ptr=bbRefGetObjectClass( obj )
-		If class=ArrayTypeId._class
-			If Not bbRefArrayLength( obj ) Return ArrayTypeId
-			Return TypeIdForTag( bbRefArrayTypeTag( obj ) ).ArrayType()
+		Local box:TBoxedStruct = TBoxedStruct(obj)
+		If box Then Return box.typeId
+		Local class:Byte Ptr = bbRefGetObjectClass(obj)
+		If class = ArrayTypeId._class
+			If Not bbRefArrayLength(obj) Return ArrayTypeId
+			Return TypeIdForTag(bbRefArrayTypeTag(obj)).ArrayType(bbRefArrayDimensions(obj))
 		Else
-			Return TTypeId( _classMap.ValueForKey( class ) )
+			Return TTypeId(_classMap.ValueForKey(class))
 		EndIf
 	End Function
-
+	
 	Rem
-	bbdoc: Get list of all types
+	bbdoc: Get list of all data types currently used in this program
 	End Rem
 	Function EnumTypes:TList()
 		_Update
-		Local list:TList=New TList
-		For Local t:TTypeId=EachIn _nameMap.Values()
+		Local list:TList = New TList
+		For Local t:TTypeId = EachIn _nameMap.Values()
 			list.AddLast t
 		Next
 		Return list
 	End Function
-
+	
 	Rem
-	bbdoc: Gets a list of all interfaces
+	bbdoc: Get a list of all class types
+	about: Does not include array types.
+	End Rem
+	Function EnumClasses:TList()
+		_Update
+		Local list:TList = New TList
+		For Local t:TTypeId = EachIn _classMap.Values()
+			If t._super = ArrayTypeId Then Continue	' filter out Object[]
+			list.AddFirst t
+		Next
+		Return list
+	End Function
+	
+	Rem
+	bbdoc: Get a list of all interface types
 	End Rem
 	Function EnumInterfaces:TList()
 		_Update
-		Local list:TList=New TList
-		For Local t:TTypeId=EachIn _interfaceMap.Values()
-			list.AddLast t
+		Local list:TList = New TList
+		For Local t:TTypeId = EachIn _interfaceMap.Values()
+			list.AddFirst t
 		Next
 		Return list
 	End Function
-
-	'***** PRIVATE *****
-
-	Method Init:TTypeId( name$,size,class:Byte Ptr=Null,supor:TTypeId=Null )
-		_name=name
-		_size=size
-		_class=class
-		_super=supor
-		_consts=New TStringMap
-		_fields=New TStringMap
-		_globals=New TStringMap
-		_functions=New TStringMap
-		_methods=New TStringMap
-		_constsList=New TList
-		_fieldsList=New TList
-		_globalsList=New TList
-		_functionsList=New TList
-		_methodsList=New TList
-
-		_nameMap.Insert _name.ToLower(),Self
-		If class _classMap.Insert class,Self
+	
+	Rem
+	bbdoc: Get a list of all struct types
+	End Rem
+	Function EnumStructs:TList()
+		_Update
+		Local list:TList = New TList
+		For Local t:TTypeId = EachIn _structMap.Values()
+			list.AddFirst t
+		Next
+		Return list
+	End Function
+	
+	Private
+	
+	Method Init:TTypeId(name$, size:Int, class:Byte Ptr = Null, supor:TTypeId = Null)
+		_name = name
+		_size = size
+		_class = class
+		_super = supor
+		_consts = New TList
+		_fields = New TList
+		_globals = New TList
+		_functions = New TList
+		_methods = New TList
+		_nameMap.Insert _name.ToLower(), Self
+		If class _classMap.Insert class, Self
 		Return Self
 	End Method
-
-	Method SetClass:TTypeId( class:Byte Ptr )
-		Local name$=String.FromCString( bbRefClassDebugScopeName(class) )
+	
+	Method InitClass:TTypeId(class:Byte Ptr) ' BBClass*
+		Local name$ = String.FromCString(bbRefClassDebugScopeName(class))
 		Local meta$
-		Local i=name.Find( "{" )
+		Local i% = name.Find("{")
 		If i<>-1
-			meta=name[i+1..name.length-1]
-			name=name[..i]
+			meta = name[i+1..name.length-1]
+			name = name[..i]
 		EndIf
-		_name=name
-		_meta=meta
-		_class=class
-		_nameMap.Insert _name.ToLower(),Self
-		_classMap.Insert class,Self
+		_name = name
+		_meta = meta
+		_class = class
+		
+		_nameMap.Insert _name.ToLower(), Self
+		_classMap.Insert class, Self
 		Return Self
 	End Method
-
-	Method SetInterface:TTypeId( ifc:Byte Ptr )
+	
+	Method InitInterface:TTypeId(ifc:Byte Ptr) ' BBInterface*
 		Local name:String = String.FromCString(bbInterfaceName(ifc))
 		Local meta$
-		Local i=name.Find( "{" )
+		Local i% = name.Find("{")
 		If i<>-1
-			meta=name[i+1..name.length-1]
-			name=name[..i]
+			meta = name[i+1..name.length-1]
+			name = name[..i]
 		EndIf
-		_name=name
-		_meta=meta
-		_interface=ifc
-		_class=bbInterfaceClass(ifc)
-		_nameMap.Insert _name.ToLower(),Self
-		_interfaceMap.Insert ifc,Self
+		_name = name
+		_meta = meta
+		_interface = ifc
+		_class = bbInterfaceClass(ifc)
+		
+		_nameMap.Insert _name.ToLower(), Self
+		_interfaceMap.Insert ifc, Self
+		_interfaceClassMap.Insert _class, Self
 		Return Self
 	End Method
-
-	Function _Update()
-		Local count:Int
-?Not ptr64
-		Local p:Int Ptr Ptr=bbObjectRegisteredTypes( count )
-?ptr64
-		Local p:Long Ptr Ptr=bbObjectRegisteredTypes( count )
-?
-		If count=_count Return
-		Local list:TList=New TList
-		For Local i=_count Until count
-			Local ty:TTypeId=New TTypeId.SetClass( p[i] )
-			list.AddLast ty
-		Next
-		_count=count
-		_UpdateInterfaces()
-		For Local t:TTypeId=EachIn list
-			t._Resolve
-		Next
-	End Function
-
-	Function _UpdateInterfaces()
-		Local count:Int
-?Not ptr64
-		Local p:Int Ptr Ptr=bbObjectRegisteredInterfaces( count )
-?ptr64
-		Local p:Long Ptr Ptr=bbObjectRegisteredInterfaces( count )
-?
-		If count=_icount Return
-		Local list:TList=New TList
-		For Local i=_icount Until count
-			Local ty:TTypeId=New TTypeId.SetInterface( p[i] )
-			list.AddLast ty
-		Next
-		_icount=count
-		For Local t:TTypeId=EachIn list
-			t._Resolve
-		Next
-	End Function
-
-	Method _Resolve()
-		If _fields Or Not _class Return
-		_consts=New TStringMap
-		_fields=New TStringMap
-		_globals=New TStringMap
-		_functions=New TStringMap
-		_methods=New TStringMap
-		_constsList=New TList
-		_fieldsList=New TList
-		_globalsList=New TList
-		_functionsList=New TList
-		_methodsList=New TList
-		_interfaces=New TList
-
-		If Not _interface Then
-			_super=TTypeId( _classMap.ValueForKey(bbRefClassSuper(_class)))
-		End If
-		If Not _super _super=ObjectTypeId
-		If Not _super._derived _super._derived=New TList
-		_super._derived.AddLast Self
-
-		Local p:Byte Ptr = bbRefClassDebugDecl(_class)
-
+	
+	Method InitStruct:TTypeId(scope:Byte Ptr) ' BBDebugScope*
+		Local name:String = String.FromCString(bbDebugScopeName(scope))
+		Local meta$
+		Local i% = name.Find("{")
+		If i<>-1
+			meta = name[i+1..name.length-1]
+			name = name[..i]
+		EndIf
+		_name = name
+		_meta = meta
+		_struct = scope
+		
+		Local p:Byte Ptr = bbDebugScopeDecl(scope)
 		While bbDebugDeclKind(p)
-			Local id$=String.FromCString( bbDebugDeclName(p) )
-			Local ty$=String.FromCString( bbDebugDeclType(p) )
+			p = bbDebugDeclNext(p)
+		Wend
+		_size = bbDebugDeclStructSize(p)
+		
+		_nameMap.Insert _name.ToLower(), Self
+		_structMap.Insert scope, Self
+		Return Self
+	End Method
+	
+	Function _Update()
+		Local ccount:Int
+		Local icount:Int
+		Local scount:Int
+		Local classArray    :Byte Ptr Ptr = bbObjectRegisteredTypes(ccount)      ' BBClass**
+		Local interfaceArray:Byte Ptr Ptr = bbObjectRegisteredInterfaces(icount) ' BBInterface**
+		Local structArray   :Byte Ptr Ptr = bbObjectRegisteredStructs(scount)    ' BBDebugScope**
+		If ccount = _ccount And icount = _icount And scount = _scount Then Return
+		
+		Local list:TList = New TList
+		For Local i:Int = _ccount Until ccount
+			list.AddLast New TTypeId.InitClass(classArray[i])
+		Next
+		For Local i:Int = _icount Until icount
+			list.AddLast New TTypeId.InitInterface(interfaceArray[i])
+		Next
+		For Local i:Int = _scount Until scount
+			list.AddLast New TTypeId.InitStruct(structArray[i])
+		Next
+		
+		_ccount = ccount
+		_icount = icount
+		_scount = scount
+		For Local t:TTypeId = EachIn list
+			t._Resolve
+		Next
+	End Function
+	
+	Method _Resolve()
+		If _fields Or ((Not _class) And (Not _struct)) Then Return
+		_consts = New TList
+		_fields = New TList
+		_globals = New TList
+		_functions = New TList
+		_methods = New TList
+		_constructors = New TList
+		_interfaces = New TList
+		
+		Local p:Byte Ptr
+		
+		If _struct Then
+			p = bbDebugScopeDecl(_struct)
+		Else
+			_super = TTypeId(_classMap.ValueForKey(bbRefClassSuper(_class)))
+			If Not _super Then _super = ObjectTypeId
+			If Not _super._derived Then _super._derived = New TList
+			_super._derived.AddLast Self
+			
+			p = bbRefClassDebugDecl(_class)
+		End If
+		
+		While bbDebugDeclKind(p)
+			Local id$ = String.FromCString(bbDebugDeclName(p))
+			Local ty$ = String.FromCString(bbDebugDeclType(p))
 			Local meta$
-			Local i=ty.Find( "{" )
+			Local modifierString$
+			Local i% = ty.Find("{")
 			If i<>-1
-				meta=ty[i+1..ty.length-1]
-				ty=ty[..i]
+				meta = ty[i+1..ty.length-1]
+				ty = ty[..i]
 			EndIf
-
+			i = ty.Find("|")
+			If i<>-1
+				modifierString = ty[i+1..ty.length]
+				ty = ty[..i]
+			EndIf
+			
 			Select bbDebugDeclKind(p)
-			Case 1	'const
-				Local tt:TTypeId = TypeIdFortag(ty)
-				If tt Then
-					Local t:TConstant = New TConstant.Init( id, tt, meta, bbDebugDeclConstValue(p))
-					_constsList.AddLast(t)
-					_consts.Insert(t.NameLower(), t)
-				EndIf
-			Case 3	'field
-				Local typeId:TTypeId=TypeIdForTag( ty )
-				If typeId Then
-					Local t:TField = New TField.Init( id,typeId,meta,bbDebugDeclFieldOffset(p) )
-					_fieldsList.AddLast(t)
-					_fields.Insert(t.NameLower(), t)
-				End If
-			Case 4	'global
-				Local typeId:TTypeId=TypeIdForTag( ty )
-				If typeId Then
-					Local t:TGlobal = New TGlobal.Init( id,typeId,meta, bbDebugDeclVarAddress(p) )
-					_globalsList.AddLast(t)
-					_globals.Insert(t.NameLower(), t)
-				End If
-			Case 6, 7	'method/function
-				Local t$[]=ty.Split( ")" )
-				Local retType:TTypeId=TypeIdForTag( t[1] )
-				If retType
-					Local argTypes:TTypeId[]
-					If t[0].length>1
-						Local i,b,q$=t[0][1..],args:TList=New TList
-						While i<q.length
-							Select q[i]
-							Case Asc( "," )
-								args.AddLast q[b..i]
-								i:+1
-								b=i
-							Case Asc( "[" )
-								i:+1
-								While i<q.length And q[i]=Asc(",")
-									i:+1
-								Wend
-							Default
-								i:+1
-							End Select
-						Wend
-						If b<q.length args.AddLast q[b..q.length]
-
-						argTypes=New TTypeId[args.Count()]
-
-						i=0
-						For Local arg$=EachIn args
-							argTypes[i]=TypeIdForTag( arg )
-							If Not argTypes[i] retType=Null
-							i:+1
-						Next
-					EndIf
-					If retType
-						If bbDebugDeclKind(p) = 6 Then ' method
-							Local t:TMethod = New TMethod.Init(id, TypeIdForTag(ty), meta, Self, bbDebugDeclVarAddress(p), argTypes)
-							_methodsList.AddLast(t)
-							_methods.Insert(t.NameLower(), t)
-						Else ' function
-							Local t:TFunction = New TFunction.Init(id, TypeIdForTag(ty), meta, Self, bbDebugDeclVarAddress(p), argTypes)
-							_functionsList.AddLast(t)
-							_functions.Insert(t.NameLower(), t)
+				Case 1 ' const
+					Local typeId:TTypeId = TypeIdForTag(ty)
+					If typeId Then _consts.AddLast New TConstant.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclConstValue(p))
+				Case 3 ' field
+					Local typeId:TTypeId = TypeIdForTag(ty)
+					If typeId Then _fields.AddLast New TField.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclFieldOffset(p))
+				Case 4 ' global
+					Local typeId:TTypeId = TypeIdForTag(ty)
+					If typeId Then _globals.AddLast New TGlobal.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclVarAddress(p))
+				Case 6 ' method
+					Local typeId:TTypeId = TypeIdForTag(ty)
+					If typeId Then
+						Local selfTypeId:TTypeId = Self
+						If selfTypeId.IsStruct() Then selfTypeId = selfTypeId.PointerType()
+						Local meth:TMethod = New TMethod.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclVarAddress(p), bbDebugDeclReflectionWrapper(p), selfTypeId)
+						_methods.AddLast meth
+						If id = "New" Then
+							_constructors.AddLast meth
+							If Not typeId._argTypes Then _defaultConstructor = meth
+						Else If id.ToLower() = "tostring" And typeId = StringTypeId.FunctionType() Then
+							_toString = meth._ref
 						End If
-					EndIf
-				EndIf
+					End If
+				Case 7 ' function
+					Local typeId:TTypeId = TypeIdForTag(ty)
+					If typeId Then
+						Local func:TFunction = New TFunction.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclVarAddress(p), bbDebugDeclReflectionWrapper(p))
+						_functions.AddLast func
+					End If
 			End Select
 			p = bbDebugDeclNext(p)
 		Wend
-		' implemented interfaces ?
-		Local impInt:Int = bbObjectImplementsInterfaces(_class)
-		If impInt Then
-			Local imps:Int = bbObjectImplementedCount(_class)
-			If imps > 0 Then
-				For Local i:Int = 0 Until imps
-					_interfaces.AddLast(_interfaceMap.ValueForKey(bbObjectImplementedInterface(_class, i)))
-				Next
+		
+		If Not _struct Then
+			' implemented interfaces ?
+			Local impInt:Int = bbObjectImplementsInterfaces(_class)
+			If impInt Then
+				Local imps:Int = bbObjectImplementedCount(_class)
+				If imps > 0 Then
+					For Local i:Int = 0 Until imps
+						_interfaces.AddLast(_interfaceMap.ValueForKey(bbObjectImplementedInterface(_class, i)))
+					Next
+				End If
 			End If
 		End If
 	End Method
-
-	Field _name$
-	Field _meta$
-	Field _class:Byte Ptr
-	Field _interface:Byte Ptr
-' default object size
-?Not ptr64
-	Field _size=4
-?ptr64
-	Field _size=8
-?
-	Field _consts:TStringMap
-	Field _fields:TStringMap
-	Field _globals:TStringMap
-	Field _functions:TStringMap
-	Field _methods:TStringMap
-	Field _constsList:TList
-	Field _fieldsList:TList
-	Field _globalsList:TList
-	Field _functionsList:TList
-	Field _methodsList:TList
+	
+	Field _class:Byte Ptr ' BBClass*
+	Field _interface:Byte Ptr ' BBInterface*
+	Field _struct:Byte Ptr ' BBDebugScope*
+	
+	Field _size:Int = SizeOf Byte Ptr Null ' size of the object reference, not the actual object
+	
+	Field _consts:TList
+	Field _fields:TList
+	Field _globals:TList
+	Field _functions:TList
+	Field _methods:TList
+	Field _constructors:TList
+	Field _defaultConstructor:TMethod
+	Field _toString:String(structPtr:Byte Ptr)
 	Field _interfaces:TList
 	Field _super:TTypeId
 	Field _derived:TList
-	Field _arrayType:TTypeId
-	Field _elementType:TTypeId
 	Field _typeTag:Byte Ptr
-
+	
+	Field _arrayTypes:TTypeId[]
 	Field _pointerType:TTypeId
-
-	Field _functionType:TTypeId
+	Field _functionTypes:TList[]
+	Field _elementType:TTypeId
+	Field _dimensions:Int
 	Field _argTypes:TTypeId[]
 	Field _retType:TTypeId
-
-	Global _count,_nameMap:TMap=New TMap,_classMap:TPtrMap=New TPtrMap
-	Global _icount:Int, _interfaceMap:TPtrMap=New TPtrMap
-
+	
+	Global _nameMap:TMap = New TMap
+	Global _ccount:Int, _classMap:TPtrMap = New TPtrMap
+	Global _icount:Int, _interfaceMap:TPtrMap = New TPtrMap, _interfaceClassMap:TPtrMap = New TPtrMap
+	Global _scount:Int, _structMap:TPtrMap = New TPtrMap
+	
 End Type
+
+
