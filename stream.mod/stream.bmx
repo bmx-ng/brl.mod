@@ -563,6 +563,10 @@ Type TStreamWrapper Extends TStream
 		_stream.WriteObject obj
 	End Method
 	
+	Method Delete()
+		_stream = Null
+	End Method
+
 End Type	
 
 Type TStreamStream Extends TStreamWrapper
