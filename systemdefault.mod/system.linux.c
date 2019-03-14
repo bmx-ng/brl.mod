@@ -101,9 +101,18 @@ void bbSystemShutdown(){
 //	XCloseDisplay(x_display);	causes crash with fltk canvas usage
 }
 
+void bbAppTerminate(int signum) {
+    bbSystemEmitEvent( BBEVENT_APPTERMINATE,&bbNullObject,0,0,0,0,&bbNullObject );
+}
+
 void bbSystemStartup(){
 	atexit( bbSystemShutdown );
-	
+
+	struct sigaction action;
+    memset(&action, 0, sizeof(struct sigaction));
+    action.sa_handler = bbAppTerminate;
+    sigaction(SIGTERM, &action, NULL);
+
 	XInitThreads();
 	
 	x_display=XOpenDisplay(0);
