@@ -84,7 +84,6 @@ void bbObjectCtor( BBObject *o ){
 }
 
 void bbObjectDtor( BBObject *o ){
-	o->clas=0;
 }
 
 BBString *bbObjectToString( BBObject *o ){
