@@ -79,6 +79,13 @@ Type TBase64
 						        -9,-9,-9,-9]
 	
 	Public
+
+	Rem
+	bbdoc: Encodes byte array data @source to a Base64 encoded String, starting at @offset.
+	End Rem
+	Function Encode:String(source:Byte[], offset:Int = 0, options:EBase64Options = EBase64Options.None)
+		Return Encode(source, source.length, offset, options)
+	End Function
 	
 	Rem
 	bbdoc: Encodes byte data @source to a Base64 encoded String, starting at @offset and of @length bytes.
