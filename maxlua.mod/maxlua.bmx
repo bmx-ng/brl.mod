@@ -76,7 +76,25 @@ Function Invoke( L:Byte Ptr )
 		Case StringTypeId
 			args[i]=lua_tostring( L,i+1 )
 		Default
-			args[i]=lua_unboxobject( L,i+1 )
+			If lua_isnil(L, i + 1)
+				'correctly pass null
+				args[i] = null
+			ElseIf lua_isuserdata(L, i + 1)
+				'got valid data to unbox
+				Local obj:object = lua_unboxobject(L, i + 1)
+				'invalid object
+				If not obj
+					Throw "MaxLua - Invoke(): "+meth.name()+"() got broken param #"+i+" (expected ~q"+tys[i].name()+"~q, got ~qNULL~q)."
+				'given param derives from requested param type
+				ElseIf TTypeID.ForObject(obj).ExtendsType(tys[i])
+					args[i] = obj
+				Else
+					Throw "MaxLua - Invoke(): "+meth.name()+"() got broken param #"+i+" (expected ~q"+tys[i].name()+"~q, got ~q"+TTypeID.ForObject(obj).name()+"~q)."
+				EndIf
+			Else
+				'something "non object" got passed
+				Throw "MaxLua - Invoke(): "+meth.name()+"() got broken param #"+i+" (expected ~q"+tys[i].name()+"~q)."
+			EndIf
 		End Select
 	Next
 	Local t:Object=meth.Invoke( obj,args )
