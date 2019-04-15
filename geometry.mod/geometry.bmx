@@ -67,49 +67,49 @@ Struct SVec2
 	End Method
 
 	Rem
-	bbdoc: Adds @b to the vector, returning the new vector.
+	bbdoc: Adds @b to the vector, returning a new vector.
 	End Rem
 	Method Operator+:SVec2(b:SVec2)
 		Return New SVec2(x + b.x, y + b.y)
 	End Method
 	
 	Rem
-	bbdoc: Subtracts @b from the vector, returning the new vector.
+	bbdoc: Subtracts @b from the vector, returning a new vector.
 	End Rem
 	Method Operator-:SVec2(b:SVec2)
 		Return New SVec2(x - b.x, y - b.y)
 	End Method
 	
 	Rem
-	bbdoc: Multiplies the vector by @b, returning the vectors.
+	bbdoc: Multiplies the vector by @b, returning a new vector.
 	End Rem
 	Method Operator*:SVec2(b:SVec2)
 		Return New SVec2(x * b.x, y * b.y)
 	End Method
 
 	Rem
-	bbdoc: Divides the vector by @b, returning the new vector.
+	bbdoc: Divides the vector by @b, returning a new vector.
 	End Rem
 	Method Operator/:SVec2(b:SVec2)
 		Return New SVec2(x / b.x, y / b.y)
 	End Method
 	
 	Rem
-	bbdoc: Returns the vector, negated.
+	bbdoc: Returns a new vector, negated.
 	End Rem
 	Method Operator-:SVec2()
 		Return New SVec2(-x, -y)
 	End Method
 
 	Rem
-	bbdoc: Scales the vector by @s, returning the new vector.
+	bbdoc: Scales the vector by @s, returning a new vector.
 	End Rem
 	Method Operator*:SVec2(s:Float)
 		Return New SVec2(x * s, y * s)
 	End Method
 
 	Rem
-	bbdoc: Divides the vector by @s, returning the new vector.
+	bbdoc: Divides the vector by @s, returning a new vector.
 	End Rem
 	Method Operator/:SVec2(s:Float)
 		Return New SVec2(x / s, y / s)
@@ -158,28 +158,28 @@ Struct SVec2
 	End Method
 	
 	Rem
-	bbdoc: Applies the 2x2 matrix @z to the vector, returning the new vector.
+	bbdoc: Applies the 2x2 matrix @z to the vector, returning a new vector.
 	End Rem
 	Method Apply:SVec2(z:SMat2)
 		Return New SVec2(z.a * x + z.c * y, z.b * x + z.d * y)
 	End Method
 
 	Rem
-	bbdoc: Applies the 3x3 matrix to the vector, returning the new vector.
+	bbdoc: Applies the 3x3 matrix to the vector, returning a new vector.
 	End Rem
 	Method Apply:SVec2(z:SMat3 Var)
 		Return New SVec2(z.a * x + z.d * y + z.g, z.b * x + z.e * y + z.h)
 	End Method
 
 	Rem
-	bbdoc: Applies the 4x4 matrix to the vector, returning the new vector.
+	bbdoc: Applies the 4x4 matrix to the vector, returning a new vector.
 	End Rem
 	Method Apply:SVec2(z:SMat4 Var)
 		Return New SVec2(z.a * x + z.e * y + z.m, z.b * x + z.f * y + z.n)
 	End Method
 	
 	Rem
-	bbdoc: Returns the vector clamped between the vectors @minv and @maxv.
+	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
 	End Rem
 	Method Clamp:SVec2(minv:SVec2, maxv:SVec2)
 		Return New SVec2(ClampF(x, minv.x, maxv.x), ClampF(y, minv.y, maxv.y))
@@ -209,7 +209,7 @@ Struct SVec2
 	End Method
 	
 	Rem
-	bbdoc: Returns the vector with a magnitude of 1.
+	bbdoc: Returns a vector with a magnitude of 1.
 	about: When normalized, a vector keeps the same direction but its length is 1.0.
 	End Rem
 	Method Normal:SVec2()
@@ -234,7 +234,7 @@ Struct SVec2
 	bbdoc: Returns the length of the vector.
 	End Rem
 	Method Length:Float()
-		Return Sqr(LengthSquared())
+		Return Float(Sqr(LengthSquared()))
 	End Method
 	
 	Rem
@@ -268,7 +268,7 @@ Struct SVec2
 	End Method
 	
 	Rem
-	bbdoc: Returns the vector reflected from the given plane, specified by its normal vector.
+	bbdoc: Returns a vector reflected from the given plane, specified by its normal vector.
 	End Rem
 	Method Reflect:SVec2(n:SVec2)
 		Return n * Dot(n) * 2.0 - Self
@@ -336,7 +336,7 @@ Struct SVec3
 	End Method
 
 	Rem
-	bbdoc: Multiplies the vector by @s, returning the new vector.
+	bbdoc: Multiplies the vector by @s, returning a new vector.
 	End Rem
 	Method Operator*:SVec3(s:Float)
 		Return New SVec3(x * s, y * s, z * s)
@@ -397,7 +397,7 @@ Struct SVec3
 	End Method
 	
 	Rem
-	bbdoc: Returns the vector clamped between the vectors @minv and @maxv.
+	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
 	End Rem
 	Method Clamp:SVec3(minv:SVec3, maxv:SVec3)
 		Return New SVec3(ClampF(x, minv.x, maxv.x), ClampF(y, minv.y, maxv.y), ClampF(z, minv.z, maxv.z))
@@ -434,7 +434,7 @@ Struct SVec3
 	End Method
 	
 	Rem
-	bbdoc: Returns the vector with a magnitude of 1.
+	bbdoc: Returns a vector with a magnitude of 1.
 	about: When normalized, a vector keeps the same direction but its length is 1.0.
 	End Rem
 	Method Normal:SVec3()
@@ -459,7 +459,7 @@ Struct SVec3
 	bbdoc: Returns the length of the vector.
 	End Rem
 	Method Length:Float()
-		Return Sqr(LengthSquared())
+		Return Float(Sqr(LengthSquared()))
 	End Method
 	
 	Rem
@@ -486,7 +486,7 @@ Struct SVec3
 	End Method
 	
 	Rem
-	bbdoc: Returns the vector reflected from the given plane, specified by its normal vector.
+	bbdoc: Returns a vector reflected from the given plane, specified by its normal vector.
 	End Rem
 	Method Reflect:SVec3(n:SVec3)
 		Return n * Dot(n) * 2.0 - Self
@@ -684,14 +684,14 @@ Struct SMat3
 	End Function
 	
 	Rem
-	bbdoc: Adds @z to the matrix, returning the new matrix.
+	bbdoc: Adds @z to the matrix, returning a new matrix.
 	End Rem
 	Method Operator+:SMat3(z:SMat3 Var)
 		Return New SMat3(a + z.a, b + z.b, c + z.c, d + z.d, e + z.e, f + z.f, g + z.g, h + z.h, i + z.i)
 	End Method
 	
 	Rem
-	bbdoc: Subtracts @z from the matrix, returning the new matrix.
+	bbdoc: Subtracts @z from the matrix, returning a new matrix.
 	End Rem
 	Method Operator-:SMat3(z:SMat3 Var)
 		Return New SMat3(a - z.a, b - z.b, c - z.c, d - z.d, e - z.e, f - z.f, g - z.g, h - z.h, i - z.i)
@@ -959,7 +959,7 @@ Struct SMat4
 	End Method
 
 	Rem
-	bbdoc: Multiplies the matrix by @z, returnin a new matrix. 
+	bbdoc: Multiplies the matrix by @z, returning a new matrix. 
 	End Rem
 	Method Operator*:SMat4(z:SMat4 Var)
 		Local a00:Float = a
@@ -1051,7 +1051,7 @@ Struct SMat4
 	End Method
 	
 	Rem
-	bbdoc: Multiplies the matrix by @z by its components, return a new matrix.
+	bbdoc: Multiplies the matrix by @z by its components, returning a new matrix.
 	End Rem
 	Method CompMul:SMat4(z:SMat4 Var)
 		Return New SMat4(a * z.a, b * z.b, c * z.c, d * z.d, ..
@@ -1412,7 +1412,7 @@ Struct SMat4
 	End Function
 
 	Rem
-	bbdoc: Returns the transpose of this matrix
+	bbdoc: Returns the transpose of this matrix.
 	about: The transposed matrix is the one that has the columns exchanged with its rows.
 	End Rem
 	Method Transpose:SMat4()
@@ -1543,7 +1543,7 @@ Struct SQuat
 	End Method
 	
 	Rem
-	bbdoc: Returns the quaternion, negated.
+	bbdoc: Returns a new quaternion, negated.
 	End Rem
 	Method Operator-:SQuat()
 		Return New SQuat(-x, -y, -z, -w)
