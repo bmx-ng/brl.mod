@@ -936,7 +936,7 @@ Struct SMat4
 End Struct
 
 Rem
-bbdoc: A 2x2 Matrix
+bbdoc: A #Float backed 2x2 Matrix.
 End Rem
 Struct SMat2F
 	Field ReadOnly a:Float
@@ -1090,7 +1090,7 @@ Struct SMat2F
 End Struct
 
 Rem
-bbdoc: A 3x3 matrix.
+bbdoc: A #Float backed 3x3 matrix.
 End Rem
 Struct SMat3F
 	Field ReadOnly a:Float
@@ -1335,7 +1335,7 @@ Struct SMat3F
 End Struct
 
 Rem
-bbdoc: A standard 4x4 transformation matrix.
+bbdoc: A standard #Float backed 4x4 transformation matrix.
 End Rem
 Struct SMat4F
 	Field ReadOnly a:Float
@@ -1828,7 +1828,7 @@ Struct SMat4F
 	End Function
 
 	Rem
-	bbdoc: Creates a scaling matrix.
+	bbdoc: Creates a Scaling matrix.
 	End Rem
 	Function Scaling:SMat4F(s:SVec3)
 		Return New SMat4F(Float(s.x), 0, 0, 0, 0, Float(s.y), 0, 0, 0, 0, Float(s.z), 0, 0, 0, 0, 1)
@@ -1907,7 +1907,7 @@ Struct SMat4F
 End Struct
 
 Rem
-bbdoc: A 2x2 Matrix
+bbdoc: An #Int backed 2x2 Matrix.
 End Rem
 Struct SMat2I
 	Field ReadOnly a:Int
@@ -2061,7 +2061,7 @@ Struct SMat2I
 End Struct
 
 Rem
-bbdoc: A 3x3 matrix.
+bbdoc: An #Int backed 3x3 matrix.
 End Rem
 Struct SMat3I
 	Field ReadOnly a:Int
@@ -2322,7 +2322,7 @@ Struct SMat3I
 End Struct
 
 Rem
-bbdoc: A standard 4x4 transformation matrix.
+bbdoc: A standard #Int backed 4x4 transformation matrix.
 End Rem
 Struct SMat4I
 	Field ReadOnly a:Int

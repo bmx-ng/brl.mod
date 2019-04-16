@@ -371,7 +371,7 @@ Struct SQuat
 End Struct
 
 Rem
-bbdoc: A Quaternion.
+bbdoc: A #Float backed Quaternion.
 about: Quaternions are used to represent rotations.
 They are compact, don't suffer from gimbal lock and can easily be interpolated.
 End Rem
@@ -703,7 +703,7 @@ Struct SQuatF
 End Struct
 
 Rem
-bbdoc: A Quaternion.
+bbdoc: An #Int backed Quaternion.
 about: Quaternions are used to represent rotations.
 They are compact, don't suffer from gimbal lock and can easily be interpolated.
 End Rem

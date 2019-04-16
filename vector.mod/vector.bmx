@@ -442,7 +442,7 @@ Struct SVec3
 End Struct
 
 Rem
-bbdoc: A 2-element structure that can be used to represent positions and directions in 2D-space.
+bbdoc: A #Float backed 2-element structure that can be used to represent positions and directions in 2D-space.
 End Rem
 Struct SVec2F
 	Field ReadOnly x:Float
@@ -653,7 +653,7 @@ Struct SVec2F
 End Struct
 
 Rem
-bbdoc: A 3-element structure that can be used to represent positions and directions in 3D-space.
+bbdoc: A #Float backed 3-element structure that can be used to represent positions and directions in 3D-space.
 End Rem
 Struct SVec3F
 	Field ReadOnly x:Float
@@ -846,7 +846,7 @@ Struct SVec3F
 End Struct
 
 Rem
-bbdoc: A 2-element structure that can be used to represent positions and directions in 2D-space.
+bbdoc: An #Int backed 2-element structure that can be used to represent positions and directions in 2D-space.
 End Rem
 Struct SVec2I
 	Field ReadOnly x:Int
@@ -1057,7 +1057,7 @@ Struct SVec2I
 End Struct
 
 Rem
-bbdoc: A 3-element structure that can be used to represent positions and directions in 3D-space.
+bbdoc: An #Int backed 3-element structure that can be used to represent positions and directions in 3D-space.
 End Rem
 Struct SVec3I
 	Field ReadOnly x:Int
