@@ -894,10 +894,10 @@ Struct SQuatI
 	bbdoc: Converts this quaternion to one with the same orientation but with a magnitude of 1.
 	End Rem
 	Method Normal:SQuatI()
-		Local length:Int = x * x + y * y + z * z + w * w
+		Local length:Double = x * x + y * y + z * z + w * w
 		If length > 0 Then
 			length = Sqr(length)
-			Return New SQuatI(x * length, y * length, z * length, w * length)
+			Return New SQuatI(Int(x * length), Int(y * length), Int(z * length), Int(w * length))
 		End If
 		Return Self
 	End Method

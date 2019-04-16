@@ -140,7 +140,7 @@ Struct SVec2
 		End If
 
 		Local dot:Double = Clamp(Self.Dot(b) / d, -1, 1)
-		Return _acos(dot) * 57.295779513
+		Return _acos(dot) * 57.295779513082320876798154814105:Double
 	End Method
 		
 	Rem
@@ -948,7 +948,7 @@ Struct SVec2I
 		End If
 
 		Local dot:Double = Clamp(Self.Dot(b) / d, -1, 1)
-		Return Int(_acos(dot) * 57.295779513)
+		Return Int(_acos(dot) * 57.295779513082320876798154814105:Double)
 	End Method
 		
 	Rem

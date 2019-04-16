@@ -60,7 +60,7 @@ Struct SMat2
 	Rem
 	bbdoc: Applies the matrix to the vector @v, returning a new vector.
 	End Rem
-	Method ApplyTo:SVec2(v:SVec2)
+	Method Apply:SVec2(v:SVec2)
 		Return New SVec2(a * v.x + c * v.y, b * v.x + d * v.y)
 	End Method
 
@@ -109,7 +109,7 @@ Struct SMat2
 	Rem
 	bbdoc: Returns the determinant of the matrix.
 	End Rem
-	Method Det:Double()
+	Method Determinant:Double()
 		Return a * d - c * b
 	End Method
 	
@@ -300,7 +300,7 @@ Struct SMat3
 	Rem
 	bbdoc: Returns the determinant of the matrix.
 	End Rem
-	Method Det:Double()
+	Method Determinant:Double()
 		Local a00:Double = a
 		Local a01:Double = b
 		Local a02:Double = c
@@ -607,7 +607,7 @@ Struct SMat4
 	Rem
 	bbdoc: Returns the determinant of the matrix.
 	End Rem
-	Method Det:Double()
+	Method Determinant:Double()
 		Local a00:Double = a
 		Local a01:Double = b
 		Local a02:Double = c
@@ -935,6 +935,9 @@ Struct SMat4
 	
 End Struct
 
+Rem
+bbdoc: A 2x2 Matrix
+End Rem
 Struct SMat2F
 	Field ReadOnly a:Float
 	Field ReadOnly b:Float
@@ -1003,7 +1006,7 @@ Struct SMat2F
 	Rem
 	bbdoc: Returns the determinant of the matrix.
 	End Rem
-	Method Det:Float()
+	Method Determinant:Float()
 		Return a * d - c * b
 	End Method
 	
@@ -1022,19 +1025,19 @@ Struct SMat2F
 	Rem
 	bbdoc: Rotates the matrix by @angle degrees, returning the rotated matrix.
 	End Rem
-	Method Rotate:SMat2F(angle:Float)
-		Local sa:Float = Sin(angle)
-		Local ca:Float = Cos(angle)
-		Return New SMat2F(a * ca + c * sa, b * ca + d * sa, a * -sa + c * ca, b * -sa + d * ca)
+	Method Rotate:SMat2F(angle:Double)
+		Local sa:Double = Sin(angle)
+		Local ca:Double = Cos(angle)
+		Return New SMat2F(Float(a * ca + c * sa), Float(b * ca + d * sa), Float(a * -sa + c * ca), Float(b * -sa + d * ca))
 	End Method
 	
 	Rem
 	bbdoc: Creates a rotated matrix of @angle degrees.
 	End Rem
-	Function Rotation:SMat2F(angle:Float)
-		Local sa:Float = Sin(angle)
-		Local ca:Float = Cos(angle)
-		Return New SMat2F(ca, sa, -sa, ca)
+	Function Rotation:SMat2F(angle:Double)
+		Local sa:Double = Sin(angle)
+		Local ca:Double = Cos(angle)
+		Return New SMat2F(Float(ca), Float(sa), Float(-sa), Float(ca))
 	End Function
 	
 	Rem
@@ -1043,12 +1046,26 @@ Struct SMat2F
 	Method Scale:SMat2F(s:SVec2F)
 		Return New SMat2F(a * s.x, b * s.x, c * s.y, d * s.y)
 	End Method
+
+	Rem
+	bbdoc: Returns the scale of this matrix.
+	End Rem
+	Method Scale:SMat2F(s:SVec2)
+		Return New SMat2F(Float(a * s.x), Float(b * s.x), Float(c * s.y), Float(d * s.y))
+	End Method
 	
 	Rem
 	bbdoc: Creates a scaled matrix of the scale @s.
 	End Rem
 	Function Scaling:SMat2F(s:SVec2F)
 		Return New SMat2F(s.x, 0, 0, s.y)
+	End Function
+
+	Rem
+	bbdoc: Creates a scaled matrix of the scale @s.
+	End Rem
+	Function Scaling:SMat2F(s:SVec2)
+		Return New SMat2F(Float(s.x), 0, 0, Float(s.y))
 	End Function
 	
 	Rem
@@ -1194,7 +1211,7 @@ Struct SMat3F
 	Rem
 	bbdoc: Returns the determinant of the matrix.
 	End Rem
-	Method Det:Float()
+	Method Determinant:Float()
 		Local a00:Float = a
 		Local a01:Float = b
 		Local a02:Float = c
@@ -1242,25 +1259,25 @@ Struct SMat3F
 	Rem
 	bbdoc: Rotates the matrix by @angle degrees, returning a new matrix.
 	End Rem
-	Method Rotate:SMat3F(angle:Float)
-		Local sa:Float = Sin(angle)
-		Local ca:Float = Cos(angle)
-		Return New SMat3F(ca * a + sa * d, ..
-			ca * b + sa * e, ..
-			ca * c + sa * f, ..
-			ca * d - sa * a, ..
-			ca * e - sa * b, ..
-			ca * f - sa * c, ..
+	Method Rotate:SMat3F(angle:Double)
+		Local sa:Double = Sin(angle)
+		Local ca:Double = Cos(angle)
+		Return New SMat3F(Float(ca * a + sa * d), ..
+			Float(ca * b + sa * e), ..
+			Float(ca * c + sa * f), ..
+			Float(ca * d - sa * a), ..
+			Float(ca * e - sa * b), ..
+			Float(ca * f - sa * c), ..
 			g, h, i)
 	End Method
 	
 	Rem
 	bbdoc: Retrns a rotation matrix of @angle degrees.
 	End Rem
-	Function Rotation:SMat3F(angle:Float)
-		Local sa:Float = Sin(angle)
-		Local ca:Float = Cos(angle)
-		Return New SMat3F(ca, sa, 0, -sa, ca, 0, 0, 0, 1)
+	Function Rotation:SMat3F(angle:Double)
+		Local sa:Double = Sin(angle)
+		Local ca:Double = Cos(angle)
+		Return New SMat3F(Float(ca), Float(sa), 0, Float(-sa), Float(ca), 0, 0, 0, 1)
 	End Function
 	
 	Rem
@@ -1271,12 +1288,28 @@ Struct SMat3F
 		Local by:Float = s.y
 		Return New SMat3F(a * bx, b * bx, c * bx, d * by, e * by, f * by, g, h, i)
 	End Method
+
+	Rem
+	bbdoc: Scales the matrix by @s, returning a new matrix.
+	End Rem
+	Method Scale:SMat3F(s:SVec2)
+		Local bx:Float = s.x
+		Local by:Float = s.y
+		Return New SMat3F(Float(a * bx), Float(b * bx), Float(c * bx), Float(d * by), Float(e * by), Float(f * by), g, h, i)
+	End Method
 	
 	Rem
 	bbdoc: Returns a scaling matrix of @s.
 	End Rem
 	Function Scaling:SMat3F(s:SVec2F)
 		Return New SMat3F(s.x, 0, 0, 0, s.y, 0, 0, 0, 1)
+	End Function
+
+	Rem
+	bbdoc: Returns a scaling matrix of @s.
+	End Rem
+	Function Scaling:SMat3F(s:SVec2)
+		Return New SMat3F(Float(s.x), 0, 0, 0, Float(s.y), 0, 0, 0, 1)
 	End Function
 	
 	Rem
@@ -1501,7 +1534,7 @@ Struct SMat4F
 	Rem
 	bbdoc: Returns the determinant of the matrix.
 	End Rem
-	Method Det:Float()
+	Method Determinant:Float()
 		Local a00:Float = a
 		Local a01:Float = b
 		Local a02:Float = c
@@ -1694,7 +1727,7 @@ Struct SMat4F
 	Rem
 	bbdoc: Creates a rotation matrix, rotated @angle degrees around the point @axis.
 	End Rem
-	Method Rotate:SMat4F(axis:SVec3F, angle:Float)
+	Method Rotate:SMat4F(axis:SVec3F, angle:Double)
 		Local x:Float = axis.x
 		Local y:Float = axis.y
 		Local z:Float = axis.z
@@ -1710,8 +1743,8 @@ Struct SMat4F
 		Local a21:Float = j
 		Local a22:Float = k
 		Local a23:Float = l
-		Local sa:Float = Sin(angle)
-		Local ca:Float = Cos(angle)
+		Local sa:Double = Sin(angle)
+		Local ca:Double = Cos(angle)
 		Local t:Float = 1 - ca
 		Local b00:Float = x * x * t + ca
 		Local b01:Float = y * x * t + z * sa
@@ -1740,24 +1773,24 @@ Struct SMat4F
 	Rem
 	bbdoc: Returns a rotation matrix on the given @axis and @angle degrees.
 	End Rem
-	Function Rotation:SMat4F(axis:SVec3F, angle:Float)
+	Function Rotation:SMat4F(axis:SVec3F, angle:Double)
 		Local x:Float = axis.x
 		Local y:Float = axis.y
 		Local z:Float = axis.z
-		Local sa:Float = Sin(angle)
-		Local ca:Float = Cos(angle)
+		Local sa:Double = Sin(angle)
+		Local ca:Double = Cos(angle)
 		Local t:Float = 1 - ca
-		Return New SMat4F(x * x * t + ca, ..
-			y * x * t + z * sa, ..
-			z * x * t - y * sa, ..
+		Return New SMat4F(Float(x * x * t + ca), ..
+			Float(y * x * t + z * sa), ..
+			Float(z * x * t - y * sa), ..
 			0, ..
-			x * y * t - z * sa, ..
-			y * y * t + ca, ..
-			z * y * t + x * sa, ..
+			Float(x * y * t - z * sa), ..
+			Float(y * y * t + ca), ..
+			Float(z * y * t + x * sa), ..
 			0, ..
-			x * z * t + y * sa, ..
-			y * z * t - x * sa, ..
-			z * z * t + ca, ..
+			Float(x * z * t + y * sa), ..
+			Float(y * z * t - x * sa), ..
+			Float(z * z * t + ca), ..
 			0, 0, 0, 0, 1)
 	End Function
 	
@@ -1773,12 +1806,32 @@ Struct SMat4F
 			i * bz, j * bz, k * bz, l * bz, ..
 			m, n, o, p)
 	End Method
+
+	Rem
+	bbdoc: Scales the matrix, return the new scaled matrix.
+	End Rem
+	Method Scale:SMat4F(s:SVec3)
+		Local bx:Double = s.x
+		Local by:Double = s.y
+		Local bz:Double = s.z
+		Return New SMat4F(Float(a * bx), Float(b * bx), Float(c * bx), Float(d * bx), ..
+			Float(e * by), Float(f * by), Float(g * by), Float(h * by), ..
+			Float(i * bz), Float(j * bz), Float(k * bz), Float(l * bz), ..
+			m, n, o, p)
+	End Method
 	
 	Rem
 	bbdoc: Creates a scaling matrix.
 	End Rem
 	Function Scaling:SMat4F(s:SVec3F)
 		Return New SMat4F(s.x, 0, 0, 0, 0, s.y, 0, 0, 0, 0, s.z, 0, 0, 0, 0, 1)
+	End Function
+
+	Rem
+	bbdoc: Creates a scaling matrix.
+	End Rem
+	Function Scaling:SMat4F(s:SVec3)
+		Return New SMat4F(Float(s.x), 0, 0, 0, 0, Float(s.y), 0, 0, 0, 0, Float(s.z), 0, 0, 0, 0, 1)
 	End Function
 
 	Rem
@@ -1804,6 +1857,20 @@ Struct SMat4F
 	End Method
 
 	Rem
+	bbdoc: Translates the matrix To @s.
+	End Rem
+	Method Translate:SMat4F(s:SVec3)
+		Local bx:Float = s.x
+		Local by:Float = s.y
+		Local bz:Float = s.z
+		Return New SMat4F(a, b, c, d, e, f, g, h, i, j, k, l, ..
+			a * bx + e * by + i * bz + m, ..
+			b * bx + f * by + j * bz + n, ..
+			c * bx + g * by + k * bz + o, ..
+			d * bx + h * by + l * bz + p)
+	End Method
+
+	Rem
 	bbdoc: Creates a translation matrix.
 	End Rem
 	Function Translation:SMat4F(s:SVec3F)
@@ -1811,6 +1878,16 @@ Struct SMat4F
 			0, 1, 0, 0, ..
 			0, 0, 1, 0, ..
 			s.x, s.y, s.z, 1)
+	End Function
+
+	Rem
+	bbdoc: Creates a translation matrix.
+	End Rem
+	Function Translation:SMat4F(s:SVec3)
+		Return New SMat4F(1, 0, 0, 0, ..
+			0, 1, 0, 0, ..
+			0, 0, 1, 0, ..
+			Float(s.x), Float(s.y), Float(s.z), 1)
 	End Function
 	
 	Rem
@@ -1829,7 +1906,9 @@ Struct SMat4F
 	
 End Struct
 
-
+Rem
+bbdoc: A 2x2 Matrix
+End Rem
 Struct SMat2I
 	Field ReadOnly a:Int
 	Field ReadOnly b:Int
@@ -1898,7 +1977,7 @@ Struct SMat2I
 	Rem
 	bbdoc: Returns the determinant of the matrix.
 	End Rem
-	Method Det:Int()
+	Method Determinant:Int()
 		Return a * d - c * b
 	End Method
 	
@@ -1906,30 +1985,30 @@ Struct SMat2I
 	bbdoc: Returns the inverse of the matrix.
 	End Rem
 	Method Invert:SMat2I()
-		Local det:Int = a * d - c * b
+		Local det:Double = a * d - c * b
 		If det = 0 Then
 			Return New SMat2I(0, 0, 0, 0)
 		End If
 		det = 1 / det
-		Return New SMat2I(d * det, -b * det, -c * det, a * det)
+		Return New SMat2I(Int(d * det), Int(-b * det), Int(-c * det), Int(a * det))
 	End Method
 	
 	Rem
 	bbdoc: Rotates the matrix by @angle degrees, returning the rotated matrix.
 	End Rem
-	Method Rotate:SMat2I(angle:Int)
-		Local sa:Int = Sin(angle)
-		Local ca:Int = Cos(angle)
-		Return New SMat2I(a * ca + c * sa, b * ca + d * sa, a * -sa + c * ca, b * -sa + d * ca)
+	Method Rotate:SMat2I(angle:Double)
+		Local sa:Double = Sin(angle)
+		Local ca:Double = Cos(angle)
+		Return New SMat2I(Int(a * ca + c * sa), Int(b * ca + d * sa), Int(a * -sa + c * ca), Int(b * -sa + d * ca))
 	End Method
 	
 	Rem
 	bbdoc: Creates a rotated matrix of @angle degrees.
 	End Rem
-	Function Rotation:SMat2I(angle:Int)
-		Local sa:Int = Sin(angle)
-		Local ca:Int = Cos(angle)
-		Return New SMat2I(ca, sa, -sa, ca)
+	Function Rotation:SMat2I(angle:Double)
+		Local sa:Double = Sin(angle)
+		Local ca:Double = Cos(angle)
+		Return New SMat2I(Int(ca), Int(sa), Int(-sa), Int(ca))
 	End Function
 	
 	Rem
@@ -1937,6 +2016,20 @@ Struct SMat2I
 	End Rem
 	Method Scale:SMat2I(s:SVec2I)
 		Return New SMat2I(a * s.x, b * s.x, c * s.y, d * s.y)
+	End Method
+
+	Rem
+	bbdoc: Returns the scale of this matrix.
+	End Rem
+	Method Scale:SMat2I(s:SVec2)
+		Return New SMat2I(Int(a * s.x), Int(b * s.x), Int(c * s.y), Int(d * s.y))
+	End Method
+
+	Rem
+	bbdoc: Returns the scale of this matrix.
+	End Rem
+	Method Scale:SMat2I(s:SVec2F)
+		Return New SMat2I(Int(a * s.x), Int(b * s.x), Int(c * s.y), Int(d * s.y))
 	End Method
 	
 	Rem
@@ -2089,7 +2182,7 @@ Struct SMat3I
 	Rem
 	bbdoc: Returns the determinant of the matrix.
 	End Rem
-	Method Det:Int()
+	Method Determinant:Int()
 		Local a00:Int = a
 		Local a01:Int = b
 		Local a02:Int = c
@@ -2118,44 +2211,44 @@ Struct SMat3I
 		Local b01:Int =  a22 * a11 - a12 * a21
 		Local b11:Int = -a22 * a10 + a12 * a20
 		Local b21:Int =  a21 * a10 - a11 * a20
-		Local det:Int = a00 * b01 + a01 * b11 + a02 * b21
+		Local det:Double = a00 * b01 + a01 * b11 + a02 * b21
 		If det = 0 Then
 			Return New SMat3I(0, 0, 0, 0, 0, 0, 0, 0, 0)
 		End If
 		det = 1 / det
-		Return New SMat3I(b01 * det, ..
-			(-a22 * a01 + a02 * a21) * det, ..
-			( a12 * a01 - a02 * a11) * det,
-			b11 * det, ..
-			( a22 * a00 - a02 * a20) * det, ..
-			(-a12 * a00 + a02 * a10) * det, ..
-			b21 * det, ..
-			(-a21 * a00 + a01 * a20) * det, ..
-			( a11 * a00 - a01 * a10) * det)
+		Return New SMat3I(Int(b01 * det), ..
+			Int((-a22 * a01 + a02 * a21) * det), ..
+			Int(( a12 * a01 - a02 * a11) * det),
+			Int(b11 * det), ..
+			Int(( a22 * a00 - a02 * a20) * det), ..
+			Int((-a12 * a00 + a02 * a10) * det), ..
+			Int(b21 * det), ..
+			Int((-a21 * a00 + a01 * a20) * det), ..
+			Int(( a11 * a00 - a01 * a10) * det))
 	End Method
 	
 	Rem
 	bbdoc: Rotates the matrix by @angle degrees, returning a new matrix.
 	End Rem
-	Method Rotate:SMat3I(angle:Int)
-		Local sa:Int = Sin(angle)
-		Local ca:Int = Cos(angle)
-		Return New SMat3I(ca * a + sa * d, ..
-			ca * b + sa * e, ..
-			ca * c + sa * f, ..
-			ca * d - sa * a, ..
-			ca * e - sa * b, ..
-			ca * f - sa * c, ..
+	Method Rotate:SMat3I(angle:Double)
+		Local sa:Double = Sin(angle)
+		Local ca:Double = Cos(angle)
+		Return New SMat3I(Int(ca * a + sa * d), ..
+			Int(ca * b + sa * e), ..
+			Int(ca * c + sa * f), ..
+			Int(ca * d - sa * a), ..
+			Int(ca * e - sa * b), ..
+			Int(ca * f - sa * c), ..
 			g, h, i)
 	End Method
 	
 	Rem
 	bbdoc: Retrns a rotation matrix of @angle degrees.
 	End Rem
-	Function Rotation:SMat3I(angle:Int)
-		Local sa:Int = Sin(angle)
-		Local ca:Int = Cos(angle)
-		Return New SMat3I(ca, sa, 0, -sa, ca, 0, 0, 0, 1)
+	Function Rotation:SMat3I(angle:Double)
+		Local sa:Double = Sin(angle)
+		Local ca:Double = Cos(angle)
+		Return New SMat3I(Int(ca), Int(sa), 0, Int(-sa), Int(ca), 0, 0, 0, 1)
 	End Function
 	
 	Rem
@@ -2166,12 +2259,44 @@ Struct SMat3I
 		Local by:Int = s.y
 		Return New SMat3I(a * bx, b * bx, c * bx, d * by, e * by, f * by, g, h, i)
 	End Method
+
+	Rem
+	bbdoc: Scales the matrix by @s, returning a new matrix.
+	End Rem
+	Method Scale:SMat3I(s:SVec2)
+		Local bx:Int = s.x
+		Local by:Int = s.y
+		Return New SMat3I(Int(a * bx), Int(b * bx), Int(c * bx), Int(d * by), Int(e * by), Int(f * by), g, h, i)
+	End Method
+
+	Rem
+	bbdoc: Scales the matrix by @s, returning a new matrix.
+	End Rem
+	Method Scale:SMat3I(s:SVec2F)
+		Local bx:Int = s.x
+		Local by:Int = s.y
+		Return New SMat3I(Int(a * bx), Int(b * bx), Int(c * bx), Int(d * by), Int(e * by), Int(f * by), g, h, i)
+	End Method
 	
 	Rem
 	bbdoc: Returns a scaling matrix of @s.
 	End Rem
 	Function Scaling:SMat3I(s:SVec2I)
 		Return New SMat3I(s.x, 0, 0, 0, s.y, 0, 0, 0, 1)
+	End Function
+
+	Rem
+	bbdoc: Returns a scaling matrix of @s.
+	End Rem
+	Function Scaling:SMat3I(s:SVec2)
+		Return New SMat3I(Int(s.x), 0, 0, 0, Int(s.y), 0, 0, 0, 1)
+	End Function
+
+	Rem
+	bbdoc: Returns a scaling matrix of @s.
+	End Rem
+	Function Scaling:SMat3I(s:SVec2F)
+		Return New SMat3I(Int(s.x), 0, 0, 0, Int(s.y), 0, 0, 0, 1)
 	End Function
 	
 	Rem
@@ -2396,7 +2521,7 @@ Struct SMat4I
 	Rem
 	bbdoc: Returns the determinant of the matrix.
 	End Rem
-	Method Det:Int()
+	Method Determinant:Int()
 		Local a00:Int = a
 		Local a01:Int = b
 		Local a02:Int = c
@@ -2431,7 +2556,7 @@ Struct SMat4I
 	Rem
 	bbdoc: Returns a projection matrix with a viewing frustum defined by the plane coordinates passed in.
 	End Rem
-	Function Frustum:SMat4I(l:Int, r:Int, b:Int, t:Int, n:Int, f:Int)
+	Function Frustum:SMat4I(l:Double, r:Double, b:Double, t:Double, n:Double, f:Double)
 		Local rl:Double = 1.0 / (r - l)
 		Local tb:Double = 1.0 / (t - b)
 		Local nf:Double = 1.0 / (n - f)
@@ -2566,7 +2691,7 @@ Struct SMat4I
 	bbdoc: Creates an orthogonal projection matrix.
 	about: The returned matrix, when used as a Camera's projection matrix, creates a view showing the area between @width and @height, with @zNear and @zFar as the near and far depth clipping planes.
 	End Rem
-	Function Orthogonal:SMat4I(width:Int, height:Int, zNear:Int, zFar:Int)
+	Function Orthogonal:SMat4I(width:Double, height:Double, zNear:Double, zFar:Double)
 		Local nf:Double = 1.0 / (zNear - zFar)
 		Return New SMat4I(Int(2.0 / width), 0, 0, 0, ..
 			0, Int(2.0 / height), 0, 0, ..
@@ -2575,9 +2700,9 @@ Struct SMat4I
 	End Function
 	
 	Rem
-	bbdoc: Creates a perspective projection matrix.
+	bbdoc: Creates a Perspective projection matrix.
 	End Rem
-	Function Perspective:SMat4I(fov:Int, w:Int, h:Int, n:Int, f:Int)
+	Function Perspective:SMat4I(fov:Double, w:Double, h:Double, n:Double, f:Double)
 		Local ft:Double = 1.0 / Tan(fov * 0.5)
 		Local nf:Double = 1.0 / (n - f)
 		Return New SMat4I(Int(ft), 0, 0, 0, ..
@@ -2589,7 +2714,7 @@ Struct SMat4I
 	Rem
 	bbdoc: Creates a rotation matrix, rotated @angle degrees around the point @axis.
 	End Rem
-	Method Rotate:SMat4I(axis:SVec3I, angle:Int)
+	Method Rotate:SMat4I(axis:SVec3I, angle:Double)
 		Local x:Int = axis.x
 		Local y:Int = axis.y
 		Local z:Int = axis.z
@@ -2605,54 +2730,54 @@ Struct SMat4I
 		Local a21:Int = j
 		Local a22:Int = k
 		Local a23:Int = l
-		Local sa:Int = Sin(angle)
-		Local ca:Int = Cos(angle)
-		Local t:Int = 1 - ca
-		Local b00:Int = x * x * t + ca
-		Local b01:Int = y * x * t + z * sa
-		Local b02:Int = z * x * t - y * sa
-		Local b10:Int = x * y * t - z * sa
-		Local b11:Int = y * y * t + ca
-		Local b12:Int = z * y * t + x * sa
-		Local b20:Int = x * z * t + y * sa
-		Local b21:Int = y * z * t - x * sa
-		Local b22:Int = z * z * t + ca
-		Return New SMat4I(a00 * b00 + a10 * b01 + a20 * b02, ..
-			a01 * b00 + a11 * b01 + a21 * b02, ..
-			a02 * b00 + a12 * b01 + a22 * b02, ..
-			a03 * b00 + a13 * b01 + a23 * b02, ..
-			a00 * b10 + a10 * b11 + a20 * b12, ..
-			a01 * b10 + a11 * b11 + a21 * b12, ..
-			a02 * b10 + a12 * b11 + a22 * b12, ..
-			a03 * b10 + a13 * b11 + a23 * b12, ..
-			a00 * b20 + a10 * b21 + a20 * b22, ..
-			a01 * b20 + a11 * b21 + a21 * b22, ..
-			a02 * b20 + a12 * b21 + a22 * b22, ..
-			a03 * b20 + a13 * b21 + a23 * b22, ..
+		Local sa:Double = Sin(angle)
+		Local ca:Double = Cos(angle)
+		Local t:Double = 1 - ca
+		Local b00:Double = x * x * t + ca
+		Local b01:Double = y * x * t + z * sa
+		Local b02:Double = z * x * t - y * sa
+		Local b10:Double = x * y * t - z * sa
+		Local b11:Double = y * y * t + ca
+		Local b12:Double = z * y * t + x * sa
+		Local b20:Double = x * z * t + y * sa
+		Local b21:Double = y * z * t - x * sa
+		Local b22:Double = z * z * t + ca
+		Return New SMat4I(Int(a00 * b00 + a10 * b01 + a20 * b02), ..
+			Int(a01 * b00 + a11 * b01 + a21 * b02), ..
+			Int(a02 * b00 + a12 * b01 + a22 * b02), ..
+			Int(a03 * b00 + a13 * b01 + a23 * b02), ..
+			Int(a00 * b10 + a10 * b11 + a20 * b12), ..
+			Int(a01 * b10 + a11 * b11 + a21 * b12), ..
+			Int(a02 * b10 + a12 * b11 + a22 * b12), ..
+			Int(a03 * b10 + a13 * b11 + a23 * b12), ..
+			Int(a00 * b20 + a10 * b21 + a20 * b22), ..
+			Int(a01 * b20 + a11 * b21 + a21 * b22), ..
+			Int(a02 * b20 + a12 * b21 + a22 * b22), ..
+			Int(a03 * b20 + a13 * b21 + a23 * b22), ..
 			m, n, o, p)
 	End Method
 	
 	Rem
 	bbdoc: Returns a rotation matrix on the given @axis and @angle degrees.
 	End Rem
-	Function Rotation:SMat4I(axis:SVec3I, angle:Int)
+	Function Rotation:SMat4I(axis:SVec3I, angle:Double)
 		Local x:Int = axis.x
 		Local y:Int = axis.y
 		Local z:Int = axis.z
-		Local sa:Int = Sin(angle)
-		Local ca:Int = Cos(angle)
-		Local t:Int = 1 - ca
-		Return New SMat4I(x * x * t + ca, ..
-			y * x * t + z * sa, ..
-			z * x * t - y * sa, ..
+		Local sa:Double = Sin(angle)
+		Local ca:Double = Cos(angle)
+		Local t:Double = 1 - ca
+		Return New SMat4I(Int(x * x * t + ca), ..
+			Int(y * x * t + z * sa), ..
+			Int(z * x * t - y * sa), ..
 			0, ..
-			x * y * t - z * sa, ..
-			y * y * t + ca, ..
-			z * y * t + x * sa, ..
+			Int(x * y * t - z * sa), ..
+			Int(y * y * t + ca), ..
+			Int(z * y * t + x * sa), ..
 			0, ..
-			x * z * t + y * sa, ..
-			y * z * t - x * sa, ..
-			z * z * t + ca, ..
+			Int(x * z * t + y * sa), ..
+			Int(y * z * t - x * sa), ..
+			Int(z * z * t + ca), ..
 			0, 0, 0, 0, 1)
 	End Function
 	
@@ -2668,12 +2793,52 @@ Struct SMat4I
 			i * bz, j * bz, k * bz, l * bz, ..
 			m, n, o, p)
 	End Method
+
+	Rem
+	bbdoc: Scales the matrix, return the new scaled matrix.
+	End Rem
+	Method Scale:SMat4I(s:SVec3)
+		Local bx:Double = s.x
+		Local by:Double = s.y
+		Local bz:Double = s.z
+		Return New SMat4I(Int(a * bx), Int(b * bx), Int(c * bx), Int(d * bx), ..
+			Int(e * by), Int(f * by), Int(g * by), Int(h * by), ..
+			Int(i * bz), Int(j * bz), Int(k * bz), Int(l * bz), ..
+			m, n, o, p)
+	End Method
+
+	Rem
+	bbdoc: Scales the matrix, return the new scaled matrix.
+	End Rem
+	Method Scale:SMat4I(s:SVec3F)
+		Local bx:Float = s.x
+		Local by:Float = s.y
+		Local bz:Float = s.z
+		Return New SMat4I(Int(a * bx), Int(b * bx), Int(c * bx), Int(d * bx), ..
+			Int(e * by), Int(f * by), Int(g * by), Int(h * by), ..
+			Int(i * bz), Int(j * bz), Int(k * bz), Int(l * bz), ..
+			m, n, o, p)
+	End Method
 	
 	Rem
 	bbdoc: Creates a scaling matrix.
 	End Rem
 	Function Scaling:SMat4I(s:SVec3I)
 		Return New SMat4I(s.x, 0, 0, 0, 0, s.y, 0, 0, 0, 0, s.z, 0, 0, 0, 0, 1)
+	End Function
+
+	Rem
+	bbdoc: Creates a scaling matrix.
+	End Rem
+	Function Scaling:SMat4I(s:SVec3)
+		Return New SMat4I(Int(s.x), 0, 0, 0, 0, Int(s.y), 0, 0, 0, 0, Int(s.z), 0, 0, 0, 0, 1)
+	End Function
+
+	Rem
+	bbdoc: Creates a scaling matrix.
+	End Rem
+	Function Scaling:SMat4I(s:SVec3F)
+		Return New SMat4I(Int(s.x), 0, 0, 0, 0, Int(s.y), 0, 0, 0, 0, Int(s.z), 0, 0, 0, 0, 1)
 	End Function
 
 	Rem
@@ -2699,6 +2864,34 @@ Struct SMat4I
 	End Method
 
 	Rem
+	bbdoc: Translates the matrix to @s.
+	End Rem
+	Method Translate:SMat4I(s:SVec3)
+		Local bx:Double = s.x
+		Local by:Double = s.y
+		Local bz:Double = s.z
+		Return New SMat4I(a, b, c, d, e, f, g, h, i, j, k, l, ..
+			Int(a * bx + e * by + i * bz + m), ..
+			Int(b * bx + f * by + j * bz + n), ..
+			Int(c * bx + g * by + k * bz + o), ..
+			Int(d * bx + h * by + l * bz + p))
+	End Method
+
+	Rem
+	bbdoc: Translates the matrix To @s.
+	End Rem
+	Method Translate:SMat4I(s:SVec3F)
+		Local bx:Float = s.x
+		Local by:Float = s.y
+		Local bz:Float = s.z
+		Return New SMat4I(a, b, c, d, e, f, g, h, i, j, k, l, ..
+			Int(a * bx + e * by + i * bz + m), ..
+			Int(b * bx + f * by + j * bz + n), ..
+			Int(c * bx + g * by + k * bz + o), ..
+			Int(d * bx + h * by + l * bz + p))
+	End Method
+
+	Rem
 	bbdoc: Creates a translation matrix.
 	End Rem
 	Function Translation:SMat4I(s:SVec3I)
@@ -2706,6 +2899,26 @@ Struct SMat4I
 			0, 1, 0, 0, ..
 			0, 0, 1, 0, ..
 			s.x, s.y, s.z, 1)
+	End Function
+
+	Rem
+	bbdoc: Creates a translation matrix.
+	End Rem
+	Function Translation:SMat4I(s:SVec3)
+		Return New SMat4I(1, 0, 0, 0, ..
+			0, 1, 0, 0, ..
+			0, 0, 1, 0, ..
+			Int(s.x), Int(s.y), Int(s.z), 1)
+	End Function
+
+	Rem
+	bbdoc: Creates a translation matrix.
+	End Rem
+	Function Translation:SMat4I(s:SVec3F)
+		Return New SMat4I(1, 0, 0, 0, ..
+			0, 1, 0, 0, ..
+			0, 0, 1, 0, ..
+			Int(s.x), Int(s.y), Int(s.z), 1)
 	End Function
 	
 	Rem
