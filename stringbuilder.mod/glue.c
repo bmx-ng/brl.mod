@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018 Bruce A Henderson
+  Copyright (c) 2018-2019 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -19,14 +19,7 @@
 */ 
 
 #include "brl.mod/blitz.mod/blitz.h"
-#ifndef BMX_NG
-extern unsigned short maxToLowerData[];
-extern unsigned short maxToUpperData[];
-#define bbToLowerData maxToLowerData
-#define bbToUpperData maxToUpperData
-#else
 #include "brl.mod/blitz.mod/blitz_unicode.h"
-#endif
 
 struct MaxStringBuilder {
 	BBChar * buffer;
@@ -535,8 +528,6 @@ void bmx_stringbuilder_append_byte(struct MaxStringBuilder * buf, char value) {
 	bmx_stringbuilder_append_cstring(buf, chars);
 }
 
-#ifdef BMX_NG
-
 void bmx_stringbuilder_append_uint(struct MaxStringBuilder * buf, unsigned int value) {
 	char chars[16];
 	sprintf(chars, "%u", value);
@@ -560,8 +551,6 @@ void bmx_stringbuilder_append_sizet(struct MaxStringBuilder * buf, BBSIZET value
 
 	bmx_stringbuilder_append_cstring(buf, chars);
 }
-
-#endif
 
 void bmx_stringbuilder_append_shorts(struct MaxStringBuilder * buf, short * shorts, int length) {
 	if (length > 0) {
