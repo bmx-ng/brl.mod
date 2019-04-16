@@ -214,14 +214,14 @@ Struct SVec2
 	Rem
 	bbdoc: Returns the distance between the vector And @b.
 	End Rem
-	Method Distance:Double(b:SVec2)
+	Method DistanceTo:Double(b:SVec2)
 		Return (Self - b).Length()
 	End Method
 	
 	Rem
 	bbdoc: Returns the squared distance between the vector and @b.
 	End Rem
-	Method DistanceSquared:Double(b:SVec2)
+	Method DistanceToSquared:Double(b:SVec2)
 		Return (Self - b).LengthSquared()
 	End Method
 	
@@ -243,7 +243,13 @@ Struct SVec2
 	bbdoc: Returns a #String representation of the vector.
 	End Rem
 	Method ToString:String() Override
-		Return x + ", " + y
+		Local sb:TStringBuilder = New TStringBuilder
+
+		sb.Append("(")
+		sb.Append(x).Append(", ").Append(y)
+		sb.Append(")")
+		
+		Return sb.ToString()
 	End Method
 
 End Struct
@@ -401,14 +407,14 @@ Struct SVec3
 	Rem
 	bbdoc: Returns the distance between the vector and @b.
 	End Rem
-	Method Distance:Double(b:SVec3)
+	Method DistanceTo:Double(b:SVec3)
 		Return (Self - b).Length()
 	End Method
 	
 	Rem
 	bbdoc: Returns the squared distance between the vector and @b.
 	End Rem
-	Method DistanceSquared:Double(b:SVec3)
+	Method DistanceToSquared:Double(b:SVec3)
 		Return (Self - b).LengthSquared()
 	End Method
 	
@@ -432,9 +438,11 @@ Struct SVec3
 	Method ToString:String() Override
 		Local sb:TStringBuilder = New TStringBuilder
 		
+		sb.Append("(")
 		sb.Append(x).Append(", ")
 		sb.Append(y).Append(", ")
 		sb.Append(z)
+		sb.Append(")")
 		
 		Return sb.ToString()
 	End Method
@@ -618,14 +626,14 @@ Struct SVec2F
 	Rem
 	bbdoc: Returns the distance between the vector And @b.
 	End Rem
-	Method Distance:Float(b:SVec2F)
+	Method DistanceTo:Float(b:SVec2F)
 		Return (Self - b).Length()
 	End Method
 	
 	Rem
-	bbdoc: Returns the squared distance between the vector and @b.
+	bbdoc: Returns the squared distance between the vector And @b.
 	End Rem
-	Method DistanceSquared:Float(b:SVec2F)
+	Method DistanceToSquared:Float(b:SVec2F)
 		Return (Self - b).LengthSquared()
 	End Method
 	
@@ -647,7 +655,13 @@ Struct SVec2F
 	bbdoc: Returns a #String representation of the vector.
 	End Rem
 	Method ToString:String() Override
-		Return x + ", " + y
+		Local sb:TStringBuilder = New TStringBuilder
+
+		sb.Append("(")
+		sb.Append(x).Append(", ").Append(y)
+		sb.Append(")")
+		
+		Return sb.ToString()
 	End Method
 
 End Struct
@@ -805,14 +819,14 @@ Struct SVec3F
 	Rem
 	bbdoc: Returns the distance between the vector and @b.
 	End Rem
-	Method Distance:Float(b:SVec3F)
+	Method DistanceTo:Float(b:SVec3F)
 		Return (Self - b).Length()
 	End Method
 	
 	Rem
 	bbdoc: Returns the squared distance between the vector and @b.
 	End Rem
-	Method DistanceSquared:Float(b:SVec3F)
+	Method DistanceToSquared:Float(b:SVec3F)
 		Return (Self - b).LengthSquared()
 	End Method
 	
@@ -836,9 +850,11 @@ Struct SVec3F
 	Method ToString:String() Override
 		Local sb:TStringBuilder = New TStringBuilder
 		
+		sb.Append("(")
 		sb.Append(x).Append(", ")
 		sb.Append(y).Append(", ")
 		sb.Append(z)
+		sb.Append(")")
 		
 		Return sb.ToString()
 	End Method
@@ -1022,14 +1038,14 @@ Struct SVec2I
 	Rem
 	bbdoc: Returns the distance between the vector And @b.
 	End Rem
-	Method Distance:Int(b:SVec2I)
+	Method DistanceTo:Int(b:SVec2I)
 		Return (Self - b).Length()
 	End Method
 	
 	Rem
 	bbdoc: Returns the squared distance between the vector and @b.
 	End Rem
-	Method DistanceSquared:Int(b:SVec2I)
+	Method DistanceToSquared:Int(b:SVec2I)
 		Return (Self - b).LengthSquared()
 	End Method
 	
@@ -1051,7 +1067,13 @@ Struct SVec2I
 	bbdoc: Returns a #String representation of the vector.
 	End Rem
 	Method ToString:String() Override
-		Return x + ", " + y
+		Local sb:TStringBuilder = New TStringBuilder
+
+		sb.Append("(")
+		sb.Append(x).Append(", ").Append(y)
+		sb.Append(")")
+		
+		Return sb.ToString()
 	End Method
 
 End Struct
@@ -1209,14 +1231,14 @@ Struct SVec3I
 	Rem
 	bbdoc: Returns the distance between the vector and @b.
 	End Rem
-	Method Distance:Int(b:SVec3I)
+	Method DistanceTo:Int(b:SVec3I)
 		Return (Self - b).Length()
 	End Method
 	
 	Rem
 	bbdoc: Returns the squared distance between the vector and @b.
 	End Rem
-	Method DistanceSquared:Int(b:SVec3I)
+	Method DistanceToSquared:Int(b:SVec3I)
 		Return (Self - b).LengthSquared()
 	End Method
 	
@@ -1240,9 +1262,11 @@ Struct SVec3I
 	Method ToString:String() Override
 		Local sb:TStringBuilder = New TStringBuilder
 		
+		sb.Append("(")
 		sb.Append(x).Append(", ")
 		sb.Append(y).Append(", ")
 		sb.Append(z)
+		sb.Append(")")
 		
 		Return sb.ToString()
 	End Method
