@@ -1102,7 +1102,7 @@ Type TCryptoKeyExchange
 	about: This variant is designed to anonymously send messages to a recipient using its public key.
 	* What the client needs to know about the server: <b>the server's public key</b>
 	* What the server needs to know about the client: <b>nothing</b>
-	End Remw
+	End Rem
 	Function N1:Int(sessionKeyPair:TCryptoSessionKeyPair Var, packet:TCryptoNPacket Var, preSharedKey:TCryptoKey, serverKeyPair:TCryptoExchangeKeyPair)
 		If Not sessionKeyPair Then
 			sessionKeyPair = New TCryptoSessionKeyPair
