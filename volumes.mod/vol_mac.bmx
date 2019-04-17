@@ -291,7 +291,7 @@ Type TMacVolume Extends TVolume
 		Return volume
 	End Method
 	
-	Method GetPath:String(folderType:Int, flags:Int = 0) Override
+	Method GetPath:String(folderType:Int, flags:Int = 0)
 		Local buf:Byte[1024],ref:Byte[80]
 		
 		If flags Then
