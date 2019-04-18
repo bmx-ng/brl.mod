@@ -1,0 +1,20 @@
+This module provides a mutable #String like object, #TStringBuilder.
+
+Unlike with an instance of #String, a #TStringBuilder object can be modified by
+appending, removing, replacing or inserting characters. A #TStringBuilder object
+maintains an internal buffer to efficiently accommodate expansions to the string.
+New text is appended to the buffer there is space available, or a larger buffer is
+allocated and the text copied into the new buffer.
+
+The contents of a #String, on the other hand, cannot be modified, and any manipulation
+of a #String (like adding two strings together) results in the creation of new #String objects.
+
+If you intend to perform extensive string manipulation, you should certainly consider using
+a #TStringBuilder.
+
+> Although #TStringBuilder generally offers better efficiency over #String, you don't
+necessarily want to replace all uses of #String with #TStringBuilder whenever you do
+string manipulation. There are a number of factors - like the size of the string, memory
+allocations, the system you are running on, and the kind of operation - which determine
+whether using a #TStringBuilder offers a significant performance improvement. Try to
+benchmark any changes you make to ensure you are using the best features.

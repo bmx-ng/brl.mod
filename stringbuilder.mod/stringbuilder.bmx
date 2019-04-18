@@ -170,15 +170,19 @@ Public
 	TStringBuilder objects are simply mem-copied.
 	End Rem
 	Method Append:TStringBuilder(obj:Object)
-		If TStringBuilder(obj) Then
-			bmx_stringbuilder_append_stringbuffer(buffer, TStringBuilder(obj).buffer)
+		If obj Then
+			bmx_stringbuilder_append_string(buffer, obj.ToString())
 		Else
-			If obj Then
-				bmx_stringbuilder_append_string(buffer, obj.ToString())
-			Else
-				Return AppendNull()
-			End If
+			Return AppendNull()
 		End If
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #TStringBuilder onto the string builder.
+	End Rem
+	Method Append:TStringBuilder(sb:TStringBuilder)
+		bmx_stringbuilder_append_stringbuffer(buffer, sb.buffer)
 		Return Self
 	End Method
 	
@@ -422,6 +426,18 @@ Public
 	End Method
 	
 	Rem
+	bbdoc: Returns the char value in the buffer at the specified index.
+	about: The first char value is at index 0, the next at index 1, and so on, as in array indexing.
+	@index must be greater than or equal to 0, and less than the length of the buffer.
+	End Rem
+	Method Operator[]:Int(index:Int)
+?debug
+		If index < 0 Or index >= Length() Throw New TArrayBoundsException
+?
+		Return bmx_stringbuilder_charat(buffer, index)
+	End Method
+	
+	Rem
 	bbdoc: Returns true if string contains @subString.
 	End Rem
 	Method Contains:Int(subString:String)
@@ -506,6 +522,17 @@ Public
 	End Method
 	
 	Rem
+	bbdoc: The character at the specified index is set to @char.
+	about: @index must be greater than or equal to 0, and less than the length of the buffer.
+	End Rem
+	Method Operator []= (index:Int, char:Int)
+?debug
+		If index < 0 Or index >= Length() Throw New TArrayBoundsException
+?
+		bmx_stringbuilder_setcharat(buffer, index, char)
+	End Method
+	
+	Rem
 	bbdoc: Sets the text to be appended when a new line is added.
 	End Rem
 	Method SetNewLineText:TStringBuilder(newLine:String)
@@ -532,7 +559,8 @@ Public
 	End Method
 	
 	Rem
-	bbdoc: 
+	bbdoc: Creates a split buffer using the specified separator.
+	about: The #TSplitBuffer can be used to iterate over the split text.
 	End Rem
 	Method Split:TSplitBuffer(separator:String)
 		Local buf:TSplitBuffer = New TSplitBuffer
@@ -559,13 +587,14 @@ End Type
 
 Rem
 bbdoc: An array of split text from a TStringBuilder.
-about: Note that the TSplitBuffer is only valid while its parent TStringBuilder is unchanged.
+about: Note that the #TSplitBuffer is only valid while its parent TStringBuilder is unchanged.
 Once you modify the TStringBuffer you should call Split() again.
 End Rem
 Type TSplitBuffer
+Private
 	Field buffer:TStringBuilder
 	Field splitPtr:Byte Ptr
-	
+Public
 	Rem
 	bbdoc: The number of split elements.
 	End Rem
@@ -621,4 +650,3 @@ Type TSplitBufferEnum
 	End Method
 
 End Type
-
