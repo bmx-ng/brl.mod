@@ -3,8 +3,8 @@ SuperStrict
 Framework brl.standardio
 Import brl.vector
 
-Local a:SVec2 = New SVec2(12, 2)
+Local a:SVec2D = New SVec2D(12, 2)
 
-Local b:SVec2 = -a
+Local b:SVec2D = -a
 
 Print b.ToString() ' -12, -2

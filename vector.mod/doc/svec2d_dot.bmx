@@ -3,8 +3,8 @@ SuperStrict
 Framework brl.standardio
 Import brl.vector
 
-Local a:SVec2 = New SVec2(-6, 8)
-Local b:SVec2 = New SVec2(5, 12)
+Local a:SVec2D = New SVec2D(-6, 8)
+Local b:SVec2D = New SVec2D(5, 12)
 
 Local dot:Float = a.Dot(b)
 

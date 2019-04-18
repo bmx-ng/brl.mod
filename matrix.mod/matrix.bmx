@@ -41,14 +41,14 @@ Import BRL.StringBuilder
 Rem
 bbdoc: A 2x2 Matrix
 End Rem
-Struct SMat2
+Struct SMat2D
 	Field ReadOnly a:Double
 	Field ReadOnly b:Double
 	Field ReadOnly c:Double
 	Field ReadOnly d:Double
 	
 	Rem
-	bbdoc: Creates a new #SMat2 from the supplied arguments.
+	bbdoc: Creates a new #SMat2D from the supplied arguments.
 	End Rem
 	Method New(a:Double, b:Double, c:Double, d:Double)
 		Self.a = a
@@ -60,50 +60,50 @@ Struct SMat2
 	Rem
 	bbdoc: Applies the matrix to the vector @v, returning a new vector.
 	End Rem
-	Method Apply:SVec2(v:SVec2)
-		Return New SVec2(a * v.x + c * v.y, b * v.x + d * v.y)
+	Method Apply:SVec2D(v:SVec2D)
+		Return New SVec2D(a * v.x + c * v.y, b * v.x + d * v.y)
 	End Method
 
 	Rem
 	bbdoc: Returns the identity matrix.
 	End Rem
-	Function Identity:SMat2()
-		Return New SMat2(1, 0, 0, 1)
+	Function Identity:SMat2D()
+		Return New SMat2D(1, 0, 0, 1)
 	End Function
 	
 	Rem
 	bbdoc: Adds @z to the matrix, returning a new matrix.
 	End Rem
-	Method Operator+:SMat2(z:SMat2)
-		Return New SMat2(a + z.a, b + z.b, c + z.c, d + z.d)
+	Method Operator+:SMat2D(z:SMat2D)
+		Return New SMat2D(a + z.a, b + z.b, c + z.c, d + z.d)
 	End Method
 	
 	Rem
 	bbdoc: Subtracts @z from the matrix, returning a new matrix.
 	End Rem
-	Method Operator-:SMat2(z:SMat2)
-		Return New SMat2(a - z.a, b - z.b, c - z.c, d - z.d)
+	Method Operator-:SMat2D(z:SMat2D)
+		Return New SMat2D(a - z.a, b - z.b, c - z.c, d - z.d)
 	End Method
 	
 	Rem
 	bbdoc: Multiplies the matrix by @z, returning a new matrix.
 	End Rem
-	Method Operator*:SMat2(z:SMat2)
-		Return New SMat2(a * z.a + c * z.b, b * z.a + d * z.b, a * z.c + c * z.d, b * z.c + d * z.d)
+	Method Operator*:SMat2D(z:SMat2D)
+		Return New SMat2D(a * z.a + c * z.b, b * z.a + d * z.b, a * z.c + c * z.d, b * z.c + d * z.d)
 	End Method
 	
 	Rem
 	bbdoc: Returns the transposition of the cofactor matrix.
 	End Rem
-	Method Adjoint:SMat2()
-		Return New SMat2(d, -b, -c, a)
+	Method Adjoint:SMat2D()
+		Return New SMat2D(d, -b, -c, a)
 	End Method
 	
 	Rem
 	bbdoc: Multiplies the matrix by @z by its components, return a new matrix.
 	End Rem
-	Method CompMul:SMat2(z:SMat2)
-		Return New SMat2(a * z.a, b * z.b, c * z.c, d * z.d)
+	Method CompMul:SMat2D(z:SMat2D)
+		Return New SMat2D(a * z.a, b * z.b, c * z.c, d * z.d)
 	End Method
 	
 	Rem
@@ -116,52 +116,52 @@ Struct SMat2
 	Rem
 	bbdoc: Returns the inverse of the matrix.
 	End Rem
-	Method Invert:SMat2()
+	Method Invert:SMat2D()
 		Local det:Double = a * d - c * b
 		If det = 0 Then
-			Return New SMat2(0, 0, 0, 0)
+			Return New SMat2D(0, 0, 0, 0)
 		End If
 		det = 1 / det
-		Return New SMat2(d * det, -b * det, -c * det, a * det)
+		Return New SMat2D(d * det, -b * det, -c * det, a * det)
 	End Method
 	
 	Rem
 	bbdoc: Rotates the matrix by @angle degrees, returning the rotated matrix.
 	End Rem
-	Method Rotate:SMat2(angle:Double)
+	Method Rotate:SMat2D(angle:Double)
 		Local sa:Double = Sin(angle)
 		Local ca:Double = Cos(angle)
-		Return New SMat2(a * ca + c * sa, b * ca + d * sa, a * -sa + c * ca, b * -sa + d * ca)
+		Return New SMat2D(a * ca + c * sa, b * ca + d * sa, a * -sa + c * ca, b * -sa + d * ca)
 	End Method
 	
 	Rem
 	bbdoc: Creates a rotated matrix of @angle degrees.
 	End Rem
-	Function Rotation:SMat2(angle:Double)
+	Function Rotation:SMat2D(angle:Double)
 		Local sa:Double = Sin(angle)
 		Local ca:Double = Cos(angle)
-		Return New SMat2(ca, sa, -sa, ca)
+		Return New SMat2D(ca, sa, -sa, ca)
 	End Function
 	
 	Rem
 	bbdoc: Returns the scale of this matrix.
 	End Rem
-	Method Scale:SMat2(s:SVec2)
-		Return New SMat2(a * s.x, b * s.x, c * s.y, d * s.y)
+	Method Scale:SMat2D(s:SVec2D)
+		Return New SMat2D(a * s.x, b * s.x, c * s.y, d * s.y)
 	End Method
 	
 	Rem
 	bbdoc: Creates a scaled matrix of the scale @s.
 	End Rem
-	Function Scaling:SMat2(s:SVec2)
-		Return New SMat2(s.x, 0, 0, s.y)
+	Function Scaling:SMat2D(s:SVec2D)
+		Return New SMat2D(s.x, 0, 0, s.y)
 	End Function
 	
 	Rem
 	bbdoc: Returns the transpose of this matrix.
 	End Rem
-	Method Transpose:SMat2()
-		Return New SMat2(a, c, b, d)
+	Method Transpose:SMat2D()
+		Return New SMat2D(a, c, b, d)
 	End Method
 	
 	Rem
@@ -181,7 +181,7 @@ End Struct
 Rem
 bbdoc: A 3x3 matrix.
 End Rem
-Struct SMat3
+Struct SMat3D
 	Field ReadOnly a:Double
 	Field ReadOnly b:Double
 	Field ReadOnly c:Double
@@ -193,7 +193,7 @@ Struct SMat3
 	Field ReadOnly i:Double
 
 	Rem
-	bbdoc: Creates a new #SMat3 from the supplied arguments.
+	bbdoc: Creates a new #SMat3D from the supplied arguments.
 	End Rem
 	Method New(a:Double, b:Double, c:Double, d:Double, e:Double, f:Double, g:Double, h:Double, i:Double)
 		Self.a = a
@@ -210,42 +210,42 @@ Struct SMat3
 	Rem
 	bbdoc: Applies the matrix to the vector @v, returning a new vector.
 	End Rem
-	Method Apply:SVec2(v:SVec2)
-		Return New SVec2(a * v.x + d * v.y + g, b * v.x + e * v.y + h)
+	Method Apply:SVec2D(v:SVec2D)
+		Return New SVec2D(a * v.x + d * v.y + g, b * v.x + e * v.y + h)
 	End Method
 
 	Rem
 	bbdoc: Applies the matrix to the vector @v, returning a new vector.
 	End Rem
-	Method Apply:SVec3(v:SVec3)
-		Return New SVec3(v.x * a + v.y * d + v.z * g, v.x * b + v.y * e + v.z * h, v.x * c + v.y * f + v.z * i)
+	Method Apply:SVec3D(v:SVec3D)
+		Return New SVec3D(v.x * a + v.y * d + v.z * g, v.x * b + v.y * e + v.z * h, v.x * c + v.y * f + v.z * i)
 	End Method
 
 	Rem
 	bbdoc: Return the 3x3 identity matrix.
 	End Rem
-	Function Identity:SMat3()
-		Return New SMat3(1, 0, 0, 0, 1, 0, 0, 0, 1)
+	Function Identity:SMat3D()
+		Return New SMat3D(1, 0, 0, 0, 1, 0, 0, 0, 1)
 	End Function
 	
 	Rem
 	bbdoc: Adds @z to the matrix, returning a new matrix.
 	End Rem
-	Method Operator+:SMat3(z:SMat3 Var)
-		Return New SMat3(a + z.a, b + z.b, c + z.c, d + z.d, e + z.e, f + z.f, g + z.g, h + z.h, i + z.i)
+	Method Operator+:SMat3D(z:SMat3D Var)
+		Return New SMat3D(a + z.a, b + z.b, c + z.c, d + z.d, e + z.e, f + z.f, g + z.g, h + z.h, i + z.i)
 	End Method
 	
 	Rem
 	bbdoc: Subtracts @z from the matrix, returning a new matrix.
 	End Rem
-	Method Operator-:SMat3(z:SMat3 Var)
-		Return New SMat3(a - z.a, b - z.b, c - z.c, d - z.d, e - z.e, f - z.f, g - z.g, h - z.h, i - z.i)
+	Method Operator-:SMat3D(z:SMat3D Var)
+		Return New SMat3D(a - z.a, b - z.b, c - z.c, d - z.d, e - z.e, f - z.f, g - z.g, h - z.h, i - z.i)
 	End Method
 	
 	Rem
 	bbdoc: Multiplies the matrix by @z, returning a new matrix.
 	End Rem
-	Method Operator*:SMat3(z:SMat3 Var)
+	Method Operator*:SMat3D(z:SMat3D Var)
 		Local a00:Double = a
 		Local a01:Double = b
 		Local a02:Double = c
@@ -264,7 +264,7 @@ Struct SMat3
 		Local b20:Double = z.g
 		Local b21:Double = z.h
 		Local b22:Double = z.i
-		Return New SMat3(b00 * a00 + b01 * a10 + b02 * a20, ..
+		Return New SMat3D(b00 * a00 + b01 * a10 + b02 * a20, ..
 			b00 * a01 + b01 * a11 + b02 * a21, ..
 			b00 * a02 + b01 * a12 + b02 * a22, ..
 			b10 * a00 + b11 * a10 + b12 * a20, ..
@@ -278,8 +278,8 @@ Struct SMat3
 	Rem
 	bbdoc: Returns the transposition of the cofactor matrix.
 	End Rem
-	Method Adjoint:SMat3()
-		Return New SMat3(e * i - f * h, ..
+	Method Adjoint:SMat3D()
+		Return New SMat3D(e * i - f * h, ..
 			c * h - b * i, ..
 			b * f - c * e, ..
 			f * g - d * i, ..
@@ -293,8 +293,8 @@ Struct SMat3
 	Rem
 	bbdoc: Multiplies the matrix by @z by its components, return a new matrix.
 	End Rem
-	Method CompMul:SMat3(z:SMat3 Var)
-		Return New SMat3(a * z.a, b * z.b, c * z.c, d * z.d, e * z.e, f * z.f, g * z.g, h * z.h, i * z.i)
+	Method CompMul:SMat3D(z:SMat3D Var)
+		Return New SMat3D(a * z.a, b * z.b, c * z.c, d * z.d, e * z.e, f * z.f, g * z.g, h * z.h, i * z.i)
 	End Method
 	
 	Rem
@@ -316,7 +316,7 @@ Struct SMat3
 	Rem
 	bbdoc: Returns the inverse of the matrix.
 	End Rem
-	Method Invert:SMat3()
+	Method Invert:SMat3D()
 		Local a00:Double = a
 		Local a01:Double = b
 		Local a02:Double = c
@@ -331,10 +331,10 @@ Struct SMat3
 		Local b21:Double =  a21 * a10 - a11 * a20
 		Local det:Double = a00 * b01 + a01 * b11 + a02 * b21
 		If det = 0 Then
-			Return New SMat3(0, 0, 0, 0, 0, 0, 0, 0, 0)
+			Return New SMat3D(0, 0, 0, 0, 0, 0, 0, 0, 0)
 		End If
 		det = 1 / det
-		Return New SMat3(b01 * det, ..
+		Return New SMat3D(b01 * det, ..
 			(-a22 * a01 + a02 * a21) * det, ..
 			( a12 * a01 - a02 * a11) * det,
 			b11 * det, ..
@@ -348,10 +348,10 @@ Struct SMat3
 	Rem
 	bbdoc: Rotates the matrix by @angle degrees, returning a new matrix.
 	End Rem
-	Method Rotate:SMat3(angle:Double)
+	Method Rotate:SMat3D(angle:Double)
 		Local sa:Double = Sin(angle)
 		Local ca:Double = Cos(angle)
-		Return New SMat3(ca * a + sa * d, ..
+		Return New SMat3D(ca * a + sa * d, ..
 			ca * b + sa * e, ..
 			ca * c + sa * f, ..
 			ca * d - sa * a, ..
@@ -363,33 +363,33 @@ Struct SMat3
 	Rem
 	bbdoc: Retrns a rotation matrix of @angle degrees.
 	End Rem
-	Function Rotation:SMat3(angle:Double)
+	Function Rotation:SMat3D(angle:Double)
 		Local sa:Double = Sin(angle)
 		Local ca:Double = Cos(angle)
-		Return New SMat3(ca, sa, 0, -sa, ca, 0, 0, 0, 1)
+		Return New SMat3D(ca, sa, 0, -sa, ca, 0, 0, 0, 1)
 	End Function
 	
 	Rem
 	bbdoc: Scales the matrix by @s, returning a new matrix.
 	End Rem
-	Method Scale:SMat3(s:SVec2)
+	Method Scale:SMat3D(s:SVec2D)
 		Local bx:Double = s.x
 		Local by:Double = s.y
-		Return New SMat3(a * bx, b * bx, c * bx, d * by, e * by, f * by, g, h, i)
+		Return New SMat3D(a * bx, b * bx, c * bx, d * by, e * by, f * by, g, h, i)
 	End Method
 	
 	Rem
 	bbdoc: Returns a scaling matrix of @s.
 	End Rem
-	Function Scaling:SMat3(s:SVec2)
-		Return New SMat3(s.x, 0, 0, 0, s.y, 0, 0, 0, 1)
+	Function Scaling:SMat3D(s:SVec2D)
+		Return New SMat3D(s.x, 0, 0, 0, s.y, 0, 0, 0, 1)
 	End Function
 	
 	Rem
 	bbdoc: Returns a transposition of the matrix.
 	End Rem
-	Method Transpose:SMat3()
-		Return New SMat3(a, d, g, b, e, h, c, f, i)
+	Method Transpose:SMat3D()
+		Return New SMat3D(a, d, g, b, e, h, c, f, i)
 	End Method
 	
 	Rem
@@ -410,7 +410,7 @@ End Struct
 Rem
 bbdoc: A standard 4x4 transformation matrix.
 End Rem
-Struct SMat4
+Struct SMat4D
 	Field ReadOnly a:Double
 	Field ReadOnly b:Double
 	Field ReadOnly c:Double
@@ -429,7 +429,7 @@ Struct SMat4
 	Field ReadOnly p:Double
 
 	Rem
-	bbdoc: Creates a new #SMat4 from the supplied arguments.
+	bbdoc: Creates a new #SMat4D from the supplied arguments.
 	End Rem
 	Method New(a:Double, b:Double, c:Double, d:Double, e:Double, f:Double, g:Double, h:Double, i:Double, j:Double, k:Double, l:Double, m:Double, n:Double, o:Double, p:Double)
 		Self.a = a
@@ -453,21 +453,21 @@ Struct SMat4
 	Rem
 	bbdoc: Applies the matrix to the vector @v, returning a new vector.
 	End Rem
-	Method Apply:SVec2(v:SVec2)
-		Return New SVec2(a * v.x + e * v.y + m, b * v.x + f * v.y + n)
+	Method Apply:SVec2D(v:SVec2D)
+		Return New SVec2D(a * v.x + e * v.y + m, b * v.x + f * v.y + n)
 	End Method
 
 	Rem
 	bbdoc: Applies the 4x4 matrix @b to the vector, returning a new vector.
 	End Rem
-	Method Apply:SVec3(v:SVec3)
+	Method Apply:SVec3D(v:SVec3D)
 		Local w:Double = d * v.x + h * v.y + l * v.z + p
 		If w = 0 Then
 			w = 1
 		Else
 			w = 1 / w
 		End If
-		Return New SVec3((a * v.x + e * v.y + i * v.z + m) * w, ..
+		Return New SVec3D((a * v.x + e * v.y + i * v.z + m) * w, ..
 			(b * v.x + f * v.y + j * v.z + n) * w, ..
 			(c * v.x + g * v.y + k * v.z + o) * w)
 	End Method
@@ -475,8 +475,8 @@ Struct SMat4
 	Rem
 	bbdoc: Returns the identity matrix.
 	End Rem
-	Function Identity:SMat4()
-		Return New SMat4(1, 0, 0, 0, ..
+	Function Identity:SMat4D()
+		Return New SMat4D(1, 0, 0, 0, ..
 				0, 1, 0, 0, ..
 				0, 0, 1, 0, ..
 				0, 0, 0, 1)
@@ -485,8 +485,8 @@ Struct SMat4
 	Rem
 	bbdoc: Adds @z to the matrix, returning a new matrix.
 	End Rem
-	Method Operator+:SMat4(z:SMat4 Var)
-		Return New SMat4(a + z.a, b + z.b, c + z.c, d + z.d, ..
+	Method Operator+:SMat4D(z:SMat4D Var)
+		Return New SMat4D(a + z.a, b + z.b, c + z.c, d + z.d, ..
 			e + z.e, f + z.f, g + z.g, h + z.h, ..
 			i + z.i, j + z.j, k + z.k, l + z.l, ..
 			m + z.m, n + z.n, o + z.o, p + z.p)
@@ -495,8 +495,8 @@ Struct SMat4
 	Rem
 	bbdoc: Subtracts @z from the matrix, returning a new matrix.
 	End Rem
-	Method Operator-:SMat4(z:SMat4 Var)
-		Return New SMat4(a - z.a, b - z.b, c - z.c, d - z.d, ..
+	Method Operator-:SMat4D(z:SMat4D Var)
+		Return New SMat4D(a - z.a, b - z.b, c - z.c, d - z.d, ..
 			e - z.e, f - z.f, g - z.g, h - z.h, ..
 			i - z.i, j - z.j, k - z.k, l - z.l, ..
 			m - z.m, n - z.n, o - z.o, p - z.p)
@@ -505,7 +505,7 @@ Struct SMat4
 	Rem
 	bbdoc: Multiplies the matrix by @z, returning a new matrix. 
 	End Rem
-	Method Operator*:SMat4(z:SMat4 Var)
+	Method Operator*:SMat4D(z:SMat4D Var)
 		Local a00:Double = a
 		Local a01:Double = b
 		Local a02:Double = c
@@ -538,7 +538,7 @@ Struct SMat4
 		Local b31:Double = z.n
 		Local b32:Double = z.o
 		Local b33:Double = z.p
-		Return New SMat4(b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30, ..
+		Return New SMat4D(b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30, ..
 			b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31, ..
 			b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32, ..
 			b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33, ..
@@ -559,7 +559,7 @@ Struct SMat4
 	Rem
 	bbdoc: Returns the transposition of the cofactor matrix.
 	End Rem
-	Method Adjoint:SMat4()
+	Method Adjoint:SMat4D()
 		Local a00:Double = a
 		Local a01:Double = b
 		Local a02:Double = c
@@ -576,7 +576,7 @@ Struct SMat4
 		Local a31:Double = n
 		Local a32:Double = o
 		Local a33:Double = p
-		Return New SMat4(a11 * (a22 * a33 - a23 * a32) - a21 * (a12 * a33 - a13 * a32) + a31 * (a12 * a23 - a13 * a22), ..
+		Return New SMat4D(a11 * (a22 * a33 - a23 * a32) - a21 * (a12 * a33 - a13 * a32) + a31 * (a12 * a23 - a13 * a22), ..
 			-(a01 * (a22 * a33 - a23 * a32) - a21 * (a02 * a33 - a03 * a32) + a31 * (a02 * a23 - a03 * a22)), ..
 			a01 * (a12 * a33 - a13 * a32) - a11 * (a02 * a33 - a03 * a32) + a31 * (a02 * a13 - a03 * a12), ..
 			-(a01 * (a12 * a23 - a13 * a22) - a11 * (a02 * a23 - a03 * a22) + a21 * (a02 * a13 - a03 * a12)), ..
@@ -597,8 +597,8 @@ Struct SMat4
 	Rem
 	bbdoc: Multiplies the matrix by @z by its components, returning a new matrix.
 	End Rem
-	Method CompMul:SMat4(z:SMat4 Var)
-		Return New SMat4(a * z.a, b * z.b, c * z.c, d * z.d, ..
+	Method CompMul:SMat4D(z:SMat4D Var)
+		Return New SMat4D(a * z.a, b * z.b, c * z.c, d * z.d, ..
 			e * z.e, f * z.f, g * z.g, h * z.h, ..
 			i * z.i, j * z.j, k * z.k, l * z.l, ..
 			m * z.m, n * z.n, o * z.o, p * z.p)
@@ -642,11 +642,11 @@ Struct SMat4
 	Rem
 	bbdoc: Returns a projection matrix with a viewing frustum defined by the plane coordinates passed in.
 	End Rem
-	Function Frustum:SMat4(l:Double, r:Double, b:Double, t:Double, n:Double, f:Double)
+	Function Frustum:SMat4D(l:Double, r:Double, b:Double, t:Double, n:Double, f:Double)
 		Local rl:Double = 1.0 / (r - l)
 		Local tb:Double = 1.0 / (t - b)
 		Local nf:Double = 1.0 / (n - f)
-		Return New SMat4((2.0 * n) * rl, 0, 0, 0, ..
+		Return New SMat4D((2.0 * n) * rl, 0, 0, 0, ..
 			0, (2.0 * n) * tb, 0, 0, ..
 			(r + l) * rl, (t + b) * tb, (f + n) * nf, -1, ..
 			0, 0, (2.0 * n * f) * nf, 0)
@@ -657,7 +657,7 @@ Struct SMat4
 	about: An inverted matrix is such that if multiplied by the original would result in identity matrix.
 	If some matrix transforms vectors in a particular way, then the inverse matrix can transform them back.
 	End Rem
-	Method Invert:SMat4()
+	Method Invert:SMat4D()
 		Local a00:Double = a
 		Local a01:Double = b
 		Local a02:Double = c
@@ -688,10 +688,10 @@ Struct SMat4
 		Local b11:Double = a22 * a33 - a23 * a32
 		Local det:Double = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06
 		If det = 0 Then
-			Return New SMat4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+			Return New SMat4D(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 		End If
 		det = 1 / det
-		Return New SMat4((a11 * b11 - a12 * b10 + a13 * b09) * det, ..
+		Return New SMat4D((a11 * b11 - a12 * b10 + a13 * b09) * det, ..
 			(a02 * b10 - a01 * b11 - a03 * b09) * det, ..
 			(a31 * b05 - a32 * b04 + a33 * b03) * det, ..
 			(a22 * b04 - a21 * b05 - a23 * b03) * det, ..
@@ -713,7 +713,7 @@ Struct SMat4
 	bbdoc: Computes a transformation matrix that corresponds to a camera viewing the @eye from the @pos.
 	about: The right-hand vector is perpendicular to the up vector.
 	End Rem
-	Function LookAt:SMat4(eye:SVec3, pos:SVec3, up:SVec3)
+	Function LookAt:SMat4D(eye:SVec3D, pos:SVec3D, up:SVec3D)
 		Local ex:Double = eye.x
 		Local ey:Double = eye.y
 		Local ez:Double = eye.z
@@ -769,7 +769,7 @@ Struct SMat4
 			y2 :* length
 		End If
 		
-		Return New SMat4(x0, y0, z0, 0, x1, y1, z1, 0, x2, y2, z2, 0, ..
+		Return New SMat4D(x0, y0, z0, 0, x1, y1, z1, 0, x2, y2, z2, 0, ..
 			-(x0 * ex + x1 * ey + x2 * ez), -(y0 * ex + y1 * ey + y2 * ez), -(z0 * ex + z1 * ey + z2 * ez), 1)
 	End Function
 	
@@ -777,9 +777,9 @@ Struct SMat4
 	bbdoc: Creates an orthogonal projection matrix.
 	about: The returned matrix, when used as a Camera's projection matrix, creates a view showing the area between @width and @height, with @zNear and @zFar as the near and far depth clipping planes.
 	End Rem
-	Function Orthogonal:SMat4(width:Double, height:Double, zNear:Double, zFar:Double)
+	Function Orthogonal:SMat4D(width:Double, height:Double, zNear:Double, zFar:Double)
 		Local nf:Double = 1.0 / (zNear - zFar)
-		Return New SMat4(2.0 / width, 0, 0, 0, ..
+		Return New SMat4D(2.0 / width, 0, 0, 0, ..
 			0, 2.0 / height, 0, 0, ..
 			0, 0, 2.0 * nf, 0, ..
 			0, 0, (zNear + zFar) * nf, 1)
@@ -788,10 +788,10 @@ Struct SMat4
 	Rem
 	bbdoc: Creates a perspective projection matrix.
 	End Rem
-	Function Perspective:SMat4(fov:Double, w:Double, h:Double, n:Double, f:Double)
+	Function Perspective:SMat4D(fov:Double, w:Double, h:Double, n:Double, f:Double)
 		Local ft:Double = 1.0 / Tan(fov * 0.5)
 		Local nf:Double = 1.0 / (n - f)
-		Return New SMat4(ft, 0, 0, 0, ..
+		Return New SMat4D(ft, 0, 0, 0, ..
 			0, ft * w / h, 0, 0, ..
 			0, 0, (f + n) * nf, -1, ..
 			0, 0, (2.0 * f * n) * nf, 0) 
@@ -800,7 +800,7 @@ Struct SMat4
 	Rem
 	bbdoc: Creates a rotation matrix, rotated @angle degrees around the point @axis.
 	End Rem
-	Method Rotate:SMat4(axis:SVec3, angle:Double)
+	Method Rotate:SMat4D(axis:SVec3D, angle:Double)
 		Local x:Double = axis.x
 		Local y:Double = axis.y
 		Local z:Double = axis.z
@@ -828,7 +828,7 @@ Struct SMat4
 		Local b20:Double = x * z * t + y * sa
 		Local b21:Double = y * z * t - x * sa
 		Local b22:Double = z * z * t + ca
-		Return New SMat4(a00 * b00 + a10 * b01 + a20 * b02, ..
+		Return New SMat4D(a00 * b00 + a10 * b01 + a20 * b02, ..
 			a01 * b00 + a11 * b01 + a21 * b02, ..
 			a02 * b00 + a12 * b01 + a22 * b02, ..
 			a03 * b00 + a13 * b01 + a23 * b02, ..
@@ -846,14 +846,14 @@ Struct SMat4
 	Rem
 	bbdoc: Returns a rotation matrix on the given @axis and @angle degrees.
 	End Rem
-	Function Rotation:SMat4(axis:SVec3, angle:Double)
+	Function Rotation:SMat4D(axis:SVec3D, angle:Double)
 		Local x:Double = axis.x
 		Local y:Double = axis.y
 		Local z:Double = axis.z
 		Local sa:Double = Sin(angle)
 		Local ca:Double = Cos(angle)
 		Local t:Double = 1 - ca
-		Return New SMat4(x * x * t + ca, ..
+		Return New SMat4D(x * x * t + ca, ..
 			y * x * t + z * sa, ..
 			z * x * t - y * sa, ..
 			0, ..
@@ -870,11 +870,11 @@ Struct SMat4
 	Rem
 	bbdoc: Scales the matrix, return the new scaled matrix.
 	End Rem
-	Method Scale:SMat4(s:SVec3)
+	Method Scale:SMat4D(s:SVec3D)
 		Local bx:Double = s.x
 		Local by:Double = s.y
 		Local bz:Double = s.z
-		Return New SMat4(a * bx, b * bx, c * bx, d * bx, ..
+		Return New SMat4D(a * bx, b * bx, c * bx, d * bx, ..
 			e * by, f * by, g * by, h * by, ..
 			i * bz, j * bz, k * bz, l * bz, ..
 			m, n, o, p)
@@ -883,26 +883,26 @@ Struct SMat4
 	Rem
 	bbdoc: Creates a scaling matrix.
 	End Rem
-	Function Scaling:SMat4(s:SVec3)
-		Return New SMat4(s.x, 0, 0, 0, 0, s.y, 0, 0, 0, 0, s.z, 0, 0, 0, 0, 1)
+	Function Scaling:SMat4D(s:SVec3D)
+		Return New SMat4D(s.x, 0, 0, 0, 0, s.y, 0, 0, 0, 0, s.z, 0, 0, 0, 0, 1)
 	End Function
 
 	Rem
 	bbdoc: Returns the transpose of this matrix.
 	about: The transposed matrix is the one that has the columns exchanged with its rows.
 	End Rem
-	Method Transpose:SMat4()
-		Return New SMat4(a, e, i, m, b, f, j, n, c, g, k, o, d, h, l, p)
+	Method Transpose:SMat4D()
+		Return New SMat4D(a, e, i, m, b, f, j, n, c, g, k, o, d, h, l, p)
 	End Method
 	
 	Rem
 	bbdoc: Translates the matrix to @s.
 	End Rem
-	Method Translate:SMat4(s:SVec3)
+	Method Translate:SMat4D(s:SVec3D)
 		Local bx:Double = s.x
 		Local by:Double = s.y
 		Local bz:Double = s.z
-		Return New SMat4(a, b, c, d, e, f, g, h, i, j, k, l, ..
+		Return New SMat4D(a, b, c, d, e, f, g, h, i, j, k, l, ..
 			a * bx + e * by + i * bz + m, ..
 			b * bx + f * by + j * bz + n, ..
 			c * bx + g * by + k * bz + o, ..
@@ -912,8 +912,8 @@ Struct SMat4
 	Rem
 	bbdoc: Creates a translation matrix.
 	End Rem
-	Function Translation:SMat4(s:SVec3)
-		Return New SMat4(1, 0, 0, 0, ..
+	Function Translation:SMat4D(s:SVec3D)
+		Return New SMat4D(1, 0, 0, 0, ..
 			0, 1, 0, 0, ..
 			0, 0, 1, 0, ..
 			s.x, s.y, s.z, 1)
@@ -1050,7 +1050,7 @@ Struct SMat2F
 	Rem
 	bbdoc: Returns the scale of this matrix.
 	End Rem
-	Method Scale:SMat2F(s:SVec2)
+	Method Scale:SMat2F(s:SVec2D)
 		Return New SMat2F(Float(a * s.x), Float(b * s.x), Float(c * s.y), Float(d * s.y))
 	End Method
 	
@@ -1064,7 +1064,7 @@ Struct SMat2F
 	Rem
 	bbdoc: Creates a scaled matrix of the scale @s.
 	End Rem
-	Function Scaling:SMat2F(s:SVec2)
+	Function Scaling:SMat2F(s:SVec2D)
 		Return New SMat2F(Float(s.x), 0, 0, Float(s.y))
 	End Function
 	
@@ -1292,7 +1292,7 @@ Struct SMat3F
 	Rem
 	bbdoc: Scales the matrix by @s, returning a new matrix.
 	End Rem
-	Method Scale:SMat3F(s:SVec2)
+	Method Scale:SMat3F(s:SVec2D)
 		Local bx:Float = s.x
 		Local by:Float = s.y
 		Return New SMat3F(Float(a * bx), Float(b * bx), Float(c * bx), Float(d * by), Float(e * by), Float(f * by), g, h, i)
@@ -1308,7 +1308,7 @@ Struct SMat3F
 	Rem
 	bbdoc: Returns a scaling matrix of @s.
 	End Rem
-	Function Scaling:SMat3F(s:SVec2)
+	Function Scaling:SMat3F(s:SVec2D)
 		Return New SMat3F(Float(s.x), 0, 0, 0, Float(s.y), 0, 0, 0, 1)
 	End Function
 	
@@ -1810,7 +1810,7 @@ Struct SMat4F
 	Rem
 	bbdoc: Scales the matrix, return the new scaled matrix.
 	End Rem
-	Method Scale:SMat4F(s:SVec3)
+	Method Scale:SMat4F(s:SVec3D)
 		Local bx:Double = s.x
 		Local by:Double = s.y
 		Local bz:Double = s.z
@@ -1830,7 +1830,7 @@ Struct SMat4F
 	Rem
 	bbdoc: Creates a Scaling matrix.
 	End Rem
-	Function Scaling:SMat4F(s:SVec3)
+	Function Scaling:SMat4F(s:SVec3D)
 		Return New SMat4F(Float(s.x), 0, 0, 0, 0, Float(s.y), 0, 0, 0, 0, Float(s.z), 0, 0, 0, 0, 1)
 	End Function
 
@@ -1859,7 +1859,7 @@ Struct SMat4F
 	Rem
 	bbdoc: Translates the matrix To @s.
 	End Rem
-	Method Translate:SMat4F(s:SVec3)
+	Method Translate:SMat4F(s:SVec3D)
 		Local bx:Float = s.x
 		Local by:Float = s.y
 		Local bz:Float = s.z
@@ -1883,7 +1883,7 @@ Struct SMat4F
 	Rem
 	bbdoc: Creates a translation matrix.
 	End Rem
-	Function Translation:SMat4F(s:SVec3)
+	Function Translation:SMat4F(s:SVec3D)
 		Return New SMat4F(1, 0, 0, 0, ..
 			0, 1, 0, 0, ..
 			0, 0, 1, 0, ..
@@ -2021,7 +2021,7 @@ Struct SMat2I
 	Rem
 	bbdoc: Returns the scale of this matrix.
 	End Rem
-	Method Scale:SMat2I(s:SVec2)
+	Method Scale:SMat2I(s:SVec2D)
 		Return New SMat2I(Int(a * s.x), Int(b * s.x), Int(c * s.y), Int(d * s.y))
 	End Method
 
@@ -2263,7 +2263,7 @@ Struct SMat3I
 	Rem
 	bbdoc: Scales the matrix by @s, returning a new matrix.
 	End Rem
-	Method Scale:SMat3I(s:SVec2)
+	Method Scale:SMat3I(s:SVec2D)
 		Local bx:Int = s.x
 		Local by:Int = s.y
 		Return New SMat3I(Int(a * bx), Int(b * bx), Int(c * bx), Int(d * by), Int(e * by), Int(f * by), g, h, i)
@@ -2288,7 +2288,7 @@ Struct SMat3I
 	Rem
 	bbdoc: Returns a scaling matrix of @s.
 	End Rem
-	Function Scaling:SMat3I(s:SVec2)
+	Function Scaling:SMat3I(s:SVec2D)
 		Return New SMat3I(Int(s.x), 0, 0, 0, Int(s.y), 0, 0, 0, 1)
 	End Function
 
@@ -2797,7 +2797,7 @@ Struct SMat4I
 	Rem
 	bbdoc: Scales the matrix, return the new scaled matrix.
 	End Rem
-	Method Scale:SMat4I(s:SVec3)
+	Method Scale:SMat4I(s:SVec3D)
 		Local bx:Double = s.x
 		Local by:Double = s.y
 		Local bz:Double = s.z
@@ -2830,7 +2830,7 @@ Struct SMat4I
 	Rem
 	bbdoc: Creates a scaling matrix.
 	End Rem
-	Function Scaling:SMat4I(s:SVec3)
+	Function Scaling:SMat4I(s:SVec3D)
 		Return New SMat4I(Int(s.x), 0, 0, 0, 0, Int(s.y), 0, 0, 0, 0, Int(s.z), 0, 0, 0, 0, 1)
 	End Function
 
@@ -2866,7 +2866,7 @@ Struct SMat4I
 	Rem
 	bbdoc: Translates the matrix to @s.
 	End Rem
-	Method Translate:SMat4I(s:SVec3)
+	Method Translate:SMat4I(s:SVec3D)
 		Local bx:Double = s.x
 		Local by:Double = s.y
 		Local bz:Double = s.z
@@ -2904,7 +2904,7 @@ Struct SMat4I
 	Rem
 	bbdoc: Creates a translation matrix.
 	End Rem
-	Function Translation:SMat4I(s:SVec3)
+	Function Translation:SMat4I(s:SVec3D)
 		Return New SMat4I(1, 0, 0, 0, ..
 			0, 1, 0, 0, ..
 			0, 0, 1, 0, ..

@@ -40,12 +40,12 @@ Import BRL.StringBuilder
 Rem
 bbdoc: A 2-element structure that can be used to represent positions and directions in 2D-space.
 End Rem
-Struct SVec2
+Struct SVec2D
 	Field ReadOnly x:Double
 	Field ReadOnly y:Double
 	
 	Rem
-	bbdoc: Creates a new #SVec2 from the supplied arguments.
+	bbdoc: Creates a new #SVec2D from the supplied arguments.
 	End Rem
 	Method New(x:Double, y:Double)
 		Self.x = x
@@ -55,64 +55,64 @@ Struct SVec2
 	Rem
 	bbdoc: Returns #True if @b is different.
 	End Rem
-	Method Operator<>:Int(b:SVec2)
+	Method Operator<>:Int(b:SVec2D)
 		Return x <> b.x Or y <> b.y
 	End Method
 
 	Rem
 	bbdoc: Returns #True if the vector and @b are aproximately equal.
 	End Rem
-	Method Operator=:Int(b:SVec2)
+	Method Operator=:Int(b:SVec2D)
 		Return (Self - b).LengthSquared() < 0.00000001
 	End Method
 
 	Rem
 	bbdoc: Adds @b to the vector, returning a new vector.
 	End Rem
-	Method Operator+:SVec2(b:SVec2)
-		Return New SVec2(x + b.x, y + b.y)
+	Method Operator+:SVec2D(b:SVec2D)
+		Return New SVec2D(x + b.x, y + b.y)
 	End Method
 	
 	Rem
 	bbdoc: Subtracts @b from the vector, returning a new vector.
 	End Rem
-	Method Operator-:SVec2(b:SVec2)
-		Return New SVec2(x - b.x, y - b.y)
+	Method Operator-:SVec2D(b:SVec2D)
+		Return New SVec2D(x - b.x, y - b.y)
 	End Method
 	
 	Rem
 	bbdoc: Multiplies the vector by @b, returning a new vector.
 	End Rem
-	Method Operator*:SVec2(b:SVec2)
-		Return New SVec2(x * b.x, y * b.y)
+	Method Operator*:SVec2D(b:SVec2D)
+		Return New SVec2D(x * b.x, y * b.y)
 	End Method
 
 	Rem
 	bbdoc: Divides the vector by @b, returning a new vector.
 	End Rem
-	Method Operator/:SVec2(b:SVec2)
-		Return New SVec2(x / b.x, y / b.y)
+	Method Operator/:SVec2D(b:SVec2D)
+		Return New SVec2D(x / b.x, y / b.y)
 	End Method
 	
 	Rem
 	bbdoc: Returns a new vector, negated.
 	End Rem
-	Method Operator-:SVec2()
-		Return New SVec2(-x, -y)
+	Method Operator-:SVec2D()
+		Return New SVec2D(-x, -y)
 	End Method
 
 	Rem
 	bbdoc: Scales the vector by @s, returning a new vector.
 	End Rem
-	Method Operator*:SVec2(s:Double)
-		Return New SVec2(x * s, y * s)
+	Method Operator*:SVec2D(s:Double)
+		Return New SVec2D(x * s, y * s)
 	End Method
 
 	Rem
 	bbdoc: Divides the vector by @s, returning a new vector.
 	End Rem
-	Method Operator/:SVec2(s:Double)
-		Return New SVec2(x / s, y / s)
+	Method Operator/:SVec2D(s:Double)
+		Return New SVec2D(x / s, y / s)
 	End Method
 	
 	Rem
@@ -132,7 +132,7 @@ Struct SVec2
 	Rem
 	bbdoc: Returns the unsigned angle between this vector and @b.
 	End Rem
-	Method AngleTo:Double(b:SVec2)
+	Method AngleTo:Double(b:SVec2D)
 		Local d:Double = Sqr(LengthSquared() * b.LengthSquared())
 
 		If d < 1e-15 Then
@@ -146,22 +146,22 @@ Struct SVec2
 	Rem
 	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
 	End Rem
-	Method Clamp:SVec2(minv:SVec2, maxv:SVec2)
-		Return New SVec2(Clamp(x, minv.x, maxv.x), Clamp(y, minv.y, maxv.y))
+	Method Clamp:SVec2D(minv:SVec2D, maxv:SVec2D)
+		Return New SVec2D(Clamp(x, minv.x, maxv.x), Clamp(y, minv.y, maxv.y))
 	End Method
 	
 	Rem
 	bbdoc: Returns a vector that is made from the smallest components of the two vectors.
 	End Rem
-	Method Min:SVec2(b:SVec2)
-		Return New SVec2(Min(x, b.x), Min(y, b.y))
+	Method Min:SVec2D(b:SVec2D)
+		Return New SVec2D(Min(x, b.x), Min(y, b.y))
 	End Method
 	
 	Rem
 	bbdoc: Returns a vector that is made from the largest components of the two vectors.
 	End Rem
-	Method Max:SVec2(b:SVec2)
-		Return New SVec2(Max(x, b.x), Max(y, b.y))
+	Method Max:SVec2D(b:SVec2D)
+		Return New SVec2D(Max(x, b.x), Max(y, b.y))
 	End Method
 	
 	Rem
@@ -169,19 +169,19 @@ Struct SVec2
 	about: Interpolates between this vector and @b by the interpolant @t.
 	This is commonly used to find a point some fraction of the way along a line between two endpoints (e.g. to move an object gradually between those points).
 	End Rem
-	Method Interpolate:SVec2(b:SVec2, t:Double)
-		Return New SVec2(Lerp(x, b.x, t), Lerp(y, b.y, t))
+	Method Interpolate:SVec2D(b:SVec2D, t:Double)
+		Return New SVec2D(Lerp(x, b.x, t), Lerp(y, b.y, t))
 	End Method
 	
 	Rem
 	bbdoc: Returns a vector with a magnitude of 1.
 	about: When normalized, a vector keeps the same direction but its length is 1.0.
 	End Rem
-	Method Normal:SVec2()
+	Method Normal:SVec2D()
 		Local length:Double = x * x + y * y
 		If length > 0 Then
 			length = Sqr(length)
-			Return New SVec2(x / length, y / length)
+			Return New SVec2D(x / length, y / length)
 		End If
 		Return Self
 	End Method
@@ -191,7 +191,7 @@ Struct SVec2
 	about: For normalized vectors #Dot returns 1 if they point in exactly the same direction, -1 if they point in completely opposite directions,
 	and a number in between for other cases (e.g. Dot returns zero if vectors are perpendicular).
 	End Rem
-	Method Dot:Double(b:SVec2)
+	Method Dot:Double(b:SVec2D)
 		Return x * b.x + y * b.y
 	End Method
 	
@@ -214,28 +214,28 @@ Struct SVec2
 	Rem
 	bbdoc: Returns the distance between the vector And @b.
 	End Rem
-	Method DistanceTo:Double(b:SVec2)
+	Method DistanceTo:Double(b:SVec2D)
 		Return (Self - b).Length()
 	End Method
 	
 	Rem
 	bbdoc: Returns the squared distance between the vector and @b.
 	End Rem
-	Method DistanceToSquared:Double(b:SVec2)
+	Method DistanceToSquared:Double(b:SVec2D)
 		Return (Self - b).LengthSquared()
 	End Method
 	
 	Rem
 	bbdoc: Returns a vector perpendicular to the vector.
 	End Rem
-	Method Perpendicular:SVec2()
-		Return New SVec2(-y, x)
+	Method Perpendicular:SVec2D()
+		Return New SVec2D(-y, x)
 	End Method
 	
 	Rem
 	bbdoc: Returns a vector reflected from the given plane, specified by its normal vector.
 	End Rem
-	Method Reflect:SVec2(n:SVec2)
+	Method Reflect:SVec2D(n:SVec2D)
 		Return n * Dot(n) * 2.0 - Self
 	End Method
 
@@ -257,13 +257,13 @@ End Struct
 Rem
 bbdoc: A 3-element structure that can be used to represent positions and directions in 3D-space.
 End Rem
-Struct SVec3
+Struct SVec3D
 	Field ReadOnly x:Double
 	Field ReadOnly y:Double
 	Field ReadOnly z:Double
 	
 	Rem
-	bbdoc: Creates a new #SVec3 from the supplied arguments.
+	bbdoc: Creates a new #SVec3D from the supplied arguments.
 	End Rem
 	Method New(x:Double, y:Double, z:Double)
 		Self.x = x
@@ -274,43 +274,43 @@ Struct SVec3
 	Rem
 	bbdoc: Adds @b to this vector, returning a new vector.
 	End Rem
-	Method Operator+:SVec3(b:SVec3)
-		Return New SVec3(x + b.x, y + b.y, z + b.z)
+	Method Operator+:SVec3D(b:SVec3D)
+		Return New SVec3D(x + b.x, y + b.y, z + b.z)
 	End Method
 	
 	Rem
 	bbdoc: Subtracts @b from this vector, returning a new vector.
 	End Rem
-	Method Operator-:SVec3(b:SVec3)
-		Return New SVec3(x - b.x, y - b.y, z - b.z)
+	Method Operator-:SVec3D(b:SVec3D)
+		Return New SVec3D(x - b.x, y - b.y, z - b.z)
 	End Method
 	
 	Rem
 	bbdoc: Multiplies the vector by @b, returning a new vector.
 	End Rem
-	Method Operator*:SVec3(b:SVec3)
-		Return New SVec3(x * b.x, y * b.y, z * b.z)
+	Method Operator*:SVec3D(b:SVec3D)
+		Return New SVec3D(x * b.x, y * b.y, z * b.z)
 	End Method
 
 	Rem
 	bbdoc: Devides the vector by @b, returning a new vector.
 	End Rem
-	Method Operator/:SVec3(b:SVec3)
-		Return New SVec3(x / b.x, y / b.y, z / b.z)
+	Method Operator/:SVec3D(b:SVec3D)
+		Return New SVec3D(x / b.x, y / b.y, z / b.z)
 	End Method
 	
 	Rem
 	bbdoc: Returns a negated version of this vector.
 	End Rem
-	Method Operator-:SVec3()
-		Return New SVec3(-x, -y, -z)
+	Method Operator-:SVec3D()
+		Return New SVec3D(-x, -y, -z)
 	End Method
 
 	Rem
 	bbdoc: Multiplies the vector by @s, returning a new vector.
 	End Rem
-	Method Operator*:SVec3(s:Double)
-		Return New SVec3(x * s, y * s, z * s)
+	Method Operator*:SVec3D(s:Double)
+		Return New SVec3D(x * s, y * s, z * s)
 	End Method
 
 	Rem
@@ -332,29 +332,29 @@ Struct SVec3
 	Rem
 	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
 	End Rem
-	Method Clamp:SVec3(minv:SVec3, maxv:SVec3)
-		Return New SVec3(Clamp(x, minv.x, maxv.x), Clamp(y, minv.y, maxv.y), Clamp(z, minv.z, maxv.z))
+	Method Clamp:SVec3D(minv:SVec3D, maxv:SVec3D)
+		Return New SVec3D(Clamp(x, minv.x, maxv.x), Clamp(y, minv.y, maxv.y), Clamp(z, minv.z, maxv.z))
 	End Method
 	
 	Rem
 	bbdoc: Returns the Cross Product of the two vectors.
 	End Rem
-	Method Cross:SVec3(b:SVec3)
-		Return New SVec3(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x)
+	Method Cross:SVec3D(b:SVec3D)
+		Return New SVec3D(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x)
 	End Method
 	
 	Rem
 	bbdoc: Returns a vector that is made from the smallest components of the two vectors.
 	End Rem
-	Method Min:SVec3(b:SVec3)
-		Return New SVec3(Min(x, b.x), Min(y, b.y), Min(z, b.z))
+	Method Min:SVec3D(b:SVec3D)
+		Return New SVec3D(Min(x, b.x), Min(y, b.y), Min(z, b.z))
 	End Method
 	
 	Rem
 	bbdoc: Returns a vector that is made from the largest components of the two vectors.
 	End Rem
-	Method Max:SVec3(b:SVec3)
-		Return New SVec3(Max(x, b.x), Max(y, b.y), Max(z, b.z))
+	Method Max:SVec3D(b:SVec3D)
+		Return New SVec3D(Max(x, b.x), Max(y, b.y), Max(z, b.z))
 	End Method
 	
 	Rem
@@ -362,19 +362,19 @@ Struct SVec3
 	about: Interpolates between this vector and @b by the interpolant @t.
 	This is commonly used to find a point some fraction of the way along a line between two endpoints (e.g. to move an object gradually between those points).
 	End Rem
-	Method Interpolate:SVec3(b:SVec3, t:Double)
-		Return New SVec3(Lerp(x, b.x, t), Lerp(y, b.y, t), Lerp(z, b.z, t))
+	Method Interpolate:SVec3D(b:SVec3D, t:Double)
+		Return New SVec3D(Lerp(x, b.x, t), Lerp(y, b.y, t), Lerp(z, b.z, t))
 	End Method
 	
 	Rem
 	bbdoc: Returns a vector with a magnitude of 1.
 	about: When normalized, a vector keeps the same direction but its length is 1.0.
 	End Rem
-	Method Normal:SVec3()
+	Method Normal:SVec3D()
 		Local length:Double = x * x + y * y + z * z
 		If length > 0 Then
 			length = Sqr(length)
-			Return New SVec3(x / length, y / length, z / length)
+			Return New SVec3D(x / length, y / length, z / length)
 		End If
 		Return Self
 	End Method
@@ -384,7 +384,7 @@ Struct SVec3
 	about: For normalized vectors Dot returns 1 if they point in exactly the same direction, -1 if they point in completely opposite directions,
 	and a number in between for other cases (e.g. Dot returns zero if vectors are perpendicular).
 	End Rem
-	Method Dot:Double(b:SVec3)
+	Method Dot:Double(b:SVec3D)
 		Return x * b.x + y * b.y + z * b.z
 	End Method
 	
@@ -407,28 +407,28 @@ Struct SVec3
 	Rem
 	bbdoc: Returns the distance between the vector and @b.
 	End Rem
-	Method DistanceTo:Double(b:SVec3)
+	Method DistanceTo:Double(b:SVec3D)
 		Return (Self - b).Length()
 	End Method
 	
 	Rem
 	bbdoc: Returns the squared distance between the vector and @b.
 	End Rem
-	Method DistanceToSquared:Double(b:SVec3)
+	Method DistanceToSquared:Double(b:SVec3D)
 		Return (Self - b).LengthSquared()
 	End Method
 	
 	Rem
 	bbdoc: Returns a vector reflected from the given plane, specified by its normal vector.
 	End Rem
-	Method Reflect:SVec3(n:SVec3)
+	Method Reflect:SVec3D(n:SVec3D)
 		Return n * Dot(n) * 2.0 - Self
 	End Method
 	
 	Rem
 	bbdoc: 
 	End Rem
-	Method Orthogonal:SVec3(b:SVec3)
+	Method Orthogonal:SVec3D(b:SVec3D)
 		Return Cross(b).Normal()
 	End Method
 

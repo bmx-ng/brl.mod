@@ -43,14 +43,14 @@ bbdoc: A Quaternion.
 about: Quaternions are used to represent rotations.
 They are compact, don't suffer from gimbal lock and can easily be interpolated.
 End Rem
-Struct SQuat
+Struct SQuatD
 	Field x:Double
 	Field y:Double
 	Field z:Double
 	Field w:Double
 	
 	Rem
-	bbdoc: Creates a new #SQuat from the supplied arguments.
+	bbdoc: Creates a new #SQuatD from the supplied arguments.
 	End Rem
 	Method New(x:Double, y:Double, z:Double, w:Double)
 		Self.x = x
@@ -62,7 +62,7 @@ Struct SQuat
 	Rem
 	bbdoc: Applies the quaternion @a to the matrix, returning a new matrix.
 	End Rem
-	Function ToMat3:SMat3(a:SQuat)
+	Function ToMat3:SMat3D(a:SQuatD)
 		Local ax:Double = a.x
 		Local ay:Double = a.y
 		Local az:Double = a.z
@@ -79,13 +79,13 @@ Struct SQuat
 		Local awx:Double = aw * ax2
 		Local awy:Double = aw * ay2
 		Local awz:Double = aw * az2
-		Return New SMat3(1 - ayy - azz, ayx + awz, azx - awy, ayx - awz, 1.0 - axx - azz, azy + awx, azx + awy, azy - awx, 1.0 - axx - ayy)
+		Return New SMat3D(1 - ayy - azz, ayx + awz, azx - awy, ayx - awz, 1.0 - axx - azz, azy + awx, azx + awy, azy - awx, 1.0 - axx - ayy)
 	End Function
 
 	Rem
 	bbdoc: Applies the quaternian to the matrix, return the new matrix.
 	End Rem
-	Function ToMat4:SMat4(a:SQuat)
+	Function ToMat4:SMat4D(a:SQuatD)
 		Local ax:Double = a.x
 		Local ay:Double = a.y
 		Local az:Double = a.z
@@ -102,7 +102,7 @@ Struct SQuat
 		Local awx:Double = aw * ax2
 		Local awy:Double = aw * ay2
 		Local awz:Double = aw * az2
-		Return New SMat4(1.0 - ayy - azz, ayx + awz, azx - awy, 0, ..
+		Return New SMat4D(1.0 - ayy - azz, ayx + awz, azx - awy, 0, ..
 			ayx - awz, 1.0 - axx - azz, azy + awx, 0, ..
 			azx + awy, azy - awx, 1.0 - axx - ayy, 0, ..
 			0, 0, 0, 1)
@@ -112,7 +112,7 @@ Struct SQuat
 	bbdoc: Creates a translation and rotation matrix.
 	about: The returned matrix is such that it places objects at position @s, oriented in rotation @a.
 	End Rem
-	Function RotTrans:SMat4(a:SQuat, s:SVec3)
+	Function RotTrans:SMat4D(a:SQuatD, s:SVec3D)
 		Local ax:Double = a.x
 		Local ay:Double = a.y
 		Local az:Double = a.x
@@ -129,7 +129,7 @@ Struct SQuat
 		Local awx:Double = aw * ax2
 		Local awy:Double = aw * ay2
 		Local awz:Double = aw * az2
-		Return New SMat4(1.0 - ayy - azz, axy + awz, axz - awy, 0, ..
+		Return New SMat4D(1.0 - ayy - azz, axy + awz, axz - awy, 0, ..
 			axy - awz, 1.0 - axx - azz, ayz + awx, 0, ..
 			axz + awy, ayz - awx, 1.0 - axx - ayy, 0, ..
 			s.x, s.y, s.z, 1)
@@ -139,7 +139,7 @@ Struct SQuat
 	bbdoc: Creates a translation, rotation and scaling matrix.
 	about: The returned matrix is such that it places objects at position @origin, oriented in rotation @a and scaled by @s.
 	End Rem
-	Function RotTransOrigin:SMat4(a:SQuat, s:SVec3, origin:SVec3)
+	Function RotTransOrigin:SMat4D(a:SQuatD, s:SVec3D, origin:SVec3D)
 		Local ax:Double = a.x
 		Local ay:Double = a.y
 		Local az:Double = a.x
@@ -168,7 +168,7 @@ Struct SQuat
 		Local o20:Double = axz + awy
 		Local o21:Double = ayz - awx
 		Local o22:Double = 1.0 - axx - ayy
-		Return New SMat4(o00, o01, o02, 0, ..
+		Return New SMat4D(o00, o01, o02, 0, ..
 			o10, o11, o12, 0, ..
 			o20, o21, o22, 0, ..
 			s.x + ox - (o00 * ox + o10 * oy + o20 * oz), ..
@@ -179,34 +179,34 @@ Struct SQuat
 	Rem
 	bbdoc: The dot product between two rotations.
 	End Rem
-	Method Dot:Double(b:SQuat)
+	Method Dot:Double(b:SQuatD)
 		Return x * b.x + y * b.y + z * b.z + w * b.w
 	End Method
 	
 	Rem
 	bbdoc: Returns the Inverse of rotation.
 	End Rem
-	Method Invert:SQuat()
+	Method Invert:SQuatD()
 		Local dot:Double = x * x + y * y + z * z + w * w
 		Local invdot:Double
 		If dot <> 0 Then
 			invdot = 1 / dot
 		End If
-		Return New SQuat(-x * invdot, -y * invdot, -z * invdot, w * invdot)
+		Return New SQuatD(-x * invdot, -y * invdot, -z * invdot, w * invdot)
 	End Method
 	
 	Rem
-	bbdoc: Interpolates between the SQuat and @b by @t and normalizes the result afterwards.
+	bbdoc: Interpolates between the SQuatD and @b by @t and normalizes the result afterwards.
 	End Rem
-	Method Interpolate:SQuat(b:SQuat, t:Double)
-		Return New SQuat(Lerp(x, b.x, t), Lerp(y, b.y, t), Lerp(z, b.z, t), Lerp(w, b.w, t))
+	Method Interpolate:SQuatD(b:SQuatD, t:Double)
+		Return New SQuatD(Lerp(x, b.x, t), Lerp(y, b.y, t), Lerp(z, b.z, t), Lerp(w, b.w, t))
 	End Method
 	
 	Rem
 	bbdoc: Multiplies the quaternion by @b, returning a new quaternion.
 	End Rem
-	Method Operator*:SQuat(b:SQuat)
-		Return New SQuat(x * b.w + w * b.x + y * b.z - z * b.y, ..
+	Method Operator*:SQuatD(b:SQuatD)
+		Return New SQuatD(x * b.w + w * b.x + y * b.z - z * b.y, ..
 			y * b.w + w * b.y + z * b.x - x * b.z, ..
 			z * b.w + w * b.z + x * b.y - y * b.x, ..
 			w * b.w - x * b.x - y * b.y - z * b.z)
@@ -215,33 +215,33 @@ Struct SQuat
 	Rem
 	bbdoc: Returns a new quaternion, negated.
 	End Rem
-	Method Operator-:SQuat()
-		Return New SQuat(-x, -y, -z, -w)
+	Method Operator-:SQuatD()
+		Return New SQuatD(-x, -y, -z, -w)
 	End Method
 	
 	Rem
 	bbdoc: The identity rotation.
 	End Rem
-	Function Identity:SQuat()
-		Return New SQuat(0, 0, 0, 1)
+	Function Identity:SQuatD()
+		Return New SQuatD(0, 0, 0, 1)
 	End Function
 	
 	Rem
 	bbdoc: Converts this quaternion to one with the same orientation but with a magnitude of 1.
 	End Rem
-	Method Normal:SQuat()
+	Method Normal:SQuatD()
 		Local length:Double = x * x + y * y + z * z + w * w
 		If length > 0 Then
 			length = Sqr(length)
-			Return New SQuat(x * length, y * length, z * length, w * length)
+			Return New SQuatD(x * length, y * length, z * length, w * length)
 		End If
 		Return Self
 	End Method
 	
 	Rem
-	bbdoc: Spherically interpolates between this SQuat and @b by @t.
+	bbdoc: Spherically interpolates between this SQuatD and @b by @t.
 	End Rem
-	Method SphericalInterpolate:SQuat(b:SQuat, t:Double)
+	Method SphericalInterpolate:SQuatD(b:SQuatD, t:Double)
 		Local bx:Double = b.x
 		Local by:Double = b.y
 		Local bz:Double = b.z
@@ -269,20 +269,20 @@ Struct SQuat
 			scale1 = t
 		End If
 		
-		Return New SQuat(scale0 * x + scale1 * bx, scale0 * y + scale1 * by, scale0 * z + scale1 * bz, scale0 * w + scale1 * bw)
+		Return New SQuatD(scale0 * x + scale1 * bx, scale0 * y + scale1 * by, scale0 * z + scale1 * bz, scale0 * w + scale1 * bw)
 	End Method
 	
 	Rem
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
-	Method EulerXYZ:SQuat(rot:SVec3)
+	Method EulerXYZ:SQuatD(rot:SVec3D)
 		Local cx:Double = Cos(rot.x)
 		Local cy:Double = Cos(rot.y)
 		Local cz:Double = Cos(rot.z)
 		Local sx:Double = Sin(rot.x)
 		Local sy:Double = Sin(rot.y)
 		Local sz:Double = Sin(rot.z)
-		Return New SQuat(sx * cy * cz + cx * sy * sz, ..
+		Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
 			cx * sy * cz - sx * cy * sz, ..
 			cx * cy * sz + sx * sy * cz, ..
 			cx * cy * cz - sx * sy * sz)
@@ -291,14 +291,14 @@ Struct SQuat
 	Rem
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
-	Method EulerXZY:SQuat(rot:SVec3)
+	Method EulerXZY:SQuatD(rot:SVec3D)
 		Local cx:Double = Cos(rot.x)
 		Local cy:Double = Cos(rot.y)
 		Local cz:Double = Cos(rot.z)
 		Local sx:Double = Sin(rot.x)
 		Local sy:Double = Sin(rot.y)
 		Local sz:Double = Sin(rot.z)
-		Return New SQuat(sx * cy * cz - cx * sy * sz, ..
+		Return New SQuatD(sx * cy * cz - cx * sy * sz, ..
 			cx * sy * cz - sx * cy * sz, ..
 			cx * cy * sz + sx * sy * cz, ..
 			cx * cy * cz + sx * sy * sz)
@@ -307,14 +307,14 @@ Struct SQuat
 	Rem
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
-	Method EulerYXZ:SQuat(rot:SVec3)
+	Method EulerYXZ:SQuatD(rot:SVec3D)
 		Local cx:Double = Cos(rot.x)
 		Local cy:Double = Cos(rot.y)
 		Local cz:Double = Cos(rot.z)
 		Local sx:Double = Sin(rot.x)
 		Local sy:Double = Sin(rot.y)
 		Local sz:Double = Sin(rot.z)
-		Return New SQuat(sx * cy * cz + cx * sy * sz, ..
+		Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
 			cx * sy * cz - sx * cy * sz, ..
 			cx * cy * sz - sx * sy * cz, ..
 			cx * cy * cz + sx * sy * sz)
@@ -323,14 +323,14 @@ Struct SQuat
 	Rem
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
-	Method EulerYZX:SQuat(rot:SVec3)
+	Method EulerYZX:SQuatD(rot:SVec3D)
 		Local cx:Double = Cos(rot.x)
 		Local cy:Double = Cos(rot.y)
 		Local cz:Double = Cos(rot.z)
 		Local sx:Double = Sin(rot.x)
 		Local sy:Double = Sin(rot.y)
 		Local sz:Double = Sin(rot.z)
-		Return New SQuat(sx * cy * cz + cx * sy * sz, ..
+		Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
 			cx * sy * cz + sx * cy * sz, ..
 			cx * cy * sz - sx * sy * cz, ..
 			cx * cy * cz - sx * sy * sz)
@@ -339,14 +339,14 @@ Struct SQuat
 	Rem
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
-	Method EulerZXY:SQuat(rot:SVec3)
+	Method EulerZXY:SQuatD(rot:SVec3D)
 		Local cx:Double = Cos(rot.x)
 		Local cy:Double = Cos(rot.y)
 		Local cz:Double = Cos(rot.z)
 		Local sx:Double = Sin(rot.x)
 		Local sy:Double = Sin(rot.y)
 		Local sz:Double = Sin(rot.z)
-		Return New SQuat(sx * cy * cz - cx * sy * sz, ..
+		Return New SQuatD(sx * cy * cz - cx * sy * sz, ..
 			cx * sy * cz + sx * cy * sz, ..
 			cx * cy * sz + sx * sy * cz, ..
 			cx * cy * cz - sx * sy * sz)
@@ -355,14 +355,14 @@ Struct SQuat
 	Rem
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
-	Method EulerZYX:SQuat(rot:SVec3)
+	Method EulerZYX:SQuatD(rot:SVec3D)
 		Local cx:Double = Cos(rot.x)
 		Local cy:Double = Cos(rot.y)
 		Local cz:Double = Cos(rot.z)
 		Local sx:Double = Sin(rot.x)
 		Local sy:Double = Sin(rot.y)
 		Local sz:Double = Sin(rot.z)
-		Return New SQuat(sx * cy * cz - cx * sy * sz, ..
+		Return New SQuatD(sx * cy * cz - cx * sy * sz, ..
 			cx * sy * cz + sx * cy * sz, ..
 			cx * cy * sz - sx * sy * cz, ..
 			cx * cy * cz + sx * sy * sz)
