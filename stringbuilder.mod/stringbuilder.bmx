@@ -260,7 +260,8 @@ Public
 	
 	Rem
 	bbdoc: Appends the new line string to the string builder.
-	about: The new line string can be altered using #SetNewLineText. This might be used to force the output to always use Unix line endings even when on Windows.
+	about: The new line string can be altered using #SetNewLineText. This might be used to force the output to always
+	use Unix line endings even when on Windows.
 	End Rem
 	Method AppendNewLine:TStringBuilder()
 		If newLine Then
@@ -587,8 +588,8 @@ End Type
 
 Rem
 bbdoc: An array of split text from a TStringBuilder.
-about: Note that the #TSplitBuffer is only valid while its parent TStringBuilder is unchanged.
-Once you modify the TStringBuffer you should call Split() again.
+about: Note that the #TSplitBuffer is only valid while its parent #TStringBuilder is unchanged.
+Once you modify the #TStringBuffer you should call Split() again.
 End Rem
 Type TSplitBuffer
 Private
