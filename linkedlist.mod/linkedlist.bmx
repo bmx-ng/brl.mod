@@ -572,6 +572,14 @@ Function ListFindLink:TLink( list:TList,value:Object )
 End Function
 
 Rem
+bbdoc: Remove an object from a linked list referenced by a link
+about: #ListRemoveLink removes an object from the linked list referenced by the given link
+End Rem
+Function ListRemoveLink( list:TList,link:TLink )
+	list.RemoveLink( link )
+End Function
+
+Rem
 bbdoc: Add an object to a linked list
 returns: A link object
 end rem
@@ -592,5 +600,5 @@ bbdoc: Remove an object from a linked list
 about: #ListRemove scans a list for the specified value and removes its link.
 End Rem
 Function ListRemove( list:TList,value:Object )
-	list.Remove value
+	list.Remove( value )
 End Function
