@@ -46,7 +46,7 @@ Rem
 bbdoc: BlitzMax Stream object used for Print and Input
 about: The #Print and #Input commands can be redirected by setting the @StandardIOStream Global to an alternative Stream Object.
 End Rem
-Global StandardIOStream:TStream=TTextStream.Create( New TCStandardIO,TTextStream.UTF8 )
+Global StandardIOStream:TStream=TTextStream.Create( New TCStandardIO,ETextStreamFormat.UTF8 )
 
 Rem
 bbdoc: Write a string to the standard IO stream
