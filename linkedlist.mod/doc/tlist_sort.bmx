@@ -1,7 +1,7 @@
 SuperStrict
 
 ' create a list to hold some objects
-Local list:TList = new TList
+Local list:TList = New TList
 
 ' add some string objects to the end of the list
 list.AddLast("short")
@@ -27,14 +27,14 @@ Next
 
 ' CUSTOM SORT
 ' define a custom compare function
-Function MyCompare:int( o1:Object, o2:Object )
-	if len(string(o1)) < len(string(o2))
-		return -1 ' o1 before o2
-	elseif len(string(o1)) > len(string(o2))
-		return 1 ' o1 after o2
-	else
-		return 0 ' equal
-	endif
+Function MyCompare:Int( o1:Object, o2:Object )
+	If Len(String(o1)) < Len(String(o2)) Then
+		Return -1 ' o1 before o2
+	ElseIf Len(String(o1)) > Len(String(o2)) Then
+		Return 1 ' o1 after o2
+	Else
+		Return 0 ' equal
+	EndIf
 End Function
 
 ' sort them with a custom compare function

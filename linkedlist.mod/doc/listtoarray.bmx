@@ -9,7 +9,7 @@ ListAddLast(list, "two")
 ListAddLast(list, "three")
 
 ' create an array out of the list elements
-local objects:object[] = ListToArray(list) 
+Local objects:Object[] = ListToArray(list) 
 
 ' enumerate all the strings in the array
 For Local a:String = EachIn objects

@@ -1,7 +1,7 @@
 SuperStrict
 
 ' create a list to hold some objects
-Local list:TList = new TList
+Local list:TList = New TList
 
 ' add some string objects to the end of the list
 list.AddLast("one")
@@ -10,7 +10,7 @@ list.AddLast("three")
 
 
 ' create a second list
-Local list2:TList = new TList
+Local list2:TList = New TList
 list2.AddLast("four")
 list2.AddLast("five")
 list2.AddLast("six")

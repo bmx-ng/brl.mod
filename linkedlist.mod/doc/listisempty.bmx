@@ -9,12 +9,11 @@ ListAddLast(list, "two")
 ListAddLast(list, "three")
 
 ' check if the list contains some elements
-If ListIsEmpty(list)
-	print "list is empty"
+If ListIsEmpty(list) Then
+	Print "list is empty"
 Else
-	print "list contains elements"
+	Print "list contains elements"
 EndIf
-
 
 ' outputs:
 ' list contains elements

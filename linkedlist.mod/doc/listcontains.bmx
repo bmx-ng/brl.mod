@@ -9,14 +9,13 @@ ListAddLast(list, "two")
 ListAddLast(list, "three")
 
 ' check if the list contains some elements
-If ListContains(list, "four")
-	print "four"
+If ListContains(list, "four") Then
+	Print "four"
 EndIf
 
-If ListContains(list, "three")
-	print "three"
+If ListContains(list, "three") Then
+	Print "three"
 EndIf
-
 
 ' outputs:
 ' three

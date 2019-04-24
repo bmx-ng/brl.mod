@@ -9,13 +9,13 @@ ListAddLast(list, "two")
 ListAddLast(list, "three")
 
 ' print amount of elements in the list
-print CountList(list)
+Print CountList(list)
 
 ' clear the list and remove all elements
 ClearList(list)
 
 ' print amount of elements in the list
-print CountList(list)
+Print CountList(list)
 
 ' outputs:
 ' 3

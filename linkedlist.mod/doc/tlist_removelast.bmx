@@ -1,7 +1,7 @@
 SuperStrict
 
 ' create a list to hold some objects
-Local list:TList = new TList
+Local list:TList = New TList
 
 ' add some string objects to the begin of the list
 list.AddLast("one")

@@ -1,10 +1,10 @@
 SuperStrict
 
 ' create an array holding some objects
-Local objects:object[] = ["one", "two", "three"]
+Local objects:Object[] = ["one", "two", "three"]
 
 ' create a linked list out of the elements
-local list:TList = ListFromArray(objects) 
+Local list:TList = ListFromArray(objects) 
 
 ' enumerate all the strings in the list
 For Local a:String = EachIn list
