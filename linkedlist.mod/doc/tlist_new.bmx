@@ -4,12 +4,12 @@ Framework Brl.LinkedList
 Import Brl.StandardIO
 
 ' create a list to hold some objects
-Local list:TList = CreateList()
+Local list:TList = New TList
 
 ' add some string objects to the list
-ListAddLast(list,"one")
-ListAddLast(list,"two")
-ListAddLast(list,"three")
+list.Addlast("one")
+list.Addlast("two")
+list.Addlast("three")
 
 ' enumerate all the strings in the list
 For Local a:String = EachIn list
