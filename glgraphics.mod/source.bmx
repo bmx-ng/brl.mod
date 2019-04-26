@@ -47,6 +47,9 @@ Type TGLGraphics Extends TGraphics
 		_context=0
 	End Method
 	
+	Method Resize(width:Int, height:Int) Override
+	End Method
+	
 	Field _context:Byte Ptr
 	
 End Type

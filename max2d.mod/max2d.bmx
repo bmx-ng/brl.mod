@@ -221,6 +221,10 @@ Type TMax2DGraphics Extends TGraphics
 		Return t
 	End Function
 	
+	Method Resize(width:Int, height:Int)
+		_graphics.Resize(width, height)
+	End Method
+	
 End Type
 
 Rem

@@ -63,6 +63,8 @@ Type TGraphics
 
 	Method Close() Abstract
 	
+	Method Resize(width:Int, height:Int) Abstract
+
 End Type
 
 Type TGraphicsMode
@@ -293,6 +295,7 @@ Function GraphicsResize( width:Int, height:Int )
 	If _driver And _driver.CanResize() And _graphics Then
 		_gWidth = width
 		_gHeight = height
+		_graphics.Resize(width, height)
 	End If
 End Function
 
