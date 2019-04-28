@@ -319,6 +319,8 @@ Type TD3D9Graphics Extends TGraphics
 		Next
 	End Method
 
+	Method Resize(width:Int, height:Int) Override
+ 	End Method
 	
 	Field _hwnd:Byte Ptr
 	Field _width:Int
