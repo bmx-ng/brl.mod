@@ -1,0 +1,9 @@
+
++Clipboard
+
+A Brl.Clipboard allows to share (textual) data between applications.
+
+To create a clipboard manager, use the #CreateClipboard command.
+
+Set (textual) content of the clipboard using #ClipboardSetText or #ClipboardSetTextEx. Both commands return True or False depending on whether the text was set or not. You can also clear the clipboard  with #ClearClipboard command.
+To retrieve the (textual) content use #ClipboardSetText or #ClipboardSetTextEx.
