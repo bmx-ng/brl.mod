@@ -141,7 +141,7 @@ static void *arrayInitializer( BBArray *arr ){
 	return 0;
 }
 
-static void initializeArray( BBArray *arr ){
+static void initializeArray( BBArray *arr, BBArrayStructInit structInit ){
 	void *init,**p;
 	
 	if( !arr->size ) return;
@@ -154,6 +154,14 @@ static void initializeArray( BBArray *arr ){
 		for( k=arr->scales[0];k>0;--k ) *p++=init;
 	}else{
 		memset( p,0,arr->size );
+		if (structInit) {
+			int k;
+			char * s = p;
+			for( k=arr->scales[0];k>0;--k ) {
+				structInit(s);
+				s += arr->data_size;
+			}
+		}
 	}
 }
 
@@ -179,12 +187,12 @@ BBArray *bbArrayNew( const char *type,int dims,... ){
 
 	BBArray *arr=allocateArray( type,dims, &lens, 0 );
 	
-	initializeArray( arr );
+	initializeArray( arr, 0 );
 	
 	return arr;
 }
 
-BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, int dims, ... ){
+BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, BBArrayStructInit init, int dims, ... ){
 
 	int lens[256];
 
@@ -200,7 +208,7 @@ BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, int dims,
 
 	BBArray *arr=allocateArray( type,dims, &lens, data_size );
 	
-	initializeArray( arr );
+	initializeArray( arr, init );
 	
 	return arr;
 }
@@ -209,7 +217,7 @@ BBArray *bbArrayNewEx( const char *type,int dims,int *lens ){
 
 	BBArray *arr=allocateArray( type,dims,lens,0 );
 	
-	initializeArray( arr );
+	initializeArray( arr, 0 );
 	
 	return arr;
 }
@@ -218,16 +226,16 @@ BBArray *bbArrayNew1D( const char *type,int length ){
 
 	BBArray *arr=allocateArray( type,1,&length, 0 );
 	
-	initializeArray( arr );
+	initializeArray( arr, 0 );
 	
 	return arr;
 }
 
-BBArray *bbArrayNew1DStruct( const char *type,int length, unsigned short data_size ){
+BBArray *bbArrayNew1DStruct( const char *type,int length, unsigned short data_size, BBArrayStructInit init ){
 
 	BBArray *arr=allocateArray( type,1,&length, data_size );
 	
-	initializeArray( arr );
+	initializeArray( arr, init );
 	
 	return arr;
 }

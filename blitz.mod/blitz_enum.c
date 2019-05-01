@@ -16,7 +16,7 @@ BBArray * bbEnumValues(BBEnum * bbEnum) {
 		case 'z':size=sizeof(BBSIZET);break;
 	}
 
-	values = bbArrayNew1DStruct(bbEnum->atype, bbEnum->length, size);
+	values = bbArrayNew1DStruct(bbEnum->atype, bbEnum->length, size, 0);
 
 	char * p = BBARRAYDATA(values, 0);
 
