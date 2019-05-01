@@ -176,3 +176,68 @@ Type TClipboard
 	End Method
 	
 End Type
+
+
+
+
+Rem
+bbdoc: Creates a new clipboard instance.
+returns: The clipboard instance, or Null on failure.
+End Rem
+Function CreateClipboard:TClipboard(opts:TClipboardOpts = Null)
+	Return New TClipboard.Create( opts )
+End Function
+
+
+Rem
+bbdoc: Clears the contents of the given clipboard.
+End Rem
+Function ClearClipboard(clipboard:TClipboard, clipboardMode:Int = LCB_CLIPBOARD)
+	clipboard.Clear( clipboardMode )
+End Function
+	
+
+Rem
+bbdoc: Determines if the clipboard content is currently owned.
+returns: #True if the clipboard data is owned by the provided instance.
+End Rem
+Function ClipboardHasOwnership:Int(clipboard:TClipboard, clipboardMode:Int = LCB_CLIPBOARD)
+	Return clipboard.HasOwnership(clipboardMode)
+End Function
+	
+
+Rem
+bbdoc: Retrieves the text currently held on the clipboard.
+returns: A copy to the retrieved text.
+End Rem
+Function ClipboardText:String(clipboard:TClipboard)
+	Return clipboard.Text()
+End Function
+	
+
+Rem
+bbdoc: Retrieves the text currently held on the clipboard.
+about: @length returns the length of the retrieved data.
+returns: A copy to the retrieved text.
+End Rem
+Function ClipboardTextEx:String(clipboard:TClipboard, length:Int Var, clipboardMode:Int = LCB_CLIPBOARD)
+	Return clipboard.TextEx(length, clipboardMode)
+End Function
+
+
+Rem
+bbdoc: Sets the text for the clipboard.
+returns: #True if the clipboard was set (#false on error).
+End Rem
+Function ClipboardSetText:Int(clipboard:TClipboard, src:String)
+	Return clipboard.SetText(src)
+End Function
+	
+
+Rem
+bbdoc: Sets the text for the clipboard.
+returns: #True if the clipboard was set (#false on error).
+End Rem
+Function ClipboardSetTextEx:Int(clipboard:TClipboard, src:String, clipboardMode:Int = LCB_CLIPBOARD)
+	Return clipboard.SetTextEx(src, clipboardMode)
+End Function
