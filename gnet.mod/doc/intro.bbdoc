@@ -1,6 +1,3 @@
-
-+GameNet
-
 The GameNet module (GNet for short) provides a set of commands for creating and managing multiplayer network 
 games.
 
