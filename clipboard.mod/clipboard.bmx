@@ -25,10 +25,14 @@ bbdoc: Cross-platform clipboards.
 End Rem
 Module BRL.Clipboard
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "License: MIT"
-ModuleInfo "Copyright: libclipboard - Copyright (C) 2016 Jeremy Tan."
+ModuleInfo "Copyright: libclipboard - Copyright (C) 2016-2019 Jeremy Tan."
 ModuleInfo "Copyright: Wrapper - 2018-2019 Bruce A Henderson"
+
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Updated to latest libclipboard 1.0.efaa094"
+ModuleInfo "History: 1.00 Initial Release"
 
 ?win32
 ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_WIN32"
@@ -37,6 +41,11 @@ ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_X11"
 ?macos
 ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_COCOA"
 ?
+
+'
+' build notes :
+' clipboard_cocoa.c renamed to clipboard_cocoa.m
+'
 
 Import "common.bmx"
 
