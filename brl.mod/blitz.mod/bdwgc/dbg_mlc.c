@@ -287,7 +287,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz GC_ATTR_UNUSED,
       ((oh *)p) -> oh_bg_ptr = HIDE_BACK_PTR((ptr_t)0);
 #   endif
     ((oh *)p) -> oh_string = string;
-    ((oh *)p) -> oh_int = (word)linenum;
+    ((oh *)p) -> oh_int = linenum;
 #   ifndef SHORT_DBG_HDRS
       ((oh *)p) -> oh_sz = sz;
       ((oh *)p) -> oh_sf = START_FLAG ^ (word)result;
@@ -334,11 +334,11 @@ static void *store_debug_info(void *p, size_t lb,
         return((ptr_t)(&(ohdr -> oh_sf)));
     }
     if (((word *)ohdr)[BYTES_TO_WORDS(gc_sz)-1] != (END_FLAG ^ (word)body)) {
-        return((ptr_t)((word *)ohdr + BYTES_TO_WORDS(gc_sz)-1));
+        return (ptr_t)(&((word *)ohdr)[BYTES_TO_WORDS(gc_sz)-1]);
     }
     if (((word *)body)[SIMPLE_ROUNDED_UP_WORDS(ohdr -> oh_sz)]
         != (END_FLAG ^ (word)body)) {
-        return((ptr_t)((word *)body + SIMPLE_ROUNDED_UP_WORDS(ohdr->oh_sz)));
+        return (ptr_t)(&((word *)body)[SIMPLE_ROUNDED_UP_WORDS(ohdr->oh_sz)]);
     }
     return(0);
   }

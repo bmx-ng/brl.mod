@@ -43,7 +43,7 @@ End Extern
 Public
 
 Type TSocketException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Internal socket error"
 	End Method
 End Type
@@ -74,8 +74,8 @@ Type TSocket
 	
 	Method Connected()
 		If _socket<0 Return False
-		Local read=_socket
-		If select_( 1,Varptr read,0,Null,0,Null,0 )<>1 Or ReadAvail()<>0 Return True
+		Local Read=_socket
+		If select_( 1,Varptr Read,0,Null,0,Null,0 )<>1 Or ReadAvail()<>0 Return True
 		Close
 		Return False
 	End Method		
@@ -107,8 +107,8 @@ Type TSocket
 	
 	Method Accept:TSocket( timeout:Int = -1, storage:TSockaddrStorage = Null )
 		If timeout >= 0 Then
-			Local read:Int = _socket
-			If select_( 1,Varptr read,0,Null,0,Null,timeout )<>1 Then
+			Local Read:Int = _socket
+			If select_( 1,Varptr Read,0,Null,0,Null,timeout )<>1 Then
 				Return
 			End If
 		End If

@@ -45,7 +45,7 @@ End Function
 
 Type TAudioSampleLoaderOGG Extends TAudioSampleLoader
 
-	Method LoadAudioSample:TAudioSample( stream:TStream )
+	Method LoadAudioSample:TAudioSample( stream:TStream ) Override
 
 		Local samples,channels,freq
 		Local ogg:Byte Ptr=Decode_Ogg(stream,readfunc,seekfunc,closefunc,tellfunc,samples,channels,freq)
@@ -62,7 +62,7 @@ Type TAudioSampleLoaderOGG Extends TAudioSampleLoader
 		Local sample:TAudioSample=TAudioSample.Create( samples,freq,format )
 
 		'negative amounts indicate an error, 0 = EOF, >0 = amount of bytes
-		Local bytesRead:int = Read_Ogg( ogg,sample.samples,size )
+		Local bytesRead:Int = Read_Ogg( ogg,sample.samples,size )
 		Read_Ogg( ogg,Null,0 )
 		If bytesRead <= 0 Return
 

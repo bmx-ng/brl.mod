@@ -235,7 +235,7 @@ BBString * bmx_mxmlElementGetAttrByIndex(mxml_node_t * node, int index, BBString
 }
 
 mxml_node_t * bmx_mxmlLoadStream(BBObject * stream) {
-	return mxmlLoadStream(NULL, bmx_mxml_stream_read, stream, NULL);
+	return mxmlLoadStream(NULL, bmx_mxml_stream_read, stream, MXML_OPAQUE_CALLBACK);
 }
 
 mxml_node_t * bmx_mxmlWalkNext(mxml_node_t * node, mxml_node_t * top, int descend) {
@@ -366,9 +366,42 @@ mxml_node_t * bmx_mxmlLoadString(BBString * txt) {
 	
 	struct _string_buf buf = {txt = txt};
 
-	return mxmlLoadStream(NULL, bmx_mxml_string_read, &buf, NULL);
+	return mxmlLoadStream(NULL, bmx_mxml_string_read, &buf, MXML_OPAQUE_CALLBACK);
 }
 
 void bmx_mxmlSetWrapMargin(int column) {
 	mxmlSetWrapMargin(column);
+}
+
+BBString * bmx_mxmlGetContent(mxml_node_t * node) {
+	const char * txt = mxmlGetOpaque(node);
+
+	if (!txt || strlen(txt) == 0) {
+		return &bbEmptyString;
+	}
+	return bbStringFromUTF8String(txt);
+}
+
+mxml_node_t * bmx_mxmlFindElement(mxml_node_t * node, BBString * element, BBString * attr, BBString * value) {
+	char * e = 0;
+	char * a = 0;
+	char * v = 0;
+	
+	if (element != &bbEmptyString) {
+		e = bbStringToUTF8String(element);
+	}
+	if (attr != &bbEmptyString) {
+		a = bbStringToUTF8String(attr);
+	}
+	if (value != &bbEmptyString) {
+		v = bbStringToUTF8String(value);
+	}
+	
+	mxml_node_t * result = mxmlFindElement(node, node, e, a, v, MXML_DESCEND);
+	
+	bbMemFree(v);
+	bbMemFree(a);
+	bbMemFree(e);
+	
+	return result;
 }

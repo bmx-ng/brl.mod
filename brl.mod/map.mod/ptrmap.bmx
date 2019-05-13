@@ -153,13 +153,32 @@ Type TPtrMap
 	about: The object returned by #ObjectEnumerator can be used with #EachIn to iterate through the nodes in the map.
 	End Rem
 	Method ObjectEnumerator:TPtrNodeEnumerator()
-		Local nodeenum:TPtrNodeEnumerator=New TPtrNodeEnumerator
-		nodeenum._node=_FirstNode()
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
+		Local nodeenum:TPtrNodeEnumerator
+		If Not isEmpty() Then
+			nodeenum = New TPtrNodeEnumerator
+			nodeenum._node=_FirstNode()
+			nodeenum._map = Self
+		Else
+			nodeenum = New TPtrEmptyEnumerator
+		End If
 		Return nodeenum
+	End Method
+
+	Rem
+	bbdoc: Finds a value given a @key using index syntax.
+	returns: The value associated with @key.
+	about: If the map does not contain @key, a #Null object is returned.
+	End Rem
+	Method Operator[]:Object(key:Byte Ptr)
+		Return bmx_map_ptrmap_valueforkey(key, Varptr _root)
+	End Method
+	
+	Rem
+	bbdoc: Inserts a key/value pair into the map using index syntax.
+	about: If the map already contains @key, its value is overwritten with @value. 
+	End Rem
+	Method Operator[]=(key:Byte Ptr, value:Object)
+		bmx_map_ptrmap_insert(key, value, Varptr _root)
 	End Method
 
 	Field _root:Byte Ptr
@@ -239,7 +258,7 @@ End Type
 
 Type TPtrKeyEnumerator Extends TPtrNodeEnumerator
 	Field _key:TPtrKey = New TPtrKey
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
 ?
@@ -251,7 +270,7 @@ Type TPtrKeyEnumerator Extends TPtrNodeEnumerator
 End Type
 
 Type TPtrValueEnumerator Extends TPtrNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
 ?
@@ -269,7 +288,7 @@ Type TPtrMapEnumerator
 End Type
 
 Type TPtrEmptyEnumerator Extends TPtrNodeEnumerator
-	Method HasNext()
+	Method HasNext() Override
 		_map = Null
 		Return False
 	End Method

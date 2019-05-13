@@ -340,7 +340,7 @@ STATIC void * GC_mark_thread(void * id)
   word my_mark_no = 0;
   IF_CANCEL(int cancel_state;)
 
-  if ((word)id == (word)-1) return 0; /* to make compiler happy */
+  if ((word)id == GC_WORD_MAX) return 0; /* to prevent a compiler warning */
   DISABLE_CANCEL(cancel_state);
                          /* Mark threads are not cancellable; they      */
                          /* should be invisible to client.              */
@@ -451,7 +451,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
           ABORT("sigdelset failed");
 #     endif
 
-      if (pthread_sigmask(SIG_BLOCK, &set, &oldset) < 0) {
+      if (REAL_FUNC(pthread_sigmask)(SIG_BLOCK, &set, &oldset) < 0) {
         WARN("pthread_sigmask set failed, no markers started,"
              " errno = %" WARN_PRIdPTR "\n", errno);
         GC_markers_m1 = 0;
@@ -477,7 +477,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
 
 #   ifndef NO_MARKER_SPECIAL_SIGMASK
       /* Restore previous signal mask.  */
-      if (pthread_sigmask(SIG_SETMASK, &oldset, NULL) < 0) {
+      if (REAL_FUNC(pthread_sigmask)(SIG_SETMASK, &oldset, NULL) < 0) {
         WARN("pthread_sigmask restore failed, errno = %" WARN_PRIdPTR "\n",
              errno);
       }
@@ -762,10 +762,11 @@ STATIC void GC_remove_all_threads_but_me(void)
 {
     pthread_t self = pthread_self();
     int hv;
-    GC_thread p, next, me;
 
     for (hv = 0; hv < THREAD_TABLE_SZ; ++hv) {
-      me = 0;
+      GC_thread p, next;
+      GC_thread me = NULL;
+
       for (p = GC_threads[hv]; 0 != p; p = next) {
         next = p -> next;
         if (THREAD_EQUAL(p -> id, self)
@@ -1087,6 +1088,7 @@ static void fork_prepare_proc(void)
         if (GC_parallel)
           GC_acquire_mark_lock();
 #     endif
+      GC_acquire_dirty_lock();
 }
 
 /* Called in parent after a fork() (even if the latter failed). */
@@ -1095,6 +1097,7 @@ static void fork_prepare_proc(void)
 #endif
 static void fork_parent_proc(void)
 {
+    GC_release_dirty_lock();
 #   if defined(PARALLEL_MARK)
       if (GC_parallel)
         GC_release_mark_lock();
@@ -1109,11 +1112,12 @@ static void fork_parent_proc(void)
 #endif
 static void fork_child_proc(void)
 {
-    /* Clean up the thread table, so that just our thread is left. */
+    GC_release_dirty_lock();
 #   if defined(PARALLEL_MARK)
       if (GC_parallel)
         GC_release_mark_lock();
 #   endif
+    /* Clean up the thread table, so that just our thread is left.      */
     GC_remove_all_threads_but_me();
 #   ifdef PARALLEL_MARK
       /* Turn off parallel marking in the child, since we are probably  */
@@ -1149,7 +1153,7 @@ static void fork_child_proc(void)
   {
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
 #   if defined(GC_DARWIN_THREADS) && defined(MPROTECT_VDB)
-      if (GC_incremental) {
+      if (GC_auto_incremental) {
         GC_ASSERT(0 == GC_handle_fork);
         ABORT("Unable to fork while mprotect_thread is running");
       }
@@ -1420,7 +1424,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     } else {
       /* The original stack. */
       if ((word)GC_stackbottom HOTTER_THAN (word)(&stacksect))
-        GC_stackbottom = (ptr_t)(&stacksect);
+        GC_stackbottom = (ptr_t)COVERT_DATAFLOW(&stacksect);
     }
 
     if (!me->thread_blocked) {
@@ -1428,7 +1432,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
       UNLOCK();
       client_data = fn(client_data);
       /* Prevent treating the above as a tail call.     */
-      GC_noop1((word)(&stacksect));
+      GC_noop1(COVERT_DATAFLOW(&stacksect));
       return client_data; /* result */
     }
 
@@ -1937,7 +1941,12 @@ STATIC void GC_pause(void)
 
     for (i = 0; i < GC_PAUSE_SPIN_CYCLES; ++i) {
         /* Something that's unlikely to be optimized away. */
+#     if defined(AO_HAVE_compiler_barrier) \
+         && !defined(BASE_ATOMIC_OPS_EMULATED)
         AO_compiler_barrier();
+#     else
+        GC_noop1(i);
+#     endif
     }
 }
 #endif
@@ -2015,7 +2024,7 @@ STATIC void GC_generic_lock(pthread_mutex_t * lock)
 
 #endif /* !USE_SPIN_LOCK || ... */
 
-#ifdef AO_HAVE_char_load
+#if defined(AO_HAVE_char_load) && !defined(BASE_ATOMIC_OPS_EMULATED)
 # define is_collecting() \
                 ((GC_bool)AO_char_load((unsigned char *)&GC_collecting))
 #else

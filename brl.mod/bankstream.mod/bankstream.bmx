@@ -27,15 +27,15 @@ Type TBankStream Extends TStream
 
 	Field _pos:Long,_bank:TBank
 
-	Method Pos:Long()
+	Method Pos:Long() Override
 		Return _pos
 	End Method
 
-	Method Size:Long()
+	Method Size:Long() Override
 		Return _bank.Size()
 	End Method
 
-	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ )
+	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ ) Override
 		If whence = SEEK_SET_ Then
 			If pos<0 pos=0 Else If pos>_bank.Size() pos=_bank.Size()
 		ElseIf whence = SEEK_END_ Then
@@ -52,7 +52,7 @@ Type TBankStream Extends TStream
 		Return _pos
 	End Method
 	
-	Method Read:Long( buf:Byte Ptr,count:Long )
+	Method Read:Long( buf:Byte Ptr,count:Long ) Override
 		If count<=0 Or _pos>=_bank.Size() Return 0
 		If _pos+count>_bank.Size() count=_bank.Size()-_pos
 		MemCopy buf,_bank.Buf()+_pos,Size_T(count)
@@ -60,7 +60,7 @@ Type TBankStream Extends TStream
 		Return count
 	End Method
 
-	Method Write:Long( buf:Byte Ptr,count:Long )
+	Method Write:Long( buf:Byte Ptr,count:Long ) Override
 		If count<=0 Or _pos>_bank.Size() Return 0
 		If _pos+count>_bank.Size() _bank.Resize Size_T(_pos+count)
 		MemCopy _bank.Buf()+_pos,buf,Size_T(count)
@@ -97,7 +97,7 @@ End Function
 
 Type TBankStreamFactory Extends TStreamFactory
 
-	Method CreateStream:TBankStream( url:Object,proto$,path$,readable:Int,writeable:Int )
+	Method CreateStream:TBankStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Override
 		Local bank:TBank=TBank(url)
 		If bank Return CreateBankStream( bank )
 	End Method

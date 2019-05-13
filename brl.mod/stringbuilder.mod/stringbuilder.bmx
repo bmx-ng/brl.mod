@@ -1,4 +1,4 @@
-' Copyright (c) 2018 Bruce A Henderson
+' Copyright (c) 2018-2019 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,10 +23,13 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.04"
+ModuleInfo "Version: 1.05"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2018 Bruce A Henderson"
+ModuleInfo "Copyright: 2018-2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.05"
+ModuleInfo "History: NG Refactoring."
+ModuleInfo "History: Added overloaded Append() methods."
 ModuleInfo "History: 1.04"
 ModuleInfo "History: Added shorts appender."
 ModuleInfo "History: 1.03"
@@ -46,9 +49,7 @@ It is an order of magnitude faster to append Strings to a TStringBuilder than it
 End Rem	
 Type TStringBuilder
 
-?bmxng
 Private
-?
 	' the char buffer
 	Field buffer:Byte Ptr
 	
@@ -63,32 +64,39 @@ Private
 	Const NEW_LINE:String = "~n"
 ?
 
-?bmxng
 Public
-?	
+	Rem
+	bbdoc: Constructs a #TStringBuilder with the default capacity.
+	End Rem
 	Method New()
 		buffer = bmx_stringbuilder_new(initialCapacity)
 	End Method
-?bmxng
+
+	Rem
+	bbdoc: Constructs a #TStringBuilder with a specified @initialCapacity.
+	End Rem
 	Method New(initialCapacity:Int)
 		buffer = bmx_stringbuilder_new(initialCapacity)
 	End Method
-?
+
 	Rem
-	bbdoc: Constructs a string builder initialized to the contents of the specified string.
+	bbdoc: Constructs a #TStringBuilder initialized to the contents of @Text.
+	End Rem
+	Method New(Text:String)
+		If Text.length > initialCapacity Then
+			buffer = bmx_stringbuilder_new(Text.Length)
+		Else
+			buffer = bmx_stringbuilder_new(initialCapacity)
+		End If
+		
+		bmx_stringbuilder_append_string(buffer, Text)
+	End Method
+
+	Rem
+	bbdoc: Constructs a #TStringBuilder initialized to the contents of the specified string.
 	End Rem	
 	Function Create:TStringBuilder(Text:String)
-?Not bmxng
-		Local this:TStringBuilder = New TStringBuilder
-?bmxng
-		Local this:TStringBuilder
-		If Text.length > initialCapacity Then
-			this = New TStringBuilder(Text.length)
-		Else
-			this = New TStringBuilder
-		End If
-?
-		Return this.Append(Text)
+		Return New TStringBuilder(Text)
 	End Function
 
 	Rem
@@ -115,7 +123,7 @@ Public
 	End Method
 	
 	Rem
-	bbdoc: Appends the text onto the string builder.
+	bbdoc: Appends a #String onto the string builder.
 	End Rem	
 	Method Append:TStringBuilder(value:String)
 		bmx_stringbuilder_append_string(buffer, value)
@@ -123,9 +131,17 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Appends a byte value to the string builder.
+	bbdoc: Appends a #Byte value to the string builder.
 	End Rem
 	Method AppendByte:TStringBuilder(value:Byte)
+		bmx_stringbuilder_append_byte(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Byte value onto the string builder.
+	End Rem	
+	Method Append:TStringBuilder(value:Byte)
 		bmx_stringbuilder_append_byte(buffer, value)
 		Return Self
 	End Method
@@ -147,6 +163,28 @@ Public
 		End If
 		Return Self
 	End Method
+
+	Rem
+	bbdoc: Appends an object onto the string builder.
+	about: This generally calls the object's ToString() method.
+	TStringBuilder objects are simply mem-copied.
+	End Rem
+	Method Append:TStringBuilder(obj:Object)
+		If obj Then
+			bmx_stringbuilder_append_string(buffer, obj.ToString())
+		Else
+			Return AppendNull()
+		End If
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #TStringBuilder onto the string builder.
+	End Rem
+	Method Append:TStringBuilder(sb:TStringBuilder)
+		bmx_stringbuilder_append_stringbuffer(buffer, sb.buffer)
+		Return Self
+	End Method
 	
 	Rem
 	bbdoc: Appends a null-terminated C string onto the string builder.
@@ -157,7 +195,7 @@ Public
 	End Method
 	
 	Rem
-	bbdoc: Appends a double value to the string builder.
+	bbdoc: Appends a #Double value to the string builder.
 	End Rem
 	Method AppendDouble:TStringBuilder(value:Double)
 		bmx_stringbuilder_append_double(buffer, value)
@@ -165,7 +203,15 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Appends a float value to the string builder.
+	bbdoc: Appends a #Double value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:Double)
+		bmx_stringbuilder_append_double(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Float value to the string builder.
 	End Rem
 	Method AppendFloat:TStringBuilder(value:Float)
 		bmx_stringbuilder_append_float(buffer, value)
@@ -173,7 +219,15 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Appends a int value to the string builder.
+	bbdoc: Appends a #Float value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:Float)
+		bmx_stringbuilder_append_float(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends an #Int value to the string builder.
 	End Rem
 	Method AppendInt:TStringBuilder(value:Int)
 		bmx_stringbuilder_append_int(buffer, value)
@@ -181,16 +235,33 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Appends a Long value to the string builder.
+	bbdoc: Appends an #Int value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:Int)
+		bmx_stringbuilder_append_int(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Long value to the string builder.
 	End Rem
 	Method AppendLong:TStringBuilder(value:Long)
+		bmx_stringbuilder_append_long(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Long value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:Long)
 		bmx_stringbuilder_append_long(buffer, value)
 		Return Self
 	End Method
 	
 	Rem
 	bbdoc: Appends the new line string to the string builder.
-	about: The new line string can be altered using #SetNewLineText. This might be used to force the output to always use Unix line endings even when on Windows.
+	about: The new line string can be altered using #SetNewLineText. This might be used to force the output to always
+	use Unix line endings even when on Windows.
 	End Rem
 	Method AppendNewLine:TStringBuilder()
 		If newLine Then
@@ -218,10 +289,17 @@ Public
 		bmx_stringbuilder_append_short(buffer, value)
 		Return Self
 	End Method
-	
-?bmxng
+
 	Rem
-	bbdoc: Appends a UInt value to the string builder.
+	bbdoc: Appends a #Short value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:Short)
+		bmx_stringbuilder_append_short(buffer, value)
+		Return Self
+	End Method
+	
+	Rem
+	bbdoc: Appends a #UInt value to the string builder.
 	End Rem
 	Method AppendUInt:TStringBuilder(value:UInt)
 		bmx_stringbuilder_append_uint(buffer, value)
@@ -229,7 +307,15 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Appends a Ulong value to the string builder.
+	bbdoc: Appends a #UInt value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:UInt)
+		bmx_stringbuilder_append_uint(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Ulong value to the string builder.
 	End Rem
 	Method AppendULong:TStringBuilder(value:ULong)
 		bmx_stringbuilder_append_ulong(buffer, value)
@@ -237,13 +323,28 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Appends a Size_T value to the string builder.
+	bbdoc: Appends a #Ulong value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:ULong)
+		bmx_stringbuilder_append_ulong(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Size_T value to the string builder.
 	End Rem
 	Method AppendSizet:TStringBuilder(value:Size_T)
 		bmx_stringbuilder_append_sizet(buffer, value)
 		Return Self
 	End Method
-?
+
+	Rem
+	bbdoc: Appends a #Size_T value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:Size_T)
+		bmx_stringbuilder_append_sizet(buffer, value)
+		Return Self
+	End Method
 
 	Rem
 	bbdoc: Appends a null-terminated UTF-8 string onto the string builder.
@@ -322,6 +423,18 @@ Public
 	@index must be greater than or equal to 0, and less than the length of the buffer.
 	End Rem
 	Method CharAt:Int(index:Int)
+		Return bmx_stringbuilder_charat(buffer, index)
+	End Method
+	
+	Rem
+	bbdoc: Returns the char value in the buffer at the specified index.
+	about: The first char value is at index 0, the next at index 1, and so on, as in array indexing.
+	@index must be greater than or equal to 0, and less than the length of the buffer.
+	End Rem
+	Method Operator[]:Int(index:Int)
+?debug
+		If index < 0 Or index >= Length() Throw New TArrayBoundsException
+?
 		Return bmx_stringbuilder_charat(buffer, index)
 	End Method
 	
@@ -410,6 +523,17 @@ Public
 	End Method
 	
 	Rem
+	bbdoc: The character at the specified index is set to @char.
+	about: @index must be greater than or equal to 0, and less than the length of the buffer.
+	End Rem
+	Method Operator []= (index:Int, char:Int)
+?debug
+		If index < 0 Or index >= Length() Throw New TArrayBoundsException
+?
+		bmx_stringbuilder_setcharat(buffer, index, char)
+	End Method
+	
+	Rem
 	bbdoc: Sets the text to be appended when a new line is added.
 	End Rem
 	Method SetNewLineText:TStringBuilder(newLine:String)
@@ -436,7 +560,8 @@ Public
 	End Method
 	
 	Rem
-	bbdoc: 
+	bbdoc: Creates a split buffer using the specified separator.
+	about: The #TSplitBuffer can be used to iterate over the split text.
 	End Rem
 	Method Split:TSplitBuffer(separator:String)
 		Local buf:TSplitBuffer = New TSplitBuffer
@@ -448,7 +573,7 @@ Public
 	Rem
 	bbdoc: Converts the string builder to a String.
 	End Rem	
-	Method ToString:String()
+	Method ToString:String() Override
 		Return bmx_stringbuilder_tostring(buffer)
 	End Method
 
@@ -463,13 +588,14 @@ End Type
 
 Rem
 bbdoc: An array of split text from a TStringBuilder.
-about: Note that the TSplitBuffer is only valid while its parent TStringBuilder is unchanged.
-Once you modify the TStringBuffer you should call Split() again.
+about: Note that the #TSplitBuffer is only valid while its parent #TStringBuilder is unchanged.
+Once you modify the #TStringBuffer you should call Split() again.
 End Rem
 Type TSplitBuffer
+Private
 	Field buffer:TStringBuilder
 	Field splitPtr:Byte Ptr
-	
+Public
 	Rem
 	bbdoc: The number of split elements.
 	End Rem
@@ -492,10 +618,10 @@ Type TSplitBuffer
 	End Method
 
 	Method ObjectEnumerator:TSplitBufferEnum()
-		Local enum:TSplitBufferEnum = New TSplitBufferEnum
-		enum.buffer = Self
-		enum.length = Length()
-		Return enum
+		Local enumeration:TSplitBufferEnum = New TSplitBufferEnum
+		enumeration.buffer = Self
+		enumeration.length = Length()
+		Return enumeration
 	End Method
 
 	Method Delete()
@@ -525,4 +651,3 @@ Type TSplitBufferEnum
 	End Method
 
 End Type
-

@@ -48,7 +48,7 @@ Type TxmlBase Abstract
 	Rem
 	bbdoc: Returns a string representation of the element.
 	End Rem
-	Method ToString:String()
+	Method ToString:String() Override
 		Return bmx_mxmlSaveString(nodePtr, False)
 	End Method
 
@@ -208,7 +208,7 @@ Type TxmlNode Extends TxmlBase
 			If bmx_mxmlGetType(n) = MXML_ELEMENT Then
 				list.AddLast(TxmlNode._create(n))
 			End If
-			n = bmx_mxmlWalkNext(n, nodePtr, MXML_DESCEND)
+			n = bmx_mxmlWalkNext(n, nodePtr, MXML_NO_DESCEND)
 		Wend
 		
 		Return list
@@ -244,6 +244,32 @@ Type TxmlNode Extends TxmlBase
 	End Rem
 	Method previousSibling:TxmlNode()
 		Return TxmlNode._create(bmx_mxmlGetPrevSibling(nodePtr))
+	End Method
+	
+	Rem
+	bbdoc: Reads the value of a node.
+	returns: The node content.
+	End Rem
+	Method getContent:String()
+		Local sb:TStringBuilder = New TStringBuilder()
+		
+		Local n:Byte Ptr = bmx_mxmlWalkNext(nodePtr, nodePtr, MXML_DESCEND)
+		While n
+			If bmx_mxmlGetType(n) = MXML_OPAQUE Then
+				sb.Append(bmx_mxmlGetContent(n))
+			End If
+			n = bmx_mxmlWalkNext(n, nodePtr, MXML_DESCEND)
+		Wend
+		
+		Return sb.ToString()
+	End Method
+	
+	Rem
+	bbdoc: Finds an element of the given @element name, attribute or attribute/value.
+	returns: A node or Null if no match was found.
+	End Rem
+	Method findElement:TxmlNode(element:String = "", attr:String = "", value:String = "")
+		Return TxmlNode._create(bmx_mxmlFindElement(nodePtr, element, attr, value))
 	End Method
 
 	Rem

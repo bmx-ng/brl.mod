@@ -92,6 +92,7 @@ static int arrayCellSize(const char * type, unsigned short data_size, int * flag
 		case 'm':size=sizeof(BBDOUBLE128);break;
 		#endif
 		case '@':size=data_size;*flags=0;break; // structs
+		case '/':size=data_size;break; // enums
 	}
 
 	return size;
@@ -112,6 +113,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned sho
 	}
 	
 	size = arrayCellSize(type, data_size, &flags);
+	int base_size = size;
 	size*=length;
 
 	arr=(BBArray*)bbGCAllocObject( BBARRAYSIZE(size,dims),&bbArrayClass,flags );
@@ -119,7 +121,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned sho
 	arr->type=type;
 	arr->dims=dims;
 	arr->size=size;
-	arr->data_size = data_size;
+	arr->data_size = base_size;
 	arr->data_start = (offsetof(BBArray, scales) + dims * sizeof(int)+0x0f) & ~0x0f; // 16-byte aligned
 	
 	len=lens;
@@ -139,7 +141,7 @@ static void *arrayInitializer( BBArray *arr ){
 	return 0;
 }
 
-static void initializeArray( BBArray *arr ){
+static void initializeArray( BBArray *arr, BBArrayStructInit structInit ){
 	void *init,**p;
 	
 	if( !arr->size ) return;
@@ -152,6 +154,14 @@ static void initializeArray( BBArray *arr ){
 		for( k=arr->scales[0];k>0;--k ) *p++=init;
 	}else{
 		memset( p,0,arr->size );
+		if (structInit) {
+			int k;
+			char * s = p;
+			for( k=arr->scales[0];k>0;--k ) {
+				structInit(s);
+				s += arr->data_size;
+			}
+		}
 	}
 }
 
@@ -177,12 +187,12 @@ BBArray *bbArrayNew( const char *type,int dims,... ){
 
 	BBArray *arr=allocateArray( type,dims, &lens, 0 );
 	
-	initializeArray( arr );
+	initializeArray( arr, 0 );
 	
 	return arr;
 }
 
-BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, int dims, ... ){
+BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, BBArrayStructInit init, int dims, ... ){
 
 	int lens[256];
 
@@ -198,7 +208,7 @@ BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, int dims,
 
 	BBArray *arr=allocateArray( type,dims, &lens, data_size );
 	
-	initializeArray( arr );
+	initializeArray( arr, init );
 	
 	return arr;
 }
@@ -207,7 +217,7 @@ BBArray *bbArrayNewEx( const char *type,int dims,int *lens ){
 
 	BBArray *arr=allocateArray( type,dims,lens,0 );
 	
-	initializeArray( arr );
+	initializeArray( arr, 0 );
 	
 	return arr;
 }
@@ -216,16 +226,16 @@ BBArray *bbArrayNew1D( const char *type,int length ){
 
 	BBArray *arr=allocateArray( type,1,&length, 0 );
 	
-	initializeArray( arr );
+	initializeArray( arr, 0 );
 	
 	return arr;
 }
 
-BBArray *bbArrayNew1DStruct( const char *type,int length, unsigned short data_size ){
+BBArray *bbArrayNew1DStruct( const char *type,int length, unsigned short data_size, BBArrayStructInit init ){
 
 	BBArray *arr=allocateArray( type,1,&length, data_size );
 	
-	initializeArray( arr );
+	initializeArray( arr, init );
 	
 	return arr;
 }
@@ -317,8 +327,17 @@ BBArray *bbArrayConcat( const char *type,BBArray *x,BBArray *y ){
 	int length=x->scales[0]+y->scales[0];
 	
 	if( length<=0 ) return &bbEmptyArray;
+	
+	int data_size = x->data_size != 0 ? x->data_size : y->data_size;
 
-	arr=allocateArray( type,1,&length,x->data_size );
+	// both arrays are empty?
+	if (data_size == 0) return &bbEmptyArray;
+
+	if (x->data_size > 0 && y->data_size > 0 && x->data_size != y->data_size) {
+		brl_blitz_RuntimeError(bbStringFromCString("Incompatible array element types for concatenation"));
+	}
+
+	arr=allocateArray( type,1,&length, data_size );
 	
 	data=(char*)BBARRAYDATA( arr,1 );
 	

@@ -95,7 +95,7 @@ Type TLinuxVolume Extends TVolume
 
 
 	
-	Method ListVolumes:TList()
+	Method ListVolumes:TList() Override
 		Local volumes:TList
 		
 		Local fp:Int = _setmntent("/etc/mtab", "r")
@@ -137,7 +137,7 @@ Type TLinuxVolume Extends TVolume
 		Return volumes
 	End Method
 	
-	Method GetVolumeFreeSpace:Long(vol:String)
+	Method GetVolumeFreeSpace:Long(vol:String) Override
 	
 		Local _vs:TVolSpace = TVolSpace.GetDiskSpace(vol)
 		
@@ -148,7 +148,7 @@ Type TLinuxVolume Extends TVolume
 		Return 0
 	End Method
 	
-	Method GetVolumeSize:Long(vol:String)
+	Method GetVolumeSize:Long(vol:String) Override
 	
 		Local _vs:TVolSpace = TVolSpace.GetDiskSpace(vol)
 
@@ -159,7 +159,7 @@ Type TLinuxVolume Extends TVolume
 		Return 0
 	End Method
 
-	Method GetVolumeInfo:TVolume(vol:String)
+	Method GetVolumeInfo:TVolume(vol:String) Override
 		Local volume:TLinuxVolume = New TLinuxVolume
 		
 		volume.volumeDevice = vol
@@ -175,7 +175,7 @@ Type TLinuxVolume Extends TVolume
 		Return volume
 	End Method
 	
-	Method Refresh()
+	Method Refresh() Override
 		If Not vs Then
 			Return
 		End If
@@ -214,23 +214,23 @@ Type TLinuxVolume Extends TVolume
 		Return dir
 	End Method
 
-	Method GetUserHomeDir:String()
+	Method GetUserHomeDir:String() Override
 		Return getHome()
 	End Method
 	
-	Method GetUserDesktopDir:String()
+	Method GetUserDesktopDir:String() Override
 		Return bmx_userdirlookup("DESKTOP")
 	End Method
 	
-	Method GetUserAppDir:String()
+	Method GetUserAppDir:String() Override
 		Return getHome()
 	End Method
 	
-	Method GetUserDocumentsDir:String()
+	Method GetUserDocumentsDir:String() Override
 		Return bmx_userdirlookup("DOCUMENTS")
 	End Method
 
-	Method GetCustomDir:String(dirType:Int, flags:Int = 0)
+	Method GetCustomDir:String(dirType:Int, flags:Int = 0) Override
 
 		Select dirType
 			Case DT_SHAREDUSERDATA

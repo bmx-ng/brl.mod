@@ -124,7 +124,9 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
     GC_ASSERT(I_HOLD_LOCK());
     /* Avoid growing the table in case of at least 25% of entries can   */
     /* be deleted by enforcing a collection.  Ignored for small tables. */
-    if (log_old_size >= GC_ON_GROW_LOG_SIZE_MIN) {
+    /* In incremental mode we skip this optimization, as we want to     */
+    /* avoid triggering a full GC whenever possible.                    */
+    if (log_old_size >= GC_ON_GROW_LOG_SIZE_MIN && !GC_incremental) {
       IF_CANCEL(int cancel_state;)
 
       DISABLE_CANCEL(cancel_state);
@@ -1326,7 +1328,7 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
 #       ifdef KEEP_BACK_PTRS
           long i;
           /* Stops when GC_gc_no wraps; that's OK.      */
-          last_back_trace_gc_no = (word)(-1);  /* disable others. */
+          last_back_trace_gc_no = GC_WORD_MAX;  /* disable others. */
           for (i = 0; i < GC_backtraces; ++i) {
               /* FIXME: This tolerates concurrent heap mutation,        */
               /* which may cause occasional mysterious results.         */

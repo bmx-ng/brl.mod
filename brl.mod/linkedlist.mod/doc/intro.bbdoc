@@ -1,6 +1,3 @@
-
-+Linked lists
-
 A linked list allows you to efficiently add and remove objects to and from a collection of objects.
 
 To create a linked list, use the #CreateList command.

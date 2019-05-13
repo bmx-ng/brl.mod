@@ -32,6 +32,10 @@
 # define _GNU_SOURCE 1
 #endif
 
+#if defined(__INTERIX) && !defined(_ALL_SOURCE)
+# define _ALL_SOURCE 1
+#endif
+
 #if (defined(DGUX) && defined(GC_THREADS) || defined(DGUX386_THREADS) \
      || defined(GC_DGUX386_THREADS)) && !defined(_USING_POSIX4A_DRAFT10)
 # define _USING_POSIX4A_DRAFT10 1
@@ -76,13 +80,8 @@
 # endif
 #endif
 
-#ifndef GC_TINY_FL_H
-# include "../gc_tiny_fl.h"
-#endif
-
-#ifndef GC_MARK_H
-# include "../gc_mark.h"
-#endif
+#include "../gc_tiny_fl.h"
+#include "../gc_mark.h"
 
 typedef GC_word word;
 typedef GC_signed_word signed_word;
@@ -92,9 +91,12 @@ typedef int GC_bool;
 #define TRUE 1
 #define FALSE 0
 
-typedef char * ptr_t;   /* A generic pointer to which we can add        */
+#ifndef PTR_T_DEFINED
+  typedef char * ptr_t; /* A generic pointer to which we can add        */
                         /* byte displacements and which can be used     */
                         /* for address comparisons.                     */
+# define PTR_T_DEFINED
+#endif
 
 #ifndef SIZE_MAX
 # include <limits.h>
@@ -118,9 +120,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #define SIZET_SAT_ADD(a, b) \
             (EXPECT((a) < GC_SIZE_MAX - (b), TRUE) ? (a) + (b) : GC_SIZE_MAX)
 
-#ifndef GCCONFIG_H
-# include "gcconfig.h"
-#endif
+#include "gcconfig.h"
 
 #if !defined(GC_ATOMIC_UNCOLLECTABLE) && defined(ATOMIC_UNCOLLECTABLE)
   /* For compatibility with old-style naming. */
@@ -250,21 +250,23 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 # define GC_API_PRIV GC_API
 #endif
 
-#if defined(THREADS) && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+#if defined(THREADS) && !defined(NN_PLATFORM_CTR) \
+    && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
 # include "gc_atomic_ops.h"
+# ifndef AO_HAVE_compiler_barrier
+#   define AO_HAVE_compiler_barrier 1
+# endif
 #endif
 
-#ifndef GC_LOCKS_H
-# include "gc_locks.h"
-#endif
+#include "gc_locks.h"
 
-#define ONES ((word)(signed_word)(-1))
+#define GC_WORD_MAX (~(word)0)
 
 # ifdef STACK_GROWS_DOWN
 #   define COOLER_THAN >
 #   define HOTTER_THAN <
 #   define MAKE_COOLER(x,y) if ((word)((x) + (y)) > (word)(x)) {(x) += (y);} \
-                            else (x) = (ptr_t)ONES
+                            else (x) = (ptr_t)GC_WORD_MAX
 #   define MAKE_HOTTER(x,y) (x) -= (y)
 # else
 #   define COOLER_THAN <
@@ -427,14 +429,17 @@ EXTERN_C_END
 # undef GET_TIME
 # undef MS_TIME_DIFF
 # define CLOCK_TYPE struct timeval
+# define CLOCK_TYPE_INITIALIZER { 0, 0 }
 # define GET_TIME(x) \
                 do { \
                   struct rusage rusage; \
                   getrusage(RUSAGE_SELF, &rusage); \
                   x = rusage.ru_utime; \
                 } while (0)
-# define MS_TIME_DIFF(a,b) ((unsigned long)(a.tv_sec - b.tv_sec) * 1000 \
-                            + (unsigned long)(a.tv_usec - b.tv_usec) / 1000)
+# define MS_TIME_DIFF(a,b) ((unsigned long)((long)(a.tv_sec-b.tv_sec) * 1000 \
+                                    + (long)(a.tv_usec-b.tv_usec) / 1000))
+                            /* "a" time is expected to be not earlier than  */
+                            /* "b" one; the result has unsigned long type.  */
 #elif defined(MSWIN32) || defined(MSWINCE)
 # ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN 1
@@ -448,7 +453,7 @@ EXTERN_C_END
 # else
 #   define GET_TIME(x) (void)(x = GetTickCount())
 # endif
-# define MS_TIME_DIFF(a,b) ((long)((a)-(b)))
+# define MS_TIME_DIFF(a,b) ((unsigned long)((a)-(b)))
 #elif defined(NN_PLATFORM_CTR)
 # define CLOCK_TYPE long long
   EXTERN_C_BEGIN
@@ -456,7 +461,7 @@ EXTERN_C_END
   CLOCK_TYPE n3ds_convert_tick_to_ms(CLOCK_TYPE tick);
   EXTERN_C_END
 # define GET_TIME(x) (void)(x = n3ds_get_system_tick())
-# define MS_TIME_DIFF(a,b) ((long)n3ds_convert_tick_to_ms((a)-(b)))
+# define MS_TIME_DIFF(a,b) ((unsigned long)n3ds_convert_tick_to_ms((a)-(b)))
 #else /* !BSD_TIME && !NN_PLATFORM_CTR && !MSWIN32 && !MSWINCE */
 # include <time.h>
 # if defined(FREEBSD) && !defined(CLOCKS_PER_SEC)
@@ -483,6 +488,11 @@ EXTERN_C_END
   /* Avoid using double type since some targets (like ARM) might        */
   /* require -lm option for double-to-long conversion.                  */
 #endif /* !BSD_TIME && !MSWIN32 */
+# ifndef CLOCK_TYPE_INITIALIZER
+    /* This is used to initialize CLOCK_TYPE variables (to some value)  */
+    /* to avoid "variable might be uninitialized" compiler warnings.    */
+#   define CLOCK_TYPE_INITIALIZER 0
+# endif
 #endif /* !NO_CLOCK */
 
 /* We use bzero and bcopy internally.  They may not be available.       */
@@ -527,8 +537,7 @@ EXTERN_C_BEGIN
                                    PCR_allSigsBlocked, \
                                    PCR_waitForever)
 # else
-//|| defined(NINTENDO_SWITCH) 
-#   if defined(NN_PLATFORM_CTR) \
+#   if defined(NN_PLATFORM_CTR) || defined(NINTENDO_SWITCH) \
        || defined(GC_WIN32_THREADS) || defined(GC_PTHREADS)
       GC_INNER void GC_stop_world(void);
       GC_INNER void GC_start_world(void);
@@ -556,7 +565,9 @@ EXTERN_C_BEGIN
 # elif defined(PCR)
 #   define ABORT(s) PCR_Base_Panic(s)
 # else
-#   if defined(MSWINCE) && !defined(DebugBreak) \
+#   if defined(MSWIN_XBOX1) && !defined(DebugBreak)
+#     define DebugBreak() __debugbreak()
+#   elif defined(MSWINCE) && !defined(DebugBreak) \
        && (!defined(UNDER_CE) || (defined(__MINGW32CE__) && !defined(ARM32)))
       /* This simplifies linking for WinCE (and, probably, doesn't      */
       /* hurt debugging much); use -DDebugBreak=DebugBreak to override  */
@@ -854,8 +865,8 @@ EXTERN_C_BEGIN
 #   define CPP_LOG_HBLKSIZE 13
 # elif HBLKSIZE == 16384
 #   define CPP_LOG_HBLKSIZE 14
-# else
-#   error fix HBLKSIZE
+# elif !defined(CPPCHECK)
+#   error Bad HBLKSIZE value
 # endif
 # undef HBLKSIZE
 #endif
@@ -910,9 +921,6 @@ EXTERN_C_BEGIN
 # endif
 # define ADD_SLOP(lb) /* lb should have no side-effect */ \
                 SIZET_SAT_ADD(lb, EXTRA_BYTES)
-# ifndef MIN_WORDS
-#  define MIN_WORDS 2   /* FIXME: obsolete */
-# endif
 
 /*
  * Hash table representation of sets of pages.
@@ -957,24 +965,17 @@ typedef word page_hash_table[PHT_SIZE];
 # define get_pht_entry_from_index(bl, index) \
                 (((bl)[divWORDSZ(index)] >> modWORDSZ(index)) & 1)
 # define set_pht_entry_from_index(bl, index) \
-                (bl)[divWORDSZ(index)] |= (word)1 << modWORDSZ(index)
-# define clear_pht_entry_from_index(bl, index) \
-                (bl)[divWORDSZ(index)] &= ~((word)1 << modWORDSZ(index))
-/* And a dumb but thread-safe version of set_pht_entry_from_index.      */
-/* This sets (many) extra bits.                                         */
-# define set_pht_entry_from_index_safe(bl, index) \
-                (bl)[divWORDSZ(index)] = ONES
+                (void)((bl)[divWORDSZ(index)] |= (word)1 << modWORDSZ(index))
 
-/* And, one more version for GC_add_to_black_list_normal/stack.         */
-/* The latter ones are invoked (indirectly) by GC_do_local_mark.        */
-#if defined(PARALLEL_MARK) && defined(THREAD_SANITIZER)
+#if defined(THREADS) && defined(AO_HAVE_or)
+  /* And, one more version for GC_add_to_black_list_normal/stack        */
+  /* (invoked indirectly by GC_do_local_mark) and                       */
+  /* async_set_pht_entry_from_index (invoked by GC_dirty or the write   */
+  /* fault handler).                                                    */
 # define set_pht_entry_from_index_concurrent(bl, index) \
                 AO_or((volatile AO_t *)&(bl)[divWORDSZ(index)], \
                       (AO_t)((word)1 << modWORDSZ(index)))
 #else
-  /* It is safe to set a bit in a blacklist even without        */
-  /* synchronization, the only drawback is that we might have   */
-  /* to redo blacklisting sometimes.                            */
 # define set_pht_entry_from_index_concurrent(bl, index) \
                 set_pht_entry_from_index(bl, index)
 #endif
@@ -1366,13 +1367,10 @@ struct _GC_arrays {
   char _valid_offsets[VALID_OFFSET_SZ];
                                 /* GC_valid_offsets[i] == TRUE ==> i    */
                                 /* is registered as a displacement.     */
-# if defined(PROC_VDB) || defined(MPROTECT_VDB) \
-     || defined(GWW_VDB) || defined(MANUAL_VDB)
+# ifndef GC_DISABLE_INCREMENTAL
 #   define GC_grungy_pages GC_arrays._grungy_pages
     page_hash_table _grungy_pages; /* Pages that were dirty at last     */
                                    /* GC_read_dirty.                    */
-# endif
-# if defined(MPROTECT_VDB) || defined(MANUAL_VDB)
 #   define GC_dirty_pages GC_arrays._dirty_pages
     volatile page_hash_table _dirty_pages;
                         /* Pages dirtied since last GC_read_dirty. */
@@ -1556,19 +1554,6 @@ GC_EXTERN word GC_black_list_spacing;
   extern struct hblk * GC_hblkfreelist[];
   extern word GC_free_bytes[];  /* Both remain visible to GNU GCJ.      */
 #endif
-
-#ifdef GC_DISABLE_INCREMENTAL
-# define GC_incremental FALSE
-                        /* Hopefully allow optimizer to remove some code. */
-# define TRUE_INCREMENTAL FALSE
-#else
-  GC_EXTERN GC_bool GC_incremental;
-                        /* Using incremental/generational collection.   */
-                        /* Assumes dirty bits are being maintained.     */
-# define TRUE_INCREMENTAL \
-        (GC_incremental && GC_time_limit != GC_TIME_UNLIMITED)
-        /* True incremental, not just generational, mode */
-#endif /* !GC_DISABLE_INCREMENTAL */
 
 GC_EXTERN word GC_root_size; /* Total size of registered root sections. */
 
@@ -1956,7 +1941,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func f);
 #define GC_gcollect_inner() \
                 (void)GC_try_to_collect_inner(GC_never_stop_func)
 
-#if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS)
+#ifdef THREADS
   GC_EXTERN GC_bool GC_in_thread_creation;
         /* We may currently be in thread creation or destruction.       */
         /* Only set to TRUE while allocation lock is held.              */
@@ -2164,7 +2149,18 @@ GC_EXTERN GC_bool GC_print_back_height;
                 /* accompanying routines are no-op in such a case.      */
 #endif
 
-#ifndef GC_DISABLE_INCREMENTAL
+#ifdef GC_DISABLE_INCREMENTAL
+# define GC_incremental FALSE
+# define GC_auto_incremental FALSE
+# define GC_manual_vdb FALSE
+# define GC_dirty(p) (void)(p)
+# define REACHABLE_AFTER_DIRTY(p) (void)(p)
+
+#else /* !GC_DISABLE_INCREMENTAL */
+  GC_EXTERN GC_bool GC_incremental;
+                        /* Using incremental/generational collection.   */
+                        /* Assumes dirty bits are being maintained.     */
+
   /* Virtual dirty bit implementation:            */
   /* Each implementation exports the following:   */
   GC_INNER void GC_read_dirty(GC_bool output_unneeded);
@@ -2190,16 +2186,18 @@ GC_EXTERN GC_bool GC_print_back_height;
                 /* Returns true if dirty bits are maintained (otherwise */
                 /* it is OK to be called again if the client invokes    */
                 /* GC_enable_incremental once more).                    */
-#endif /* !GC_DISABLE_INCREMENTAL */
 
-#ifdef MANUAL_VDB
+  GC_EXTERN GC_bool GC_manual_vdb;
+                /* The incremental collection is in the manual VDB      */
+                /* mode.  Assumes GC_incremental is true.  Should not   */
+                /* be modified once GC_incremental is set to true.      */
+
+# define GC_auto_incremental (GC_incremental && !GC_manual_vdb)
+
   GC_INNER void GC_dirty_inner(const void *p); /* does not require locking */
-# define GC_dirty(p) (GC_incremental ? GC_dirty_inner(p) : (void)0)
+# define GC_dirty(p) (GC_manual_vdb ? GC_dirty_inner(p) : (void)0)
 # define REACHABLE_AFTER_DIRTY(p) GC_reachable_here(p)
-#else
-# define GC_dirty(p) (void)(p)
-# define REACHABLE_AFTER_DIRTY(p) (void)(p)
-#endif
+#endif /* !GC_DISABLE_INCREMENTAL */
 
 /* Same as GC_base but excepts and returns a pointer to const object.   */
 #define GC_base_C(p) ((const void *)GC_base((/* no const */ void *)(p)))
@@ -2218,7 +2216,7 @@ extern word GC_fo_entries; /* should be visible in extra/MacOS.c */
 #  define GC_STORE_BACK_PTR(source, dest) GC_store_back_pointer(source, dest)
 #  define GC_MARKED_FOR_FINALIZATION(dest) GC_marked_for_finalization(dest)
 #else
-#  define GC_STORE_BACK_PTR(source, dest)
+#  define GC_STORE_BACK_PTR(source, dest) (void)(source)
 #  define GC_MARKED_FOR_FINALIZATION(dest)
 #endif
 
@@ -2326,7 +2324,17 @@ GC_EXTERN signed_word GC_bytes_found;
                                 /* protected by GC_write_cs.    */
 
 # endif
-# ifdef MPROTECT_VDB
+# if defined(GC_DISABLE_INCREMENTAL) || defined(HAVE_LOCKFREE_AO_OR)
+#   define GC_acquire_dirty_lock() (void)0
+#   define GC_release_dirty_lock() (void)0
+# else
+    /* Acquire the spin lock we use to update dirty bits.       */
+    /* Threads should not get stopped holding it.  But we may   */
+    /* acquire and release it during GC_remove_protection call. */
+#   define GC_acquire_dirty_lock() \
+        do { /* empty */ \
+        } while (AO_test_and_set_acquire(&GC_fault_handler_lock) == AO_TS_SET)
+#   define GC_release_dirty_lock() AO_CLEAR(&GC_fault_handler_lock)
     GC_EXTERN volatile AO_TS_t GC_fault_handler_lock;
                                         /* defined in os_dep.c */
 # endif
@@ -2450,12 +2458,12 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 
 #ifdef SEARCH_FOR_DATA_START
   GC_INNER void GC_init_linux_data_start(void);
-  ptr_t GC_find_limit(ptr_t, GC_bool);
+  void * GC_find_limit(void *, int);
 #endif
 
 #if defined(NETBSD) && defined(__ELF__)
   GC_INNER void GC_init_netbsd_elf(void);
-  ptr_t GC_find_limit(ptr_t, GC_bool);
+  void * GC_find_limit(void *, int);
 #endif
 
 #ifdef UNIX_LIKE

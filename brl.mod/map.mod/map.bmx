@@ -6,12 +6,14 @@ bbdoc: Data structures/Maps
 End Rem
 Module BRL.Map
 
-ModuleInfo "Version: 1.08"
+ModuleInfo "Version: 1.09"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.09"
+ModuleInfo "History: Added index operator overloads to maps."
 ModuleInfo "History: 1.08"
 ModuleInfo "History: Added TStringMap."
 ModuleInfo "History: (Debug) Assertion on modification during iteration."
@@ -115,11 +117,11 @@ Type TNode Extends TKeyValue
 		Return t
 	End Method
 	
-	Method Key:Object()
+	Method Key:Object() Override
 		Return _key
 	End Method
 	
-	Method Value:Object()
+	Method Value:Object() Override
 		Return _value
 	End Method
 
@@ -156,7 +158,7 @@ Type TNodeEnumerator
 End Type
 
 Type TKeyEnumerator Extends TNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
 ?
@@ -167,7 +169,7 @@ Type TKeyEnumerator Extends TNodeEnumerator
 End Type
 
 Type TValueEnumerator Extends TNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
 ?
@@ -342,7 +344,7 @@ Type TMap
 	End Method
 
 	Rem
-	bbdoc: Returns a node enumeration object.
+	bbdoc: Returns a node enumeration Object.
 	about: The object returned by #ObjectEnumerator can be used with #EachIn to iterate through the nodes in the map.
 	End Rem
 	Method ObjectEnumerator:TNodeEnumerator()
@@ -564,7 +566,24 @@ Type TMap
 		Wend
 		node._color=BLACK
 	End Method
+
+	Rem
+	bbdoc: Finds a value given a @key using index syntax.
+	returns: The value associated with @key.
+	about: If the map does not contain @key, a #Null object is returned.
+	End Rem
+	Method Operator[]:Object(key:Object)
+		Return ValueForKey(key)
+	End Method
 	
+	Rem
+	bbdoc: Inserts a key/value pair into the map using index syntax.
+	about: If the map already contains @key, its value is overwritten with @value. 
+	End Rem
+	Method Operator[]=(key:Object, value:Object)
+		Insert(key, value)
+	End Method
+
 	Const RED=-1,BLACK=1
 	
 	Field _root:TNode=nil

@@ -51,13 +51,16 @@ void		bbGCSetDebug( int debug );
 void*	bbGCMalloc( int size,int flags );
 BBObject*	bbGCAllocObject( int size,BBClass *clas,int flags );
 int 		bbGCValidate( void *p );
-int		bbGCMemAlloced();
-int		bbGCCollect();
+size_t		bbGCMemAlloced();
+size_t		bbGCCollect();
 int     bbGCCollectALittle();
 void		bbGCSuspend();
 void		bbGCResume();
 void		bbGCRetain( BBObject *p );
 void		bbGCRelease( BBObject *p );
+int			bbGCThreadIsRegistered();
+int			bbGCRegisterMyThread();
+int			bbGCUnregisterMyThread();
 
 // BBRETAIN/BBRELEASE should be used to prevent an object from garbage collection.
 //

@@ -24,19 +24,19 @@ Import BRL.TextStream
 
 Type TCStandardIO Extends TStream
 
-	Method Eof:Int()
+	Method Eof:Int() Override
 		Return feof_( stdin_ )
 	End Method
 	
-	Method Flush()
+	Method Flush() Override
 		fflush_ stdout_
 	End Method
 
-	Method Read:Long( buf:Byte Ptr,count:Long )
+	Method Read:Long( buf:Byte Ptr,count:Long ) Override
 		Return fread_( buf,1,count,stdin_ )
 	End Method
 
-	Method Write:Long( buf:Byte Ptr,count:Long )
+	Method Write:Long( buf:Byte Ptr,count:Long ) Override
 		Return fwrite_( buf,1,count,stdout_ )
 	End Method
 
@@ -46,7 +46,7 @@ Rem
 bbdoc: BlitzMax Stream object used for Print and Input
 about: The #Print and #Input commands can be redirected by setting the @StandardIOStream Global to an alternative Stream Object.
 End Rem
-Global StandardIOStream:TStream=TTextStream.Create( New TCStandardIO,TTextStream.UTF8 )
+Global StandardIOStream:TStream=TTextStream.Create( New TCStandardIO,ETextStreamFormat.UTF8 )
 
 Rem
 bbdoc: Write a string to the standard IO stream

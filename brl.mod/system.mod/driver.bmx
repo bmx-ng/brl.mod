@@ -24,7 +24,7 @@ Type TSystemDriver
 	Method DesktopDepth:Int() Abstract
 	Method DesktopHertz:Int() Abstract
 
-	Method ToString:String()
+	Method ToString:String() Override
 		Return Name()
 	End Method
 

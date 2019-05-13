@@ -13,7 +13,7 @@ void lua_boxobject( lua_State *L,BBObject *obj ){
 	struct BBObjectContainer * uc = (struct BBObjectContainer *)GC_MALLOC_UNCOLLECTABLE(sizeof(struct BBObjectContainer));
 	uc->o = obj;
 	
-	p=lua_newuserdata( L,4 );
+	p=lua_newuserdata( L, sizeof(struct BBObjectContainer) );
 	*(struct BBObjectContainer**)p=uc;
 }
 

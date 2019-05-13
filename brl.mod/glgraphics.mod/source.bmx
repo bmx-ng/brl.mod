@@ -25,12 +25,12 @@ Public
 
 Type TGLGraphics Extends TGraphics
 
-	Method Driver:TGLGraphicsDriver()
+	Method Driver:TGLGraphicsDriver() Override
 		Assert _context
 		Return GLGraphicsDriver()
 	End Method
 	
-	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var )
+	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var ) Override
 		Assert _context
 		Local w,h,d,r,f
 		bbGLGraphicsGetSettings _context,w,h,d,r,f
@@ -41,10 +41,13 @@ Type TGLGraphics Extends TGraphics
 		flags=f
 	End Method
 	
-	Method Close()
+	Method Close() Override
 		If Not _context Return
 		bbGLGraphicsClose( _context )
 		_context=0
+	End Method
+	
+	Method Resize(width:Int, height:Int) Override
 	End Method
 	
 	Field _context:Byte Ptr
@@ -53,7 +56,7 @@ End Type
 
 Type TGLGraphicsDriver Extends TGraphicsDriver
 
-	Method GraphicsModes:TGraphicsMode[]()
+	Method GraphicsModes:TGraphicsMode[]() Override
 		Local buf[1024*4]
 		Local count=bbGLGraphicsGraphicsModes( buf,1024 )
 		Local modes:TGraphicsMode[count],p:Int Ptr=buf
@@ -69,26 +72,26 @@ Type TGLGraphicsDriver Extends TGraphicsDriver
 		Return modes
 	End Method
 	
-	Method AttachGraphics:TGLGraphics( widget:Byte Ptr,flags )
+	Method AttachGraphics:TGLGraphics( widget:Byte Ptr,flags ) Override
 		Local t:TGLGraphics=New TGLGraphics
 		t._context=bbGLGraphicsAttachGraphics( widget,flags )
 		Return t
 	End Method
 	
-	Method CreateGraphics:TGLGraphics( width,height,depth,hertz,flags )
+	Method CreateGraphics:TGLGraphics( width,height,depth,hertz,flags ) Override
 		Local t:TGLGraphics=New TGLGraphics
 		t._context=bbGLGraphicsCreateGraphics( width,height,depth,hertz,flags )
 		Return t
 	End Method
 	
-	Method SetGraphics( g:TGraphics )
+	Method SetGraphics( g:TGraphics ) Override
 		Local context:Byte Ptr
 		Local t:TGLGraphics=TGLGraphics( g )
 		If t context=t._context
 		bbGLGraphicsSetGraphics context
 	End Method
 	
-	Method Flip( sync )
+	Method Flip( sync ) Override
 		bbGLGraphicsFlip sync
 	End Method
 	
@@ -245,7 +248,7 @@ The font used is an internal fixed point 8x16 font.<br>
 <br>
 This function is intended for debugging purposes only - performance is unlikely to be stellar.
 End Rem
-Function GLDrawText( text$,x,y )
+Function GLDrawText( Text$,x,y )
 '	If fontSeq<>graphicsSeq
 	If Not fontTex
 		Local pixmap:TPixmap=TPixmap.Create( 1024,16,PF_RGBA8888 )
@@ -272,8 +275,8 @@ Function GLDrawText( text$,x,y )
 	glEnable GL_TEXTURE_2D
 	glBindTexture GL_TEXTURE_2D,fontTex
 	
-	For Local i=0 Until text.length
-		Local c=text[i]-32
+	For Local i=0 Until Text.length
+		Local c=Text[i]-32
 		If c>=0 And c<96
 			Const adv#=8/1024.0
 			Local t#=c*adv;

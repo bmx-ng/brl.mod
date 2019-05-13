@@ -75,7 +75,7 @@ BBGCMem *bbGCAlloc( int sz,BBGCPool *pool ){
 	BBGCMem *q=(BBGCMem*) GC_MALLOC( sz );
 	q->pool=pool;
 	//q->refs=-1;
-	GC_REGISTER_FINALIZER( q,gc_finalizer,pool,&ofn,&ocd );
+	GC_REGISTER_FINALIZER_NO_ORDER( q,gc_finalizer,pool,&ofn,&ocd );
 	return q;
 }
 
@@ -91,7 +91,7 @@ BBObject * bbGCAllocObject( int sz,BBClass *clas,int flags ){
 	if( flags & BBGC_FINALIZE ){
 		GC_finalization_proc ofn;
 		void *ocd;
-		GC_REGISTER_FINALIZER( q,gc_finalizer,clas,&ofn,&ocd );
+		GC_REGISTER_FINALIZER_NO_ORDER( q,gc_finalizer,clas,&ofn,&ocd );
 	}
 	return q;	
 }
@@ -117,8 +117,9 @@ int bbGCValidate( void *q ){
 	return 0;
 }
 
-int bbGCCollect(){
+size_t bbGCCollect(){
 	GC_gcollect();
+	return GC_get_expl_freed_bytes_since_gc();
 }
 
 int bbGCCollectALittle() {
@@ -139,7 +140,7 @@ void bbGCResume(){
 	GC_enable();
 }
 
-int bbGCMemAlloced(){
+size_t bbGCMemAlloced(){
 	return GC_get_heap_size();
 }
 
@@ -189,4 +190,30 @@ void bbGCRelease( BBObject *p ) {
 			GC_FREE(found);
 		}
 	}
+}
+
+int bbGCThreadIsRegistered() {
+#ifdef GC_THREADS
+	return GC_thread_is_registered();
+#else
+	return 0;
+#endif
+}
+
+int bbGCRegisterMyThread() {
+#ifdef GC_THREADS
+	struct GC_stack_base stackBase;
+	GC_get_stack_base(&stackBase);
+	return GC_register_my_thread(&stackBase);
+#else
+	return -1;
+#endif
+}
+
+int bbGCUnregisterMyThread() {
+#ifdef GC_THREADS
+	return GC_unregister_my_thread();
+#else
+	return -1;
+#endif
 }

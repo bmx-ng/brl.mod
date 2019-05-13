@@ -153,13 +153,32 @@ Type TStringMap
 	about: The object returned by #ObjectEnumerator can be used with #EachIn to iterate through the nodes in the map.
 	End Rem
 	Method ObjectEnumerator:TStringNodeEnumerator()
-		Local nodeenum:TStringNodeEnumerator=New TStringNodeEnumerator
-		nodeenum._node=_FirstNode()
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
+		Local nodeenum:TStringNodeEnumerator
+		If Not isEmpty() Then
+			nodeenum = New TStringNodeEnumerator
+			nodeenum._node=_FirstNode()
+			nodeenum._map = Self
+		Else
+			nodeenum = New TStringEmptyEnumerator
+		End If
 		Return nodeenum
+	End Method
+	
+	Rem
+	bbdoc: Finds a value given a @key using index syntax.
+	returns: The value associated with @key.
+	about: If the map does not contain @key, a #Null object is returned.
+	End Rem
+	Method Operator[]:Object(key:String)
+		Return bmx_map_stringmap_valueforkey(key, Varptr _root)
+	End Method
+	
+	Rem
+	bbdoc: Inserts a key/value pair into the map using index syntax.
+	about: If the map already contains @key, its value is overwritten with @value. 
+	End Rem
+	Method Operator[]=(key:String, value:Object)
+		bmx_map_stringmap_insert(key, value, Varptr _root)
 	End Method
 
 	Field _root:Byte Ptr
@@ -227,7 +246,7 @@ Type TStringNodeEnumerator
 End Type
 
 Type TStringKeyEnumerator Extends TStringNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TStringMap Concurrent Modification"
 ?
@@ -238,7 +257,7 @@ Type TStringKeyEnumerator Extends TStringNodeEnumerator
 End Type
 
 Type TStringValueEnumerator Extends TStringNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TStringMap Concurrent Modification"
 ?
@@ -256,7 +275,7 @@ Type TStringMapEnumerator
 End Type
 
 Type TStringEmptyEnumerator Extends TStringNodeEnumerator
-	Method HasNext()
+	Method HasNext() Override
 		_map = Null
 		Return False
 	End Method

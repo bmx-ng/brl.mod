@@ -63,13 +63,15 @@ Type TGraphics
 
 	Method Close() Abstract
 	
+	Method Resize(width:Int, height:Int) Abstract
+
 End Type
 
 Type TGraphicsMode
 
 	Field width,height,depth,hertz
 	
-	Method ToString$()
+	Method ToString$() Override
 		Return width+","+height+","+depth+" "+hertz+"Hz"
 	End Method
 
@@ -293,6 +295,7 @@ Function GraphicsResize( width:Int, height:Int )
 	If _driver And _driver.CanResize() And _graphics Then
 		_gWidth = width
 		_gHeight = height
+		_graphics.Resize(width, height)
 	End If
 End Function
 

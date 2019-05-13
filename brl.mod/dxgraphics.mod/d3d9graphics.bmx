@@ -9,6 +9,9 @@ Import BRL.LinkedList
 Import brl.systemdefault
 
 Private
+Extern
+	Function bbAppIcon:Byte Ptr(inst:Byte Ptr)="HICON bbAppIcon(HINSTANCE)!"
+End Extern
 
 Global _wndClass$="BBDX9Device Window Class"
 
@@ -278,11 +281,11 @@ Type TD3D9Graphics Extends TGraphics
 		
 	End Method
 
-	Method Driver:TGraphicsDriver()
+	Method Driver:TGraphicsDriver() Override
 		Return _driver
 	End Method
 	
-	Method GetSettings:Int( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Int Var )
+	Method GetSettings:Int( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Int Var ) Override
 		'
 		ValidateSize
 		'
@@ -293,7 +296,7 @@ Type TD3D9Graphics Extends TGraphics
 		flags=_flags
 	End Method
 
-	Method Close:Int()
+	Method Close:Int() Override
 		If Not _hwnd Return False
 		CloseD3DDevice
 		If Not _attached DestroyWindow( _hwnd )
@@ -316,6 +319,8 @@ Type TD3D9Graphics Extends TGraphics
 		Next
 	End Method
 
+	Method Resize(width:Int, height:Int) Override
+ 	End Method
 	
 	Field _hwnd:Byte Ptr
 	Field _width:Int
@@ -373,6 +378,7 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		wndclass.SethInstance(GetModuleHandleW( Null ))
 		wndclass.SetlpfnWndProc(D3D9WndProc)
 		wndclass.SethCursor(LoadCursorW( Null,Short Ptr IDC_ARROW ))
+		wndClass.SethIcon(bbAppIcon(GetModuleHandleW( Null )))
 		wndclass.SetlpszClassName(name)
 		RegisterClassW wndclass.classPtr
 		MemFree name
@@ -380,15 +386,15 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		Return Self
 	End Method
 	
-	Method GraphicsModes:TGraphicsMode[]()
+	Method GraphicsModes:TGraphicsMode[]() Override
 		Return _modes
 	End Method
 	
-	Method AttachGraphics:TD3D9Graphics( widget:Byte Ptr,flags:Int )
+	Method AttachGraphics:TD3D9Graphics( widget:Byte Ptr,flags:Int ) Override
 		Return New TD3D9Graphics.Attach( widget:Byte Ptr,flags:Int )
 	End Method
 	
-	Method CreateGraphics:TD3D9Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Int)
+	Method CreateGraphics:TD3D9Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Int) Override
 		Return New TD3D9Graphics.Create( width,height,depth,hertz,flags )
 	End Method
 
@@ -396,11 +402,11 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		Return _graphics
 	End Method
 		
-	Method SetGraphics( g:TGraphics )
+	Method SetGraphics( g:TGraphics ) Override
 		_graphics=TD3D9Graphics( g )
 	End Method
 	
-	Method Flip( sync:Int )
+	Method Flip( sync:Int ) Override
 		Local present:Int = _graphics.Flip(sync)
 		If UseDX9RenderLagFix Then
 			Local pixelsdrawn:Int

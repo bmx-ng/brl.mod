@@ -21,7 +21,7 @@
  *
  * One restriction is that we drop all back-edges from nodes with very
  * high in-degree, and simply add them add them to a list of such
- * nodes.  They are then treated as permanent roots.  Id this by itself
+ * nodes.  They are then treated as permanent roots.  If this by itself
  * doesn't introduce a space leak, then such nodes can't contribute to
  * a growing space leak.
  */
@@ -32,7 +32,8 @@
 
 /* #include <unistd.h> */
 
-#if !defined(DBG_HDRS_ALL) || (ALIGNMENT != CPP_WORDSZ/8) /* || !defined(UNIX_LIKE) */
+#if (!defined(DBG_HDRS_ALL) || (ALIGNMENT != CPP_WORDSZ/8) \
+     /* || !defined(UNIX_LIKE) */) && !defined(CPPCHECK)
 # error The configuration does not support MAKE_BACK_GRAPH
 #endif
 
@@ -399,7 +400,7 @@ static word backwards_height(ptr_t p)
 
       if (((word)pred & FLAG_MANY) != 0) {
         n_edges = e -> n_edges;
-      } else if (pred != NULL && ((word)pred & 1) == 0) {
+      } else if (((word)pred & 1) == 0) {
         /* A misinterpreted freelist link.      */
         n_edges = 1;
         local = -1;

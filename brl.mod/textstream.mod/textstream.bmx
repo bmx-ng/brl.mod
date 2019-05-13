@@ -35,16 +35,24 @@ ModuleInfo "History: Added TextStream module"
 
 Import BRL.Stream
 
+Enum ETextStreamFormat
+	LATIN1
+	UTF8
+	UTF16BE
+	UTF16LE
+End Enum
+
 Type TTextStream Extends TStreamWrapper
+
+	' deprecated
+	Const LATIN1:Int = 1
+	Const UTF8:Int = 2
+	Const UTF16BE:Int = 3
+	Const UTF16LE:Int = 4
 
 	'***** PUBLIC *****
 
-	Const LATIN1:Int=1
-	Const UTF8:Int=2
-	Const UTF16BE:Int=3
-	Const UTF16LE:Int=4
-
-	Method Read:Long( buf:Byte Ptr,count:Long )
+	Method Read:Long( buf:Byte Ptr,count:Long ) Override
 		For Local i:Long=0 Until count
 			If _bufcount=32 _FlushRead
 			Local hi:Int=_ReadByte()
@@ -57,7 +65,7 @@ Type TTextStream Extends TStreamWrapper
 		Return count
 	End Method
 	
-	Method Write:Long( buf:Byte Ptr,count:Long )
+	Method Write:Long( buf:Byte Ptr,count:Long ) Override
 		For Local i:Long=0 Until count
 			Local hi:Int=buf[i] Shr 4
 			Local lo:Int=buf[i] & $f
@@ -71,67 +79,67 @@ Type TTextStream Extends TStreamWrapper
 		Return count
 	End Method
 	
-	Method ReadByte:Int()
+	Method ReadByte:Int() Override
 		_FlushRead
 		Return Int( ReadLine() )
 	End Method
 	
-	Method WriteByte( n:Int )
+	Method WriteByte( n:Int ) Override
 		_FlushWrite
 		WriteLine n
 	End Method
 	
-	Method ReadShort:Int()
+	Method ReadShort:Int() Override
 		_FlushRead
 		Return Int( ReadLine() )
 	End Method
 	
-	Method WriteShort( n:Int )
+	Method WriteShort( n:Int ) Override
 		_FlushWrite
 		WriteLine n
 	End Method
 	
-	Method ReadInt:Int()
+	Method ReadInt:Int() Override
 		_FlushRead
 		Return Int( ReadLine() )
 	End Method
 	
-	Method WriteInt( n:Int )
+	Method WriteInt( n:Int ) Override
 		_FlushWrite
 		WriteLine n
 	End Method
 	
-	Method ReadLong:Long()
+	Method ReadLong:Long() Override
 		_FlushRead
 		Return Long( ReadLine() )
 	End Method
 	
-	Method WriteLong( n:Long )
+	Method WriteLong( n:Long ) Override
 		_FlushWrite
 		WriteLine n
 	End Method
 	
-	Method ReadFloat:Float()
+	Method ReadFloat:Float() Override
 		_FlushRead
 		Return Float( ReadLine() )
 	End Method
 	
-	Method WriteFloat( n:Float )
+	Method WriteFloat( n:Float ) Override
 		_FlushWrite
 		WriteLine n
 	End Method
 	
-	Method ReadDouble:Double()
+	Method ReadDouble:Double() Override
 		_FlushRead
 		Return Double( ReadLine() )
 	End Method
 	
-	Method WriteDouble( n:Double )
+	Method WriteDouble( n:Double ) Override
 		_FlushWrite
 		WriteLine n
 	End Method
 	
-	Method ReadLine$()
+	Method ReadLine$() Override
 		_FlushRead
 		Local buf:Short[1024],i:Int
 		While Not Eof()
@@ -158,13 +166,13 @@ Type TTextStream Extends TStreamWrapper
 		Return String.FromShorts( buf,i )
 	End Method
 	
-	Method WriteLine:Int( str$ )
+	Method WriteLine:Int( str$ ) Override
 		_FlushWrite
 		WriteString str
 		WriteString "~r~n"
 	End Method
 	
-	Method ReadString$( length:Int )
+	Method ReadString$( length:Int ) Override
 		_FlushRead
 		Local buf:Short[length]
 		For Local i:Int=0 Until length
@@ -173,7 +181,7 @@ Type TTextStream Extends TStreamWrapper
 		Return String.FromShorts(buf,length)
 	End Method
 	
-	Method WriteString( str$ )
+	Method WriteString( str$ ) Override
 		_FlushWrite
 		For Local i:Int=0 Until str.length
 			WriteChar str[i]
@@ -183,18 +191,18 @@ Type TTextStream Extends TStreamWrapper
 	Method ReadChar:Int()
 		Local c:Int=_ReadByte()
 		Select _encoding
-		Case LATIN1
+		Case ETextStreamFormat.LATIN1
 			Return c
-		Case UTF8
+		Case ETextStreamFormat.UTF8
 			If c<128 Return c
 			Local d:Int=_ReadByte()
 			If c<224 Return (c-192)*64+(d-128)
 			Local e:Int=_ReadByte()
 			If c<240 Return (c-224)*4096+(d-128)*64+(e-128)
-		Case UTF16BE
+		Case ETextStreamFormat.UTF16BE
 			Local d:Int=_ReadByte()
 			Return c Shl 8 | d
-		Case UTF16LE
+		Case ETextStreamFormat.UTF16LE
 			Local d:Int=_ReadByte()
 			Return d Shl 8 | c
 		End Select
@@ -203,9 +211,9 @@ Type TTextStream Extends TStreamWrapper
 	Method WriteChar( char:Int )
 		Assert char>=0 And char<=$ffff
 		Select _encoding
-		Case LATIN1
+		Case ETextStreamFormat.LATIN1
 			_WriteByte char
-		Case UTF8
+		Case ETextStreamFormat.UTF8
 			If char<128
 				_WriteByte char
 			Else If char<2048
@@ -216,16 +224,31 @@ Type TTextStream Extends TStreamWrapper
 				_WriteByte char/64 Mod 64 | 128
 				_WriteByte char Mod 64 | 128
 			EndIf
-		Case UTF16BE
+		Case ETextStreamFormat.UTF16BE
 			_WriteByte char Shr 8
 			_WriteByte char
-		Case UTF16LE
+		Case ETextStreamFormat.UTF16LE
 			_WriteByte char
 			_WriteByte char Shr 8
 		End Select
 	End Method
 
 	Function Create:TTextStream( stream:TStream,encoding:Int )
+		Local enc:ETextStreamFormat
+		Select encoding
+			Case LATIN1
+				enc = ETextStreamFormat.LATIN1
+			Case UTF8
+				enc = ETextStreamFormat.UTF8
+			Case UTF16BE
+				enc = ETextStreamFormat.UTF16BE
+			Case UTF16LE
+				enc = ETextStreamFormat.UTF16LE
+		End Select
+		Return Create(stream, enc)
+	End Function
+	
+	Function Create:TTextStream( stream:TStream,encoding:ETextStreamFormat )
 		Local t:TTextStream=New TTextStream
 		t._encoding=encoding
 		t.SetStream stream
@@ -257,23 +280,24 @@ Type TTextStream Extends TStreamWrapper
 		_bufcount=0
 	End Method
 	
-	Field _encoding:Int,_bufcount:Int
+	Field _encoding:ETextStreamFormat
+	Field _bufcount:Int
 	
 End Type
 	
 Type TTextStreamFactory Extends TStreamFactory
 
-	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeable:Int )
-		Local encoding:Int
+	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Override
+		Local encoding:ETextStreamFormat
 		Select proto$
 		Case "latin1"
-			encoding=TTextStream.LATIN1
+			encoding=ETextStreamFormat.LATIN1
 		Case "utf8"
-			encoding=TTextStream.UTF8
+			encoding=ETextStreamFormat.UTF8
 		Case "utf16be"
-			encoding=TTextStream.UTF16BE
+			encoding=ETextStreamFormat.UTF16BE
 		Case "utf16le"
-			encoding=TTextStream.UTF16LE
+			encoding=ETextStreamFormat.UTF16LE
 		End Select
 		If Not encoding Return Null
 		Local stream:TStream=OpenStream( path,readable,writeable )
@@ -305,7 +329,8 @@ Function LoadText$( url:Object )
 	Local stream:TStream=ReadStream( url )
 	If Not stream Throw New TStreamReadException
 
-	Local format:Int,size:Int,c:Int,d:Int,e:Int
+	Local format:ETextStreamFormat
+	Local size:Int,c:Int,d:Int,e:Int
 
 	If Not stream.Eof()
 		c=stream.ReadByte()
@@ -314,14 +339,14 @@ Function LoadText$( url:Object )
 			d=stream.ReadByte()
 			size:+1
 			If c=$fe And d=$ff
-				format=TTextStream.UTF16BE
+				format=ETextStreamFormat.UTF16BE
 			Else If c=$ff And d=$fe
-				format=TTextStream.UTF16LE
+				format=ETextStreamFormat.UTF16LE
 			Else If c=$ef And d=$bb
 				If Not stream.Eof()
 					e=stream.ReadByte()
 					size:+1
-					If e=$bf format=TTextStream.UTF8
+					If e=$bf format=ETextStreamFormat.UTF8
 				EndIf
 			EndIf
 		EndIf
@@ -356,21 +381,22 @@ then @str is saved in UTF16 format. Otherwise, @str is saved in LATIN1 format.
 
 A #TStreamWriteException is thrown if not all bytes could be written.
 End Rem
-Function SaveText:Int( str$,url:Object )
+Function SaveText:Int( str$,url:Object, format:ETextStreamFormat = ETextStreamFormat.LATIN1, withBOM:Int = True )
 
-	Local format:Int
-	For Local i:Int=0 Until str.length
-		If str[i]>255
+	If format <> ETextStreamFormat.LATIN1 And format <> ETextStreamFormat.UTF8
+		For Local i:Int=0 Until str.length
+			If str[i]>255
 ?BigEndian
-			format=TTextStream.UTF16BE
+				format=ETextStreamFormat.UTF16BE
 ?LittleEndian
-			format=TTextStream.UTF16LE
+				format=ETextStreamFormat.UTF16LE
 ?
-			Exit
-		EndIf
-	Next
+				Exit
+			EndIf
+		Next
+	End If
 	
-	If Not format
+	If format = ETextStreamFormat.LATIN1
 		SaveString str,url
 		Return True
 	EndIf
@@ -378,17 +404,19 @@ Function SaveText:Int( str$,url:Object )
 	Local stream:TStream=WriteStream( url )
 	If Not stream Throw New TStreamWriteException
 	
-	Select format
-	Case TTextStream.UTF8
-		stream.WriteByte $ef
-		stream.WriteByte $bb
-	Case TTextStream.UTF16BE
-		stream.WriteByte $fe
-		stream.WriteByte $ff
-	Case TTextStream.UTF16LE
-		stream.WriteByte $ff
-		stream.WriteByte $fe
-	End Select
+	If withBOM Then
+		Select format
+		Case ETextStreamFormat.UTF8
+			stream.WriteByte $ef
+			stream.WriteByte $bb
+		Case ETextStreamFormat.UTF16BE
+			stream.WriteByte $fe
+			stream.WriteByte $ff
+		Case ETextStreamFormat.UTF16LE
+			stream.WriteByte $ff
+			stream.WriteByte $fe
+		End Select
+	End If
 	
 	Local TStream:TTextStream=TTextStream.Create( stream,format )
 	TStream.WriteString str

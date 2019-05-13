@@ -84,7 +84,6 @@ void bbObjectCtor( BBObject *o ){
 }
 
 void bbObjectDtor( BBObject *o ){
-	o->clas=0;
 }
 
 BBString *bbObjectToString( BBObject *o ){
@@ -233,3 +232,41 @@ BBObject * bbNullObjectTest( BBObject *o ) {
 	return o;
 }
 
+static struct avl_root *enum_root = 0;
+
+int enum_node_compare(const void *x, const void *y) {
+
+        struct enum_node * node_x = (struct enum_node *)x;
+        struct enum_node * node_y = (struct enum_node *)y;
+
+        return strcmp(node_x->scope->name, node_y->scope->name);
+}
+
+void bbObjectRegisterEnum( BBDebugScope *p ) {
+	struct enum_node * node = (struct enum_node *)malloc(sizeof(struct enum_node));
+	node->scope = p;
+	
+	struct enum_node * old_node = (struct enum_node *)avl_map(&node->link, enum_node_compare, &enum_root);
+	if (&node->link != &old_node->link) {
+		// this object already exists here...
+		// delete the new node, since we don't need it
+		// note : should never happen as structs should only ever be registered once.
+		free(node);
+	}
+}
+
+BBDebugScope * bbObjectEnumInfo( char * name ) {
+	// create something to look up
+	struct enum_node node;
+	BBDebugScope scope;
+	scope.name = name;
+	node.scope = &scope;
+	
+	struct enum_node * found = (struct enum_node *)tree_search(&node, enum_node_compare, enum_root);
+
+	if (found) {
+		return found->scope;
+	}
+	
+	return 0;
+}

@@ -54,17 +54,17 @@ ModuleInfo "History: 1.04 Release"
 ModuleInfo "History: Fixed C Compiler warnings"
 
 ?win32
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG"
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?osx
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG"
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?linuxx86
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?linuxx64
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?raspberrypi
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
 ?android
-ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DATOMIC_UNCOLLECTABLE"
 ?emscripten
 ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE"
 ?ios
@@ -74,6 +74,7 @@ ModuleInfo "CC_OPTS: -DNO_GETCONTEXT"
 ?nx
 ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE -DNN_BUILD_TARGET_PLATFORM_NX"
 ?
+ModuleInfo "CC_OPTS: -DJAVA_FINALIZATION"
 
 ?debug
 ModuleInfo "CC_OPTS: -DBMX_DEBUG"
@@ -94,6 +95,7 @@ Import "blitz_thread.c"
 Import "blitz_ex.c"
 Import "blitz_gc.c"
 Import "blitz_unicode.c"
+Import "blitz_enum.c"
 
 '?Threaded
 'Import "blitz_gc_ms.c"
@@ -174,7 +176,7 @@ bbdoc: Null object exception
 about: Thrown when a field or method of a Null object is accessed. (only in debug mode)
 End Rem
 Type TNullObjectException Extends TBlitzException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Attempt to access field or method of Null object"
 	End Method
 End Type
@@ -184,7 +186,7 @@ bbdoc: Null method exception
 about: Thrown when an abstract method is called.
 End Rem
 Type TNullMethodException Extends TBlitzException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Attempt to call abstract method"
 	End Method
 End Type
@@ -194,7 +196,7 @@ bbdoc: Null function exception
 about: Thrown when an uninitialized function pointer is called.
 End Rem
 Type TNullFunctionException Extends TBlitzException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Attempt to call uninitialized function pointer"
 	End Method
 End Type
@@ -204,7 +206,7 @@ bbdoc: Null method exception
 about: Thrown when an array element with an index outside the valid range of the array (0 to array.length-1) is accessed. (only in debug mode)
 End Rem
 Type TArrayBoundsException Extends TBlitzException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Attempt to index array element beyond array length"
 	End Method
 End Type
@@ -214,7 +216,7 @@ bbdoc: Out of data exception
 about: Thrown when #ReadData is used but not enough data is left to read. (only in debug mode)
 End Rem
 Type TOutOfDataException Extends TBlitzException
-	Method ToString$()
+	Method ToString$() Override
 		Return "Attempt to read beyond end of data"
 	End Method
 End Type
@@ -225,7 +227,7 @@ about: Thrown by #RuntimeError.
 End Rem
 Type TRuntimeException Extends TBlitzException
 	Field error$
-	Method ToString$()
+	Method ToString$() Override
 		Return error
 	End Method
 	Function Create:TRuntimeException( error$ )
@@ -286,6 +288,9 @@ bbdoc: Application directory
 about: The #AppDir global variable contains the fully qualified directory of the currently
 executing application. An application's initial current directory is also set to #AppDir
 when an application starts.
+
+In a compiled DLL, the #AppDir global variable will instead contain the fully qualified
+directory of the DLL.
 End Rem
 Global AppDir$="bbAppDir"
 
@@ -293,6 +298,9 @@ Rem
 bbdoc: Application file name
 about: The #AppFile global variable contains the fully qualified file name of the currently
 executing application.
+
+In a compiled DLL, the #AppFile global variable will instead contain the fully qualified
+file name of the DLL.
 End Rem
 Global AppFile$="bbAppFile"
 
@@ -444,7 +452,7 @@ about:
 This function will have no effect if the garbage collector has been
 suspended due to #GCSuspend.
 End Rem
-Function GCCollect:Int()="bbGCCollect"
+Function GCCollect:Size_T()="bbGCCollect"
 
 Rem
 bbdoc: Run garbage collector, collecting a little
@@ -453,7 +461,7 @@ about:
 This function will have no effect if the garbage collector has been
 suspended due to #GCSuspend.
 End Rem
-Function GCCollectALittle:Int()="bbGCCollectAlittle"
+Function GCCollectALittle:Int()="bbGCCollectALittle"
 
 Rem
 bbdoc: Memory allocated by application
@@ -462,7 +470,7 @@ about:
 This function only returns 'managed memory'. This includes all objects, strings and
 arrays in use by the application.
 End Rem
-Function GCMemAlloced:Int()="bbGCMemAlloced"
+Function GCMemAlloced:Size_T()="bbGCMemAlloced"
 
 Rem
 bbdoc: Private: do not use
@@ -473,6 +481,34 @@ Rem
 bbdoc: Private: do not use
 End Rem
 Function GCLeave()="bbGCLeave"
+
+Rem
+bbdoc: Retains a reference to the specified #Object, preventing it from being collected.
+End Rem
+Function GCRetain(obj:Object)="bbGCRetain"
+
+Rem
+bbdoc: Releases a reference from the specified #Object.
+End Rem
+Function GCRelease(obj:Byte Ptr)="void bbGCRelease(BBObject*)!"
+
+Rem
+bbdoc: Returns #True if the current thread is registered with the garbage collector.
+End Rem
+Function GCThreadIsRegistered:Int()="bbGCThreadIsRegistered"
+
+Rem
+bbdoc: Registers the current thread with the garbage collector.
+returns: 0 on success, 1 if the thread was already registered, or -1 if threads are not supported.
+End Rem
+Function GCRegisterMyThread:Int()="bbGCRegisterMyThread"
+
+Rem
+bbdoc: Unregisters the previously registered current thread.
+about: Note, that any memory allocated by the garbage collector from the current thread will no longer be
+accessible after the thread is unregistered.
+End Rem
+Function GCUnregisterMyThread:Int()="bbGCUnregisterMyThread"
 
 Rem
 bbdoc: Convert object to integer handle
@@ -495,6 +531,18 @@ End Rem
 Function ArrayCopy(src:Object, srcPos:Int, dst:Object, dstPos:Int, length:Int)="void bbArrayCopy(BBARRAY, int, BBARRAY, int, int)!"
 
 End Extern
+
+Rem
+bbdoc: Provides a mechanism for releasing resources.
+End Rem
+Interface IDisposable
+
+	Rem
+	bbdoc: Performs application-defined tasks associated with freeing, releasing, or resetting resources.
+	End Rem
+	Method Dispose()
+
+End Interface
 
 'BlitzMax keyword definitions
 
@@ -832,6 +880,16 @@ keyword: "EndStruct"
 End Rem
 
 Rem
+bbdoc: Begin an enumeration declaration
+keyword: "Enum"
+End Rem
+
+Rem
+bbdoc: End an enumeration declaration
+keyword: "EndEnum"
+End Rem
+
+Rem
 bbdoc: Specify supertype(s) of a user defined type
 keyword: "Extends"
 End Rem
@@ -859,6 +917,12 @@ End Rem
 Rem
 bbdoc: Denote a function for export to a shared library. The generated function name will not be mangled.
 keyword: "Export"
+End Rem
+
+Rem
+bbdoc: Indicates that a method declaration is intended to override a method declaration in a supertype.
+about: Use of #Override on a method that does not override a method will result in a compilation error.
+keyword: "Override"
 End Rem
 
 Rem
@@ -892,17 +956,17 @@ keyword: "Release"
 End Rem
 
 Rem
-bbdoc: Make a type, constant, global variable or function accessible from outside the current source file (default)
+bbdoc: Make types, constants, global variables, functions or type members accessible from outside the current source file (default)
 keyword: "Public"
 End Rem
 
 Rem
-bbdoc: Make a type, constant, global variable or function only accessible from within the current source file, or make a type member only accessible from within that type.
+bbdoc: Make types, constants, global variables, functions or type members only accessible from within the current source file.
 keyword: "Private"
 End Rem
 
 Rem
-bbdoc: Make a type member accessible only from within that type and from its subtypes.
+bbdoc: Make type members only accessible from within the current source file and within subtypes.
 keyword: "Protected"
 End Rem
 

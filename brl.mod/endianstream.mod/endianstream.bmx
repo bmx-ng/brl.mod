@@ -38,66 +38,66 @@ Type TXEndianStream Extends TStreamWrapper
 		t=buf[3];buf[3]=buf[4];buf[4]=t
 	End Method
 
-	Method ReadShort:Int()
+	Method ReadShort:Int() Override
 		Local q:Short
 		ReadBytes Varptr q,2
 		Swap2 Varptr q
 		Return q
 	End Method
 
-	Method WriteShort( n:Int )
+	Method WriteShort( n:Int ) Override
 		Local q:Short=n
 		Swap2 Varptr q
 		WriteBytes Varptr q,2
 	End Method
 
-	Method ReadInt:Int()
+	Method ReadInt:Int() Override
 		Local q:Int
 		ReadBytes Varptr q,4
 		Swap4 Varptr q
 		Return q
 	End Method
 
-	Method WriteInt( n:Int )
+	Method WriteInt( n:Int ) Override
 		Local q:Int=n
 		Swap4 Varptr q
 		WriteBytes Varptr q,4
 	End Method
 
-	Method ReadLong:Long()
+	Method ReadLong:Long() Override
 		Local q:Long
 		ReadBytes Varptr q,8
 		Swap8 Varptr q
 		Return q
 	End Method
 
-	Method WriteLong( n:Long )
+	Method WriteLong( n:Long ) Override
 		Local q:Long=n
 		Swap8 Varptr q
 		WriteBytes Varptr q,8
 	End Method
 	
-	Method ReadFloat#()
+	Method ReadFloat#() Override
 		Local q:Float
 		ReadBytes Varptr q,4
 		Swap4 Varptr q
 		Return q
 	End Method
 
-	Method WriteFloat( n# )
+	Method WriteFloat( n# ) Override
 		Local q:Float=n
 		Swap4 Varptr q
 		WriteBytes Varptr q,4
 	End Method
 
-	Method ReadDouble!()
+	Method ReadDouble!() Override
 		Local q:Double
 		ReadBytes Varptr q,8
 		Swap8 Varptr q
 		Return q
 	End Method
 
-	Method WriteDouble( n! )
+	Method WriteDouble( n! ) Override
 		Local q:Double=n
 		Swap8 Varptr q
 		WriteBytes Varptr q,8
@@ -145,7 +145,7 @@ Function LittleEndianStream:TStream( stream:TStream )
 End Function
 
 Type TXEndianStreamFactory Extends TStreamFactory
-	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeable:Int )
+	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Override
 		Select proto$
 		Case "bigendian"
 			Return TXEndianStream.BigEndian( OpenStream(path,readable,writeable) )

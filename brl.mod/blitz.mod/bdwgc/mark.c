@@ -40,7 +40,7 @@ void GC_noop6(word arg1 GC_ATTR_UNUSED, word arg2 GC_ATTR_UNUSED,
               word arg5 GC_ATTR_UNUSED, word arg6 GC_ATTR_UNUSED)
 {
   /* Avoid GC_noop6 calls to be optimized away. */
-# ifdef AO_CLEAR
+# if defined(AO_HAVE_compiler_barrier) && !defined(BASE_ATOMIC_OPS_EMULATED)
     AO_compiler_barrier(); /* to serve as a special side-effect */
 # else
     GC_noop1(0);
@@ -161,7 +161,7 @@ GC_INNER void GC_set_hdr_marks(hdr *hhdr)
       }
 #   else
       for (i = 0; i < divWORDSZ(n_marks + WORDSZ); ++i) {
-        hhdr -> hb_marks[i] = ONES;
+        hhdr -> hb_marks[i] = GC_WORD_MAX;
       }
 #   endif
 #   ifdef MARK_BIT_PER_OBJ
@@ -526,7 +526,7 @@ static void alloc_mark_stack(size_t);
 #       endif
         er.alt_path = &&handle_ex;
 #       pragma GCC diagnostic pop
-#     else /* pragma diagnostic is not supported */
+#     elif !defined(CPPCHECK) /* pragma diagnostic is not supported */
         er.alt_path = &&handle_ex;
 #     endif
       er.ex_reg.handler = mark_ex_handler;
@@ -650,7 +650,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 # ifdef OS2 /* Use untweaked version to circumvent compiler problem */
     while ((word)mark_stack_top >= (word)mark_stack && credit >= 0)
 # else
-    while ((((ptr_t)mark_stack_top - (ptr_t)mark_stack) | credit) >= 0)
+    while (((((word)mark_stack_top - (word)mark_stack) | (word)credit)
+            & SIGNB) == 0)
 # endif
   {
     current_p = mark_stack_top -> mse_start;
@@ -1287,9 +1288,10 @@ static void alloc_mark_stack(size_t n)
       /* Don't recycle a stack segment obtained with the wrong flags.   */
       /* Win32 GetWriteWatch requires the right kind of memory.         */
       static GC_bool GC_incremental_at_stack_alloc = FALSE;
-      GC_bool recycle_old = (!GC_incremental || GC_incremental_at_stack_alloc);
+      GC_bool recycle_old = !GC_auto_incremental
+                            || GC_incremental_at_stack_alloc;
 
-      GC_incremental_at_stack_alloc = GC_incremental;
+      GC_incremental_at_stack_alloc = GC_auto_incremental;
 #   else
 #     define recycle_old TRUE
 #   endif
@@ -1415,7 +1417,7 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
       GC_push_selected((ptr_t)bottom, (ptr_t)top, GC_page_was_dirty);
     } else {
 #     ifdef PROC_VDB
-        if (GC_incremental) {
+        if (GC_auto_incremental) {
           /* Pages that were never dirtied cannot contain pointers.     */
           GC_push_selected((ptr_t)bottom, (ptr_t)top, GC_page_was_ever_dirty);
         } else
@@ -1458,10 +1460,8 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
       GC_ADD_TO_BLACK_LIST_NORMAL(obj, (ptr_t)src);
       return mark_stack_ptr;
     }
-
-    PUSH_CONTENTS_HDR(obj, mark_stack_ptr /* modified */, mark_stack_limit,
-                      (ptr_t)src, hhdr, TRUE);
-    return mark_stack_ptr;
+    return GC_push_contents_hdr((ptr_t)obj, mark_stack_ptr, mark_stack_limit,
+                                (ptr_t)src, hhdr, TRUE);
 }
 
 /* Mark and push (i.e. gray) a single object p onto the main    */
@@ -1499,8 +1499,9 @@ GC_API struct GC_ms_entry * GC_CALL GC_mark_and_push(void *obj,
       /* it points to, but have not called GC_dirty yet.                */
       GC_dirty(p); /* entire object */
 #   endif
-    PUSH_CONTENTS_HDR(r, GC_mark_stack_top, GC_mark_stack_limit,
-                      source, hhdr, FALSE);
+    GC_mark_stack_top = GC_push_contents_hdr(r, GC_mark_stack_top,
+                                             GC_mark_stack_limit,
+                                             source, hhdr, FALSE);
     /* We silently ignore pointers to near the end of a block,  */
     /* which is very mildly suboptimal.                         */
     /* FIXME: We should probably add a header word to address   */
@@ -1599,18 +1600,19 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 
 GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
 {
-# if defined(THREADS) && defined(MPROTECT_VDB)
-    GC_push_all_eager(bottom, top);
-# else
 #   ifndef NEED_FIXUP_POINTER
-      if (GC_all_interior_pointers) {
+      if (GC_all_interior_pointers
+#         if defined(THREADS) && defined(MPROTECT_VDB)
+            && !GC_auto_incremental
+#         endif
+          && (word)GC_mark_stack_top
+             < (word)(GC_mark_stack_limit - INITIAL_MARK_STACK_SIZE/8)) {
         GC_push_all(bottom, top);
       } else
 #   endif
     /* else */ {
       GC_push_all_eager(bottom, top);
     }
-# endif
 }
 
 #if defined(WRAP_MARK_SOME) && defined(PARALLEL_MARK)

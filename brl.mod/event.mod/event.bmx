@@ -96,7 +96,7 @@ Type TEvent
 	about:
 	This method is mainly useful for debugging purposes.
 	End Rem	
-	Method ToString$()
+	Method ToString$() Override
 		Local t$=DescriptionForId( id )
 		If Not t
 			If id & EVENT_USEREVENTMASK

@@ -25,10 +25,14 @@ bbdoc: Cross-platform clipboards.
 End Rem
 Module BRL.Clipboard
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "License: MIT"
-ModuleInfo "Copyright: libclipboard - Copyright (C) 2016 Jeremy Tan."
+ModuleInfo "Copyright: libclipboard - Copyright (C) 2016-2019 Jeremy Tan."
 ModuleInfo "Copyright: Wrapper - 2018-2019 Bruce A Henderson"
+
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Updated to latest libclipboard 1.0.efaa094"
+ModuleInfo "History: 1.00 Initial Release"
 
 ?win32
 ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_WIN32"
@@ -37,6 +41,11 @@ ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_X11"
 ?macos
 ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_COCOA"
 ?
+
+'
+' build notes :
+' clipboard_cocoa.c renamed to clipboard_cocoa.m
+'
 
 Import "common.bmx"
 
@@ -176,3 +185,68 @@ Type TClipboard
 	End Method
 	
 End Type
+
+
+
+
+Rem
+bbdoc: Creates a new clipboard instance.
+returns: The clipboard instance, or Null on failure.
+End Rem
+Function CreateClipboard:TClipboard(opts:TClipboardOpts = Null)
+	Return New TClipboard.Create( opts )
+End Function
+
+
+Rem
+bbdoc: Clears the contents of the given clipboard.
+End Rem
+Function ClearClipboard(clipboard:TClipboard, clipboardMode:Int = LCB_CLIPBOARD)
+	clipboard.Clear( clipboardMode )
+End Function
+	
+
+Rem
+bbdoc: Determines if the clipboard content is currently owned.
+returns: #True if the clipboard data is owned by the provided instance.
+End Rem
+Function ClipboardHasOwnership:Int(clipboard:TClipboard, clipboardMode:Int = LCB_CLIPBOARD)
+	Return clipboard.HasOwnership(clipboardMode)
+End Function
+	
+
+Rem
+bbdoc: Retrieves the text currently held on the clipboard.
+returns: A copy to the retrieved text.
+End Rem
+Function ClipboardText:String(clipboard:TClipboard)
+	Return clipboard.Text()
+End Function
+	
+
+Rem
+bbdoc: Retrieves the text currently held on the clipboard.
+about: @length returns the length of the retrieved data.
+returns: A copy to the retrieved text.
+End Rem
+Function ClipboardTextEx:String(clipboard:TClipboard, length:Int Var, clipboardMode:Int = LCB_CLIPBOARD)
+	Return clipboard.TextEx(length, clipboardMode)
+End Function
+
+
+Rem
+bbdoc: Sets the text for the clipboard.
+returns: #True if the clipboard was set (#false on error).
+End Rem
+Function ClipboardSetText:Int(clipboard:TClipboard, src:String)
+	Return clipboard.SetText(src)
+End Function
+	
+
+Rem
+bbdoc: Sets the text for the clipboard.
+returns: #True if the clipboard was set (#false on error).
+End Rem
+Function ClipboardSetTextEx:Int(clipboard:TClipboard, src:String, clipboardMode:Int = LCB_CLIPBOARD)
+	Return clipboard.SetTextEx(src, clipboardMode)
+End Function

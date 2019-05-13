@@ -106,11 +106,11 @@ Type TMax2DGraphics Extends TGraphics
 
 	Field _graphics:TGraphics,_driver:TMax2DDriver,_setup
 	
-	Method Driver:TMax2DDriver()
+	Method Driver:TMax2DDriver() Override
 		Return _driver
 	End Method
 	
-	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var )
+	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var ) Override
 		Local w,h,d,r,f
 		_graphics.GetSettings w,h,d,r,f
 		width=w
@@ -120,7 +120,7 @@ Type TMax2DGraphics Extends TGraphics
 		flags=f
 	End Method
 	
-	Method Close()
+	Method Close() Override
 		If Not _graphics Return
 		_graphics.Close
 		_graphics=Null
@@ -220,6 +220,10 @@ Type TMax2DGraphics Extends TGraphics
 
 		Return t
 	End Function
+	
+	Method Resize(width:Int, height:Int)
+		_graphics.Resize(width, height)
+	End Method
 	
 End Type
 
@@ -708,8 +712,8 @@ bbdoc: Set current rotation
 about:
 @rotation is given in degrees and should be in the range 0 to 360.
 End Rem
-Function SetRotation( rotation# )
-	gc.tform_rot=rotation
+Function SetRotation( Rotation# )
+	gc.tform_rot=Rotation
 	UpdateTransform
 End Function
 
@@ -749,8 +753,8 @@ about:
 SetTransform is a shortcut for setting both the rotation and
 scale parameters in Max2D with a single function call.
 End Rem
-Function SetTransform( rotation#=0,scale_x#=1,scale_y#=1 )
-	gc.tform_rot=rotation
+Function SetTransform( Rotation#=0,scale_x#=1,scale_y#=1 )
+	gc.tform_rot=Rotation
 	gc.tform_scale_x=scale_x
 	gc.tform_scale_y=scale_y
 	UpdateTransform

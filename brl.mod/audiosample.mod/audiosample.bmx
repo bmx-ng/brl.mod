@@ -44,7 +44,7 @@ Type TAudioSample
 	end rem
 	Field format
 	
-	Field capacity:Size_T
+	Field capacity:Long
 
 	Method Delete()
 		If capacity>=0 MemFree samples
@@ -76,8 +76,8 @@ Type TAudioSample
 	end rem
 	Function Create:TAudioSample( length,hertz,format )
 		Local t:TAudioSample=New TAudioSample
-		Local capacity:Size_T=length*BytesPerSample[format]
-		t.samples=MemAlloc( capacity )
+		Local capacity:Long=length*BytesPerSample[format]
+		t.samples=MemAlloc( Size_T(capacity) )
 		t.length=length
 		t.hertz=hertz
 		t.format=format

@@ -124,6 +124,27 @@ int bbIsMainThread(){
 	return GetCurrentThreadId()==_mainThread;
 }
 
+void bbGetAppFileDir(wchar_t * buf) {
+	int e = 0;
+	for(int i=0;buf[i];++i ){
+		if( buf[i]=='\\' ) buf[i]='/';
+		if( buf[i]=='/' ) e=i;
+	}
+
+	bbAppFile=bbStringFromWString( buf );
+
+	if( e ){
+		if( buf[e-1]==':' ) ++e;
+		bbAppDir=bbStringFromShorts( buf,e );
+	}else{
+		bbAppDir=&bbEmptyString;
+	}
+}
+
+HICON bbAppIcon(HINSTANCE hInstance) {
+	return LoadIcon(hInstance, MAKEINTRESOURCE (101));
+}
+
 #elif __linux
 
 #include <unistd.h>
@@ -290,6 +311,7 @@ int bbIsMainThread(){
 
 #endif
 
+
 void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 
 	int i,k;
@@ -324,21 +346,9 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 			if( buf[i]=='\\' ) buf[i]='/';
 		}
 		bbLaunchDir=bbStringFromWString( buf );
-		
+
 		GetModuleFileNameW( GetModuleHandleW(0),buf,MAX_PATH );
-		for( i=0;buf[i];++i ){
-			if( buf[i]=='\\' ) buf[i]='/';
-			if( buf[i]=='/' ) e=i;
-		}
-		bbAppFile=bbStringFromWString( buf );
-
-		if( e ){
-			if( buf[e-1]==':' ) ++e;
-			bbAppDir=bbStringFromShorts( buf,e );
-		}else{
-			bbAppDir=&bbEmptyString;
-		}
-
+		bbGetAppFileDir(buf);
 		_wchdir( bbTmpWString( bbAppDir ) );
 		
 	}else{
@@ -469,10 +479,14 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	startup();
 }
 
-void bbLibStartup(){
+#if _WIN32
+void bbLibStartup(wchar_t * buf){
 
 	bbGCStartup();
 	bbThreadStartup();
 
+	bbGetAppFileDir(buf);
+
 	startup();
 }
+#endif

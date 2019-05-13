@@ -153,13 +153,32 @@ Type TIntMap
 	about: The object returned by #ObjectEnumerator can be used with #EachIn to iterate through the nodes in the map.
 	End Rem
 	Method ObjectEnumerator:TIntNodeEnumerator()
-		Local nodeenum:TIntNodeEnumerator=New TIntNodeEnumerator
-		nodeenum._node=_FirstNode()
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
+		Local nodeenum:TIntNodeEnumerator
+		If Not isEmpty() Then
+			nodeenum = New TIntNodeEnumerator
+			nodeenum._node=_FirstNode()
+			nodeenum._map = Self
+		Else
+			nodeenum=New TIntEmptyEnumerator
+		End If
 		Return nodeenum
+	End Method
+
+	Rem
+	bbdoc: Finds a value given a @key using index syntax.
+	returns: The value associated with @key.
+	about: If the map does not contain @key, a #Null object is returned.
+	End Rem
+	Method Operator[]:Object(key:Int)
+		Return bmx_map_intmap_valueforkey(key, Varptr _root)
+	End Method
+	
+	Rem
+	bbdoc: Inserts a key/value pair into the map using index syntax.
+	about: If the map already contains @key, its value is overwritten with @value. 
+	End Rem
+	Method Operator[]=(key:Int, value:Object)
+		bmx_map_intmap_insert(key, value, Varptr _root)
 	End Method
 
 	Field _root:Byte Ptr
@@ -239,7 +258,7 @@ End Type
 
 Type TIntKeyEnumerator Extends TIntNodeEnumerator
 	Field _key:TIntKey = New TIntKey
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TIntMap Concurrent Modification"
 ?
@@ -251,7 +270,7 @@ Type TIntKeyEnumerator Extends TIntNodeEnumerator
 End Type
 
 Type TIntValueEnumerator Extends TIntNodeEnumerator
-	Method NextObject:Object()
+	Method NextObject:Object() Override
 ?ngcmod
 		Assert _expectedModCount = _map._modCount, "TIntMap Concurrent Modification"
 ?
@@ -269,7 +288,7 @@ Type TIntMapEnumerator
 End Type
 
 Type TIntEmptyEnumerator Extends TIntNodeEnumerator
-	Method HasNext()
+	Method HasNext() Override
 		_map = Null
 		Return False
 	End Method

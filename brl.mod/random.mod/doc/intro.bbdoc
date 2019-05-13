@@ -1,6 +1,3 @@
-
-+Random numbers
-
 The random module contains commands for generating random numbers.
 
 The numbers generated are not really random, as without special hardware support a software algorithm cannot produce 'real' random numbers.

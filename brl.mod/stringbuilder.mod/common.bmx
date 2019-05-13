@@ -1,4 +1,4 @@
-' Copyright (c) 2018 Bruce A Henderson
+' Copyright (c) 2018-2019 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -19,9 +19,6 @@
 SuperStrict
 
 Import "glue.c"
-?Not bmxng
-Import "uni_conv.c"
-?
 
 Extern
 	Function bmx_stringbuilder_new:Byte Ptr(initial:Int)
@@ -58,11 +55,9 @@ Extern
 	Function bmx_stringbuilder_append_long(buffer:Byte Ptr, value:Long)
 	Function bmx_stringbuilder_append_short(buffer:Byte Ptr, value:Short)
 	Function bmx_stringbuilder_append_byte(buffer:Byte Ptr, value:Byte)
-?bmxng
 	Function bmx_stringbuilder_append_uint(buffer:Byte Ptr, value:UInt)
 	Function bmx_stringbuilder_append_ulong(buffer:Byte Ptr, value:ULong)
 	Function bmx_stringbuilder_append_sizet(buffer:Byte Ptr, value:Size_T)
-?
 	Function bmx_stringbuilder_append_shorts(buffer:Byte Ptr, shorts:Short Ptr, length:Int)
 	Function bmx_stringbuilder_left:String(buffer:Byte Ptr, length:Int)
 	Function bmx_stringbuilder_right:String(buffer:Byte Ptr, length:Int)

@@ -69,13 +69,13 @@ Type TDirectSoundSound Extends TSound
 		EndIf
 	End Method
 
-	Method Play:TDirectSoundChannel( alloced_channel:TChannel=Null )
+	Method Play:TDirectSoundChannel( alloced_channel:TChannel=Null ) Override
 		Local t:TDirectSoundChannel=Cue( alloced_channel )
 		t.SetPaused False
 		Return t
 	End Method
 
-	Method Cue:TDirectSoundChannel( alloced_channel:TChannel=Null )
+	Method Cue:TDirectSoundChannel( alloced_channel:TChannel=Null ) Override
 		Local t:TDirectSoundChannel=TDirectSoundChannel( alloced_channel )
 		If t
 			Assert t._static
@@ -139,7 +139,7 @@ Type TDirectSoundChannel Extends TChannel
 		If _buf._paused Stop
 	End Method
 
-	Method Stop()
+	Method Stop() Override
 		If Not _buf Or _seq<>_buf._seq Return
 		bmx_directsound_IDirectSoundBuffer_stop(_buf._buffer)
 		'_buf._buffer.Stop
@@ -148,7 +148,7 @@ Type TDirectSoundChannel Extends TChannel
 		_buf=Null
 	End Method
 	
-	Method SetPaused( paused:Int )
+	Method SetPaused( paused:Int ) Override
 		If Not _buf Or _seq<>_buf._seq Return
 		If Not _buf.Active()
 			_buf._seq:+1
@@ -163,14 +163,14 @@ Type TDirectSoundChannel Extends TChannel
 		_buf._paused=paused
 	End Method
 	
-	Method SetVolume( volume# )
+	Method SetVolume( volume# ) Override
 		volume=Min(Max(volume,0),1)^.1
 		_volume=volume
 		If Not _buf Or _seq<>_buf._seq Return
 		bmx_directsound_IDirectSoundBuffer_setvolume(_buf._buffer, Int((1-volume)*-10000))
 	End Method
 	
-	Method SetPan( pan# )
+	Method SetPan( pan# ) Override
 		pan=Min(Max(pan,-1),1)
 		pan=Sgn(pan) * (1-(1-Abs(pan))^.1)		
 		_pan=pan
@@ -178,17 +178,17 @@ Type TDirectSoundChannel Extends TChannel
 		bmx_directsound_IDirectSoundBuffer_setpan(_buf._buffer, Int(pan*10000))
 	End Method
 	
-	Method SetDepth( depth# )
+	Method SetDepth( depth# ) Override
 		If Not _buf Or _seq<>_buf._seq Return
 	End Method
 	
-	Method SetRate( rate# )
+	Method SetRate( rate# ) Override
 		_rate=rate
 		If Not _buf Or _seq<>_buf._seq Return
 		bmx_directsound_IDirectSoundBuffer_setfrequency(_buf._buffer, Int(_hertz * rate))
 	End Method
 	
-	Method Playing:Int()
+	Method Playing:Int() Override
 		If Not _buf Or _seq<>_buf._seq Return False
 		Return _buf.Playing()
 	End Method
@@ -239,11 +239,11 @@ End Type
 
 Type TDirectSoundAudioDriver Extends TAudioDriver
 
-	Method Name$()
+	Method Name$() Override
 		Return _name
 	End Method
 	
-	Method Startup:Int()
+	Method Startup:Int() Override
 		If bmx_directsound_IDirectSound_create(Varptr _dsound)>=0
 			If bmx_directsound_IDirectSound_setcooperativeLevel(_dsound, GetDesktopWindow(),DSSCL_PRIORITY )>=0
 				Rem
@@ -273,18 +273,18 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 		EndIf
 	End Method
 	
-	Method Shutdown()
+	Method Shutdown() Override
 		_seq:+1
 		_driver=Null
 		_lonely=Null
 		bmx_directsound_IDirectSound_release(_dsound)
 	End Method
 
-	Method CreateSound:TDirectSoundSound( sample:TAudioSample,flags:Int )
+	Method CreateSound:TDirectSoundSound( sample:TAudioSample,flags:Int ) Override
 		Return TDirectSoundSound.Create( sample,flags )
 	End Method
 	
-	Method AllocChannel:TDirectSoundChannel()
+	Method AllocChannel:TDirectSoundChannel() Override
 		Return TDirectSoundChannel.Create( True )
 	End Method
 	
