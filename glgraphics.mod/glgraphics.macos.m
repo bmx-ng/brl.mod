@@ -274,8 +274,12 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 		[window setDelegate:window];
 		[window setAcceptsMouseMovedEvents:YES];
 
-		[window setTitle:[NSString stringWithUTF8String:bbTmpUTF8String(bbAppTitle)]];
+		char *p=bbStringToUTF8String(bbAppTitle);
+
+		[window setTitle:[NSString stringWithUTF8String:p]];
 		[window center];
+
+		bbMemFree(p);
 
 		[window makeKeyAndOrderFront:NSApp];
 		

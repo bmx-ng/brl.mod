@@ -349,7 +349,9 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 
 		GetModuleFileNameW( GetModuleHandleW(0),buf,MAX_PATH );
 		bbGetAppFileDir(buf);
-		_wchdir( bbTmpWString( bbAppDir ) );
+		BBChar * p = bbStringToWString(bbAppDir);
+		_wchdir( p );
+		bbMemFree(p);
 		
 	}else{
 		int e=0;
@@ -375,7 +377,9 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 			bbAppDir=&bbEmptyString;
 		}
 
-		_chdir( bbTmpCString( bbAppDir ) );
+		char *p=bbStringToCString( bbAppDir );
+		_chdir( p );
+		bbMemFree(p);
 	}
 
 #elif __linux
@@ -414,7 +418,9 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 		bbAppDir=&bbEmptyString;
 	}
 	
-	chdir( bbTmpUTF8String( bbAppDir ) );
+	char *p=bbStringToUTF8String( bbAppDir );
+	chdir( p );
+	bbMemFree(p);
 	
 #elif __APPLE__
 	
@@ -449,7 +455,9 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 		bbAppDir=&bbEmptyString;
 	}
 	
-	chdir( bbTmpUTF8String( bbAppDir ) );
+	char *p=bbStringToCString( bbAppDir );
+	chdir( p );
+	bbMemFree(p);
 
 #elif __SWITCH__
 

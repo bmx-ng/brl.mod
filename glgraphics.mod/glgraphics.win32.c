@@ -46,14 +46,6 @@ void bbGLGraphicsClose( BBGLContext *context );
 void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,int *flags );
 void bbGLGraphicsSetGraphics( BBGLContext *context );
 
-static const char *appTitle(){
-	return bbTmpCString( bbAppTitle );
-}
-
-static const wchar_t *appTitleW(){
-	return bbTmpWString( bbAppTitle );
-}
-
 static void _initPfd( PIXELFORMATDESCRIPTOR *pfd,int flags ){
 
 	memset( pfd,0,sizeof(*pfd) );
@@ -326,13 +318,17 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 	AdjustWindowRectEx( &rect,hwnd_style,0,0 );
 	
 	if( _bbusew ){
+		BBChar *p=bbStringToWString( bbAppTitle );
 		hwnd=CreateWindowExW( 
-			0,CLASS_NAMEW,appTitleW(),
+			0,CLASS_NAMEW,p,
 			hwnd_style,rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,0,0,GetModuleHandle(0),0 );
+		bbMemFree(p);
 	}else{
+		char *p=bbStringToCString( bbAppTitle );
 		hwnd=CreateWindowEx( 
-			0,CLASS_NAME,appTitle(),
+			0,CLASS_NAME,p,
 			hwnd_style,rect.left,rect.top,rect.right-rect.left,rect.bottom-rect.top,0,0,GetModuleHandle(0),0 );
+		bbMemFree(p);
 	}
 		
 	if( !hwnd ) return 0;

@@ -350,13 +350,12 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,i
 		bbSetSystemWindow(xwindow);
 	}
 
-	appTitle=bbTmpUTF8String( bbAppTitle );
+	appTitle=bbStringToUTF8String( bbAppTitle );
 	
-	XChangeProperty( xdisplay,window,
-	XInternAtom( xdisplay,"_NET_WM_NAME",True ),
-	XInternAtom( xdisplay,"UTF8_STRING",True ),
-	8,PropModeReplace,appTitle,strlen( appTitle ) );
+	XChangeProperty( xdisplay,window, XInternAtom( xdisplay,"_NET_WM_NAME",True ),
+		XInternAtom( xdisplay,"UTF8_STRING",True ), 8,PropModeReplace,appTitle,strlen( appTitle ) );
 
+	bbMemFree(appTitle);
 //	XStoreName( xdisplay,window,appTitle );
 	
 	bbSystemPoll();
