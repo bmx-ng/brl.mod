@@ -87,3 +87,60 @@ Function EnumModules:TList( modid$="",mods:TList=Null )
 
 	Return mods
 End Function
+
+Private
+?win32
+Global _minGWPath:String
+?
+Public
+
+Function MinGWPath:String()
+?Not win32
+	Return ""
+?win32
+	If Not _minGWPath Then
+		Local path:String
+		' look for local MinGW32 dir
+		' some distros (eg. MinGW-w64) only support a single target architecture - x86 or x64
+		' to compile for both, requires two separate MinGW installations. Check against
+		' CPU target based dir first, before working through the fallbacks.
+		
+		Local cpuMinGW:String
+		
+?win32x86
+		cpuMinGW  ="/MinGW32x86"
+?win32x64
+		cpuMinGW = "/MinGW32x64"
+?win32
+		path = BlitzMaxPath() + cpuMinGW + "/bin"
+		If FileType(path) = FILETYPE_DIR Then
+			' bin dir exists, go with that
+			_minGWPath = BlitzMaxPath() + cpuMinGW 
+			Return _minGWPath
+		End If
+		
+		path = BlitzMaxPath() + "/MinGW32/bin"
+		If FileType(path) = FILETYPE_DIR Then
+			' bin dir exists, go with that
+			_minGWPath = BlitzMaxPath() + "/MinGW32"
+			Return _minGWPath
+		End If
+
+		' try MINGW environment variable
+		path = getenv_("MINGW")
+		If path And FileType(path) = FILETYPE_DIR Then
+			' check for bin dir
+			If FileType(path + "/bin") = FILETYPE_DIR Then
+				' go with that
+				_minGWPath = path
+				Return _minGWPath
+			End If
+		End If
+
+		' none of the above? fallback to BlitzMax dir (for bin and lib)
+		_minGWPath = BlitzMaxPath()
+	End If
+	
+	Return _minGWPath
+?
+End Function
