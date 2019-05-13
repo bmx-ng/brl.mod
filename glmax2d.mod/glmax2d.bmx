@@ -96,7 +96,9 @@ Function DeleteTex( name,seq )
 	dead_texs.AddLast(name)
 End Function
 
-Function CreateTex( width,height,flags )
+Function CreateTex( width,height,flags,pixmap:TPixmap )
+	If pixmap.dds_fmt<>0 Return pixmap.tex_name ' if dds texture already exists
+	
 	'alloc new tex
 	Local name
 	glGenTextures 1,Varptr name
@@ -151,6 +153,7 @@ End Function
 
 Function UploadTex( pixmap:TPixmap,flags )
 	Local mip_level
+	If pixmap.dds_fmt<>0 Return ' if dds texture already exists
 	Repeat
 		glPixelStorei GL_UNPACK_ROW_LENGTH,pixmap.pitch/BytesPerPixel[pixmap.format]
 		glTexSubImage2D GL_TEXTURE_2D,mip_level,0,0,pixmap.width,pixmap.height,GL_RGBA,GL_UNSIGNED_BYTE,pixmap.pixels
@@ -308,11 +311,13 @@ Type TGLImageFrame Extends TImageFrame
 				EndIf
 			EndIf
 		Else
-			If tex.format<>PF_RGBA8888 tex=tex.Convert( PF_RGBA8888 )
+			If tex.dds_fmt=0 ' not dds
+				If tex.format<>PF_RGBA8888 tex=tex.Convert( PF_RGBA8888 )
+			EndIf
 		EndIf
 		
 		'create tex
-		Local name=CreateTex( tex_w,tex_h,flags )
+		Local name=CreateTex( tex_w,tex_h,flags,tex )
 		
 		'upload it
 		UploadTex tex,flags
