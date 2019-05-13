@@ -182,7 +182,7 @@ Type TPixmap
 	Function Create:TPixmap( width,height,format,align=4 )
 		Local pitch=width*BytesPerPixel[format]
 		pitch=(pitch+(align-1))/align*align
-		Local capacity=pitch*height
+		Local capacity:Size_T=pitch*height
 		Local pixmap:TPixmap=New TPixmap
 		pixmap.pixels=MemAlloc( capacity )
 		pixmap.width=width
@@ -213,13 +213,13 @@ Type TPixmap
 	End Rem	
 	Method ClearPixels( argb )
 		If Not argb And width*BytesPerPixel[format]=pitch
-			MemClear pixels,pitch*height
+			MemClear pixels,Size_T(pitch*height)
 			Return
 		EndIf
 		For Local y=0 Until height
 			Local p:Byte Ptr=PixelPtr(0,y)
 			If Not argb
-				MemClear p,width*BytesPerPixel[format]
+				MemClear p,Size_T(width*BytesPerPixel[format])
 				Continue
 			EndIf			
 			Select format

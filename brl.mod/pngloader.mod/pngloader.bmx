@@ -8,12 +8,14 @@ The PNG loader module provides the ability to load PNG format #pixmaps.
 End Rem
 Module BRL.PNGLoader
 
-ModuleInfo "Version: 1.06"
+ModuleInfo "Version: 1.07"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.07"
+ModuleInfo "History: Fixed global stream concurrency issue."
 ModuleInfo "History: 1.06"
 ModuleInfo "History: Use Byte Ptr instead of int for.. pointers."
 ModuleInfo "History: 1.05"
@@ -31,18 +33,19 @@ Import Pub.LibPNG
 
 Private
 
-Global png_stream:TStream
-
 Function png_read_fn( png_ptr:Byte Ptr,buf:Byte Ptr,size )
-	Return png_stream.ReadBytes( buf,size )
+	Local stream:TStream = TStream(png_get_io_ptr(png_ptr))
+	Return stream.ReadBytes( buf,size )
 End Function
 
 Function png_write_fn( png_ptr:Byte Ptr,buf:Byte Ptr,size )
-	Return png_stream.WriteBytes( buf,size )
+	Local stream:TStream = TStream(png_get_io_ptr(png_ptr))
+	Return stream.WriteBytes( buf,size )
 End Function
 
 Function png_flush_fn( png_ptr:Byte Ptr )
-	png_stream.Flush
+	Local stream:TStream = TStream(png_get_io_ptr(png_ptr))
+	stream.Flush
 End Function
 
 Public
@@ -56,7 +59,7 @@ If the pixmap cannot be loaded, Null is returned.
 End Rem
 Function LoadPixmapPNG:TPixmap( url:Object )
 
-	png_stream=ReadStream( url )
+	Local png_stream:TStream=ReadStream( url )
 	If Not png_stream Return
 
 	Local buf:Byte[8]
@@ -89,7 +92,7 @@ Function LoadPixmapPNG:TPixmap( url:Object )
 		
 		png_set_sig_bytes png_ptr,8
 	
-		png_set_read_fn png_ptr,Null,png_read_fn
+		png_set_read_fn png_ptr,png_stream,png_read_fn
 			
 		png_read_png png_ptr,info_ptr,PNG_TRANSFORM_EXPAND|PNG_TRANSFORM_STRIP_16,Null
 	
@@ -161,14 +164,14 @@ Function SavePixmapPNG( pixmap:TPixmap,url:Object,compression=5 )
 
 	compression=Min( Max( compression,0 ),9 )
 
-	png_stream:TStream=WriteStream( url )
+	Local png_stream:TStream = WriteStream( url )
 	If Not png_stream Return
 	
 	Try
 		Local png_ptr:Byte Ptr=png_create_write_struct( "1.6.7",Null,Null,Null )
 		Local info_ptr:Byte Ptr=png_create_info_struct( png_ptr )
 	
-		png_set_write_fn png_ptr,Null,png_write_fn,png_flush_fn
+		png_set_write_fn png_ptr,png_stream,png_write_fn,png_flush_fn
 	
 		Local bitdepth,colortype,transform
 		

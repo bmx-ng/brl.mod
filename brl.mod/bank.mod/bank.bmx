@@ -25,7 +25,7 @@ end rem
 Type TBank
 
 	Field _buf:Byte Ptr
-	Field _size:Long,_capacity:Long
+	Field _size:Size_T,_capacity:Size_T,_static:Int
 	Field _locked
 	
 	Method _pad()
@@ -74,7 +74,7 @@ Type TBank
 	bbdoc: Get a bank's size
 	returns: The size, in bytes, of the memory block controlled by the bank
 	End Rem
-	Method Size:Long()
+	Method Size:Size_T()
 		Return _size
 	End Method
 
@@ -82,18 +82,25 @@ Type TBank
 	bbdoc: Get capacity of bank
 	returns: The capacity, in bytes, of the bank's internal memory buffer
 	End Rem
-	Method Capacity:Long()
+	Method Capacity:Size_T()
 		Return _capacity
+	End Method
+	
+	Rem
+	bbdoc: Returns True if the bank is static.
+	End Rem
+	Method IsStatic:Int()
+		Return _static
 	End Method
 
 	Rem
 	bbdoc: Resize a bank
 	End Rem
-	Method Resize( size:Long )
+	Method Resize( size:Size_T )
 		Assert _locked=0 Else "Locked banks cannot be resize"
-		Assert _capacity>=0 Else "Static banks cannot be resized"
+		Assert _static=0 Else "Static banks cannot be resized"
 		If size>_capacity
-			Local n:Long=_capacity*3/2
+			Local n:Size_T=_capacity*3/2
 			If n<size n=size
 			Local tmp:Byte Ptr=MemAlloc(n)
 			MemCopy tmp,_buf,_size
@@ -124,7 +131,7 @@ Type TBank
 	bbdoc: Peek a byte from a bank
 	returns: The byte value at the specified byte offset within the bank
 	End Rem
-	Method PeekByte( offset:Long )
+	Method PeekByte( offset:Size_T )
 		Assert offset>=0 And offset<_size Else "Illegal bank offset"
 		Return _buf[offset]
 	End Method
@@ -132,7 +139,7 @@ Type TBank
 	Rem
 	bbdoc: Poke a byte into a bank
 	End Rem
-	Method PokeByte( offset:Long,value )
+	Method PokeByte( offset:Size_T,value )
 		Assert offset>=0 And offset<_size Else "Illegal bank offset"
 		_buf[offset]=value
 	End Method
@@ -141,7 +148,7 @@ Type TBank
 	bbdoc: Peek a short from a bank
 	returns: The short value at the specified byte offset within the bank
 	End Rem
-	Method PeekShort( offset:Long )
+	Method PeekShort( offset:Size_T )
 		Assert offset>=0 And offset<_size-1 Else "Illegal bank offset"
 		Return (Short Ptr(_buf+offset))[0]
 	End Method
@@ -149,7 +156,7 @@ Type TBank
 	Rem
 	bbdoc: Poke a short into a bank
 	End Rem
-	Method PokeShort( offset:Long,value )
+	Method PokeShort( offset:Size_T,value )
 		Assert offset>=0 And offset<_size-1 Else "Illegal bank offset"
 		(Short Ptr(_buf+offset))[0]=value
 	End Method
@@ -158,7 +165,7 @@ Type TBank
 	bbdoc: Peek an int from a bank
 	returns: The int value at the specified byte offset within the bank
 	End Rem
-	Method PeekInt( offset:Long )
+	Method PeekInt( offset:Size_T )
 		Assert offset>=0 And offset<_size-3 Else "Illegal bank offset"
 		Return (Int Ptr(_buf+offset))[0]
 	End Method
@@ -166,7 +173,7 @@ Type TBank
 	Rem
 	bbdoc: Poke an int into a bank
 	End Rem
-	Method PokeInt( offset:Long,value )
+	Method PokeInt( offset:Size_T,value )
 		Assert offset>=0 And offset<_size-3 Else "Illegal bank offset"
 		(Int Ptr(_buf+offset))[0]=value
 	End Method
@@ -175,7 +182,7 @@ Type TBank
 	bbdoc: Peek a long from a bank
 	returns: The long value at the specified byte offset within the bank
 	End Rem
-	Method PeekLong:Long( offset:Long )
+	Method PeekLong:Long( offset:Size_T )
 		Assert offset>=0 And offset<_size-7 Else "Illegal bank offset"
 		Return (Long Ptr(_buf+offset))[0]
 	End Method
@@ -183,7 +190,7 @@ Type TBank
 	Rem
 	bbdoc: Poke a long value into a bank
 	End Rem
-	Method PokeLong( offset:Long,value:Long )
+	Method PokeLong( offset:Size_T,value:Long )
 		Assert offset>=0 And offset<_size-7 Else "Illegal bank offset"
 		(Long Ptr(_buf+offset))[0]=value
 	End Method
@@ -192,7 +199,7 @@ Type TBank
 	bbdoc: Peek a float from a bank
 	returns: The float value at the specified byte offset within the bank
 	End Rem
-	Method PeekFloat#( offset:Long )
+	Method PeekFloat#( offset:Size_T )
 		Assert offset>=0 And offset<_size-3 Else "Illegal bank offset"
 		Return (Float Ptr(_buf+offset))[0]
 	End Method
@@ -200,7 +207,7 @@ Type TBank
 	Rem
 	bbdoc: Poke a float value into a bank
 	End Rem
-	Method PokeFloat( offset:Long,value# )
+	Method PokeFloat( offset:Size_T,value# )
 		Assert offset>=0 And offset<_size-3 Else "Illegal bank offset"
 		(Float Ptr(_buf+offset))[0]=value
 	End Method
@@ -209,7 +216,7 @@ Type TBank
 	bbdoc: Peek a double from a bank
 	returns: The double value at the specified byte offset within the bank
 	End Rem
-	Method PeekDouble!( offset:Long )
+	Method PeekDouble!( offset:Size_T )
 		Assert offset>=0 And offset<_size-7 Else "Illegal bank offset"
 		Return (Double Ptr(_buf+offset))[0]
 	End Method
@@ -217,7 +224,7 @@ Type TBank
 	Rem
 	bbdoc: Poke a double value into a bank
 	End Rem
-	Method PokeDouble( offset:Long,value! )
+	Method PokeDouble( offset:Size_T,value! )
 		Assert offset>=0 And offset<_size-7 Else "Illegal bank offset"
 		(Double Ptr(_buf+offset))[0]=value
 	End Method
@@ -245,8 +252,8 @@ Type TBank
 		Local stream:TStream=ReadStream( url )
 		If Not stream Return
 		Local data:Byte[]=LoadByteArray( stream )
-		Local bank:TBank=Create( data.length )
-		MemCopy bank.Buf(),data,data.length 
+		Local bank:TBank=Create( Size_T(data.length) )
+		MemCopy bank.Buf(),data,Size_T(data.length)
 		stream.Close
 		Return bank
 	End Function
@@ -255,25 +262,41 @@ Type TBank
 	bbdoc: Create a bank
 	returns: A new TBank object with an initial size of @size
 	End Rem
-	Function Create:TBank( size:Long )
-		Assert size>=0 Else "Illegal bank size"
+	Function Create:TBank( size:Size_T )
 		Local bank:TBank=New TBank
 		bank._buf=MemAlloc( size )
 		bank._size=size
 		bank._capacity=size
 		Return bank
 	End Function
+
+	Rem
+	bbdoc: Create a bank
+	returns: A new TBank object with an initial size of @size
+	End Rem
+	Function Create:TBank( size:Int )
+		Assert size>=0 Else "Illegal bank size"
+		Return Create(Size_T(size))
+	End Function
 	
 	Rem
 	bbdoc: Create a bank from an existing block of memory
 	End Rem
-	Function CreateStatic:TBank( buf:Byte Ptr,size:Long )
-		Assert size>=0 Else "Illegal bank size"
+	Function CreateStatic:TBank( buf:Byte Ptr,size:Size_T )
 		Local bank:TBank=New TBank
 		bank._buf=buf
 		bank._size=size
-		bank._capacity=-1
+		bank._capacity=size
+		bank._static=True
 		Return bank
+	End Function
+
+	Rem
+	bbdoc: Create a bank from an existing block of memory
+	End Rem
+	Function CreateStatic:TBank( buf:Byte Ptr,size:Int )
+		Assert size>=0 Else "Illegal bank size"
+		Return CreateStatic(buf, Size_T(size))
 	End Function
 
 End Type
@@ -286,7 +309,7 @@ about:
 can be used for storage of binary data using the various Poke and
 Peek commands. 
 End Rem
-Function CreateBank:TBank( size:Long=0 )
+Function CreateBank:TBank( size:Int=0 )
 	Return TBank.Create( size )
 End Function
 
@@ -297,7 +320,7 @@ about:
 The memory referenced by a static bank is not released when the bank is deleted.
 A static bank cannot be resized.
 End Rem
-Function CreateStaticBank:TBank( buf:Byte Ptr,size:Long )
+Function CreateStaticBank:TBank( buf:Byte Ptr,size:Int )
 	Return TBank.CreateStatic( buf,size )
 End Function
 
@@ -384,7 +407,7 @@ about:
 allocated if the requested size is greater than the bank's current capacity,
 see #BankCapacity for more information.
 End Rem
-Function ResizeBank( bank:TBank,size:Long )
+Function ResizeBank( bank:TBank,size:Size_T )
 	bank.Resize size
 End Function
 
@@ -394,7 +417,7 @@ about:
 #CopyBank copies @count bytes from @src_offset in @src_bank to @dst_offset
 in @dst_bank.
 End Rem
-Function CopyBank( src_bank:TBank,src_offset:Long,dst_bank:TBank,dst_offset:Long,count:Long )
+Function CopyBank( src_bank:TBank,src_offset:Size_T,dst_bank:TBank,dst_offset:Size_T,count:Size_T )
 	Assert..
 	count>=0 And..
 	src_offset>=0 And..
@@ -410,14 +433,14 @@ returns: The byte value at the specified byte offset within the bank
 about:
 A byte is an unsigned 8 bit value with a range of 0..255.
 End Rem
-Function PeekByte( bank:TBank,offset:Long )
+Function PeekByte( bank:TBank,offset:Size_T )
 	Return bank.PeekByte( offset )
 End Function
 
 Rem
 bbdoc: Poke a byte into a bank
 End Rem
-Function PokeByte( bank:TBank,offset:Long,value )
+Function PokeByte( bank:TBank,offset:Size_T,value )
 	bank.PokeByte offset,value
 End Function
 
@@ -427,7 +450,7 @@ returns: The short value at the specified byte offset within the bank
 about:
 A short is an unsigned 16 bit (2 bytes) value with a range of 0..65535.
 End Rem
-Function PeekShort( bank:TBank,offset:Long )
+Function PeekShort( bank:TBank,offset:Size_T )
 	Return bank.PeekShort( offset )
 End Function
 
@@ -436,7 +459,7 @@ bbdoc: Poke a short into a bank
 about:
 An short is an unsigned 16 bit value that requires 2 bytes of storage.
 End Rem
-Function PokeShort( bank:TBank,offset:Long,value )
+Function PokeShort( bank:TBank,offset:Size_T,value )
 	bank.PokeShort offset,value
 End Function
 
@@ -446,7 +469,7 @@ returns: The int value at the specified byte offset within the bank
 about:
 An int is a signed 32 bit value (4 bytes).
 End Rem
-Function PeekInt( bank:TBank,offset:Long )
+Function PeekInt( bank:TBank,offset:Size_T )
 	Return bank.PeekInt( offset )
 End Function
 
@@ -455,7 +478,7 @@ bbdoc: Poke an int into a bank
 about:
 An int is a signed 32 bit value that requires 4 bytes of storage.
 End Rem
-Function PokeInt( bank:TBank,offset:Long,value )
+Function PokeInt( bank:TBank,offset:Size_T,value )
 	bank.PokeInt offset,value
 End Function
 
@@ -465,7 +488,7 @@ returns: The long integer value at the specified byte offset within the bank
 about:
 A long is a 64 bit integer that requires 8 bytes of memory.
 End Rem
-Function PeekLong:Long( bank:TBank,offset:Long )
+Function PeekLong:Long( bank:TBank,offset:Size_T )
 	Return bank.PeekLong( offset )
 End Function
 
@@ -474,7 +497,7 @@ bbdoc: Poke a long integer int into a bank
 about:
 A long is a 64 bit integer that requires 8 bytes of storage.
 End Rem
-Function PokeLong( bank:TBank,offset:Long,value:Long )
+Function PokeLong( bank:TBank,offset:Size_T,value:Long )
 	bank.PokeLong offset,value
 End Function
 
@@ -484,7 +507,7 @@ returns: The float value at the specified byte offset within the bank
 about:
 A float requires 4 bytes of storage
 End Rem
-Function PeekFloat#( bank:TBank,offset:Long )
+Function PeekFloat#( bank:TBank,offset:Size_T )
 	Return bank.PeekFloat( offset )
 End Function
 
@@ -493,7 +516,7 @@ bbdoc: Poke a float into a bank
 about:
 A float requires 4 bytes of storage
 End Rem
-Function PokeFloat( bank:TBank,offset:Long,value# )
+Function PokeFloat( bank:TBank,offset:Size_T,value# )
 	bank.PokeFloat offset,value
 End Function
 
@@ -503,7 +526,7 @@ returns: The double value at the specified byte offset within the bank
 about:
 A double requires 8 bytes of storage
 End Rem
-Function PeekDouble!( bank:TBank,offset:Long )
+Function PeekDouble!( bank:TBank,offset:Size_T )
 	Return bank.PeekDouble( offset )
 End Function
 
@@ -512,7 +535,7 @@ bbdoc: Poke a double into a bank
 about:
 A double requires 8 bytes of storage
 End Rem
-Function PokeDouble( bank:TBank,offset:Long,value! )
+Function PokeDouble( bank:TBank,offset:Size_T,value! )
 	bank.PokeDouble offset,value
 End Function
 
@@ -520,7 +543,7 @@ Rem
 bbdoc: Read bytes from a Stream to a Bank
 returns: The number of bytes successfully read from the Stream
 End Rem
-Function ReadBank:Long( bank:TBank,stream:TStream,offset:Long,count:Long )
+Function ReadBank:Long( bank:TBank,stream:TStream,offset:Size_T,count:Long )
 	Return bank.Read( stream,offset,count )
 End Function
 
@@ -528,6 +551,6 @@ Rem
 bbdoc: Write bytes from a Bank to a Stream
 returns: The number of bytes successfully written to the Stream
 end rem
-Function WriteBank:Long( bank:TBank,stream:TStream,offset:Long,count:Long )
+Function WriteBank:Long( bank:TBank,stream:TStream,offset:Size_T,count:Long )
 	Return bank.Write( stream,offset,count )
 End Function

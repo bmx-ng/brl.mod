@@ -20,6 +20,9 @@ ModuleInfo "History: Support for Run Length Encoded compression"
 ModuleInfo "History: 1.05 Release"
 ModuleInfo "History: Fixed 24 bit byte ordering"
 
+Import BRL.StbImageLoader
+
+?deprecated
 Import BRL.Pixmap
 Import BRL.EndianStream
 
@@ -40,9 +43,9 @@ Type tgahdr
 End Type
 
 Function makeargb(a,r,g,b)
-?BigEndian
-	Return (b Shl 24)|(g Shl 16)|(r Shl 8)|a
-?
+'?BigEndian
+'	Return (b Shl 24)|(g Shl 16)|(r Shl 8)|a
+'?
 	Return (a Shl 24)|(r Shl 16)|(g Shl 8)|b
 End Function
 
@@ -217,3 +220,4 @@ Type TPixmapLoaderTGA Extends TPixmapLoader
 End Type
 
 New TPixmapLoaderTGA
+?

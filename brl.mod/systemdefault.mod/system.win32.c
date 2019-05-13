@@ -10,6 +10,10 @@ typedef struct AsyncOp{
 	int asyncInfo;
 }AsyncOp;
 
+// track shift key state because Windows doesn't report events when the two shift
+// keys are being pressed at the same time, and then one released.
+static int shiftKeyState[2];
+
 static int _usew;
 
 static HHOOK msghook;
@@ -30,7 +34,7 @@ static const char *appTitleA(){
 	return bbStringToCString( bbAppTitle );
 }
 
-static int keyCode( int wp,int lp ){
+static int keyCode( WPARAM wp,LPARAM lp){
 	switch( ((lp>>17)&0x80)|((lp>>16)&0x7f) ){
 	case 42:return VK_LSHIFT;
 	case 54:return VK_RSHIFT;
@@ -129,11 +133,31 @@ void bbSystemEmitOSEvent( HWND hwnd,UINT msg,WPARAM wp,LPARAM lp,BBObject *sourc
 		if( wp<1 || wp>255 ) return;
 		id=( lp & 0x40000000 ) ? BBEVENT_KEYREPEAT : BBEVENT_KEYDOWN;
 		data=keyCode( wp,lp );
+		
+		switch(data) {
+			case VK_LSHIFT:
+				shiftKeyState[0] = 1;
+				break;
+			case VK_RSHIFT:
+				shiftKeyState[1] = 1;
+				break;
+		}
+		
 		break;
 	case WM_KEYUP:case WM_SYSKEYUP:
 		if( wp<1 || wp>255 ) return;
 		id=BBEVENT_KEYUP;
 		data=keyCode( wp,lp );
+
+		switch(data) {
+			case VK_LSHIFT:
+				shiftKeyState[0] = 0;
+				break;
+			case VK_RSHIFT:
+				shiftKeyState[1] = 0;
+				break;
+		}
+
 		break;
 	case WM_CHAR:case WM_SYSCHAR:
 		id=BBEVENT_KEYCHAR;
@@ -255,6 +279,17 @@ void bbSystemPoll(){
 		
 		TranslateMessage( &msg );
 		DispatchMessage( &msg );
+	}
+
+	// test shift keys current state
+	if (shiftKeyState[0] && !(GetKeyState(VK_LSHIFT) & 0x8000)) {
+		shiftKeyState[0] = 0;
+		bbSystemEmitEvent( BBEVENT_KEYUP,&bbNullObject,VK_LSHIFT,mods,0,0,&bbNullObject );
+	}
+
+	if (shiftKeyState[1] && !(GetKeyState(VK_RSHIFT) & 0x8000)) {
+		shiftKeyState[1] = 0;
+		bbSystemEmitEvent( BBEVENT_KEYUP,&bbNullObject,VK_RSHIFT,mods,0,0,&bbNullObject );
 	}
 }
 

@@ -66,6 +66,37 @@ static void bbArrayFree( BBObject *o ){
 #endif
 }
 
+static int arrayCellSize(const char * type, unsigned short data_size, int * flags) {
+	int size = 4;
+	
+	switch( type[0] ){
+		case 'b':size=1;break;
+		case 's':size=2;break;
+		case 'l':size=8;break;
+		case 'y':size=8;break;
+		case 'd':size=8;break;
+		case '*':size=sizeof(void*);break;
+		case ':':size=sizeof(void*);*flags=0;break;
+		case '$':size=sizeof(void*);*flags=0;break;
+		case '[':size=sizeof(void*);*flags=0;break;
+		case '(':size=sizeof(void*);break;
+		case 'z':size=sizeof(BBSIZET);break;
+		#ifdef _WIN32
+		case 'w':size=sizeof(WPARAM);break;
+		case 'x':size=sizeof(LPARAM);break;
+		#endif
+		#ifdef __x86_64__
+		case 'h':size=sizeof(BBFLOAT64);break;
+		case 'j':size=sizeof(BBINT128);break;
+		case 'k':size=sizeof(BBFLOAT128);break;
+		case 'm':size=sizeof(BBDOUBLE128);break;
+		#endif
+		case '@':size=data_size;*flags=0;break; // structs
+	}
+
+	return size;
+}
+
 static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned short data_size ){
 	int k,*len;
 	int size=4;
@@ -79,31 +110,8 @@ static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned sho
 		if( n<=0 ) return &bbEmptyArray;
 		length*=n;
 	}
-		
-	switch( type[0] ){
-	case 'b':size=1;break;
-	case 's':size=2;break;
-	case 'l':size=8;break;
-	case 'y':size=8;break;
-	case 'd':size=8;break;
-	case '*':size=sizeof(void*);break;
-	case ':':size=sizeof(void*);flags=0;break;
-	case '$':size=sizeof(void*);flags=0;break;
-	case '[':size=sizeof(void*);flags=0;break;
-	case '(':size=sizeof(void*);break;
-	case 'z':size=sizeof(BBSIZET);break;
-	#ifdef _WIN32
-	case 'w':size=sizeof(WPARAM);break;
-	case 'x':size=sizeof(LPARAM);break;
-	#endif
-	#ifdef __x86_64__
-	case 'h':size=sizeof(BBFLOAT64);break;
-	case 'j':size=sizeof(BBINT128);break;
-	case 'k':size=sizeof(BBFLOAT128);break;
-	case 'm':size=sizeof(BBDOUBLE128);break;
-	#endif
-	case '#':size=data_size;flags=0;break; // extern structs
-	}
+	
+	size = arrayCellSize(type, data_size, &flags);
 	size*=length;
 
 	arr=(BBArray*)bbGCAllocObject( BBARRAYSIZE(size,dims),&bbArrayClass,flags );
@@ -174,7 +182,7 @@ BBArray *bbArrayNew( const char *type,int dims,... ){
 	return arr;
 }
 
-BBArray *bbArrayNewStruct( const char *type,int dims, unsigned short data_size, ... ){
+BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, int dims, ... ){
 
 	int lens[256];
 
@@ -275,6 +283,33 @@ BBArray *bbArraySlice( const char *type,BBArray *inarr,int beg,int end ){
 	return arr;
 }
 
+void bbArrayCopy(BBArray * srcArr, int srcPos, BBArray * dstArr, int dstPos, int length) {
+
+	if (srcPos < 0 || dstPos < 0 || length <= 0) {
+		return;
+	}
+	
+	if (strcmp(srcArr->type, dstArr->type)) {
+		brl_blitz_RuntimeError(bbStringFromCString("Incompatible array element types for copy"));
+	}
+	
+	if (srcPos + length > srcArr->scales[0]) {
+		brl_blitz_ArrayBoundsError();
+	}
+
+	if (dstPos + length > dstArr->scales[0]) {
+		brl_blitz_ArrayBoundsError();
+	}
+	
+	int flags = 0;
+	int size = arrayCellSize(srcArr->type, srcArr->data_size, &flags);
+	
+	char * src = (char*)BBARRAYDATA(srcArr, 1) + srcPos * size;
+	char * dst = (char*)BBARRAYDATA(dstArr, 1) + dstPos * size;
+	
+	memmove(dst, src, length * size);
+}
+
 BBArray *bbArrayConcat( const char *type,BBArray *x,BBArray *y ){
 
 	BBArray *arr;
@@ -301,6 +336,20 @@ BBArray *bbArrayFromData( const char *type,int length,void *data ){
 	if( length<=0 ) return &bbEmptyArray;
 	
 	arr=allocateArray( type,1,&length,0 );
+
+	memcpy( BBARRAYDATA( arr,1 ),data,arr->size );
+
+	return arr;
+}
+
+BBArray *bbArrayFromDataStruct( const char *type,int length,void *data, unsigned short data_size ){
+
+	int k;
+	BBArray *arr;
+
+	if( length<=0 ) return &bbEmptyArray;
+	
+	arr=allocateArray( type,1,&length, data_size );
 
 	memcpy( BBARRAYDATA( arr,1 ),data,arr->size );
 
@@ -378,7 +427,7 @@ static void IDENT( TYPE *lo,TYPE *hi ){\
 #undef LESSTHAN
 #define LESSTHAN(X,Y) (*(X)<*(Y))
 QSORTARRAY( unsigned char,_qsort_b )
-QSORTARRAY( unsigned short,qsort_s )
+QSORTARRAY( unsigned short,_qsort_s )
 QSORTARRAY( int,qsort_i )
 QSORTARRAY( unsigned int,qsort_u )
 QSORTARRAY( BBInt64,qsort_l );
@@ -421,7 +470,7 @@ void bbArraySort( BBArray *arr,int ascending ){
 	if( ascending ){
 		switch( arr->type[0] ){
 		case 'b':_qsort_b( (unsigned char*)p,(unsigned char*)p+n );break;
-		case 's':qsort_s( (unsigned short*)p,(unsigned short*)p+n );break;
+		case 's':_qsort_s( (unsigned short*)p,(unsigned short*)p+n );break;
 		case 'i':qsort_i( (int*)p,(int*)p+n );break;
 		case 'u':qsort_u( (unsigned int*)p,(unsigned int*)p+n );break;
 		case 'l':qsort_l( (BBInt64*)p,(BBInt64*)p+n );break;

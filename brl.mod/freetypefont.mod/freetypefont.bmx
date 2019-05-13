@@ -33,7 +33,7 @@ Private
 
 Function PadPixmap:TPixmap( p:TPixmap )
 	Local t:TPixmap=TPixmap.Create( p.width+2,p.height+2,p.format )
-	MemClear t.pixels,t.capacity
+	MemClear t.pixels,Size_T(t.capacity)
 	t.Paste p,1,1
 	Return t
 End Function
@@ -170,8 +170,8 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 			Local tmp:Byte[]=LoadByteArray( src )
 			buf_size=tmp.length
 			If Not buf_size Return Null
-			buf=MemAlloc( buf_size )
-			MemCopy buf,tmp,buf_size
+			buf=MemAlloc( Size_T(buf_size) )
+			MemCopy buf,tmp,Size_T(buf_size)
 			If FT_New_Memory_Face( ft_lib,buf,buf_size,0,Varptr ft_face )
 				MemFree buf
 				Return Null

@@ -21,6 +21,9 @@ ModuleInfo "History: Fixed inverted 1 bit bitmaps"
 ModuleInfo "History: 1.05 Release"
 ModuleInfo "History: Fixed palettized bitmaps failing when biClrUsed=0"
 
+Import BRL.StbImageLoader
+
+?deprecated
 Import BRL.Pixmap
 Import BRL.EndianStream
 
@@ -34,7 +37,7 @@ Type TPixmapLoaderBMP Extends TPixmapLoader
 		Local	pixmap:TPixmap
 		Local	hsize,hoffset,pad
 		Local	size,width,height
-		Local	planes,bits,compression,isize,xpels,ypels,cols,inuse
+		Local	planes,bits,compression,isize,xpels,ypels,COLS,inuse
 		Local	w,x,y,c0,c1,p
 
 		If stream.ReadBytes( buf,2 )=2
@@ -51,10 +54,10 @@ Type TPixmapLoaderBMP Extends TPixmapLoader
 				isize=ReadInt(stream)
 				xpels=ReadInt(stream)
 				ypels=ReadInt(stream)
-				cols=ReadInt(stream)
+				COLS=ReadInt(stream)
 				inuse=ReadInt(stream)
 				hoffset:-54
-				If Not cols cols=1 Shl bits
+				If Not COLS COLS=1 Shl bits
 				If bits=32
 					pixmap=TPixmap.Create( width,height,PF_BGRA8888 )
 				Else
@@ -80,7 +83,7 @@ Type TPixmapLoaderBMP Extends TPixmapLoader
 					Case 4
 						palette=New Int[16]
 						line=New Int[width]
-						stream.ReadBytes(palette,cols*4)
+						stream.ReadBytes(palette,COLS*4)
 						w=(width+1)/2
 						w=(w+3)&$fffc
 						pix=New Byte[w]
@@ -95,7 +98,7 @@ Type TPixmapLoaderBMP Extends TPixmapLoader
 					Case 8
 						palette=New Int[256]
 						line=New Int[width]
-						stream.ReadBytes(palette,cols*4)
+						stream.ReadBytes(palette,COLS*4)
 						w=(width+3)&$fffc
 						pix=New Byte[w]
 						For y=height-1 To 0 Step -1
@@ -131,4 +134,4 @@ Type TPixmapLoaderBMP Extends TPixmapLoader
 End Type
 
 New TPixmapLoaderBMP
-
+?

@@ -15,10 +15,14 @@
 #ifndef GC_HEADERS_H
 #define GC_HEADERS_H
 
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 typedef struct hblkhdr hdr;
 
 #if CPP_WORDSZ != 32 && CPP_WORDSZ < 36
-        --> Get a real machine.
+# error Get a real machine
 #endif
 
 /*
@@ -98,22 +102,21 @@ typedef struct hce {
 #endif
 
 /* Set hhdr to the header for p.  Analogous to GET_HDR below,           */
-/* except that in the case of large objects, it                         */
-/* gets the header for the object beginning, if GC_all_interior_ptrs    */
-/* is set.                                                              */
+/* except that in the case of large objects, it gets the header for     */
+/* the object beginning if GC_all_interior_pointers is set.             */
 /* Returns zero if p points to somewhere other than the first page      */
 /* of an object, and it is not a valid pointer to the object.           */
-#define HC_GET_HDR(p, hhdr, source, exit_label) \
-        do { \
+#define HC_GET_HDR(p, hhdr, source) \
+        { /* cannot use do-while(0) here */ \
           hdr_cache_entry * hce = HCE(p); \
           if (EXPECT(HCE_VALID_FOR(hce, p), TRUE)) { \
             HC_HIT(); \
             hhdr = hce -> hce_hdr; \
           } else { \
             hhdr = HEADER_CACHE_MISS(p, hce, source); \
-            if (0 == hhdr) goto exit_label; \
+            if (NULL == hhdr) break; /* go to the enclosing loop end */ \
           } \
-        } while (0)
+        }
 
 typedef struct bi {
     hdr * index[BOTTOM_SZ];
@@ -208,5 +211,9 @@ typedef struct bi {
 /* Get an HBLKSIZE aligned address closer to the beginning of the block */
 /* h.  Assumes hhdr == HDR(h) and IS_FORWARDING_ADDR(hhdr).             */
 #define FORWARDED_ADDR(h, hhdr) ((struct hblk *)(h) - (size_t)(hhdr))
+
+#ifdef __cplusplus
+  } /* extern "C" */
+#endif
 
 #endif /* GC_HEADERS_H */

@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.19"
+ModuleInfo "Version: 1.20"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.20"
+ModuleInfo "History: Update to bdwgc 7.7.0."
 ModuleInfo "History: 1.19"
 ModuleInfo "History: Added interfaces."
 ModuleInfo "History: Added Interface and EndInterface keyword docs"
@@ -124,11 +126,9 @@ Import "bdwgc/mark_rts.c"
 Import "bdwgc/headers.c"
 Import "bdwgc/mark.c"
 Import "bdwgc/obj_map.c"
-Import "bdwgc/pcr_interface.c"
 Import "bdwgc/blacklst.c"
 Import "bdwgc/finalize.c"
 Import "bdwgc/new_hblk.c"
-Import "bdwgc/real_malloc.c"
 Import "bdwgc/dyn_load.c"
 Import "bdwgc/dbg_mlc.c"
 Import "bdwgc/malloc.c"
@@ -339,7 +339,7 @@ Rem
 bbdoc: Allocate memory
 returns: A new block of memory @size bytes long
 End Rem
-Function MemAlloc:Byte Ptr( size:Long )="void* bbMemAlloc( size_t )"
+Function MemAlloc:Byte Ptr( size:Size_T )="void* bbMemAlloc( size_t )"
 
 Rem
 bbdoc: Free allocated memory
@@ -353,22 +353,22 @@ returns: A new block of memory @new_size bytes long
 about: An existing block of memory specified by @mem and @size is copied into a new block
 of memory @new_size bytes long. The existing block is released and the new block is returned. 
 End Rem
-Function MemExtend:Byte Ptr( mem:Byte Ptr,size:Long,new_size:Long )="void* bbMemExtend( void *,size_t ,size_t )"
+Function MemExtend:Byte Ptr( mem:Byte Ptr,size:Size_T,new_size:Size_T )="void* bbMemExtend( void *,size_t ,size_t )"
 
 Rem
 bbdoc: Clear a block of memory to 0
 End Rem
-Function MemClear( mem:Byte Ptr,size:Long )="void bbMemClear( void *,size_t )"
+Function MemClear( mem:Byte Ptr,size:Size_T )="void bbMemClear( void *,size_t )"
 
 Rem
 bbdoc: Copy a non-overlapping block of memory
 End Rem
-Function MemCopy( dst:Byte Ptr,src:Byte Ptr,size:Long )="void bbMemCopy( void *,const void *,size_t )"
+Function MemCopy( dst:Byte Ptr,src:Byte Ptr,size:Size_T )="void bbMemCopy( void *,const void *,size_t )"
 
 Rem
 bbdoc: Copy a potentially overlapping block of memory
 End Rem
-Function MemMove( dst:Byte Ptr,src:Byte Ptr,size:Long )="void bbMemMove( void *,const void *,size_t )"
+Function MemMove( dst:Byte Ptr,src:Byte Ptr,size:Size_T )="void bbMemMove( void *,const void *,size_t )"
 
 Rem
 bbdoc: Set garbage collector mode
@@ -453,6 +453,11 @@ bbdoc: Convert integer handle to object
 returns: The object associated with the integer handle
 End Rem
 Function HandleToObject:Object( handle:Size_T )="bbHandleToObject"
+
+Rem
+bbdoc: Copies an array from the specified @src array, starting at the position @srcPos, to the position @dstPos of the destination array.
+End Rem
+Function ArrayCopy(src:Object, srcPos:Int, dst:Object, dstPos:Int, length:Int)="void bbArrayCopy(BBARRAY, int, BBARRAY, int, int)!"
 
 End Extern
 
