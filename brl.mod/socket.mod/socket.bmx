@@ -22,7 +22,7 @@ Private
 Extern "os"
 ?Win32
 Const FIONREAD=$4004667F
-Function ioctl_( socket,opt,buf:Byte Ptr )="ioctlsocket"
+Function ioctl_( socket,opt,buf:Byte Ptr )="int ioctlsocket(SOCKET ,long ,u_long *)!"
 ?MacOS
 Const FIONREAD=$4004667F
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
@@ -45,14 +45,14 @@ End Type
 
 Type TSocket
 
-	Method Send:size_t( buf:Byte Ptr,count:size_t,flags=0 )
-		Local n:size_t=send_( _socket,buf,count,flags )
+	Method Send:Size_T( buf:Byte Ptr,count:Size_T,flags=0 )
+		Local n:Size_T=send_( _socket,buf,count,flags )
 		If n<0 Return 0
 		Return n
 	End Method
 
-	Method Recv:size_t( buf:Byte Ptr,count:size_t,flags=0 )
-		Local n:size_t=recv_( _socket,buf,count,flags )
+	Method Recv:Size_T( buf:Byte Ptr,count:Size_T,flags=0 )
+		Local n:Size_T=recv_( _socket,buf,count,flags )
 		If n<0 Return 0
 		Return n
 	End Method

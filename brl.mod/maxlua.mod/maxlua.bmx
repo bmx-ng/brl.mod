@@ -74,7 +74,7 @@ Function Invoke( L:Byte Ptr )
 		End Select
 	Next
 	Local t:Object=meth.Invoke( obj,args )
-	Select meth.TypeId()
+	Select meth.ReturnType()
 	Case IntTypeId, ShortTypeId, ByteTypeId, LongTypeId
 		lua_pushinteger L,t.ToString().ToInt()
 	Case FloatTypeId

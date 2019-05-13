@@ -93,6 +93,8 @@ struct struct_node {
 void bbObjectRegisterStruct( BBDebugScope *p );
 BBDebugScope * bbObjectStructInfo( char * name );
 
+BBObject * bbNullObjectTest( BBObject *o );
+
 #ifdef __cplusplus
 }
 #endif

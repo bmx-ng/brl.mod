@@ -10,11 +10,11 @@ Private
 Extern "Win32"
 Const SW_SHOW:Int=5
 Const SW_RESTORE:Int=9
-Function IsIconic:Int( hwnd:Byte Ptr )
-Function GetForegroundWindow:Byte Ptr()
-Function SetForegroundWindow:Int( hwnd:Byte Ptr )
-Function ShowWindow:Int( hwnd:Byte Ptr,cmdShow:Int )
-Function GetCurrentThreadId:Int()
+Function IsIconic:Int( hwnd:Byte Ptr )="WINBOOL IsIconic( HWND )!"
+Function GetForegroundWindow:Byte Ptr()="HWND GetForegroundWindow()!"
+Function SetForegroundWindow:Int( hwnd:Byte Ptr )="WINBOOL SetForegroundWindow( HWND )!"
+Function ShowWindow:Int( hwnd:Byte Ptr,cmdShow:Int )="WINBOOL ShowWindow( HWND ,int )!"
+Function GetCurrentThreadId:Int()="DWORD GetCurrentThreadId()!"
 End Extern
 ?
 
@@ -26,7 +26,7 @@ End Extern
 
 Extern
 	Function bbIsMainThread:Int()="bbIsMainThread"
-	Function bbGCValidate:Int( mem:Byte Ptr ) = "bbGCValidate"
+	Function bbGCValidate:Int( mem:Byte Ptr ) = "int bbGCValidate( void * )!"
 
 	Function DebugScopeName:String( scope:Int Ptr )="bmx_debugger_DebugScopeName"
 	Function bmx_debugger_DebugScopeKind:UInt( scope:Int Ptr )
@@ -63,7 +63,7 @@ Extern
 	Function bmx_debugger_ref_bbEmptyString:Byte Ptr()
 	Function bmx_debugger_ref_brl_blitz_NullFunctionError:Byte Ptr()
 	
-	Function bbObjectStructInfo:Byte Ptr(name:Byte Ptr)
+	Function bbObjectStructInfo:Byte Ptr(name:Byte Ptr)="BBDebugScope * bbObjectStructInfo( char * )!"
 End Extern
 
 ?Not ptr64
@@ -518,14 +518,14 @@ EndFunction
 'End Function
 
 Extern
-Global bbOnDebugStop()
-Global bbOnDebugLog( message$ )
-Global bbOnDebugEnterStm( stm:Int Ptr )
-Global bbOnDebugEnterScope( scope:Int Ptr)',inst:Byte Ptr )
-Global bbOnDebugLeaveScope()
-Global bbOnDebugPushExState()
-Global bbOnDebugPopExState()
-Global bbOnDebugUnhandledEx( ex:Object )
+Global bbOnDebugStop()="void bbOnDebugStop()!"
+Global bbOnDebugLog( message$ )="void bbOnDebugLog( BBString * )!"
+Global bbOnDebugEnterStm( stm:Int Ptr )="void bbOnDebugEnterStm( BBDebugStm * )!"
+Global bbOnDebugEnterScope( scope:Int Ptr)="void bbOnDebugEnterScope( BBDebugScope * )!"
+Global bbOnDebugLeaveScope()="void bbOnDebugLeaveScope()!"
+Global bbOnDebugPushExState()="void bbOnDebugPushExState()!"
+Global bbOnDebugPopExState()="void bbOnDebugPopExState()!"
+Global bbOnDebugUnhandledEx( ex:Object )="void bbOnDebugUnhandledEx( BBObject * )!"
 End Extern
 
 bbOnDebugStop=OnDebugStop
@@ -568,7 +568,7 @@ End Type
 Extern
 Function bbThreadAllocData:Int()
 Function bbThreadSetData( index:Int,data:Object )
-Function bbThreadGetData:TDbgState( index:Int )
+Function bbThreadGetData:TDbgState( index:Int )="BBObject* bbThreadGetData(int )!"
 End Extern
 ?
 

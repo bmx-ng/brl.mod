@@ -109,6 +109,14 @@ BBObject*		bbThreadGetData( int index );
 int			bbAtomicCAS( volatile int *target,int oldVal,int newVal );
 int			bbAtomicAdd( volatile int *target,int incr );
 
+#ifdef _WIN32
+BBThread *bbThreadRegister( DWORD id );
+#else
+BBThread *bbThreadRegister( void * thd );
+#endif
+void bbThreadUnregister( BBThread * thread );
+
+
 //Internal locks...
 extern int _bbNeedsLock;
 extern bb_mutex_t _bbLock;

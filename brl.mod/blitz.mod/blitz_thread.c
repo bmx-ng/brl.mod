@@ -75,7 +75,7 @@ void bbThreadSetData( int index,BBObject *data ){
 }
 
 BBObject *bbThreadGetData( int index ){
-	BBObject *data=bbThreadGetCurrent()->data[index];
+	BBObject * data = bbThreadGetCurrent()->data[index];
 	return data ? data : &bbNullObject;
 }
 
@@ -175,6 +175,32 @@ int bbThreadSuspend( BBThread *thread ){
 int bbThreadResume( BBThread *thread ){
 	return ResumeThread( thread->handle );
 }
+
+BBThread *bbThreadRegister( DWORD id ) {
+	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
+	memset( thread->data,0,sizeof(thread->data) );
+	
+	thread->handle = 0;
+	thread->proc=0;
+	thread->data[0]=0;
+	thread->detached=0;
+	thread->id = id;
+	
+	TlsSetValue( curThreadTls,thread );
+
+	BB_LOCK
+	addThread( thread );
+	BB_UNLOCK
+	
+	return thread;
+}
+
+void bbThreadUnregister( BBThread * thread ) {
+	BB_LOCK
+	removeThread( thread );
+	BB_UNLOCK
+}
+
 //***** POSIX threads *****
 #else
 
@@ -254,6 +280,30 @@ BBThread *bbThreadCreate( BBThreadProc proc,BBObject *data ){
 	}
 	GC_FREE( thread );
 	return 0;
+}
+
+BBThread *bbThreadRegister( void * thd ) {
+	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
+	memset( thread->data,0,sizeof(thread->data) );
+	
+	thread->handle = thd;
+	thread->proc=0;
+	thread->data[0]=0;
+	thread->detached=0;
+	
+	pthread_setspecific( curThreadTls,thread );
+
+	BB_LOCK
+	addThread( thread );
+	BB_UNLOCK
+	
+	return thread;
+}
+
+void bbThreadUnregister( BBThread * thread ) {
+	BB_LOCK
+	removeThread( thread );
+	BB_UNLOCK
 }
 
 void bbThreadDetach( BBThread *thread ){

@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Audio/OpenAL audio 
@@ -31,12 +31,12 @@ Import Pub.OpenAL
 
 Private
 
-Const CLOG=False
+Const CLOG:Int=False
 
 'list of all non-static sources
 Global _sources:TOpenALSource
 
-Function CheckAL()
+Function CheckAL:Int()
 	Local err$
 	Select alGetError()
 	Case AL_NO_ERROR
@@ -60,28 +60,28 @@ End Function
 
 Type TOpenALSource
 
-	Field _succ:TOpenALSource,_id,_seq,_sound:TOpenALSound,_avail
+	Field _succ:TOpenALSource,_id:Int,_seq:Int,_sound:TOpenALSound,_avail:Int
 	
-	Method Playing()
-		Local st
+	Method Playing:Int()
+		Local st:Int
 		alGetSourcei _id,AL_SOURCE_STATE,Varptr st
 		Return st=AL_PLAYING
 	End Method
 			
-	Method Paused()
-		Local st
+	Method Paused:Int()
+		Local st:Int
 		alGetSourcei _id,AL_SOURCE_STATE,Varptr st
 		Return st=AL_PAUSED Or st=AL_INITIAL
 	End Method
 	
-	Method Active()	
-		Local st
+	Method Active:Int()	
+		Local st:Int
 		alGetSourcei _id,AL_SOURCE_STATE,Varptr st
 		Return st=AL_PLAYING Or st=AL_PAUSED Or st=AL_INITIAL
 	End Method
 	
 	Method LogState()
-		Local st
+		Local st:Int
 		alGetSourcei _id,AL_SOURCE_STATE,Varptr st
 		Select st
 		Case AL_PAUSED WriteStdout "AL_PAUSED~n"
@@ -96,10 +96,10 @@ End Type
 
 Function EnumOpenALDevices$[]()
 	Local p:Byte Ptr=alcGetString(Null,ALC_DEVICE_SPECIFIER )
-	If Not p Return
-	Local devs$[100],n
+	If Not p Return Null
+	Local devs$[100],n:Int
 	While p[0] And n<100
-		Local sz
+		Local sz:Int
 		Repeat
 			sz:+1
 		Until Not p[sz]
@@ -137,8 +137,8 @@ Type TOpenALSound Extends TSound
 		Return t
 	End Method
 
-	Function Create:TOpenALSound( sample:TAudioSample,flags )
-		Local alfmt
+	Function Create:TOpenALSound( sample:TAudioSample,flags:Int )
+		Local alfmt:Int
 		Select sample.format
 		Case SF_MONO8
 			alfmt=AL_FORMAT_MONO8
@@ -166,7 +166,7 @@ Type TOpenALSound Extends TSound
 ?
 		End Select
 		
-		Local buffer=-1
+		Local buffer:Int=-1
 		alGenBuffers 1,Varptr buffer
 		CheckAL
 		
@@ -181,7 +181,7 @@ Type TOpenALSound Extends TSound
 		Return t
 	End Function
 
-	Field _buffer,_loop
+	Field _buffer:Int,_loop:Int
 
 End Type
 
@@ -219,7 +219,7 @@ Type TOpenALChannel Extends TChannel
 		EndIf
 	End Method
 	
-	Method SetPaused( paused )
+	Method SetPaused( paused:Int )
 		If _seq<>_source._seq Return
 
 		If paused
@@ -252,8 +252,8 @@ Type TOpenALChannel Extends TChannel
 		alSourcef _source._id,AL_PITCH,rate
 	End Method
 	
-	Method Playing()
-		If _seq<>_source._seq Return
+	Method Playing:Int()
+		If _seq<>_source._seq Return False
 
 		Return _source.Playing()
 	End Method
@@ -267,7 +267,7 @@ Type TOpenALChannel Extends TChannel
 		alSourcei _source._id,AL_BUFFER,sound._buffer
 	End Method
 	
-	Function Create:TOpenALChannel( static )
+	Function Create:TOpenALChannel( static:Int )
 	
 		Local source:TOpenALSource=_sources,pred:TOpenALSource
 		While source
@@ -319,7 +319,7 @@ Type TOpenALChannel Extends TChannel
 		Return t
 	End Function
 	
-	Field _source:TOpenALSource,_seq,_static
+	Field _source:TOpenALSource,_seq:Int,_static:Int
 	
 End Type
 
@@ -329,7 +329,7 @@ Type TOpenALAudioDriver Extends TAudioDriver
 		Return _name
 	End Method
 	
-	Method Startup()
+	Method Startup:Int()
 		_device=0
 		If _devname
 			_device=alcOpenDevice( _devname )
@@ -359,7 +359,7 @@ Type TOpenALAudioDriver Extends TAudioDriver
 		alcCloseDevice _device
 	End Method
 
-	Method CreateSound:TOpenALSound( sample:TAudioSample,flags )
+	Method CreateSound:TOpenALSound( sample:TAudioSample,flags:Int )
 		Return TOpenALSound.Create( sample,flags )
 	End Method
 	
@@ -387,8 +387,8 @@ about:
 After successfully executing this command, OpenAL audio drivers will be added
 to the array of drivers returned by #AudioDrivers.
 End Rem
-Function EnableOpenALAudio()
-	Global done,okay
+Function EnableOpenALAudio:Int()
+	Global done:Int,okay:Int
 	If done Return okay
 	If OpenALInstalled() And alcGetString
 		For Local devname$=EachIn EnumOpenALDevices()

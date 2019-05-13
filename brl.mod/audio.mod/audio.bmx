@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Audio/Audio playback
@@ -49,8 +49,8 @@ atexit_ Shutdown
 
 Public
 
-Const SOUND_LOOP=1
-Const SOUND_HARDWARE=2
+Const SOUND_LOOP:Int=1
+Const SOUND_HARDWARE:Int=2
 
 Rem
 bbdoc: Audio sound type
@@ -90,7 +90,7 @@ Type TSound
 	@url can be either a string, a stream or an audio sample object.
 	The returned sound object can be played using #Play or #Cue.
 	End Rem
-	Function Load:TSound( url:Object,loop_flag )
+	Function Load:TSound( url:Object,loop_flag:Int )
 		Local sample:TAudioSample
 		sample=TAudioSample( url )
 		If Not sample sample=LoadAudioSample( url )
@@ -115,7 +115,7 @@ Type TChannel
 	about:
 	If @paused is True, the audio channel is paused. Otherwise, the audio channel is unpaused.
 	End Rem
-	Method SetPaused( paused )
+	Method SetPaused( paused:Int )
 	End Method
 	Rem
 	bbdoc: Set audio channel volume
@@ -155,7 +155,7 @@ Type TChannel
 	#Playing will return False if the audio channel is either paused, or has been stopped
 	using #Stop.
 	End Rem
-	Method Playing()
+	Method Playing:Int()
 	End Method
 
 End Type
@@ -171,14 +171,14 @@ Type TAudioDriver
 		Return "Null"
 	End Method
 	
-	Method Startup()
+	Method Startup:Int()
 		Return True
 	End Method
 	
 	Method Shutdown()
 	End Method
 
-	Method CreateSound:TSound( sample:TAudioSample,loop_flag )
+	Method CreateSound:TSound( sample:TAudioSample,loop_flag:Int )
 		Return New TSound
 	End Method
 	
@@ -210,7 +210,7 @@ The @flags parameter can be any combination of:
 
 To combine flags, use the binary 'or' operator: '|'.
 End Rem
-Function LoadSound:TSound( url:Object,flags=0 )
+Function LoadSound:TSound( url:Object,flags:Int=0 )
 	Return Driver().LoadSound( url,flags )
 End Function
 
@@ -267,7 +267,7 @@ about:
 #ChannelPlaying will return #False if either the channel has been paused using #PauseChannel,
 or stopped using #StopChannel.
 end rem
-Function ChannelPlaying( channel:TChannel )
+Function ChannelPlaying:Int( channel:TChannel )
 	Return channel.Playing()
 End Function
 
@@ -334,7 +334,7 @@ about:
 Returns an array of strings, where each string describes an audio driver.
 End Rem
 Function AudioDrivers$[]()
-	Local devs$[100],n
+	Local devs$[100],n:Int
 	Local t:TAudioDriver=_drivers
 	While t And n<100
 		devs[n]=t.Name()
@@ -349,7 +349,7 @@ bbdoc: Determine if an audio driver exists
 about:
 Returns True if the audio drvier specified by @driver exists.
 End Rem
-Function AudioDriverExists( name$ )
+Function AudioDriverExists:Int( name$ )
 	name=name.ToLower()
 	Local t:TAudioDriver=_drivers
 	While t
@@ -363,7 +363,7 @@ bbdoc: Set current audio driver
 about:
 Returns true if the audio driver was successfully set.
 End Rem
-Function SetAudioDriver( name$ )
+Function SetAudioDriver:Int( name$ )
 	name=name.ToLower()
 	Shutdown
 	_driver=_nullDriver

@@ -49,6 +49,7 @@ Import "source.bmx"
 ?osx
 Import "glgraphics.macos.m"
 Import "source.bmx"
+Import "-framework CoreVideo"
 ?Linuxx86
 Import "-lX11"
 Import "-lXxf86vm"
