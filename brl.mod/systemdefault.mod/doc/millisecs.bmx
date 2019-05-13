@@ -2,8 +2,10 @@ Rem
 Millisecs is useful for seeding the random number generator.
 End Rem
 
-seedrnd(millisecs())
+SuperStrict
 
-for i=1 to 10
-	print rnd()
-next
+SeedRnd(MilliSecs())
+
+For Local i:Int = 1 To 10
+	Print Rnd()
+Next

@@ -2,21 +2,23 @@ Rem
 SizeOf returns the number of bytes of system memory used to store the variable.
 End Rem
 
+SuperStrict
+
 Type MyType
-	Field a,b,c
+	Field a:Int,b:Int,c:Int
 End Type
 
 Local t:MyType
-print sizeof t	'prints 12
+Print SizeOf t	'prints 12
 
 Local f!
-print sizeof f	'prints 8
+Print SizeOf f	'prints 8
 
-Local i
-print sizeof i	'prints 4
+Local i:Int
+Print SizeOf i	'prints 4
 
 Local b:Byte
-print sizeof b	'prints 1
+Print SizeOf b	'prints 1
 
-a$="Hello World"
-print sizeof a	'prints 22 (unicode characters take 2 bytes each)
+Local a:String="Hello World"
+Print SizeOf a	'prints 22 (unicode characters take 2 bytes each)

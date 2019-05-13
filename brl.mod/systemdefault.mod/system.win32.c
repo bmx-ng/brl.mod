@@ -5,7 +5,7 @@
 typedef struct AsyncOp{
 	BBSyncOp syncOp;
 	BBObject *syncInfo;
-	int asyncRet;
+	size_t asyncRet;
 	BBAsyncOp asyncOp;
 	int asyncInfo;
 }AsyncOp;
@@ -513,7 +513,7 @@ static DWORD WINAPI asyncOpThread( void *t ){
 	PostThreadMessage( mainThreadId,WM_BBRESERVED1,0,(LPARAM)p );
 }
 
-void bbSystemPostSyncOp( BBSyncOp syncOp,BBObject *syncInfo,int asyncRet ){
+void bbSystemPostSyncOp( BBSyncOp syncOp,BBObject *syncInfo,size_t asyncRet ){
 	AsyncOp *p=(AsyncOp*)malloc( sizeof( AsyncOp ) );
 	p->asyncOp=0;
 	p->asyncRet=asyncRet;
@@ -533,18 +533,26 @@ void bbSystemStartAsyncOp( BBAsyncOp asyncOp,int asyncInfo,BBSyncOp syncOp,BBObj
 	CreateThread( 0,0,asyncOpThread,p,0,&threadId );
 }
 
+int DesktopCaps(int index){
+	HWND hwnd = GetDesktopWindow();
+	HDC dc = GetDC(hwnd);
+	int caps = GetDeviceCaps(dc,index);
+	ReleaseDC(hwnd,dc);
+	return caps;
+}
+
 int bbSystemDesktopWidth(){
-	return GetDeviceCaps( GetDC( GetDesktopWindow() ),HORZRES );
+	return DesktopCaps(HORZRES);
 }
 
 int bbSystemDesktopHeight(){
-	return GetDeviceCaps( GetDC( GetDesktopWindow() ),VERTRES );
+	return DesktopCaps(VERTRES);
 }
 
 int bbSystemDesktopDepth(){
-	return GetDeviceCaps( GetDC( GetDesktopWindow() ),BITSPIXEL );
+	return DesktopCaps(BITSPIXEL);
 }
 
 int bbSystemDesktopHertz(){
-	return GetDeviceCaps( GetDC( GetDesktopWindow() ),VREFRESH );
+	return DesktopCaps(VREFRESH);
 }

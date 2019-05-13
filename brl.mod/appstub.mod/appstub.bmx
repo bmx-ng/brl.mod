@@ -66,6 +66,8 @@ Import "appstub.win32.c"
 Import "appstub.linux.c"
 ?emscripten
 Import "appstub.linux.c"
+?nx
+Import "appstub.nx.c"
 ?
 
 Extern

@@ -2,6 +2,8 @@ Rem
 True is a Constant Integer assigned the value 1.
 End Rem
 
+SuperStrict
+
 Print "True="+True
 
 If True

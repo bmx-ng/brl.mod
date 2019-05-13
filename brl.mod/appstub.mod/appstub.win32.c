@@ -62,9 +62,10 @@ BOOL WINAPI DllMain( HINSTANCE hinstDLL,DWORD fdwReason,LPVOID lpvReserved ){
 
 	if( fdwReason!=DLL_PROCESS_ATTACH ) return 1;
 
-	bbLibStartup();
-	
-	__bb_brl_appstub_appstub();
-
 	return 1;
+}
+
+void bbLibInit() {
+	bbLibStartup();
+	__bb_brl_appstub_appstub();
 }

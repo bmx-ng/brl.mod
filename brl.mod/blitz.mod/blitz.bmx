@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.20"
+ModuleInfo "Version: 1.21"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
-
+'
+ModuleInfo "History: 1.21"
+ModuleInfo "History: Update to bdwgc 7.7.0.d76816e"
 ModuleInfo "History: 1.20"
 ModuleInfo "History: Update to bdwgc 7.7.0."
 ModuleInfo "History: 1.19"
@@ -69,6 +71,8 @@ ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE"
 ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE"
 ?musl
 ModuleInfo "CC_OPTS: -DNO_GETCONTEXT"
+?nx
+ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE -DNN_BUILD_TARGET_PLATFORM_NX"
 ?
 
 ?debug
@@ -132,7 +136,6 @@ Import "bdwgc/new_hblk.c"
 Import "bdwgc/dyn_load.c"
 Import "bdwgc/dbg_mlc.c"
 Import "bdwgc/malloc.c"
-Import "bdwgc/stubborn.c"
 Import "bdwgc/checksums.c"
 Import "bdwgc/pthread_start.c"
 Import "bdwgc/pthread_support.c"
@@ -147,47 +150,79 @@ Import "bdwgc/gc_dlopen.c"
 Import "bdwgc/backgraph.c"
 Import "bdwgc/win32_threads.c"
 Import "bdwgc/thread_local_alloc.c"	'bdwgc only? not gc6.7
-
+?nx
+Import "blitz_nx.c"
+?
 Import "tree/tree.c"
+
+Include "builtin.bmx"
 
 Extern
 Global OnDebugStop()="bbOnDebugStop"
 Global OnDebugLog( message$ )="bbOnDebugLog"
 End Extern
 
+Rem
+bbdoc: Exception
+about: Common base class of the built-in exceptions of the language.
+End Rem
 Type TBlitzException
 End Type
 
+Rem
+bbdoc: Null object exception
+about: Thrown when a field or method of a Null object is accessed. (only in debug mode)
+End Rem
 Type TNullObjectException Extends TBlitzException
 	Method ToString$()
 		Return "Attempt to access field or method of Null object"
 	End Method
 End Type
 
+Rem
+bbdoc: Null method exception
+about: Thrown when an abstract method is called.
+End Rem
 Type TNullMethodException Extends TBlitzException
 	Method ToString$()
 		Return "Attempt to call abstract method"
 	End Method
 End Type
 
+Rem
+bbdoc: Null function exception
+about: Thrown when an uninitialized function pointer is called.
+End Rem
 Type TNullFunctionException Extends TBlitzException
 	Method ToString$()
 		Return "Attempt to call uninitialized function pointer"
 	End Method
 End Type
 
+Rem
+bbdoc: Null method exception
+about: Thrown when an array element with an index outside the valid range of the array (0 to array.length-1) is accessed. (only in debug mode)
+End Rem
 Type TArrayBoundsException Extends TBlitzException
 	Method ToString$()
 		Return "Attempt to index array element beyond array length"
 	End Method
 End Type
 
+Rem
+bbdoc: Out of data exception
+about: Thrown when #ReadData is used but not enough data is left to read. (only in debug mode)
+End Rem
 Type TOutOfDataException Extends TBlitzException
 	Method ToString$()
 		Return "Attempt to read beyond end of data"
 	End Method
 End Type
 
+Rem
+bbdoc: Runtime exception
+about: Thrown by #RuntimeError.
+End Rem
 Type TRuntimeException Extends TBlitzException
 	Field error$
 	Method ToString$()
@@ -222,7 +257,7 @@ End Function
 
 Rem
 bbdoc: Generate a runtime error
-about: Throws a TRuntimeException.
+about: Throws a #TRuntimeException.
 End Rem
 Function RuntimeError( message$ )
 	Throw TRuntimeException.Create( message )
@@ -267,7 +302,7 @@ about: The #AppTitle global variable is used by various commands when a
 default application title is required - for example, when opening simple 
 windows or requesters.<br>
 <br>
-Initially, #AppTitle is set the value "BlitzMax Application". However, you may change
+Initially, #AppTitle is set to the value "BlitzMax Application". However, you may change
 #AppTitle at any time with a simple assignment.
 End Rem
 Global AppTitle$="bbAppTitle"
@@ -501,101 +536,113 @@ keyword: "False"
 End Rem
 
 Rem
-bbdoc: Constant Pi value: 3.1415926535897932384626433832795
+bbdoc: Constant pi value: 3.1415926535897932384626433832795
 keyword: "Pi"
 End Rem
 
 Rem
-bbdoc: Get Default Null value
+bbdoc: Get Null value (default value for types)
 keyword: "Null"
 End Rem
 
 Rem
-bbdoc: Unsigned 8 bit integer Type
+bbdoc: Unsigned 8 bit integer type
 keyword: "Byte"
 End Rem
 
 Rem
-bbdoc: Unsigned 16 bit integer Type
+bbdoc: Unsigned 16 bit integer type
 keyword: "Short"
 End Rem
 
 Rem
-bbdoc: Signed 32 bit integer Type
+bbdoc: Signed 32 bit integer type
 keyword: "Int"
 End Rem
 
 Rem
-bbdoc: Unsigned 32 bit integer Type
+bbdoc: Unsigned 32 bit integer type
 keyword: "UInt"
 End Rem
 
 Rem
-bbdoc: Signed 64 bit integer Type
+bbdoc: Signed 64 bit integer type
 keyword: "Long"
 End Rem
 
 Rem
-bbdoc: Unsigned 64 bit integer Type
+bbdoc: Unsigned 64 bit integer type
 keyword: "ULong"
 End Rem
 
 Rem
-bbdoc: Unsigned 32/64 bit integer Type
+bbdoc: Unsigned 32/64 bit integer type
 keyword: "Size_T"
 End Rem
 
 Rem
-bbdoc: 128 bit integer intrinsic Type
+bbdoc: Signed 32/64 bit LPARAM WinAPI type
+keyword: "LParam"
+about: Only available on Windows.
+End Rem
+
+Rem
+bbdoc: Unsigned 32/64 bit WPARAM WinAPI type
+keyword: "WParam"
+about: Only available on Windows.
+End Rem
+
+Rem
+bbdoc: 32 bit floating point type
+keyword: "Float"
+End Rem
+
+Rem
+bbdoc: 64 bit floating point type
+keyword: "Double"
+End Rem
+
+Rem
+bbdoc: 128 bit integer intrinsic type
 about: Only available on x64.
 keyword: "Int128"
 End Rem
 
 Rem
-bbdoc: 32 bit Floating point Type
-keyword: "Float"
-End Rem
-
-Rem
-bbdoc: 64 bit floating point Type
-keyword: "Double"
-End Rem
-
-Rem
-bbdoc: 128 bit floating point intrinsic Type
-about: Only available on x64.
-keyword: "Float128"
-End Rem
-
-Rem
-bbdoc: 64 bit floating point intrinsic Type
+bbdoc: 64 bit floating point intrinsic type
 about: Only available on x64.
 keyword: "Float64"
 End Rem
 
 Rem
-bbdoc: 128 bit double intrinsic Type
+bbdoc: 128 bit floating point intrinsic type
+about: Only available on x64.
+keyword: "Float128"
+End Rem
+
+Rem
+bbdoc: 128 bit floating point intrinsic type
 about: Only available on x64.
 keyword: "Double128"
 End Rem
 
 Rem
-bbdoc: String Type
+bbdoc: String type
 keyword: "String"
 End Rem
 
 Rem
-bbdoc: Object Type
+bbdoc: Object type
 keyword: "Object"
 End Rem
 
 Rem
-bbdoc: Composite Type specifier for 'by reference' types
+bbdoc: Composite type specifier for 'by reference' types
 keyword: "Var"
 End Rem
 
 Rem
-bbdoc: Composite Type specifier for pointer types
+bbdoc: Composite type specifier for pointer types
 keyword: "Ptr"
 End Rem
 
@@ -610,7 +657,7 @@ keyword: "Then"
 End Rem
 
 Rem
-bbdoc: Else provides the ability For an If Then construct to execute a second block of code when the If condition is False.
+bbdoc: Else provides the ability for an If-Then construct to execute a second block of code when the If condition is false.
 keyword: "Else"
 End Rem
 
@@ -620,7 +667,7 @@ keyword: "ElseIf"
 End Rem
 
 Rem
-bbdoc: Marks the End of an If Then block.
+bbdoc: Marks the End of an If-Then construct.
 keyword: "EndIf"
 End Rem
 
@@ -650,7 +697,7 @@ keyword: "EachIn"
 End Rem
 
 Rem
-bbdoc: Execute a block of code While a condition is True
+bbdoc: Execute a block of code while a condition is true
 keyword: "While"
 End Rem
 
@@ -665,7 +712,7 @@ keyword: "EndWhile"
 End Rem
 
 Rem
-bbdoc: Execute a block of code Until a termination condition is met, or Forever
+bbdoc: Execute a block of code until a termination condition is met, or forever
 keyword: "Repeat"
 End Rem
 
@@ -675,7 +722,7 @@ keyword: "Until"
 End Rem
 
 Rem
-bbdoc: Continue a Repeat block Forever
+bbdoc: Continue a Repeat block forever
 keyword: "Forever"
 End Rem
 
@@ -715,144 +762,169 @@ keyword: "Const"
 End Rem
 
 Rem
-bbdoc: Declare a Local variable
+bbdoc: Declare a local variable
 keyword: "Local"
 End Rem
 
 Rem
-bbdoc: Declare a Global variable
+bbdoc: Declare a global variable
 keyword: "Global"
 End Rem
 
 Rem
-bbdoc: Declare a Field variable
+bbdoc: Declare a field variable
 keyword: "Field"
 End Rem
 
 Rem
-bbdoc: Begin a Function declaration
+bbdoc: Begin a function declaration
 keyword: "Function"
 End Rem
 
 Rem
-bbdoc: End a Function declaration
+bbdoc: End a function declaration
 keyword: "EndFunction"
 End Rem
 
 Rem
-bbdoc: Return from a Function
-keyword: "Return"
-End Rem
-
-Rem
-bbdoc: Begin a user defined Type declaration
-keyword: "Type"
-End Rem
-
-Rem
-bbdoc: End a user defined Type declaration
-keyword: "EndType"
-End Rem
-
-Rem
-bbdoc: Begin a user defined Struct declaration
-keyword: "Struct"
-End Rem
-
-Rem
-bbdoc: End a user defined Struct declaration
-keyword: "EndStruct"
-End Rem
-
-Rem
-bbdoc: Specify user defined Type supertype
-keyword: "Extends"
-End Rem
-
-Rem
-bbdoc: Specify user defined Interface(s)
-keyword: "Implements"
-End Rem
-
-Rem
-bbdoc: Begin a Method declaration
+bbdoc: Begin a method declaration
 keyword: "Method"
 End Rem
 
 Rem
-bbdoc: End a Method declaration
+bbdoc: End a method declaration
 keyword: "EndMethod"
 End Rem
 
 Rem
-bbdoc: Denote a Type or Method as Abstract
+bbdoc: Return from a method or function
+keyword: "Return"
+End Rem
+
+Rem
+bbdoc: Begin a user defined class declaration
+keyword: "Type"
+End Rem
+
+Rem
+bbdoc: End a user defined class declaration
+keyword: "EndType"
+End Rem
+
+Rem
+bbdoc: Begin a user defined interface declaration
+keyword: "Interface"
+End Rem
+
+Rem
+bbdoc: End a user defined interface declaration
+keyword: "EndInterface"
+End Rem
+
+Rem
+bbdoc: Begin a user defined structure declaration
+keyword: "Struct"
+End Rem
+
+Rem
+bbdoc: End a user defined structure declaration
+keyword: "EndStruct"
+End Rem
+
+Rem
+bbdoc: Specify supertype(s) of a user defined type
+keyword: "Extends"
+End Rem
+
+Rem
+bbdoc: Specify implemented interface(s) of a user defined type
+keyword: "Implements"
+End Rem
+
+Rem
+bbdoc: Denote a class, function or method as abstract
 keyword: "Abstract"
 End Rem
 
 Rem
-bbdoc: Denote a Type or Method as Final
+bbdoc: Denote a class, function or method as final
 keyword: "Final"
 End Rem
 
 Rem
-bbdoc: Create an instance of a user defined Type
+bbdoc: Denote a field as read only, where the value may only be set in its declaration or in the type constructor
+keyword: "ReadOnly"
+End Rem
+
+Rem
+bbdoc: Denote a function for export to a shared library. The generated function name will not be mangled.
+keyword: "Export"
+End Rem
+
+Rem
+bbdoc: Specify constraints on the types that can be used as arguments for a type parameter defined in a generic declaration
+keyword: "Where"
+End Rem
+
+Rem
+bbdoc: Create an instance of a user defined type, or specify a custom constructor
 keyword: "New"
 End Rem
 
 Rem
-bbdoc: Reference to this Method's Object instance
-keyword: "Self"
-End Rem
-
-Rem
-bbdoc: Reference to the Super Type Object instance
-keyword: "Super"
-End Rem
-
-Rem
-bbdoc: Reserved for future expansion
+bbdoc: Specify a custom finalizer
 keyword: "Delete"
 End Rem
 
 Rem
-bbdoc: Release an integer Object handle
+bbdoc: Reference to this method's type instance
+keyword: "Self"
+End Rem
+
+Rem
+bbdoc: Reference to the super type instance
+keyword: "Super"
+End Rem
+
+Rem
+bbdoc: Release an integer object handle
 keyword: "Release"
 End Rem
 
 Rem
-bbdoc: Public makes a Constant, Global variable or Function accessible from outside the current source file (Default)
+bbdoc: Make a type, constant, global variable or function accessible from outside the current source file (default)
 keyword: "Public"
 End Rem
 
 Rem
-bbdoc: Private makes a Constant, Global variable or Function only accessible from within the current source file, or a Type member only accessible from within that Type.
+bbdoc: Make a type, constant, global variable or function only accessible from within the current source file, or make a type member only accessible from within that type.
 keyword: "Private"
 End Rem
 
 Rem
-bbdoc: Protected makes a Type member accessible only from within that Type or its sub-Types.
+bbdoc: Make a type member accessible only from within that type and from its subtypes.
 keyword: "Protected"
 End Rem
 
 Rem
-bbdoc: Extern marks the beginning of an external list of Function declarations
+bbdoc: Begin an Extern section (a list of imported external declarations)
 keyword: "Extern"
 End Rem
 
 Rem
-bbdoc: EndExtern marks the End of an Extern section
+bbdoc: End an Extern section
 keyword: "EndExtern"
 End Rem
 
 Rem
-bbdoc: Declare Module scope and identifier
+bbdoc: Declare module scope and identifier
 about:
 See the <a href=../../../../doc/bmxlang/modules.html>BlitzMax Language Reference</a> for more information on BlitzMax Modules.
 keyword: "Module"
 End Rem
 
 Rem
-bbdoc: Define Module properties
+bbdoc: Define module properties
 keyword: "ModuleInfo"
 End Rem
 
@@ -877,17 +949,17 @@ keyword: "Include"
 End Rem
 
 Rem
-bbdoc: Framework builds the BlitzMax application with only the Module specified rather than all modules installed.
+bbdoc: Framework builds the BlitzMax application with only the module(s) specified rather than the standard set of modules.
 keyword: "Framework"
 End Rem
 
 Rem
-bbdoc: Import declarations from a Module or source file
+bbdoc: Import declarations from a module or source file
 keyword: "Import"
 End Rem
 
 Rem
-bbdoc: Throw a RuntimeError if a condition is False
+bbdoc: Throw a RuntimeError if a condition is false
 keyword: "Assert"
 End Rem
 
@@ -902,22 +974,27 @@ keyword: "Try"
 End Rem
 
 Rem
+bbdoc: Catch an exception object in a Try block
+keyword: "Catch"
+End Rem
+
+Rem
+bbdoc: Execute a block of code upon exiting a Try or Catch block
+keyword: "Finally"
+End Rem
+
+Rem
 bbdoc: End declaration of a Try block
 keyword: "EndTry"
 End Rem
 
 Rem
-bbdoc: Catch an exception Object in a Try block
-keyword: "Catch"
-End Rem
-
-Rem
-bbdoc: Throw an exception Object to the enclosing Try block
+bbdoc: Throw an exception object to the enclosing Try block
 keyword: "Throw"
 End Rem
 
 Rem
-bbdoc: Define class BASIC style data
+bbdoc: Define classic BASIC style data
 keyword: "DefData"
 End Rem
 
@@ -962,35 +1039,13 @@ keyword: "Sar"
 End Rem
 
 Rem
-bbdoc: Number of characters in a String or elements in an array
+bbdoc: Number of characters in a string or elements in an array
 keyword: "Len"
-End Rem
-
-Rem
-bbdoc: Numeric 'absolute value' unary operator
-keyword: "Abs"
 End Rem
 
 Rem
 bbdoc: Numeric 'modulus' or 'remainder' binary operator
 keyword: "Mod"
-End Rem
-
-Rem
-bbdoc: Numeric 'sign' unary operator
-keyword: "Sgn"
-End Rem
-
-Rem
-bbdoc: Numeric 'minimum' builtin function
-returns: The lesser of the two numeric arguments
-keyword: "Min"
-End Rem
-
-Rem
-bbdoc: Numeric 'maximum' builtin function
-returns: The larger of the two numeric arguments
-keyword: "Max"
 End Rem
 
 Rem
@@ -1013,23 +1068,5 @@ bbdoc: Create a string of length 1 with a character code
 keyword: "Chr"
 End Rem
 
-Rem
-bbdoc: Begin a user defined Interface declaration
-keyword: "Interface"
-End Rem
 
-Rem
-bbdoc: End a user defined Interface declaration
-keyword: "EndInterface"
-End Rem
-
-Rem
-bbdoc: WPARAM Type
-keyword: "WParam"
-End Rem
-
-Rem
-bbdoc: LPARAM Type
-keyword: "LParam"
-End Rem
 

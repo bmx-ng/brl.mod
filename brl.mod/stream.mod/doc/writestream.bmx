@@ -3,9 +3,11 @@
 ' opens a write stream to the file mygame.ini and
 ' outputs a simple text file using WriteLine
 
-out=WriteStream("mygame.ini")
+SuperStrict
 
-if not out RuntimeError "Failed to open a WriteStream to file mygame.ini"
+Local out:TStream = WriteStream("mygame.ini")
+
+If Not out RuntimeError "Failed to open a WriteStream to file mygame.ini"
 
 WriteLine out,"[display]"
 WriteLine out,"width=800"
@@ -19,4 +21,4 @@ WriteLine out,"MAK=920"
 
 CloseStream out
 
-print "File mygame.ini created, bytes="+FileSize("mygame.ini")
+Print "File mygame.ini created, bytes="+FileSize("mygame.ini")

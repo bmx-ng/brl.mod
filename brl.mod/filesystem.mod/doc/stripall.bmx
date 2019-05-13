@@ -1,3 +1,5 @@
 ' stripall.bmx
 
-print stripall("mypath/myfile.bmx")	'prints myfile
+SuperStrict
+
+Print StripAll("mypath/myfile.bmx")	' prints myfile

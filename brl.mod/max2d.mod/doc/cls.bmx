@@ -4,8 +4,13 @@
 ' remove the call to cls to illustrate the
 ' need for clearing the screen every frame
 
+SuperStrict
+
 Graphics 640,480
 SetOrigin 320,240
+
+Local frame:Float
+
 While Not KeyHit(KEY_ESCAPE)
 	Cls 
 	SetRotation frame

@@ -4,7 +4,9 @@ End Rem
 
 ' the following illustrates the use of traditional c style pointers
 
-Local c[]=[1,2,3,4]
+SuperStrict
+
+Local c:Int[]=[1,2,3,4]
 Local p:Int Ptr
 
 p=c

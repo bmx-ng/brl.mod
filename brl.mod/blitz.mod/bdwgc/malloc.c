@@ -31,10 +31,6 @@ STATIC GC_bool GC_alloc_reclaim_list(struct obj_kind *kind)
     return(TRUE);
 }
 
-GC_INNER GC_bool GC_collect_or_expand(word needed_blocks,
-                                      GC_bool ignore_off_page,
-                                      GC_bool retry); /* from alloc.c */
-
 /* Allocate a large block of size lb bytes.     */
 /* The block is not cleared.                    */
 /* Flags is 0 or IGNORE_OFF_PAGE.               */
@@ -102,18 +98,6 @@ STATIC ptr_t GC_alloc_large_and_clear(size_t lb, int k, unsigned flags)
     return result;
 }
 
-/* This function should be called with the allocation lock held.        */
-/* At the same time, it is safe to get a value from GC_size_map not     */
-/* acquiring the allocation lock provided the obtained value is used    */
-/* according to the pattern given in alloc.c file (see the comment      */
-/* about GC_allocobj usage and, e.g., GC_malloc_kind_global code).      */
-GC_ATTR_NO_SANITIZE_THREAD
-static void fill_size_map(size_t low_limit, size_t byte_sz, size_t granule_sz)
-{
-  for (; low_limit <= byte_sz; low_limit++)
-    GC_size_map[low_limit] = granule_sz;
-}
-
 /* Fill in additional entries in GC_size_map, including the i-th one.   */
 /* Note that a filled in section of the array ending at n always        */
 /* has the length of at least n/4.                                      */
@@ -163,13 +147,13 @@ STATIC void GC_extend_size_map(size_t i)
                         /* We may need one extra byte; do not always    */
                         /* fill in GC_size_map[byte_sz].                */
 
-  fill_size_map(low_limit, byte_sz, granule_sz);
+  for (; low_limit <= byte_sz; low_limit++)
+    GC_size_map[low_limit] = granule_sz;
 }
 
-/* Allocate lb bytes for an object of kind k.   */
-/* Should not be used to directly to allocate   */
-/* objects such as STUBBORN objects that        */
-/* require special handling on allocation.      */
+/* Allocate lb bytes for an object of kind k.           */
+/* Should not be used to directly to allocate objects   */
+/* that require special handling on allocation.         */
 GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
 {
     void *op;
@@ -311,11 +295,12 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind_global(size_t lb, int k)
     if (SMALL_OBJ(lb)) {
         void *op;
         void **opp;
-        size_t lg = GC_size_map[lb];
+        size_t lg;
         DCL_LOCK_STATE;
 
         GC_DBG_COLLECT_AT_MALLOC(lb);
         LOCK();
+        lg = GC_size_map[lb];
         opp = &GC_obj_kinds[k].ok_freelist[lg];
         op = *opp;
         if (EXPECT(op != NULL, TRUE)) {
@@ -376,8 +361,8 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
         if (EXTRA_BYTES != 0 && lb != 0) lb--;
                   /* We don't need the extra byte, since this won't be  */
                   /* collected anyway.                                  */
-        lg = GC_size_map[lb];
         LOCK();
+        lg = GC_size_map[lb];
         opp = &GC_obj_kinds[k].ok_freelist[lg];
         op = *opp;
         if (EXPECT(op != NULL, TRUE)) {

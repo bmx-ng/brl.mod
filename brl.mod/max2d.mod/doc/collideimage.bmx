@@ -1,6 +1,6 @@
-Strict
+SuperStrict
 
-Local rot,x,y
+Local rot:Int,x:Int,y:Int
 
 Graphics 640,480
 

@@ -2,6 +2,8 @@ Rem
 :Import specifies the external BlitzMax modules and source files used by the program.
 End Rem
 
+SuperStrict
+
 Framework BRL.GlMax2D
 
 Import BRL.System

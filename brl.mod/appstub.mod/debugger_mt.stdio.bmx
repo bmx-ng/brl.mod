@@ -4,7 +4,19 @@ Import "debugger.stdio.glue.c"
 
 NoDebug
 
+?win32
+Include "deref_win32.bmx"
+?linux
+Include "deref_linux.bmx"
+?macos
+Include "deref_macos.bmx"
+?
+
+
 Private
+
+Const derefFailure:String = "{?}"
+Const derefSymbol:String = "->"
 
 ?Win32
 Extern "Win32"
@@ -155,7 +167,7 @@ Function TypeName$( tag$ Var )
 	Case "w"
 		Return "WString"
 	Case "t"
-		Return "size_t"
+		Return "Size_T"
 	Case "W"
 		Return "WParam"
 	Case "X"
@@ -356,10 +368,12 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		Local s$=String.FromWString( Short Ptr p )
 		Return DebugEscapeString( s )
 	Case Asc("*"),Asc("?"),Asc("#")
+		Local deref:String
+		If tag = Asc("*") Then deref = DebugDerefPointer(decl, p)
 ?Not ptr64
-		Return "$"+ToHex( (Int Ptr p)[0] )
+		Return "$" + ToHex( (Int Ptr p)[0] ) + deref
 ?ptr64
-		Return "$"+ToHex( (Long Ptr p)[0] )
+		Return "$" + ToHex( (Long Ptr p)[0] ) + deref
 ?
 	Case Asc("(")
 		p=(Byte Ptr Ptr p)[0]
@@ -409,95 +423,98 @@ Function DebugScopeKind$( scope:Int Ptr )
 	DebugError "Invalid scope kind"
 End Function
 
-Rem
-?ptr64
-Function DebugDerefPointer$(decl:Int Ptr, pointer:Long Ptr)
-?Not ptr64
-Function DebugDerefPointer$(decl:Int Ptr, pointer:Int Ptr)
-? 
-	Local tipe$=DebugDeclType( decl )
-	Local datatype$ = tipe[..tipe.Find(" ",0)]
-	Local start:Int
-	Local count:Int
+Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
+	Const derefFailure:String = "{?}"
+	Const derefSymbol:String = "->"
 	
-	Repeat
-		start = tipe.Find("Ptr",start+1)
-		If start = -1 Exit
-		count :+ 1
-	Forever
+	Local declType:String = DebugDeclType(decl)
+	Local dataType:String = declType
+	Local ptrDepth:Int = 0
+	While dataType.EndsWith(" Ptr")
+		dataType = dataType[..dataType.length - " Ptr".length]
+		ptrDepth :+ 1
+	Wend
+	
+	Local result:String = ""
+	
+	Local dataSize:Size_T
+	Select dataType
+ 		Case "Byte"      dataSize = SizeOf(Byte Null)
+		Case "Short"     dataSize = SizeOf(Short Null)
+		Case "Int"       dataSize = SizeOf(Int Null)
+		Case "UInt"      dataSize = SizeOf(UInt Null)
+		Case "Long"      dataSize = SizeOf(Long Null)
+		Case "ULong"     dataSize = SizeOf(ULong Null)
+		Case "Size_T"    dataSize = SizeOf(Size_T Null)
+		Case "Float"     dataSize = SizeOf(Float Null)
+		Case "Double"    dataSize = SizeOf(Double Null)
+	? Ptr64
+		Case "Float64"   dataSize = SizeOf(Float64 Null)
+		Case "Float128"  dataSize = SizeOf(Float128 Null)
+		Case "Double128" dataSize = SizeOf(Double128 Null)
+		Case "Int128"    dataSize = SizeOf(Int128 Null)
+	? Win32	
+		Case "WParam"    dataSize = SizeOf(WParam Null)
+		Case "LParam"    dataSize = SizeOf(LParam Null)
+	?
+		Default          dataSize = 0 ' cannot dereference this
+	EndSelect
 
-	For Local i:Int = 0 Until count
-		' Null
-		If pointer = 0 Then
-			Return " {-}"
-		End If
-?ptr64
-		pointer = Long Ptr (Varptr pointer)[0]
-?Not ptr64
-		pointer = Int Ptr (Varptr pointer)[0]
-?
-	Next
+	Local buffer:Byte Ptr = MemAlloc(Size_T(Max(dataSize, SizeOf(Byte Ptr Null))))
+	(Byte Ptr Ptr buffer)[0] = Null
+	
+	Local res:Int
+	?win32
+	result = DebugDerefPointerWin32(dataSize, ptrDepth, pointer, buffer, res)
+	?linux
+	result = DebugDerefPointerLinux(dataSize, ptrDepth, pointer, buffer, res)
+	?macos
+	result = DebugDerefPointerMacos(dataSize, ptrDepth, pointer, buffer, res)
+	?
 
-	' make sure the final pointer is not null
-	If pointer = 0 
-		Return " {-}"
-	EndIf
+	If Not res Then
+		Return result
+	End If
 
 	Local value:String
-	Select datatype
-	Case "Byte"
-		' don't reference a byte ptr in case its an OS handle ( which isn't a memory address! )
-		Return " {-}"
-
-	Case "Short"
-		value = Short (Short  Ptr (Varptr pointer)[0])
-		Return " {"+value+"}"
-
-	Case "Int"
-		value =  Int Ptr (Varptr pointer)[0]
-		Return " {"+value+"}"
-
-	Case "Long"
-		value = Long Ptr (Varptr pointer)[0]
-		Return " {"+value+"}"
-
-	Case "Float"
-		value = Float (Float Ptr (pointer)[0])
-		Return " {"+value+"}"
-		
-	Case "Double"
-		value = Double Ptr (Varptr pointer)[0]
-		Return " {"+value+"}"
-
-	Case "Float64"
-		value = String(Float Ptr (Varptr pointer)[0])
-		value :+ "," + String(Float Ptr (Varptr pointer)[1])
-		Return " {"+value+"}"
-
-	Case "Float128"
-		value = String(Float Ptr (Varptr pointer)[0])
-		value :+ "," + String(Float Ptr (Varptr pointer)[1])
-		value :+ "," + String(Float Ptr (Varptr pointer)[2])
-		value :+ "," + String(Float Ptr (Varptr pointer)[3])
-		Return " {"+value+"}"
-
-	Case "Double128"
-		value = String(Double Ptr (Varptr pointer)[0])
-		value :+ "," + String(Double Ptr (Varptr pointer)[1])
-		Return " {"+value+"}"
-
-	Case "Int128"
-		value = String(Int Ptr (Varptr pointer)[0])
-		value :+ "," + String(Int Ptr (Varptr pointer)[1])
-		value :+ "," + String(Int Ptr (Varptr pointer)[2])
-		value :+ "," + String(Int Ptr (Varptr pointer)[3])
-		Return " {"+value+"}"
-
+	Select dataType
+ 		Case "Byte"      value = String((Byte   Ptr buffer)[0])
+		Case "Short"     value = String((Short  Ptr buffer)[0])
+		Case "Int"       value = String((Int    Ptr buffer)[0])
+		Case "UInt"      value = String((UInt   Ptr buffer)[0])
+		Case "Long"      value = String((Long   Ptr buffer)[0])
+		Case "ULong"     value = String((ULong  Ptr buffer)[0])
+		Case "Size_T"    value = String((Size_T Ptr buffer)[0])
+		Case "Float"     value = String((Float  Ptr buffer)[0])
+		Case "Double"    value = String((Double Ptr buffer)[0])
+	? Ptr64
+		Case "Float64"   value = String((Float  Ptr buffer)[0]) + "," + ..
+		                         String((Float  Ptr buffer)[1])
+		Case "Float128"  value = String((Float  Ptr buffer)[0]) + "," + ..
+		                         String((Float  Ptr buffer)[1]) + "," + ..
+		                         String((Float  Ptr buffer)[2]) + "," + ..
+		                         String((Float  Ptr buffer)[3])
+		Case "Double128" value = String((Double Ptr buffer)[0]) + "," + ..
+		                         String((Double Ptr buffer)[1])
+		Case "Int128"    value = String((Int    Ptr buffer)[0]) + "," + ..
+		                         String((Int    Ptr buffer)[1]) + "," + ..
+		                         String((Int    Ptr buffer)[2]) + "," + ..
+		                         String((Int    Ptr buffer)[3])
+	? Win32	
+		Case "WParam"    value = String((WParam Ptr buffer)[0])
+		Case "LParam"    value = String((LParam Ptr buffer)[0])
+	?
+		Default
+			MemFree buffer
+			result :+ derefSymbol + derefFailure
+			Return result
 	EndSelect
+	MemFree buffer
+	result :+ derefSymbol + "{" + value + "}"
+	?
 	
-	Return ""
+	Return result
 EndFunction
-End Rem
 
 'Function DebugScopeDecls:Int Ptr[]( scope:Int Ptr )
 '	Local n,p:Int Ptr=scope+DEBUGSCOPE_DECLS

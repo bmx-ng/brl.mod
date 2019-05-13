@@ -1,11 +1,13 @@
 ' mousedown.bmx
 
-graphics 640,480
+SuperStrict
 
-while not keyhit(KEY_ESCAPE)
-	cls
-	if mousedown(1) drawrect 0,0,200,200
-	if mousedown(2) drawrect 200,0,200,200
-	if mousedown(3) drawrect 400,0,200,200
-	flip
-wend
+Graphics 640,480
+
+While Not KeyHit(KEY_ESCAPE)
+	Cls
+	If MouseDown(1) DrawRect 0,0,200,200
+	If MouseDown(2) DrawRect 200,0,200,200
+	If MouseDown(3) DrawRect 400,0,200,200
+	Flip
+Wend

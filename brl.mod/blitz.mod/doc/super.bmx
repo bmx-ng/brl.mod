@@ -2,18 +2,20 @@ Rem
 Super evaluates to Self cast to the method's immediate base class.
 End Rem
 
+SuperStrict
+
 Type TypeA
 	Method Report()
-		print "TypeA reporting"
+		Print "TypeA reporting"
 	End Method
 End Type
 
-Type TypeB extends TypeA
+Type TypeB Extends TypeA
 	Method Report()
 		Print "TypeB Reporting"
-		super.Report()
+		Super.Report()
 	End Method
 End Type
 
-b:TypeB=new TypeB
+Local b:TypeB=New TypeB
 b.Report()

@@ -1,12 +1,13 @@
 ' openfile.bmx
+SuperStrict
 
 ' the following prints the contents of this source file 
 
-file=openfile("openfile.bmx")
+Local file:TStream = OpenFile("openfile.bmx")
 
-if not file runtimeerror "could not open file openfile.bmx"
+If Not file RuntimeError "could not open file openfile.bmx"
 
-while not eof(file)
-	print readline(file)
-wend
-closestream file
+While Not Eof(file)
+	Print ReadLine(file)
+Wend
+CloseStream file

@@ -5,15 +5,17 @@ When a function does not return a value the use of brackets when
 calling the function is optional.
 End Rem
 
-Function NextArg(a$)
-	Local	p
-	p=instr(a$,",")
-	if p 
-		NextArg a$[p..]
-		print a$[..p-1]
-	else
-		print a$
-	endif
+SuperStrict
+
+Function NextArg(a:String)
+	Local p:Int
+	p=Instr(a,",")
+	If p 
+		NextArg a[p..]
+		Print a[..p-1]
+	Else
+		Print a
+	EndIf
 End Function
 
 NextArg("one,two,three,four")

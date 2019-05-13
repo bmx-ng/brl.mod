@@ -2,13 +2,15 @@ Rem
 EndMethod marks the end of a BlitzMax Method declaration.
 End Rem
 
-Type TPoint
-	field	x,y
+SuperStrict
 
-	Method ToString$()
-		return x+","+y
+Type TPoint
+	Field x:Int,y:Int
+
+	Method ToString:String()
+		Return x+","+y
 	End Method
 End Type
 
-a:TPoint=new TPoint
-print a.ToString()
+Local p:TPoint = New TPoint
+Print p.ToString()

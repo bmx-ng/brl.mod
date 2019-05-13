@@ -2,6 +2,8 @@ Rem
 Double is a 64 bit floating point BlitzMax primitive type.
 End Rem
 
+SuperStrict
+
 Local speedoflight:Double
 Local distance:Double
 Local seconds:Double

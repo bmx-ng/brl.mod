@@ -3,7 +3,9 @@
 ' Case performs a comparison with the preceeding value(s) and that
 ' listed in the enclosing Select statement:
 
-a=Int( Input("Enter a number between 1 and 5 ") )
+SuperStrict
+
+Local a:Int=Int( Input("Enter a number between 1 and 5 ") )
 
 Select a
 	Case 1 Print "You think small"

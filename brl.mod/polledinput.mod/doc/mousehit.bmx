@@ -1,11 +1,13 @@
 ' mousehit.bmx
 
-graphics 640,480
+SuperStrict
 
-while not keyhit(KEY_ESCAPE)
-	cls
-	if mousehit(1) drawrect 0,0,200,200
-	if mousehit(2) drawrect 200,0,200,200
-	if mousehit(3) drawrect 400,0,200,200
-	flip
-wend
+Graphics 640,480
+
+While Not KeyHit(KEY_ESCAPE)
+	Cls
+	If MouseHit(1) DrawRect 0,0,200,200
+	If MouseHit(2) DrawRect 200,0,200,200
+	If MouseHit(3) DrawRect 400,0,200,200
+	Flip
+Wend

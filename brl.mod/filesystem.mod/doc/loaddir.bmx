@@ -1,11 +1,10 @@
 ' loaddir.bmx
+SuperStrict
 
 ' declare a string array
+Local files:String[] 
+files = LoadDir(CurrentDir())
 
-local files$[]
-
-files=loaddir(currentdir())
-
-for t$=eachin files
-	print t	
-next
+For Local t:String = EachIn files
+	Print t	
+Next

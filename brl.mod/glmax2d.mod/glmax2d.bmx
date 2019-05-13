@@ -33,7 +33,7 @@ ModuleInfo "History: Ripped out a bunch of dead code"
 ModuleInfo "History: 1.05 Release"
 ModuleInfo "History: Added checks to prevent invalid textures deletes"
 
-?Not opengles
+?Not opengles And Not nx
 
 Import BRL.Max2D
 Import BRL.GLGraphics
@@ -82,24 +82,17 @@ Function Pow2Size( n )
 	Return t
 End Function
 
-Global dead_texs[],n_dead_texs,dead_tex_seq
+Global dead_texs:TDynamicArray = New TDynamicArray(32),dead_tex_seq
+
+Extern
+	Function bbAtomicAdd:Int( target:Int Ptr,value:Int )="int bbAtomicAdd( int *,int )!"
+End Extern
 
 'Enqueues a texture for deletion, to prevent release textures on wrong thread.
-'
-'Not thread safe, but that's OK because all threads are stopped when TGLImageFrame.Delete()
-'is called, which is what calls us.
-'
 Function DeleteTex( name,seq )
-
 	If seq<>dead_tex_seq Return
 
-	'add tex to queue
-	If dead_texs.length=n_dead_texs
-		dead_texs=dead_texs[..n_dead_texs+10]
-	EndIf
-	dead_texs[n_dead_texs]=name
-	n_dead_texs:+1
-	'
+	dead_texs.AddLast(name)
 End Function
 
 Function CreateTex( width,height,flags,pixmap:TPixmap )
@@ -111,11 +104,13 @@ Function CreateTex( width,height,flags,pixmap:TPixmap )
 	
 	'flush dead texs
 	If dead_tex_seq=GraphicsSeq
-		For Local i=0 Until n_dead_texs
-			glDeleteTextures 1,Varptr dead_texs[i]
-		Next
+		Local n:Int = dead_texs.RemoveLast()
+		While n <> $FFFFFFFF
+			glDeleteTextures 1, Varptr n
+			n = dead_texs.RemoveLast()
+		Wend
 	EndIf
-	n_dead_texs=0
+
 	dead_tex_seq=GraphicsSeq
 
 	'bind new tex
@@ -190,6 +185,63 @@ Function AdjustTexSize( width Var,height Var )
 		If height>1 height:/2
 	Forever
 End Function
+
+Type TDynamicArray
+
+	Private
+	
+	Field data:Int Ptr
+	Field size:Size_T
+	Field capacity:Size_T
+	
+	Field guard:TMutex
+	
+	Public
+	
+	Method New(initialCapacity:Int = 8)
+		capacity = initialCapacity
+		data = malloc_(Size_T(initialCapacity * 4))
+		guard = CreateMutex()
+	End Method
+
+	Method AddLast(value:Int)
+		guard.Lock()
+		If size = capacity Then
+			capacity :* 2
+			Local d:Byte Ptr = realloc_(data, capacity * 4)
+			If Not d Then
+				Throw "Failed to allocate more memory"
+			End If
+			data = d
+		End If
+		
+		data[size] = value
+		size :+ 1
+		guard.Unlock()
+	End Method
+	
+	Method RemoveLast:Int()
+		guard.Lock()
+		Local v:Int
+		
+		If size > 0 Then
+			size :- 1
+			v = data[size]
+		Else
+			v = $FFFFFFFF
+		End If
+		
+		guard.Unlock()
+		
+		Return v
+	End Method
+
+	Method Delete()
+		free_(data)
+		CloseMutex(guard)
+	End Method
+	
+End Type
 
 Public
 

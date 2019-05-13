@@ -17,6 +17,7 @@
 #include "private/gc_pmark.h"
 
 #ifndef GC_NO_FINALIZATION
+# include "javaxfc.h" /* to get GC_finalize_all() as extern "C" */
 
 /* Type of mark procedure used for marking from finalizable object.     */
 /* This procedure normally does not mark the object, only its           */
@@ -71,33 +72,48 @@ struct finalizable_object {
 
 static signed_word log_fo_table_size = -1;
 
-STATIC struct {
+STATIC struct fnlz_roots_s {
   struct finalizable_object **fo_head;
   /* List of objects that should be finalized now: */
   struct finalizable_object *finalize_now;
 } GC_fnlz_roots = { NULL, NULL };
 
+#ifdef AO_HAVE_store
+  /* Update finalize_now atomically as GC_should_invoke_finalizers does */
+  /* not acquire the allocation lock.                                   */
+# define SET_FINALIZE_NOW(fo) \
+            AO_store((volatile AO_t *)&GC_fnlz_roots.finalize_now, (AO_t)(fo))
+#else
+# define SET_FINALIZE_NOW(fo) (void)(GC_fnlz_roots.finalize_now = (fo))
+#endif /* !THREADS */
+
 GC_API void GC_CALL GC_push_finalizer_structures(void)
 {
-  GC_ASSERT((word)&GC_dl_hashtbl.head % sizeof(word) == 0);
-  GC_ASSERT((word)&GC_fnlz_roots % sizeof(word) == 0);
+  GC_ASSERT((word)(&GC_dl_hashtbl.head) % sizeof(word) == 0);
+  GC_ASSERT((word)(&GC_fnlz_roots) % sizeof(word) == 0);
 # ifndef GC_LONG_REFS_NOT_NEEDED
-    GC_ASSERT((word)&GC_ll_hashtbl.head % sizeof(word) == 0);
+    GC_ASSERT((word)(&GC_ll_hashtbl.head) % sizeof(word) == 0);
     GC_PUSH_ALL_SYM(GC_ll_hashtbl.head);
 # endif
   GC_PUSH_ALL_SYM(GC_dl_hashtbl.head);
   GC_PUSH_ALL_SYM(GC_fnlz_roots);
 }
 
-/* Double the size of a hash table. *size_ptr is the log of its current */
-/* size.  May be a no-op.                                               */
+/* Threshold of log_size to initiate full collection before growing     */
+/* a hash table.                                                        */
+#ifndef GC_ON_GROW_LOG_SIZE_MIN
+# define GC_ON_GROW_LOG_SIZE_MIN CPP_LOG_HBLKSIZE
+#endif
+
+/* Double the size of a hash table. *log_size_ptr is the log of its     */
+/* current size.  May be a no-op.                                       */
 /* *table is a pointer to an array of hash headers.  If we succeed, we  */
 /* update both *table and *log_size_ptr.  Lock is held.                 */
 STATIC void GC_grow_table(struct hash_chain_entry ***table,
-                          signed_word *log_size_ptr)
+                          signed_word *log_size_ptr, word *entries_ptr)
 {
-    register word i;
-    register struct hash_chain_entry *p;
+    word i;
+    struct hash_chain_entry *p;
     signed_word log_old_size = *log_size_ptr;
     signed_word log_new_size = log_old_size + 1;
     word old_size = log_old_size == -1 ? 0 : (word)1 << log_old_size;
@@ -106,6 +122,19 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
     struct hash_chain_entry **new_table;
 
     GC_ASSERT(I_HOLD_LOCK());
+    /* Avoid growing the table in case of at least 25% of entries can   */
+    /* be deleted by enforcing a collection.  Ignored for small tables. */
+    if (log_old_size >= GC_ON_GROW_LOG_SIZE_MIN) {
+      IF_CANCEL(int cancel_state;)
+
+      DISABLE_CANCEL(cancel_state);
+      (void)GC_try_to_collect_inner(GC_never_stop_func);
+      RESTORE_CANCEL(cancel_state);
+      /* GC_finalize might decrease entries value.  */
+      if (*entries_ptr < ((word)1 << log_old_size) - (*entries_ptr >> 2))
+        return;
+    }
+
     new_table = (struct hash_chain_entry **)
                     GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
                         (size_t)new_size * sizeof(struct hash_chain_entry *),
@@ -125,12 +154,14 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
         size_t new_hash = HASH3(real_key, new_size, log_new_size);
 
         p -> next = new_table[new_hash];
+        GC_dirty(p);
         new_table[new_hash] = p;
         p = next;
       }
     }
     *log_size_ptr = log_new_size;
     *table = new_table;
+    GC_dirty(new_table); /* entire object */
 }
 
 GC_API int GC_CALL GC_register_disappearing_link(void * * link)
@@ -158,7 +189,7 @@ STATIC int GC_register_disappearing_link_inner(
     if (dl_hashtbl -> log_size == -1
         || dl_hashtbl -> entries > ((word)1 << dl_hashtbl -> log_size)) {
         GC_grow_table((struct hash_chain_entry ***)&dl_hashtbl -> head,
-                      &dl_hashtbl -> log_size);
+                      &dl_hashtbl -> log_size, &dl_hashtbl -> entries);
 #       ifdef LINT2
           if (dl_hashtbl->log_size < 0) ABORT("log_size is negative");
 #       endif
@@ -205,8 +236,10 @@ STATIC int GC_register_disappearing_link_inner(
     new_dl -> dl_hidden_obj = GC_HIDE_POINTER(obj);
     new_dl -> dl_hidden_link = GC_HIDE_POINTER(link);
     dl_set_next(new_dl, dl_hashtbl -> head[index]);
+    GC_dirty(new_dl);
     dl_hashtbl -> head[index] = new_dl;
     dl_hashtbl -> entries++;
+    GC_dirty(dl_hashtbl->head + index);
     UNLOCK();
     return GC_SUCCESS;
 }
@@ -227,7 +260,6 @@ GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
 #endif
 
 /* Unregisters given link and returns the link entry to free.   */
-/* Assume the lock is held.                                     */
 GC_INLINE struct disappearing_link *GC_unregister_disappearing_link_inner(
                                 struct dl_hashtbl_s *dl_hashtbl, void **link)
 {
@@ -235,6 +267,7 @@ GC_INLINE struct disappearing_link *GC_unregister_disappearing_link_inner(
     struct disappearing_link *prev_dl = NULL;
     size_t index;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (dl_hashtbl->log_size == -1)
         return NULL; /* prevent integer shift by a negative amount */
 
@@ -245,8 +278,10 @@ GC_INLINE struct disappearing_link *GC_unregister_disappearing_link_inner(
             /* Remove found entry from the table. */
             if (NULL == prev_dl) {
                 dl_hashtbl -> head[index] = dl_next(curr_dl);
+                GC_dirty(dl_hashtbl->head + index);
             } else {
                 dl_set_next(prev_dl, dl_next(curr_dl));
+                GC_dirty(prev_dl);
             }
             dl_hashtbl -> entries--;
             break;
@@ -288,6 +323,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
   {
     int i;
     int new_size = 0;
+    GC_bool needs_barrier = FALSE;
 
     GC_ASSERT(I_HOLD_LOCK());
     for (i = 0; i < GC_toggleref_array_size; ++i) {
@@ -305,6 +341,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
         break;
       case GC_TOGGLE_REF_STRONG:
         GC_toggleref_arr[new_size++].strong_ref = obj;
+        needs_barrier = TRUE;
         break;
       case GC_TOGGLE_REF_WEAK:
         GC_toggleref_arr[new_size++].weak_ref = GC_HIDE_POINTER(obj);
@@ -319,6 +356,8 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
             (GC_toggleref_array_size - new_size) * sizeof(GCToggleRef));
       GC_toggleref_array_size = new_size;
     }
+    if (needs_barrier)
+      GC_dirty(GC_toggleref_arr); /* entire object */
   }
 
   STATIC void GC_normal_finalize_mark_proc(ptr_t);
@@ -390,6 +429,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
   static GC_bool ensure_toggleref_capacity(int capacity_inc)
   {
     GC_ASSERT(capacity_inc >= 0);
+    GC_ASSERT(I_HOLD_LOCK());
     if (NULL == GC_toggleref_arr) {
       GC_toggleref_array_capacity = 32; /* initial capacity */
       GC_toggleref_arr = (GCToggleRef *)GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(
@@ -433,8 +473,11 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
       if (!ensure_toggleref_capacity(1)) {
         res = GC_NO_MEMORY;
       } else {
-        GC_toggleref_arr[GC_toggleref_array_size++].strong_ref =
+        GC_toggleref_arr[GC_toggleref_array_size].strong_ref =
                         is_strong_ref ? obj : (void *)GC_HIDE_POINTER(obj);
+        if (is_strong_ref)
+          GC_dirty(GC_toggleref_arr + GC_toggleref_array_size);
+        GC_toggleref_array_size++;
       }
     }
     UNLOCK();
@@ -501,6 +544,7 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
     word curr_hidden_link;
     word new_hidden_link;
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (dl_hashtbl->log_size == -1)
         return GC_NOT_FOUND; /* prevent integer shift by a negative amount */
 
@@ -539,10 +583,13 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
       dl_hashtbl -> head[curr_index] = dl_next(curr_dl);
     } else {
       dl_set_next(prev_dl, dl_next(curr_dl));
+      GC_dirty(prev_dl);
     }
     curr_dl -> dl_hidden_link = new_hidden_link;
     dl_set_next(curr_dl, dl_hashtbl -> head[new_index]);
     dl_hashtbl -> head[new_index] = curr_dl;
+    GC_dirty(curr_dl);
+    GC_dirty(dl_hashtbl->head); /* entire object */
     return GC_SUCCESS;
   }
 
@@ -587,10 +634,8 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 /* overflow is handled by the caller, and is not a disaster.            */
 STATIC void GC_normal_finalize_mark_proc(ptr_t p)
 {
-    hdr * hhdr = HDR(p);
-
-    PUSH_OBJ(p, hhdr, GC_mark_stack_top,
-             &(GC_mark_stack[GC_mark_stack_size]));
+    GC_mark_stack_top = GC_push_obj(p, HDR(p), GC_mark_stack_top,
+                                    GC_mark_stack + GC_mark_stack_size);
 }
 
 /* This only pays very partial attention to the mark descriptor.        */
@@ -654,7 +699,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
     if (log_fo_table_size == -1
         || GC_fo_entries > ((word)1 << log_fo_table_size)) {
         GC_grow_table((struct hash_chain_entry ***)&GC_fnlz_roots.fo_head,
-                      &log_fo_table_size);
+                      &log_fo_table_size, &GC_fo_entries);
 #       ifdef LINT2
           if (log_fo_table_size < 0) ABORT("log_size is negative");
 #       endif
@@ -681,6 +726,7 @@ STATIC void GC_register_finalizer_inner(void * obj,
             GC_fnlz_roots.fo_head[index] = fo_next(curr_fo);
           } else {
             fo_set_next(prev_fo, fo_next(curr_fo));
+            GC_dirty(prev_fo);
           }
           if (fn == 0) {
             GC_fo_entries--;
@@ -694,14 +740,18 @@ STATIC void GC_register_finalizer_inner(void * obj,
             curr_fo -> fo_fn = fn;
             curr_fo -> fo_client_data = (ptr_t)cd;
             curr_fo -> fo_mark_proc = mp;
+            GC_dirty(curr_fo);
             /* Reinsert it.  We deleted it first to maintain    */
             /* consistency in the event of a signal.            */
             if (prev_fo == 0) {
               GC_fnlz_roots.fo_head[index] = curr_fo;
             } else {
               fo_set_next(prev_fo, curr_fo);
+              GC_dirty(prev_fo);
             }
           }
+          if (NULL == prev_fo)
+            GC_dirty(GC_fnlz_roots.fo_head + index);
           UNLOCK();
 #         ifndef DBG_HDRS_ALL
             if (EXPECT(new_fo != 0, FALSE)) {
@@ -762,8 +812,10 @@ STATIC void GC_register_finalizer_inner(void * obj,
     new_fo -> fo_object_size = hhdr -> hb_sz;
     new_fo -> fo_mark_proc = mp;
     fo_set_next(new_fo, GC_fnlz_roots.fo_head[index]);
+    GC_dirty(new_fo);
     GC_fo_entries++;
     GC_fnlz_roots.fo_head[index] = new_fo;
+    GC_dirty(GC_fnlz_roots.fo_head + index);
     UNLOCK();
 }
 
@@ -886,68 +938,53 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
   }
 #endif /* THREADS */
 
-#define ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr_dl, prev_dl) \
-  { \
-    size_t i; \
-    size_t dl_size = dl_hashtbl->log_size == -1 ? 0 : \
-                                (size_t)1 << dl_hashtbl->log_size; \
-    for (i = 0; i < dl_size; i++) { \
-      struct disappearing_link *prev_dl = NULL; \
-      curr_dl = dl_hashtbl -> head[i]; \
-      while (curr_dl) {
-
-#define ITERATE_DL_HASHTBL_END(curr_dl, prev_dl) \
-        prev_dl = curr_dl; \
-        curr_dl = dl_next(curr_dl); \
-      } \
-    } \
-  }
-
-#define DELETE_DL_HASHTBL_ENTRY(dl_hashtbl, curr_dl, prev_dl, next_dl) \
-  { \
-    next_dl = dl_next(curr_dl); \
-    if (NULL == prev_dl) { \
-        dl_hashtbl -> head[i] = next_dl; \
-    } else { \
-        dl_set_next(prev_dl, next_dl); \
-    } \
-    GC_clear_mark_bit(curr_dl); \
-    dl_hashtbl -> entries--; \
-    curr_dl = next_dl; \
-    continue; \
-  }
-
 GC_INLINE void GC_make_disappearing_links_disappear(
-                                struct dl_hashtbl_s* dl_hashtbl)
+                                        struct dl_hashtbl_s* dl_hashtbl,
+                                        GC_bool is_remove_dangling)
 {
-    struct disappearing_link *curr, *next;
+  size_t i;
+  size_t dl_size = dl_hashtbl->log_size == -1 ? 0
+                        : (size_t)1 << dl_hashtbl->log_size;
+  GC_bool needs_barrier = FALSE;
 
-    ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr, prev)
-        ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr->dl_hidden_obj);
-        ptr_t real_link = (ptr_t)GC_REVEAL_POINTER(curr->dl_hidden_link);
+  GC_ASSERT(I_HOLD_LOCK());
+  for (i = 0; i < dl_size; i++) {
+    struct disappearing_link *curr_dl, *next_dl;
+    struct disappearing_link *prev_dl = NULL;
 
-        if (!GC_is_marked(real_ptr)) {
-            *(word *)real_link = 0;
-            GC_clear_mark_bit(curr);
-            DELETE_DL_HASHTBL_ENTRY(dl_hashtbl, curr, prev, next);
+    for (curr_dl = dl_hashtbl->head[i]; curr_dl != NULL; curr_dl = next_dl) {
+      next_dl = dl_next(curr_dl);
+      if (is_remove_dangling) {
+        ptr_t real_link = (ptr_t)GC_base(GC_REVEAL_POINTER(
+                                                curr_dl->dl_hidden_link));
+
+        if (NULL == real_link || EXPECT(GC_is_marked(real_link), TRUE)) {
+          prev_dl = curr_dl;
+          continue;
         }
-    ITERATE_DL_HASHTBL_END(curr, prev)
-}
-
-GC_INLINE void GC_remove_dangling_disappearing_links(
-                                struct dl_hashtbl_s* dl_hashtbl)
-{
-    struct disappearing_link *curr, *next;
-
-    ITERATE_DL_HASHTBL_BEGIN(dl_hashtbl, curr, prev)
-        ptr_t real_link =
-                (ptr_t)GC_base(GC_REVEAL_POINTER(curr->dl_hidden_link));
-
-        if (NULL != real_link && !GC_is_marked(real_link)) {
-            GC_clear_mark_bit(curr);
-            DELETE_DL_HASHTBL_ENTRY(dl_hashtbl, curr, prev, next);
+      } else {
+        if (EXPECT(GC_is_marked((ptr_t)GC_REVEAL_POINTER(
+                                        curr_dl->dl_hidden_obj)), TRUE)) {
+          prev_dl = curr_dl;
+          continue;
         }
-    ITERATE_DL_HASHTBL_END(curr, prev)
+        *(ptr_t *)GC_REVEAL_POINTER(curr_dl->dl_hidden_link) = NULL;
+      }
+
+      /* Delete curr_dl entry from dl_hashtbl.  */
+      if (NULL == prev_dl) {
+        dl_hashtbl -> head[i] = next_dl;
+        needs_barrier = TRUE;
+      } else {
+        dl_set_next(prev_dl, next_dl);
+        GC_dirty(prev_dl);
+      }
+      GC_clear_mark_bit(curr_dl);
+      dl_hashtbl -> entries--;
+    }
+  }
+  if (needs_barrier)
+    GC_dirty(dl_hashtbl -> head); /* entire object */
 }
 
 /* Called with held lock (but the world is running).                    */
@@ -960,7 +997,9 @@ GC_INNER void GC_finalize(void)
     size_t i;
     size_t fo_size = log_fo_table_size == -1 ? 0 :
                                 (size_t)1 << log_fo_table_size;
+    GC_bool needs_barrier = FALSE;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifndef SMALL_CONFIG
       /* Save current GC_[dl/ll]_entries value for stats printing */
       GC_old_dl_entries = GC_dl_hashtbl.entries;
@@ -972,7 +1011,7 @@ GC_INNER void GC_finalize(void)
 #   ifndef GC_TOGGLE_REFS_NOT_NEEDED
       GC_mark_togglerefs();
 #   endif
-    GC_make_disappearing_links_disappear(&GC_dl_hashtbl);
+    GC_make_disappearing_links_disappear(&GC_dl_hashtbl, FALSE);
 
   /* Mark all objects reachable via chains of 1 or more pointers        */
   /* from finalizable objects.                                          */
@@ -1007,8 +1046,14 @@ GC_INNER void GC_finalize(void)
               next_fo = fo_next(curr_fo);
               if (NULL == prev_fo) {
                 GC_fnlz_roots.fo_head[i] = next_fo;
+                if (GC_object_finalized_proc) {
+                  GC_dirty(GC_fnlz_roots.fo_head + i);
+                } else {
+                  needs_barrier = TRUE;
+                }
               } else {
                 fo_set_next(prev_fo, next_fo);
+                GC_dirty(prev_fo);
               }
               GC_fo_entries--;
               if (GC_object_finalized_proc)
@@ -1016,7 +1061,8 @@ GC_INNER void GC_finalize(void)
 
             /* Add to list of objects awaiting finalization.    */
               fo_set_next(curr_fo, GC_fnlz_roots.finalize_now);
-              GC_fnlz_roots.finalize_now = curr_fo;
+              GC_dirty(curr_fo);
+              SET_FINALIZE_NOW(curr_fo);
               /* unhide object pointer so any future collections will   */
               /* see it.                                                */
               curr_fo -> fo_hidden_base =
@@ -1066,9 +1112,10 @@ GC_INNER void GC_finalize(void)
               GC_set_mark_bit(real_ptr);
             } else {
               if (NULL == prev_fo) {
-                GC_fnlz_roots.finalize_now = next_fo;
+                SET_FINALIZE_NOW(next_fo);
               } else {
                 fo_set_next(prev_fo, next_fo);
+                GC_dirty(prev_fo);
               }
               curr_fo -> fo_hidden_base =
                                 GC_HIDE_POINTER(curr_fo -> fo_hidden_base);
@@ -1077,9 +1124,11 @@ GC_INNER void GC_finalize(void)
 
               i = HASH2(real_ptr, log_fo_table_size);
               fo_set_next(curr_fo, GC_fnlz_roots.fo_head[i]);
+              GC_dirty(curr_fo);
               GC_fo_entries++;
               GC_fnlz_roots.fo_head[i] = curr_fo;
               curr_fo = prev_fo;
+              needs_barrier = TRUE;
             }
           }
           prev_fo = curr_fo;
@@ -1087,14 +1136,18 @@ GC_INNER void GC_finalize(void)
         }
       }
   }
+  if (needs_barrier)
+    GC_dirty(GC_fnlz_roots.fo_head); /* entire object */
 
-  GC_remove_dangling_disappearing_links(&GC_dl_hashtbl);
+  /* Remove dangling disappearing links. */
+  GC_make_disappearing_links_disappear(&GC_dl_hashtbl, TRUE);
+
 # ifndef GC_TOGGLE_REFS_NOT_NEEDED
     GC_clear_togglerefs();
 # endif
 # ifndef GC_LONG_REFS_NOT_NEEDED
-    GC_make_disappearing_links_disappear(&GC_ll_hashtbl);
-    GC_remove_dangling_disappearing_links(&GC_ll_hashtbl);
+    GC_make_disappearing_links_disappear(&GC_ll_hashtbl, FALSE);
+    GC_make_disappearing_links_disappear(&GC_ll_hashtbl, TRUE);
 # endif
 
   if (GC_fail_count) {
@@ -1110,21 +1163,23 @@ GC_INNER void GC_finalize(void)
 
 #ifndef JAVA_FINALIZATION_NOT_NEEDED
 
-  /* Enqueue all remaining finalizers to be run - Assumes lock is held. */
+  /* Enqueue all remaining finalizers to be run.        */
   STATIC void GC_enqueue_all_finalizers(void)
   {
-    struct finalizable_object * curr_fo, * next_fo;
-    ptr_t real_ptr;
+    struct finalizable_object * next_fo;
     int i;
     int fo_size;
 
+    GC_ASSERT(I_HOLD_LOCK());
     fo_size = log_fo_table_size == -1 ? 0 : 1 << log_fo_table_size;
     GC_bytes_finalized = 0;
     for (i = 0; i < fo_size; i++) {
-      curr_fo = GC_fnlz_roots.fo_head[i];
+      struct finalizable_object * curr_fo = GC_fnlz_roots.fo_head[i];
+
       GC_fnlz_roots.fo_head[i] = NULL;
       while (curr_fo != NULL) {
-          real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
+          ptr_t real_ptr = (ptr_t)GC_REVEAL_POINTER(curr_fo->fo_hidden_base);
+
           GC_MARK_FO(real_ptr, GC_normal_finalize_mark_proc);
           GC_set_mark_bit(real_ptr);
 
@@ -1132,7 +1187,8 @@ GC_INNER void GC_finalize(void)
 
           /* Add to list of objects awaiting finalization.      */
           fo_set_next(curr_fo, GC_fnlz_roots.finalize_now);
-          GC_fnlz_roots.finalize_now = curr_fo;
+          GC_dirty(curr_fo);
+          SET_FINALIZE_NOW(curr_fo);
 
           /* unhide object pointer so any future collections will       */
           /* see it.                                                    */
@@ -1141,7 +1197,7 @@ GC_INNER void GC_finalize(void)
           GC_bytes_finalized +=
                 curr_fo -> fo_object_size + sizeof(struct finalizable_object);
           curr_fo = next_fo;
-        }
+      }
     }
     GC_fo_entries = 0;  /* all entries deleted from the hash table */
   }
@@ -1183,10 +1239,13 @@ GC_INNER void GC_finalize(void)
 /* Returns true if it is worth calling GC_invoke_finalizers. (Useful if */
 /* finalizers can only be called from some kind of "safe state" and     */
 /* getting into that safe state is expensive.)                          */
-GC_ATTR_NO_SANITIZE_THREAD
 GC_API int GC_CALL GC_should_invoke_finalizers(void)
 {
-  return GC_fnlz_roots.finalize_now != NULL;
+# ifdef AO_HAVE_load
+    return AO_load((volatile AO_t *)&GC_fnlz_roots.finalize_now) != 0;
+# else
+    return GC_fnlz_roots.finalize_now != NULL;
+# endif /* !THREADS */
 }
 
 /* Invoke finalizers for all objects that are ready to be finalized.    */
@@ -1209,7 +1268,8 @@ GC_API int GC_CALL GC_invoke_finalizers(void)
         }
         curr_fo = GC_fnlz_roots.finalize_now;
 #       ifdef THREADS
-            if (curr_fo != 0) GC_fnlz_roots.finalize_now = fo_next(curr_fo);
+            if (curr_fo != NULL)
+                SET_FINALIZE_NOW(fo_next(curr_fo));
             UNLOCK();
             if (curr_fo == 0) break;
 #       else
@@ -1280,9 +1340,7 @@ GC_INNER void GC_notify_or_invoke_finalizers(void)
 #       endif
 #       ifdef MAKE_BACK_GRAPH
           if (GC_print_back_height) {
-            UNLOCK();
             GC_print_back_graph_stats();
-            LOCK();
           }
 #       endif
       }

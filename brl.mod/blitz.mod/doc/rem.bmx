@@ -7,6 +7,8 @@ First created 9th August, 2004
 
 End Rem
 
+SuperStrict
+
 Print "This program has no useful function"
 
 Rem

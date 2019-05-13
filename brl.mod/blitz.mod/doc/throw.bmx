@@ -2,12 +2,15 @@ Rem
 Throw generates a BlitzMax exception.
 End Rem
 
+SuperStrict
+
+Local a:Int
 Try
-	repeat
+	Repeat
 		a:+1
-		print a
-		if a>20 throw "chunks"
-	forever
-Catch a$
-	print "caught exception "+a$
+		Print a
+		If a>20 Throw "chunks"
+	Forever
+Catch e:String
+	Print "caught exception "+e
 EndTry

@@ -7,6 +7,7 @@
 typedef struct BBExEnv{
 	jmp_buf buf;
 	BBObject * ex;
+	int jmp_status;
 }BBExEnv;
 
 typedef struct BBExStack{
@@ -33,6 +34,18 @@ BBExStack *getExStack(){
 
 void setExStack( BBExStack *st ){
 	TlsSetValue( exKey(),st );
+}
+
+#elif __SWITCH__
+
+BBExStack *getExStack(){
+	// TODO
+	//return (BBExStack*)pthread_getspecific( exKey() );
+	return NULL;
+}
+
+void setExStack( BBExStack *st ){
+	//pthread_setspecific( exKey(),st );
 }
 
 #else
@@ -75,40 +88,35 @@ static void freeExStack( BBExStack *st ){
 	setExStack( 0 );
 }
 
-BBObject* bbExObject() {
-	BBExStack *st=getExStack();
-	if (st) {
-		BBObject * ex = st->ex_sp->ex;
-		if (st->ex_sp==st->ex_base) {
-			freeExStack(st);
-		}
-		return ex;
-	} else {
-		return &bbNullObject;
-	}
-}
-
 jmp_buf *bbExEnter(){
 	BBExStack *st=exStack();
-
+	
 	if( st->ex_sp==st->ex_end ){
 		int len=st->ex_sp-st->ex_base,new_len=len+EX_GROW;
 		st->ex_base=(BBExEnv*)bbMemExtend( st->ex_base,len*sizeof(BBExEnv),new_len*sizeof(BBExEnv) );
 		st->ex_end=st->ex_base+new_len;
 		st->ex_sp=st->ex_base+len;
 	}
-
+	
+	st->ex_sp->jmp_status=1;
 	return &((st->ex_sp++)->buf);
 }
 
-void bbExThrow( BBObject *p ){
+BBObject* bbExCatchAndReenter() {
 	BBExStack *st=getExStack();
+	BBObject *ex=st->ex_sp->ex;
+	st->ex_sp->jmp_status=2;
+	st->ex_sp++;
+	return ex;
+}
 
-	if( !st ) bbOnDebugUnhandledEx( p );
-	
-	--st->ex_sp;
-	st->ex_sp->ex = p;
-	longjmp(st->ex_sp->buf, 1);
+BBObject* bbExCatch() {
+	BBExStack *st=getExStack();
+	BBObject *ex=st->ex_sp->ex;
+	if (st->ex_sp==st->ex_base) {
+		freeExStack(st);
+	}
+	return ex;
 }
 
 void bbExLeave(){
@@ -120,6 +128,20 @@ void bbExLeave(){
 	if( --st->ex_sp==st->ex_base ){
 		freeExStack( st );
 	}
+}
+
+void bbExThrow( BBObject *p ){
+	BBExStack *st=getExStack();
+	
+	if( !st ) bbOnDebugUnhandledEx( p );
+	
+	--st->ex_sp;
+	st->ex_sp->ex = p;
+#ifndef __APPLE__
+	longjmp(st->ex_sp->buf, st->ex_sp->jmp_status);
+#else
+	_longjmp(st->ex_sp->buf, st->ex_sp->jmp_status);
+#endif
 }
 
 void bbExThrowCString( const char *p ){

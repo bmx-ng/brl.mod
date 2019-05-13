@@ -1,3 +1,5 @@
 ' filetime.bmx
 
-print filetime("filetime.bmx")
+SuperStrict
+
+Print FileTime("filetime.bmx")

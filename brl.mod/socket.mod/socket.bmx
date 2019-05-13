@@ -34,6 +34,9 @@ Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
 ?emscripten
 Const FIONREAD=$541b
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
+?nx
+Const FIONREAD=$4004667F
+Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
 ?
 End Extern
 
@@ -91,8 +94,8 @@ Type TSocket
 		Return True
 	End Method
 	
-	Method Connect:Int( addrInfo:TAddrInfo )
-		If connect_( _socket, addrInfo.infoPtr )<0 Return False
+	Method Connect:Int( AddrInfo:TAddrInfo )
+		If connect_( _socket, AddrInfo.infoPtr )<0 Return False
 		UpdateLocalName
 		UpdateRemoteName
 		Return True
@@ -262,8 +265,8 @@ ip address could not be reached.
 In the case of TCP sockets, #ConnectSocket will also fail if there is
 no application listening at the remote port.
 End Rem
-Function ConnectSocket( socket:TSocket, addrInfo:TAddrInfo )
-	Return socket.Connect( addrInfo )
+Function ConnectSocket( socket:TSocket, AddrInfo:TAddrInfo )
+	Return socket.Connect( AddrInfo )
 End Function
 
 Rem

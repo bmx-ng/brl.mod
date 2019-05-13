@@ -1,17 +1,20 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Streams/Bank streams
 End Rem
 Module BRL.BankStream
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Made SuperStrict."
+ModuleInfo "History: 1.01"
 ModuleInfo "History: Added TBankStreamFactory"
 
 Import BRL.Bank
@@ -94,7 +97,7 @@ End Function
 
 Type TBankStreamFactory Extends TStreamFactory
 
-	Method CreateStream:TBankStream( url:Object,proto$,path$,readable,writeable )
+	Method CreateStream:TBankStream( url:Object,proto$,path$,readable:Int,writeable:Int )
 		Local bank:TBank=TBank(url)
 		If bank Return CreateBankStream( bank )
 	End Method
@@ -102,5 +105,3 @@ Type TBankStreamFactory Extends TStreamFactory
 End Type
 
 New TBankStreamFactory
-
-

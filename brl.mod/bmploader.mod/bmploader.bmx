@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Graphics/BMP loader
@@ -23,7 +23,6 @@ ModuleInfo "History: Fixed palettized bitmaps failing when biClrUsed=0"
 
 Import BRL.StbImageLoader
 
-?deprecated
 Import BRL.Pixmap
 Import BRL.EndianStream
 
@@ -35,10 +34,10 @@ Type TPixmapLoaderBMP Extends TPixmapLoader
 				
 		Local	line:Int[],palette:Int[],pix:Byte[],buf:Byte[64]
 		Local	pixmap:TPixmap
-		Local	hsize,hoffset,pad
-		Local	size,width,height
-		Local	planes,bits,compression,isize,xpels,ypels,COLS,inuse
-		Local	w,x,y,c0,c1,p
+		Local	hsize:Int,hoffset:Int,pad:Int
+		Local	size:Int,width:Int,height:Int
+		Local	planes:Int,bits:Int,compression:Int,isize:Int,xpels:Int,ypels:Int,COLS:Int,inuse:Int
+		Local	w:Int,x:Int,y:Int,c0:Int,c1:Int,p:Int
 
 		If stream.ReadBytes( buf,2 )=2
 			If buf[0]=Asc("B") And buf[1]=Asc("M")			
@@ -134,4 +133,3 @@ Type TPixmapLoaderBMP Extends TPixmapLoader
 End Type
 
 New TPixmapLoaderBMP
-?

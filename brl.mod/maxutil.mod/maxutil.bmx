@@ -19,9 +19,9 @@ Import Pub.StdC
 
 Function BlitzMaxPath$()
 	Global bmxpath$
-	If bmxpath Return bmxpath
+	If bmxpath And FileType(bmxpath)=FILETYPE_DIR Return bmxpath
 	Local p$=getenv_("BMXPATH")
-	If p
+	If p And FileType(p)=FILETYPE_DIR
 		bmxpath=p
 		Return p
 	EndIf

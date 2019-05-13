@@ -2,12 +2,14 @@ Rem
 Local defines a variable as local to the Method or Function it is defined meaning it is automatically released when the function returns.
 End Rem
 
+SuperStrict
+
 Function TestLocal()
-	Local	a
+	Local a:Int
 	a=20
-	print "a="+a
+	Print "a="+a
 	Return
 End Function
 
 TestLocal
-print "a="+a	'prints 0 or if in Strict mode is an error as a is only local to the TestLocal function
+Print "a="+a	'prints an error as a is only local to the TestLocal function
