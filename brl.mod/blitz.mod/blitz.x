@@ -1,0 +1,6 @@
+void bbMemCopy( void *,const void *,size_t )
+void bbMemMove( void *,const void *,size_t )
+void* bbMemAlloc( size_t )
+void bbMemFree( void * )
+void* bbMemExtend( void *,size_t ,size_t )
+void bbMemClear( void *,size_t )
