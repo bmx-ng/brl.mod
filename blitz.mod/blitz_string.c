@@ -892,18 +892,21 @@ static void mktmp( void *p ){
 }
 #endif
 char *bbTmpCString( BBString *str ){
+	printf("Use of bbTmpCString is deprecated\n");fflush(stdout);
 	char *p=bbStringToCString( str );
 	mktmp( p );
 	return p;
 }
 
 BBChar *bbTmpWString( BBString *str ){
+	printf("Use of bbTmpWString is deprecated\n");fflush(stdout);
 	BBChar *p=bbStringToWString( str );
 	mktmp( p );
 	return p;
 }
 
 char *bbTmpUTF8String( BBString *str ){
+	printf("Use of bbTmpUTF8String is deprecated\n");fflush(stdout);
 	char *p=bbStringToUTF8String( str );
 	mktmp( p );
 	return p;
