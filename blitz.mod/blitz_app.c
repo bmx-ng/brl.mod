@@ -418,9 +418,9 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 		bbAppDir=&bbEmptyString;
 	}
 	
-	char *p=bbStringToUTF8String( bbAppDir );
-	chdir( p );
-	bbMemFree(p);
+	char *d=bbStringToUTF8String( bbAppDir );
+	chdir( d );
+	bbMemFree(d);
 	
 #elif __APPLE__
 	
@@ -455,9 +455,9 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 		bbAppDir=&bbEmptyString;
 	}
 	
-	char *p=bbStringToCString( bbAppDir );
-	chdir( p );
-	bbMemFree(p);
+	char *d=bbStringToCString( bbAppDir );
+	chdir( d );
+	bbMemFree(d);
 
 #elif __SWITCH__
 
