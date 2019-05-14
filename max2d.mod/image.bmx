@@ -41,6 +41,8 @@ Type TImage
 		If (flags & MASKEDIMAGE) And AlphaBitsPerPixel[pixmap.format]=0
 			pixmap=MaskPixmap( pixmap,mask_r,mask_g,mask_b )
 		EndIf
+		pixmap.dds_fmt=GreenBitsPerPixel[0] ' set dds format
+		pixmap.tex_name=BlueBitsPerPixel[0] ' set texture name
 		pixmaps[index]=pixmap
 		seqs[index]=0
 		frames[index]=Null

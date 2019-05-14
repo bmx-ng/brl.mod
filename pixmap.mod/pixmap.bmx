@@ -66,6 +66,10 @@ Type TPixmap
 	'Hack to provide robust PixmapWindow functionality
 	Field _source:Object
 	
+	Field dds_fmt=0 ' dds format
+	
+	Field tex_name=0 ' texture name
+	
 	Method Delete()
 		If capacity>=0 
 			MemFree pixels
