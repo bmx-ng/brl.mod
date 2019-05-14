@@ -511,7 +511,9 @@ BBString *bbSystemRequestFile( BBString *title,BBString *exts,int save,BBString 
 	
 	if( dir->length ){
 		char tmp[PATH_MAX];
-		realpath( bbTmpUTF8String(dir),tmp );
+		char *p=bbStringToUTF8String( dir );
+		realpath( p,tmp );
+		bbMemFree(p);
 		nsdir=[NSString stringWithUTF8String:tmp];
 	}
 	
@@ -524,7 +526,7 @@ BBString *bbSystemRequestFile( BBString *title,BBString *exts,int save,BBString 
 	}
 	
 	if( exts->length ){
-		char *p=bbTmpUTF8String(exts),*t;
+		char *p=bbStringToUTF8String(exts),*t;
 		nsexts=[NSMutableArray arrayWithCapacity:10];
 		while( t=strchr(p,',') ){
 			*t=0;
@@ -532,6 +534,7 @@ BBString *bbSystemRequestFile( BBString *title,BBString *exts,int save,BBString 
 			p=t+1;
 		}
 		if( *p ) [nsexts addObject:[NSString stringWithUTF8String:p]];
+		bbMemFree(p);
 	}
 
 	beginPanel();
@@ -574,7 +577,9 @@ BBString *bbSystemRequestDir( BBString *title,BBString *dir ){
 
 	if( dir->length ){
 		char tmp[PATH_MAX];
-		realpath( bbTmpUTF8String(dir),tmp );
+		char *p=bbStringToUTF8String(dir);
+		realpath( p,tmp );
+		bbMemFree(p);
 		nsdir=[NSString stringWithUTF8String:tmp];
 	}
 	
