@@ -11,6 +11,7 @@ Import brl.systemdefault
 Private
 Extern
 	Function bbAppIcon:Byte Ptr(inst:Byte Ptr)="HICON bbAppIcon(HINSTANCE)!"
+	Function GetSystemMetrics:Int(index:Int)
 End Extern
 
 Global _wndClass$="BBDX9Device Window Class"
@@ -178,7 +179,11 @@ Type TD3D9Graphics Extends TGraphics
 		Return Self
 	End Method
 	
-	Method Create:TD3D9Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Int)
+	Method Create:TD3D9Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Int,x:Int,y:Int)
+		Const SM_CYCAPTION:Int = 4
+		Const SM_CXBORDER:Int = 5
+		Const SM_CYFIXEDFRAME:Int = 8
+		
 		Local wstyle:Int
 
 		If depth
@@ -193,8 +198,18 @@ Type TD3D9Graphics Extends TGraphics
 			Local desktopRect:Int[4]
 			GetWindowRect GetDesktopWindow(),desktopRect
 				
-			rect[0]=desktopRect[2]/2-width/2;		
-			rect[1]=desktopRect[3]/2-height/2;		
+			If x = -1 Then
+				x = desktopRect[2]/2-width/2
+			Else
+				x = x + GetSystemMetrics(SM_CXBORDER)
+			End If
+			If y = -1 Then
+				y = desktopRect[3]/2-height/2
+			Else
+				y = y + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFIXEDFRAME)
+			End If
+			rect[0]=x;
+			rect[1]=y;
 			rect[2]=rect[0]+width;
 			rect[3]=rect[1]+height;
 				
@@ -285,7 +300,7 @@ Type TD3D9Graphics Extends TGraphics
 		Return _driver
 	End Method
 	
-	Method GetSettings:Int( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Int Var ) Override
+	Method GetSettings:Int( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Int Var, x:Int Var, y:Int Var ) Override
 		'
 		ValidateSize
 		'
@@ -321,6 +336,9 @@ Type TD3D9Graphics Extends TGraphics
 
 	Method Resize(width:Int, height:Int) Override
  	End Method
+
+	Method Position(x:Int, y:Int) Override
+	End Method
 	
 	Field _hwnd:Byte Ptr
 	Field _width:Int
@@ -394,8 +412,8 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		Return New TD3D9Graphics.Attach( widget:Byte Ptr,flags:Int )
 	End Method
 	
-	Method CreateGraphics:TD3D9Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Int) Override
-		Return New TD3D9Graphics.Create( width,height,depth,hertz,flags )
+	Method CreateGraphics:TD3D9Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Int,x:Int,y:Int) Override
+		Return New TD3D9Graphics.Create( width,height,depth,hertz,flags,x,y )
 	End Method
 
 	Method Graphics:TD3D9Graphics()

@@ -110,14 +110,16 @@ Type TMax2DGraphics Extends TGraphics
 		Return _driver
 	End Method
 	
-	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var ) Override
-		Local w,h,d,r,f
-		_graphics.GetSettings w,h,d,r,f
+	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var, x Var, y Var ) Override
+		Local w,h,d,r,f,xp,yp
+		_graphics.GetSettings w,h,d,r,f,xp,yp
 		width=w
 		height=h
 		depth=d
 		hertz=r
 		flags=f
+		x=-1
+		y=-1
 	End Method
 	
 	Method Close() Override
@@ -128,8 +130,8 @@ Type TMax2DGraphics Extends TGraphics
 	End Method
 	
 	Method Validate()
-		Local w,h,d,r,f
-		_graphics.GetSettings w,h,d,r,f
+		Local w,h,d,r,f,xp,yp
+		_graphics.GetSettings w,h,d,r,f,xp,yp
 		If w<>g_width Or h<>g_height
 			g_width=w
 			g_height=h
@@ -175,8 +177,8 @@ Type TMax2DGraphics Extends TGraphics
 	End Function
 	
 	Function Create:TMax2DGraphics( g:TGraphics,d:TMax2DDriver )
-		Local gw,gh,gd,gr,gf
-		g.GetSettings gw,gh,gd,gr,gf
+		Local gw,gh,gd,gr,gf,gx,gy
+		g.GetSettings gw,gh,gd,gr,gf,gx,gy
 		
 		If Not default_font default_font=TImageFont.CreateDefault()
 
@@ -225,6 +227,9 @@ Type TMax2DGraphics Extends TGraphics
 		_graphics.Resize(width, height)
 	End Method
 	
+	Method Position(x:Int, y:Int)
+		_graphics.Position(x, y)
+	End Method
 End Type
 
 Rem

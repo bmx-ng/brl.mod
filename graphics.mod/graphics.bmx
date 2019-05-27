@@ -59,11 +59,13 @@ Type TGraphics
 
 	Method Driver:TGraphicsDriver() Abstract
 
-	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var ) Abstract
+	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var, x Var, y Var ) Abstract
 
 	Method Close() Abstract
 	
 	Method Resize(width:Int, height:Int) Abstract
+	
+	Method Position(x:Int, y:Int) Abstract
 
 End Type
 
@@ -83,7 +85,7 @@ Type TGraphicsDriver
 	
 	Method AttachGraphics:TGraphics( widget:Byte Ptr,flags ) Abstract
 	
-	Method CreateGraphics:TGraphics( width,height,depth,hertz,flags ) Abstract
+	Method CreateGraphics:TGraphics( width,height,depth,hertz,flags,x,y ) Abstract
 	
 	Method SetGraphics( g:TGraphics ) Abstract
 	
@@ -100,7 +102,7 @@ Private
 Global _defaultFlags
 Global _driver:TGraphicsDriver
 Global _graphicsModes:TGraphicsMode[]
-Global _graphics:TGraphics,_gWidth,_gHeight,_gDepth,_gHertz,_gFlags
+Global _graphics:TGraphics,_gWidth,_gHeight,_gDepth,_gHertz,_gFlags,_gx,_gy
 
 Global _exGraphics:TGraphics
 
@@ -142,6 +144,8 @@ Function SetGraphicsDriver( driver:TGraphicsDriver,defaultFlags=GRAPHICS_BACKBUF
 	_gDepth=0
 	_gHertz=0
 	_gFlags=0
+	_gx=0
+	_gy=0
 End Function
 
 Rem
@@ -223,11 +227,11 @@ first have to select it using #SetGraphics.
 The kind of graphics object returned depends upon the current graphics driver as set by
 #SetGraphicsDriver.
 End Rem
-Function CreateGraphics:TGraphics( width,height,depth,hertz,flags )
+Function CreateGraphics:TGraphics( width,height,depth,hertz,flags,x,y )
 	flags:|_defaultFlags
 	Local g:TGraphics
 	Try
-		g=_driver.CreateGraphics( width,height,depth,hertz,flags )
+		g=_driver.CreateGraphics( width,height,depth,hertz,flags,x,y )
 	Catch ex:Object
 ?Debug
 		WriteStdout "CreateGraphics failed:"+ex.ToString()
@@ -275,6 +279,8 @@ Function SetGraphics( g:TGraphics )
 		_gDepth=0
 		_gHertz=0
 		_gFlags=0
+		_gx=0
+		_gy=0
 		Return
 	EndIf
 	Local d:TGraphicsDriver=g.Driver()
@@ -283,7 +289,7 @@ Function SetGraphics( g:TGraphics )
 		_graphicsModes=Null
 		_driver=d
 	EndIf
-	g.GetSettings _gWidth,_gHeight,_gDepth,_gHertz,_gFlags
+	g.GetSettings _gWidth,_gHeight,_gDepth,_gHertz,_gFlags,_gx,_gy
 	d.SetGraphics g
 	_graphics=g
 End Function
@@ -296,6 +302,17 @@ Function GraphicsResize( width:Int, height:Int )
 		_gWidth = width
 		_gHeight = height
 		_graphics.Resize(width, height)
+	End If
+End Function
+
+Rem
+bbdoc: Sets the position of the graphics window to @x, @y.
+End Rem
+Function GraphicsPosition( x:Int, y:Int )
+	If _driver And _graphics Then
+		_gx = x
+		_gy = y
+		_graphics.Position(x, y)
 	End If
 End Function
 
@@ -347,6 +364,14 @@ The current graphics object can be changed using #SetGraphics.
 End Rem
 Function GraphicsFlags()
 	Return _gFlags
+End Function
+
+Function GraphicsX:Int()
+	Return _gx
+End Function
+
+Function GraphicsY:Int()
+	Return _gy
 End Function
 
 Rem
@@ -441,15 +466,15 @@ Once #Graphics has executed, you can begin rendering immediately without any nee
 #Graphics also enables #{polled input} mode, providing a simple way to monitor the keyboard
 and mouse.
 End Rem
-Function Graphics:TGraphics( width,height,depth=0,hertz=60,flags=0 )
+Function Graphics:TGraphics( width,height,depth=0,hertz=60,flags=0,x=-1,y=-1 )
 	EndGraphics
 	flags:|_defaultFlags
 	
-	Local g:TGraphics=CreateGraphics( width,height,depth,hertz,flags )
+	Local g:TGraphics=CreateGraphics( width,height,depth,hertz,flags,x,y )
 	If Not g Return
 	
 	BumpGraphicsSeq
-	
+
 	SetGraphics g
 
 	If depth

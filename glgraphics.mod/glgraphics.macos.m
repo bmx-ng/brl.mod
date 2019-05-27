@@ -220,7 +220,7 @@ BBGLContext *bbGLGraphicsAttachGraphics( NSView *view,int flags ){
 	return context;
 }
 
-BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hertz,int flags ){
+BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hertz,int flags, int x, int y ){
 	int mode;
 	BBGLWindow *window=0;
 	BBGLContext *context;
@@ -262,9 +262,11 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 		mode=MODE_DISPLAY;
 		
 	}else{
+		if (x < 0) x = 0;
+		if (y < 0) y = 0;
 		
 		window=[[BBGLWindow alloc]
-			initWithContentRect:NSMakeRect( 0,0,width,height )
+			initWithContentRect:NSMakeRect( x, y,width,height )
 			styleMask:NSTitledWindowMask|NSClosableWindowMask
 			backing:NSBackingStoreBuffered
 			defer:YES];

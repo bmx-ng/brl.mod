@@ -14,7 +14,7 @@ Extern
 	Function bbGLGraphicsShareContexts()
 	Function bbGLGraphicsGraphicsModes( buf:Byte Ptr,size )
 	Function bbGLGraphicsAttachGraphics:Byte Ptr( widget:Byte Ptr,flags )
-	Function bbGLGraphicsCreateGraphics:Byte Ptr( width,height,depth,hertz,flags )
+	Function bbGLGraphicsCreateGraphics:Byte Ptr( width,height,depth,hertz,flags,x,y )
 	Function bbGLGraphicsGetSettings( context:Byte Ptr,width Var,height Var,depth Var,hertz Var,flags Var )
 	Function bbGLGraphicsClose( context:Byte Ptr )	
 	Function bbGLGraphicsSetGraphics( context:Byte Ptr )
@@ -30,15 +30,17 @@ Type TGLGraphics Extends TGraphics
 		Return GLGraphicsDriver()
 	End Method
 	
-	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var ) Override
+	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var, x Var, y Var ) Override
 		Assert _context
-		Local w,h,d,r,f
+		Local w,h,d,r,f,xp,yp
 		bbGLGraphicsGetSettings _context,w,h,d,r,f
 		width=w
 		height=h
 		depth=d
 		hertz=r
 		flags=f
+		x=-1
+		y=-1
 	End Method
 	
 	Method Close() Override
@@ -50,6 +52,9 @@ Type TGLGraphics Extends TGraphics
 	Method Resize(width:Int, height:Int) Override
 	End Method
 	
+	Method Position(x:Int, y:Int) Override
+	End Method
+
 	Field _context:Byte Ptr
 	
 End Type
@@ -78,9 +83,9 @@ Type TGLGraphicsDriver Extends TGraphicsDriver
 		Return t
 	End Method
 	
-	Method CreateGraphics:TGLGraphics( width,height,depth,hertz,flags ) Override
+	Method CreateGraphics:TGLGraphics( width,height,depth,hertz,flags,x,y ) Override
 		Local t:TGLGraphics=New TGLGraphics
-		t._context=bbGLGraphicsCreateGraphics( width,height,depth,hertz,flags )
+		t._context=bbGLGraphicsCreateGraphics( width,height,depth,hertz,flags,x,y )
 		Return t
 	End Method
 	

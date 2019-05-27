@@ -411,7 +411,7 @@ BBGLContext *bbGLGraphicsAttachGraphics( HWND hwnd,int flags ){
 	return context;
 }
 
-BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hertz,int flags ){
+BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hertz,int flags, int x, int y ){
 	BBGLContext *context;
 	
 	int mode;
@@ -434,8 +434,8 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 		RECT desktopRect;
 		GetWindowRect(desktop, &desktopRect);
 
-		rect.left=desktopRect.right/2-width/2;		
-		rect.top=desktopRect.bottom/2-height/2;		
+		rect.left=(x == -1) ? desktopRect.right/2-width/2 : x + GetSystemMetrics(SM_CXBORDER);
+		rect.top=(y == -1) ? desktopRect.bottom/2-height/2: y + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFIXEDFRAME);
 		rect.right=rect.left+width;
 		rect.bottom=rect.top+height;
 		

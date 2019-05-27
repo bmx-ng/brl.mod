@@ -353,8 +353,8 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		If g Return TMax2DGraphics.Create( g,Self )
 	End Method
 	
-	Method CreateGraphics:TMax2DGraphics( width,height,depth,hertz,flags ) Override
-		Local g:TGLGraphics=GLGraphicsDriver().CreateGraphics( width,height,depth,hertz,flags )
+	Method CreateGraphics:TMax2DGraphics( width,height,depth,hertz,flags,x,y ) Override
+		Local g:TGLGraphics=GLGraphicsDriver().CreateGraphics( width,height,depth,hertz,flags,x,y )
 		If g Return TMax2DGraphics.Create( g,Self )
 	End Method
 	
@@ -376,8 +376,8 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	End Method
 	
 	Method ResetGLContext( g:TGraphics )
-		Local gw,gh,gd,gr,gf
-		g.GetSettings gw,gh,gd,gr,gf
+		Local gw,gh,gd,gr,gf,gx,gy
+		g.GetSettings gw,gh,gd,gr,gf,gx,gy
 		
 		state_blend=0
 		state_boundtex=0

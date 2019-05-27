@@ -59,7 +59,7 @@ struct BBGLContext{
 
 int bbGLGraphicsGraphicsModes( int *imodes,int maxcount );
 BBGLContext *bbGLGraphicsAttachGraphics( void * window,int flags );
-BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,int flags );
+BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,int flags, int x, int y );
 void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hz,int *flags );
 void bbGLGraphicsClose( BBGLContext *context );
 void bbGLGraphicsSetGraphics( BBGLContext *context );
@@ -210,7 +210,7 @@ void bbGLGraphicsShareContexts(){
 	_sharedContext=bbGLGraphicsCreateGraphics(0,0,0,0,0);
 }
 
-BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,int flags ){
+BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,int flags, int x, int y ){
 	XSetWindowAttributes swa;
 	XVisualInfo *vizinfo;
 	XEvent event;
@@ -300,6 +300,9 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,i
 		Atom atom;
 		XSizeHints *hints;
 		
+		if (x < 0) x = 0 ;
+		if (y < 0) y = 0 ;	
+		
 		swa.border_pixel=0;
 		swa.event_mask=StructureNotifyMask;
 		swa.colormap=XCreateColormap( xdisplay,RootWindow(xdisplay,0),vizinfo->visual,AllocNone );
@@ -307,8 +310,8 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,i
 		window=XCreateWindow(
 			xdisplay,
 			RootWindow(xdisplay,xscreen),
-			0,
-			0,  
+			x,
+			y,  
 			width,height,
 			0,
 			vizinfo->depth,
