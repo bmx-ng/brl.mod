@@ -207,7 +207,7 @@ static Bool WaitForNotify(Display *display,XEvent *event,XPointer arg){
 
 void bbGLGraphicsShareContexts(){
 	if( _sharedContext ) return;
-	_sharedContext=bbGLGraphicsCreateGraphics(0,0,0,0,0);
+	_sharedContext=bbGLGraphicsCreateGraphics(0,0,0,0,0,0,0);
 }
 
 BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,int flags, int x, int y ){
