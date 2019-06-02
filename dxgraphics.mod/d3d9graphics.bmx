@@ -11,7 +11,7 @@ Import brl.systemdefault
 Private
 Extern
 	Function bbAppIcon:Byte Ptr(inst:Byte Ptr)="HICON bbAppIcon(HINSTANCE)!"
-	Function GetSystemMetrics:Int(index:Int)
+	Function GetSystemMetrics:Int(index:Int) "win32"
 End Extern
 
 Global _wndClass$="BBDX9Device Window Class"
