@@ -202,7 +202,7 @@ Type TNullFunctionException Extends TBlitzException
 End Type
 
 Rem
-bbdoc: Null method exception
+bbdoc: Array bounds exception
 about: Thrown when an array element with an index outside the valid range of the array (0 to array.length-1) is accessed. (only in debug mode)
 End Rem
 Type TArrayBoundsException Extends TBlitzException
