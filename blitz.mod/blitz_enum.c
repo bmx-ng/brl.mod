@@ -69,13 +69,19 @@ ENUM_TO_STRING(BBSIZET,t)
 int bbEnumTryConvert_##chr(BBEnum * bbEnum, type ordinalValue, type * ordinalResult) {\
 	type * value = (type*)bbEnum->values;\
 	if (bbEnum->flags) {\
-		int result;\
-		for (int i = 0; i < bbEnum->length; i++) {\
-			if (ordinalValue & *value) {\
-				result |= *value++;\
+		if (ordinalValue == 0) {\
+			for (int i = 0; i < bbEnum->length; i++) {\
+				if (*value++ == 0) {\
+					return 1;\
+				}\
 			}\
+			return 0;\
 		}\
-		if (result == ordinalValue) {\
+		type val = ordinalValue;\
+		for (int i = 0; i < bbEnum->length; i++) {\
+			val ^= *value++;\
+		}\
+		if (val == 0) {\
 			*ordinalResult = ordinalValue;\
 			return 1;\
 		}\
