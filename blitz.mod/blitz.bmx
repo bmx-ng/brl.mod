@@ -237,6 +237,16 @@ Type TRuntimeException Extends TBlitzException
 	End Function
 End Type
 
+Rem
+bbdoc: Invalid enum exception
+about: Thrown when attempting to cast an invalid value to an #Enum. (only in debug mode)
+End Rem
+Type TInvalidEnumException Extends TBlitzException
+	Method ToString$() Override
+		Return "Attempt to cast invalid value to Enum"
+	End Method
+End Type
+
 Function NullObjectError()
 	Throw New TNullObjectException
 End Function
@@ -255,6 +265,10 @@ End Function
 
 Function OutOfDataError()
 	Throw New TOutOfDataException
+End Function
+
+Function InvalidEnumError()
+	Throw New TInvalidEnumException
 End Function
 
 Rem
