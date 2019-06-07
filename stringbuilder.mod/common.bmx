@@ -59,6 +59,7 @@ Extern
 	Function bmx_stringbuilder_append_ulong(buffer:Byte Ptr, value:ULong)
 	Function bmx_stringbuilder_append_sizet(buffer:Byte Ptr, value:Size_T)
 	Function bmx_stringbuilder_append_shorts(buffer:Byte Ptr, shorts:Short Ptr, length:Int)
+	Function bmx_stringbuilder_append_char(buffer:Byte Ptr, value:Int)
 	Function bmx_stringbuilder_left:String(buffer:Byte Ptr, length:Int)
 	Function bmx_stringbuilder_right:String(buffer:Byte Ptr, length:Int)
 	

@@ -363,6 +363,14 @@ Public
 	End Method
 	
 	Rem
+	bbdoc: Appends a character of the given @char code point to the string builder.
+	End Rem
+	Method AppendChar:TStringBuilder(char:Int)
+		bmx_stringbuilder_append_char(buffer, char)
+		Return Self
+	End Method
+	
+	Rem
 	bbdoc: Finds first occurance of a sub string.
 	returns: -1 if @subString not found.
 	End Rem
