@@ -166,12 +166,18 @@ Type TSocket
 		Return _remotePort
 	End Method
 	
-	Method UpdateLocalName()
-		_localIp = bmx_stdc_getsockname(_socket, _localPort)
+	Method UpdateLocalName:Int()
+		If bmx_stdc_getsockname(_socket, _localPort, _localIp) < 0 Then
+			Return False
+		End If
+		Return True
 	End Method
 	
-	Method UpdateRemoteName()
-		_remoteIp = bmx_stdc_getpeername(_socket, _remotePort)
+	Method UpdateRemoteName:Int()
+		If bmx_stdc_getpeername(_socket, _remotePort, _remoteIp) < 0 Then
+			Return False
+		End If
+		Return True
 	End Method
 	
 	Function Create:TSocket( socket:Int, autoClose:Int = True )
