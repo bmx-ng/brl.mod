@@ -154,7 +154,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 
 	End Method
 	
-	Function Load:TFreeTypeFont( src$,size:Int,style:Int )
+	Function Load:TFreeTypeFont( src:object,size:Int,style:Int )
 
 		Global ft_lib:Byte Ptr
 		
@@ -166,7 +166,41 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 				
 		Local ft_face:Byte Ptr
 
-		If src.Find( "::" )>0
+		If TStream(src)
+			Local stream:TStream = TStream(src)
+			Local data:Byte[1024]
+			Local dataSize:Int
+
+			'backup old stream position to set it back to it afterwards
+			Local oldStreamPos:int = stream.Pos()
+			stream.Seek(0)
+			
+			While Not stream.Eof()
+				If dataSize = data.length
+					data = data[.. dataSize*3/2]
+				EndIf
+				dataSize :+ stream.Read( (Byte Ptr data) + dataSize, data.length - dataSize )
+			Wend
+			If dataSize <> data.length
+				data = data[..dataSize]
+			EndIf
+
+			'restore stream position
+			stream.Seek(oldStreamPos)
+
+			'load data into freetype buffer
+			buf_size = data.length
+			If Not buf_size
+				Return Null
+			EndIf
+			buf = MemAlloc( Size_T(buf_size) )
+			MemCopy( buf, data, Size_T(buf_size) )
+
+			If FT_New_Memory_Face( ft_lib, buf, buf_size, 0, Varptr ft_face )
+				MemFree buf
+				Return Null
+			EndIf
+		ElseIf String(src).Find( "::" )>0
 			Local tmp:Byte[]=LoadByteArray( src )
 			buf_size=tmp.length
 			If Not buf_size Return Null
@@ -177,7 +211,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 				Return Null
 			EndIf
 		Else
-			If FT_New_Face( ft_lib,src$,0,Varptr ft_face ) Return Null
+			If FT_New_Face( ft_lib,String(src),0,Varptr ft_face ) Return Null
 		EndIf
 		
 		While size
@@ -217,9 +251,7 @@ Type TFreeTypeFontLoader Extends TFontLoader
 
 	Method LoadFont:TFreeTypeFont( url:Object,size:Int,style:Int ) Override
 	
-		Local src$=String( url )
-		
-		If src Return TFreeTypeFont.Load( src,size,style )
+		Return TFreeTypeFont.Load( url, size, style )
 	
 	End Method
 
