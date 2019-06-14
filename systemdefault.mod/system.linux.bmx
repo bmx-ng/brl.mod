@@ -98,10 +98,16 @@ Type TLinuxSystemDriver Extends TSystemDriver
 	End Method
 
 	Method OpenURL:Int( url$ ) Override
-		If getenv_("KDE_FULL_DESKTOP")
-			system_ "kfmclient exec ~q"+url+"~q"
+		'environment variable is most likely set for desktop environments
+		'working with the freedesktop.org project / x.org
+		'So this works at least for KDE, Gnome and XFCE
+		If getenv_("XDG_CURRENT_DESKTOP")
+			system_("xdg-open ~q"+url+"~q")
+		'Fallback for KDE/GNOME
+		ElseIf getenv_("KDE_FULL_DESKTOP")
+			system_("kfmclient exec ~q"+url+"~q")
 		ElseIf getenv_("GNOME_DESKTOP_SESSION_ID")
-			system_ "gnome-open ~q"+url+"~q"
+			system_("gnome-open ~q"+url+"~q")
 		EndIf
 	End Method
 
