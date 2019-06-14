@@ -169,12 +169,21 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 			Local data:Byte[1024 * 90]
 			Local dataSize:Int
 
+			'backup old stream position to set it back to it afterwards
+			'Pos() returns -1 for non-seekable-streams
+			Local oldStreamPos:int = stream.Pos()
+			If oldStreamPos > -1 Then stream.Seek(0)
+			
 			While Not stream.Eof()
 				If dataSize = data.length
 					data = data[..dataSize * 3 / 2]
 				EndIf
 				dataSize :+ stream.Read( (Byte Ptr data) + dataSize, data.length - dataSize )
 			Wend
+
+			'restore stream position
+			If oldStreamPos > -1 Then stream.Seek(oldStreamPos)
+
 			If dataSize <> data.length
 				data = data[..dataSize]
 			EndIf
