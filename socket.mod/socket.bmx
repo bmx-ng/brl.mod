@@ -50,15 +50,23 @@ End Type
 
 Type TSocket
 
-	Method Send:Size_T( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
-		Local n:Size_T=send_( _socket,buf,count,flags )
-		If n<0 Return 0
+?Ptr64
+	Method Send:Long( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
+		Local n:Long=send_( _socket,buf,count,flags )
+?Not ptr64
+	Method Send:Int( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
+		Local n:Int=send_( _socket,buf,count,flags )
+?
 		Return n
 	End Method
 
-	Method Recv:Size_T( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
-		Local n:Size_T=recv_( _socket,buf,count,flags )
-		If n<0 Return 0
+?ptr64
+	Method Recv:Long( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
+		Local n:Long=recv_( _socket,buf,count,flags )
+?Not ptr64
+	Method Recv:Int( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
+		Local n:Int=recv_( _socket,buf,count,flags )
+?
 		Return n
 	End Method
 
