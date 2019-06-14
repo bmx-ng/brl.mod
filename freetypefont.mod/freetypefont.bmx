@@ -168,7 +168,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 
 		If TStream(src)
 			Local stream:TStream = TStream(src)
-			Local data:Byte[1024]
+			Local data:Byte[1024 * 8]
 			Local dataSize:Int
 
 			'backup old stream position to set it back to it afterwards
@@ -200,18 +200,25 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 				MemFree buf
 				Return Null
 			EndIf
-		ElseIf String(src).Find( "::" )>0
-			Local tmp:Byte[]=LoadByteArray( src )
-			buf_size=tmp.length
-			If Not buf_size Return Null
-			buf=MemAlloc( Size_T(buf_size) )
-			MemCopy buf,tmp,Size_T(buf_size)
-			If FT_New_Memory_Face( ft_lib,buf,buf_size,0,Varptr ft_face )
-				MemFree buf
-				Return Null
-			EndIf
+		ElseIf Not String(src) 'empty tring
+			Return Null
 		Else
-			If FT_New_Face( ft_lib,String(src),0,Varptr ft_face ) Return Null
+			'handle "incbin::"-data
+			If String(src).Find( "::" )>0
+				Local tmp:Byte[]=LoadByteArray( src )
+				buf_size=tmp.length
+				If Not buf_size Return Null
+				buf=MemAlloc( Size_T(buf_size) )
+				MemCopy buf,tmp,Size_T(buf_size)
+				If FT_New_Memory_Face( ft_lib,buf,buf_size,0,Varptr ft_face )
+					MemFree buf
+					Return Null
+				EndIf
+			Else
+				If FT_New_Face( ft_lib,String(src),0,Varptr ft_face )
+					Return Null
+				EndIf
+			EndIf
 		EndIf
 		
 		While size
