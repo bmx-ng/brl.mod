@@ -3,12 +3,14 @@ SuperStrict
 
 Module BRL.FreeTypeFont
 
-ModuleInfo "Version: 1.11"
+ModuleInfo "Version: 1.12"
 ModuleInfo "Author: Simon Armstrong, Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.12"
+ModuleInfo "History: Added support for loading fonts from TBanks."
 ModuleInfo "History: 1.11"
 ModuleInfo "History: Added support for loading fonts from streams."
 ModuleInfo "History: 1.10"
@@ -30,6 +32,7 @@ ModuleInfo "History: Added stream hooks"
 Import BRL.Font
 Import BRL.Pixmap
 Import Pub.FreeType
+Import BRL.Bank
 
 Private
 
@@ -184,6 +187,21 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 			End If
 			
 			buf = data
+			
+			If FT_New_Memory_Face( ft_lib, buf, buf.length, 0, Varptr ft_face )
+				Return Null
+			EndIf
+
+		Else If TBank(src) Then
+
+			If Not TBank(src).Size() Then
+				Return Null
+			End If
+
+			Local data:Byte Ptr = TBank(src).Lock()
+			buf = New Byte[TBank(src).Size()]
+			MemCopy(buf, data, TBank(src).Size())
+			TBank(src).UnLock()
 			
 			If FT_New_Memory_Face( ft_lib, buf, buf.length, 0, Varptr ft_face )
 				Return Null
