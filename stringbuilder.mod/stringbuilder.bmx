@@ -607,37 +607,37 @@ Public
 	bbdoc: Returns #True if @obj is equal to this string builder.
 	End Rem
 	Method Operator =:Int (obj:Object)
-        Return Compare(obj) = 0
-    End Method
+		Return Compare(obj) = 0
+	End Method
 
 	Rem
 	bbdoc: Returns #True if @sb is lexicographically equal to this string builder.
 	End Rem
 	Method Operator =:Int (sb:TStringBuilder)
 		' quick length test
-        If Length() <> sb.Length() Then
+		If Length() <> sb.Length() Then
 			Return False
 		End If
 		Return Compare(sb) = 0
-    End Method
+	End Method
 
 	Rem
 	bbdoc: Returns #True if @obj is not equal to this string builder.
 	End Rem
 	Method Operator <>:Int (obj:Object)
-        Return Compare(obj) <> 0
-    End Method
+		Return Compare(obj) <> 0
+	End Method
 
 	Rem
 	bbdoc: Returns #True if @sb is not lexicographically equal to this string builder.
 	End Rem
 	Method Operator <>:Int (sb:TStringBuilder)
 		' quick length test
-        If Length() <> sb.Length() Then
+		If Length() <> sb.Length() Then
 			Return True
 		End If
 		Return Compare(sb) <> 0
-    End Method
+	End Method
 
 	Method Delete()
 		If buffer Then
