@@ -589,6 +589,21 @@ BBString * bmx_stringbuilder_right(struct MaxStringBuilder * buf, int length) {
 	}
 }
 
+int bmx_stringbuilder_compare(struct MaxStringBuilder * buf1, struct MaxStringBuilder * buf2) {
+	if (buf1 == buf2) {
+		return 0;
+	}
+	
+	int c = buf1->count < buf2->count ? buf1->count : buf2->count;
+	int n = 0;
+	for (int i=0; i < c; ++i) {
+		if (n = buf1->buffer[i] - buf2->buffer[i]) {
+			return n;
+		}
+	}
+	return buf1->count - buf2->count;
+}
+
 /* ----------------------------------------------------- */
 
 int bmx_stringbuilder_splitbuffer_length(struct MaxSplitBuffer * buf) {

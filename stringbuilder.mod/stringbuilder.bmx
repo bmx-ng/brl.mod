@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.05"
+ModuleInfo "Version: 1.06"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2018-2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.06"
+ModuleInfo "History: Implemented Compare(), and added overloads for = and <>."
 ModuleInfo "History: 1.05"
 ModuleInfo "History: NG Refactoring."
 ModuleInfo "History: Added overloaded Append() methods."
@@ -369,6 +371,22 @@ Public
 		bmx_stringbuilder_append_char(buffer, char)
 		Return Self
 	End Method
+
+	Rem
+	bbdoc: Compares the string builder with another object.
+	about: If the other object is a string builder then, the contents of two are compared lexicographically, as
+	determined by the unicode value of each character in order.
+	If there is no difference, then the shorter of the two contents precedes the longer.
+	
+	If the other object is not a string builder, the standard object comparison is made.
+	End Rem
+	Method Compare:Int(o:Object)
+		If TStringBuilder(o) Then
+			Return bmx_stringbuilder_compare(buffer, TStringBuilder(o).buffer)
+		End If
+		
+		Return Super.Compare(o)
+	End Method
 	
 	Rem
 	bbdoc: Finds first occurance of a sub string.
@@ -584,6 +602,42 @@ Public
 	Method ToString:String() Override
 		Return bmx_stringbuilder_tostring(buffer)
 	End Method
+
+	Rem
+	bbdoc: Returns #True if @obj is equal to this string builder.
+	End Rem
+	Method Operator =:Int (obj:Object)
+        Return Compare(obj) = 0
+    End Method
+
+	Rem
+	bbdoc: Returns #True if @sb is lexicographically equal to this string builder.
+	End Rem
+	Method Operator =:Int (sb:TStringBuilder)
+		' quick length test
+        If Length() <> sb.Length() Then
+			Return False
+		End If
+		Return Compare(sb) = 0
+    End Method
+
+	Rem
+	bbdoc: Returns #True if @obj is not equal to this string builder.
+	End Rem
+	Method Operator <>:Int (obj:Object)
+        Return Compare(obj) <> 0
+    End Method
+
+	Rem
+	bbdoc: Returns #True if @sb is not lexicographically equal to this string builder.
+	End Rem
+	Method Operator <>:Int (sb:TStringBuilder)
+		' quick length test
+        If Length() <> sb.Length() Then
+			Return True
+		End If
+		Return Compare(sb) <> 0
+    End Method
 
 	Method Delete()
 		If buffer Then

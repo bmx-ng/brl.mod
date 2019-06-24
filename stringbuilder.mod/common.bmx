@@ -62,6 +62,7 @@ Extern
 	Function bmx_stringbuilder_append_char(buffer:Byte Ptr, value:Int)
 	Function bmx_stringbuilder_left:String(buffer:Byte Ptr, length:Int)
 	Function bmx_stringbuilder_right:String(buffer:Byte Ptr, length:Int)
+	Function bmx_stringbuilder_compare:Int(buffer:Byte Ptr, buffer2:Byte Ptr)
 	
 	Function bmx_stringbuilder_splitbuffer_length:Int(splitPtr:Byte Ptr)
 	Function bmx_stringbuilder_splitbuffer_text:String(splitPtr:Byte Ptr, index:Int)
