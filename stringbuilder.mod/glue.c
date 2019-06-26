@@ -516,14 +516,14 @@ void bmx_stringbuilder_append_long(struct MaxStringBuilder * buf, BBInt64 value)
 	bmx_stringbuilder_append_cstring(buf, chars);
 }
 
-void bmx_stringbuilder_append_short(struct MaxStringBuilder * buf, short value) {
-	char chars[16];
+void bmx_stringbuilder_append_short(struct MaxStringBuilder * buf, BBSHORT value) {
+	BBSHORT chars[16];
 	sprintf(chars, "%d", value);
 	bmx_stringbuilder_append_cstring(buf, chars);
 }
 
-void bmx_stringbuilder_append_byte(struct MaxStringBuilder * buf, char value) {
-	char chars[8];
+void bmx_stringbuilder_append_byte(struct MaxStringBuilder * buf, BBBYTE value) {
+	BBBYTE chars[8];
 	sprintf(chars, "%d", value);
 	bmx_stringbuilder_append_cstring(buf, chars);
 }
@@ -552,7 +552,7 @@ void bmx_stringbuilder_append_sizet(struct MaxStringBuilder * buf, BBSIZET value
 	bmx_stringbuilder_append_cstring(buf, chars);
 }
 
-void bmx_stringbuilder_append_shorts(struct MaxStringBuilder * buf, short * shorts, int length) {
+void bmx_stringbuilder_append_shorts(struct MaxStringBuilder * buf, BBSHORT * shorts, int length) {
 	if (length > 0) {
 		bmx_stringbuilder_resize(buf, buf->count + length);
 		BBChar * p = buf->buffer + buf->count;

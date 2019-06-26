@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.06"
+ModuleInfo "Version: 1.07"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2018-2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.07"
+ModuleInfo "History: Fixed AppendByte and AppendShort not using unsigned variants."
 ModuleInfo "History: 1.06"
 ModuleInfo "History: Implemented Compare(), and added overloads for = and <>."
 ModuleInfo "History: 1.05"
