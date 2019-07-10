@@ -158,6 +158,8 @@ Import "blitz_nx.c"
 Import "tree/tree.c"
 
 Include "builtin.bmx"
+Include "iterator.bmx"
+Include "comparator.bmx"
 
 Extern
 Global OnDebugStop()="bbOnDebugStop"
