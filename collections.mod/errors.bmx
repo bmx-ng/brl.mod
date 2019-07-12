@@ -51,3 +51,11 @@ Type TArgumentException Extends TBlitzException
 	End Method
 
 End Type
+
+Type TArgumentNullException Extends TArgumentException
+
+	Method New(arg:String)
+		Self.message = arg + " cannot be null"
+	End Method
+
+End Type
