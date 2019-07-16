@@ -30,6 +30,35 @@ Public
 	End Method
 
 	Rem
+	bbdoc: Creates a new #TQueue initialised by @array.
+	End Rem
+	Method New(array:T[])
+		initialCapacity = 16
+		If array Then
+			initialCapacity = Max(initialCapacity, array.length)
+		End If
+		data = New T[initialCapacity]
+		
+		If array Then
+			For Local element:T = EachIn array
+				Enqueue(element)
+			Next
+		End If
+	End Method
+
+	Rem
+	bbdoc: Creates a new #TQueue initialised by @iterable.
+	End Rem
+	Method New(iterable:IIterable<T>)
+		New(16)
+		If iterable Then
+			For Local value:T = EachIn iterable
+				Enqueue(value)
+			Next
+		End If
+	End Method
+
+	Rem
 	bbdoc: Returns an iterator that iterates through the #TQueue.
 	End Rem
 	Method GetIterator:IIterator<T>()

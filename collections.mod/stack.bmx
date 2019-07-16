@@ -10,7 +10,7 @@ Type TStack<T> Implements ICollection<T>
 Private
 	Field data:T[]
 	Field size:Int
-	Field intialCapacity:Int
+	Field initialCapacity:Int
 Public
 
 	Rem
@@ -19,6 +19,35 @@ Public
 	Method New(initialCapacity:Int = 16)
 		Self.initialCapacity = 16
 		data = New T[initialCapacity]
+	End Method
+
+	Rem
+	bbdoc: Creates a new #TStack initialised by @array.
+	End Rem
+	Method New(array:T[])
+		initialCapacity = 16
+		If array Then
+			initialCapacity = Max(initialCapacity, array.length)
+		End If
+		data = New T[initialCapacity]
+		
+		If array Then
+			For Local element:T = EachIn array
+				Push(element)
+			Next
+		End If
+	End Method
+
+	Rem
+	bbdoc: Creates a new #TStack initialised by @iterable.
+	End Rem
+	Method New(iterable:IIterable<T>)
+		New(16)
+		If iterable Then
+			For Local value:T = EachIn iterable
+				Push(value)
+			Next
+		End If
 	End Method
 
 	Rem
