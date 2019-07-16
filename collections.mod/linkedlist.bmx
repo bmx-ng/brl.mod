@@ -155,6 +155,20 @@ Public
 		End If
 		Return node
 	End Method
+
+	Rem
+	bbdoc: Adds the specified new @node at the end of the #TLinkedList.
+	End Rem
+	Method Add(node:TLinkedListNode<T>)
+		AddLast(node)
+	End Method
+	
+	Rem
+	bbdoc: Adds a new node containing the specified @value at the end of the #TLinkedList.
+	End Rem
+	Method Add:TLinkedListNode<T>(value:T)
+		Return AddLast(value)
+	End Method
 	
 	Rem
 	bbdoc: Adds the specified new @node at the end of the #TLinkedList.
