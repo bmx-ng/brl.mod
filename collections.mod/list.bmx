@@ -2,6 +2,7 @@ SuperStrict
 
 Import "collection.bmx"
 Import "errors.bmx"
+Import "sort.bmx"
 
 Interface IList<T> Extends ICollection<T>
 
@@ -33,6 +34,35 @@ Public
 	Method New(initialCapacity:Int = 16)
 		Self.initialCapacity = initialCapacity
 		data = New T[initialCapacity]
+	End Method
+
+	Rem
+	bbdoc: Creates a new #TArrayList initialised by @array.
+	End Rem
+	Method New(array:T[])
+		initialCapacity = 16
+		If array Then
+			initialCapacity = Max(initialCapacity, array.length)
+		End If
+		data = New T[initialCapacity]
+		
+		If data Then
+			For Local element:T = EachIn array
+				Add(element)
+			Next
+		End If
+	End Method
+
+	Rem
+	bbdoc: Creates a new #TArrayList initialised by @iterable.
+	End Rem
+	Method New(iterable:IIterable<T>)
+		New(16)
+		If iterable Then
+			For Local value:T = EachIn iterable
+				Add(value)
+			Next
+		End If
 	End Method
 
 	Rem
@@ -242,6 +272,31 @@ Public
 		
 		size :- 1
 		data[size] = Null
+	End Method
+	
+	Rem
+	bbdoc: Sorts the elements in the entire #TArrayList using the specified comparator, or the default if #Null.
+	End Rem
+	Method Sort(comparator:IComparator<T> = Null)
+		' introsort
+		If size < 2 Then
+			Return
+		End If
+		
+		Local depth:Int
+		Local n:Int = size
+		While n >= 1
+			depth :+ 1
+			n = n / 2
+		Wend
+		
+		depth :* 2
+		
+		If comparator Then
+			New TComparatorArraySort<T>(comparator).Sort(data, 0, size - 1, depth)
+		Else
+			New TArraySort<T>().Sort(data, 0, size - 1, depth)
+		End If
 	End Method
 	
 	Rem
