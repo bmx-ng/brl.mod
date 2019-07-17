@@ -302,7 +302,56 @@ Public
 		
 		RemoveNode(head.previousNode)		
 	End Method
-	
+
+	Rem
+	bbdoc: Sorts the elements in the entire #TLinkedList using the specified comparator, or the default if #Null.
+	End Rem
+	Method Sort(comparator:IComparator<T> = Null)
+
+		If Not head Or head.nextNode = head Then
+			Return
+		End If
+
+		head.previousNode.nextNode = Null
+
+		Local array:TLinkedListNode<T>[32]
+
+		Local result:TLinkedListNode<T> = head
+		
+		While result
+		
+			Local nextNode:TLinkedListNode<T> = result.nextNode
+			result.nextNode = Null
+			
+			Local i:Int
+			While i < array.length
+				If Not array[i] Then
+					Exit
+				End If
+				
+				result = MergeSort(array[i], result, comparator)
+				array[i] = Null
+				
+				i :+ 1
+			Wend
+
+			If i = array.length Then
+				i = array.length - 1
+			End If
+			
+			array[i] = result
+			result = nextNode
+		Wend
+		
+		result = Null
+		For Local i:Int = 0 Until 32
+			result = MergeSort(array[i], result, comparator)
+		Next
+		
+		head = result
+		FixHead()
+	End Method
+
 Private
 	Method ValidateNode(node:TLinkedListNode<T>)
 		If Not node Then
@@ -352,7 +401,87 @@ Private
 		node.previousNode = newNode
 		size :+ 1
 	End Method
-Public
+
+	Method MergeSort:TLinkedListNode<T>(leftNode:TLinkedListNode<T>, rightNode:TLinkedListNode<T>, comparator:IComparator<T>)
+		Local firstNode:TLinkedListNode<T>
+		Local lastNode:TLinkedListNode<T>
+	
+		While leftNode And rightNode
+		
+			Local cc:Int
+			If comparator Then
+				cc = comparator.Compare( leftNode.value, rightNode.value )
+			Else
+				cc = DefaultComparator_Compare(leftNode.value, rightNode.value)
+			End If
+			
+			If cc < 0 Then
+				If Not firstNode Then
+					firstNode = leftNode
+					lastNode = leftNode
+				Else
+					lastNode.nextNode = leftNode
+					leftNode.previousNode = lastNode
+				End If
+				
+				lastNode = leftNode
+				leftNode = leftNode.nextNode
+			Else
+				If Not firstNode Then
+					firstNode = rightNode
+					lastNode = rightNode
+				Else
+					lastNode.nextNode = rightNode
+					rightNode.previousNode = lastNode
+				End If
+				lastNode = rightNode
+				rightNode = rightNode.nextNode
+			End If
+		
+		Wend
+		
+		While leftNode
+			If Not firstNode Then
+				firstNode = leftNode
+				lastNode = leftNode
+			Else
+				lastNode.nextNode = leftNode
+				leftNode.previousNode = lastNode
+			End If
+			lastNode = leftNode
+			leftNode = leftNode.nextNode
+		Wend
+
+		While rightNode
+			If Not firstNode Then
+				firstNode = rightNode
+				lastNode = rightNode
+			Else
+				lastNode.nextNode = rightNode
+				rightNode.previousNode = lastNode
+			End If
+
+			lastNode = rightNode
+			rightNode = rightNode.nextNode
+		Wend
+		
+		Return firstNode
+	End Method
+	
+	Method FixHead()
+		Local node:TLinkedListNode<T> = head
+		Local lastNode:TLinkedListNode<T>
+		
+		While node
+			lastNode = node
+			node = node.nextNode
+		Wend
+		
+		head.previousNode = lastNode
+		lastNode.nextNode = head
+	End Method
+
+	Public
 
 End Type
 
@@ -372,6 +501,20 @@ Public
 	End Rem
 	Method New(value:T)
 		Self.value = value
+	End Method
+	
+	Rem
+	bbdoc: Gets the next node.
+	End Rem
+	Method GetNext:TLinkedListNode<T>()
+		Return nextNode
+	End Method
+	
+	Rem
+	bbdoc: Gets the previousNode
+	End Rem
+	Method GetPrevious:TLinkedListNode<T>()
+		Return previousNode
 	End Method
 	
 Private
