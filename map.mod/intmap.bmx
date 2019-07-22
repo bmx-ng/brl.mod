@@ -1,4 +1,4 @@
-Strict
+SuperStrict
 
 
 Extern
@@ -42,7 +42,7 @@ Type TIntMap
 	bbdoc: Checks if the map is empty.
 	about: #True if @map is empty, otherwise #False.
 	End Rem
-	Method IsEmpty()
+	Method IsEmpty:Int()
 		Return bmx_map_intmap_isempty(Varptr _root)
 	End Method
 	
@@ -78,7 +78,7 @@ Type TIntMap
 	bbdoc: Remove a key/value pair from the map.
 	returns: #True if @key was removed, or #False otherwise.
 	End Rem
-	Method Remove( key:Int )
+	Method Remove:Int( key:Int )
 ?ngcmod
 		_modCount :+ 1
 ?
@@ -193,6 +193,8 @@ Type TIntNode
 	Field _root:Byte Ptr
 	Field _nodePtr:Byte Ptr
 	
+	Field _nextNode:Byte Ptr
+	
 	Method Key:Int()
 		Return bmx_map_intmap_key(_nodePtr)
 	End Method
@@ -201,7 +203,7 @@ Type TIntNode
 		Return bmx_map_intmap_value(_nodePtr)
 	End Method
 
-	Method HasNext()
+	Method HasNext:Int()
 		Return bmx_map_intmap_hasnext(_nodePtr, _root)
 	End Method
 	
@@ -209,10 +211,19 @@ Type TIntNode
 		If Not _nodePtr Then
 			_nodePtr = bmx_map_intmap_firstnode(_root)
 		Else
-			_nodePtr = bmx_map_intmap_nextnode(_nodePtr)
+			'_nodePtr = bmx_map_intmap_nextnode(_nodePtr)
+			_nodePtr = _nextNode
+		End If
+
+		If HasNext() Then
+			_nextNode = bmx_map_intmap_nextnode(_nodePtr)
 		End If
 
 		Return Self
+	End Method
+	
+	Method Remove()
+		
 	End Method
 	
 End Type
@@ -229,7 +240,7 @@ Type TIntKey
 End Type
 
 Type TIntNodeEnumerator
-	Method HasNext()
+	Method HasNext:Int()
 		Local has:Int = _node.HasNext()
 		If Not has Then
 			_map = Null
@@ -245,7 +256,7 @@ Type TIntNodeEnumerator
 		_node=_node.NextNode()
 		Return node
 	End Method
-
+	
 	'***** PRIVATE *****
 		
 	Field _node:TIntNode	
@@ -288,7 +299,7 @@ Type TIntMapEnumerator
 End Type
 
 Type TIntEmptyEnumerator Extends TIntNodeEnumerator
-	Method HasNext() Override
+	Method HasNext:Int() Override
 		_map = Null
 		Return False
 	End Method

@@ -1,4 +1,4 @@
-Strict
+SuperStrict
 
 
 Extern
@@ -42,7 +42,7 @@ Type TStringMap
 	bbdoc: Checks if the map is empty.
 	about: #True if @map is empty, otherwise #False.
 	End Rem
-	Method IsEmpty()
+	Method IsEmpty:Int()
 		Return bmx_map_stringmap_isempty(Varptr _root)
 	End Method
 	
@@ -78,7 +78,7 @@ Type TStringMap
 	bbdoc: Remove a key/value pair from the map.
 	returns: #True if @key was removed, or #False otherwise.
 	End Rem
-	Method Remove( key:String )
+	Method Remove:Int( key:String )
 ?ngcmod
 		_modCount :+ 1
 ?
@@ -201,7 +201,7 @@ Type TStringNode
 		Return bmx_map_stringmap_value(_nodePtr)
 	End Method
 
-	Method HasNext()
+	Method HasNext:Int()
 		Return bmx_map_stringmap_hasnext(_nodePtr, _root)
 	End Method
 	
@@ -218,7 +218,7 @@ Type TStringNode
 End Type
 
 Type TStringNodeEnumerator
-	Method HasNext()
+	Method HasNext:Int()
 		Local has:Int = _node.HasNext()
 		If Not has Then
 			_map = Null
@@ -275,7 +275,7 @@ Type TStringMapEnumerator
 End Type
 
 Type TStringEmptyEnumerator Extends TStringNodeEnumerator
-	Method HasNext() Override
+	Method HasNext:Int() Override
 		_map = Null
 		Return False
 	End Method

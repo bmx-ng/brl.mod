@@ -1,4 +1,4 @@
-Strict
+SuperStrict
 
 
 Extern
@@ -42,7 +42,7 @@ Type TPtrMap
 	bbdoc: Checks if the map is empty.
 	about: #True if @map is empty, otherwise #False.
 	End Rem
-	Method IsEmpty()
+	Method IsEmpty:Int()
 		Return bmx_map_ptrmap_isempty(Varptr _root)
 	End Method
 	
@@ -78,7 +78,7 @@ Type TPtrMap
 	bbdoc: Remove a key/value pair from the map.
 	returns: #True if @key was removed, or #False otherwise.
 	End Rem
-	Method Remove( key:Byte Ptr )
+	Method Remove:Int( key:Byte Ptr )
 ?ngcmod
 		_modCount :+ 1
 ?
@@ -201,7 +201,7 @@ Type TPtrNode
 		Return bmx_map_ptrmap_value(_nodePtr)
 	End Method
 
-	Method HasNext()
+	Method HasNext:Int()
 		Return bmx_map_ptrmap_hasnext(_nodePtr, _root)
 	End Method
 	
@@ -229,7 +229,7 @@ Type TPtrKey
 End Type
 
 Type TPtrNodeEnumerator
-	Method HasNext()
+	Method HasNext:Int()
 		Local has:Int = _node.HasNext()
 		If Not has Then
 			_map = Null
@@ -288,7 +288,7 @@ Type TPtrMapEnumerator
 End Type
 
 Type TPtrEmptyEnumerator Extends TPtrNodeEnumerator
-	Method HasNext() Override
+	Method HasNext:Int() Override
 		_map = Null
 		Return False
 	End Method

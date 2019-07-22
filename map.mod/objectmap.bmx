@@ -1,4 +1,4 @@
-Strict
+SuperStrict
 
 
 Extern
@@ -31,7 +31,7 @@ Type TObjectMap
 		bmx_map_objectmap_clear(Varptr _root)
 	End Method
 	
-	Method IsEmpty()
+	Method IsEmpty:Int()
 		Return bmx_map_objectmap_isempty(Varptr _root)
 	End Method
 	
@@ -50,7 +50,7 @@ Type TObjectMap
 		Return bmx_map_objectmap_valueforkey(key, Varptr _root)
 	End Method
 	
-	Method Remove( key:Object )
+	Method Remove:Int( key:Object )
 ?ngcmod
 		_modCount :+ 1
 ?
@@ -139,7 +139,7 @@ Type TObjectNode
 		Return bmx_map_objectmap_value(_nodePtr)
 	End Method
 
-	Method HasNext()
+	Method HasNext:Int()
 		Return bmx_map_objectmap_hasnext(_nodePtr, _root)
 	End Method
 	
@@ -156,7 +156,7 @@ Type TObjectNode
 End Type
 
 Type TObjectNodeEnumerator
-	Method HasNext()
+	Method HasNext:Int()
 		Local has:Int = _node.HasNext()
 		If Not has Then
 			_map = Null
@@ -213,7 +213,7 @@ Type TObjectMapEnumerator
 End Type
 
 Type TObjectEmptyEnumerator Extends TObjectNodeEnumerator
-	Method HasNext() Override
+	Method HasNext:Int() Override
 		_map = Null
 		Return False
 	End Method
