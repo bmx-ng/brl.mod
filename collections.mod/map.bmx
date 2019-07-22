@@ -41,7 +41,7 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 	End Method
 
 	Rem
-	bbdoc: 
+	bbdoc: Returns an iterator that iterates through the #TTreeMap.
 	End Rem
 	Method GetIterator:IIterator<TMapNode<K,V>>()
 		Return New TMapIterator<K,V>(FirstNode())
@@ -58,7 +58,7 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 	End Method
 	
 	Rem
-	bbdoc: 
+	bbdoc: Returns the #TTreeMap keys as a collection.
 	End Rem
 	Method Keys:ICollection<K>()
 		Local list:TArrayList<K> = New TArrayList<K>(size)
@@ -71,7 +71,7 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 	End Method
 
 	Rem
-	bbdoc: 
+	bbdoc: Returns the #TTreeMap values as a collection.
 	End Rem
 	Method Values:ICollection<V>()
 		Local list:TArrayList<V> = New TArrayList<V>(size)

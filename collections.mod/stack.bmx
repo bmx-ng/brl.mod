@@ -138,6 +138,18 @@ Public
 		
 		size :+ 1
 	End Method
+
+	Rem
+	bbdoc: Converts a #TStack to an array.
+	returns: An array of elements.
+	End Rem
+	Method ToArray:T[]()
+		Local arr:T[size]
+			
+		ArrayCopy(data, 0, arr, 0, size)
+		
+		Return arr
+	End Method
 	
 	Rem
 	bbdoc: Can be used to minimize a collection's memory overhead if no new elements will be added to the collection.

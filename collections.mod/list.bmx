@@ -278,7 +278,7 @@ Public
 	bbdoc: Sorts the elements in the entire #TArrayList using the specified comparator, or the default if #Null.
 	End Rem
 	Method Sort(comparator:IComparator<T> = Null)
-		' introsort
+		' nothing to sort
 		If size < 2 Then
 			Return
 		End If
@@ -299,6 +299,18 @@ Public
 		End If
 	End Method
 	
+	Rem
+	bbdoc: Converts a #TArrayList to an array.
+	returns: An array of elements.
+	End Rem
+	Method ToArray:T[]()
+		Local arr:T[size]
+			
+		ArrayCopy(data, 0, arr, 0, size)
+		
+		Return arr
+	End Method
+
 	Rem
 	bbdoc: Sets the capacity to the actual number of elements in the #TArrayList.
 	about: This method can be used to minimize a collection's memory overhead if no new elements will be added to the collection. 

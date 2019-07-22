@@ -351,6 +351,20 @@ Public
 		head = result
 		FixHead()
 	End Method
+	
+	Rem
+	bbdoc: Converts a #TLinkedList to an array.
+	returns: An array of elements.
+	End Rem
+	Method ToArray:T[]()
+		Local arr:T[size]
+		Local i:Int
+		For Local elem:T = EachIn Self
+			arr[i] = elem
+			i :+ 1
+		Next
+		Return arr
+	End Method
 
 Private
 	Method ValidateNode(node:TLinkedListNode<T>)
