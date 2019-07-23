@@ -15,7 +15,8 @@ event:
 | EVENT_APPTERMINATE | Application wants to terminate |
 | EVENT_KEYDOWN | Key pressed. Event data contains keycode |
 | EVENT_KEYUP | Key released. Event data contains keycode |
-| EVENT_KEYCHAR | Key character. Event data contains unicode value |
+| EVENT_KEYCHAR | Key character being pressed. Event data contains unicode value of character. |
+| EVENT_KEYREPEAT | Key held down. Event data contains keycode |
 | EVENT_MOUSEDOWN | Mouse button pressed. Event data contains mouse button code |
 | EVENT_MOUSEUP | Mouse button released. Event data contains mouse button code |
 | EVENT_MOUSEMOVE | Mouse moved. Event x and y contain mouse coordinates |
@@ -37,4 +38,4 @@ event:
 | EVENT_GADGETOPEN | A TreeView Node has been expanded |
 | EVENT_GADGETCLOSE | A TreeView Node has been collapsed |
 | EVENT_GADGETDONE | An HTMLView has completed loading a page |
-
+| --- | --- |
