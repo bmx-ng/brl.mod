@@ -92,7 +92,7 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 		End If
 	
 		Local node:TMapNode<K,V>=root
-		Local parent:TMapNode<K,V>'=nil
+		Local parent:TMapNode<K,V>
 		Local cmp:Int
 		
 		While node<>Null
@@ -137,13 +137,28 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 
 	Rem
 	bbdoc: Determines whether the #TTreeMap contains the specified key.
+	returns: #True if the #TTreeMap contains an element with the specified key; otherwise, #False.
 	End Rem
 	Method ContainsKey:Int(key:K)
 		Return FindNode( key )<>Null
 	End Method
+	
+	Rem
+	bbdoc: Determines whether the #TTreeMap contains a specific value.
+	returns: #True if the #TTreeMap contains an element with the specified value; otherwise, #False.
+	End Rem
+	Method ContainsValue:Int(value:V)
+		For Local node:TMapNode<K,V> = EachIn Self
+			If value = node.value Then
+				Return True
+			End If
+		Next
+		Return False
+	End Method
 
 	Rem
 	bbdoc: Removes the value with the specified key from the #TTreeMap.
+	returns: #True if the element is successfully found and removed; otherwise, #False. This method returns #False if key is not found in the #TTreeMap.
 	End Rem
 	Method Remove:Int(key:K)
 		Local node:TMapNode<K,V> = FindNode(key)
@@ -157,6 +172,9 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 
 	Rem
 	bbdoc: Gets the value associated with the specified key.
+	returns: #True if the #TTreeMap contains an element with the specified key; otherwise, #False.
+	about: When this method returns, @value contains the value associated with the specified key, if the key is found;
+	otherwise, @value will remain unchanged.
 	End Rem
 	Method TryGetValue:Int(key:K, value:V Var)
 		Local node:TMapNode<K,V> = FindNode(key)
@@ -169,6 +187,7 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 
 	Rem
 	bbdoc: Gets the element with the specified key.
+	returns: The value if @key exists in the #TTreeMap; otherwise returns the default/#Null value for the value type.
 	End Rem
 	Method Operator [] :V(key:K)
 		Local node:TMapNode<K,V> = FindNode(key)
@@ -176,7 +195,8 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 		If node Then
 			Return node.value
 		Else
-			Return Null
+			Local value:V
+			Return value
 		End If
 	End Method
 
