@@ -393,6 +393,20 @@ Type TSet<T> Implements ISet<T>
 		Next
 	End Method
 
+	Rem
+	bbdoc: Converts a #TSet to an array.
+	returns: An array of elements.
+	End Rem
+	Method ToArray:T[]()
+		Local arr:T[Count()]
+		Local i:Int
+		For Local elem:T = EachIn Self
+			arr[i] = elem
+			i :+ 1
+		Next
+		Return arr
+	End Method
+
 Private
 	Method RotateLeft( node:TSetNode<T> )
 		Local child:TSetNode<T>=node.rightNode
