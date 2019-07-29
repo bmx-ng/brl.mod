@@ -505,7 +505,7 @@ Private
 
 	Method FirstNode:TSetNode<T>()
 		Local node:TSetNode<T> = root
-		While node.leftNode <> Null
+		While node And node.leftNode
 			node = node.leftNode
 		Wend
 		Return node
@@ -513,7 +513,7 @@ Private
 
 	Method LastNode:TSetNode<T>()
 		Local node:TSetNode<T> = root
-		While node.rightNode <> Null
+		While node And node.rightNode
 			node = node.rightNode
 		Wend
 		Return node
