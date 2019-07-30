@@ -74,6 +74,22 @@ Public
 	
 	Method CopyTo(array:T[], index:Int = 0)
 	End Method
+
+	Rem
+	bbdoc: Converts a #TQueue to an array.
+	returns: An array of elements.
+	End Rem
+	Method ToArray:T[]()
+		Local arr:T[size]
+		
+		Local i:Int
+		For Local element:T = EachIn Self
+			arr[i] = element
+			i :+ 1
+		Next
+		
+		Return arr
+	End Method
 	
 	Rem
 	bbdoc: Removes all elements from the #TQueue.
@@ -201,6 +217,34 @@ Public
 		data = temp
 		tail = 0
 		full = size > 0
+	End Method
+	
+	Rem
+	bbdoc: Tries to remove and return the element at the beginning of the #TQueue.
+	returns: #True if an element was removed and returned from the beginning of the #TQueue successfully; otherwise, #False.
+	about: When this method returns, if the operation was successful, @vlaue contains the element removed. If no element was available to be removed, the value is unspecified.
+	End Rem
+	Method TryDequeue:Int(value:T Var)
+		If Not size Then
+			Return False
+		End If
+		
+		value = Dequeue()
+		Return True
+	End Method
+	
+	Rem
+	bbdoc: Tries to return an element from the beginning of the #TQueue without removing it.
+	returns: #True if an element was returned successfully; otherwise, #False.
+	about: When this method returns, @value contains an element from the beginning of the #TQueue or an unspecified value if the operation failed.
+	End Rem
+	Method TryPeek:Int(value:T Var)
+		If Not size Then
+			Return False
+		End If
+		
+		value = data[head]
+		Return True
 	End Method
 
 	Private
