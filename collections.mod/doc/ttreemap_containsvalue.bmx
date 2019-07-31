@@ -10,8 +10,11 @@ openWith.Add("bmp", "paint.exe")
 openWith.Add("dib", "paint.exe")
 openWith.Add("rtf", "wordpad.exe")
 
-Print "Keys : "
+Print "Values :"
 
-For Local key:String = EachIn openWith.Keys()
-	Print key
+For Local value:String = EachIn openWith.Values()
+	Print value
 Next
+
+Print "~nopenWith.ContainsValue() : " + openWith.ContainsValue("paint.exe")
+Print "~nopenWith.ContainsValue() : " + openWith.ContainsValue("calc.exe")

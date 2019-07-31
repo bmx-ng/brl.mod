@@ -10,8 +10,9 @@ openWith.Add("bmp", "paint.exe")
 openWith.Add("dib", "paint.exe")
 openWith.Add("rtf", "wordpad.exe")
 
-Print "Keys : "
+Print "openWith.Count() : " + openWith.Count()
 
-For Local key:String = EachIn openWith.Keys()
-	Print key
-Next
+Print "~nopenWith.Clear()"
+openWith.Clear()
+
+Print "~nopenWith.Count() : " + openWith.Count()

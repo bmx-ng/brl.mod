@@ -46,6 +46,14 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 	Method GetIterator:IIterator<TMapNode<K,V>>()
 		Return New TMapIterator<K,V>(FirstNode())
 	End Method
+	
+	Rem
+	bbdoc: Removes all elements from the #TTreeMap.
+	End Rem
+	Method Clear()
+		root = Null
+		size = 0
+	End Method
 
 	Rem
 	bbdoc: Gets the number of key/value pairs contained in the #TTreeMap.
@@ -85,6 +93,7 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 
 	Rem
 	bbdoc: Adds the specified key and value to the #TTreeMap.
+	about: Throws an exception if an element with the specified key already exists.
 	End Rem
 	Method Add(key:K, value:V)
 		If FindNode(key) Then
@@ -202,6 +211,7 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 
 	Rem
 	bbdoc: Sets the element with the specified key.
+	about: Unlike with #Add, if @key already exists, the current value is replaced with @value.
 	End Rem
 	Method Operator []= (key:K, value:V)
 		Local node:TMapNode<K,V> = FindNode(key)
