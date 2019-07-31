@@ -146,7 +146,9 @@ Public
 	Method ToArray:T[]()
 		Local arr:T[size]
 			
-		ArrayCopy(data, 0, arr, 0, size)
+		For Local i:Int = 0 Until size
+			arr[i] = data[size - i - 1]
+		Next
 		
 		Return arr
 	End Method
@@ -162,6 +164,32 @@ Public
 		Else If size < data.length Then
 			data = data[..size]
 		End If
+	End Method
+	
+	Rem
+	bbdoc: Tries to return an element from the top of the #TStack without removing it.
+	returns: #True if an element was returned successfully; otherwise, #False.
+	End Rem
+	Method TryPeek:Int(value:T Var)
+		If Not size Then
+			Return False
+		End If
+		
+		value = Peek()
+		Return True
+	End Method
+	
+	Rem
+	bbdoc: Tries to remove and return an element from the top of the #TStack.
+	returns: #True if an element was removed and returned from the top of the #TStack successfully; otherwise, #False.
+	End Rem
+	Method TryPop:Int(value:T Var)
+		If Not size Then
+			Return False
+		End If
+
+		value = Pop()
+		Return True
 	End Method
 	
 	Private
