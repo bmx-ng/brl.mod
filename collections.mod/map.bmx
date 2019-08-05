@@ -441,7 +441,7 @@ Public
 End Type
 
 Rem
-bbdoc: 
+bbdoc: A #TTreeMap node representing a key/value pair.
 End Rem
 Type TMapNode<K, V>
 Private
@@ -449,12 +449,13 @@ Private
 	Field leftNode:TMapNode
 	Field rightNode:TMapNode
 	Field colour:Int
-Public
+
 	Field key:K
 	Field value:V
-	
+
+Public	
 	Rem
-	bbdoc: 
+	bbdoc: Returns the next node in the sequence.
 	End Rem
 	Method NextNode:TMapNode<K,V>()
 		Local node:TMapNode<K,V> = Self
@@ -472,7 +473,21 @@ Public
 		Wend
 		Return parent
 	End Method
-	
+
+	Rem
+	bbdoc: Returns the key for this node.
+	End Rem
+	Method GetKey:K()
+		Return key
+	End Method
+
+	Rem
+	bbdoc: Returns the value for this node.
+	End Rem
+	Method GetValue:V()
+		Return value
+	End Method
+		
 End Type
 
 Type TMapIterator<K,V> Implements IIterator<TMapNode<K,V>> 
