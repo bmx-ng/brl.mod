@@ -16,12 +16,14 @@ many text processing applications are unable to handle UTF8 and UTF16 files.
 End Rem
 Module BRL.TextStream
 
-ModuleInfo "Version: 1.04"
+ModuleInfo "Version: 1.05"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.05"
+ModuleInfo "History: UCS-2 surrogate pairs."
 ModuleInfo "History: 1.04"
 ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.03 Release"
@@ -189,16 +191,34 @@ Type TTextStream Extends TStreamWrapper
 	End Method
 	
 	Method ReadChar:Int()
-		Local c:Int=_ReadByte()
+		Local c:Int
+		If _carried Then
+			c = _carried
+			_carried = 0
+			Return c
+		End If
+		
+		c = _ReadByte()
 		Select _encoding
 		Case ETextStreamFormat.LATIN1
 			Return c
 		Case ETextStreamFormat.UTF8
 			If c<128 Return c
-			Local d:Int=_ReadByte()
-			If c<224 Return (c-192)*64+(d-128)
-			Local e:Int=_ReadByte()
-			If c<240 Return (c-224)*4096+(d-128)*64+(e-128)
+			Local d:Int=_ReadByte() & $3f
+			If c<224 Return ((c & 31) Shl 6) | d
+			Local e:Int=_ReadByte() & $3f
+			If c<240 Return ((c & 15) Shl 12) | (d Shl 6) | e
+			Local f:Int = _ReadByte() & $3f
+			Local v:Int = ((c & 7) Shl 18) | (d Shl 12) | (e Shl 6) | f
+			If v & $ffff0000 Then
+				v :- $10000
+				d = ((v Shr 10) & $7ffff) + $d800
+				e = (v & $3ff) + $dc00
+				_carried = e
+				Return d
+			Else
+				Return v
+			End If
 		Case ETextStreamFormat.UTF16BE
 			Local d:Int=_ReadByte()
 			Return c Shl 8 | d
@@ -209,6 +229,16 @@ Type TTextStream Extends TStreamWrapper
 	End Method
 	
 	Method WriteChar( char:Int )
+		If _carried Then
+			Local c:Int = ((_carried - $d800) Shl 10) + (char - $dc00) + $10000
+			_WriteByte (c Shr 18) | $f0
+			_WriteByte ((c Shr 12) & $3f) | $80
+			_WriteByte ((c Shr 6) & $3f) | $80
+			_WriteByte (c & $3f) | $80
+			_carried = 0
+			Return
+		End If
+	
 		Assert char>=0 And char<=$ffff
 		Select _encoding
 		Case ETextStreamFormat.LATIN1
@@ -219,10 +249,13 @@ Type TTextStream Extends TStreamWrapper
 			Else If char<2048
 				_WriteByte char/64 | 192
 				_WriteByte char Mod 64 | 128
-			Else
+			Else If char < $d800 Or char > $dbff
 				_WriteByte char/4096 | 224
 				_WriteByte char/64 Mod 64 | 128
 				_WriteByte char Mod 64 | 128
+			Else
+				_carried = char
+				Return
 			EndIf
 		Case ETextStreamFormat.UTF16BE
 			_WriteByte char Shr 8
@@ -282,6 +315,7 @@ Type TTextStream Extends TStreamWrapper
 	
 	Field _encoding:ETextStreamFormat
 	Field _bufcount:Int
+	Field _carried:Int
 	
 End Type
 	
