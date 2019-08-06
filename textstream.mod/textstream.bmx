@@ -354,11 +354,12 @@ The first bytes read from the stream control the format of the text:
 ]
 
 If the first bytes don't match any of the above values, the stream
-is assumed to contain LATIN1 text.
+is assumed to contain LATIN1 text. Additionally, when @checkForUTF8 is enabled, the
+stream will be tested for UTF8 compatibility, and loaded as such as appropriate.
 
 A #TStreamReadException is thrown if not all bytes could be read.
 End Rem
-Function LoadText$( url:Object )
+Function LoadText$( url:Object, checkForUTF8:Int = True )
 
 	Local stream:TStream=ReadStream( url )
 	If Not stream Throw New TStreamReadException
@@ -394,7 +395,11 @@ Function LoadText$( url:Object )
 			size:+stream.Read( (Byte Ptr data)+size,data.length-size )
 		Wend
 		stream.Close
-		Return String.FromBytes( data,size )
+		If checkForUTF8 And IsProbablyUTF8(data, size) Then
+			Return String.FromUTF8String(data)
+		Else
+			Return String.FromBytes( data,size )
+		End If
 	EndIf
 	
 	Local TStream:TTextStream=TTextStream.Create( stream,format )
@@ -460,3 +465,130 @@ Function SaveText:Int( str$,url:Object, format:ETextStreamFormat = ETextStreamFo
 
 End Function
 
+Private
+Function IsProbablyUTF8:Int(data:Byte Ptr, size:Int)
+	Local count:Int
+	Local buf:Byte[6]
+	Local encodeBuf:Byte[6]
+
+	For Local i:Int = 0 Until size
+		Local c:Int = data[i]
+		
+		If c < $80 Or (c & $c0) <> $80 Then
+			
+			If count > 0 Then
+				Local char:Int = Decode(buf, count)
+				If char = -1 Then
+					Return False
+				End If
+
+				Local encodedCount:Int = Encode(char, encodeBuf, count)
+
+				If count <> encodedCount Then
+					Return False
+				End If
+				
+				For Local n:Int = 0 Until count
+					If buf[n] <> encodeBuf[n] Then
+						Return False
+					End If
+				Next
+			End If
+			
+			count = 0
+			
+			If c >= $80 Then
+				buf[count] = c
+				count :+ 1
+			End If
+		Else
+			If count = 6 Then
+				Return False
+			End If
+			buf[count] = c
+			count :+ 1
+		End If
+	Next
+
+	If count Then
+		Return False
+	End If
+	
+	Return True
+End Function
+
+Function Decode:Int(buf:Byte Ptr, count:Int)
+	If count <= 0 Then
+		Return -1
+	End If
+	
+	If count = 1 Then
+		If buf[0] >= $80 Then
+			Return -1
+		Else
+			Return buf[0]
+		End If
+	End If
+	
+	Local bits:Int = 0
+	Local c:Int = buf[0]
+	
+	While c & $80 = $80
+		bits :+ 1
+		c :Shl 1
+	Wend
+	
+	If bits <> count Then
+		Return -1
+	End If
+	
+	Local v:Int = buf[0] & ($ff Shr bits)
+	For Local i:Int = 1 Until count
+		If buf[i] & $c0 <> $80 Then
+			Return -1
+		End If
+		v = (v Shl 6) | (buf[i] & $3f)
+	Next
+	
+	If v >= $d800 And v <= $dfff Then
+		Return -1
+	End If
+	
+	If v = $fffe Or v = $ffff Then
+		Return -1
+	End If
+	
+	Return v
+End Function
+
+Function Encode:Int(char:Int, buf:Byte Ptr, count:Int)
+	If char<128
+		buf[0] = char
+		Return 1
+	Else If char<2048
+		If count <> 2 Then
+			Return -1
+		End If
+		buf[0] = char/64 | 192
+		buf[1] = char Mod 64 | 128
+		Return 2
+	Else If char < $10000
+		If count <> 3 Then
+			Return -1
+		End If
+		buf[0] = char/4096 | 224
+		buf[1] = char/64 Mod 64 | 128
+		buf[2] = char Mod 64 | 128
+		Return 3
+	Else
+		If count <> 4 Then
+			Return -1
+		End If
+		buf[0] = (char Shr 18) | $f0
+		buf[1] = ((char Shr 12) & $3f) | $80
+		buf[2] = ((char Shr 6) & $3f) | $80
+		buf[3] = (char & $3f) | $80
+		Return 4
+	End If
+	Return -1
+End Function
