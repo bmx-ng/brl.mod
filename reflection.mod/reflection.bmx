@@ -6,12 +6,14 @@ bbdoc: BASIC/Reflection
 End Rem
 Module BRL.Reflection
 
-ModuleInfo "Version: 1.06"
+ModuleInfo "Version: 1.07"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.07"
+ModuleInfo "History: Primitive field set/get now avoids passing values through String."
 ModuleInfo "History: 1.06"
 ModuleInfo "History: Cache lower case memmber names and use map lookup instead of list."
 ModuleInfo "History: 1.05"
@@ -1327,44 +1329,252 @@ Type TField Extends TMember
 	Method Get:Object( obj:Object )
 		Return _Get( bbRefFieldPtr( obj,_index ),_typeId )
 	End Method
-
+	
 	Rem
-	bbdoc: Get int field value
+	bbdoc: Get #Byte field value
 	End Rem
-	Method GetInt:Int( obj:Object )
-		Return GetString( obj ).ToInt()
+	Method GetByte:Byte( obj:Object )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				Return (Byte Ptr p)[0]
+			Case ShortTypeId
+				Return (Short Ptr p)[0]
+			Case IntTypeId
+				Return (Int Ptr p)[0]
+			Case UIntTypeId
+				Return (UInt Ptr p)[0]
+			Case LongTypeId
+				Return (Long Ptr p)[0]
+			Case ULongTypeId
+				Return (ULong Ptr p)[0]
+			Case SizetTypeId
+				Return (Size_T Ptr p)[0]
+			Case FloatTypeId
+				Return (Float Ptr p)[0]
+			Case DoubleTypeId
+				Return (Double Ptr p)[0]
+		End Select
+	End Method
+	
+	Rem
+	bbdoc: Get #Short field value
+	End Rem
+	Method GetShort:Short( obj:Object )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				Return (Byte Ptr p)[0]
+			Case ShortTypeId
+				Return (Short Ptr p)[0]
+			Case IntTypeId
+				Return (Int Ptr p)[0]
+			Case UIntTypeId
+				Return (UInt Ptr p)[0]
+			Case LongTypeId
+				Return (Long Ptr p)[0]
+			Case ULongTypeId
+				Return (ULong Ptr p)[0]
+			Case SizetTypeId
+				Return (Size_T Ptr p)[0]
+			Case FloatTypeId
+				Return (Float Ptr p)[0]
+			Case DoubleTypeId
+				Return (Double Ptr p)[0]
+		End Select
 	End Method
 
+	Rem
+	bbdoc: Get #Int field value
+	End Rem
+	Method GetInt:Int( obj:Object )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				Return (Byte Ptr p)[0]
+			Case ShortTypeId
+				Return (Short Ptr p)[0]
+			Case IntTypeId
+				Return (Int Ptr p)[0]
+			Case UIntTypeId
+				Return (UInt Ptr p)[0]
+			Case LongTypeId
+				Return (Long Ptr p)[0]
+			Case ULongTypeId
+				Return (ULong Ptr p)[0]
+			Case SizetTypeId
+				Return (Size_T Ptr p)[0]
+			Case FloatTypeId
+				Return (Float Ptr p)[0]
+			Case DoubleTypeId
+				Return (Double Ptr p)[0]
+		End Select
+	End Method
+
+	Rem
+	bbdoc: Get #UInt field value
+	End Rem
+	Method GetUInt:UInt( obj:Object )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				Return (Byte Ptr p)[0]
+			Case ShortTypeId
+				Return (Short Ptr p)[0]
+			Case IntTypeId
+				Return (Int Ptr p)[0]
+			Case UIntTypeId
+				Return (UInt Ptr p)[0]
+			Case LongTypeId
+				Return (Long Ptr p)[0]
+			Case ULongTypeId
+				Return (ULong Ptr p)[0]
+			Case SizetTypeId
+				Return (Size_T Ptr p)[0]
+			Case FloatTypeId
+				Return (Float Ptr p)[0]
+			Case DoubleTypeId
+				Return (Double Ptr p)[0]
+		End Select
+	End Method
+	
 	Rem
 	bbdoc: Get long field value
 	End Rem
 	Method GetLong:Long( obj:Object )
-		Return GetString( obj ).ToLong()
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				Return (Byte Ptr p)[0]
+			Case ShortTypeId
+				Return (Short Ptr p)[0]
+			Case IntTypeId
+				Return (Int Ptr p)[0]
+			Case UIntTypeId
+				Return (UInt Ptr p)[0]
+			Case LongTypeId
+				Return (Long Ptr p)[0]
+			Case ULongTypeId
+				Return (ULong Ptr p)[0]
+			Case SizetTypeId
+				Return (Size_T Ptr p)[0]
+			Case FloatTypeId
+				Return (Float Ptr p)[0]
+			Case DoubleTypeId
+				Return (Double Ptr p)[0]
+		End Select
 	End Method
 
 	Rem
-	bbdoc: Get size_t field value
+	bbdoc: Get #ULong field value
+	End Rem
+	Method GetULong:ULong( obj:Object )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				Return (Byte Ptr p)[0]
+			Case ShortTypeId
+				Return (Short Ptr p)[0]
+			Case IntTypeId
+				Return (Int Ptr p)[0]
+			Case UIntTypeId
+				Return (UInt Ptr p)[0]
+			Case LongTypeId
+				Return (Long Ptr p)[0]
+			Case ULongTypeId
+				Return (ULong Ptr p)[0]
+			Case SizetTypeId
+				Return (Size_T Ptr p)[0]
+			Case FloatTypeId
+				Return (Float Ptr p)[0]
+			Case DoubleTypeId
+				Return (Double Ptr p)[0]
+		End Select
+	End Method
+	
+	Rem
+	bbdoc: Get #Size_T field value
 	End Rem
 	Method GetSizet:Size_T( obj:Object )
-		Return GetString( obj ).ToSizet()
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				Return (Byte Ptr p)[0]
+			Case ShortTypeId
+				Return (Short Ptr p)[0]
+			Case IntTypeId
+				Return (Int Ptr p)[0]
+			Case UIntTypeId
+				Return (UInt Ptr p)[0]
+			Case LongTypeId
+				Return (Long Ptr p)[0]
+			Case ULongTypeId
+				Return (ULong Ptr p)[0]
+			Case SizetTypeId
+				Return (Size_T Ptr p)[0]
+			Case FloatTypeId
+				Return (Float Ptr p)[0]
+			Case DoubleTypeId
+				Return (Double Ptr p)[0]
+		End Select
 	End Method
 
 	Rem
-	bbdoc: Get float field value
+	bbdoc: Get #Float field value
 	End Rem
 	Method GetFloat:Float( obj:Object )
-		Return GetString( obj ).ToFloat()
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				Return (Byte Ptr p)[0]
+			Case ShortTypeId
+				Return (Short Ptr p)[0]
+			Case IntTypeId
+				Return (Int Ptr p)[0]
+			Case UIntTypeId
+				Return (UInt Ptr p)[0]
+			Case LongTypeId
+				Return (Long Ptr p)[0]
+			Case ULongTypeId
+				Return (ULong Ptr p)[0]
+			Case SizetTypeId
+				Return (Size_T Ptr p)[0]
+			Case FloatTypeId
+				Return (Float Ptr p)[0]
+			Case DoubleTypeId
+				Return (Double Ptr p)[0]
+		End Select
 	End Method
 
 	Rem
-	bbdoc: Get double field value
+	bbdoc: Get #Double field value
 	End Rem
 	Method GetDouble:Double( obj:Object )
-		Return GetString( obj ).ToDouble()
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				Return (Byte Ptr p)[0]
+			Case ShortTypeId
+				Return (Short Ptr p)[0]
+			Case IntTypeId
+				Return (Int Ptr p)[0]
+			Case UIntTypeId
+				Return (UInt Ptr p)[0]
+			Case LongTypeId
+				Return (Long Ptr p)[0]
+			Case ULongTypeId
+				Return (ULong Ptr p)[0]
+			Case SizetTypeId
+				Return (Size_T Ptr p)[0]
+			Case FloatTypeId
+				Return (Float Ptr p)[0]
+			Case DoubleTypeId
+				Return (Double Ptr p)[0]
+		End Select
 	End Method
 
 	Rem
-	bbdoc: Get string field value
+	bbdoc: Get #String field value
 	End Rem
 	Method GetString$( obj:Object )
 		Return String( Get( obj ) )
@@ -1378,35 +1588,331 @@ Type TField Extends TMember
 	End Method
 
 	Rem
-	bbdoc: Set int field value
+	bbdoc: Set #Byte field value
+	End Rem
+	Method Set( obj:Object,value:Byte )
+		SetByte(obj, value)
+	End Method
+
+	Rem
+	bbdoc: Set #Short field value
+	End Rem
+	Method Set( obj:Object,value:Short )
+		SetShort(obj, value)
+	End Method
+
+	Rem
+	bbdoc: Set #Int field value
+	End Rem
+	Method Set( obj:Object,value:Int )
+		SetInt(obj, value)
+	End Method
+
+	Rem
+	bbdoc: Set #UInt field value
+	End Rem
+	Method Set( obj:Object,value:UInt )
+		SetUInt(obj, value)
+	End Method
+
+	Rem
+	bbdoc: Set #Long field value
+	End Rem
+	Method Set( obj:Object,value:Long )
+		SetLong(obj, value)
+	End Method
+
+	Rem
+	bbdoc: Set #ULong field value
+	End Rem
+	Method Set( obj:Object,value:ULong )
+		SetULong(obj, value)
+	End Method
+
+	Rem
+	bbdoc: Set #Size_T field value
+	End Rem
+	Method Set( obj:Object,value:Size_T )
+		SetSizet(obj, value)
+	End Method
+
+	Rem
+	bbdoc: Set #Float field value
+	End Rem
+	Method Set( obj:Object,value:Float )
+		SetFloat(obj, value)
+	End Method
+
+	Rem
+	bbdoc: Set #Double field value
+	End Rem
+	Method Set( obj:Object,value:Double )
+		SetDouble(obj, value)
+	End Method
+
+	Rem
+	bbdoc: Set #Byte field value
+	End Rem
+	Method SetByte( obj:Object,value:Byte )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				(Byte Ptr p)[0]=value
+			Case ShortTypeId
+				(Short Ptr p)[0]=Short(value)
+			Case IntTypeId
+				(Int Ptr p)[0]=Int(value)
+			Case UIntTypeId
+				(UInt Ptr p)[0]=UInt(value)
+			Case LongTypeId
+				(Long Ptr p)[0]=Long(value)
+			Case ULongTypeId
+				(ULong Ptr p)[0]=ULong(value)
+			Case SizetTypeId
+				(Size_T Ptr p)[0]=Size_T(value)
+			Case FloatTypeId
+				(Float Ptr p)[0]=Float(value)
+			Case DoubleTypeId
+				(Double Ptr p)[0]=Double(value)
+			Case StringTypeId
+				bbRefAssignObject p,String.FromInt( value )
+		End Select
+	End Method
+
+	Rem
+	bbdoc: Set #Short field value
+	End Rem
+	Method SetShort( obj:Object,value:Short )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				(Byte Ptr p)[0]=Byte(value)
+			Case ShortTypeId
+				(Short Ptr p)[0]=value
+			Case IntTypeId
+				(Int Ptr p)[0]=Int(value)
+			Case UIntTypeId
+				(UInt Ptr p)[0]=UInt(value)
+			Case LongTypeId
+				(Long Ptr p)[0]=Long(value)
+			Case ULongTypeId
+				(ULong Ptr p)[0]=ULong(value)
+			Case SizetTypeId
+				(Size_T Ptr p)[0]=Size_T(value)
+			Case FloatTypeId
+				(Float Ptr p)[0]=Float(value)
+			Case DoubleTypeId
+				(Double Ptr p)[0]=Double(value)
+			Case StringTypeId
+				bbRefAssignObject p,String.FromInt( value )
+		End Select
+	End Method
+
+	Rem
+	bbdoc: Set #Int field value
 	End Rem
 	Method SetInt( obj:Object,value:Int )
-		SetString obj,String.FromInt( value )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				(Byte Ptr p)[0]=Byte(value)
+			Case ShortTypeId
+				(Short Ptr p)[0]=Short(value)
+			Case IntTypeId
+				(Int Ptr p)[0]=value
+			Case UIntTypeId
+				(UInt Ptr p)[0]=UInt(value)
+			Case LongTypeId
+				(Long Ptr p)[0]=Long(value)
+			Case ULongTypeId
+				(ULong Ptr p)[0]=ULong(value)
+			Case SizetTypeId
+				(Size_T Ptr p)[0]=Size_T(value)
+			Case FloatTypeId
+				(Float Ptr p)[0]=Float(value)
+			Case DoubleTypeId
+				(Double Ptr p)[0]=Double(value)
+			Case StringTypeId
+				bbRefAssignObject p,String.FromInt( value )
+		End Select
 	End Method
 
 	Rem
-	bbdoc: Set long field value
+	bbdoc: Set #UInt field value
+	End Rem
+	Method SetUInt( obj:Object,value:UInt )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				(Byte Ptr p)[0]=Byte(value)
+			Case ShortTypeId
+				(Short Ptr p)[0]=Short(value)
+			Case IntTypeId
+				(Int Ptr p)[0]=Int(value)
+			Case UIntTypeId
+				(UInt Ptr p)[0]=value
+			Case LongTypeId
+				(Long Ptr p)[0]=Long(value)
+			Case ULongTypeId
+				(ULong Ptr p)[0]=ULong(value)
+			Case SizetTypeId
+				(Size_T Ptr p)[0]=Size_T(value)
+			Case FloatTypeId
+				(Float Ptr p)[0]=Float(value)
+			Case DoubleTypeId
+				(Double Ptr p)[0]=Double(value)
+			Case StringTypeId
+				bbRefAssignObject p,String.FromUInt( value )
+		End Select
+	End Method
+
+	Rem
+	bbdoc: Set #Long field value
 	End Rem
 	Method SetLong( obj:Object,value:Long )
-		SetString obj,String.FromLong( value )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				(Byte Ptr p)[0]=Byte(value)
+			Case ShortTypeId
+				(Short Ptr p)[0]=Short(value)
+			Case IntTypeId
+				(Int Ptr p)[0]=Int(value)
+			Case UIntTypeId
+				(UInt Ptr p)[0]=UInt(value)
+			Case LongTypeId
+				(Long Ptr p)[0]=value
+			Case ULongTypeId
+				(ULong Ptr p)[0]=ULong(value)
+			Case SizetTypeId
+				(Size_T Ptr p)[0]=Size_T(value)
+			Case FloatTypeId
+				(Float Ptr p)[0]=Float(value)
+			Case DoubleTypeId
+				(Double Ptr p)[0]=Double(value)
+			Case StringTypeId
+				bbRefAssignObject p,String.FromLong( value )
+		End Select
 	End Method
 
 	Rem
-	bbdoc: Set float field value
+	bbdoc: Set #ULong field value
+	End Rem
+	Method SetULong( obj:Object,value:ULong )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				(Byte Ptr p)[0]=Byte(value)
+			Case ShortTypeId
+				(Short Ptr p)[0]=Short(value)
+			Case IntTypeId
+				(Int Ptr p)[0]=Int(value)
+			Case UIntTypeId
+				(UInt Ptr p)[0]=UInt(value)
+			Case LongTypeId
+				(Long Ptr p)[0]=Long(value)
+			Case ULongTypeId
+				(ULong Ptr p)[0]=value
+			Case SizetTypeId
+				(Size_T Ptr p)[0]=Size_T(value)
+			Case FloatTypeId
+				(Float Ptr p)[0]=Float(value)
+			Case DoubleTypeId
+				(Double Ptr p)[0]=Double(value)
+			Case StringTypeId
+				bbRefAssignObject p,String.FromULong( value )
+		End Select
+	End Method
+
+	Rem
+	bbdoc: Set #Size_T field value
+	End Rem
+	Method SetSizet( obj:Object,value:Size_T )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				(Byte Ptr p)[0]=Byte(value)
+			Case ShortTypeId
+				(Short Ptr p)[0]=Short(value)
+			Case IntTypeId
+				(Int Ptr p)[0]=Int(value)
+			Case UIntTypeId
+				(UInt Ptr p)[0]=UInt(value)
+			Case LongTypeId
+				(Long Ptr p)[0]=Long(value)
+			Case ULongTypeId
+				(ULong Ptr p)[0]=ULong(value)
+			Case SizetTypeId
+				(Size_T Ptr p)[0]=value
+			Case FloatTypeId
+				(Float Ptr p)[0]=Float(value)
+			Case DoubleTypeId
+				(Double Ptr p)[0]=Double(value)
+			Case StringTypeId
+				bbRefAssignObject p,String.FromSizet( value )
+		End Select
+	End Method
+
+	Rem
+	bbdoc: Set #Float field value
 	End Rem
 	Method SetFloat( obj:Object,value:Float )
-		SetString obj,String.FromFloat( value )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				(Byte Ptr p)[0]=Byte(value)
+			Case ShortTypeId
+				(Short Ptr p)[0]=Short(value)
+			Case IntTypeId
+				(Int Ptr p)[0]=Int(value)
+			Case UIntTypeId
+				(UInt Ptr p)[0]=UInt(value)
+			Case LongTypeId
+				(Long Ptr p)[0]=Long(value)
+			Case ULongTypeId
+				(ULong Ptr p)[0]=ULong(value)
+			Case SizetTypeId
+				(Size_T Ptr p)[0]=Size_T(value)
+			Case FloatTypeId
+				(Float Ptr p)[0]=value
+			Case DoubleTypeId
+				(Double Ptr p)[0]=Double(value)
+			Case StringTypeId
+				bbRefAssignObject p,String.FromFloat( value )
+		End Select
 	End Method
 
 	Rem
-	bbdoc: Set double field value
+	bbdoc: Set #Double field value
 	End Rem
 	Method SetDouble( obj:Object,value:Double )
-		SetString obj,String.FromDouble( value )
+		Local p:Byte Ptr = bbRefFieldPtr( obj,_index )
+		Select _typeId
+			Case ByteTypeId
+				(Byte Ptr p)[0]=Byte(value)
+			Case ShortTypeId
+				(Short Ptr p)[0]=Short(value)
+			Case IntTypeId
+				(Int Ptr p)[0]=Int(value)
+			Case UIntTypeId
+				(UInt Ptr p)[0]=UInt(value)
+			Case LongTypeId
+				(Long Ptr p)[0]=Long(value)
+			Case ULongTypeId
+				(ULong Ptr p)[0]=ULong(value)
+			Case SizetTypeId
+				(Size_T Ptr p)[0]=Size_T(value)
+			Case FloatTypeId
+				(Float Ptr p)[0]=Float(value)
+			Case DoubleTypeId
+				(Double Ptr p)[0]=value
+			Case StringTypeId
+				bbRefAssignObject p,String.FromDouble( value )
+		End Select
 	End Method
 
 	Rem
-	bbdoc: Set string field value
+	bbdoc: Set #String field value
 	End Rem
 	Method SetString( obj:Object,value$ )
 		Set obj,value
