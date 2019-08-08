@@ -1329,7 +1329,7 @@ Type TField Extends TMember
 	Method Get:Object( obj:Object )
 		Return _Get( bbRefFieldPtr( obj,_index ),_typeId )
 	End Method
-	
+
 	Rem
 	bbdoc: Get #Byte field value
 	End Rem
@@ -1356,7 +1356,7 @@ Type TField Extends TMember
 				Return (Double Ptr p)[0]
 		End Select
 	End Method
-	
+
 	Rem
 	bbdoc: Get #Short field value
 	End Rem
@@ -1437,7 +1437,7 @@ Type TField Extends TMember
 				Return (Double Ptr p)[0]
 		End Select
 	End Method
-	
+
 	Rem
 	bbdoc: Get long field value
 	End Rem
@@ -1491,7 +1491,7 @@ Type TField Extends TMember
 				Return (Double Ptr p)[0]
 		End Select
 	End Method
-	
+
 	Rem
 	bbdoc: Get #Size_T field value
 	End Rem
@@ -1648,6 +1648,13 @@ Type TField Extends TMember
 	End Rem
 	Method Set( obj:Object,value:Double )
 		SetDouble(obj, value)
+	End Method
+
+	Rem
+	bbdoc: Set #Object field value
+	End Rem
+	Method SetObject( obj:Object,value:Object )
+		_Assign bbRefFieldPtr( obj,_index ),_typeId,value
 	End Method
 
 	Rem
