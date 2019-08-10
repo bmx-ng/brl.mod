@@ -522,3 +522,7 @@ void bbArraySort( BBArray *arr,int ascending ){
 		}
 	}
 }
+
+int bbObjectIsEmptyArray(BBObject * o) {
+	return o == &bbEmptyArray;
+}

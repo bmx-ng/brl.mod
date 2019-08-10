@@ -54,6 +54,8 @@ BBArray*	bbArrayFromDataStruct( const char *type,int length,void *data, unsigned
 
 void bbArrayCopy(BBArray * srcArr, int srcPos, BBArray * dstArr, int dstPos, int length);
 
+int bbObjectIsEmptyArray(BBObject * o);
+
 #ifdef __cplusplus
 }
 #endif

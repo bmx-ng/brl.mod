@@ -546,6 +546,12 @@ bbdoc: Copies an array from the specified @src array, starting at the position @
 End Rem
 Function ArrayCopy(src:Object, srcPos:Int, dst:Object, dstPos:Int, length:Int)="void bbArrayCopy(BBARRAY, int, BBARRAY, int, int)!"
 
+Rem
+bbdoc: Determines whether the #Object @obj is an empty array.
+returns: #True if @obj is an empty array, or #False otherwise.
+End Rem
+Function IsEmptyArray:Int(obj:Object)="int bbObjectIsEmptyArray(BBOBJECT)!"
+
 End Extern
 
 Rem
