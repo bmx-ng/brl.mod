@@ -14,12 +14,18 @@ person.address.line1 = "10 Somewhere Street"
 person.address.city = "SomeTown"
 person.address.state = "SomeState"
 
+person.notes = New String[2]
+person.notes[0] = "Note 1"
+person.notes[1] = "Note 2"
+
 ' create jconv instance
 Local jconv:TJConv = New TJConvBuilder.Build()
 
 ' serialize the person data
-Print jconv.ToJson(person)
-
+Local s:String = jconv.ToJson(person)
+Print s
+Local p:TPerson = TPerson(jconv.FromJson(s, "TPerson"))
+Print jconv.ToJson(p)
 
 Type TPerson
 
@@ -28,6 +34,7 @@ Type TPerson
 
 	Field address:TAddress
 
+	Field notes:String[]
 End Type
 
 Type TAddress
