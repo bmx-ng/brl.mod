@@ -567,7 +567,7 @@ Type TAssert
 	about: If it is #Null, an #AssertionFailedException is thrown with the given message.
 	End Rem
 	Function assertNotNull(obj:Object, message:String = Null)
-		If obj = Null Or IsEmptyArray(obj) Then
+		If obj = Null Then
 			fail("assertNotNull() : " + message)
 		End If
 	End Function
@@ -577,7 +577,7 @@ Type TAssert
 	If it is not #Null, an #AssertionFailedException is thrown with the given message.
 	End Rem
 	Function assertNull(obj:Object, message:String = Null)
-		If obj <> Null And Not IsEmptyArray(obj) Then
+		If obj <> Null Then
 			fail("assertNull() : " + message)
 		End If
 	End Function
