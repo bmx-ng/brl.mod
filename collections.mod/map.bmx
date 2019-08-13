@@ -265,10 +265,10 @@ Private
 	End Method
 	
 	Method RepairAdd( node:TMapNode<K,V> )
-		While node.parent.colour=0 And node.parent.parent<>Null
+		While node.parent And node.parent.colour=0 And node.parent.parent<>Null
 			If node.parent = node.parent.parent.leftNode Then
 				Local uncle:TMapNode<K,V>=node.parent.parent.rightNode
-				If uncle.colour = 0 Then
+				If uncle And uncle.colour = 0 Then
 					node.parent.colour = 1
 					uncle.colour = 1
 					uncle.parent.colour = 0
@@ -284,7 +284,7 @@ Private
 				EndIf
 			Else
 				Local uncle:TMapNode<K,V>=node.parent.parent.leftNode
-				If uncle.colour=0
+				If uncle And uncle.colour=0
 					node.parent.colour=1
 					uncle.colour=1
 					uncle.parent.colour=0
