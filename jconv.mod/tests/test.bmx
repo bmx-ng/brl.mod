@@ -22,6 +22,8 @@ Type TArrayTest Extends TJConvTest
 	Const EMPTY_OBJECT:String = "{}"
 	Const STRING_ARRAY:String = "[~qOne~q, ~qTwo~q, ~qThree~q]"
 	Const INT_ARRAY:String = "[1, 2, 3, 4, 5]"
+	Const JSON_TYPES:String = "{~qfByte~q: 1, ~qfShort~q: 2, ~qfInt~q: 3, ~qfUInt~q: 4, ~qfLong~q: 5, ~qfULong~q: 6, ~qfSizeT~q: 7, ~qfFloat~q: 8.0, ~qfDouble~q: 9.0, ~qfString~q: ~q10~q, ~qfObject~q: {~qx~q: 1, ~qy~q: 2, ~qz~q: 3}}"
+	Const JSON_TYPES_SER:String = "{~qfByte~q: 1, ~qfShort~q: 2, ~qfInt~q: 3, ~qfUInt~q: 4, ~qfLong~q: 5, ~qfULong~q: 6, ~qfSizeT~q: 7, ~qfFloat~q: 8.0, ~qfDouble~q: 9.0, ~qfString~q: ~q10~q, ~qfObject~q: {~qz~q: 3, ~qy~q: 2, ~qx~q: 1}}"
 
 	Method testEmptyObject() { test }
 		Local obj:Object
@@ -102,6 +104,19 @@ Type TArrayTest Extends TJConvTest
 		assertEquals(50.4575108:Double, array[1].locations[1].lat)
 	End Method
 	
+	Method testFieldTypes() { test }
+		Local types:TTypes = New TTypes
+		
+		assertEquals(JSON_TYPES, jconv.ToJson(types)) 
+	End Method
+
+	Method testObjectSerializer() { test }
+		jconv = New TJConvBuilder.RegisterSerializer("TEmbedded", New TEmbeddedSerializer).Build()
+
+		Local types:TTypes = New TTypes
+		assertEquals(JSON_TYPES_SER, jconv.ToJson(types)) 
+	End Method
+	
 End Type
 
 Type TData
@@ -120,3 +135,48 @@ Type TLocation
 	Field lng:Double
 End Type
 
+Type TTypes
+
+	Field fByte:Byte = 1
+	Field fShort:Short = 2
+	Field fInt:Int = 3
+	Field fUInt:UInt = 4
+	Field fLong:Long = 5
+	Field fULong:ULong = 6
+	Field fSizeT:Size_T = 7
+	Field fFloat:Float = 8
+	Field fDouble:Double = 9
+	Field fString:String = "10"
+	
+	Field fObject:TEmbedded = New TEmbedded(1, 2, 3)
+End Type
+
+Type TEmbedded
+
+	Field x:Int
+	Field y:Int
+	Field z:Int
+	
+	Method New(x:Int, y:Int, z:Int)
+		Self.x = x
+		Self.y = y
+		Self.z = z
+	End Method
+
+End Type
+
+Type TEmbeddedSerializer Extends TJConvSerializer
+
+	Method Serialize:TJSON(source:Object, sourceType:String)
+		Local embedded:TEmbedded = TEmbedded(source)
+		
+		Local json:TJSONObject = New TJSONObject.Create()
+		
+		json.Set("z", embedded.z)
+		json.Set("y", embedded.y)
+		json.Set("x", embedded.x)
+		
+		Return json
+	End Method
+
+End Type

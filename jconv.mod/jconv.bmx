@@ -26,11 +26,13 @@ bbdoc: JSON Object de/serializer.
 End Rem
 Module brl.jconv
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib/png"
 ModuleInfo "Copyright: 2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Added custom serializer."
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Added support for arrays."
 ModuleInfo "History: 1.00"
@@ -38,7 +40,8 @@ ModuleInfo "History: Initial Release"
 
 Import brl.reflection
 Import brl.json
-Import brl.standardio
+Import brl.map
+
 Rem
 bbdoc: Creates an instance of #TJConv with custom settings.
 End Rem
@@ -52,17 +55,39 @@ Type TJConvBuilder
 	Method Build:TJConv()
 		Local jconv:TJConv = New TJConv
 		jconv.options = options
+		
+		For Local serializer:TJConvSerializer = EachIn options.serializers.Values()
+			serializer.jconv = jconv
+		Next
+		
 		Return jconv
 	End Method
 
 	Rem
-	bbdoc: Null/Empty array fields will be output to JSON.
+	bbdoc: Null/Empty array fields will be output to JSON as `[]`.
 	about: The default is not to output these fields.
 	End Rem
 	Method WithEmptyArrays:TJConvBuilder()
 		options.emptyArraysAreNull = False
 		Return Self
 	End Method
+	
+	Rem
+	bbdoc: Registers a serializer for the given source type.
+	End Rem
+	Method RegisterSerializer:TJConvBuilder(sourceType:String, serializer:Object)
+		options.serializers.Insert(sourceType, serializer)
+		Return Self
+	End Method
+
+	'Rem
+	'bbdoc: 
+	'End Rem
+	'Method RegisterDeserializer:TJConvBuilder(sourceType:String, deserializer:Object)
+	'	options.deserializers.Insert(sourceType, deserializer)
+	'	Return Self
+	'End Method
+	
 End Type
 
 Rem
@@ -71,6 +96,14 @@ End Rem
 Type TJConv
 
 	Field options:TJConvOptions = New TJConvOptions
+	
+	Field defaultSerializer:TJConvSerializer = New TJConvSerializer
+	'Field defaultDeserializer:TJConvDeserializer = New TJConvDeserializer
+	
+	Method New()
+		defaultSerializer.jconv = Self
+		'defaultDeserializer.jconv = Self
+	End Method
 
 	Rem
 	bbdoc: Deserializes the specified JSON string into an object of the specified type.
@@ -130,7 +163,7 @@ Type TJConv
 
 				If f Then
 					Local fieldType:TTypeId = f.TypeId()
-				
+
 					If TJSONInteger(j) Then
 						Select fieldType
 							Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
@@ -290,10 +323,13 @@ Type TJConv
 		
 		If typeId.ExtendsType(ObjectTypeId) Then
 
-			Local json:TJSONObject = New TJSONObject.Create()
+			Local serializer:TJConvSerializer = TJConvSerializer(options.serializers.ValueForKey(typeId.Name()))
+			If Not serializer Then
+				serializer = defaultSerializer
+			End If
 
-			ToJson(json, obj)
-		
+			Local json:TJSON = serializer.Serialize(obj, typeId.Name())
+
 			Return json.SaveString()
 		End If
 	End Method
@@ -343,38 +379,44 @@ Type TJConv
 			
 			Local fieldType:TTypeId = f.TypeId()
 			
+			Local serializer:TJConvSerializer = TJConvSerializer(options.serializers.ValueForKey(fieldType.Name()))
+			If Not serializer Then
+				serializer = defaultSerializer
+			End If
+			
 			Select fieldType
 				Case ByteTypeId
-					j = New TJSONInteger.Create(f.GetByte(obj))
+					j = serializer.Serialize(f.GetByte(obj), fieldType.Name())
 
 				Case ShortTypeId
-					j = New TJSONInteger.Create(f.GetShort(obj))
+					j = serializer.Serialize(f.GetShort(obj), fieldType.Name())
 
 				Case IntTypeId
-					j = New TJSONInteger.Create(f.GetInt(obj))
+					j = serializer.Serialize(f.GetInt(obj), fieldType.Name())
 
 				Case UIntTypeId
-					j = New TJSONInteger.Create(f.GetUInt(obj))
+					j = serializer.Serialize(f.GetUInt(obj), fieldType.Name())
 
 				Case LongTypeId
-					j = New TJSONInteger.Create(f.GetLong(obj))
+					j = serializer.Serialize(f.GetLong(obj), fieldType.Name())
 
 				Case ULongTypeId
-					j = New TJSONInteger.Create(f.GetULong(obj))
+					j = serializer.Serialize(f.GetULong(obj), fieldType.Name())
 
 				Case SizetTypeId
-					j = New TJSONInteger.Create(f.GetSizeT(obj))
+					j = serializer.Serialize(f.GetSizeT(obj), fieldType.Name())
 					
 				Case FloatTypeId
-					j = New TJSONReal.Create(f.GetFloat(obj))
+					j = serializer.Serialize(f.GetFloat(obj), fieldType.Name())
 
 				Case DoubleTypeId
-					j = New TJSONReal.Create(f.GetDouble(obj))
+					j = serializer.Serialize(f.GetDouble(obj), fieldType.Name())
 					
 				Case StringTypeId
 					Local s:String = f.GetString(obj)
 					If s Then
-						json.Set(f.Name(), New TJSONString.Create(s))
+						j = serializer.Serialize(s, fieldType.Name())
+						json.Set(f.Name(), j)
 					End If
 					Continue
 			End Select
@@ -395,8 +437,9 @@ Type TJConv
 			If Not j And fieldType.ExtendsType(ObjectTypeId) Then
 				Local o:Object = f.Get(obj)
 				If o Then
-					j = New TJSONObject.Create()
-					ToJson(TJSONObject(j), o)
+					Local objectTypeId:TTypeId = TTypeId.ForObject(o)
+				
+					j = serializer.Serialize(o, objectTypeId.Name())
 				End If
 			End If
 			
@@ -417,7 +460,7 @@ Type TJConv
 		Local dims:Int
 		Try
 			dims = typeId.ArrayDimensions(array)
-		Catch e$
+		Catch e:String
 			Return
 		End Try
 
@@ -426,50 +469,56 @@ Type TJConv
 
 		Try
 			size = typeId.ArrayLength(array)
-		Catch e$
+		Catch e:String
 			size = 0
 		End Try
+
+		Local serializer:TJConvSerializer = TJConvSerializer(options.serializers.ValueForKey(elementType.Name()))
+		If Not serializer Then
+			serializer = defaultSerializer
+		End If
 
 		For Local i:Int = 0 Until size
 			Local element:TJSON
 
 			Select elementType
 				Case ByteTypeId
-					element = New TJSONInteger.Create(typeId.GetByteArrayElement(array, i))
+					element = serializer.Serialize(typeId.GetByteArrayElement(array, i), elementType.Name())
 
 				Case ShortTypeId
-					element = New TJSONInteger.Create(typeId.GetShortArrayElement(array, i))
+					element = serializer.Serialize(typeId.GetShortArrayElement(array, i), elementType.Name())
 
 				Case IntTypeId
-					element = New TJSONInteger.Create(typeId.GetIntArrayElement(array, i))
+					element = serializer.Serialize(typeId.GetIntArrayElement(array, i), elementType.Name())
 
 				Case UIntTypeId
-					element = New TJSONInteger.Create(typeId.GetUIntArrayElement(array, i))
+					element = serializer.Serialize(typeId.GetUIntArrayElement(array, i), elementType.Name())
 
 				Case LongTypeId
-					element = New TJSONInteger.Create(typeId.GetLongArrayElement(array, i))
+					element = serializer.Serialize(typeId.GetLongArrayElement(array, i), elementType.Name())
 
 				Case ULongTypeId
-					element = New TJSONInteger.Create(typeId.GetULongArrayElement(array, i))
+					element = serializer.Serialize(typeId.GetULongArrayElement(array, i), elementType.Name())
 
 				Case SizetTypeId
-					element = New TJSONInteger.Create(typeId.GetSizeTArrayElement(array, i))
+					element = serializer.Serialize(typeId.GetSizeTArrayElement(array, i), elementType.Name())
 
 				Case FloatTypeId
-					element = New TJSONReal.Create(typeId.GetFloatArrayElement(array, i))
+					element = serializer.Serialize(typeId.GetFloatArrayElement(array, i), elementType.Name())
 
 				Case DoubleTypeId
-					element = New TJSONReal.Create(typeId.GetDoubleArrayElement(array, i))
+					element = serializer.Serialize(typeId.GetDoubleArrayElement(array, i), elementType.Name())
 
 				Case StringTypeId
-					element = New TJSONString.Create(typeId.GetStringArrayElement(array, i))
+					element = serializer.Serialize(typeId.GetStringArrayElement(array, i), elementType.Name())
 			End Select
 
 			If Not element And typeId.ExtendsType(ObjectTypeId) Then
 				Local o:Object = typeId.GetArrayElement(array, i)
 				If o Then
-					element = New TJSONObject.Create()
-					ToJson(TJSONObject(element), o)
+					Local objectTypeId:TTypeId = TTypeId.ForObject(o)
+				
+					element = serializer.Serialize(o, objectTypeId.Name())
 				End If
 			End If
 			
@@ -486,4 +535,68 @@ Type TJConvOptions
 
 	Field emptyArraysAreNull:Int = True
 
+	Field serializers:TMap = New TMap
+	'Field deserializers:TMap = New TMap
+
 End Type
+
+Rem
+bbdoc: Serializes BlitzMax type to JSON.
+End Rem
+Type TJConvSerializer
+
+	Field jconv:TJConv
+
+	Method Serialize:TJSON(source:Byte, sourceType:String)
+		Return New TJSONInteger.Create(source)
+	End Method
+
+	Method Serialize:TJSON(source:Short, sourceType:String)
+		Return New TJSONInteger.Create(source)
+	End Method
+	
+	Method Serialize:TJSON(source:Int, sourceType:String)
+		Return New TJSONInteger.Create(source)
+	End Method
+
+	Method Serialize:TJSON(source:UInt, sourceType:String)
+		Return New TJSONInteger.Create(source)
+	End Method
+
+	Method Serialize:TJSON(source:Long, sourceType:String)
+		Return New TJSONInteger.Create(source)
+	End Method
+
+	Method Serialize:TJSON(source:ULong, sourceType:String)
+		Return New TJSONInteger.Create(source)
+	End Method
+
+	Method Serialize:TJSON(source:Size_T, sourceType:String)
+		Return New TJSONInteger.Create(source)
+	End Method
+					
+	Method Serialize:TJSON(source:Float, sourceType:String)
+		Return New TJSONReal.Create(source)
+	End Method
+
+	Method Serialize:TJSON(source:Double, sourceType:String)
+		Return New TJSONReal.Create(source)
+	End Method
+
+	Method Serialize:TJSON(source:String, sourceType:String)
+		Return New TJSONString.Create(source)
+	End Method
+
+	Method Serialize:TJSON(source:Object, sourceType:String)
+		Local json:TJSONObject = New TJSONObject.Create()
+		jconv.ToJson(json, source)
+		Return json
+	End Method
+	
+End Type
+
+'Type TJConvDeserializer
+'
+'	Field jconv:TJConv
+'
+'End Type
