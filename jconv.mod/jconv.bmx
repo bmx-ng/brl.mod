@@ -26,11 +26,13 @@ bbdoc: JSON Object de/serializer.
 End Rem
 Module brl.jconv
 
-ModuleInfo "Version: 1.02"
+ModuleInfo "Version: 1.03"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib/png"
 ModuleInfo "Copyright: 2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Added custom deserializing."
 ModuleInfo "History: 1.02"
 ModuleInfo "History: Added custom serializer."
 ModuleInfo "History: 1.01"
@@ -80,14 +82,6 @@ Type TJConvBuilder
 		Return Self
 	End Method
 
-	'Rem
-	'bbdoc: 
-	'End Rem
-	'Method RegisterDeserializer:TJConvBuilder(sourceType:String, deserializer:Object)
-	'	options.deserializers.Insert(sourceType, deserializer)
-	'	Return Self
-	'End Method
-	
 End Type
 
 Rem
@@ -98,11 +92,9 @@ Type TJConv
 	Field options:TJConvOptions = New TJConvOptions
 	
 	Field defaultSerializer:TJConvSerializer = New TJConvSerializer
-	'Field defaultDeserializer:TJConvDeserializer = New TJConvDeserializer
 	
 	Method New()
 		defaultSerializer.jconv = Self
-		'defaultDeserializer.jconv = Self
 	End Method
 
 	Rem
@@ -152,150 +144,13 @@ Type TJConv
 	End Method
 
 	Method FromJson:Object(json:TJSON, typeId:TTypeId, obj:Object)
-	
-		If TJSONObject(json) Then
-			If Not obj Then
-				obj = typeId.NewObject()
-			End If
 
-			For Local j:TJSON = EachIn TJSONObject(json)
-				Local f:TField = typeId.FindField(j.key)
-
-				If f Then
-					Local fieldType:TTypeId = f.TypeId()
-
-					If TJSONInteger(j) Then
-						Select fieldType
-							Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
-								f.SetLong(obj, TJSONInteger(j).Value())
-						End Select
-						Continue
-					End If
-					
-					If TJSONReal(j) Then
-						Select fieldType
-							Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
-								f.SetDouble(obj, TJSONReal(j).Value())
-						End Select
-						Continue
-					End If
-					
-					If TJSONString(j) Then
-						Select fieldType
-							Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
-								f.SetString(obj, TJSONString(j).Value())
-						End Select
-						Continue
-					End If
-					
-					If TJSONArray(j) Then
-
-						If fieldType.ExtendsType(ArrayTypeId) Then
-
-							Local elementType:TTypeId = fieldType.ElementType()
-
-							Local arrayObj:Object = ProcessArray(TJSONArray(j), fieldType, Null)
-							
-							f.Set(obj, arrayObj)
-						End If
-						Continue
-					End If
-					
-					If TJSONObject(j) Then
-					
-						If typeId.ExtendsType(ObjectTypeId) Then
-							
-							Local o:Object = FromJson(j, fieldType, Null)
-							If o Then
-								f.Set(obj, o)
-							End If
-						End If
-					End If
-				End If
-			Next
-		Else If TJSONArray(json) Then
-			
-			obj = ProcessArray(TJSONArray(json), typeId, obj)
-		
-		End If
-				
-		Return obj
-	End Method
-
-	Method ProcessArray:Object(jsonArray:TJSONArray, typeId:TTypeId, arrayObj:Object)
-
-		Local size:Int = jsonArray.Size()
-
-		If Not size Then
-			Return typeId.NullArray()
+		Local serializer:TJConvSerializer = TJConvSerializer(options.serializers.ValueForKey(typeId.Name()))
+		If Not serializer Then
+			serializer = defaultSerializer
 		End If
 
-		Local elementType:TTypeId = typeId.ElementType()
-
-		' arrayObj is Null Array?
-		' We need to read the first jsonarray element and create a new array of that type
-		If Not elementType And size Then
-			
-			Local jsonElement:TJSON = jsonArray.Get(0)
-			
-			If TJSONInteger(jsonElement) Then
-				typeId = TypeIdForTag("[]l")
-			Else If TJSONReal(jsonElement) Then
-				typeId = TypeIdForTag("[]d")
-			Else If TJSONString(jsonElement) Then
-				typeId = TypeIdForTag("[]$")
-			Else If TJSONObject(jsonElement) Then
-				typeId = TypeIdForTag("[]:Object")
-			End If
-
-			elementType = typeId.ElementType()
-			If Not elementType Then
-				Return Null
-			End If
-		End If
-
-		If Not arrayObj Then
-			arrayObj = typeId.NewArray(size)
-		Else
-			arrayObj = typeId.ArraySlice(arrayObj, 0, size)
-		End If
-
-		For Local i:Int = 0 Until size
-			Local jsonElement:TJSON = jsonArray.Get(i)
-			
-			If TJSONInteger(jsonElement) Then
-				Select elementType
-					Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
-						typeId.SetLongArrayElement(arrayObj, i, TJSONInteger(jsonElement).Value())
-				End Select
-				Continue
-			End If
-
-			If TJSONReal(jsonElement) Then
-				Select elementType
-					Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
-						typeId.SetDoubleArrayElement(arrayObj, i, TJSONReal(jsonElement).Value())
-				End Select
-				Continue
-			End If
-			
-			If TJSONString(jsonElement) Then
-				Select elementType
-					Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
-						typeId.SetStringArrayElement(arrayObj, i, TJSONString(jsonElement).Value())
-				End Select
-				Continue
-			End If
-			
-			If TJSONObject(jsonElement) Then
-				If elementType.ExtendsType(ObjectTypeId) Then
-					Local o:Object = FromJson(jsonElement, elementType, Null)
-					typeId.SetArrayElement(arrayObj, i, o)
-				End If
-			End If						
-		Next
-		
-		Return arrayObj
+		Return serializer.Deserialize(json, typeId, obj)
 	End Method
 	
 	Rem
@@ -536,7 +391,6 @@ Type TJConvOptions
 	Field emptyArraysAreNull:Int = True
 
 	Field serializers:TMap = New TMap
-	'Field deserializers:TMap = New TMap
 
 End Type
 
@@ -593,10 +447,159 @@ Type TJConvSerializer
 		Return json
 	End Method
 	
-End Type
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+		If TJSONObject(json) Then
+			If Not obj Then
+				obj = typeId.NewObject()
+			End If
 
-'Type TJConvDeserializer
-'
-'	Field jconv:TJConv
-'
-'End Type
+			For Local j:TJSON = EachIn TJSONObject(json)
+				Local f:TField = typeId.FindField(j.key)
+
+				If f Then
+					Local fieldType:TTypeId = f.TypeId()
+
+					If TJSONInteger(j) Then
+						Select fieldType
+							Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
+								f.SetLong(obj, TJSONInteger(j).Value())
+						End Select
+						Continue
+					End If
+					
+					If TJSONReal(j) Then
+						Select fieldType
+							Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
+								f.SetDouble(obj, TJSONReal(j).Value())
+						End Select
+						Continue
+					End If
+					
+					If TJSONString(j) Then
+						Select fieldType
+							Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
+								f.SetString(obj, TJSONString(j).Value())
+						End Select
+						
+						If fieldType.ExtendsType(ArrayTypeId) Or fieldType.ExtendsType(ObjectTypeId) Then
+						
+							Local fobj:Object = jconv.FromJson(j, fieldType, Null)
+						
+							If fobj Then
+								f.Set(obj, fobj)
+							End If
+						
+						End If
+
+						Continue
+					End If
+					
+					If TJSONArray(j) Then
+
+						If fieldType.ExtendsType(ArrayTypeId) Then
+
+							Local arrayObj:Object = jconv.FromJson(TJSONArray(j), fieldType, Null)
+							
+							f.Set(obj, arrayObj)
+						End If
+						Continue
+					End If
+					
+					If TJSONObject(j) Then
+					
+						If typeId.ExtendsType(ObjectTypeId) Then
+							
+							Local o:Object = jconv.FromJson(j, fieldType, Null)
+							If o Then
+								f.Set(obj, o)
+							End If
+						End If
+					End If
+				End If
+			Next
+		Else If TJSONArray(json) Then
+			
+			obj = Deserialize(TJSONArray(json), typeId, obj)
+		
+		End If
+				
+		Return obj
+	End Method
+
+	Method Deserialize:Object(jsonArray:TJSONArray, typeId:TTypeId, arrayObj:Object)
+
+		Local size:Int = jsonArray.Size()
+
+		If Not size Then
+			Return typeId.NullArray()
+		End If
+
+		Local elementType:TTypeId = typeId.ElementType()
+
+		' arrayObj is Null Array?
+		' We need to read the first jsonarray element and create a new array of that type
+		If Not elementType And size Then
+			
+			Local jsonElement:TJSON = jsonArray.Get(0)
+			
+			If TJSONInteger(jsonElement) Then
+				typeId = TypeIdForTag("[]l")
+			Else If TJSONReal(jsonElement) Then
+				typeId = TypeIdForTag("[]d")
+			Else If TJSONString(jsonElement) Then
+				typeId = TypeIdForTag("[]$")
+			Else If TJSONObject(jsonElement) Then
+				typeId = TypeIdForTag("[]:Object")
+			End If
+
+			elementType = typeId.ElementType()
+			If Not elementType Then
+				Return Null
+			End If
+		End If
+
+		If Not arrayObj Then
+			arrayObj = typeId.NewArray(size)
+		Else
+			arrayObj = typeId.ArraySlice(arrayObj, 0, size)
+		End If
+
+		For Local i:Int = 0 Until size
+			Local jsonElement:TJSON = jsonArray.Get(i)
+			
+			If TJSONInteger(jsonElement) Then
+				Select elementType
+					Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
+						typeId.SetLongArrayElement(arrayObj, i, TJSONInteger(jsonElement).Value())
+				End Select
+				Continue
+			End If
+
+			If TJSONReal(jsonElement) Then
+				Select elementType
+					Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
+						typeId.SetDoubleArrayElement(arrayObj, i, TJSONReal(jsonElement).Value())
+				End Select
+				Continue
+			End If
+			
+			If TJSONString(jsonElement) Then
+				Select elementType
+					Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
+						typeId.SetStringArrayElement(arrayObj, i, TJSONString(jsonElement).Value())
+				End Select
+				Continue
+			End If
+			
+			If TJSONObject(jsonElement) Then
+				If elementType.ExtendsType(ObjectTypeId) Then
+					Local o:Object = jconv.FromJson(jsonElement, elementType, Null)
+					typeId.SetArrayElement(arrayObj, i, o)
+				End If
+			End If						
+		Next
+		
+		Return arrayObj
+	End Method
+
+End Type
