@@ -25,6 +25,8 @@ Type TArrayTest Extends TJConvTest
 	Const JSON_TYPES:String = "{~qfByte~q: 1, ~qfShort~q: 2, ~qfInt~q: 3, ~qfUInt~q: 4, ~qfLong~q: 5, ~qfULong~q: 6, ~qfSizeT~q: 7, ~qfFloat~q: 8.0, ~qfDouble~q: 9.0, ~qfString~q: ~q10~q, ~qfObject~q: {~qx~q: 1, ~qy~q: 2, ~qz~q: 3}}"
 	Const JSON_TYPES_SER:String = "{~qfByte~q: 1, ~qfShort~q: 2, ~qfInt~q: 3, ~qfUInt~q: 4, ~qfLong~q: 5, ~qfULong~q: 6, ~qfSizeT~q: 7, ~qfFloat~q: 8.0, ~qfDouble~q: 9.0, ~qfString~q: ~q10~q, ~qfObject~q: {~qz~q: 3, ~qy~q: 2, ~qx~q: 1}}"
 	Const JSON_CONTAINER:String = "{~qbox~q: ~q10,10,100,150~q}"
+	Const JSON_SER_NAME:String = "{~qname~q: ~qone~q, ~qname1~q: ~qtwo~q, ~qc~q: ~qthree~q}"
+	Const JSON_ALT_SER_NAME:String = "{~qa~q: ~qone~q, ~qname3~q: ~qtwo~q, ~qc~q: ~qthree~q}"
 
 	Method testEmptyObject() { test }
 		Local obj:Object
@@ -136,6 +138,27 @@ Type TArrayTest Extends TJConvTest
 		assertEquals(150, c2.box.h)
 	End Method
 
+	Method testFieldNameSerialize() { test }
+		Local name1:TSName = New TSName
+		name1.a = "one"
+		name1.b = "two"
+		name1.c = "three"
+		
+		assertEquals(JSON_SER_NAME, jconv.ToJson(name1))
+
+		Local name2:TSName = TSName(jconv.FromJson(JSON_SER_NAME, "TSName"))
+		assertNotNull(name2)
+		assertEquals(name1.a, name2.a)
+		assertEquals(name1.b, name2.b)
+		assertEquals(name1.c, name2.c)
+
+		Local name3:TSName = TSName(jconv.FromJson(JSON_ALT_SER_NAME, "TSName"))
+		assertNotNull(name3)
+		assertEquals(name1.a, name3.a)
+		assertEquals(name1.b, name3.b)
+		assertEquals(name1.c, name3.c)
+	End Method
+	
 End Type
 
 Type TData
@@ -252,4 +275,12 @@ Type TBoxSerializer Extends TJConvSerializer
 		Return obj
 	End Method
 	
+End Type
+
+Type TSName
+
+	Field a:String { serializedName="name" }
+	Field b:String { serializedName="name1" alternateName="name2,name3" }
+	Field c:String
+
 End Type

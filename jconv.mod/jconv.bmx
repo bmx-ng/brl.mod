@@ -26,11 +26,13 @@ bbdoc: JSON Object de/serializer.
 End Rem
 Module brl.jconv
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.04"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib/png"
 ModuleInfo "Copyright: 2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Added support for serializedName and alternateName field metadata."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Added custom deserializing."
 ModuleInfo "History: 1.02"
@@ -120,6 +122,16 @@ Type TJConv
 		Return FromJson(json, typeId, obj)
 	End Method
 
+	Method FromJsonInstance:Object(json:TJSON, obj:Object)
+		If Not obj Then
+			Return Null
+		End If
+		
+		Local typeId:TTypeId = TTypeId.ForObject(obj)
+		
+		Return FromJson(json, typeId, obj)
+	End Method
+
 	Method FromJson:Object(txt:String, typeId:TTypeId, obj:Object)
 		Local error:TJSONError
 		Local json:TJSON = TJSON.Load(txt, 0, error)
@@ -152,7 +164,7 @@ Type TJConv
 
 		Return serializer.Deserialize(json, typeId, obj)
 	End Method
-	
+
 	Rem
 	bbdoc: Serializes the specified object into its equivalent JSON representation.
 	returns: The JSON representation as a #String.
@@ -186,6 +198,36 @@ Type TJConv
 			Local json:TJSON = serializer.Serialize(obj, typeId.Name())
 
 			Return json.SaveString()
+		End If
+	End Method
+
+	Method ToJsonInstance:TJSON(obj:Object)
+		If Not obj Then
+			Return Null
+		End If
+		
+		Local typeId:TTypeId = TTypeId.ForObject(obj)
+
+		If typeId.ExtendsType(StringTypeId) Then
+			Return New TJSONString.Create(String(obj))
+		End If
+		
+		If typeId.ExtendsType(ArrayTypeId) Then
+			Local json:TJSONArray = New TJSONArray.Create()
+		
+			ToJson(json, obj)
+			
+			Return json
+		End If
+		
+		If typeId.ExtendsType(ObjectTypeId) Then
+
+			Local serializer:TJConvSerializer = TJConvSerializer(options.serializers.ValueForKey(typeId.Name()))
+			If Not serializer Then
+				serializer = defaultSerializer
+			End If
+
+			Return serializer.Serialize(obj, typeId.Name())
 		End If
 	End Method
 	
@@ -271,7 +313,8 @@ Type TJConv
 					Local s:String = f.GetString(obj)
 					If s Then
 						j = serializer.Serialize(s, fieldType.Name())
-						json.Set(f.Name(), j)
+						
+						json.Set(FieldName(f), j)
 					End If
 					Continue
 			End Select
@@ -299,7 +342,7 @@ Type TJConv
 			End If
 			
 			If j Then
-				json.Set(f.Name(), j)
+				json.Set(FieldName(f), j)
 			End If
 		Next
 		
@@ -384,6 +427,14 @@ Type TJConv
 
 	End Method
 
+	Method FieldName:String(f:TField)
+		Local meta:String = f.Metadata("serializedName")
+		If meta Then
+			Return meta
+		Else
+			Return f.Name()
+		End If
+	End Method
 End Type
 
 Type TJConvOptions
@@ -455,6 +506,29 @@ Type TJConvSerializer
 
 			For Local j:TJSON = EachIn TJSONObject(json)
 				Local f:TField = typeId.FindField(j.key)
+				
+				If Not f Then
+					For Local namedField:TField = EachIn typeId.Fields().Values()
+						Local meta:String = namedField.Metadata("serializedName")
+						If meta = j.key Then
+							f = namedField
+							Exit
+						End If
+						
+						meta = namedField.Metadata("alternateName")
+						If meta Then
+							For Local name:String = EachIn meta.Split(",")
+								If name = j.key Then
+									f = namedField
+									Exit
+								End If
+							Next
+						End If
+						If f Then
+							Exit
+						End If
+					Next
+				End If
 
 				If f Then
 					Local fieldType:TTypeId = f.TypeId()
@@ -479,6 +553,7 @@ Type TJConvSerializer
 						Select fieldType
 							Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
 								f.SetString(obj, TJSONString(j).Value())
+								Continue
 						End Select
 						
 						If fieldType.ExtendsType(ArrayTypeId) Or fieldType.ExtendsType(ObjectTypeId) Then
@@ -521,6 +596,10 @@ Type TJConvSerializer
 			
 			obj = Deserialize(TJSONArray(json), typeId, obj)
 		
+		Else If TJSONString(json) Then
+
+			obj = TJSONString(json).Value()
+
 		End If
 				
 		Return obj
