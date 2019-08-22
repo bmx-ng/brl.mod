@@ -582,7 +582,7 @@ Type TJConvSerializer
 					
 					If TJSONObject(j) Then
 					
-						If typeId.ExtendsType(ObjectTypeId) Then
+						If fieldType.ExtendsType(ObjectTypeId) Then
 							
 							Local o:Object = jconv.FromJson(j, fieldType, Null)
 							If o Then
