@@ -25,11 +25,13 @@ bbdoc: A JSON encoder/decoder.
 End Rem
 Module BRL.Json
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.04"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: MIT"
 ModuleInfo "Copyright: 2014-2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Added index operator overloading to TJSONArray."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Updated to Jansson 2.12"
 ModuleInfo "History: 1.02"
@@ -228,6 +230,22 @@ Type TJSONArray Extends TJSON
 		Local enumeration:TJSONArrayEnum =New TJSONArrayEnum
 		enumeration.array = Self
 		Return enumeration
+	End Method
+
+	Rem
+	bbdoc: Returns the element in array at position index.
+	about: The valid range for index is from 0 to the return value of Size() minus 1. If index is out of range, NULL is returned.
+	End Rem
+	Method Operator [] :TJSON(index:Int)
+		Return Get(index)
+	End Method
+
+	Rem
+	bbdoc: Replaces the element in array at position index with value.
+	returns: 0 on success and -1 on error.
+	End Rem
+	Method Operator []= (index:Int, value:TJSON)
+		Set(index, value)
 	End Method
 
 End Type
