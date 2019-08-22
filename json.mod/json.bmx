@@ -242,7 +242,6 @@ Type TJSONArray Extends TJSON
 
 	Rem
 	bbdoc: Replaces the element in array at position index with value.
-	returns: 0 on success and -1 on error.
 	End Rem
 	Method Operator []= (index:Int, value:TJSON)
 		Set(index, value)
