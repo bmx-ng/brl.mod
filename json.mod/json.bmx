@@ -32,6 +32,7 @@ ModuleInfo "Copyright: 2014-2019 Bruce A Henderson"
 
 ModuleInfo "History: 1.04"
 ModuleInfo "History: Added index operator overloading to TJSONArray."
+ModuleInfo "History: Added TJSONBool Create method."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Updated to Jansson 2.12"
 ModuleInfo "History: 1.02"
@@ -715,6 +716,15 @@ End Rem
 Type TJSONBool Extends TJSON
 
 	Field isTrue:Int
+
+	Rem
+	bbdoc: Creates an instance of #TJSONBool with @v.
+	End Rem
+	Method Create:TJSONBool(v:Int)
+		jsonPtr = bmx_json_bool(v)
+		isTrue = v
+		Return Self
+	End Method
 
 End Type
 

@@ -61,6 +61,8 @@ int bmx_json_object_del(json_t * handle, BBString * key);
 
 BBObject * bmx_json_object_iter_value(void * iter);
 
+json_t * bmx_json_bool(int v);
+
 
 void bmx_json_decref(json_t * handle) {
 	json_decref(handle);
@@ -201,4 +203,8 @@ BBObject * bmx_json_object_iter_value(void * iter) {
 	} else {
 		return &bbNullObject;
 	}
+}
+
+json_t * bmx_json_bool(int v) {
+	return json_boolean(v);
 }

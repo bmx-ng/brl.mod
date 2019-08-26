@@ -74,6 +74,8 @@ Extern
 	Function json_object_iter:Byte Ptr(handle:Byte Ptr)
 	Function json_object_iter_next:Byte Ptr(handle:Byte Ptr, iter:Byte Ptr)
 	Function bmx_json_object_iter_value:Object(iter:Byte Ptr)
+
+	Function bmx_json_bool:Byte Ptr(v:Int)
 	
 End Extern
 
