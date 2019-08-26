@@ -26,11 +26,13 @@ bbdoc: JSON Object de/serializer.
 End Rem
 Module brl.jconv
 
-ModuleInfo "Version: 1.04"
+ModuleInfo "Version: 1.05"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib/png"
 ModuleInfo "Copyright: 2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.05"
+ModuleInfo "History: Added boxing for nullable primitives."
 ModuleInfo "History: 1.04"
 ModuleInfo "History: Added support for serializedName and alternateName field metadata."
 ModuleInfo "History: 1.03"
@@ -84,6 +86,24 @@ Type TJConvBuilder
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Registers serializers for boxed primitive numbers.
+	about: Boxed primitives allow for the provision of serializing #Null primitive numbers via JSON.
+	End Rem
+	Method WithBoxing:TJConvBuilder()
+		RegisterSerializer("TBool", New TBoolSerializer)
+		RegisterSerializer("TByte", New TByteSerializer)
+		RegisterSerializer("TShort", New TShortSerializer)
+		RegisterSerializer("TInt", New TIntSerializer)
+		RegisterSerializer("TUInt", New TUIntSerializer)
+		RegisterSerializer("TSize_T", New TSizetSerializer)
+		RegisterSerializer("TLong", New TLongSerializer)
+		RegisterSerializer("TULong", New TULongSerializer)
+		RegisterSerializer("TFloat", New TFloatSerializer)
+		RegisterSerializer("TDouble", New TDoubleSerializer)
+		Return Self
+	End Method
+
 End Type
 
 Rem
@@ -122,6 +142,9 @@ Type TJConv
 		Return FromJson(json, typeId, obj)
 	End Method
 
+	Rem
+	bbdoc: Deserializes the specified JSON instance into @obj.
+	End Rem
 	Method FromJsonInstance:Object(json:TJSON, obj:Object)
 		If Not obj Then
 			Return Null
@@ -201,6 +224,10 @@ Type TJConv
 		End If
 	End Method
 
+	Rem
+	bbdoc: Serializes the specified object into its equivalent JSON representation.
+	returns: A JSON instance.
+	End Rem
 	Method ToJsonInstance:TJSON(obj:Object)
 		If Not obj Then
 			Return Null
@@ -538,6 +565,32 @@ Type TJConvSerializer
 							Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
 								f.SetLong(obj, TJSONInteger(j).Value())
 						End Select
+
+						If fieldType.ExtendsType(ObjectTypeId) Then
+							Local fobj:Object = jconv.FromJson(j, fieldType, Null)
+						
+							If fobj Then
+								f.Set(obj, fobj)
+							End If
+						End If
+
+						Continue
+					End If
+
+					If TJSONBool(j) Then
+						Select fieldType
+							Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
+								f.SetInt(obj, TJSONBool(j).isTrue)
+						End Select
+
+						If fieldType.ExtendsType(ObjectTypeId) Then
+							Local fobj:Object = jconv.FromJson(j, fieldType, Null)
+						
+							If fobj Then
+								f.Set(obj, fobj)
+							End If
+						End If
+
 						Continue
 					End If
 					
@@ -546,6 +599,15 @@ Type TJConvSerializer
 							Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
 								f.SetDouble(obj, TJSONReal(j).Value())
 						End Select
+
+						If fieldType.ExtendsType(ObjectTypeId) Then
+							Local fobj:Object = jconv.FromJson(j, fieldType, Null)
+						
+							If fobj Then
+								f.Set(obj, fobj)
+							End If
+						End If
+
 						Continue
 					End If
 					
@@ -629,6 +691,8 @@ Type TJConvSerializer
 				typeId = TypeIdForTag("[]$")
 			Else If TJSONObject(jsonElement) Then
 				typeId = TypeIdForTag("[]:Object")
+			Else If TJSONBool(jsonElement) Then
+				typeId = TypeIdForTag("[]i")
 			End If
 
 			elementType = typeId.ElementType()
@@ -661,6 +725,14 @@ Type TJConvSerializer
 				End Select
 				Continue
 			End If
+
+			If TJSONBool(jsonElement) Then
+				Select elementType
+					Case ByteTypeId,ShortTypeId,IntTypeId,UIntTypeId,LongTypeId,ULongTypeId,SizetTypeId,FloatTypeId,DoubleTypeId,StringTypeId
+						typeId.SetIntArrayElement(arrayObj, i, TJSONBool(jsonElement).isTrue)
+				End Select
+				Continue
+			End If
 			
 			If TJSONString(jsonElement) Then
 				Select elementType
@@ -681,4 +753,314 @@ Type TJConvSerializer
 		Return arrayObj
 	End Method
 
+End Type
+
+Type TBool
+
+	Field value:Int
+	
+	Method New(value:Int)
+		Self.value = value
+	End Method
+
+End Type
+
+Type TByte
+
+	Field value:Byte
+
+	Method New(value:Byte)
+		Self.value = value
+	End Method
+	
+End Type
+
+Type TShort
+
+	Field value:Short
+
+	Method New(value:Short)
+		Self.value = value
+	End Method
+
+End Type
+
+Type TInt
+
+	Field value:Int
+
+	Method New(value:Int)
+		Self.value = value
+	End Method
+
+End Type
+
+Type TUInt
+
+	Field value:UInt
+
+	Method New(value:UInt)
+		Self.value = value
+	End Method
+
+End Type
+
+Type TSize_T
+
+	Field value:Size_T
+
+	Method New(value:Size_T)
+		Self.value = value
+	End Method
+
+End Type
+
+Type TLong
+
+	Field value:Long
+
+	Method New(value:Long)
+		Self.value = value
+	End Method
+
+End Type
+
+Type TULong
+
+	Field value:ULong
+
+	Method New(value:ULong)
+		Self.value = value
+	End Method
+
+End Type
+
+Type TFloat
+
+	Field value:Float
+
+	Method New(value:Float)
+		Self.value = value
+	End Method
+
+End Type
+
+Type TDouble
+
+	Field value:Double
+
+	Method New(value:Double)
+		Self.value = value
+	End Method
+
+End Type
+
+Type TBoolSerializer Extends TJConvSerializer
+
+	Method Serialize:TJSON(source:Object, sourceType:String)
+		Local value:TBool = TBool(source)
+		If value Then
+			Return New TJSONBool.Create(value.value)
+		End If
+	End Method
+
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+		If TJSONBool(json) Then
+			If Not obj Then
+				obj = New TBool(TJSONBool(json).isTrue)
+			End If
+		End If
+		
+		Return obj
+	End Method
+	
+End Type
+
+Type TByteSerializer Extends TJConvSerializer
+
+	Method Serialize:TJSON(source:Object, sourceType:String)
+		Local value:TByte = TByte(source)
+		If value Then
+			Return New TJSONInteger.Create(value.value)
+		End If
+	End Method
+
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+		If TJSONInteger(json) Then
+			If Not obj Then
+				obj = New TByte(Byte(TJSONInteger(json).Value()))
+			End If
+		End If
+		
+		Return obj
+	End Method
+	
+End Type
+
+Type TShortSerializer Extends TJConvSerializer
+
+	Method Serialize:TJSON(source:Object, sourceType:String)
+		Local value:TShort = TShort(source)
+		If value Then
+			Return New TJSONInteger.Create(value.value)
+		End If
+	End Method
+
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+		If TJSONInteger(json) Then
+			If Not obj Then
+				obj = New TShort(Short(TJSONInteger(json).Value()))
+			End If
+		End If
+		
+		Return obj
+	End Method
+	
+End Type
+
+Type TIntSerializer Extends TJConvSerializer
+
+	Method Serialize:TJSON(source:Object, sourceType:String)
+		Local value:TInt = TInt(source)
+		If value Then
+			Return New TJSONInteger.Create(value.value)
+		End If
+	End Method
+
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+		If TJSONInteger(json) Then
+			If Not obj Then
+				obj = New TInt(Int(TJSONInteger(json).Value()))
+			End If
+		End If
+		
+		Return obj
+	End Method
+	
+End Type
+
+Type TUIntSerializer Extends TJConvSerializer
+
+	Method Serialize:TJSON(source:Object, sourceType:String)
+		Local value:TUInt = TUInt(source)
+		If value Then
+			Return New TJSONInteger.Create(value.value)
+		End If
+	End Method
+
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+		If TJSONInteger(json) Then
+			If Not obj Then
+				obj = New TUInt(UInt(TJSONInteger(json).Value()))
+			End If
+		End If
+		
+		Return obj
+	End Method
+	
+End Type
+
+Type TSizetSerializer Extends TJConvSerializer
+
+	Method Serialize:TJSON(source:Object, sourceType:String)
+		Local value:TSize_T = TSize_T(source)
+		If value Then
+			Return New TJSONInteger.Create(value.value)
+		End If
+	End Method
+
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+		If TJSONInteger(json) Then
+			If Not obj Then
+				obj = New TSize_T(Size_T(TJSONInteger(json).Value()))
+			End If
+		End If
+		
+		Return obj
+	End Method
+	
+End Type
+
+Type TLongSerializer Extends TJConvSerializer
+
+	Method Serialize:TJSON(source:Object, sourceType:String)
+		Local value:TLong = TLong(source)
+		If value Then
+			Return New TJSONInteger.Create(value.value)
+		End If
+	End Method
+
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+		If TJSONInteger(json) Then
+			If Not obj Then
+				obj = New TLong(Long(TJSONInteger(json).Value()))
+			End If
+		End If
+		
+		Return obj
+	End Method
+	
+End Type
+
+Type TULongSerializer Extends TJConvSerializer
+
+	Method Serialize:TJSON(source:Object, sourceType:String)
+		Local value:TULong = TULong(source)
+		If value Then
+			Return New TJSONInteger.Create(value.value)
+		End If
+	End Method
+
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+		If TJSONInteger(json) Then
+			If Not obj Then
+				obj = New TULong(ULong(TJSONInteger(json).Value()))
+			End If
+		End If
+		
+		Return obj
+	End Method
+	
+End Type
+
+Type TFloatSerializer Extends TJConvSerializer
+
+	Method Serialize:TJSON(source:Object, sourceType:String)
+		Local value:TFloat = TFloat(source)
+		If value Then
+			Return New TJSONReal.Create(value.value)
+		End If
+	End Method
+
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+		If TJSONReal(json) Then
+			If Not obj Then
+				obj = New TFloat(Float(TJSONReal(json).Value()))
+			End If
+		End If
+		
+		Return obj
+	End Method
+	
+End Type
+
+Type TDoubleSerializer Extends TJConvSerializer
+
+	Method Serialize:TJSON(source:Object, sourceType:String)
+		Local value:TDouble = TDouble(source)
+		If value Then
+			Return New TJSONReal.Create(value.value)
+		End If
+	End Method
+
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+		If TJSONReal(json) Then
+			If Not obj Then
+				obj = New TDouble(Double(TJSONReal(json).Value()))
+			End If
+		End If
+		
+		Return obj
+	End Method
+	
 End Type

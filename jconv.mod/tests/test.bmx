@@ -11,7 +11,7 @@ Type TJConvTest Extends TTest
 	Field jconv:TJConv
 	
 	Method setup() { before }
-		jconv = New TJConvBuilder.WithEmptyArrays().Build()
+		jconv = New TJConvBuilder.WithEmptyArrays().WithBoxing().Build()
 	End Method
 
 End Type
@@ -27,6 +27,19 @@ Type TArrayTest Extends TJConvTest
 	Const JSON_CONTAINER:String = "{~qbox~q: ~q10,10,100,150~q}"
 	Const JSON_SER_NAME:String = "{~qname~q: ~qone~q, ~qname1~q: ~qtwo~q, ~qc~q: ~qthree~q}"
 	Const JSON_ALT_SER_NAME:String = "{~qa~q: ~qone~q, ~qname3~q: ~qtwo~q, ~qc~q: ~qthree~q}"
+	Const JSON_WITH_BOOL_ON:String = "{~qonOff~q: true}"
+	Const JSON_WITH_BOOL_OFF:String = "{~qonOff~q: false}"
+	Const JSON_BOX_BOOL_ON:String = "{~qb1~q: true}"
+	Const JSON_BOX_BOOL_OFF:String = "{~qb1~q: false}"
+	Const JSON_BOX_BYTE:String = "{~qb2~q: 42}"
+	Const JSON_BOX_SHORT:String = "{~qb3~q: 84}"
+	Const JSON_BOX_INT:String = "{~qb4~q: -99}"
+	Const JSON_BOX_UINT:String = "{~qb5~q: 6600}"
+	Const JSON_BOX_LONG:String = "{~qb6~q: 54321}"
+	Const JSON_BOX_ULONG:String = "{~qb7~q: 96}"
+	Const JSON_BOX_SIZE_T:String = "{~qb8~q: 100}"
+	Const JSON_BOX_FLOAT:String = "{~qb9~q: 7.5}"
+	Const JSON_BOX_DOUBLE:String = "{~qb10~q: 68.418}"
 
 	Method testEmptyObject() { test }
 		Local obj:Object
@@ -158,7 +171,141 @@ Type TArrayTest Extends TJConvTest
 		assertEquals(name1.b, name3.b)
 		assertEquals(name1.c, name3.c)
 	End Method
+
+	Method testWithBool() { test }
+		Local obj:TWithBool = TWithBool(jconv.FromJson(JSON_WITH_BOOL_ON, "TWithBool"))
+		
+		assertNotNull(obj)
+		assertEquals(True, obj.onOff)
+
+		obj = TWithBool(jconv.FromJson(JSON_WITH_BOOL_OFF, "TWithBool"))
+		
+		assertNotNull(obj)
+		assertEquals(False, obj.onOff)
+	End Method
+
+	Method testBoxing() { test }
+		Local boxed:TBoxed = New TBoxed
+		
+		assertEquals(EMPTY_OBJECT, jconv.ToJson(boxed))
+		
+		boxed.b1 = New TBool(True)
+		assertEquals(JSON_BOX_BOOL_ON, jconv.ToJson(boxed))
+		boxed.b1.value = False
+		assertEquals(JSON_BOX_BOOL_OFF, jconv.ToJson(boxed))
+		boxed.b1 = Null
+
+		boxed.b2 = New TByte(42)
+		assertEquals(JSON_BOX_BYTE, jconv.ToJson(boxed))
+		boxed.b2 = Null
+
+		boxed.b3 = New TShort(84)
+		assertEquals(JSON_BOX_SHORT, jconv.ToJson(boxed))
+		boxed.b3 = Null
+
+		boxed.b4 = New TInt(-99)
+		assertEquals(JSON_BOX_INT, jconv.ToJson(boxed))
+		boxed.b4 = Null
+
+		boxed.b5 = New TUInt(6600)
+		assertEquals(JSON_BOX_UINT, jconv.ToJson(boxed))
+		boxed.b5 = Null
+
+		boxed.b6 = New TLong(54321)
+		assertEquals(JSON_BOX_LONG, jconv.ToJson(boxed))
+		boxed.b6 = Null
+
+		boxed.b7 = New TULong(96)
+		assertEquals(JSON_BOX_ULONG, jconv.ToJson(boxed))
+		boxed.b7 = Null
+
+		boxed.b8 = New TSize_T(100)
+		assertEquals(JSON_BOX_SIZE_T, jconv.ToJson(boxed))
+		boxed.b8 = Null
+
+		boxed.b9 = New TFloat(7.5)
+		assertEquals(JSON_BOX_FLOAT, jconv.ToJson(boxed), 0.01)
+		boxed.b9 = Null
+
+		boxed.b10 = New TDouble(68.484)
+		Local s:String = jconv.ToJson(boxed)
+		Local dboxed:TBoxed = TBoxed(jconv.FromJson(s, "TBoxed"))
+		assertNotNull(dboxed.b10)
+		assertEquals(68.484, dboxed.b10.value, 0.1)
+		boxed.b10 = Null
+		
+	End Method
 	
+	Method testUnboxing() { test }
+		Local boxed:TBoxed = TBoxed(jconv.FromJson(EMPTY_OBJECT, "TBoxed"))
+		
+		assertNull(boxed.b1)
+		assertNull(boxed.b2)
+		assertNull(boxed.b3)
+		assertNull(boxed.b4)
+		assertNull(boxed.b5)
+		assertNull(boxed.b6)
+		assertNull(boxed.b7)
+		assertNull(boxed.b8)
+		assertNull(boxed.b9)
+		assertNull(boxed.b10)
+
+		boxed = TBoxed(jconv.FromJson(JSON_BOX_BOOL_ON, "TBoxed"))
+		
+		assertNotNull(boxed.b1)
+		assertEquals(True, boxed.b1.value)
+
+		boxed = TBoxed(jconv.FromJson(JSON_BOX_BOOL_OFF, "TBoxed"))
+		
+		assertNotNull(boxed.b1)
+		assertEquals(False, boxed.b1.value)
+
+		boxed = TBoxed(jconv.FromJson(JSON_BOX_BYTE, "TBoxed"))
+
+		assertNotNull(boxed.b2)
+		assertEquals(42, boxed.b2.value)
+		
+		boxed = TBoxed(jconv.FromJson(JSON_BOX_SHORT, "TBoxed"))
+
+		assertNotNull(boxed.b3)
+		assertEquals(84, boxed.b3.value)
+
+		boxed = TBoxed(jconv.FromJson(JSON_BOX_INT, "TBoxed"))
+
+		assertNotNull(boxed.b4)
+		assertEquals(-99, boxed.b4.value)
+
+		boxed = TBoxed(jconv.FromJson(JSON_BOX_UINT, "TBoxed"))
+
+		assertNotNull(boxed.b5)
+		assertEquals(6600, boxed.b5.value)
+
+		boxed = TBoxed(jconv.FromJson(JSON_BOX_LONG, "TBoxed"))
+
+		assertNotNull(boxed.b6)
+		assertEquals(54321, boxed.b6.value)
+
+		boxed = TBoxed(jconv.FromJson(JSON_BOX_ULONG, "TBoxed"))
+
+		assertNotNull(boxed.b7)
+		assertEquals(96, boxed.b7.value)
+
+		boxed = TBoxed(jconv.FromJson(JSON_BOX_SIZE_T, "TBoxed"))
+
+		assertNotNull(boxed.b8)
+		assertEquals(100, boxed.b8.value)
+
+		boxed = TBoxed(jconv.FromJson(JSON_BOX_FLOAT, "TBoxed"))
+
+		assertNotNull(boxed.b9)
+		assertEquals(7.5, boxed.b9.value, 0.1)
+
+		boxed = TBoxed(jconv.FromJson(JSON_BOX_DOUBLE, "TBoxed"))
+		assertNotNull(boxed.b10)
+		assertEquals(68.484, boxed.b10.value, 0.1)
+		
+	End Method
+
 End Type
 
 Type TData
@@ -282,5 +429,26 @@ Type TSName
 	Field a:String { serializedName="name" }
 	Field b:String { serializedName="name1" alternateName="name2,name3" }
 	Field c:String
+
+End Type
+
+Type TWithBool
+
+	Field onOff:Int
+
+End Type
+
+Type TBoxed
+
+	Field b1:TBool
+	Field b2:TByte
+	Field b3:TShort
+	Field b4:TInt
+	Field b5:TUInt
+	Field b6:TLong
+	Field b7:TULong
+	Field b8:TSize_T
+	Field b9:TFloat
+	Field b10:TDouble
 
 End Type
