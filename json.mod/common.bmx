@@ -127,6 +127,10 @@ bbdoc: The opening and closing characters of the top-level array ('[', ']') or o
 about: This flag is useful when concatenating multiple arrays or objects into a stream.
 End Rem
 Const JSON_EMBED:Int = $10000
+Rem
+bbdoc: Precision becomes the number of fraction digits.
+End Rem
+Const JSON_FRACTIONAL_DIGITS:Int = $20000
 
 Rem
 bbdoc: Pretty-prints the result, using newlines between array and object items, and indenting with n spaces.
