@@ -40,6 +40,9 @@ Type TArrayTest Extends TJConvTest
 	Const JSON_BOX_SIZE_T:String = "{~qb8~q: 100}"
 	Const JSON_BOX_FLOAT:String = "{~qb9~q: 7.5}"
 	Const JSON_BOX_DOUBLE:String = "{~qb10~q: 68.418}"
+	Const JSON_PREC:String = "{~qp1~q: 5.352, ~qp2~q: 65.698}"
+	Const JSON_SER_NAME_COMPACT:String = "{~qname~q:~qone~q,~qname1~q:~qtwo~q,~qc~q:~qthree~q}"
+	Const JSON_SER_NAME_PRETTY:String = "{~n  ~qname~q: ~qone~q,~n  ~qname1~q: ~qtwo~q,~n  ~qc~q: ~qthree~q~n}"
 
 	Method testEmptyObject() { test }
 		Local obj:Object
@@ -306,6 +309,42 @@ Type TArrayTest Extends TJConvTest
 		
 	End Method
 
+	Method testPrecision() { test }
+
+		Local prec:TPrec = New TPrec(5.3521, 65.6982902)
+
+		jconv = New TJConvBuilder.WithPrecision(3).Build()
+		
+		assertEquals(JSON_PREC, jconv.ToJson(prec))
+
+	End Method
+
+	Method testCompact() { test }
+
+		jconv = New TJConvBuilder.WithCompact().Build()
+
+		Local name1:TSName = New TSName
+		name1.a = "one"
+		name1.b = "two"
+		name1.c = "three"
+		
+		assertEquals(JSON_SER_NAME_COMPACT, jconv.ToJson(name1))
+		
+	End Method
+
+	Method testIndent() { test }
+
+		jconv = New TJConvBuilder.WithIndent(2).Build()
+
+		Local name1:TSName = New TSName
+		name1.a = "one"
+		name1.b = "two"
+		name1.c = "three"
+		
+		assertEquals(JSON_SER_NAME_PRETTY, jconv.ToJson(name1))
+		
+	End Method
+	
 End Type
 
 Type TData
@@ -451,4 +490,17 @@ Type TBoxed
 	Field b9:TFloat
 	Field b10:TDouble
 
+End Type
+
+
+Type TPrec
+
+	Field p1:Float
+	Field p2:Double
+
+	Method New(p1:Float, p2:Double)
+		Self.p1 = p1
+		Self.p2 = p2
+	End Method
+	
 End Type

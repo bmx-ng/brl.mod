@@ -60,7 +60,7 @@ Type TJConvBuilder
 	End Rem
 	Method Build:TJConv()
 		Local jconv:TJConv = New TJConv
-		jconv.options = options
+		jconv.SetOptions(options)
 		
 		For Local serializer:TJConvSerializer = EachIn options.serializers.Values()
 			serializer.jconv = jconv
@@ -104,6 +104,31 @@ Type TJConvBuilder
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Serialization of real numbers will have a maximum precision of @precision fractional digits.
+	End Rem
+	Method WithPrecision:TJConvBuilder(precision:Int)
+		options.precision = precision
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Enables pretty-printing of the serialized json, using @indent spaces of indentation.
+	about: The default, 0, disables pretty-printing. The maximum indent size is 31.
+	End Rem
+	Method WithIndent:TJConvBuilder(indent:Int)
+		options.indent = indent
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Enables compact representation, removing extra spacing.
+	End Rem
+	Method WithCompact:TJConvBuilder()
+		options.compact = True
+		Return Self
+	End Method
+	
 End Type
 
 Rem
@@ -112,6 +137,8 @@ End Rem
 Type TJConv
 
 	Field options:TJConvOptions = New TJConvOptions
+	Field flags:Int
+	Field precision:Int = 17
 	
 	Field defaultSerializer:TJConvSerializer = New TJConvSerializer
 	
@@ -208,7 +235,7 @@ Type TJConv
 		
 			ToJson(json, obj)
 			
-			Return json.SaveString()
+			Return json.SaveString(flags, 0, precision)
 		End If
 		
 		If typeId.ExtendsType(ObjectTypeId) Then
@@ -220,7 +247,7 @@ Type TJConv
 
 			Local json:TJSON = serializer.Serialize(obj, typeId.Name())
 
-			Return json.SaveString()
+			Return json.SaveString(flags, 0, precision)
 		End If
 	End Method
 
@@ -266,12 +293,12 @@ Type TJConv
 		If Not obj Then
 			If IsEmptyArray(obj) Then
 				Local json:TJSONArray = New TJSONArray.Create()
-				json.SaveStream(stream)
+				json.SaveStream(stream, flags, 0, precision)
 				Return
 			End If
 			
 			Local json:TJSONObject = New TJSONObject.Create()
-			json.SaveStream(stream)
+			json.SaveStream(stream, flags, 0, precision)
 			Return
 		End If
 
@@ -282,7 +309,7 @@ Type TJConv
 		
 			ToJson(json, obj)
 			
-			json.SaveStream(stream)
+			json.SaveStream(stream, flags, 0, precision)
 			Return
 		Else If typeId.ExtendsType(ObjectTypeId) Then
 
@@ -290,7 +317,7 @@ Type TJConv
 
 			ToJson(json, obj)
 		
-			json.SaveStream(stream)
+			json.SaveStream(stream, flags, 0, precision)
 		End If
 
 	End Method
@@ -462,6 +489,27 @@ Type TJConv
 			Return f.Name()
 		End If
 	End Method
+
+Private
+	Method SetOptions(options:TJConvOptions)
+		Self.options = options
+		
+		flags = 0
+		
+		If options.indent Then
+			flags :| (options.indent & $1F)
+		End If
+		
+		If options.compact Then
+			flags :| JSON_COMPACT
+		End If
+		
+		If options.precision >= 0 Then
+			flags :| JSON_FRACTIONAL_DIGITS
+			precision = options.precision
+		End If
+	End Method
+Public
 End Type
 
 Type TJConvOptions
@@ -470,6 +518,12 @@ Type TJConvOptions
 
 	Field serializers:TMap = New TMap
 
+	Field precision:Int = -1
+	
+	Field indent:Int
+	
+	Field compact:Int
+	
 End Type
 
 Rem
@@ -858,6 +912,7 @@ End Type
 Type TBoolSerializer Extends TJConvSerializer
 
 	Method Serialize:TJSON(source:Object, sourceType:String)
+
 		Local value:TBool = TBool(source)
 		If value Then
 			Return New TJSONBool.Create(value.value)
