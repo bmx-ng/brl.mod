@@ -604,6 +604,51 @@ int bmx_stringbuilder_compare(struct MaxStringBuilder * buf1, struct MaxStringBu
 	return buf1->count - buf2->count;
 }
 
+void bmx_stringbuilder_leftalign(struct MaxStringBuilder * buf, int length) {
+	bmx_stringbuilder_resize(buf, length);
+	
+	if (length == buf->count) {
+		return;
+	} else if (length > buf->count) {
+		int c = length - buf->count;
+
+		BBChar * p = buf->buffer + buf->count;
+
+		for (int i=0; i < c; ++i) {
+			*p++ = (BBChar)' ';
+		}
+	}
+	
+	buf->count = length;
+}
+
+void bmx_stringbuilder_rightalign(struct MaxStringBuilder * buf, int length) {
+	bmx_stringbuilder_resize(buf, length);
+
+	if (length == buf->count) {
+		return;
+	} else if (length < buf->count) {
+		int offset = buf->count - length;
+		memmove(buf->buffer, buf->buffer + offset, buf->count * sizeof(BBChar));
+	} else {
+		int offset = length - buf->count;
+		
+		if (offset == 0) {
+			return;
+		}
+		
+		memmove(buf->buffer + offset, buf->buffer, buf->count * sizeof(BBChar));
+
+		BBChar * p = buf->buffer;
+
+		for (int i=0; i < offset; ++i) {
+			*p++ = (BBChar)' ';
+		}
+	}
+
+	buf->count = length;
+}
+
 /* ----------------------------------------------------- */
 
 int bmx_stringbuilder_splitbuffer_length(struct MaxSplitBuffer * buf) {

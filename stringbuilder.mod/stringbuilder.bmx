@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.07"
+ModuleInfo "Version: 1.08"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2018-2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.08"
+ModuleInfo "History: Added LeftAlign() and RightAlign() methods."
 ModuleInfo "History: 1.07"
 ModuleInfo "History: Fixed AppendByte and AppendShort not using unsigned variants."
 ModuleInfo "History: 1.06"
@@ -496,6 +498,26 @@ Public
 	End Rem	
 	Method ToUpper:TStringBuilder()
 		bmx_stringbuilder_toupper(buffer)
+		Return Self
+	End Method
+	
+	Rem
+	bbdoc: Left aligns the buffer, adjusted to the specified @length.
+	about: If buffer is longer than the specified length, the buffer is shortened to the specified length.
+	If the buffer is shorter than the specified length, spaces are added to the right end of the buffer to produce the appropriate length.
+	End Rem
+	Method LeftAlign:TStringBuilder(length:Int)
+		bmx_stringbuilder_leftalign(buffer, length)
+		Return Self
+	End Method
+	
+	Rem
+	bbdoc: Right aligns the buffer, adjusted to the specified @length.
+	about: If buffer is longer than the specified length, the buffer is shortened to the specified length.
+	If the buffer is shorter than the specified length, spaces are added to the left end of the buffer to produce the appropriate length.
+	End Rem
+	Method RightAlign:TStringBuilder(length:Int)
+		bmx_stringbuilder_rightalign(buffer, length)
 		Return Self
 	End Method
 
