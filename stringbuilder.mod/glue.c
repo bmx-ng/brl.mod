@@ -605,11 +605,11 @@ int bmx_stringbuilder_compare(struct MaxStringBuilder * buf1, struct MaxStringBu
 }
 
 void bmx_stringbuilder_leftalign(struct MaxStringBuilder * buf, int length) {
-	bmx_stringbuilder_resize(buf, length);
-	
 	if (length == buf->count) {
 		return;
 	} else if (length > buf->count) {
+		bmx_stringbuilder_resize(buf, length);
+
 		int c = length - buf->count;
 
 		BBChar * p = buf->buffer + buf->count;
@@ -623,14 +623,14 @@ void bmx_stringbuilder_leftalign(struct MaxStringBuilder * buf, int length) {
 }
 
 void bmx_stringbuilder_rightalign(struct MaxStringBuilder * buf, int length) {
-	bmx_stringbuilder_resize(buf, length);
-
 	if (length == buf->count) {
 		return;
 	} else if (length < buf->count) {
 		int offset = buf->count - length;
 		memmove(buf->buffer, buf->buffer + offset, buf->count * sizeof(BBChar));
 	} else {
+		bmx_stringbuilder_resize(buf, length);
+
 		int offset = length - buf->count;
 		
 		if (offset == 0) {
