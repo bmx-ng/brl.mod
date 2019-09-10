@@ -26,12 +26,14 @@ bbdoc: MaxUnit - Unit Testing
 End Rem
 Module BRL.MaxUnit
 
-ModuleInfo "Version: 1.05"
+ModuleInfo "Version: 1.06"
 ModuleInfo "License: MIT"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "Credit: Based loosely on the JUnit testing framework by Erich Gamma and Kent Beck. see junit.org"
 ModuleInfo "Copyright: (c) 2006-2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.06"
+ModuleInfo "History: Added assertNull() and assertNotNull() pointer overloads."
 ModuleInfo "History: 1.05"
 ModuleInfo "History: Overloaded assertEquals() functions for NG."
 ModuleInfo "History: 1.04"
@@ -571,6 +573,16 @@ Type TAssert
 			fail("assertNotNull() : " + message)
 		End If
 	End Function
+
+	Rem
+	bbdoc: Asserts that a pointer isn't #Null.
+	about: If it is #Null, an #AssertionFailedException is thrown with the given message.
+	End Rem
+	Function assertNotNull(value:Byte Ptr, message:String = Null)
+		If value = Null Then
+			fail("assertNotNull() : " + message)
+		End If
+	End Function
 	
 	Rem
 	bbdoc: Asserts that an #Object is #Null.
@@ -593,7 +605,15 @@ Type TAssert
 		failNotSame(expected, actual, "assertSame() : " + message)
 	End Function
 
-
+	Rem
+	bbdoc: Asserts that an pointer is #Null.
+	If it is not #Null, an #AssertionFailedException is thrown with the given message.
+	End Rem
+	Function assertNull(value:Byte Ptr, message:String = Null)
+		If value <> Null Then
+			fail("assertNull() : " + message)
+		End If
+	End Function
 
  	Rem
  	bbdoc: Asserts that two objects refer to different objects.
