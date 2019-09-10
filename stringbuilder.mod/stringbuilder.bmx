@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.08"
+ModuleInfo "Version: 1.09"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2018-2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.09"
+ModuleInfo "History: Added ToUTF8String() and ToWString() methods."
 ModuleInfo "History: 1.08"
 ModuleInfo "History: Added LeftAlign() and RightAlign() methods."
 ModuleInfo "History: 1.07"
@@ -627,6 +629,24 @@ Public
 		Return bmx_stringbuilder_tostring(buffer)
 	End Method
 
+	Rem
+	bbdoc: Converts the value of the string builder to a UTF-8 formatted #Byte sequence.
+	returns: A pointer to a sequence of Bytes, or #Null if the string builder is empty.
+	about: The resulting Byte Ptr must be freed with #MemFree.
+	End Rem
+	Method ToUTF8String:Byte Ptr()
+		Return bmx_stringbuilder_toutf8string(buffer)
+	End Method
+
+	Rem
+	bbdoc: Converts the value of the string builder to a sequence of Shorts.
+	returns: A pointer to a sequence of Shorts, or #Null if the string builder is empty.
+	about: The resulting Short Ptr must be freed with #MemFree.
+	End Rem
+	Method ToWString:Short Ptr()
+		Return bmx_stringbuilder_towstring(buffer)
+	End Method
+	
 	Rem
 	bbdoc: Returns #True if @obj is equal to this string builder.
 	End Rem

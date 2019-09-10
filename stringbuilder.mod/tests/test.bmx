@@ -44,4 +44,51 @@ Type TStringBuilderTest Extends TTest
 		assertEquals("          ", sb.ToString())
 	End Method
 
+	Method testToUTF8String() { test }
+		Local s:String = "@825B"
+		sb.Append(s)
+	
+		Local b1:Byte Ptr = s.ToUTF8String()
+		Local b2:Byte Ptr = sb.ToUTF8String()
+		
+		assertNotNull(b2)
+		assertEquals(strlen_(b1), strlen_(b2))
+		
+		For Local i:Int = 0 Until strlen_(b1)
+			assertEquals(b1[0], b2[0])
+		Next
+		
+		MemFree(b1)
+		MemFree(b2)
+	End Method
+
+	Method testEmptyToUTF8String() { test }
+	
+		assertNull(sb.ToUTF8String())
+		
+	End Method
+
+	Method testToWString() { test }
+		Local s:String = "@825B"
+		sb.Append(s)
+	
+		Local s1:Short Ptr = s.ToWString()
+		Local s2:Short Ptr = sb.ToWString()
+		
+		assertNotNull(s2)
+		
+		For Local i:Int = 0 Until 6
+			assertEquals(s1[0], s2[0])
+		Next
+		
+		MemFree(s1)
+		MemFree(s2)
+	End Method
+
+	Method testEmptyToWString() { test }
+	
+		assertNull(sb.ToWString())
+		
+	End Method
+
 End Type

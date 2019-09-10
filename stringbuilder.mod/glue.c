@@ -649,6 +649,62 @@ void bmx_stringbuilder_rightalign(struct MaxStringBuilder * buf, int length) {
 	buf->count = length;
 }
 
+char * bmx_stringbuilder_toutf8string(struct MaxStringBuilder * buf) {
+	int i = 0;
+	int count = buf->count;
+	if (count == 0) {
+		return NULL;
+	}
+	char *ubuf = (char*)bbMemAlloc( count * 4 + 1 );
+	char *q = ubuf;
+	unsigned short *p = buf->buffer;
+	while (i < count) {
+		unsigned int c=*p++;
+		if (0xd800 <= c && c <= 0xdbff && i < count - 1) {
+			/* surrogate pair */
+			unsigned int c2 = *p;
+			if(0xdc00 <= c2 && c2 <= 0xdfff) {
+				/* valid second surrogate */
+				c = ((c - 0xd800) << 10) + (c2 - 0xdc00) + 0x10000;
+				++p;
+				++i;
+			}
+		}
+		if (c < 0x80) {
+			*q++ = c;
+		} else if (c < 0x800){
+			*q++ = 0xc0 | (c >> 6);
+			*q++ = 0x80 | (c & 0x3f);
+		} else if (c < 0x10000) { 
+			*q++ = 0xe0 | (c >> 12);
+			*q++ = 0x80 | ((c >> 6) & 0x3f);
+			*q++ = 0x80 | (c & 0x3f);
+		} else if (c <= 0x10ffff) {
+			*q++ = 0xf0 | (c >> 18);
+			*q++ = 0x80 | ((c >> 12) & 0x3f);
+			*q++ = 0x80 | ((c >> 6) & 0x3f);
+			*q++ = 0x80 | ((c & 0x3f));
+		} else {
+			bbExThrowCString( "Unicode character out of UTF-8 range" );
+		}
+		++i;
+	}
+	*q=0;
+	return ubuf;
+}
+
+BBChar * bmx_stringbuilder_towstring(struct MaxStringBuilder * buf) {
+	int k;
+	int count = buf->count;
+	if (count == 0) {
+		return NULL;
+	}
+	BBChar *p = (BBChar*)bbMemAlloc((count + 1) * sizeof(BBChar));
+	memcpy(p, buf->buffer, count * sizeof(BBChar));
+	p[count] = 0;
+	return p;
+}
+
 /* ----------------------------------------------------- */
 
 int bmx_stringbuilder_splitbuffer_length(struct MaxSplitBuffer * buf) {
