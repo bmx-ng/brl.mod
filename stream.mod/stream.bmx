@@ -619,7 +619,7 @@ Type TCStream Extends TStream
 
 	Method Write:Long( buf:Byte Ptr,count:Long ) Override
 		Assert _cstream Else "Attempt to write to closed stream"
-		Assert _mode & MODE_WRITE Else "Attempt to write to read-only stream"
+		Assert _mode & (MODE_WRITE | MODE_APPEND) Else "Attempt to write to read-only stream"
 		count=fwrite_( buf,1,count,_cstream )
 		_pos:+count
 		If _pos>_size _size=_pos
