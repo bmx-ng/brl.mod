@@ -6,12 +6,14 @@ bbdoc: Streams/Streams
 End Rem
 Module BRL.Stream
 
-ModuleInfo "Version: 1.10"
+ModuleInfo "Version: 1.11"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.11"
+ModuleInfo "History: Streams can now be opened for appending with the new WRITE_MODE_APPEND write mode."
 ModuleInfo "History: 1.10"
 ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.09 Release"
@@ -587,6 +589,7 @@ Type TCStream Extends TStream
 
 	Const MODE_READ:Int=1
 	Const MODE_WRITE:Int=2
+	Const MODE_APPEND:Int = 4
 	
 	Field _pos:Long,_size:Long,_mode:Int
 	Field _cstream:Byte Ptr
@@ -643,14 +646,20 @@ Type TCStream Extends TStream
 	Rem
 	bbdoc: Create a TCStream from a 'C' filename
 	End Rem
-	Function OpenFile:TCStream( path$,readable:Int,writeable:Int )
+	Function OpenFile:TCStream( path$,readable:Int,writeMode:Int )
 		Local Mode$,_mode:Int
-		If readable And writeable
+		If readable And writeMode = WRITE_MODE_OVERWRITE
 			Mode="r+b"
 			_mode=MODE_READ|MODE_WRITE
-		Else If writeable
+		Else If readable And writeMode = WRITE_MODE_APPEND
+			Mode="a+b"
+			_mode=MODE_READ|MODE_APPEND
+		Else If writeMode = WRITE_MODE_OVERWRITE
 			Mode="wb"
 			_mode=MODE_WRITE
+		Else If writeMode = WRITE_MODE_APPEND
+			Mode="ab"
+			_mode=MODE_APPEND
 		Else
 			Mode="rb"
 			_mode=MODE_READ
@@ -658,7 +667,7 @@ Type TCStream Extends TStream
 		path=path.Replace( "\","/" )
 		Local cstream:Byte Ptr=fopen_( path,Mode )
 ?Linux
-		If (Not cstream) And (Not writeable)
+		If (Not cstream) And (Not writeMode)
 			path=CasedFileName(path)
 			If path cstream=fopen_( path,Mode )
 		EndIf
@@ -724,17 +733,17 @@ Type TStreamFactory
 	
 	If @url is not a string, both @proto and @path will be Null.
 	End Rem
-	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Abstract
+	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeMode:Int ) Abstract
 
 End Type
 
 Rem
-bbdoc: Open a stream for reading/writing
+bbdoc: Open a stream for reading/writing/appending
 returns: A stream object
-about: All streams created by #OpenStream, #ReadStream or #WriteStream should eventually be
+about: All streams created by #OpenStream, #ReadStream, #WriteStream or #AppendStream should eventually be
 closed using #CloseStream.
 End Rem
-Function OpenStream:TStream( url:Object,readable:Int=True,writeable:Int=True )
+Function OpenStream:TStream( url:Object,readable:Int=True,writeMode:Int=WRITE_MODE_OVERWRITE )
 
 	Local stream:TStream=TStream( url )
 	If stream
@@ -744,7 +753,7 @@ Function OpenStream:TStream( url:Object,readable:Int=True,writeable:Int=True )
 	Local str$=String( url ),proto$,path$
 	If str
 		Local i:Int=str.Find( "::",0 )
-		If i=-1 Return TCStream.OpenFile( str,readable,writeable )
+		If i=-1 Return TCStream.OpenFile( str,readable,writeMode )
 		proto$=str[..i].ToLower()
 		path$=str[i+2..]
 	EndIf
@@ -752,7 +761,7 @@ Function OpenStream:TStream( url:Object,readable:Int=True,writeable:Int=True )
 	Local factory:TStreamFactory=stream_factories
 	
 	While factory
-		Local stream:TStream=factory.CreateStream( url,proto,path,readable,writeable )
+		Local stream:TStream=factory.CreateStream( url,proto,path,readable,writeMode )
 		If stream Return stream
 		factory=factory._succ
 	Wend
@@ -771,11 +780,21 @@ End Function
 Rem
 bbdoc: Open a stream for writing
 returns: A stream object
-about: All streams created by #OpenStream, #ReadStream or #WriteStream should eventually
+about: All streams created by #OpenStream, #ReadStream, #WriteStream or #AppendStream should eventually
 be closed using #CloseStream.
 End Rem
 Function WriteStream:TStream( url:Object )
-	Return OpenStream( url,False,True )
+	Return OpenStream( url,False,WRITE_MODE_OVERWRITE )
+End Function
+
+Rem
+bbdoc: Open a stream for appending
+returns: A stream object
+about: All streams created by #OpenStream, #ReadStream, #WriteStream or #AppendStream should eventually
+be closed using #CloseStream.
+End Rem
+Function AppendStream:TStream( url:Object )
+	Return OpenStream( url,False,WRITE_MODE_APPEND )
 End Function
 
 Rem
@@ -1145,3 +1164,13 @@ Function CasedFileName$(path$)
 		closedir_(dir)
 	EndIf
 End Function
+
+Rem
+bbdoc: Opens a file for output operations.
+End Rem
+Const WRITE_MODE_OVERWRITE:Int = 1
+Rem 
+bbdoc: Opens a file for appending with all output operations writing data at the end of the file.
+about: Repositioning operations such as #Seek affects the next input operations, but output operations move the position back to the end of file.
+End Rem
+Const WRITE_MODE_APPEND:Int = 2

@@ -17,7 +17,7 @@ Import BRL.SocketStream
 
 Type THTTPStreamFactory Extends TStreamFactory
 
-	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Override
+	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeMode:Int ) Override
 		If proto="http"
 
 			Local i:Int=path.Find( "/",0 ),server$,file$

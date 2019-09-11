@@ -145,12 +145,12 @@ Function LittleEndianStream:TStream( stream:TStream )
 End Function
 
 Type TXEndianStreamFactory Extends TStreamFactory
-	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Override
+	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeMode:Int ) Override
 		Select proto$
 		Case "bigendian"
-			Return TXEndianStream.BigEndian( OpenStream(path,readable,writeable) )
+			Return TXEndianStream.BigEndian( OpenStream(path,readable,writeMode) )
 		Case "littleendian"
-			Return TXEndianStream.LittleEndian( OpenStream(path,readable,writeable) )
+			Return TXEndianStream.LittleEndian( OpenStream(path,readable,writeMode) )
 		End Select
 	End Method
 End Type

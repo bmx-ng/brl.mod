@@ -321,7 +321,7 @@ End Type
 	
 Type TTextStreamFactory Extends TStreamFactory
 
-	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Override
+	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeMode:Int ) Override
 		Local encoding:ETextStreamFormat
 		Select proto$
 		Case "latin1"
@@ -334,7 +334,7 @@ Type TTextStreamFactory Extends TStreamFactory
 			encoding=ETextStreamFormat.UTF16LE
 		End Select
 		If Not encoding Return Null
-		Local stream:TStream=OpenStream( path,readable,writeable )
+		Local stream:TStream=OpenStream( path,readable,writeMode )
 		If stream Return TTextStream.Create( stream,encoding )
 	End Method
 End Type

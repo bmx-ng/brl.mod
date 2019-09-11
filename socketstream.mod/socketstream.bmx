@@ -77,7 +77,7 @@ Type TSocketStream Extends TStream
 End Type
 
 Type TSocketStreamFactory Extends TStreamFactory
-	Method CreateStream:TSocketStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Override
+	Method CreateStream:TSocketStream( url:Object,proto$,path$,readable:Int,writeMode:Int ) Override
 		If proto$="tcp"
 			Local i:Int=path.Find( ":",0 ),server$,port:Int
 			If i>=0 Return TSocketStream.CreateClient( path[..i],Int(path[i+1..]) )
