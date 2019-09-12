@@ -358,6 +358,23 @@ void bmx_stringbuilder_join(struct MaxStringBuilder * buf, BBArray * bits, struc
 	}
 }
 
+void bmx_stringbuilder_join_strings(struct MaxStringBuilder * buf, BBArray * bits, BBString * joiner) {
+	if (bits == &bbEmptyArray) {
+		return;
+	}
+
+	int i;
+	int n_bits = bits->scales[0];
+	int n = joiner->length;
+	BBString **p = (BBString**)BBARRAYDATA( bits,1 );
+	for(i = 0; i < n_bits; ++i) {
+		if (i && n) {
+			bmx_stringbuilder_append_string(buf, joiner);
+		}
+		bmx_stringbuilder_append_string(buf, *p++);
+	}
+}
+
 struct MaxSplitBuffer * bmx_stringbuilder_split(struct MaxStringBuilder * buf, BBString * separator) {
 	struct MaxSplitBuffer * splitBuffer = malloc(sizeof(struct MaxSplitBuffer));
 	splitBuffer->buffer = buf;

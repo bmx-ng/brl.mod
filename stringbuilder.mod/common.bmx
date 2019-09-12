@@ -67,6 +67,7 @@ Extern
 	Function bmx_stringbuilder_rightalign(buffer:Byte Ptr, length:Int)
 	Function bmx_stringbuilder_toutf8string:Byte Ptr(buffer:Byte Ptr)
 	Function bmx_stringbuilder_towstring:Short Ptr(buffer:Byte Ptr)
+	Function bmx_stringbuilder_join_strings(buffer:Byte Ptr, bits:String[], joiner:String)
 	
 	Function bmx_stringbuilder_splitbuffer_length:Int(splitPtr:Byte Ptr)
 	Function bmx_stringbuilder_splitbuffer_text:String(splitPtr:Byte Ptr, index:Int)

@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.09"
+ModuleInfo "Version: 1.10"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2018-2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.10"
+ModuleInfo "History: Added JoinStrings() method."
 ModuleInfo "History: 1.09"
 ModuleInfo "History: Added ToUTF8String() and ToWString() methods."
 ModuleInfo "History: 1.08"
@@ -479,12 +481,23 @@ Public
 	
 	Rem
 	bbdoc: Joins @bits together by inserting this string builder between each bit.
-	returns: A new TStringBuilder object.
+	returns: @buf or a new TStringBuilder object of @buf is #Null.
+	about: Optionally accepts a preassigned string builder for populating with the result of the join.
 	End Rem
-	Method Join:TStringBuilder(bits:String[])
-		Local buf:TStringBuilder = New TStringBuilder
+	Method Join:TStringBuilder(bits:String[], buf:TStringBuilder = Null)
+		If Not buf Then
+			buf = New TStringBuilder
+		End If
 		bmx_stringbuilder_join(buffer, bits, buf.buffer)
 		Return buf
+	End Method
+
+	Rem
+	bbdoc: Joins @bits together by inserting @joiner between each bit, appending to the end of this string builder.
+	End Rem
+	Method JoinStrings:TStringBuilder(bits:String[], joiner:String)
+		bmx_stringbuilder_join_strings(buffer, bits, joiner)
+		Return Self
 	End Method
 
 	Rem
