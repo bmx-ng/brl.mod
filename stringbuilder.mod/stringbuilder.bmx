@@ -505,6 +505,15 @@ Public
 	End Method
 
 	Rem
+	bbdoc: Appends a #String value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatString:TStringBuilder(formatText:String, value:String)
+		bmx_stringbuilder_format_string(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
 	bbdoc: Appends a #Byte value to the string builder using the specified printf style @formatText.
 	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
 	End Rem
