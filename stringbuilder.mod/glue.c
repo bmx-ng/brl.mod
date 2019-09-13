@@ -722,6 +722,140 @@ BBChar * bmx_stringbuilder_towstring(struct MaxStringBuilder * buf) {
 	return p;
 }
 
+void bmx_stringbuilder_toutf8_buffer(BBString *str, char * buf, size_t length) {
+	int i=0,len=str->length;
+	int out=0;
+	char *q=buf;
+	unsigned short *p=str->buf;
+	while (i < len && out < length) {
+		unsigned int c=*p++;
+		if(0xd800 <= c && c <= 0xdbff && i < len - 1) {
+			/* surrogate pair */
+			unsigned int c2 = *p;
+			if(0xdc00 <= c2 && c2 <= 0xdfff) {
+				/* valid second surrogate */
+				c = ((c - 0xd800) << 10) + (c2 - 0xdc00) + 0x10000;
+				++p;
+				++i;
+			}
+		}
+		if( c<0x80 ){
+			*q++=c;
+			out++;
+		}else if( c<0x800 ){
+			if (out > length - 2) {
+				break;
+			}
+			*q++=0xc0|(c>>6);
+			*q++=0x80|(c&0x3f);
+			out += 2;
+		}else if(c < 0x10000) { 
+			if (out > length - 3) {
+				break;
+			}
+			*q++=0xe0|(c>>12);
+			*q++=0x80|((c>>6)&0x3f);
+			*q++=0x80|(c&0x3f);
+			out += 3;
+		}else if(c <= 0x10ffff) {
+			if (out > length - 4) {
+				break;
+			}
+			*q++ = 0xf0|(c>>18);
+			*q++ = 0x80|((c>>12)&0x3f);
+			*q++ = 0x80|((c>>6)&0x3f);
+			*q++ = 0x80|((c&0x3f));
+			out += 4;
+		}else{
+			bbExThrowCString( "Unicode character out of UTF-8 range" );
+		}
+		++i;
+	}
+	*q=0;
+}
+
+void bmx_stringbuilder_format_string(struct MaxStringBuilder * buf, BBString * formatText, BBString * value) {
+	char formatBuf[256];
+	bmx_stringbuilder_toutf8_buffer(formatText, formatBuf, sizeof(formatBuf));
+	char vbuffer[2048];
+	bmx_stringbuilder_toutf8_buffer(value, vbuffer, sizeof(vbuffer));
+	char buffer[2048];
+	snprintf(buffer, sizeof(buffer), formatBuf, vbuffer);
+	bmx_stringbuilder_append_utf8string(buf, buffer);
+}
+
+void bmx_stringbuilder_format_byte(struct MaxStringBuilder * buf, BBString * formatText, BBBYTE value) {
+	char formatBuf[256];
+	bmx_stringbuilder_toutf8_buffer(formatText, formatBuf, sizeof(formatBuf));
+	char buffer[2048];
+	snprintf(buffer, sizeof(buffer), formatBuf, value);
+	bmx_stringbuilder_append_utf8string(buf, buffer);
+}
+
+void bmx_stringbuilder_format_short(struct MaxStringBuilder * buf, BBString * formatText, BBSHORT value) {
+	char formatBuf[256];
+	bmx_stringbuilder_toutf8_buffer(formatText, formatBuf, sizeof(formatBuf));
+	char buffer[2048];
+	snprintf(buffer, sizeof(buffer), formatBuf, value);
+	bmx_stringbuilder_append_utf8string(buf, buffer);
+}
+
+void bmx_stringbuilder_format_int(struct MaxStringBuilder * buf, BBString * formatText, BBINT value) {
+	char formatBuf[256];
+	bmx_stringbuilder_toutf8_buffer(formatText, formatBuf, sizeof(formatBuf));
+	char buffer[2048];
+	snprintf(buffer, sizeof(buffer), formatBuf, value);
+	bmx_stringbuilder_append_utf8string(buf, buffer);
+}
+
+void bmx_stringbuilder_format_uint(struct MaxStringBuilder * buf, BBString * formatText, BBUINT value) {
+	char formatBuf[256];
+	bmx_stringbuilder_toutf8_buffer(formatText, formatBuf, sizeof(formatBuf));
+	char buffer[2048];
+	snprintf(buffer, sizeof(buffer), formatBuf, value);
+	bmx_stringbuilder_append_utf8string(buf, buffer);
+}
+
+void bmx_stringbuilder_format_long(struct MaxStringBuilder * buf, BBString * formatText, BBLONG value) {
+	char formatBuf[256];
+	bmx_stringbuilder_toutf8_buffer(formatText, formatBuf, sizeof(formatBuf));
+	char buffer[2048];
+	snprintf(buffer, sizeof(buffer), formatBuf, value);
+	bmx_stringbuilder_append_utf8string(buf, buffer);
+}
+
+void bmx_stringbuilder_format_ulong(struct MaxStringBuilder * buf, BBString * formatText, BBULONG value) {
+	char formatBuf[256];
+	bmx_stringbuilder_toutf8_buffer(formatText, formatBuf, sizeof(formatBuf));
+	char buffer[2048];
+	snprintf(buffer, sizeof(buffer), formatBuf, value);
+	bmx_stringbuilder_append_utf8string(buf, buffer);
+}
+
+void bmx_stringbuilder_format_sizet(struct MaxStringBuilder * buf, BBString * formatText, BBSIZET value) {
+	char formatBuf[256];
+	bmx_stringbuilder_toutf8_buffer(formatText, formatBuf, sizeof(formatBuf));
+	char buffer[2048];
+	snprintf(buffer, sizeof(buffer), formatBuf, value);
+	bmx_stringbuilder_append_utf8string(buf, buffer);
+}
+
+void bmx_stringbuilder_format_float(struct MaxStringBuilder * buf, BBString * formatText, float value) {
+	char formatBuf[256];
+	bmx_stringbuilder_toutf8_buffer(formatText, formatBuf, sizeof(formatBuf));
+	char buffer[2048];
+	snprintf(buffer, sizeof(buffer), formatBuf, value);
+	bmx_stringbuilder_append_utf8string(buf, buffer);
+}
+
+void bmx_stringbuilder_format_double(struct MaxStringBuilder * buf, BBString * formatText, double value) {
+	char formatBuf[256];
+	bmx_stringbuilder_toutf8_buffer(formatText, formatBuf, sizeof(formatBuf));
+	char buffer[2048];
+	snprintf(buffer, sizeof(buffer), formatBuf, value);
+	bmx_stringbuilder_append_utf8string(buf, buffer);
+}
+
 /* ----------------------------------------------------- */
 
 int bmx_stringbuilder_splitbuffer_length(struct MaxSplitBuffer * buf) {

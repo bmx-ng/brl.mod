@@ -68,7 +68,17 @@ Extern
 	Function bmx_stringbuilder_toutf8string:Byte Ptr(buffer:Byte Ptr)
 	Function bmx_stringbuilder_towstring:Short Ptr(buffer:Byte Ptr)
 	Function bmx_stringbuilder_join_strings(buffer:Byte Ptr, bits:String[], joiner:String)
-	
+	Function bmx_stringbuilder_format_string(buffer:Byte Ptr, formatText:String, value:String)
+	Function bmx_stringbuilder_format_byte(buffer:Byte Ptr, formatText:String, value:Byte)
+	Function bmx_stringbuilder_format_short(buffer:Byte Ptr, formatText:String, value:Short)
+	Function bmx_stringbuilder_format_int(buffer:Byte Ptr, formatText:String, value:Int)
+	Function bmx_stringbuilder_format_uint(buffer:Byte Ptr, formatText:String, value:UInt)
+	Function bmx_stringbuilder_format_long(buffer:Byte Ptr, formatText:String, value:Long)
+	Function bmx_stringbuilder_format_ulong(buffer:Byte Ptr, formatText:String, value:ULong)
+	Function bmx_stringbuilder_format_sizet(buffer:Byte Ptr, formatText:String, value:Size_T)
+	Function bmx_stringbuilder_format_float(buffer:Byte Ptr, formatText:String, value:Float)
+	Function bmx_stringbuilder_format_double(buffer:Byte Ptr, formatText:String, value:Double)
+
 	Function bmx_stringbuilder_splitbuffer_length:Int(splitPtr:Byte Ptr)
 	Function bmx_stringbuilder_splitbuffer_text:String(splitPtr:Byte Ptr, index:Int)
 	Function bmx_stringbuilder_splitbuffer_free(splitPtr:Byte Ptr)

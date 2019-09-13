@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.10"
+ModuleInfo "Version: 1.11"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2018-2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.11"
+ModuleInfo "History: Added Format() methods."
 ModuleInfo "History: 1.10"
 ModuleInfo "History: Added JoinStrings() method."
 ModuleInfo "History: 1.09"
@@ -411,7 +413,178 @@ Public
 	Method FindLast:Int(subString:String, startIndex:Int = 0)
 		Return bmx_stringbuilder_findlast(buffer, subString, startIndex)
 	End Method
-	
+
+	Rem
+	bbdoc: Appends a #String value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:String)
+		bmx_stringbuilder_format_string(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Byte value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Byte)
+		bmx_stringbuilder_format_byte(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Short value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Short)
+		bmx_stringbuilder_format_short(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Int value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Int)
+		bmx_stringbuilder_format_int(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #UInt value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:UInt)
+		bmx_stringbuilder_format_uint(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Long value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Long)
+		bmx_stringbuilder_format_long(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #ULong value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:ULong)
+		bmx_stringbuilder_format_ulong(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Size_T value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Size_T)
+		bmx_stringbuilder_format_sizet(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Float value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Float)
+		bmx_stringbuilder_format_float(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Double value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Double)
+		bmx_stringbuilder_format_double(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Byte value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatByte:TStringBuilder(formatText:String, value:Byte)
+		bmx_stringbuilder_format_byte(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Short value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatShort:TStringBuilder(formatText:String, value:Short)
+		bmx_stringbuilder_format_short(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Int value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatInt:TStringBuilder(formatText:String, value:Int)
+		bmx_stringbuilder_format_int(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #UInt value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatUInt:TStringBuilder(formatText:String, value:UInt)
+		bmx_stringbuilder_format_uint(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Long value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatLong:TStringBuilder(formatText:String, value:Long)
+		bmx_stringbuilder_format_long(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #ULong value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatULong:TStringBuilder(formatText:String, value:ULong)
+		bmx_stringbuilder_format_ulong(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Size_T value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatSizeT:TStringBuilder(formatText:String, value:Size_T)
+		bmx_stringbuilder_format_sizet(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Float value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatFloat:TStringBuilder(formatText:String, value:Float)
+		bmx_stringbuilder_format_float(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Double value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatDouble:TStringBuilder(formatText:String, value:Double)
+		bmx_stringbuilder_format_double(buffer, formatText, value)
+		Return Self
+	End Method
+
 	Rem
 	bbdoc: Extracts the leftmost characters from the string builder.
 	about: This method extracts the left @length characters from the builder. If this many characters are not available, the whole builder is returned.
