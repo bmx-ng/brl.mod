@@ -8,7 +8,7 @@ Type TComparatorArraySort<T> Extends TArraySort<T>
 		Self.comparator = comparator
 	End Method
 
-	Method DoCompare:Int(a:T, b:T)
+	Method DoCompare:Int(a:T, b:T) Override
 		Return comparator.Compare(a, b)
 	End Method
 

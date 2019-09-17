@@ -68,14 +68,14 @@ Public
 	Rem
 	bbdoc: Returns an iterator that iterates through the #TList.
 	End Rem
-	Method GetIterator:IIterator<T>()
+	Method GetIterator:IIterator<T>() Override
 		Return New TArrayListIterator<T>(Self)
 	End Method
 	
 	Rem
 	bbdoc: Gets the number of elements contained in the #TArrayList.
 	End Rem
-	Method Count:Int()
+	Method Count:Int() Override
 		Return size
 	End Method
 	
@@ -101,14 +101,14 @@ Public
 		data = data[..value]
 	End Method
 	
-	Method CopyTo(array:T[], index:Int = 0)
+	Method CopyTo(array:T[], index:Int = 0) Override
 		' TODO
 	End Method
 	
 	Rem
 	bbdoc: Adds an element to the end of the #TArrayList.
 	End Rem
-	Method Add(element:T)
+	Method Add(element:T) Override
 		ResizeAsNeeded(size + 1)
 		data[size] = element
 		size :+ 1
@@ -117,7 +117,7 @@ Public
 	Rem
 	bbdoc: Removes all elements from the #TArrayList.
 	End Rem
-	Method Clear()
+	Method Clear() Override
 		For Local i:Int = 0 Until size
 			data[i] = Null
 		Next
@@ -127,14 +127,14 @@ Public
 	Rem
 	bbdoc: Determines whether an element is in the #TArrayList.
 	End Rem
-	Method Contains:Int(element:T)
+	Method Contains:Int(element:T) Override
 		Return IndexOf(element) >= 0
 	End Method
 	
 	Rem
 	bbdoc: Returns the zero-based index of the first occurrence of a value in the #List.
 	End Rem
-	Method IndexOf:Int(element:T)
+	Method IndexOf:Int(element:T) Override
 		For Local i:Int = 0 Until size
 			If data[i] = element Then
 				Return i
@@ -179,7 +179,7 @@ Public
 	Rem
 	bbdoc: Inserts an element into the #TArrayList at the specified index.
 	End Rem
-	Method Insert(index:Int, element:T)
+	Method Insert(index:Int, element:T) Override
 		If index < 0 Or index > size Then
 			Throw New TIndexOutOfBoundsException
 		End If
@@ -249,7 +249,7 @@ Public
 	Rem
 	bbdoc: Removes the first occurrence of a specific element from the #TArrayList.
 	End Rem
-	Method Remove(element:T)
+	Method Remove(element:T) Override
 		Local index:Int = IndexOf(element)
 		If index >= 0 Then
 			RemoveAt(index)
@@ -259,7 +259,7 @@ Public
 	Rem
 	bbdoc: Removes the element at the specified index of the #TArrayList.
 	End Rem
-	Method RemoveAt(index:Int)
+	Method RemoveAt(index:Int) Override
 		If index < 0 Or index >= size Then
 			Throw New TIndexOutOfBoundsException
 		End If
@@ -372,11 +372,11 @@ Type TArrayListIterator<T> Implements IIterator<T>
 	
 	Public
 
-	Method Current:T()
+	Method Current:T() Override
 		Return list[index]
 	End Method
 	
-	Method MoveNext:Int()
+	Method MoveNext:Int() Override
 		index :+ 1
 		Return index < list.size
 	End Method
