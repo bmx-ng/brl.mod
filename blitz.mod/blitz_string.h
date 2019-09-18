@@ -82,6 +82,8 @@ char*	bbTmpCString( BBString *str );
 BBChar*	bbTmpWString( BBString *str );
 char*	bbTmpUTF8String( BBString *str );
 
+int bbStringEquals( BBString *x,BBString *y );
+
 #ifdef __cplusplus
 }
 #endif

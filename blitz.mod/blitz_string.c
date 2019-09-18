@@ -948,3 +948,12 @@ char *bbTmpUTF8String( BBString *str ){
 	mktmp( p );
 	return p;
 }
+
+int bbStringEquals( BBString *x,BBString *y ){
+	if (x->length-y->length != 0) return 0;
+	BBChar * bx = x->buf;
+	BBChar * by = y->buf;
+	int k = x->length;
+	while( k-- ) if ( bx++ - by++ != 0 ) return 0;
+	return 1;
+}
