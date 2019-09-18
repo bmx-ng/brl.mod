@@ -74,6 +74,8 @@ BBULONG bbULongMax( BBULONG x, BBULONG y );
 BBULONG bbULongSgn( BBULONG x );
 BBULONG bbULongAbs( BBULONG x );
 
+BBLONG bbLongPow(BBLONG base, BBBYTE exp);
+
 #ifdef __cplusplus
 }
 #endif
