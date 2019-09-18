@@ -37,6 +37,7 @@ BBString*bbStringFromArray( BBArray *arr );
 BBString*	bbStringFromCString( const char *p );
 BBString*bbStringFromWString( const BBChar *p );
 BBString*bbStringFromUTF8String( const char *p );
+BBString *bbStringFromUTF8Bytes( const char *p,int n );
 
 BBString*	bbStringToString( BBString *t );
 int		bbStringCompare( BBString *x,BBString *y );

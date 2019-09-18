@@ -62,6 +62,7 @@ BBClass bbStringClass={
 	
 	bbStringFromUTF8String,
 	bbStringToUTF8String,
+	bbStringFromUTF8Bytes,
 	
 	bbStringToSizet,
 	bbStringFromSizet,
@@ -240,33 +241,44 @@ BBString *bbStringFromWString( const BBChar *p ){
 }
 
 BBString *bbStringFromUTF8String( const char *p ){
-	int c,n;
+	if( !p ) return &bbEmptyString;
+	
+	int n=strlen(p);
+
+	return bbStringFromUTF8Bytes(p, n);
+}
+
+BBString *bbStringFromUTF8Bytes( const char *p,int n ){
+	int c;
 	short *d,*q;
 	BBString *str;
 
-	if( !p ) return &bbEmptyString;
+	if( !p || n <= 0 ) return &bbEmptyString;
 	
-	n=strlen(p);
 	d=(short*)malloc( n*2 );
 	q=d;
 	
-	while( c=*p++ & 0xff ){
+	while( n-- && (c=*p++ & 0xff)){
 		if( c<0x80 ){
 			*q++=c;
 		}else{
+			if (!n--) continue;
 			int d=*p++ & 0x3f;
 			if( c<0xe0 ){
 				*q++=((c&31)<<6) | d;
 			}else{
+				if (!n--) continue;
 				int e=*p++ & 0x3f;
 				if( c<0xf0 ){
 					*q++=((c&15)<<12) | (d<<6) | e;
+					n--;
 				}else{
+					if (!n--) continue;
 					int f=*p++ & 0x3f;
 					int v=((c&7)<<18) | (d<<12) | (e<<6) | f;
 					if( v & 0xffff0000 ) {
 						v -= 0x10000;
-						d = ((v >> 10) & 0x7ffff) + 0xd800;
+						d = ((v >> 10) & 0x7ff) + 0xd800;
 						e = (v & 0x3ff) + 0xdc00;
 						*q++=d;
 						*q++=e;
@@ -766,31 +778,40 @@ BBChar *bbStringToWString( BBString *str ){
 }
 
 char *bbStringToUTF8String( BBString *str ){
-	int i,len=str->length;
+	int i=0,len=str->length;
 	char *buf=(char*)bbMemAlloc( len*4+1 );
 	char *q=buf;
 	unsigned short *p=str->buf;
-	for( i=0;i<len;++i ){
+	while (i < len) {
 		unsigned int c=*p++;
+		if(0xd800 <= c && c <= 0xdbff && i < len - 1) {
+			/* surrogate pair */
+			unsigned int c2 = *p;
+			if(0xdc00 <= c2 && c2 <= 0xdfff) {
+				/* valid second surrogate */
+				c = ((c - 0xd800) << 10) + (c2 - 0xdc00) + 0x10000;
+				++p;
+				++i;
+			}
+		}
 		if( c<0x80 ){
 			*q++=c;
 		}else if( c<0x800 ){
 			*q++=0xc0|(c>>6);
 			*q++=0x80|(c&0x3f);
+		}else if(c < 0x10000) { 
+			*q++=0xe0|(c>>12);
+			*q++=0x80|((c>>6)&0x3f);
+			*q++=0x80|(c&0x3f);
+		}else if(c <= 0x10ffff) {
+			*q++ = 0xf0|(c>>18);
+			*q++ = 0x80|((c>>12)&0x3f);
+			*q++ = 0x80|((c>>6)&0x3f);
+			*q++ = 0x80|((c&0x3f));
 		}else{
-			if (c < 0xd800 || c > 0xdbff) { 
-				*q++=0xe0|(c>>12);
-				*q++=0x80|((c>>6)&0x3f);
-				*q++=0x80|(c&0x3f);
-			}else{
-				if (i == len - 1) bbExThrowCString( "Invalid UCS-2 character" );
-				c = ((c - 0xd800) << 10) + (*p++ - 0xdc00) + 0x10000;
-				*q++ = 0xf0|(c>>18);
-				*q++ = 0x80|((c>>12)&0x3f);
-				*q++ = 0x80|((c>>6)&0x3f);
-				*q++ = 0x80|((c&0x3f));
-			}
+			bbExThrowCString( "Unicode character out of UTF-8 range" );
 		}
+		++i;
 	}
 	*q=0;
 	return buf;
