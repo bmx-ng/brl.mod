@@ -75,6 +75,8 @@ BBObject*	bbObjectSendMessage( BBObject * o, BBObject *m,BBObject *s );
 void		bbObjectReserved();
 
 BBObject*	bbObjectDowncast( BBObject *o,BBClass *t );
+BBObject*	bbObjectStringcast( BBObject *o );
+BBObject*	bbObjectArraycast( BBObject *o );
 
 void		bbObjectRegisterType( BBClass *clas );
 BBClass**	bbObjectRegisteredTypes( int *count );

@@ -104,6 +104,22 @@ void bbObjectReserved(){
 	bbExThrowCString( "Illegal call to reserved method" );
 }
 
+BBObject *bbObjectStringcast( BBObject *o ){
+	if (o->clas == &bbStringClass) {
+		return o;
+	} else {
+		return &bbEmptyString;
+	}
+}
+
+BBObject *bbObjectArraycast( BBObject *o ){
+	if (o->clas == &bbArrayClass) {
+		return o;
+	} else {
+		return &bbEmptyArray;
+	}
+}
+
 BBObject *bbObjectDowncast( BBObject *o,BBClass *t ){
 	BBClass *p=o->clas;
 	while( p && p!=t ) p=p->super;
