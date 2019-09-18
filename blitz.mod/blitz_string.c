@@ -954,6 +954,6 @@ int bbStringEquals( BBString *x,BBString *y ){
 	BBChar * bx = x->buf;
 	BBChar * by = y->buf;
 	int k = x->length;
-	while( k-- ) if ( bx++ - by++ != 0 ) return 0;
+	while( k-- ) if ( *bx++ - *by++ != 0 ) return 0;
 	return 1;
 }
