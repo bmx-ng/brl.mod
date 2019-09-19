@@ -241,11 +241,7 @@ BBString *bbStringFromWString( const BBChar *p ){
 }
 
 BBString *bbStringFromUTF8String( const char *p ){
-	if( !p ) return &bbEmptyString;
-	
-	int n=strlen(p);
-
-	return bbStringFromUTF8Bytes(p, n);
+	return p ? bbStringFromUTF8Bytes( p,strlen(p) ) : &bbEmptyString;
 }
 
 BBString *bbStringFromUTF8Bytes( const char *p,int n ){
