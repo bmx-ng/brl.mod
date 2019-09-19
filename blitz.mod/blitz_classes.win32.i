@@ -52,6 +52,7 @@ String^Object{
 	
 	+FromUTF8String:String( utf8String:Byte Ptr )="bbStringFromUTF8String"
 	-ToUTF8String:Byte Ptr()="bbStringToUTF8String"
+	+FromUTF8Bytes:String( utf8String:Byte Ptr, count )="bbStringFromUTF8Bytes"
 
 	-ToSizet:size_t()="bbStringToSizet"
 	+FromSizet:String( sizetValue:size_t )="bbStringFromSizet"
