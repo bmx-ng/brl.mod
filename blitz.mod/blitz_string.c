@@ -271,7 +271,6 @@ BBString *bbStringFromUTF8Bytes( const char *p,int n ){
 				int e=*p++ & 0x3f;
 				if( c<0xf0 ){
 					*q++=((c&15)<<12) | (d<<6) | e;
-					n--;
 				}else{
 					if (!n--) continue;
 					int f=*p++ & 0x3f;
