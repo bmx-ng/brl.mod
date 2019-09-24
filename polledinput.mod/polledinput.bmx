@@ -290,7 +290,7 @@ The returned value represents the number of the times @button has been clicked s
 last call to #MouseHit with the same @button.
 
 @button should be 1 for the left mouse button, 2 for the right mouse button or 3 for the
-middle mouse button.
+middle mouse button. Two further buttons, 4 and 5, are also available for mice that support them.
 End Rem
 Function MouseHit( button )
 	If autoPoll PollSystem
@@ -304,8 +304,8 @@ bbdoc: Check for mouse button down state
 returns: #True if @button is currently down
 about:
 @button should be 1 for the left mouse button, 2 for the right mouse button or 3 for the
-middle mouse button.
-end rem
+middle mouse button. Two further buttons, 4 and 5, are also available for mice that support them.
+End Rem
 Function MouseDown( button )
 	If autoPoll PollSystem
 	Return mouseStates[button]
