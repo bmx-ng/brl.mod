@@ -182,16 +182,16 @@ void bbSystemEmitOSEvent( HWND hwnd,UINT msg,WPARAM wp,LPARAM lp,BBObject *sourc
 		ReleaseCapture();
 		id=BBEVENT_MOUSEUP;
 		switch (msg) {
-			case WM_LBUTTONDOWN:
+			case WM_LBUTTONUP:
 				data = 1;
 				break;
-			case WM_RBUTTONDOWN:
+			case WM_RBUTTONUP:
 				data = 2;
 				break;
-			case WM_MBUTTONDOWN:
+			case WM_MBUTTONUP:
 				data = 3;
 				break;
-			case WM_XBUTTONDOWN:
+			case WM_XBUTTONUP:
 				if (GET_XBUTTON_WPARAM(wp) == XBUTTON1) {
 					data = 4;
 				} else {
