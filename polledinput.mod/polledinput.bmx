@@ -6,12 +6,14 @@ bbdoc: User input/Polled input
 End Rem
 Module BRL.PolledInput
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.04"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Support for 5 mouse buttons."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Improved Win32 KeyDown handling."
 ModuleInfo "History: 1.02"
@@ -31,7 +33,7 @@ Global suspended,terminate
 Global keyStates[256],keyHits[256]
 Global charGet,charPut,charQueue[256]
 
-Global mouseStates[4],mouseHits[4]
+Global mouseStates[6],mouseHits[6]
 Global mouseLocation[4],lastMouseLocation[4]
 
 Function Hook:Object( id,data:Object,context:Object )

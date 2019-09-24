@@ -155,17 +155,49 @@ void bbSystemEmitOSEvent( HWND hwnd,UINT msg,WPARAM wp,LPARAM lp,BBObject *sourc
 		id=BBEVENT_KEYCHAR;
 		data=wp;
 		break;
-	case WM_LBUTTONDOWN:case WM_RBUTTONDOWN:case WM_MBUTTONDOWN:
+	case WM_LBUTTONDOWN:case WM_RBUTTONDOWN:case WM_MBUTTONDOWN:case WM_XBUTTONDOWN:
 		SetCapture( hwnd );
 		id=BBEVENT_MOUSEDOWN;
-		data=(msg==WM_LBUTTONDOWN) ? 1 : (msg==WM_RBUTTONDOWN ? 2 : 3);
+		switch (msg) {
+			case WM_LBUTTONDOWN:
+				data = 1;
+				break;
+			case WM_RBUTTONDOWN:
+				data = 2;
+				break;
+			case WM_MBUTTONDOWN:
+				data = 3;
+				break;
+			case WM_XBUTTONDOWN:
+				if (GET_XBUTTON_WPARAM(wp) == XBUTTON1) {
+					data = 4;
+				} else {
+					data = 5;
+				}
+		}
 		x=(short)LOWORD(lp);
 		y=(short)HIWORD(lp);
 		break;
-	case WM_LBUTTONUP:case WM_RBUTTONUP:case WM_MBUTTONUP:
+	case WM_LBUTTONUP:case WM_RBUTTONUP:case WM_MBUTTONUP:case WM_XBUTTONUP:
 		ReleaseCapture();
 		id=BBEVENT_MOUSEUP;
-		data=(msg==WM_LBUTTONUP) ? 1 : (msg==WM_RBUTTONUP ? 2 : 3);
+		switch (msg) {
+			case WM_LBUTTONDOWN:
+				data = 1;
+				break;
+			case WM_RBUTTONDOWN:
+				data = 2;
+				break;
+			case WM_MBUTTONDOWN:
+				data = 3;
+				break;
+			case WM_XBUTTONDOWN:
+				if (GET_XBUTTON_WPARAM(wp) == XBUTTON1) {
+					data = 4;
+				} else {
+					data = 5;
+				}
+		}
 		x=(short)LOWORD(lp);
 		y=(short)HIWORD(lp);
 		break;
