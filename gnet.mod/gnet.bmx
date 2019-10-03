@@ -1,17 +1,20 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Networking/GameNet
 End Rem
 Module BRL.GNet
 
-ModuleInfo "Version: 1.06"
+ModuleInfo "Version: 1.07"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.07"
+ModuleInfo "History: Updated for NG."
+ModuleInfo "History: Made SuperStrict."
 ModuleInfo "History: 1.06 Release"
 ModuleInfo "History: Object id's now unmapped ASAP"
 ModuleInfo "History: 1.05 Release"
@@ -28,19 +31,21 @@ Import Pub.ENet
 Import BRL.Socket
 Import BRL.LinkedList
 Import BRL.System
+Import BRL.Collections
+Import brl.standardio
 
 Private
 
-Const GNET_INT=		1
-Const GNET_FLOAT16=		2
-Const GNET_STRING=		3
-Const GNET_UINT8=		4
-Const GNET_UINT16=		5
-Const GNET_FLOAT32=		6
+Const GNET_INT:Int =     1
+Const GNET_FLOAT16:Int = 2
+Const GNET_STRING:Int =  3
+Const GNET_UINT8:Int =   4
+Const GNET_UINT16:Int =  5
+Const GNET_FLOAT32:Int = 6
 
-Global GNET_DIAGNOSTICS=False
+Global GNET_DIAGNOSTICS:Int = False
 
-Const GNET_MAXIDS=		4096
+Const GNET_MAXIDS:Int = 4096
 
 ?Debug
 Function dprint( t$ )
@@ -48,13 +53,13 @@ Function dprint( t$ )
 End Function
 ?
 
-Function PackFloat16( f# )
-	Local i=(Int Ptr Varptr f)[0]
+Function PackFloat16:Int( f# )
+	Local i:Int = (Int Ptr Varptr f)[0]
 	If i=$00000000 Return $0000	'+0
 	If i=$80000000 Return $8000	'-0
-	Local M=i Shl 9
-	Local S=i Shr 31
-	Local E=(i Shr 23 & $ff)-127
+	Local M:Int=i Shl 9
+	Local S:Int=i Shr 31
+	Local E:Int=(i Shr 23 & $ff)-127
 	If E=128
 		If M Return $ffff		'NaN
 		Return S Shl 15 | $7c00	'+/-Infinity
@@ -69,65 +74,65 @@ Function PackFloat16( f# )
 	Return S Shl 15 | (E+15) Shl 10 | M Shr 22
 End Function
 
-Function UnpackFloat16#( i )
+Function UnpackFloat16#( i:Int )
 	i:&$ffff
 	If i=$0000 Return +0.0
 	If i=$8000 Return -0.0
-	Local M=i Shl 22
-	Local S=i Shr 15
-	Local E=(i Shr 10 & $1f)-15
+	Local M:Int=i Shl 22
+	Local S:Int=i Shr 15
+	Local E:Int=(i Shr 10 & $1f)-15
 	If E=16
 		If M Return 0.0/0.0		'NaN
 		If S Return -1.0/0.0		'-Infinity
 		Return +1.0/0.0			'+Infinity
 	Else If E = -15				'denormal as float16, but normal as float32.
-		Local i
+		Local i:Int
 		For i = 0 To 9          'find the leading 1-bit
-			Local bit = M & $80000000
+			Local bit:Int = M & $80000000
 			M:Shl 1
 			If bit Exit
 		Next
 		E:-i
 	End If
-	Local n=S Shl 31 | (E+127) Shl 23 | M Shr 9
+	Local n:Int=S Shl 31 | (E+127) Shl 23 | M Shr 9
 	Return (Float Ptr Varptr n)[0]
 End Function
 
-Function PackFloat32( f# )
+Function PackFloat32:Int( f# )
 	Return (Int Ptr Varptr f)[0]
 End Function
 
-Function UnpackFloat32#( i )
+Function UnpackFloat32#( i:Int )
 	Return (Float Ptr Varptr i)[0]
 End Function
 
 Public
 
-Const GNET_ALL=		0
+Const GNET_ALL:Int = 0
 
 'object states
-Const GNET_CREATED=		1
-Const GNET_MODIFIED=	2
-Const GNET_CLOSED=		3
-Const GNET_SYNCED=		4
-Const GNET_MESSAGE=		5
-Const GNET_ZOMBIE=		-1
+Const GNET_CREATED:Int =  1
+Const GNET_MODIFIED:Int = 2
+Const GNET_CLOSED:Int =   3
+Const GNET_SYNCED:Int =   4
+Const GNET_MESSAGE:Int =  5
+Const GNET_ZOMBIE:Int =  -1
 
 Type TGNetMsg
 
-	Field id
-	Field state
+	Field id:Int
+	Field state:Int
 	Field data:Byte[]
 	
 End Type
 
 Type TGNetSlot
-	Field _type
-	Field _int
+	Field _type:Int
+	Field _int:Int
 	Field _float#
 	Field _string$
 	
-	Method SetInt( data )
+	Method SetInt( data:Int )
 		Assert _type=0 Or _type=GNET_INT Or _type=GNET_UINT8 Or _type=GNET_UINT16
 		_int=data
 		If data<0
@@ -153,7 +158,7 @@ Type TGNetSlot
 		_type=GNET_STRING
 	End Method
 	
-	Method GetInt()
+	Method GetInt:Int()
 		Assert _type=GNET_INT Or _type=GNET_UINT8 Or _type=GNET_UINT16
 		Return _int
 	End Method
@@ -173,12 +178,12 @@ End Type
 Type TGNetObject
 
 	Method New()
-		For Local i=0 Until 32
+		For Local i:Int=0 Until 32
 			_slots[i]=New TGNetSlot
 		Next
 	End Method
 	
-	Method State()
+	Method State:Int()
 		Return _state
 	End Method
 
@@ -195,31 +200,31 @@ Type TGNetObject
 		End Select
 	End Method
 	
-	Method SetInt( index,data )
+	Method SetInt( index:Int, data:Int )
 		WriteSlot( index ).SetInt data
 	End Method
 
-	Method SetFloat( index,data# )
+	Method SetFloat( index:Int, data# )
 		WriteSlot( index ).SetFloat data
 	End Method
 
-	Method SetString( index,data$ )
+	Method SetString( index:Int, data$ )
 		WriteSlot( index ).SetString data
 	End Method
 	
-	Method GetInt( index )
+	Method GetInt:Int( index:Int )
 		Return _slots[index].GetInt()
 	End Method
 	
-	Method GetFloat#( index )
+	Method GetFloat#( index:Int )
 		Return _slots[index].GetFloat()
 	End Method
 	
-	Method GetString$( index )
+	Method GetString$( index:Int )
 		Return _slots[index].GetString()
 	End Method
 	
-	Method WriteSlot:TGNetSlot( index )
+	Method WriteSlot:TGNetSlot( index:Int )
 		Assert _state<>GNET_CLOSED And _state<>GNET_ZOMBIE Else "Object has been closed"
 		_modified:|1 Shl index
 		If _state=GNET_SYNCED _state=GNET_MODIFIED
@@ -229,7 +234,7 @@ Type TGNetObject
 	Method Sync:TGNetMsg()
 		Select _state
 		Case GNET_SYNCED,GNET_ZOMBIE
-			Return
+			Return Null
 		End Select
 		
 		Local msg:TGNetMsg
@@ -276,7 +281,7 @@ Type TGNetObject
 		Return msg
 	End Method
 	
-	Method MessageMsg:TGNetMsg( id )
+	Method MessageMsg:TGNetMsg( id:Int )
 		Local msg:TGNetMsg=New TGNetMsg
 		msg.id=id
 		msg.state=GNET_MESSAGE
@@ -284,11 +289,11 @@ Type TGNetObject
 		Return msg
 	End Method
 	
-	Method PackSlots:Byte[]( mask )
-		Local sz
-		For Local index=0 Until 32
+	Method PackSlots:Byte[]( mask:Int )
+		Local sz:Int
+		For Local index:Int=0 Until 32
 			If Not (mask & 1 Shl index) Continue
-			Local ty=_slots[index]._type
+			Local ty:Int=_slots[index]._type
 			If Not ty Continue
 			Select ty
 			Case GNET_INT
@@ -308,13 +313,13 @@ Type TGNetObject
 		If sz>$fff0 Throw "GNet message data too large"
 		Local data:Byte[sz]
 		Local p:Byte Ptr=data
-		For Local index=0 Until 32
+		For Local index:Int=0 Until 32
 			If Not (mask & 1 Shl index) Continue
-			Local ty=_slots[index]._type
+			Local ty:Int=_slots[index]._type
 			If Not ty Continue
 			Select ty
 			Case GNET_INT
-				Local n=GetInt( index )
+				Local n:Int=GetInt( index )
 				p[0]=GNET_INT Shl 5 | index
 				p[1]=n Shr 24
 				p[2]=n Shr 16
@@ -322,24 +327,24 @@ Type TGNetObject
 				p[4]=n Shr 0
 				p:+5
 			Case GNET_UINT8
-				Local n=GetInt( index )
+				Local n:Int=GetInt( index )
 				p[0]=GNET_UINT8 Shl 5 | index
 				p[1]=n
 				p:+2
 			Case GNET_UINT16
-				Local n=GetInt( index )
+				Local n:Int=GetInt( index )
 				p[0]=GNET_UINT16 Shl 5 | index
 				p[1]=n Shr 8
 				p[2]=n Shr 0
 				p:+3
 			Case GNET_FLOAT16
-				Local n=PackFloat16( GetFloat(index) )
+				Local n:Int=PackFloat16( GetFloat(index) )
 				p[0]=GNET_FLOAT16 Shl 5 | index
 				p[1]=n Shr 8
 				p[2]=n Shr 0
 				p:+3
 			Case GNET_FLOAT32
-				Local n=PackFloat32( GetFloat(index) )
+				Local n:Int=PackFloat32( GetFloat(index) )
 				p[0]=GNET_FLOAT32 Shl 5 | index
 				p[1]=n Shr 24
 				p[2]=n Shr 16
@@ -367,8 +372,8 @@ Type TGNetObject
 		Local p:Byte Ptr=data
 		Local e:Byte Ptr=p+data.length
 		While p<e
-			Local ty=p[0] Shr 5
-			Local index=p[0] & 31
+			Local ty:Int=p[0] Shr 5
+			Local index:Int=p[0] & 31
 			p:+1
 			Select ty
 			Case GNET_INT
@@ -381,15 +386,15 @@ Type TGNetObject
 				SetInt index,p[0] Shl 8 | p[1]
 				p:+2
 			Case GNET_FLOAT16
-				Local t=p[0] Shl 8 | p[1]
+				Local t:Int=p[0] Shl 8 | p[1]
 				SetFloat index,UnpackFloat16( t )
 				p:+2
 			Case GNET_FLOAT32
-				Local t=p[0] Shl 24 | p[1] Shl 16 | p[2] Shl 8 | p[3]
+				Local t:Int=p[0] Shl 24 | p[1] Shl 16 | p[2] Shl 8 | p[3]
 				SetFloat index,UnpackFloat32( t )
 				p:+4
 			Case GNET_STRING
-				Local n=p[0] Shl 8 | p[1]
+				Local n:Int=p[0] Shl 8 | p[1]
 				Local data$=String.FromBytes( p+2,n )
 				SetString index,data
 				p:+2+n
@@ -400,7 +405,7 @@ Type TGNetObject
 		If p<>e Throw "Corrupt GNet message"
 	End Method
 	
-	Function Create:TGNetObject( id,state,host:TGNetHost,peer:TGNetPeer )
+	Function Create:TGNetObject( id:Int,state:Int,host:TGNetHost,peer:TGNetPeer )
 		Local t:TGNetObject=New TGNetObject
 		t._id=id
 		t._state=state
@@ -409,13 +414,13 @@ Type TGNetObject
 		Return t
 	End Function
 
-	Field _id
-	Field _state
+	Field _id:Int
+	Field _state:Int
 	Field _host:TGNetHost
 	Field _peer:TGNetPeer
 	Field _target:Object
 	
-	Field _slots:TGNetSlot[32],_modified
+	Field _slots:TGNetSlot[32],_modified:Int
 	
 End Type
 
@@ -425,8 +430,8 @@ Type TGNetHost
 		If Not _enetHost Return
 		Repeat
 			Local ev:ENetEvent=New ENetEvent
-			If Not enet_host_service( _enetHost,ev,0 ) Return
-			_enetEvents.AddLast ev
+			If Not enet_host_service( _enetHost,ev.eventPtr,0 ) Return
+			_enetEvents.Add(ev)
 		Forever
 	End Method
 
@@ -462,17 +467,18 @@ Type TGNetHost
 			
 			If _enetEvents.IsEmpty() Return
 	
-			Local ev:ENetEvent=ENetEvent( _enetEvents.RemoveFirst() )
+			Local ev:ENetEvent=_enetEvents[0]
+			_enetEvents.RemoveAt(0)
 
 			Local peer:TGNetPeer
 			For Local t:TGNetPeer=EachIn _peers
-				If t._enetPeer=ev.peer
+				If t._enetPeer=ev.peer()
 					peer=t
 					Exit
 				EndIf
 			Next
 			
-			Select ev.event
+			Select ev.event()
 			Case ENET_EVENT_TYPE_CONNECT
 				Assert Not peer Else "GNet error"
 				peer=AddPeer( ev.peer )
@@ -490,7 +496,7 @@ Type TGNetHost
 				EndIf
 			Case ENET_EVENT_TYPE_RECEIVE
 				Assert peer Else "GNet error"
-				Local msg:TGNetMsg=peer.RecvMsg( ev.packet )
+				Local msg:TGNetMsg=peer.RecvMsg( ev.packet() )
 				enet_packet_destroy ev.packet
 				Select msg.state
 				Case GNET_MESSAGE
@@ -604,8 +610,8 @@ Type TGNetHost
 		EndIf
 	End Method
 	
-	Method AllocId()
-		For Local id=1 Until GNET_MAXIDS
+	Method AllocId:Int()
+		For Local id:Int=1 Until GNET_MAXIDS
 			If Not _idMap[id] Return id
 		Next
 		Throw "Out of GNet object IDs"
@@ -621,33 +627,66 @@ Type TGNetHost
 		_idMap[obj._id]=Null
 	End Method
 	
-	Method Listen( port )
-		If _enetHost Return
+	Method Listen:Int( port:Int )
+		If _enetHost Return False
 		Local addr:Byte Ptr=enet_address_create( ENET_HOST_ANY,port )
-		_enetHost=enet_host_create( addr,32,0,0 )
+		_enetHost=enet_host_create( addr,32,0,0,0 )
+
 		enet_address_destroy addr
-		If Not _enetHost Return
+		If Not _enetHost Return False
 		Return True
 	End Method
 	
-	Method Connect( ip,port,timeout )
-		If _enetHost Return
-		_enetHost=enet_host_create( Null,32,0,0 )
-		If Not _enetHost Return
+	Method Connect:Int( ip:Int,port:Int,timeout:Int )
+		If _enetHost Return False
+		_enetHost=enet_host_create( Null,32,0,0,0 )
+		If Not _enetHost Return False
 		Local addr:Byte Ptr=enet_address_create( ip,port )
-		Local peer:Byte Ptr=enet_host_connect( _enetHost,addr,1 )
+		Local peer:Byte Ptr=enet_host_connect( _enetHost,addr,1,0 )
 		enet_address_destroy addr
 		If peer
 			timeout:+MilliSecs()
 			While timeout-MilliSecs()>0
 				UpdateENetEvents
-				For Local ev:ENetEvent=EachIn _enetEvents
-					If ev.event=ENET_EVENT_TYPE_CONNECT And ev.peer=peer
-						_enetEvents.Remove ev
+				Local i:Int
+				While i < _enetEvents.Count()
+				'For Local ev:ENetEvent=EachIn _enetEvents
+					Local ev:ENetEvent = _enetEvents[i]
+					If ev.event()=ENET_EVENT_TYPE_CONNECT And ev.peer()=peer
+						_enetEvents.RemoveAt(i)
 						AddPeer peer
 						Return True
 					EndIf
-				Next
+					i :+ 1
+				Wend
+			Wend
+		EndIf
+		enet_host_destroy _enetHost
+		_enetHost=Null
+	End Method
+
+	Method Connect:Int( ip:String,port:Int,timeout:Int )
+		If _enetHost Return False
+		_enetHost=enet_host_create( Null,32,0,0,0 )
+		If Not _enetHost Return False
+		Local addr:Byte Ptr=enet_address_create( ip,port )
+		Local peer:Byte Ptr=enet_host_connect( _enetHost,addr,1,0 )
+		enet_address_destroy addr
+		If peer
+			timeout:+MilliSecs()
+			While timeout-MilliSecs()>0
+				UpdateENetEvents
+				Local i:Int = 0
+				While i < _enetEvents.Count()
+				'For Local ev:ENetEvent=EachIn _enetEvents
+					Local ev:ENetEvent = _enetEvents[i]
+					If ev.event()=ENET_EVENT_TYPE_CONNECT And ev.peer()=peer
+						_enetEvents.RemoveAt(i)
+						AddPeer peer
+						Return True
+					EndIf
+					i :+ 1
+				Wend
 			Wend
 		EndIf
 		enet_host_destroy _enetHost
@@ -660,7 +699,7 @@ Type TGNetHost
 	End Function
 	
 	Field _enetHost:Byte Ptr
-	Field _enetEvents:TList=New TList
+	Field _enetEvents:TArrayList<EnetEvent> = New TArrayList<EnetEvent>
 	
 	Field _peers:TList=New TList	'active peers
 	Field _objects:TList=New TList		'all objects
@@ -680,16 +719,16 @@ Type TGNetPeer
 	Field _enetPeer:Byte Ptr
 
 	'id mapping
-	Field _localToRemote[GNET_MAXIDS]
-	Field _remoteToLocal[GNET_MAXIDS]
+	Field _localToRemote:Int[GNET_MAXIDS]
+	Field _remoteToLocal:Int[GNET_MAXIDS]
 	
 	Method Close()
 		If Not _enetPeer Return
-		enet_peer_disconnect _enetPeer
+		enet_peer_disconnect _enetPeer, 0
 		_enetPeer=Null
 	End Method
 
-	Method MapLocalId( localId,remoteId )
+	Method MapLocalId( localId:Int,remoteId:Int )
 		Assert Not _localToRemote[localId] And Not _remoteToLocal[remoteId]
 		_localToRemote[localId]=remoteId
 		_remoteToLocal[remoteId]=localId
@@ -698,8 +737,8 @@ Type TGNetPeer
 ?
 	End Method
 	
-	Method UnmapLocalId( localId )
-		Local remoteId=_localToRemote[localId]
+	Method UnmapLocalId( localId:Int )
+		Local remoteId:Int=_localToRemote[localId]
 		Assert _localToRemote[localId]=remoteId And _remoteToLocal[remoteId]=localId
 		_localToRemote[localId]=0
 		_remoteToLocal[remoteId]=0
@@ -710,11 +749,11 @@ Type TGNetPeer
 	
 	Method RecvMsg:TGNetMsg( packet:Byte Ptr )
 	
-		Local buf:Byte Ptr=enet_packet_data( packet )
-		Local sz=enet_packet_size( packet )-2
+		Local buf:Byte Ptr=bmx_enet_packet_data( packet )
+		Local sz:Size_T=bmx_enet_packet_size( packet )-2
 		
-		Local id=(buf[0] Shl 8 | buf[1]) & (GNET_MAXIDS-1)
-		Local state=(buf[0] Shl 8 | buf[1]) Shr 12
+		Local id:Int=(buf[0] Shl 8 | buf[1]) & (GNET_MAXIDS-1)
+		Local state:Int=(buf[0] Shl 8 | buf[1]) Shr 12
 			
 		If state<>GNET_MESSAGE
 			id=_remoteToLocal[id]
@@ -741,10 +780,10 @@ Type TGNetPeer
 	End Method
 	
 	Method SendMsg( msg:TGNetMsg )
-		Local sz:Int=msg.data.length
-		Local buf:Byte Ptr=MemAlloc( Size_T(sz+2) )
+		Local sz:Size_T=msg.data.length
+		Local buf:Byte Ptr=MemAlloc( sz+2 )
 
-		Local id=msg.id
+		Local id:Int=msg.id
 		If msg.state=GNET_MESSAGE
 			id=_localToRemote[id]
 			Assert id Else "SendMsg: Unmapped localId="+msg.id
@@ -752,7 +791,7 @@ Type TGNetPeer
 		
 		buf[0]=(msg.state Shl 12 | id) Shr 8
 		buf[1]=(msg.state Shl 12 | id) Shr 0
-		If sz MemCopy buf+2,msg.data,Size_T(sz)
+		If sz MemCopy buf+2,msg.data,sz
 ?Debug
 		dprint "SendMsg id="+id+", state="+msg.state+", size="+sz
 ?
@@ -801,7 +840,7 @@ use the #GNetObjects function to determine which objects have been remotely crea
 or closed.
 End Rem
 Function GNetSync( host:TGNetHost )
-	Return host.Sync()
+	host.Sync()
 End Function
 
 Rem
@@ -814,7 +853,7 @@ Once a host is listening, hosts on other machines can connect using #GNetConnect
 #GNetListen may fail if @port is already in use by another application, or if @host
 is already listening or has already connected to a remote host using #GNetConnect.
 End Rem
-Function GNetListen( host:TGNetHost,port )
+Function GNetListen:Int( host:TGNetHost,port:Int )
 	Return host.Listen( port )
 End Function
 
@@ -827,8 +866,8 @@ Attempts to connect @host to the specified remote address and port.
 A GNet host must be listening (see #GNetListen) at the specified address and port for the
 connection to succeed.
 End Rem
-Function GNetConnect( host:TGNetHost,address$,port,timeout_ms=10000 )
-	Return host.Connect( DottedIPToInt(HostIp(address, AF_INET_)),port,timeout_ms )
+Function GNetConnect:Int( host:TGNetHost,address$,port:Int,timeout_ms:Int=10000 )
+	Return host.Connect( HostIp(address),port,timeout_ms )
 End Function
 
 Rem
@@ -842,7 +881,7 @@ The @state parameter controls which objects are listed, and can be one of &GNET_
 
 Note that with the exception of &GNET_ALL, the returned lists will only ever contain remote objects.
 End Rem
-Function GNetObjects:TList( host:TGNetHost,state=GNET_ALL )
+Function GNetObjects:TList( host:TGNetHost,state:Int=GNET_ALL )
 	Select state
 	Case GNET_ALL
 		Return host.Objects()
@@ -884,7 +923,7 @@ Rem
 bbdoc: Send a GNet message to a remote object
 End Rem
 Function SendGNetMessage( msg:TGNetObject,toObject:TGNetObject )
-	Return msg._host.SendGNetMessage( msg,toObject )
+	msg._host.SendGNetMessage( msg,toObject )
 End Function
 
 Rem
@@ -912,7 +951,7 @@ Zombie objects are objects that have been successfully closed and will never aga
 by GameNet. Therefore, such objects will never appear in any list returned by the 
 #GNetObjects function.
 End Rem
-Function GNetObjectState( obj:TGNetObject )
+Function GNetObjectState:Int( obj:TGNetObject )
 	Return obj.State()
 End Function
 
@@ -920,7 +959,7 @@ Rem
 bbdoc: Determine whether a GNet object is local
 returns: True if object is a local object
 End Rem
-Function GNetObjectLocal( obj:TGNetObject )
+Function GNetObjectLocal:Int( obj:TGNetObject )
 	Return obj._peer=Null
 End Function
 
@@ -928,49 +967,49 @@ Rem
 bbdoc: Determine whether a GNet object is remote
 returns: True if object is a remote object
 End Rem
-Function GNetObjectRemote( obj:TGNetObject )
+Function GNetObjectRemote:Int( obj:TGNetObject )
 	Return obj._peer<>Null
 End Function
 
 Rem
 bbdoc: Set GNet object int data
 End Rem
-Function SetGNetInt( obj:TGNetObject,index,value )
+Function SetGNetInt( obj:TGNetObject,index:Int,value:Int )
 	obj.SetInt index,value
 End Function
 
 Rem
 bbdoc: Set GNet object float data
 End Rem
-Function SetGNetFloat( obj:TGNetObject,index,value# )
+Function SetGNetFloat( obj:TGNetObject,index:Int,value# )
 	obj.SetFloat index,value
 End Function
 
 Rem
 bbdoc: Set GNet object string data
 End Rem
-Function SetGNetString( obj:TGNetObject,index,value$ )
+Function SetGNetString( obj:TGNetObject,index:Int,value$ )
 	obj.SetString index,value
 End Function
 
 Rem
 bbdoc: Get GNet object int data
 End Rem
-Function GetGNetInt( obj:TGNetObject,index )
+Function GetGNetInt:Int( obj:TGNetObject,index:Int )
 	Return obj.GetInt( index )
 End Function
 
 Rem
 bbdoc: Get GNet object float data
 End Rem
-Function GetGNetFloat#( obj:TGNetObject,index )
+Function GetGNetFloat#( obj:TGNetObject,index:Int )
 	Return obj.GetFloat( index )
 End Function
 
 Rem
 bbdoc: Get GNet object string data
 End Rem
-Function GetGNetString$( obj:TGNetObject,index )
+Function GetGNetString$( obj:TGNetObject,index:Int )
 	Return obj.GetString( index )
 End Function
 
