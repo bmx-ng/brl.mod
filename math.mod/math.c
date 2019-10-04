@@ -58,3 +58,82 @@ double bbLog10( double x ){
 double bbCeil( double x ){
 	return ceil( x );
 }
+
+// fallback for pre C99 versions
+#ifndef __STDC_VERSION__
+	#define __STDC_VERSION__ 0
+#endif
+
+#if __STDC_VERSION__ < 199901L
+	#define RAD_TO_DEGF RAD_TO_DEG
+	#define DEG_TO_RADF DEG_TO_RAD
+
+	#define sqrtf sqrt
+	#define sinf sin
+	#define cosf cos
+	#define tanf tan
+	#define asinf asin
+	#define acosf acos
+	#define atanf atan
+	#define atan2f atan2
+	#define sinhf sinh
+	#define coshf cosh
+	#define tanhf tanh
+	#define expf exp
+	#define floorf floor
+	#define logf log
+	#define log10f log10
+	#define ceilf ceil
+#else
+	#define RAD_TO_DEGF 57.2957795
+	#define DEG_TO_RADF 0.0174532
+#endif
+
+float bbSqrf( float x ){
+	return sqrtf( x );
+}
+float bbSinf( float x ){
+	return sinf( x*DEG_TO_RADF );
+}
+float bbCosf( float x ){
+	return cosf( x*DEG_TO_RADF );
+}
+float bbTanf( float x ){
+	return tanf( x*DEG_TO_RADF );
+}
+float bbASinf( float x ){
+	return asinf( x ) * RAD_TO_DEGF;
+}
+float bbACosf( float x ){
+	return acosf( x ) * RAD_TO_DEGF;
+}
+float bbATanf( float x ){
+	return atanf( x ) * RAD_TO_DEGF;
+}
+float bbATan2f( float y,float x ){
+	return atan2f( y,x ) * RAD_TO_DEGF;
+}
+float bbSinhf( float x ){
+	return sinhf( x );
+}
+float bbCoshf( float x ){
+	return coshf( x );
+}
+float bbTanhf( float x ){
+	return tanhf( x );
+}
+float bbExpf( float x ){
+	return expf( x );
+}
+float bbFloorf( float x ){
+	return floorf( x );
+}
+float bbLogf( float x ){
+	return logf(x);
+}
+float bbLog10f( float x ){
+	return log10f(x);
+}
+float bbCeilf( float x ){
+	return ceilf( x );
+}
