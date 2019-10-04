@@ -911,7 +911,7 @@ End Type
 
 Type TBoolSerializer Extends TJConvSerializer
 
-	Method Serialize:TJSON(source:Object, sourceType:String)
+	Method Serialize:TJSON(source:Object, sourceType:String) Override
 
 		Local value:TBool = TBool(source)
 		If value Then
@@ -919,7 +919,7 @@ Type TBoolSerializer Extends TJConvSerializer
 		End If
 	End Method
 
-	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object) Override
 		If TJSONBool(json) Then
 			If Not obj Then
 				obj = New TBool(TJSONBool(json).isTrue)
@@ -933,14 +933,14 @@ End Type
 
 Type TByteSerializer Extends TJConvSerializer
 
-	Method Serialize:TJSON(source:Object, sourceType:String)
+	Method Serialize:TJSON(source:Object, sourceType:String) Override
 		Local value:TByte = TByte(source)
 		If value Then
 			Return New TJSONInteger.Create(value.value)
 		End If
 	End Method
 
-	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object) Override
 		If TJSONInteger(json) Then
 			If Not obj Then
 				obj = New TByte(Byte(TJSONInteger(json).Value()))
@@ -954,14 +954,14 @@ End Type
 
 Type TShortSerializer Extends TJConvSerializer
 
-	Method Serialize:TJSON(source:Object, sourceType:String)
+	Method Serialize:TJSON(source:Object, sourceType:String) Override
 		Local value:TShort = TShort(source)
 		If value Then
 			Return New TJSONInteger.Create(value.value)
 		End If
 	End Method
 
-	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object) Override
 		If TJSONInteger(json) Then
 			If Not obj Then
 				obj = New TShort(Short(TJSONInteger(json).Value()))
@@ -975,14 +975,14 @@ End Type
 
 Type TIntSerializer Extends TJConvSerializer
 
-	Method Serialize:TJSON(source:Object, sourceType:String)
+	Method Serialize:TJSON(source:Object, sourceType:String) Override
 		Local value:TInt = TInt(source)
 		If value Then
 			Return New TJSONInteger.Create(value.value)
 		End If
 	End Method
 
-	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object) Override
 		If TJSONInteger(json) Then
 			If Not obj Then
 				obj = New TInt(Int(TJSONInteger(json).Value()))
@@ -996,14 +996,14 @@ End Type
 
 Type TUIntSerializer Extends TJConvSerializer
 
-	Method Serialize:TJSON(source:Object, sourceType:String)
+	Method Serialize:TJSON(source:Object, sourceType:String) Override
 		Local value:TUInt = TUInt(source)
 		If value Then
 			Return New TJSONInteger.Create(value.value)
 		End If
 	End Method
 
-	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object) Override
 		If TJSONInteger(json) Then
 			If Not obj Then
 				obj = New TUInt(UInt(TJSONInteger(json).Value()))
@@ -1017,14 +1017,14 @@ End Type
 
 Type TSizetSerializer Extends TJConvSerializer
 
-	Method Serialize:TJSON(source:Object, sourceType:String)
+	Method Serialize:TJSON(source:Object, sourceType:String) Override
 		Local value:TSize_T = TSize_T(source)
 		If value Then
 			Return New TJSONInteger.Create(value.value)
 		End If
 	End Method
 
-	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object) Override
 		If TJSONInteger(json) Then
 			If Not obj Then
 				obj = New TSize_T(Size_T(TJSONInteger(json).Value()))
@@ -1038,14 +1038,14 @@ End Type
 
 Type TLongSerializer Extends TJConvSerializer
 
-	Method Serialize:TJSON(source:Object, sourceType:String)
+	Method Serialize:TJSON(source:Object, sourceType:String) Override
 		Local value:TLong = TLong(source)
 		If value Then
 			Return New TJSONInteger.Create(value.value)
 		End If
 	End Method
 
-	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object) Override
 		If TJSONInteger(json) Then
 			If Not obj Then
 				obj = New TLong(Long(TJSONInteger(json).Value()))
@@ -1059,14 +1059,14 @@ End Type
 
 Type TULongSerializer Extends TJConvSerializer
 
-	Method Serialize:TJSON(source:Object, sourceType:String)
+	Method Serialize:TJSON(source:Object, sourceType:String) Override
 		Local value:TULong = TULong(source)
 		If value Then
 			Return New TJSONInteger.Create(value.value)
 		End If
 	End Method
 
-	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object) Override
 		If TJSONInteger(json) Then
 			If Not obj Then
 				obj = New TULong(ULong(TJSONInteger(json).Value()))
@@ -1080,14 +1080,14 @@ End Type
 
 Type TFloatSerializer Extends TJConvSerializer
 
-	Method Serialize:TJSON(source:Object, sourceType:String)
+	Method Serialize:TJSON(source:Object, sourceType:String) Override
 		Local value:TFloat = TFloat(source)
 		If value Then
 			Return New TJSONReal.Create(value.value)
 		End If
 	End Method
 
-	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object) Override
 		If TJSONReal(json) Then
 			If Not obj Then
 				obj = New TFloat(Float(TJSONReal(json).Value()))
@@ -1101,14 +1101,14 @@ End Type
 
 Type TDoubleSerializer Extends TJConvSerializer
 
-	Method Serialize:TJSON(source:Object, sourceType:String)
+	Method Serialize:TJSON(source:Object, sourceType:String) Override
 		Local value:TDouble = TDouble(source)
 		If value Then
 			Return New TJSONReal.Create(value.value)
 		End If
 	End Method
 
-	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object)
+	Method Deserialize:Object(json:TJSON, typeId:TTypeId, obj:Object) Override
 		If TJSONReal(json) Then
 			If Not obj Then
 				obj = New TDouble(Double(TJSONReal(json).Value()))

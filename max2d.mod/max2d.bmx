@@ -223,11 +223,11 @@ Type TMax2DGraphics Extends TGraphics
 		Return t
 	End Function
 	
-	Method Resize(width:Int, height:Int)
+	Method Resize(width:Int, height:Int) Override
 		_graphics.Resize(width, height)
 	End Method
 	
-	Method Position(x:Int, y:Int)
+	Method Position(x:Int, y:Int) Override
 		_graphics.Position(x, y)
 	End Method
 End Type

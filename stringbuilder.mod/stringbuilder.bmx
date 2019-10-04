@@ -390,7 +390,7 @@ Public
 	
 	If the other object is not a string builder, the standard object comparison is made.
 	End Rem
-	Method Compare:Int(o:Object)
+	Method Compare:Int(o:Object) Override
 		If TStringBuilder(o) Then
 			Return bmx_stringbuilder_compare(buffer, TStringBuilder(o).buffer)
 		End If

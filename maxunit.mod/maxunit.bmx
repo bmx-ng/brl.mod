@@ -408,7 +408,7 @@ Type AssertionFailedException
 		Return this
 	End Function
 	
-	Method toString:String()
+	Method toString:String() Override
 		Return message
 	End Method
 End Type
