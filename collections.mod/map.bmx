@@ -62,6 +62,13 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 		Return size
 	End Method
 
+	Rem
+	bbdoc: Returns #True if the #TTreeMap is empty, otherwise #False.
+	End Rem
+	Method IsEmpty:Int() Override
+		Return size = 0
+	End Method
+
 	Method CopyTo(array:TMapNode<K,V>[], index:Int = 0)
 	End Method
 	

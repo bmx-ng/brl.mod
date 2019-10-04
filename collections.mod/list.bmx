@@ -78,6 +78,13 @@ Public
 	Method Count:Int() Override
 		Return size
 	End Method
+
+	Rem
+	bbdoc: Returns #True if the #TArrayList is empty, otherwise #False.
+	End Rem
+	Method IsEmpty:Int() Override
+		Return size = 0
+	End Method
 	
 	Rem
 	bbdoc: Gets the total number of elements the internal data structure can hold without resizing.

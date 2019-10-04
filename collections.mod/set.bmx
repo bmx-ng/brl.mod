@@ -86,6 +86,13 @@ Type TSet<T> Implements ISet<T>
 		Return size
 	End Method
 
+	Rem
+	bbdoc: Returns #True if the #TSet is empty, otherwise #False.
+	End Rem
+	Method IsEmpty:Int() Override
+		Return size = 0
+	End Method
+
 	Method CopyTo(array:T[], index:Int = 0)
 	End Method
 	
