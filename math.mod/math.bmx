@@ -118,81 +118,81 @@ Function Floor:Double( x:Double )="bbFloor"
 Rem
 bbdoc: Square root of @x
 End Rem
-Function Sqr:Float( x:Float )="bbSqrf"
+Function SqrF:Float( x:Float )="bbSqrf"
 
 Rem
 bbdoc: Sine of @x degrees
 End Rem
-Function Sin:Float( x:Float )="bbSinf"
+Function SinF:Float( x:Float )="bbSinf"
 
 Rem
 bbdoc: Cosine of @x degrees
 End Rem
-Function Cos:Float( x:Float )="bbCosf"
+Function CosF:Float( x:Float )="bbCosf"
 
 Rem
 bbdoc: Tangent of @x degrees
 End Rem
-Function Tan:Float( x:Float )="bbTanf"
+Function TanF:Float( x:Float )="bbTanf"
 
 Rem
 bbdoc: Inverse Sine of @x 
 End Rem
-Function ASin:Float( x:Float )="bbASinf"
+Function ASinF:Float( x:Float )="bbASinf"
 
 Rem
 bbdoc: Inverse Cosine of @x
 End Rem
-Function ACos:Float( x:Float )="bbACosf"
+Function ACosF:Float( x:Float )="bbACosf"
 
 Rem
 bbdoc: Inverse Tangent of @x
 End Rem
-Function ATan:Float( x:Float )="bbATanf"
+Function ATanF:Float( x:Float )="bbATanf"
 
 Rem
 bbdoc: Inverse Tangent of two variables @x , @y
 End Rem
-Function ATan2:Float( y:Float,x:Float )="bbATan2f"
+Function ATan2F:Float( y:Float,x:Float )="bbATan2f"
 
 Rem
 bbdoc: Hyperbolic sine of @x
 End Rem
-Function Sinh:Float( x:Float )="bbSinhf"
+Function SinhF:Float( x:Float )="bbSinhf"
 
 Rem
 bbdoc: Hyperbolic cosine of @x
 End Rem
-Function Cosh:Float( x:Float )="bbCoshf"
+Function CoshF:Float( x:Float )="bbCoshf"
 
 Rem
 bbdoc: Hyperbolic tangent of @x
 End Rem
-Function Tanh:Float( x:Float )="bbTanhf"
+Function TanhF:Float( x:Float )="bbTanhf"
 
 Rem
 bbdoc: Exponential function
 end rem
-Function Exp:Float( x:Float )="bbExpf"
+Function ExpF:Float( x:Float )="bbExpf"
 
 Rem
 bbdoc: Natural logarithm
 End Rem
-Function Log:Float( x:Float )="bbLogf"
+Function LogF:Float( x:Float )="bbLogf"
 
 Rem
 bbdoc: Base 10 logarithm
 End Rem
-Function Log10:Float( x:Float )="bbLog10f"
+Function Log10F:Float( x:Float )="bbLog10f"
 
 Rem
 bbdoc: Smallest integral value not less than @x
 End Rem
-Function Ceil:Float( x:Float )="bbCeilf"
+Function CeilF:Float( x:Float )="bbCeilf"
 
 Rem
 bbdoc: Largest integral value not greater than @x
 End Rem
-Function Floor:Float( x:Float )="bbFloorf"
+Function FloorF:Float( x:Float )="bbFloorf"
 
 End Extern
