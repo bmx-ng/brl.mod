@@ -82,7 +82,14 @@ char*	bbTmpCString( BBString *str );
 BBChar*	bbTmpWString( BBString *str );
 char*	bbTmpUTF8String( BBString *str );
 
+#if __STDC_VERSION__ >= 199901L
+inline int bbStringEquals( BBString *x,BBString *y ){
+	if (x->length-y->length != 0) return 0;
+	return memcmp(x->buf, y->buf, x->length * sizeof(BBChar)) == 0;
+}
+#else
 int bbStringEquals( BBString *x,BBString *y );
+#endif
 
 #ifdef __cplusplus
 }

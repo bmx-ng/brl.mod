@@ -944,6 +944,9 @@ char *bbTmpUTF8String( BBString *str ){
 	return p;
 }
 
+#if __STDC_VERSION__ >= 199901L
+extern int bbStringEquals( BBString *x,BBString *y);
+#else
 int bbStringEquals( BBString *x,BBString *y ){
 	if (x->length-y->length != 0) return 0;
 	BBChar * bx = x->buf;
@@ -952,3 +955,4 @@ int bbStringEquals( BBString *x,BBString *y ){
 	while( k-- ) if ( *bx++ - *by++ != 0 ) return 0;
 	return 1;
 }
+#endif
