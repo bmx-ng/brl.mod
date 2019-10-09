@@ -80,6 +80,9 @@ ModuleInfo "CC_OPTS: -DJAVA_FINALIZATION"
 ModuleInfo "CC_OPTS: -DBMX_DEBUG"
 ?
 
+' uncomment to enable allocation counting
+'ModuleInfo "CC_OPTS: -DBBCC_ALLOCCOUNT"
+
 Import "blitz_app.c"
 Import "blitz_types.c"
 Import "blitz_cclib.c"
