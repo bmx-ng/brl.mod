@@ -25,6 +25,10 @@ extern void *_end;
 #endif
 #endif
 
+#ifdef BBCC_ALLOCCOUNT
+BBUInt64 bbGCAllocCount = 0;
+#endif
+
 static void gc_finalizer( void *mem,void *pool ){
 	((BBGCPool*)pool)->free( (BBGCMem*)mem );
 }
@@ -73,6 +77,9 @@ BBGCMem *bbGCAlloc( int sz,BBGCPool *pool ){
 	GC_finalization_proc ofn;
 	void *ocd;
 	BBGCMem *q=(BBGCMem*) GC_MALLOC( sz );
+	#ifdef BBCC_ALLOCCOUNT
+	++bbGCAllocCount;
+	#endif
 	q->pool=pool;
 	//q->refs=-1;
 	GC_REGISTER_FINALIZER_NO_ORDER( q,gc_finalizer,pool,&ofn,&ocd );
@@ -86,6 +93,9 @@ BBObject * bbGCAllocObject( int sz,BBClass *clas,int flags ){
 	}else{
 		q=(BBObject*)GC_MALLOC( sz );
 	}
+	#ifdef BBCC_ALLOCCOUNT
+	++bbGCAllocCount;
+	#endif
 	q->clas=clas;
 	//q->refs=-1;
 	if( flags & BBGC_FINALIZE ){
@@ -160,6 +170,9 @@ void bbGCRetain( BBObject *p ) {
 	struct retain_node * node = (struct retain_node *)GC_MALLOC(sizeof(struct retain_node));
 	node->count = 1;
 	node->obj = p;
+	#ifdef BBCC_ALLOCCOUNT
+	++bbGCAllocCount;
+	#endif
 	
 	struct retain_node * old_node = (struct retain_node *)avl_map(&node->link, node_compare, &retain_root);
 	if (&node->link != &old_node->link) {

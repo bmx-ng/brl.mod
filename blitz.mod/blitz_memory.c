@@ -11,6 +11,9 @@ void *bbMemAlloc( size_t size ){
 	p=malloc( size );
 #else
 	p=GC_MALLOC_ATOMIC_UNCOLLECTABLE( size );
+	#ifdef BBCC_ALLOCCOUNT
+	++bbGCAllocCount;
+	#endif
 #endif
 	return p;
 	

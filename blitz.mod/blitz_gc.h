@@ -9,6 +9,9 @@
 extern "C"{
 #endif
 
+// uncomment to enable allocation counting
+//#define BBCC_ALLOCCOUNT
+
 #define BBGC_MANYREFS 0x40000000
 
 //for bbGCSetMode
@@ -31,6 +34,10 @@ extern "C"{
 #define BBGC_NUM_ROOTREGS 4
 #endif
 void*	bbGCRootRegs( void *p );
+
+#ifdef BBCC_ALLOCCOUNT
+BBUInt64 bbGCAllocCount;
+#endif
 
 typedef struct BBGCMem BBGCMem;
 typedef struct BBGCPool BBGCPool;
