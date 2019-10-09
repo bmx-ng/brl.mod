@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.11"
+ModuleInfo "Version: 1.12"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2018-2019 Bruce A Henderson"
 
+ModuleInfo "History: 1.12"
+ModuleInfo "History: Improved equality checks."
 ModuleInfo "History: 1.11"
 ModuleInfo "History: Added Format() methods."
 ModuleInfo "History: 1.10"
@@ -853,11 +855,7 @@ Public
 	bbdoc: Returns #True if @sb is lexicographically equal to this string builder.
 	End Rem
 	Method Operator =:Int (sb:TStringBuilder)
-		' quick length test
-		If Length() <> sb.Length() Then
-			Return False
-		End If
-		Return Compare(sb) = 0
+		Return bmx_stringbuilder_equals(buffer, sb.buffer)
 	End Method
 
 	Rem
@@ -871,11 +869,7 @@ Public
 	bbdoc: Returns #True if @sb is not lexicographically equal to this string builder.
 	End Rem
 	Method Operator <>:Int (sb:TStringBuilder)
-		' quick length test
-		If Length() <> sb.Length() Then
-			Return True
-		End If
-		Return Compare(sb) <> 0
+		Return Not bmx_stringbuilder_equals(buffer, sb.buffer)
 	End Method
 
 	Method Delete()

@@ -78,6 +78,7 @@ Extern
 	Function bmx_stringbuilder_format_sizet(buffer:Byte Ptr, formatText:String, value:Size_T)
 	Function bmx_stringbuilder_format_float(buffer:Byte Ptr, formatText:String, value:Float)
 	Function bmx_stringbuilder_format_double(buffer:Byte Ptr, formatText:String, value:Double)
+	Function bmx_stringbuilder_equals:Int(buffer:Byte Ptr, other:Byte Ptr)
 
 	Function bmx_stringbuilder_splitbuffer_length:Int(splitPtr:Byte Ptr)
 	Function bmx_stringbuilder_splitbuffer_text:String(splitPtr:Byte Ptr, index:Int)
