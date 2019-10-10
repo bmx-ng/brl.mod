@@ -32,6 +32,8 @@ ModuleInfo "History: Fixed NewArray using temp type name"
 
 Import BRL.LinkedList
 Import BRL.Map
+Import BRL.Threads
+Import BRL.StringBuilder
 
 Import "reflection.c"
 
@@ -95,6 +97,8 @@ Function bbDebugDeclVarAddress:Byte Ptr(decl:Byte Ptr)
 Function bbDebugDeclNext:Byte Ptr(decl:Byte Ptr)
 
 End Extern
+
+Global _guard:TMutex = TMutex.Create()
 
 Function _Get:Object( p:Byte Ptr,typeId:TTypeId )
 	Select typeId
@@ -989,7 +993,6 @@ Function TypeIdForTag:TTypeId( ty$ )
 		ty=ty[ty.Find("]")+1..]
 		Local id:TTypeId = TypeIdForTag( ty )
 		If id Then
-			id._arrayType = Null
 			id=id.ArrayType(dims)
 		End If
 		Return id
@@ -1004,7 +1007,6 @@ Function TypeIdForTag:TTypeId( ty$ )
 		ty = ty[1..]
 		Local id:TTypeId = TypeIdForTag( ty )
 		If id Then
-			id._pointerType = Null
 			id = id.PointerType()
 		EndIf
 		Return id
@@ -1062,7 +1064,6 @@ Function TypeIdForTag:TTypeId( ty$ )
 			Next
 		EndIf
 		If Not retType Then retType = ObjectTypeId
-		retType._functionType = Null
 		Return retType.FunctionType(argTypes)
 	EndIf
 	Select ty
@@ -2203,26 +2204,41 @@ Type TTypeId
 	bbdoc: Get array type
 	End Rem
 	Method ArrayType:TTypeId(dims:Int = 1)
-		If Not _arrayType
-			Local dim:String
-			If dims > 1 Then
-				For Local i:Int = 1 Until dims
-					dim :+ ","
-				Next
+		Try
+			_guard.Lock()
+			
+			If dims >= _arrayType.length Then
+				_arrayType = _arrayType[..dims + 1]
 			End If
+			
+			Local at:TTypeId = _arrayType[dims]
+			
+			If Not at
+				Local dim:String
+				If dims > 1 Then
+					For Local i:Int = 1 Until dims
+						dim :+ ","
+					Next
+				End If			
 ?Not ptr64
-			_arrayType=New TTypeId.Init( _name+"[" + dim + "]",4,bbRefArrayClass() )
+				at = New TTypeId.Init( _name+"[" + dim + "]",4,bbRefArrayClass() )
 ?ptr64
-			_arrayType=New TTypeId.Init( _name+"[" + dim + "]",8,bbRefArrayClass() )
+				at = New TTypeId.Init( _name+"[" + dim + "]",8,bbRefArrayClass() )
 ?
-			_arrayType._elementType=Self
-			If _super
-				_arrayType._super=_super.ArrayType()
-			Else
-				_arrayType._super=ArrayTypeId
+				at._elementType=Self
+				If _super
+					at._super=_super.ArrayType()
+				Else
+					at._super=ArrayTypeId
+				EndIf
+				
+				_arrayType[dims] = at
 			EndIf
-		EndIf
-		Return _arrayType
+			Return at
+
+		Finally
+			_guard.Unlock()
+		End Try
 	End Method
 
 	Rem
@@ -2236,46 +2252,73 @@ Type TTypeId
 	bbdoc: Get pointer type
 	End Rem
 	Method PointerType:TTypeId()
-		If Not _pointerType Then
-?Not ptr64
-			_pointerType = New TTypeId.Init( _name + " Ptr", 4)
-?ptr64
-			_pointerType = New TTypeId.Init( _name + " Ptr", 8)
-?
-			_pointerType._elementType = Self
-			If _super Then
-				_pointerType._super = _super.PointerType()
-			Else
-				_pointerType._super = PointerTypeId
+		Try
+			_guard.Lock()
+			
+			Local pt:TTypeId = _pointerType
+			If Not pt Then
+	?Not ptr64
+				pt = New TTypeId.Init( _name + " Ptr", 4)
+	?ptr64
+				pt = New TTypeId.Init( _name + " Ptr", 8)
+	?
+				pt._elementType = Self
+				If _super Then
+					pt._super = _super.PointerType()
+				Else
+					pt._super = PointerTypeId
+				EndIf
+				
+				_pointertype = pt
 			EndIf
-		EndIf
-		Return _pointerType
+			Return pt
+
+		Finally
+			_guard.Unlock()
+		End Try
 	End Method
 
 	Rem
 	bbdoc: Get function pointer type
 	End Rem
 	Method FunctionType:TTypeId( args:TTypeId[]=Null)
-		If Not _functionType Then
-			Local s:String
+		Local s:String
+		If args.length > 2 Then
+			Local sb:TStringBuilder = New TStringBuilder()
+			For Local t:TTypeId = EachIn args
+				If sb.Length() sb.Append(",")
+				sb.Append(t.Name())
+			Next
+		Else
 			For Local t:TTypeId = EachIn args
 				If s Then s :+ ","
 				s :+ t.Name()
-			Next
+			Next 
+		End If
+		
+		If Not _functionType Then
+			_functionType = New TStringMap
+		End If
+		
+		Local ft:TTypeId = TTypeId(_functionType.ValueForKey(s))
+	
+		If Not ft Then
 ?Not ptr64
-			_functionType = New TTypeId.Init( _name + "(" + s + ")", 4)
+			ft = New TTypeId.Init( _name + "(" + s + ")", 4)
 ?ptr64
-			_functionType = New TTypeId.Init( _name + "(" + s + ")", 8)
+			ft = New TTypeId.Init( _name + "(" + s + ")", 8)
 ?
-			_functionType._retType = Self
-			_functionType._argTypes = args
+			ft._retType = Self
+			ft._argTypes = args
 			If _super Then
-				_functionType._super = _super.FunctionType()
+				ft._super = _super.FunctionType()
 			Else
-				_functionType._super = FunctionTypeId
+				ft._super = FunctionTypeId
 			EndIf
+			
+			_functionType.Insert(s, ft)
 		EndIf
-		Return _functionType
+		Return ft
 	End Method
 
 	Rem
@@ -3187,78 +3230,99 @@ Type TTypeId
 	bbdoc: Get Type by name
 	End Rem
 	Function ForName:TTypeId( name$ )
-		_Update
-		If name.EndsWith( "]" )
-			' TODO
-			name=name[..name.length-2]
-			Return TTypeId( _nameMap.ValueForKey( name.ToLower() ) ).ArrayType()
-		' pointers
-		ElseIf name.EndsWith( "Ptr" )
-			name=name[..name.length-4].Trim()
-			If Not name Then Return Null
-			Local baseType:TTypeId = ForName( name )
-			If baseType Then
-				' check for valid pointer base types
-				Select baseType
-					Case ByteTypeId, ShortTypeId, IntTypeId, LongTypeId, FloatTypeId, DoubleTypeId
-						Return baseType.PointerType()
-					Default
-						If baseType.ExtendsType(PointerTypeId) Then Return baseType.PointerType()
-				EndSelect
-			EndIf
-			Return Null
-		' function pointers
-		ElseIf name.EndsWith( ")" )
-			' check if its in the table already
-			Local t:TTypeId = TTypeId( _nameMap.ValueForKey( name.ToLower() ) )
-			If t Then Return t
-			Local i:Int = name.Find("(")
-			Local ret:TTypeId = ForName( name[..i].Trim())
-			Local typs:TTypeId[]
-			If ret Then
-				Local params:String = name[i+1..name.Length-1].Trim()
-				If params Then
-					Local args:String[] = params.Split(",")
-					If args.Length >= 1 And args[0] Then
-						typs = New TTypeId[args.Length]
-						For Local i:Int = 0 Until args.Length
-							typs[i] = ForName(args[i].Trim())
-							If Not typs[i] Then typs[i] = ObjectTypeId
-						Next
-					EndIf
+		Try
+			_guard.Lock()
+			
+			_Update
+			If name.EndsWith( "]" )
+				' TODO
+				name=name[..name.length-2]
+				Return TTypeId( _nameMap.ValueForKey( name.ToLower() ) ).ArrayType()
+			' pointers
+			ElseIf name.EndsWith( "Ptr" )
+				name=name[..name.length-4].Trim()
+				If Not name Then Return Null
+				Local baseType:TTypeId = ForName( name )
+				If baseType Then
+					' check for valid pointer base types
+					Select baseType
+						Case ByteTypeId, ShortTypeId, IntTypeId, LongTypeId, FloatTypeId, DoubleTypeId
+							Return baseType.PointerType()
+						Default
+							If baseType.ExtendsType(PointerTypeId) Then Return baseType.PointerType()
+					EndSelect
 				EndIf
-				ret._functionType = Null
-				Return ret.FunctionType(typs)
+				Return Null
+			' function pointers
+			ElseIf name.EndsWith( ")" )
+				' check if its in the table already
+				Local t:TTypeId = TTypeId( _nameMap.ValueForKey( name.ToLower() ) )
+				If t Then Return t
+				Local i:Int = name.Find("(")
+				Local ret:TTypeId = ForName( name[..i].Trim())
+				Local typs:TTypeId[]
+				If ret Then
+					Local params:String = name[i+1..name.Length-1].Trim()
+					If params Then
+						Local args:String[] = params.Split(",")
+						If args.Length >= 1 And args[0] Then
+							typs = New TTypeId[args.Length]
+							For Local i:Int = 0 Until args.Length
+								typs[i] = ForName(args[i].Trim())
+								If Not typs[i] Then typs[i] = ObjectTypeId
+							Next
+						EndIf
+					EndIf
+					'ret._functionType = Null
+					Return ret.FunctionType(typs)
+				EndIf
+			Else
+				Return TTypeId( _nameMap.ValueForKey( name.ToLower() ) )
 			EndIf
-		Else
-			Return TTypeId( _nameMap.ValueForKey( name.ToLower() ) )
-		EndIf
+
+		Finally
+			_guard.Unlock()
+		End Try
 	End Function
 
 	Rem
 	bbdoc: Get Type by object
 	End Rem
 	Function ForObject:TTypeId( obj:Object )
-		_Update
-		Local class:Byte Ptr=bbRefGetObjectClass( obj )
-		If class=ArrayTypeId._class
-			If Not bbRefArrayLength( obj ) Return ArrayTypeId
-			Return TypeIdForTag( bbRefArrayTypeTag( obj ) ).ArrayType()
-		Else
-			Return TTypeId( _classMap.ValueForKey( class ) )
-		EndIf
+		Try
+			_guard.Lock()
+
+			_Update
+			Local class:Byte Ptr=bbRefGetObjectClass( obj )
+			If class=ArrayTypeId._class
+				If Not bbRefArrayLength( obj ) Return ArrayTypeId
+				Return TypeIdForTag( bbRefArrayTypeTag( obj ) ).ArrayType()
+			Else
+				Return TTypeId( _classMap.ValueForKey( class ) )
+			EndIf
+
+		Finally
+			_guard.Unlock()
+		End Try
 	End Function
 
 	Rem
 	bbdoc: Get list of all types
 	End Rem
 	Function EnumTypes:TList()
-		_Update
-		Local list:TList=New TList
-		For Local t:TTypeId=EachIn _nameMap.Values()
-			list.AddLast t
-		Next
-		Return list
+		Try
+			_guard.Lock()
+
+			_Update
+			Local list:TList=New TList
+			For Local t:TTypeId=EachIn _nameMap.Values()
+				list.AddLast t
+			Next
+			Return list
+
+		Finally
+			_guard.Unlock()
+		End Try
 	End Function
 
 	Rem
@@ -3512,13 +3576,13 @@ Type TTypeId
 	Field _interfaces:TList
 	Field _super:TTypeId
 	Field _derived:TList
-	Field _arrayType:TTypeId
+	Field _arrayType:TTypeId[]
 	Field _elementType:TTypeId
 	Field _typeTag:Byte Ptr
 
 	Field _pointerType:TTypeId
 
-	Field _functionType:TTypeId
+	Field _functionType:TStringMap
 	Field _argTypes:TTypeId[]
 	Field _retType:TTypeId
 
