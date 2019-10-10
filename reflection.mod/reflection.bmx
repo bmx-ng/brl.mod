@@ -1252,7 +1252,7 @@ Type TMember
 	bbdoc: Get member meta data
 	End Rem
 	Method MetaData$( key$="" )
-		If Not key Return _meta
+		If Not _metaMap Or Not key Return _meta
 		Return String(_metaMap.ValueForKey(key))
 	End Method
 	
@@ -1260,7 +1260,7 @@ Type TMember
 	bbdoc: Returns #True if @key is in the metadata.
 	End Rem
 	Method HasMetaData:Int( key:String )
-		If Not key Return False
+		If Not _metaMap Or Not key Return False
 		Return _metaMap.Contains(key)
 	End Method
 	
