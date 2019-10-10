@@ -6,12 +6,14 @@ bbdoc: BASIC/Reflection
 End Rem
 Module BRL.Reflection
 
-ModuleInfo "Version: 1.08"
+ModuleInfo "Version: 1.09"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.09"
+ModuleInfo "History: Threading support."
 ModuleInfo "History: 1.08"
 ModuleInfo "History: Improved metadata retrieval."
 ModuleInfo "History: 1.07"
