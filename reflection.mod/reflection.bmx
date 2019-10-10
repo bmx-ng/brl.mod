@@ -1080,29 +1080,44 @@ Function TypeIdForTag:TTypeId( ty$ )
 	End Select
 End Function
 Private
-Function ExtractMetaData$( meta$,key$ )
-	If Not key Return meta
+Function ExtractMetaMap:TStringMap( meta:String )
+	If Not meta Then
+		Return Null
+	End If
+
+	Local map:TStringMap = New TStringMap
+
+	Local key:String
+	Local value:String
+	
 	Local i=0
-	While i<meta.length
-		Local e=meta.Find( "=",i )
-		If e=-1 Throw "Malformed meta data"
-		Local k$=meta[i..e],v$
-		i=e+1
-		If i<meta.length And meta[i]=Asc("~q")
+	While i < meta.length
+		Local e:Int = meta.Find( "=",i )
+		If e = -1 Throw "Malformed meta data"
+		
+		Local key:String = meta[i..e]
+		Local value:String
+		i = e + 1
+		
+		If i < meta.length And meta[i]=Asc("~q")
 			i:+1
-			Local e=meta.Find( "~q",i )
-			If e=-1 Throw "Malformed meta data"
-			v=meta[i..e]
-			i=e+1
+			Local e:Int = meta.Find( "~q",i )
+			If e = -1 Throw "Malformed meta data"
+			value = meta[i..e]
+			i = e + 1
 		Else
-			Local e=meta.Find( " ",i )
-			If e=-1 e=meta.length
-			v=meta[i..e]
-			i=e
+			Local e:Int = meta.Find( " ",i )
+			If e = -1 e = meta.length
+			value = meta[i..e]
+			i = e
 		EndIf
-		If k=key Return v
-		If i<meta.length And meta[i]=Asc(" ") i:+1
+
+		map.Insert(key, value)
+		
+		If i < meta.length And meta[i] = Asc(" ") i:+1
 	Wend
+	
+	Return map
 End Function
 
 Public
@@ -1235,11 +1250,26 @@ Type TMember
 	bbdoc: Get member meta data
 	End Rem
 	Method MetaData$( key$="" )
-		Return ExtractMetaData( _meta,key )
+		If Not key Return _meta
+		Return String(_metaMap.ValueForKey(key))
+	End Method
+	
+	Rem
+	bbdoc: Returns #True if @key is in the metadata.
+	End Rem
+	Method HasMetaData:Int( key:String )
+		If Not key Return False
+		Return _metaMap.Contains(key)
+	End Method
+	
+	Method InitMeta(meta:String)
+		_meta = meta
+		_metaMap = ExtractMetaMap(meta)
 	End Method
 
 	Field _name$,_typeId:TTypeId,_meta$
 	Field _nameLower$
+	Field _metaMap:TStringMap
 
 End Type
 
@@ -1251,7 +1281,7 @@ Type TConstant Extends TMember
 	Method Init:TConstant( name:String, typeId:TTypeId, meta:String, str:String)
 		_name = name
 		_typeId = typeId
-		_meta = meta
+		InitMeta(meta)
 		_string = str
 		Return Self
 	EndMethod
@@ -1320,7 +1350,7 @@ Type TField Extends TMember
 	Method Init:TField( name$,typeId:TTypeId,meta$,index )
 		_name=name
 		_typeId=typeId
-		_meta=meta
+		InitMeta(meta)
 		_index=index
 		Return Self
 	End Method
@@ -1939,7 +1969,7 @@ Type TGlobal Extends TMember
 	Method Init:TGlobal( name$,typeId:TTypeId,meta$,ref:Byte Ptr )
 		_name=name
 		_typeId=typeId
-		_meta=meta
+		InitMeta(meta)
 		_ref=ref
 		Return Self
 	End Method
@@ -2053,7 +2083,7 @@ Type TFunction Extends TMember
 	Method Init:TFunction(name:String, typeId:TTypeId, meta:String, selfTypeId:TTypeId, ref:Byte Ptr, argTypes:TTypeId[])
 		_name=name
 		_typeId=typeId
-		_meta=meta
+		InitMeta(meta)
 		_selfTypeId=selfTypeId
 		_ref=ref
 		_argTypes=argTypes
@@ -2101,7 +2131,7 @@ Type TMethod Extends TMember
 	Method Init:TMethod( name$,typeId:TTypeId,meta$,selfTypeId:TTypeId,ref:Byte Ptr,argTypes:TTypeId[] )
 		_name=name
 		_typeId=typeId
-		_meta=meta
+		InitMeta(meta)
 		_selfTypeId=selfTypeId
 		_ref=ref
 		_argTypes=argTypes
@@ -2148,7 +2178,16 @@ Type TTypeId
 	bbdoc: Get type meta data
 	End Rem
 	Method MetaData$( key$="" )
-		Return ExtractMetaData( _meta,key )
+		If Not key Return _meta
+		Return String(_metaMap.ValueForKey(key))
+	End Method
+	
+	Rem
+	bbdoc: Returns #True if @key is in the metadata.
+	End Rem
+	Method HasMetaData:Int( key:String )
+		If Not key Return False
+		Return _metaMap.Contains(key)
 	End Method
 
 	Rem
@@ -3254,6 +3293,11 @@ Type TTypeId
 		If class _classMap.Insert class,Self
 		Return Self
 	End Method
+	
+	Method InitMeta(meta:String)
+		_meta = meta
+		_metaMap = ExtractMetaMap(meta)
+	End Method
 
 	Method SetClass:TTypeId( class:Byte Ptr )
 		Local name$=String.FromCString( bbRefClassDebugScopeName(class) )
@@ -3264,7 +3308,7 @@ Type TTypeId
 			name=name[..i]
 		EndIf
 		_name=name
-		_meta=meta
+		InitMeta(meta)
 		_class=class
 		_nameMap.Insert _name.ToLower(),Self
 		_classMap.Insert class,Self
@@ -3280,7 +3324,7 @@ Type TTypeId
 			name=name[..i]
 		EndIf
 		_name=name
-		_meta=meta
+		InitMeta(meta)
 		_interface=ifc
 		_class=bbInterfaceClass(ifc)
 		_nameMap.Insert _name.ToLower(),Self
@@ -3444,6 +3488,7 @@ Type TTypeId
 
 	Field _name$
 	Field _meta$
+	Field _metaMap:TStringMap
 	Field _class:Byte Ptr
 	Field _interface:Byte Ptr
 ' default object size
