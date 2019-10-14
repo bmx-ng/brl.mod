@@ -162,6 +162,16 @@ Type TIO
 		RuntimeError "Stream is not writeable"
 		Return 0
 	End Method
+	
+	Rem
+	bbdoc: Sets the size of the stream to @size bytes.
+	returns: #True if the stream was able to be resized, #False otherwise.
+	about: Only a few stream types support resizing.
+	End Rem
+	Method SetSize:Int(size:Long)
+		RuntimeError "Stream does not support resizing"
+		Return 0
+	End Method
 
 	Method Delete()
 		Close
@@ -565,6 +575,9 @@ Type TStreamWrapper Extends TStream
 		_stream.WriteObject obj
 	End Method
 
+	Method SetSize:Int(size:Long) Override
+		Return _stream.SetSize(size)
+	End Method
 End Type	
 
 Type TStreamStream Extends TStreamWrapper
@@ -637,6 +650,20 @@ Type TCStream Extends TStream
 		_pos=0
 		_size=0
 		_cstream=Null
+	End Method
+
+	Method SetSize:Int(size:Long) Override
+		If Not _cstream Return 0
+		Flush()
+		If _size > size Then
+			Seek(size)
+		End If
+		Local res:Int = ftruncate_(_cstream, size)
+		Flush()
+		If Not res Then
+			_size = size
+		End If
+		Return res = 0
 	End Method
 	
 	Method Delete()
