@@ -703,8 +703,28 @@ BBString *bbStringFromLParam( LPARAM n ){
 BBString *bbStringToLower( BBString *str ){
 	int k;
 	BBString *t;
+	int n = 0;
+	
+	while (n < str->length) {
+		int c=str->buf[n];
+		// ascii upper or other unicode char
+		if (c >= 192 || (c>='A' && c<='Z')) {
+			break;
+		}
+		++n;
+	}
+	
+	if (n == str->length) {
+		return str;
+	}
+	
 	t=bbStringNew( str->length );
-	for( k=0;k<str->length;++k ){
+
+	if (n > 0) {
+		memcpy(t->buf, str->buf, n * sizeof(BBChar));
+	}
+	
+	for( k=n;k<str->length;++k ){
 		int c=str->buf[k];
 		if( c<192 ){
 			c=(c>='A' && c<='Z') ? (c|32) : c;
@@ -730,8 +750,28 @@ BBString *bbStringToLower( BBString *str ){
 BBString *bbStringToUpper( BBString *str ){
 	int k;
 	BBString *t;
+	int n = 0;
+	
+	while (n < str->length) {
+		int c=str->buf[n];
+		// ascii lower or other unicode char
+		if (c >= 181 || (c>='a' && c<='z')) {
+			break;
+		}
+		++n;
+	}
+	
+	if (n == str->length) {
+		return str;
+	}
+	
 	t=bbStringNew( str->length );
-	for( k=0;k<str->length;++k ){
+
+	if (n > 0) {
+		memcpy(t->buf, str->buf, n * sizeof(BBChar));
+	}
+
+	for( k=n;k<str->length;++k ){
 		int c=str->buf[k];
 		if( c<181 ){
 			c=(c>='a' && c<='z') ? (c&~32) : c;
