@@ -29,6 +29,8 @@ extern void *_end;
 BBUInt64 bbGCAllocCount = 0;
 #endif
 
+static bb_mutex_t * bbReleaseRetainGuard = 0;
+
 static void gc_finalizer( void *mem,void *pool ){
 	((BBGCPool*)pool)->free( (BBGCMem*)mem );
 }
@@ -71,6 +73,7 @@ void bbGCStartup( void *spTop ){
 #endif
 #endif
 	GC_set_warn_proc( gc_warn_proc );
+	bbReleaseRetainGuard = threads_CreateMutex();
 }
 
 BBGCMem *bbGCAlloc( int sz,BBGCPool *pool ){
@@ -167,21 +170,29 @@ int node_compare(const void *x, const void *y) {
 }
 
 void bbGCRetain( BBObject *p ) {
-	struct retain_node * node = (struct retain_node *)GC_MALLOC(sizeof(struct retain_node));
+	struct retain_node * node = (struct retain_node *)GC_malloc_uncollectable(sizeof(struct retain_node));
 	node->count = 1;
 	node->obj = p;
 	#ifdef BBCC_ALLOCCOUNT
 	++bbGCAllocCount;
 	#endif
 	
+	bb_mutex_lock(bbReleaseRetainGuard);
+	
 	struct retain_node * old_node = (struct retain_node *)avl_map(&node->link, node_compare, &retain_root);
 	if (&node->link != &old_node->link) {
 		// this object already exists here... increment our reference count
 		old_node->count++;
 		
+		// unlock before free, to prevent deadlocks from finalizers.
+		bb_mutex_unlock(bbReleaseRetainGuard);
+		
 		// delete the new node, since we don't need it
 		GC_FREE(node);
+		return;
 	}
+
+	bb_mutex_unlock(bbReleaseRetainGuard);
 }
 
 void bbGCRelease( BBObject *p ) {
@@ -189,20 +200,29 @@ void bbGCRelease( BBObject *p ) {
 	struct retain_node node;
 	node.obj = p;
 	
+	bb_mutex_lock(bbReleaseRetainGuard);
+
 	struct retain_node * found = (struct retain_node *)tree_search(&node, node_compare, retain_root);
 
 	if (found) {
 		// found a retained object!
-		
+
 		found->count--;
 		if (found->count <=0) {
 			// remove from the tree
 			avl_del(&found->link, &retain_root);
 			// free the node
 			found->obj = 0;
+
+			// unlock before free, to prevent deadlocks from finalizers.
+			bb_mutex_unlock(bbReleaseRetainGuard);
+
 			GC_FREE(found);
+			return;
 		}
 	}
+
+	bb_mutex_unlock(bbReleaseRetainGuard);
 }
 
 int bbGCThreadIsRegistered() {

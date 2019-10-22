@@ -509,7 +509,7 @@ Function GCRetain(obj:Object)="bbGCRetain"
 Rem
 bbdoc: Releases a reference from the specified #Object.
 End Rem
-Function GCRelease(obj:Byte Ptr)="void bbGCRelease(BBObject*)!"
+Function GCRelease(obj:Object)="void bbGCRelease(BBObject*)!"
 
 Rem
 bbdoc: Returns #True if the current thread is registered with the garbage collector.
