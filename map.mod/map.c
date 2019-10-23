@@ -156,7 +156,6 @@ void bmx_map_ptrmap_insert( void * key, BBObject *value, struct avl_root ** root
 	struct ptrmap_node * node = (struct ptrmap_node *)GC_malloc_uncollectable(sizeof(struct ptrmap_node));
 	node->key = key;
 	node->value = value;
-	BBRETAIN(value);
 	
 	struct ptrmap_node * old_node = (struct ptrmap_node *)avl_map(&node->link, compare_ptrmap_nodes, root);
 
