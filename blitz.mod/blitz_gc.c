@@ -39,6 +39,13 @@ static void gc_warn_proc( char *msg,GC_word arg ){
 	/*printf(msg,arg);fflush(stdout);*/
 }
 
+static bb_mutex_t *bb_create_mutex(){
+	bb_mutex_t *mutex=malloc( sizeof(bb_mutex_t) );
+	if( bb_mutex_init( mutex ) ) return mutex;
+	free( mutex );
+	return 0;
+}
+
 void bbGCStartup( void *spTop ){
 /*	GC_set_no_dls(1);
 	GC_clear_roots();
@@ -73,7 +80,7 @@ void bbGCStartup( void *spTop ){
 #endif
 #endif
 	GC_set_warn_proc( gc_warn_proc );
-	bbReleaseRetainGuard = threads_CreateMutex();
+	bbReleaseRetainGuard = bb_create_mutex();
 }
 
 BBGCMem *bbGCAlloc( int sz,BBGCPool *pool ){
