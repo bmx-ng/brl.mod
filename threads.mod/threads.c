@@ -223,7 +223,7 @@ int threads_TimedWaitCond(pthread_cond_t *cond,bb_mutex_t *mutex, int millisecs)
 
 	if (res == 0) {
 		return 0;
-	} else if (res == -1 && errno == ETIMEDOUT) {
+	} else if (res == ETIMEDOUT) {
 		return 1;
 	}
 
@@ -252,7 +252,7 @@ int threads_TimedWaitSemaphore( bb_sem_t *sem, int millisecs ){
 	
 	if (res == 0) {
 		return 0;
-	} else if (res == -1 && errno == ETIMEDOUT) {
+	} else if (res == ETIMEDOUT) {
 		return 1;
 	}
 
