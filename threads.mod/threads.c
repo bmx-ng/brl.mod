@@ -217,7 +217,7 @@ int threads_TimedWaitCond(pthread_cond_t *cond,bb_mutex_t *mutex, int millisecs)
 	}
 	
 	ts.tv_sec += millisecs / 1000;
-	ts.tv_nsec += (millsecs % 1000) * 1000000L;
+	ts.tv_nsec += (millisecs % 1000) * 1000000L;
 
 	int res = pthread_cond_timedwait(cond, mutex, &ts);
 
@@ -246,7 +246,7 @@ int threads_TimedWaitSemaphore( bb_sem_t *sem, int millisecs ){
 	}
 	
 	ts.tv_sec += millisecs / 1000;
-	ts.tv_nsec += (millsecs % 1000) * 1000000L;
+	ts.tv_nsec += (millisecs % 1000) * 1000000L;
 	
 	int res = sem_timedwait(sem, &ts);
 	
