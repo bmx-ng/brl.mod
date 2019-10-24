@@ -44,12 +44,14 @@ Function threads_CreateSemaphore:Byte Ptr( count:Int )
 Function threads_CloseSemaphore( sema:Byte Ptr )
 Function threads_WaitSemaphore( sema:Byte Ptr )
 Function threads_PostSemaphore( sema:Byte Ptr )
+Function threads_TimedWaitSemaphore:Int( sema:Byte Ptr, millis:Int )
 
 Function threads_CreateCond:Byte Ptr()
 Function threads_WaitCond( cond:Byte Ptr,mutex:Byte Ptr )
 Function threads_SignalCond( cond:Byte Ptr )
 Function threads_BroadcastCond( cond:Byte Ptr )
 Function threads_CloseCond( cond:Byte Ptr )
+Function threads_TimedWaitCond:Int( cond:Byte Ptr,mutex:Byte Ptr, millis:Int )
 
 End Extern
 
@@ -254,6 +256,14 @@ Type TSemaphore
 		Assert _handle
 		threads_WaitSemaphore _handle
 	End Method
+
+	Rem
+	bbdoc: Wait for the semaphore
+	End Rem
+	Method TimedWait:Int(millis:Int)
+		Assert _handle
+		Return threads_TimedWaitSemaphore(_handle, millis)
+	End Method
 	
 	Rem
 	bbdoc: Post the semaphore
@@ -302,6 +312,14 @@ Type TCondVar
 	Method Wait( mutex:TMutex )
 		Assert _handle
 		threads_WaitCond _handle,mutex._handle
+	End Method
+
+	Rem
+	bbdoc: Wait for the condvar
+	End Rem	
+	Method TimedWait:Int( mutex:TMutex, millis:Int )
+		Assert _handle
+		Return threads_TimedWaitCond(_handle,mutex._handle, millis)
 	End Method
 	
 	Rem 
