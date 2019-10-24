@@ -26,6 +26,7 @@ typedef HANDLE bb_sem_t;
 #define bb_sem_destroy(SEMPTR) CloseHandle(*(SEMPTR))
 #define bb_sem_wait(SEMPTR) WaitForSingleObject(*(SEMPTR),INFINITE)
 #define bb_sem_post(SEMPTR) ReleaseSemaphore(*(SEMPTR),1,0)
+#define bb_sem_timed_wait(SEMPTR, MILLIS) WaitForSingleObject(*(SEMPTR),MILLIS)
 
 #elif __SWITCH__
 #include<switch/kernel/mutex.h>
@@ -78,6 +79,7 @@ typedef sem_t bb_sem_t;
 #define bb_sem_destroy sem_destroy
 #define bb_sem_wait sem_wait
 #define bb_sem_post sem_post
+#define bb_sem_timed_wait sem_timedwait
 
 #endif
 

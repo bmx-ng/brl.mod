@@ -183,6 +183,8 @@ void threads_BroadcastCond( cnd_t *cond ){
 
 #else
 
+#include <errno.h>
+
 pthread_cond_t *threads_CreateCond(){
 	pthread_cond_t *cond=malloc( sizeof( pthread_cond_t ) );
 	if( pthread_cond_init( cond,0 )>=0 ) return cond;
