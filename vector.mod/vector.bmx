@@ -314,6 +314,13 @@ Struct SVec3D
 	End Method
 
 	Rem
+	bbdoc: Divides the vector by @s, returning a new vector.
+	End Rem
+	Method Operator/:SVec3D(s:Double)
+		Return New SVec3D(x / s, y / s, z/s)
+	End Method
+
+	Rem
 	bbdoc: Retrieves the x, y or z component using [0], [1] or [2] respectively.
 	End Rem
 	Method Operator[]:Double(index:Int)
@@ -726,6 +733,13 @@ Struct SVec3F
 	End Method
 
 	Rem
+	bbdoc: Divides the vector by @s, returning a new vector.
+	End Rem
+	Method Operator/:SVec3F(s:Float)
+		Return New SVec3F(x / s, y / s, z / s)
+	End Method
+
+	Rem
 	bbdoc: Retrieves the x, y or z component using [0], [1] or [2] respectively.
 	End Rem
 	Method Operator[]:Float(index:Int)
@@ -938,6 +952,13 @@ Struct SVec2I
 	Method Operator/:SVec2I(s:Int)
 		Return New SVec2I(x / s, y / s)
 	End Method
+
+	Rem
+	bbdoc: Divides the vector by @s, returning a new vector.
+	End Rem
+	Method Operator/:SVec2I(s:Float)
+		Return New SVec2I(Int(x / s), Int(y / s))
+	End Method
 	
 	Rem
 	bbdoc: Retrieves the x or y component using [0] or [1] respectively.
@@ -1135,6 +1156,20 @@ Struct SVec3I
 	End Rem
 	Method Operator*:SVec3I(s:Int)
 		Return New SVec3I(x * s, y * s, z * s)
+	End Method
+
+	Rem
+	bbdoc: Divides the vector by @s, returning a new vector.
+	End Rem
+	Method Operator/:SVec3I(s:Int)
+		Return New SVec3I(x / s, y / s, z / s)
+	End Method
+
+	Rem
+	bbdoc: Divides the vector by @s, returning a new vector.
+	End Rem
+	Method Operator/:SVec3I(s:Float)
+		Return New SVec3I(Int(x / s), Int(y / s), Int(z / s))
 	End Method
 
 	Rem
