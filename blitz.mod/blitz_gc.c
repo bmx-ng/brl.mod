@@ -209,7 +209,7 @@ void bbGCRelease( BBObject *p ) {
 	
 	bb_mutex_lock(bbReleaseRetainGuard);
 
-	struct retain_node * found = (struct retain_node *)tree_search(&node, node_compare, retain_root);
+	struct retain_node * found = (struct retain_node *)tree_search((struct tree_root_np *)&node, node_compare, (struct tree_root_np *)retain_root);
 
 	if (found) {
 		// found a retained object!

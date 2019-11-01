@@ -104,6 +104,7 @@ struct BBThread{
 	int detached;
 	int locked_regs[BB_THREADREGS];
 #ifdef _WIN32
+	BBObject * result;
 	HANDLE handle;
 	DWORD id;
 #elif __SWITCH__

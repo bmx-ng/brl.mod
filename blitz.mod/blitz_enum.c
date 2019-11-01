@@ -165,7 +165,7 @@ BBEnum * bbEnumGetInfo( char * name ) {
 	bbEnum.atype = name;
 	node.bbEnum = &bbEnum;
 	
-	struct enum_info_node * found = (struct enum_info_node *)tree_search(&node, enum_info_node_compare, enum_info_root);
+	struct enum_info_node * found = (struct enum_info_node *)tree_search((struct tree_root_np *)&node, enum_info_node_compare, (struct tree_root_np *)enum_info_root);
 
 	if (found) {
 		return found->bbEnum;

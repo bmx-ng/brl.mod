@@ -89,13 +89,14 @@ static DWORD WINAPI threadProc( void *p ){
 	
 	TlsSetValue( curThreadTls,thread );
 	
-	DWORD ret=(DWORD)thread->proc( thread->data[0] );
+	BBObject * result = thread->proc( thread->data[0] );
+	thread->result = result;
 	
 	BB_LOCK
 	removeThread( thread );
 	BB_UNLOCK
 	
-	return ret;
+	return 0;
 }
 
 void bbThreadStartup(){
@@ -128,6 +129,7 @@ BBThread *bbThreadCreate( BBThreadProc proc,BBObject *data ){
 	memset( thread->data,0,sizeof(thread->data) );
 	thread->data[0]=data;
 	thread->detached=0;
+	thread->result = &bbNullObject;
 	thread->handle=CreateThread( 0,0,threadProc,thread,CREATE_SUSPENDED,&thread->id );
 
 	BB_LOCK
@@ -145,10 +147,10 @@ void bbThreadDetach( BBThread *thread ){
 
 BBObject *bbThreadWait( BBThread *thread ){
 	if( WaitForSingleObject( thread->handle,INFINITE )==WAIT_OBJECT_0 ){
-		BBObject *p;
-		if( GetExitCodeThread( thread->handle,(DWORD*)&p ) ){
+		DWORD res;
+		if( GetExitCodeThread( thread->handle, &res ) ){
 			thread->detached=1;
-			return p;
+			return thread->result;
 		}else{
 			printf( "ERROR! bbThreadWait: GetExitCodeThread failed!\n" );
 		}
@@ -220,7 +222,7 @@ void bbThreadStartup() {
 	mainThread=thread;
 }
 
-static int threadProc( void *p ){
+static BBObject * threadProc( void *p ){
 	BBThread *thread = p;
 	
 	bbThread = thread;
@@ -233,7 +235,7 @@ static int threadProc( void *p ){
 	printf( "Thread %p added\n",thread );fflush( stdout );
 #endif
 	
-	void *ret=thread->proc( thread->data[0] );
+	BBObject * ret=thread->proc( thread->data[0] );
 	
 	BB_LOCK
 	removeThread( thread );

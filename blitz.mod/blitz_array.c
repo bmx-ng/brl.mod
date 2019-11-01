@@ -156,7 +156,7 @@ static void initializeArray( BBArray *arr, BBArrayStructInit structInit ){
 		memset( p,0,arr->size );
 		if (structInit) {
 			int k;
-			char * s = p;
+			char * s = (char*)p;
 			for( k=arr->scales[0];k>0;--k ) {
 				structInit(s);
 				s += arr->data_size;
@@ -164,12 +164,6 @@ static void initializeArray( BBArray *arr, BBArrayStructInit structInit ){
 		}
 	}
 }
-
-static volatile void *t;
-void *addressOfParam( void *p ){
-	t=p;
-	return t;
-} 
 
 BBArray *bbArrayNew( const char *type,int dims,... ){
 
@@ -185,7 +179,7 @@ BBArray *bbArrayNew( const char *type,int dims,... ){
 	}
 	va_end(lengths);
 
-	BBArray *arr=allocateArray( type,dims, &lens, 0 );
+	BBArray *arr=allocateArray( type,dims, lens, 0 );
 	
 	initializeArray( arr, 0 );
 	
@@ -206,7 +200,7 @@ BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, BBArraySt
 	}
 	va_end(lengths);
 
-	BBArray *arr=allocateArray( type,dims, &lens, data_size );
+	BBArray *arr=allocateArray( type,dims, lens, data_size );
 	
 	initializeArray( arr, init );
 	
@@ -524,5 +518,5 @@ void bbArraySort( BBArray *arr,int ascending ){
 }
 
 int bbObjectIsEmptyArray(BBObject * o) {
-	return o == &bbEmptyArray;
+	return (BBArray*)o == &bbEmptyArray;
 }
