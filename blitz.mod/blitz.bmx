@@ -1157,5 +1157,12 @@ bbdoc: Create a string of length 1 with a character code
 keyword: "Chr"
 End Rem
 
+Rem
+bbdoc: Allocates memory from the stack.
+keyword: "StackAlloc"
+about: This memory is automatically freed on leaving the function where it was created.
+It should not be freed, or returned from the function.
+End Rem
+
 
 
