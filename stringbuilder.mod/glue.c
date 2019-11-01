@@ -196,6 +196,7 @@ int bmx_stringbuilder_endswith(struct MaxStringBuilder * buf, BBString * subStri
 	if (subString->length <= buf->count) {
 		return bmx_stringbuilder_matches(buf, buf->count - subString->length, subString);
 	}
+	return 0;
 }
 
 int bmx_stringbuilder_find(struct MaxStringBuilder * buf, BBString * subString, int startIndex) {
@@ -462,7 +463,7 @@ void bmx_stringbuilder_append_cstring(struct MaxStringBuilder * buf, const char 
 		
 		bmx_stringbuilder_resize(buf, buf->count + length);
 		
-		char * p = chars;
+		const char * p = chars;
 		BBChar * b = buf->buffer + buf->count;
 		while (length--) {
 			*b++ = *p++;
@@ -480,7 +481,7 @@ void bmx_stringbuilder_append_utf8string(struct MaxStringBuilder * buf, const ch
 		bmx_stringbuilder_resize(buf, buf->count + length);
 		
 		int c;
-		char * p = chars;
+		const char * p = chars;
 		BBChar * b = buf->buffer + buf->count;
 		
 		while( c=*p++ & 0xff ){
@@ -534,13 +535,13 @@ void bmx_stringbuilder_append_long(struct MaxStringBuilder * buf, BBInt64 value)
 }
 
 void bmx_stringbuilder_append_short(struct MaxStringBuilder * buf, BBSHORT value) {
-	BBSHORT chars[16];
+	char chars[16];
 	sprintf(chars, "%d", value);
 	bmx_stringbuilder_append_cstring(buf, chars);
 }
 
 void bmx_stringbuilder_append_byte(struct MaxStringBuilder * buf, BBBYTE value) {
-	BBBYTE chars[8];
+	char chars[8];
 	sprintf(chars, "%d", value);
 	bmx_stringbuilder_append_cstring(buf, chars);
 }
