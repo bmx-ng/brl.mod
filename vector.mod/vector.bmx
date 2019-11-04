@@ -140,7 +140,7 @@ Struct SVec2D
 		End If
 
 		Local dot:Double = Clamp(Self.Dot(b) / d, -1, 1)
-		Return _acos(dot) * 57.295779513082320876798154814105:Double
+		Return _acos(dot)
 	End Method
 		
 	Rem
@@ -559,7 +559,7 @@ Struct SVec2F
 		End If
 
 		Local dot:Float = ClampF(Self.Dot(b) / d, -1, 1)
-		Return _acos(dot) * 57.295779513
+		Return _acos(dot)
 	End Method
 		
 	Rem
@@ -985,7 +985,7 @@ Struct SVec2I
 		End If
 
 		Local dot:Double = Clamp(Self.Dot(b) / d, -1, 1)
-		Return Int(_acos(dot) * 57.295779513082320876798154814105:Double)
+		Return Int(_acos(dot))
 	End Method
 		
 	Rem
@@ -1377,7 +1377,6 @@ Function ClampI:Int(a:Int, mini:Int, maxi:Int)
 End Function
 
 Extern
-	Function _acos:Double(x:Double)="double acos(double)!"
-	Function _sin:Double(x:Double)="double sin(double)!"
+	Function _acos:Double(x:Double)="double bbACos(double)!"
 End Extern
 Public

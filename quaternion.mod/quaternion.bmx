@@ -38,6 +38,8 @@ Import BRL.Math
 Import BRL.Matrix
 Import BRL.StringBuilder
 
+Import "glue.h"
+
 Rem
 bbdoc: A Quaternion.
 about: Quaternions are used to represent rotations.
