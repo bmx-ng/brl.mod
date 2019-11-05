@@ -83,3 +83,10 @@ bmx_os_getwindowsversion(int * major, int * minor) {
 	*major = 0;
 	*minor = 0;
 }
+
+int bmx_os_getproccount() {
+	SYSTEM_INFO info;
+	GetSystemInfo(&info);
+	return info.dwNumberOfProcessors;
+}
+

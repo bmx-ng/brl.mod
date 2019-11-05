@@ -26,11 +26,22 @@ bbdoc: Platform utils
 End Rem
 Module BRL.Platform
 
+ModuleInfo "Version: 1.01"
+ModuleInfo "Author: Bruce A Henderson"
+ModuleInfo "License: zlib/libpng"
+
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Added LogicalProcessorCount()."
+ModuleInfo "History: 1.00"
+ModuleInfo "History: Initial Release"
+
 Import BRL.TextStream
 Import Pub.macos
 
 ?win32
 Import "win32_glue.c"
+?Not win32
+Import "glue.c"
 ?
 
 Private
@@ -114,3 +125,18 @@ Function WindowsVersion:String()
 	Return _version
 ?
 End Function
+
+Rem
+bbdoc: Returns the number of logical processors available.
+about: Logical processors are the number of physical processors times the number of threads that can run on each.
+End Rem
+Function LogicalProcessorCount:Int()
+	Return bmx_os_getproccount()
+End Function
+
+
+
+Extern
+	Function bmx_os_getproccount:Int()
+End Extern
+
