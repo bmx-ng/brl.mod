@@ -51,6 +51,7 @@ Public
 
 Const SOUND_LOOP:Int=1
 Const SOUND_HARDWARE:Int=2
+Const SOUND_STREAM:Int=4
 
 Rem
 bbdoc: Audio sound type
