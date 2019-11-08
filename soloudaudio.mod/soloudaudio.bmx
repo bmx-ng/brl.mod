@@ -161,49 +161,19 @@ Type TSoloudSound Extends TSound
 			this.isLooped = True
 		End If
 
+		Local stream:TStream
 		If String(url) Then
-			Local s:String = String(url)
-			
-			If Not sound Then
-				this._sound = TryLoadSound(s, loopFlag)
-				
-				If Not this._sound Then
-					Return Null
-				End If
-				
-				Return this
+			stream = ReadStream(url)
+			If Not stream Then
+				Return Null
 			End If
-			
-			If sound Then
-				Local i:Int = s.Find( "::",0 )
-				' a "normal" url?
-				If i = -1 Then
-					Local res:Int = sound.Load(s)
-					If res Then
-						Return Null
-					End If
-				Else
-					Local proto:String = s[..i].ToLower()
-					Local path:String = s[i+2..]
-					
-					If proto = "incbin" Then
-						Local buf:Byte Ptr = IncbinPtr( path )
-						If Not buf Then
-							Return Null
-						End If
-						
-						Local res:Int = sound.loadMem(buf, IncbinLen(path), False, False)
-						
-						If res Then
-							Return Null
-						End If
-					End If
-				End If
-			End If
-		
 		Else If TStream(url) Then
+			stream = TStream(url)
+		End If
+			
+		If stream Then
 			If Not sound Then
-				this._sound = TryLoadSound(TStream(url), loopFlag)
+				this._sound = TryLoadSound(stream, loopFlag)
 				
 				If Not this._sound Then
 					Return Null
@@ -213,7 +183,7 @@ Type TSoloudSound Extends TSound
 			End If
 			
 			If sound Then
-				Local res:Int = sound.loadStream(TStream(url))
+				Local res:Int = sound.loadStream(stream)
 				If res Then
 					Return Null
 				End If
@@ -226,83 +196,6 @@ Type TSoloudSound Extends TSound
 
 	End Function
 	
-	Function TryLoadSound:TSLLoadableAudioSource(url:String, flags:Int)
-		Local sound:TSLLoadableAudioSource
-
-		Local i:Int = url.Find( "::",0 )
-		' a "normal" url?
-		If i = -1 Then
-		
-			url = RealPath(url)
-		
-			If flags & SOUND_STREAM Then
-				sound = New TSLWavStream
-				If sound.Load(url) = SO_NO_ERROR Then
-					Return sound
-				End If
-				sound.destroy()
-			End If
-			
-			sound = New TSLOpenmpt
-			If sound.Load(url) = SO_NO_ERROR Then
-				Return sound
-			End If
-			sound.destroy()
-
-			sound = New TSLWav
-			If sound.Load(url) = SO_NO_ERROR Then
-				Return sound
-			End If
-			sound.destroy()
-
-			sound = New TSLMonotone
-			If sound.Load(url) = SO_NO_ERROR Then
-				Return sound
-			End If
-			sound.destroy()
-
-		Else
-
-			Local proto:String = url[..i].ToLower()
-			Local path:String = url[i+2..]
-
-			If proto = "incbin" Then
-				Local buf:Byte Ptr = IncbinPtr( path )
-				If Not buf Then
-					Return Null
-				End If
-				
-				If flags & SOUND_STREAM Then
-					sound = New TSLWavStream
-					If sound.loadMem(buf, IncbinLen(path), False, False) = SO_NO_ERROR Then
-						Return sound
-					End If
-					sound.destroy()
-				End If
-				
-				sound = New TSLOpenmpt
-				If sound.loadMem(buf, IncbinLen(path), False, False) = SO_NO_ERROR Then
-					Return sound
-				End If
-				sound.destroy()
-
-				sound = New TSLWav
-				If sound.loadMem(buf, IncbinLen(path), False, False) = SO_NO_ERROR Then
-					Return sound
-				End If
-				sound.destroy()
-
-				sound = New TSLMonotone
-				If sound.loadMem(buf, IncbinLen(path), False, False) = SO_NO_ERROR Then
-					Return sound
-				End If
-				sound.destroy()
-
-			End If
-				
-		End If
-	End Function
-
 	Function TryLoadSound:TSLLoadableAudioSource(stream:TStream, flags:Int)
 		Local sound:TSLLoadableAudioSource
 		
