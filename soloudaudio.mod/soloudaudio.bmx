@@ -233,6 +233,8 @@ Type TSoloudSound Extends TSound
 		' a "normal" url?
 		If i = -1 Then
 		
+			url = RealPath(url)
+		
 			If flags & SOUND_STREAM Then
 				sound = New TSLWavStream
 				If sound.Load(url) = SO_NO_ERROR Then
