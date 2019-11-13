@@ -159,6 +159,12 @@ Type TChannel
 	Method Playing:Int()
 	End Method
 
+	Rem
+	bbdoc: 
+	End Rem
+	Method Position:Int()
+	End Method
+
 End Type
 
 Type TAudioDriver
