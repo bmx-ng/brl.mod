@@ -901,7 +901,7 @@ Function OnDebugLeaveScope()
 	If dbgState.scopeStackTop
 		dbgState.currentScope=dbgState.scopeStack[dbgState.scopeStackTop-1]
 	Else
-		dbgState.currentScope=New TScope
+		dbgState.currentScope=Null
 	EndIf
 
 	GCResume	
@@ -940,7 +940,7 @@ Function OnDebugPopExState()
 	If dbgState.scopeStackTop
 		dbgState.currentScope=dbgState.scopeStack[dbgState.scopeStackTop-1]
 	Else
-		dbgState.currentScope=New TScope
+		dbgState.currentScope=Null
 	EndIf
 
 	GCResume	
