@@ -2,6 +2,10 @@
 #ifndef BLITZ_THREAD_H
 #define BLITZ_THREAD_H
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 #ifdef _WIN32
 
 #include <windows.h>
@@ -146,5 +150,9 @@ extern bb_mutex_t _bbLock;
 
 #define BB_LOCK if( _bbNeedsLock ){ bb_mutex_lock( &_bbLock ); }
 #define BB_UNLOCK if( _bbNeedsLock ){ bb_mutex_unlock( &_bbLock ); }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
