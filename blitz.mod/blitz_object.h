@@ -82,6 +82,8 @@ BBObject*	bbObjectArraycast( BBObject *o );
 void		bbObjectRegisterType( BBClass *clas );
 BBClass**	bbObjectRegisteredTypes( int *count );
 void bbObjectDumpInstanceCounts();
+extern int bbCountInstances;
+
 
 void bbObjectRegisterInterface( BBInterface * ifc );
 BBInterface **bbObjectRegisteredInterfaces( int *count );

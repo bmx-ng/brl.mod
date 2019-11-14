@@ -3,6 +3,8 @@
 
 #define REG_GROW 256
 
+int bbCountInstances = 0;
+
 static BBClass **reg_base,**reg_put,**reg_end;
 static BBInterface **ireg_base,**ireg_put,**ireg_end;
 
@@ -62,7 +64,9 @@ BBObject *bbObjectAtomicNewNC( BBClass *clas ){
 void bbObjectFree( BBObject *o ){
 	BBClass *clas=o->clas;
 
-	bbAtomicAdd(&clas->instance_count, -1);
+	if (bbCountInstances) {
+		bbAtomicAdd(&clas->instance_count, -1);
+	}
 
 	if (clas->dtor != bbObjectDtor) {
 		clas->dtor( o );

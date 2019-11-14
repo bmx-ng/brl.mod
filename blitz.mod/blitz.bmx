@@ -556,6 +556,7 @@ End Rem
 Function IsEmptyArray:Int(obj:Object)="int bbObjectIsEmptyArray(BBOBJECT)!"
 
 Function DumpObjectCounts(buffer:Byte Ptr, size:Int, includeZeros:Int)="bbObjectDumpInstanceCounts"
+Global CountObjectInstances:Int="bbCountInstances"
 
 End Extern
 
