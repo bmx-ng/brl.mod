@@ -68,9 +68,7 @@ void bbObjectFree( BBObject *o ){
 		bbAtomicAdd(&clas->instance_count, -1);
 	}
 
-	if (clas->dtor != bbObjectDtor) {
-		clas->dtor( o );
-	}
+	clas->dtor( o );
 }
 
 void bbObjectCtor( BBObject *o ){
