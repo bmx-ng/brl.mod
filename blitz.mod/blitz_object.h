@@ -31,6 +31,7 @@ struct BBClass{
 	BBINTERFACETABLE itable;
 	void*   extra;
 	unsigned int obj_size;
+	unsigned int instance_count;
 
 	void*	vfns[32];
 };
@@ -80,6 +81,7 @@ BBObject*	bbObjectArraycast( BBObject *o );
 
 void		bbObjectRegisterType( BBClass *clas );
 BBClass**	bbObjectRegisteredTypes( int *count );
+void bbObjectDumpInstanceCounts();
 
 void bbObjectRegisterInterface( BBInterface * ifc );
 BBInterface **bbObjectRegisteredInterfaces( int *count );

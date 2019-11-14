@@ -25,6 +25,7 @@ BBClass bbArrayClass={
 	0,          //interface
 	0,          //extra
 	0,          //obj_size
+	0,          //instance_count
 	
 	bbArraySort,
 	bbArrayDimensions

@@ -555,6 +555,8 @@ returns: #True if @obj is an empty array, or #False otherwise.
 End Rem
 Function IsEmptyArray:Int(obj:Object)="int bbObjectIsEmptyArray(BBOBJECT)!"
 
+Function DumpObjectCounts(buffer:Byte Ptr, size:Int, includeZeros:Int)="bbObjectDumpInstanceCounts"
+
 End Extern
 
 Rem

@@ -27,6 +27,7 @@ BBClass bbStringClass={
 	0,              //interface
 	0,              //extra
 	0,
+	0,          //instance_count
 	
 	bbStringFind,
 	bbStringFindLast,
