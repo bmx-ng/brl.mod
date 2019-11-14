@@ -135,15 +135,15 @@ void bbObjectDumpInstanceCounts(char * buf, int size, int includeZeros) {
 	int count = 0;
 	int offset = 0;
 	BBClass ** classes = bbObjectRegisteredTypes(&count);
-	offset += snprintf(buf, size, "===      Instance count dump (%3d)      ===\n", count);
+	offset += snprintf(buf, size, "=== Instance count dump (%4d) ===\n", count);
 	for (int i = 0; i < count; i++) {
 		BBClass * clas = classes[i];
 		if (offset < size && (clas->instance_count > 0 || includeZeros)) {
-			offset += snprintf(buf + offset, size - offset, "%-34s  %7d\n", clas->debug_scope->name, clas->instance_count);
+			offset += snprintf(buf + offset, size - offset, "%s\t%d\n", clas->debug_scope->name, clas->instance_count);
 		}
 	}
 	if (offset < size) {
-		snprintf(buf + offset, size - offset, "===                End                  ===\n");
+		snprintf(buf + offset, size - offset, "===  End  ===\n");
 	}
 	fflush(stdout);
 }
