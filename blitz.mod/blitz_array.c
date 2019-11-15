@@ -44,27 +44,9 @@ BBArray bbEmptyArray={
 
 //***** Note: Only used by ref counting GC.
 static void bbArrayFree( BBObject *o ){
-#ifdef BB_GC_RC
-	int k;
-	BBObject **p;
-	BBArray *arr=(BBArray*)o;
-	
-	if( arr==&bbEmptyArray ){
-		//arr->refs=BBGC_MANYREFS;
-		return;
+	if (bbCountInstances) {
+		bbAtomicAdd(&bbArrayClass.instance_count, -1);
 	}
-
-	switch( arr->type[0] ){
-	case ':':case '$':case '[':
-		p=(BBObject**)BBARRAYDATA(arr,arr->dims);
-		for( k=arr->scales[0];k>0;--k ){
-			BBObject *o=*p++;
-			//BBDECREFS( o );
-		}
-		break;
-	}
-	bbGCDeallocObject( arr,BBARRAYSIZE( arr->size,arr->dims ) );
-#endif
 }
 
 static int arrayCellSize(const char * type, unsigned short data_size, int * flags) {

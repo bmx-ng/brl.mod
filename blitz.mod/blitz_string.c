@@ -103,14 +103,9 @@ static int charsEqual( unsigned short *a,unsigned short *b,int n ){
 
 //***** Note: Not called in THREADED mode.
 static void bbStringFree( BBObject *o ){
-#ifdef BB_GC_RC
-	BBString *str=(BBString*)o;
-	if( str==&bbEmptyString ){
-		//str->refs=BBGC_MANYREFS;
-		return;
+	if (bbCountInstances) {
+		bbAtomicAdd(&bbStringClass.instance_count, -1);
 	}
-	bbGCDeallocObject( str,sizeof(BBString)+str->length*sizeof(BBChar) );
-#endif
 }
 
 BBString *bbStringNew( int len ){
