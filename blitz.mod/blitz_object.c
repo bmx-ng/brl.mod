@@ -153,7 +153,6 @@ void bbObjectDumpInstanceCounts(char * buf, int size, int includeZeros) {
 	if (offset < size) {
 		snprintf(buf + offset, size - offset, "===  End  ===\n");
 	}
-	fflush(stdout);
 }
 
 void bbObjectRegisterInterface( BBInterface * ifc ){
