@@ -423,7 +423,7 @@ int bbThreadResume( BBThread *thread ){
 int bbAtomicCAS( volatile int *addr,int old,int new_val ){
 #if !defined(__ANDROID__) && !defined(_WIN32)
 #	ifndef __APPLE__
-		return AO_compare_and_swap(addr, old, new_val);
+		return __sync_bool_compare_and_swap(addr, old, new_val);
 #	else
 		return OSAtomicCompareAndSwap32(old, new_val, addr);
 #	endif
@@ -435,7 +435,7 @@ int bbAtomicCAS( volatile int *addr,int old,int new_val ){
 int bbAtomicAdd( volatile int *p,int incr ){
 #if !defined(__ANDROID__) && !defined(_WIN32)
 #	ifndef __APPLE__
-		return AO_fetch_and_add((AO_t*)p, incr);
+		return __sync_fetch_and_add(p, incr);
 #	else
 		return OSAtomicAdd32(incr, p);
 #	endif
