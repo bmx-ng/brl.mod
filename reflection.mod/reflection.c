@@ -102,13 +102,10 @@ void bbRefPushObject( BBObject **p,BBObject *t ){
 }
 
 void bbRefInitObject( BBObject **p,BBObject *t ){
-	BBRETAIN( t );
 	*p=t;
 }
 
 void bbRefAssignObject( BBObject **p,BBObject *t ){
-	BBRETAIN( t );
-	BBRELEASE( *p );
 	*p=t;
 }
 
