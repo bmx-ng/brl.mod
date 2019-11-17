@@ -387,6 +387,14 @@ End Rem
 Function Delay( millis:Int )="bbDelay"
 
 Rem
+bbdoc: Wait for a given number of microseconds
+#UDelay suspends program execution for at least @microcseconds.<br>
+<br>
+A microsecond is one millionth of a second.
+End Rem
+Function UDelay( microseconds:Int )="void bbUDelay(int)!"
+
+Rem
 bbdoc: Get millisecond counter
 returns: Milliseconds since computer turned on.
 about:

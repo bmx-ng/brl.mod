@@ -32,6 +32,18 @@ void		bbWriteStderr( BBString *t );
 void		bbDelay( int ms );
 int		bbMilliSecs();
 int		bbIsMainThread();
+#if __STDC_VERSION__ >= 199901L
+#ifndef _WIN32
+inline void bbUDelay( int microseconds ) {
+	if( microseconds<0 ) return;
+	usleep( microseconds );
+}
+#else
+void bbUDelay( int microseconds );
+#endif
+#else
+void bbUDelay( int microseconds );
+#endif
 
 void		bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 );
 

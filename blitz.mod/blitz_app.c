@@ -82,6 +82,15 @@ void bbDelay( int millis ){
 	usleep( millis*1000 );
 }
 
+#if __STDC_VERSION__ >= 199901L
+extern void bbUDelay( int microseconds );
+#else
+void bbUDelay( int microseconds ) {
+	if (microseconds <0) return
+	usleep( microseconds );
+}
+#endif
+
 int bbMilliSecs(){
 	static mach_timebase_info_data_t info;
 
@@ -118,6 +127,20 @@ void bbDelay( int millis ){
 
 int bbMilliSecs(){
 	return timeGetTime();
+}
+
+void bbUDelay( int microseconds ) {
+	__int64 time1 = 0;
+	__int64 time2 = 0;
+	__int64 freq = 0;
+
+	QueryPerformanceCounter((LARGE_INTEGER *) &time1);
+	QueryPerformanceFrequency(&freq);
+
+	do {
+		Sleep(0);
+		QueryPerformanceCounter((LARGE_INTEGER *) &time2);
+	} while(time2-time1 < microseconds*freq/1000000);
 }
 
 int bbIsMainThread(){
@@ -183,6 +206,15 @@ void bbDelay( int millis ){
 		usleep( t*1000 );
 	}
 }
+
+#if __STDC_VERSION__ >= 199901L
+extern void bbUDelay( int microseconds );
+#else
+void bbUDelay( int microseconds ) {
+	if (microseconds <0) return
+	usleep( microseconds );
+}
+#endif
 
 //***** ThreadSafe! *****
 int bbMilliSecs(){
