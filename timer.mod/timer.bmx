@@ -17,6 +17,7 @@ ModuleInfo "History: 1.03"
 ModuleInfo "History: Update to use Byte Ptr instead of int."
 
 Import BRL.Event
+Import pub.stdc
 
 Rem
 History:
@@ -111,3 +112,121 @@ Type TTimerFactory
 		
 End Type
 
+
+
+Rem
+bbdoc: A high resolution timing mechanism.
+End Rem
+Type TChrono
+
+	Const TICKS_PER_MILLIS:Int = 10000
+	Const TICKS_PER_SEC:Int = TICKS_PER_MILLIS * 1000
+	Const SECS_TO_NS:ULong = 1000000000:ULong
+	
+	Const FREQUENCY:Double = 1000000000.0
+	Const tickFrequency:Double = TICKS_PER_SEC / FREQUENCY
+	
+	Field isRunning:Int
+	Field startTimestamp:ULong
+	Field elapsed:ULong
+	
+	Rem
+	bbdoc: Creates a new #TChrono instance.
+	End Rem
+	Method New()
+		Reset()
+	End Method
+	
+	Method Reset()
+		elapsed = 0
+		isRunning = False
+		startTimestamp = 0
+	End Method
+	
+	Rem
+	bbdoc: Restarts the timing mechanism.
+	End Rem
+	Method Restart()
+		elapsed = 0
+		startTimestamp = GetTimestamp()
+		isRunning = True
+	End Method
+
+	Rem
+	bbdoc: Returns the number of elapsed ticks since the timing mechanism was started.
+	End Rem
+	Method GetElapsedTicks:Long()
+		Local timeElapsed:Long = elapsed
+		
+		If isRunning Then
+			Local currentTimestamp:ULong = GetTimestamp()
+			Local elapsedUntilNow:ULong = currentTimestamp - startTimestamp
+			timeElapsed :+ elapsedUntilNow
+		End If
+		
+		Return timeElapsed
+	End Method
+	
+	Rem
+	bbdoc: Returns the number of elapsed milliseconds since the timing mechanism was started.
+	End Rem
+	Method GetElapsedMilliseconds:ULong()
+		Return GetElapsedDateTimeTicks() / TICKS_PER_MILLIS
+	End Method
+	
+	Rem
+	bbdoc: 
+	End Rem
+	Method GetElapsedDateTimeTicks:ULong()
+		Local ticks:Double = GetElapsedTicks()
+		ticks :* tickFrequency
+		Return ULong(ticks)
+	End Method
+	
+	Rem
+	bbdoc: Returns the current timestamp, in ns.
+	End Rem
+	Function GetTimestamp:ULong()
+?Not macos
+		Local tv:STimeSpec
+		clock_gettime_(1, tv)
+		Return tv.tv_sec * SECS_TO_NS + tv.tv_nsec
+?macos
+		Return mach_absolute_time_ns()
+?
+	End Function
+	
+	Rem
+	bbdoc: Starts the timimg mechanism.
+	End Rem
+	Method Start()
+		If Not isRunning Then
+			startTimestamp = GetTimestamp()
+			isRunning = True
+		End If
+	End Method
+	
+	Rem
+	bbdoc: Stops the timing mechanism.
+	End Rem
+	Method Stop()
+		If isRunning Then
+			Local endTimestamp:ULong = GetTimestamp()
+			Local elapsedThisPeriod:ULong = endTimestamp - startTimestamp
+			elapsed :+ elapsedThisPeriod
+			isRunning = False
+		End If
+	End Method
+	
+	Rem
+	bbdoc: Creates, and optionally starts an instance of #TChrono.
+	End Rem
+	Function Create:TChrono(start:Int = True)
+		Local stopWatch:TChrono = New TChrono
+		If start Then
+			stopWatch.Start()
+		End If
+		Return stopWatch
+	End Function
+	
+End Type
