@@ -113,6 +113,7 @@ Public
 			Until index = tail
 			
 			size = 0
+			head = tail
 		End If
 	End Method
 	
