@@ -586,6 +586,7 @@ Type TAssert
 	
 	Rem
 	bbdoc: Asserts that an #Object is #Null.
+	about:
 	If it is not #Null, an #AssertionFailedException is thrown with the given message.
 	End Rem
 	Function assertNull(obj:Object, message:String = Null)
@@ -607,6 +608,7 @@ Type TAssert
 
 	Rem
 	bbdoc: Asserts that an pointer is #Null.
+	about:
 	If it is not #Null, an #AssertionFailedException is thrown with the given message.
 	End Rem
 	Function assertNull(value:Byte Ptr, message:String = Null)
