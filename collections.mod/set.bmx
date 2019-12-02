@@ -197,7 +197,7 @@ Type TSet<T> Implements ISet<T>
 	Rem
 	bbdoc: Returns a view of a subset in the #TSet.
 	returns: A subset view that contains only the values in the specified range.
-	about: This method returns a view of the range of elements that fall between #lowerValue and #upperValue.
+	about: This method returns a view of the range of elements that fall between @lowerValue and @upperValue.
 	This method does not copy elements from the #TSet, but provides a window into the underlying #TSet itself.
 	You can make changes in both the view and in the underlying #TSet.
 	End Rem

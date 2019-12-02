@@ -232,7 +232,7 @@ Public
 	
 	Rem
 	bbdoc: Determines whether @value is in the #TLinkedList.
-	returns: #True if @value is in the #TLinkedList, or #Fale otherwise.
+	returns: #True if @value is in the #TLinkedList, or #False otherwise.
 	End Rem
 	Method Contains:Int(value:T)
 		Return Find(value) <> Null

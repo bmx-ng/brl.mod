@@ -139,7 +139,7 @@ Public
 	End Method
 	
 	Rem
-	bbdoc: Returns the zero-based index of the first occurrence of a value in the #List.
+	bbdoc: Returns the zero-based index of the first occurrence of a value in the #TArrayList.
 	End Rem
 	Method IndexOf:Int(element:T) Override
 		For Local i:Int = 0 Until size

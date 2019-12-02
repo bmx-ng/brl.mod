@@ -884,7 +884,7 @@ End Type
 Rem
 bbdoc: An array of split text from a TStringBuilder.
 about: Note that the #TSplitBuffer is only valid while its parent #TStringBuilder is unchanged.
-Once you modify the #TStringBuffer you should call Split() again.
+Once you modify the #TSplitBuffer you should call Split() again.
 End Rem
 Type TSplitBuffer
 Private
