@@ -588,11 +588,43 @@ Function ListAddLast:TLink( list:TList,value:Object )
 End Function
 
 Rem
+bbdoc: Returns the first object in the list
+about: Returns Null if the list is empty.
+End Rem
+Function ListGetFirst:Object( list:TList )
+	Return list.First()
+EndFunction
+
+Rem
+bbdoc: Returns the last object in the list
+about: Returns Null if the list is empty.
+End Rem
+Function ListGetLast:Object( list:TList )
+	Return list.Last()
+EndFunction
+
+Rem
 bbdoc: Add an object to a linked list
 returns: A link object
 end rem
 Function ListAddFirst:TLink( list:TList,value:Object )
 	Return list.AddFirst( value )
+End Function
+
+Rem
+bbdoc: Removes and returns the first object in the list.
+about: Returns Null if the list is empty.
+End Rem
+Function ListRemoveFirst:Object( list:TList )
+	Return list.RemoveFirst()
+End Function
+
+Rem
+bbdoc: Removes and returns the last object in the list.
+about: Returns Null if the list is empty.
+End Rem
+Function ListRemoveLast:Object( list:TList )
+	Return list.RemoveLast()
 End Function
 
 Rem
