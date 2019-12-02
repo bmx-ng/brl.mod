@@ -973,11 +973,6 @@ keyword: "New"
 End Rem
 
 Rem
-bbdoc: Specify a custom finalizer
-keyword: "Delete"
-End Rem
-
-Rem
 bbdoc: Reference to this method's type instance
 keyword: "Self"
 End Rem
