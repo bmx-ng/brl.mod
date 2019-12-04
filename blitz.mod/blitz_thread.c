@@ -65,6 +65,11 @@ static void removeThread( BBThread *thread ){
 	}
 }
 
+static void * bbRegisterGCThread(struct GC_stack_base * sb, void * arg) {
+    GC_register_my_thread(sb);
+    return NULL; 
+}
+
 int bbThreadAllocData(){
 	if( threadDataId<31 ) return ++threadDataId;
 	return 0;
@@ -85,13 +90,18 @@ BBObject *bbThreadGetData( int index ){
 static DWORD curThreadTls;
 
 static DWORD WINAPI threadProc( void *p ){
+
+	GC_call_with_stack_base(bbRegisterGCThread, NULL);
+
 	BBThread *thread=p;
 	
 	TlsSetValue( curThreadTls,thread );
 	
 	BBObject * result = thread->proc( thread->data[0] );
 	thread->result = result;
-	
+
+	GC_unregister_my_thread();
+
 	BB_LOCK
 	removeThread( thread );
 	BB_UNLOCK
@@ -179,6 +189,9 @@ int bbThreadResume( BBThread *thread ){
 }
 
 BBThread *bbThreadRegister( DWORD id ) {
+
+	GC_call_with_stack_base(bbRegisterGCThread, NULL);
+
 	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
 	memset( thread->data,0,sizeof(thread->data) );
 	
@@ -198,6 +211,9 @@ BBThread *bbThreadRegister( DWORD id ) {
 }
 
 void bbThreadUnregister( BBThread * thread ) {
+
+	GC_unregister_my_thread();
+
 	BB_LOCK
 	removeThread( thread );
 	BB_UNLOCK
@@ -223,6 +239,9 @@ void bbThreadStartup() {
 }
 
 static BBObject * threadProc( void *p ){
+
+	GC_call_with_stack_base(bbRegisterGCThread, NULL);
+
 	BBThread *thread = p;
 	
 	bbThread = thread;
@@ -236,6 +255,8 @@ static BBObject * threadProc( void *p ){
 #endif
 	
 	BBObject * ret=thread->proc( thread->data[0] );
+	
+	GC_unregister_my_thread();
 	
 	BB_LOCK
 	removeThread( thread );
@@ -330,6 +351,9 @@ void bbThreadStartup(){
 }
 
 static void *threadProc( void *p ){
+
+	GC_call_with_stack_base(bbRegisterGCThread, NULL);
+
 	BBThread *thread=p;
 	
 	pthread_setspecific( curThreadTls,thread );
@@ -343,6 +367,8 @@ static void *threadProc( void *p ){
 #endif
 	
 	void *ret=thread->proc( thread->data[0] );
+	
+	GC_unregister_my_thread();
 	
 	BB_LOCK
 	removeThread( thread );
@@ -371,6 +397,9 @@ BBThread *bbThreadCreate( BBThreadProc proc,BBObject *data ){
 }
 
 BBThread *bbThreadRegister( void * thd ) {
+
+	GC_call_with_stack_base(bbRegisterGCThread, NULL);
+
 	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
 	memset( thread->data,0,sizeof(thread->data) );
 	
@@ -389,6 +418,9 @@ BBThread *bbThreadRegister( void * thd ) {
 }
 
 void bbThreadUnregister( BBThread * thread ) {
+
+	GC_unregister_my_thread();
+
 	BB_LOCK
 	removeThread( thread );
 	BB_UNLOCK
