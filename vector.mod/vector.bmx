@@ -238,6 +238,13 @@ Struct SVec2D
 	Method Reflect:SVec2D(n:SVec2D)
 		Return n * Dot(n) * 2.0 - Self
 	End Method
+	
+	Rem
+	bbdoc: Returns a vector rotated by @angle degrees.
+	End Rem
+	Method Rotate:SVec2D(angle:Double)
+		Return New SVec2D(x * Cos(angle) - y * Sin(angle), x * Sin(angle) + y * Cos(angle))
+	End Method
 
 	Rem
 	bbdoc: Returns a #String representation of the vector.
@@ -656,6 +663,13 @@ Struct SVec2F
 	End Rem
 	Method Reflect:SVec2F(n:SVec2F)
 		Return n * Dot(n) * 2.0 - Self
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector rotated by @angle degrees.
+	End Rem
+	Method Rotate:SVec2F(angle:Double)
+		Return New SVec2F(Float(x * Cos(angle) - y * Sin(angle)), Float(x * Sin(angle) + y * Cos(angle)))
 	End Method
 
 	Rem
@@ -1082,6 +1096,13 @@ Struct SVec2I
 	End Rem
 	Method Reflect:SVec2I(n:SVec2I)
 		Return n * Dot(n) * 2 - Self
+	End Method
+
+	Rem
+	bbdoc: Returns a vector rotated by @angle degrees.
+	End Rem
+	Method Rotate:SVec2I(angle:Double)
+		Return New SVec2I(Int(x * Cos(angle) - y * Sin(angle)), Int(x * Sin(angle) + y * Cos(angle)))
 	End Method
 
 	Rem
