@@ -90,17 +90,12 @@ BBObject *bbThreadGetData( int index ){
 static DWORD curThreadTls;
 
 static DWORD WINAPI threadProc( void *p ){
-
-	GC_call_with_stack_base(bbRegisterGCThread, NULL);
-
 	BBThread *thread=p;
 	
 	TlsSetValue( curThreadTls,thread );
 	
 	BBObject * result = thread->proc( thread->data[0] );
 	thread->result = result;
-
-	GC_unregister_my_thread();
 
 	BB_LOCK
 	removeThread( thread );
