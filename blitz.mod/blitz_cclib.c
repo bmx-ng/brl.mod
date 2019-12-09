@@ -2,6 +2,54 @@
 #include "blitz.h"
 #include <math.h>
 
+#if __STDC_VERSION__ >= 199901L
+
+extern int bbIntAbs( int x );
+extern int bbIntSgn( int x );
+extern int bbIntMod( int x,int y );
+extern void bbIntToLong( BBInt64 *r,int x );
+
+extern double bbFloatAbs( double x );
+extern double bbFloatSgn( double x );
+extern double bbFloatPow( double x,double y );
+extern double bbFloatMod( double x,double y );
+extern int bbFloatToInt( double x );
+extern void bbFloatToLong( BBInt64 *r,double x );
+
+extern BBInt64 bbLongNeg( BBInt64 x );
+extern BBInt64 bbLongNot( BBInt64 x );
+extern BBInt64 bbLongAbs( BBInt64 x );
+extern BBInt64 bbLongSgn( BBInt64 x );
+extern void bbLongAdd( BBInt64 *r,BBInt64 x,BBInt64 y );
+extern void bbLongSub( BBInt64 *r,BBInt64 x,BBInt64 y );
+extern void bbLongMul( BBInt64 *r,BBInt64 x,BBInt64 y );
+extern void bbLongDiv( BBInt64 *r,BBInt64 x,BBInt64 y );
+extern void bbLongMod( BBInt64 *r,BBInt64 x,BBInt64 y );
+extern void bbLongAnd( BBInt64 *r,BBInt64 x,BBInt64 y );
+extern void bbLongOrl( BBInt64 *r,BBInt64 x,BBInt64 y );
+extern void bbLongXor( BBInt64 *r,BBInt64 x,BBInt64 y );
+extern void bbLongShl( BBInt64 *r,BBInt64 x,BBInt64 y );
+extern void bbLongShr( BBInt64 *r,BBInt64 x,BBInt64 y );
+extern void bbLongSar( BBInt64 *r,BBInt64 x,BBInt64 y );
+extern int bbLongSlt( BBInt64 x,BBInt64 y );
+extern int bbLongSgt( BBInt64 x,BBInt64 y );
+extern int bbLongSle( BBInt64 x,BBInt64 y );
+extern int bbLongSge( BBInt64 x,BBInt64 y );
+extern int bbLongSeq( BBInt64 x,BBInt64 y );
+extern int bbLongSne( BBInt64 x,BBInt64 y );
+extern double bbLongToFloat( BBInt64 x );
+
+extern BBSIZET bbSizetSgn( BBSIZET x );
+extern BBSIZET bbSizetAbs( BBSIZET x );
+
+extern BBUINT bbUIntSgn( BBUINT x );
+extern BBUINT bbUIntAbs( BBUINT x );
+
+extern BBULONG bbULongSgn( BBULONG x );
+extern BBULONG bbULongAbs( BBULONG x );
+
+
+#else
 
 int bbIntAbs( int x ){
 	return x>=0 ? x : -x;
@@ -11,12 +59,6 @@ int bbIntSgn( int x ){
 }
 int bbIntMod( int x,int y ){
 	return x % y;
-}
-int bbIntMin( int x,int y ){
-	return x<y ? x : y;
-}
-int bbIntMax( int x,int y ){ 
-	return x>y ? x : y;
 }
 void bbIntToLong( BBInt64 *r,int x ){
 	*r=x;
@@ -33,12 +75,6 @@ double bbFloatPow( double x,double y ){
 }
 double bbFloatMod( double x,double y ){
 	return fmod( x,y );
-}
-double bbFloatMin( double x,double y ){
-	return x<y ? x : y;
-}
-double bbFloatMax( double x,double y ){
-	return x>y ? x : y;
 }
 void bbFloatToLong( BBInt64 *r,double x ){
 	*r=x;
@@ -70,12 +106,6 @@ void bbLongDiv( BBInt64 *r,BBInt64 x,BBInt64 y ){
 }
 void bbLongMod( BBInt64 *r,BBInt64 x,BBInt64 y ){
 	*r=x%y;
-}
-BBInt64 bbLongMin( BBInt64 x,BBInt64 y ){
-	return x<y ? x : y;
-}
-BBInt64 bbLongMax( BBInt64 x,BBInt64 y ){
-	return x>y ? x : y;
 }
 void bbLongAnd( BBInt64 *r,BBInt64 x,BBInt64 y ){
 	*r=x&y;
@@ -123,24 +153,12 @@ BBSIZET bbSizetAbs( BBSIZET x ){
 BBSIZET bbSizetSgn( BBSIZET x ){
 	return x==0 ? 0 : (x>0 ? 1 : -1);
 }
-BBSIZET bbSizetMin( BBSIZET x,BBSIZET y ){
-	return x<y ? x : y;
-}
-BBSIZET bbSizetMax( BBSIZET x,BBSIZET y ){ 
-	return x>y ? x : y;
-}
 
 BBUINT bbUIntAbs( BBUINT x ){
 	return x>=0 ? x : -x;
 }
 BBUINT bbUIntSgn( BBUINT x ){
 	return x==0 ? 0 : (x>0 ? 1 : -1);
-}
-BBUINT bbUIntMin( BBUINT x,BBUINT y ){
-	return x<y ? x : y;
-}
-BBUINT bbUIntMax( BBUINT x,BBUINT y ){ 
-	return x>y ? x : y;
 }
 
 BBULONG bbULongAbs( BBULONG x ){
@@ -149,12 +167,8 @@ BBULONG bbULongAbs( BBULONG x ){
 BBULONG bbULongSgn( BBULONG x ){
 	return x==0 ? 0 : (x>0 ? 1 : -1);
 }
-BBULONG bbULongMin( BBULONG x,BBULONG y ){
-	return x<y ? x : y;
-}
-BBULONG bbULongMax( BBULONG x,BBULONG y ){ 
-	return x>y ? x : y;
-}
+
+#endif
 
 BBLONG bbLongPow(BBLONG base, BBBYTE exp) {
     static const BBBYTE highest_bit_set[] = {
