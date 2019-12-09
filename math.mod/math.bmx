@@ -6,12 +6,14 @@ bbdoc: Math/Math
 End Rem
 Module BRL.Math
 
-ModuleInfo "Version: 1.06"
+ModuleInfo "Version: 1.07"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.07"
+ModuleInfo "History: Added Round and Trunc."
 ModuleInfo "History: 1.06"
 ModuleInfo "History: Added Float versions."
 ModuleInfo "History: 1.05 Release"
@@ -113,6 +115,15 @@ bbdoc: Largest integral value not greater than @x
 End Rem
 Function Floor:Double( x:Double )="bbFloor"
 
+Rem
+bbdoc: Nearest integral value to @x.
+End Rem
+Function Round:Double( x:Double )="bbRound"
+
+Rem
+bbdoc: Nearest integral not greater in magnitude than @x.
+End Rem
+Function Trunc:Double( x:Double )="bbTrunc"
 
 
 Rem
@@ -194,5 +205,15 @@ Rem
 bbdoc: Largest integral value not greater than @x
 End Rem
 Function FloorF:Float( x:Float )="bbFloorf"
+
+Rem
+bbdoc: Nearest integral value to @x.
+End Rem
+Function RoundF:Float( x:Float )="bbRoundf"
+
+Rem
+bbdoc: Nearest integral not greater in magnitude than @x.
+End Rem
+Function TruncF:Float( x:Float )="bbTruncf"
 
 End Extern

@@ -58,6 +58,12 @@ double bbLog10( double x ){
 double bbCeil( double x ){
 	return ceil( x );
 }
+double bbRound( double x ){
+	return round( x );
+}
+double bbTrunc( double x ){
+	return trunc( x );
+}
 
 // fallback for pre C99 versions
 #ifndef __STDC_VERSION__
@@ -84,6 +90,8 @@ double bbCeil( double x ){
 	#define logf log
 	#define log10f log10
 	#define ceilf ceil
+	#define roundf round
+	#define truncf trunc
 #else
 	#define RAD_TO_DEGF 57.2957795
 	#define DEG_TO_RADF 0.0174532
@@ -136,4 +144,10 @@ float bbLog10f( float x ){
 }
 float bbCeilf( float x ){
 	return ceilf( x );
+}
+float bbRoundf( float x ){
+	return roundf( x );
+}
+float bbTruncf( float x ){
+	return truncf( x );
 }
