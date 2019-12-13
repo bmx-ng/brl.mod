@@ -9,13 +9,4 @@ This choice is generally dictated by the CPU. For example, Intel CPU's such as t
 Most of the time, you don't have to worry about endian issues. As long as the same endian format is being used to read and write data, there is no problem. However, endian issues do need to be taken into account when reading or writing binary files. For example, writing a binary file on a PC  (which is little endian) and reading it back on a Mac (which is big endian) may produce odd results if the file contains multibyte values.<br/>
 <br/>
 Endian streams help solve this problem by modifying the behaviour of stream commands that read or write multi-byte values. These commands are:
-<font class=token>ReadShort</font>,
-<font class=token>ReadInt</font>,
-<font class=token>ReadLong</font>,
-<font class=token>ReadFloat</font>,
-<font class=token>ReadDouble</font>,
-<font class=token>WriteShort</font>,
-<font class=token>WriteInt</font>,
-<font class=token>WriteLong</font>,
-<font class=token>WriteFloat</font> and
-<font class=token>WriteDouble</font>.
+#ReadShort, #ReadInt, #ReadLong, #ReadFloat, #ReadDouble, #WriteShort, #WriteInt, #WriteLong, #WriteFloat and #WriteDouble.
