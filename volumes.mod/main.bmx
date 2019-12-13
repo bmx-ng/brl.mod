@@ -138,9 +138,9 @@ bbdoc: Returns the user home directory.
 about: The table lists examples for the various platforms -
 <table align="center">
 <tr><th>Platform</th><th>Example</th><th>Equivalent</th></tr>
-<tr><td>Linux</td><td>/home/username</td><td>~</td></tr>
-<tr><td>Mac OS</td><td>/Users/username</td><td>~</td></tr>
-<tr><td>Win32</td><td>C:\Documents and Settings\username</td><td>&nbsp;</td></tr>
+<tr><td>Linux</td><td>`/home/username`</td><td>`~`</td></tr>
+<tr><td>Mac OS</td><td>`/Users/username`</td><td>`~`</td></tr>
+<tr><td>Win32</td><td>`C:\Documents and Settings\username`</td><td>&nbsp;</td></tr>
 </table>
 End Rem
 Function GetUserHomeDir:String()
@@ -152,9 +152,9 @@ bbdoc: Returns the user Desktop directory.
 about: The table lists examples for the various platforms -
 <table align="center">
 <tr><th>Platform</th><th>Example</th><th>Equivalent</th></tr>
-<tr><td>Linux</td><td>/home/username/Desktop</td><td>~/Desktop</td></tr>
-<tr><td>Mac OS</td><td>/Users/username/Desktop</td><td>~/Desktop</td></tr>
-<tr><td>Win32</td><td>C:\Documents and Settings\username\Desktop</td><td>&nbsp;</td></tr>
+<tr><td>Linux</td><td>`/home/username/Desktop`</td><td>`~/Desktop`</td></tr>
+<tr><td>Mac OS</td><td>`/Users/username/Desktop`</td><td>`~/Desktop`</td></tr>
+<tr><td>Win32</td><td>`C:\Documents and Settings\username\Desktop`</td><td>&nbsp;</td></tr>
 </table>
 End Rem
 Function GetUserDesktopDir:String()
@@ -166,9 +166,9 @@ bbdoc: Returns the user directory for application data.
 about: The table lists examples for the various platforms -
 <table align="center">
 <tr><th>Platform</th><th>Example</th><th>Equivalent</th></tr>
-<tr><td>Linux</td><td>/home/username</td><td>~</td></tr>
-<tr><td>Mac OS</td><td>/Users/username/Library/Application Support</td><td>~/Library/Application Support</td></tr>
-<tr><td>Win32</td><td>C:\Documents and Settings\username\Application Data</td><td>&nbsp;</td></tr>
+<tr><td>Linux</td><td>`/home/username`</td><td>`~`</td></tr>
+<tr><td>Mac OS</td><td>`/Users/username/Library/Application Support`</td><td>`~/Library/Application Support`</td></tr>
+<tr><td>Win32</td><td>`C:\Documents and Settings\username\Application Data`</td><td>&nbsp;</td></tr>
 </table>
 End Rem
 Function GetUserAppDir:String()
@@ -180,9 +180,9 @@ bbdoc: Returns the user Documents directory.
 about: The table lists examples for the various platforms -
 <table align="center">
 <tr><th>Platform</th><th>Example</th><th>Equivalent</th></tr>
-<tr><td>Linux</td><td>/home/username/Documents</td><td>~/Documents</td></tr>
-<tr><td>Mac OS</td><td>/Users/username/Documents</td><td>~/Documents</td></tr>
-<tr><td>Win32</td><td>C:\Documents and Settings\username\My Documents</td><td>&nbsp;</td></tr>
+<tr><td>Linux</td><td>`/home/username/Documents`</td><td>`~/Documents`</td></tr>
+<tr><td>Mac OS</td><td>`/Users/username/Documents`</td><td>`~/Documents`</td></tr>
+<tr><td>Win32</td><td>`C:\Documents and Settings\username\My Documents`</td><td>&nbsp;</td></tr>
 </table>
 End Rem
 Function GetUserDocumentsDir:String()

@@ -939,9 +939,9 @@ bbdoc: Get state of a GNet object
 returns: An integer state
 about:The returned value can be one of the following:
 <table>
-<tr><th>Object State</th><td>Meaning</td></tr>
+<tr><th>Object State</th><th>Meaning</th></tr>
 <tr><td>GNET_CREATED</td><td>Object has been created</td></tr>
-<tr><td>GNET_SYNCED</td><td>Object is in sync</td><tr>
+<tr><td>GNET_SYNCED</td><td>Object is in sync</td></tr>
 <tr><td>GNET_MODIFIED</td><td>Object has been modified</td></tr>
 <tr><td>GNET_CLOSED</td><td>Object has been closed</td></tr>
 <tr><td>GNET_ZOMBIE</td><td>Object is a zombie</td></tr>
