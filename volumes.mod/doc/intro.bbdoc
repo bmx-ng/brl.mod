@@ -4,7 +4,7 @@
 <h2>Volume Information</h2>
 <p>Enables access to all volumes on the system, as well as drive-details such as free and total space for the volume.</p>
 <p>To get a list of volumes on the current system, simply call <a href="#ListVolumes">ListVolumes</a> which returns
-a list of <a href="#TVolume">TVolume</a> objects, from which you have access to the extra information.<br>
+a list of <a href="#TVolume">TVolume</a> objects, from which you have access to the extra information.<br/>
 You can also retrieve size information directly using <a href="#GetVolumeSize">GetVolumeSize</a> and <a href="#GetVolumeFreeSpace">GetVolumeFreeSpace</a>.
 </p>
 <h2>User Directories</h2>
