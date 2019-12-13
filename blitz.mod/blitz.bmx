@@ -586,7 +586,7 @@ End Interface
 Rem
 bbdoc: Set strict mode
 about:
-See the <a href=../../../../doc/bmxlang/compatibility.html>BlitzMax Language Reference</a> for more information on Strict mode programming.
+See the <a href="../../../../doc/bmxlang/compatibility.html">BlitzMax Language Reference</a> for more information on Strict mode programming.
 keyword: "Strict"
 End Rem
 
@@ -1020,7 +1020,7 @@ End Rem
 Rem
 bbdoc: Declare module scope and identifier
 about:
-See the <a href=../../../../doc/bmxlang/modules.html>BlitzMax Language Reference</a> for more information on BlitzMax Modules.
+See the <a href="../../../../doc/bmxlang/modules.html">BlitzMax Language Reference</a> for more information on BlitzMax Modules.
 keyword: "Module"
 End Rem
 

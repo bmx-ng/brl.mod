@@ -264,7 +264,7 @@ bbdoc: Abstract base type for pixmap loaders
 about:
 To create a new pixmap loader, you should extend TPixmapLoader and implement the #LoadPixmap method.
 
-To install your pixmap loader, simply create an instance of it using #New</font>.
+To install your pixmap loader, simply create an instance of it using #New.
 End Rem
 Type TPixmapLoader
 	Field _succ:TPixmapLoader
