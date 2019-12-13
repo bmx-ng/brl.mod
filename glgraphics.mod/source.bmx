@@ -247,10 +247,10 @@ End Function
 Rem
 bbdoc: Helper function to output some simple 8x16 font text
 about:
-Draws text relative to top-left of current viewport.<br>
-<br>
-The font used is an internal fixed point 8x16 font.<br>
-<br>
+Draws text relative to top-left of current viewport.<br/>
+<br/>
+The font used is an internal fixed point 8x16 font.<br/>
+<br/>
 This function is intended for debugging purposes only - performance is unlikely to be stellar.
 End Rem
 Function GLDrawText( Text$,x,y )
@@ -305,8 +305,8 @@ End Function
 Rem
 bbdoc: Helper function to draw a pixmap to a gl context
 about:
-Draws the pixmap relative to top-left of current viewport.<br>
-<br>
+Draws the pixmap relative to top-left of current viewport.<br/>
+<br/>
 This function is intended for debugging purposes only - performance is unlikely to be stellar.
 End Rem
 Function GLDrawPixmap( pixmap:TPixmap,x,y )

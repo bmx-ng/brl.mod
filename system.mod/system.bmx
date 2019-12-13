@@ -148,8 +148,8 @@ You can also specify some parameters to return the date in a format of your choi
 * %%Y | Year (2014).
 * %%Z | Time zone name.
 ]
-You can use these parameters together:<br>
-CurrentDate("Month: %%a Day: %%d")<br>
+You can use these parameters together:<br/>
+CurrentDate("Month: %%a Day: %%d")<br/>
 End Rem
 Function CurrentDate$(_format$="%d %b %Y")
 	Local	time[256],buff:Byte[256]

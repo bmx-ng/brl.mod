@@ -327,8 +327,8 @@ Rem
 bbdoc: Application title
 about: The #AppTitle global variable is used by various commands when a
 default application title is required - for example, when opening simple 
-windows or requesters.<br>
-<br>
+windows or requesters.<br/>
+<br/>
 Initially, #AppTitle is set to the value "BlitzMax Application". However, you may change
 #AppTitle at any time with a simple assignment.
 End Rem
@@ -380,8 +380,8 @@ Function WriteStderr( str$ )="bbWriteStderr"
 Rem
 bbdoc: Wait for a given number of milliseconds
 about:
-#Delay suspends program execution for at least @millis milliseconds.<br>
-<br>
+#Delay suspends program execution for at least @millis milliseconds.<br/>
+<br/>
 A millisecond is one thousandth of a second.
 End Rem
 Function Delay( millis:Int )="bbDelay"
@@ -389,8 +389,8 @@ Function Delay( millis:Int )="bbDelay"
 Rem
 bbdoc: Wait for a given number of microseconds
 about:
-#UDelay suspends program execution for at least @microcseconds.<br>
-<br>
+#UDelay suspends program execution for at least @microcseconds.<br/>
+<br/>
 A microsecond is one millionth of a second.
 End Rem
 Function UDelay( microseconds:Int )="void bbUDelay(int)!"
@@ -400,8 +400,8 @@ bbdoc: Get millisecond counter
 returns: Milliseconds since computer turned on.
 about:
 #MilliSecs returns the number of milliseconds elapsed since the computer
-was turned on.<br>
-<br>
+was turned on.<br/>
+<br/>
 A millisecond is one thousandth of a second.
 End Rem
 Function MilliSecs:Int()="bbMilliSecs"
@@ -444,10 +444,10 @@ Function MemMove( dst:Byte Ptr,src:Byte Ptr,size:Size_T )="void bbMemMove( void 
 Rem
 bbdoc: Set garbage collector mode
 about:
-@mode can be one of the following:<br>
-1 : automatic GC - memory will be automatically garbage collected<br>
-2 : manual GC - no memory will be collected until a call to GCCollect is made<br>
-<br>
+@mode can be one of the following:<br/>
+1 : automatic GC - memory will be automatically garbage collected<br/>
+2 : manual GC - no memory will be collected until a call to GCCollect is made<br/>
+<br/>
 The default GC mode is automatic GC.
 End Rem
 Function GCSetMode( Mode:Int )="bbGCSetMode"
@@ -456,8 +456,8 @@ Rem
 bbdoc: Suspend garbage collector
 about:
 #GCSuspend temporarily suspends the garbage collector. No garbage
-collection will be performed following a call to #GCSuspend.<br>
-<br>
+collection will be performed following a call to #GCSuspend.<br/>
+<br/>
 Use #GCResume to resume the garbage collector. Note that #GCSuspend
 and #GCResume 'nest', meaning that each call to #GCSuspend must be 
 matched by a call to #GCResume.
@@ -467,8 +467,8 @@ Function GCSuspend()="bbGCSuspend"
 Rem
 bbdoc: Resume garbage collector
 about:
-#GCResume resumes garbage collection following a call to #GCSuspend.<br>
-<br>
+#GCResume resumes garbage collection following a call to #GCSuspend.<br/>
+<br/>
 See #GCSuspend for more details.
 End Rem
 Function GCResume()="bbGCResume"
