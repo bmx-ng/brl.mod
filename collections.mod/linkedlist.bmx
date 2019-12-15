@@ -131,7 +131,7 @@ Public
 	End Method
 	
 	Rem
-	bbdoc: Adds the specified @newNode before the specified existing node in the LinkedList<T>.
+	bbdoc: Adds the specified @newNode before the specified existing node in the #TLinkedList.
 	End Rem
 	Method AddBefore(node:TLinkedListNode<T>, newNode:TLinkedListNode<T>)
 		ValidateNode(node)
