@@ -97,7 +97,7 @@ End Function
 
 Type TBankStreamFactory Extends TStreamFactory
 
-	Method CreateStream:TBankStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Override
+	Method CreateStream:TBankStream( url:Object,proto$,path$,readable:Int,writeMode:Int ) Override
 		Local bank:TBank=TBank(url)
 		If bank Return CreateBankStream( bank )
 	End Method
