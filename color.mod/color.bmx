@@ -36,9 +36,16 @@ Struct SColor8
 	Field ReadOnly a:Byte
 	
 	Rem
-	bbdoc: Craetes an #SColor8 instance using the specified @r, @g, @b and @a components.
+	bbdoc: Creates an #SColor8 instance using the specified @r, @g, @b and @a components.
 	End Rem
 	Method New(r:Byte, g:Byte, b:Byte, a:Byte = 255)
+		Self.r = r
+		Self.g = g
+		Self.b = b
+		Self.a = a
+	End Method
+
+	Method New(r:Int, g:Int, b:Int, a:Int = 255)
 		Self.r = r
 		Self.g = g
 		Self.b = b

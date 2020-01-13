@@ -417,12 +417,24 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_iverts[15]=_color
 		_iverts[21]=_color
 	End Method
+
+	Method SetColor( color:SColor8 ) Override
+		_color=(_color&$ff000000)|color.ToARGB()	
+		_iverts[3]=_color
+		_iverts[9]=_color
+		_iverts[15]=_color
+		_iverts[21]=_color
+	End Method
 	
 	Method SetClsColor( red,green,blue ) Override
 		red=Max(Min(red,255),0)
 		green=Max(Min(green,255),0)
 		blue=Max(Min(blue,255),0)
 		_clscolor=$ff000000|(red Shl 16)|(green Shl 8)|blue
+	End Method
+	
+	Method SetClsColor( color:SColor8 ) Override
+		_clscolor=$ff000000|color.ToARGB()
 	End Method
 	
 	Method SetViewport( x,y,width,height ) Override

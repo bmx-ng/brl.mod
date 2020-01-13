@@ -83,9 +83,11 @@ Public
 
 Type TMax2DGraphics Extends TGraphics
 
-	Field color_red,color_green,color_blue
+	'Field color_red,color_green,color_blue
+	Field color:SColor8
 	Field color_alpha#
-	Field clscolor_red,clscolor_green,clscolor_blue
+	'Field clscolor_red,clscolor_green,clscolor_blue
+	Field clscolor:SColor8
 	Field line_width#
 	Field tform_rot#,tform_scale_x#,tform_scale_y#
 	Field tform_ix#,tform_iy#,tform_jx#,tform_jy#
@@ -142,9 +144,9 @@ Type TMax2DGraphics Extends TGraphics
 		EndIf
 		SetVirtualResolution vres_width,vres_height
 		SetBlend blend_mode
-		SetColor color_red,color_green,color_blue
+		SetColor color
 		SetAlpha color_alpha
-		SetClsColor clscolor_red,clscolor_green,clscolor_blue
+		SetClsColor clscolor
 		SetLineWidth line_width
 		SetRotation tform_rot
 		SetScale tform_scale_x,tform_scale_y
@@ -187,13 +189,9 @@ Type TMax2DGraphics Extends TGraphics
 		t.g_width=gw
 		t.g_height=gh
 		t.blend_mode=MASKBLEND
-		t.color_red=255
-		t.color_green=255
-		t.color_blue=255
+		t.color = New SColor8(255, 255, 255)
 		t.color_alpha=1
-		t.clscolor_red=0
-		t.clscolor_green=0
-		t.clscolor_blue=0
+		t.clscolor = New SColor8(0, 0, 0)
 		t.line_width=1
 		t.tform_rot=0
 		t.tform_scale_x=1
@@ -249,10 +247,13 @@ The @red, @green and @blue parameters should be in the range of 0 to 255.
 The default cls color is black.
 End Rem
 Function SetClsColor( red,green,blue )
-	gc.clscolor_red=red
-	gc.clscolor_green=green
-	gc.clscolor_blue=blue
+	gc.clscolor = New SColor8(red, green, blue)
 	_max2dDriver.SetClsColor red,green,blue
+End Function
+
+Function SetClsColor( color:SColor8 )
+	gc.clscolor = color
+	_max2dDriver.SetClsColor color
 End Function
 
 Rem
@@ -260,9 +261,9 @@ bbdoc: Get red, green and blue component of current cls color.
 returns: Red, green and blue values in the range 0..255 in the variables supplied.
 End Rem
 Function GetClsColor( red Var,green Var,blue Var )
-	red=gc.clscolor_red
-	green=gc.clscolor_green
-	blue=gc.clscolor_blue
+	red=gc.clscolor.r
+	green=gc.clscolor.g
+	blue=gc.clscolor.b
 End Function
 
 Rem
@@ -469,10 +470,13 @@ The #SetColor command affects the color of #Plot, #DrawRect, #DrawLine, #DrawTex
 The @red, @green and @blue parameters should be in the range of 0 to 255.
 End Rem
 Function SetColor( red,green,blue )
-	gc.color_red=red
-	gc.color_green=green
-	gc.color_blue=blue
+	gc.color = New SColor8(red, green, blue)
 	_max2dDriver.SetColor red,green,blue
+End Function
+
+Function SetColor( color:SColor8 )
+	gc.color = color
+	_max2dDriver.SetColor color
 End Function
 
 Rem
@@ -480,9 +484,13 @@ bbdoc: Get red, green and blue component of current color.
 returns: Red, green and blue values in the range 0..255 in the variables supplied.
 End Rem
 Function GetColor( red Var,green Var,blue Var )
-	red=gc.color_red
-	green=gc.color_green
-	blue=gc.color_blue
+	red=gc.color.r
+	green=gc.color.g
+	blue=gc.color.b
+End Function
+
+Function GetColor( color:SColor8 Var )
+	color = gc.color
 End Function
 
 Rem

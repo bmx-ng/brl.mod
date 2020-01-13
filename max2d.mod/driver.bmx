@@ -37,6 +37,13 @@ Type TMax2DDriver Extends TGraphicsDriver
 	Method SetViewport( x,y,width,height ) Abstract
 	Method SetTransform( xx#,xy#,yx#,yy# ) Abstract
 	Method SetLineWidth( width# ) Abstract
+
+	Method SetColor( color:SColor8 )
+		SetColor(color.r, color.g, color.b)
+	End Method
+	Method SetClsColor( color:SColor8)
+		SetClsColor(color.r, color.g, color.b)
+	End Method
 	
 	Method Cls() Abstract
 	Method Plot( x#,y# ) Abstract

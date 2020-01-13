@@ -22,6 +22,7 @@ ModuleInfo "History: Removed AddPixmapLoader function"
 
 Import BRL.Math
 Import BRL.Stream
+Import BRL.Color
 
 Import "pixel.bmx"
 
@@ -133,7 +134,7 @@ Type TPixmap
 	Rem
 	bbdoc: Read a pixel from a pixmap
 	returns: The pixel at the specified coordinates packed into an integer
-	end rem
+	End Rem
 	Method ReadPixel( x,y )
 		Assert x>=0 And x<width And y>=0 And y<height Else "Pixmap coordinates out of bounds"
 		Local p:Byte Ptr=PixelPtr(x,y)
@@ -151,6 +152,10 @@ Type TPixmap
 		Case PF_BGRA8888
 			Return p[2] Shl 16 | p[1] Shl 8 | p[0] | p[3] Shl 24
 		End Select
+	End Method
+
+	Method ReadPixelColor:SColor8( x,y )
+		Return New SColor8(ReadPixel(x, y))
 	End Method
 
 	Rem
@@ -173,6 +178,28 @@ Type TPixmap
 		Case PF_BGRA8888
 			p[0]=argb ; p[1]=argb Shr 8 ; p[2]=argb Shr 16 ; p[3]=argb Shr 24
 		End Select
+	End Method
+	
+	Rem
+	bbdoc: Writes a pixel to a pixmap of the specified #SColor8
+	End Rem
+	Method WritePixel(x:Int, y:Int, col:SColor8)
+		Assert x>=0 And x<width And y>=0 And y<height Else "Pixmap coordinates out of bounds"
+		Local p:Byte Ptr=PixelPtr(x,y)
+		Select format
+		Case PF_A8
+			p[0]=col.a
+		Case PF_I8
+			p[0]=(col.r + col.g + col.b)/3
+		Case PF_RGB888
+			p[0]=col.r ; p[1]=col.g ; p[2]=col.b
+		Case PF_BGR888
+			p[0]=col.b ; p[1]=col.g ; p[2]=col.r
+		Case PF_RGBA8888
+			p[0]=col.r ; p[1]=col.g ; p[2]=col.b; p[3]=col.a
+		Case PF_BGRA8888
+			p[0]=col.b ; p[1]=col.g ; p[2]=col.r ; p[3]=col.a
+		End Select	
 	End Method
 	
 	Rem
@@ -250,6 +277,11 @@ Type TPixmap
 			End Select
 		Next
 	End Method
+	
+	Method ClearPixels( color:SColor8 )
+		ClearPixels(color.ToARGB())
+	End Method
+
 	
 End Type
 
@@ -558,6 +590,10 @@ Function ReadPixel( pixmap:TPixmap,x,y )
 	Return pixmap.ReadPixel( x,y )
 End Function
 
+Function ReadPixelColor:SColor8( pixmap:TPixmap,x,y )
+	Return pixmap.ReadPixelColor( x,y )
+End Function
+
 Rem
 bbdoc: Write a pixel to a pixmap
 about:
@@ -571,6 +607,10 @@ The 32 bit @argb value contains the following components:
 End Rem
 Function WritePixel( pixmap:TPixmap,x,y,argb )
 	pixmap.WritePixel x,y,argb
+End Function
+
+Function WritePixel( pixmap:TPixmap,x,y,color:SColor8 )
+	pixmap.WritePixel x,y,color
 End Function
 
 Rem
@@ -588,4 +628,8 @@ The 32 bit @argb value contains the following components:
 End Rem
 Function ClearPixels( pixmap:TPixmap,argb=0 )
 	pixmap.ClearPixels argb
+End Function
+
+Function ClearPixels( pixmap:TPixmap,color:SColor8 )
+	pixmap.ClearPixels color
 End Function
