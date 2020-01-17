@@ -32,7 +32,7 @@ ModuleInfo "License: zlib/png"
 ModuleInfo "Copyright: 2019-2020 Bruce A Henderson"
 
 ModuleInfo "History: 1.06"
-ModuleInfo "History: Added support for transient field metadata."
+ModuleInfo "History: Added support for transient, noSerialize and noDeserialize field metadata."
 ModuleInfo "History: 1.05"
 ModuleInfo "History: Added boxing for nullable primitives."
 ModuleInfo "History: 1.04"
@@ -330,7 +330,7 @@ Type TJConv
 		For Local f:TField = EachIn typeId.EnumFields()
 			Local j:TJSON
 			
-			If f.Metadata("transient") Then
+			If f.Metadata("transient") Or f.Metadata("noSerialize") Then
 				Continue
 			End If
 			
@@ -618,7 +618,7 @@ Type TJConvSerializer
 				End If
 
 				If f Then
-					If f.Metadata("transient") Then
+					If f.Metadata("transient") Or f.Metadata("noDeserialize") Then
 						Continue
 					End If
 					

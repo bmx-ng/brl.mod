@@ -45,6 +45,8 @@ Type TArrayTest Extends TJConvTest
 	Const JSON_SER_NAME_PRETTY:String = "{~n  ~qname~q: ~qone~q,~n  ~qname1~q: ~qtwo~q,~n  ~qc~q: ~qthree~q~n}"
 	Const JSON_TRANS_NO_B:String = "{~qa~q: ~qone~q, ~qc~q: ~qthree~q}"
 	Const JSON_TRANS:String = "{~qa~q: ~qone~q, ~qb~q: ~qtwo~q, ~qc~q: ~qthree~q}"
+	Const JSON_IGNORE_SER:String = "{~qa~q: ~qone~q, ~qc~q: ~qthree~q}"
+	Const JSON_IGNORE:String = "{~qa~q: ~qone~q, ~qb~q: ~qtwo~q, ~qc~q: ~qthree~q, ~qd~q: ~qfour~q}"
 
 	Method testEmptyObject() { test }
 		Local obj:Object
@@ -371,6 +373,23 @@ Type TArrayTest Extends TJConvTest
 		assertEquals("three", trans.c)
 	End Method
 
+	Method testIgnored() { test }
+		
+		Local ignored:TIgnored = New TIgnored
+		ignored.a = "one"
+		ignored.b = "two"
+		ignored.c = "three"
+		ignored.d = "four"
+		
+		assertEquals(JSON_IGNORE_SER, jconv.ToJson(ignored))
+		
+		ignored = TIgnored(jconv.FromJson(JSON_IGNORE, "TIgnored"))
+		assertEquals("one", ignored.a)
+		assertEquals("two", ignored.b)
+		assertNull(ignored.c)
+		assertNull(ignored.d)
+	End Method
+
 End Type
 
 Type TData
@@ -553,4 +572,11 @@ Type TTransient
 	Field a:String
 	Field b:String { transient }
 	Field c:String
+End Type
+
+Type TIgnored
+	Field a:String
+	Field b:String { noSerialize }
+	Field c:String { noDeserialize }
+	Field d:String { noSerialize noDeserialize }
 End Type

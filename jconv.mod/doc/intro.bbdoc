@@ -314,7 +314,7 @@ Type TLocation
 End Type
 ```
 
-### Customising Field names
+### Customising Field Names
 
 Occasionally, a JSON object will use a key that has the same name as a reserved keyword in BlitzMax. In that case, you are unable create a field
 using the desired name. Fortunately, #BRL.JConv allows you use metadata to specify the serialised name of a given field using the `serializedName`
@@ -406,3 +406,66 @@ deserialising the JSON would result in the `name` #Field containing the value `u
   "email" : "bob@example.com"
 }
 ```
+
+### Ignoring Fields
+
+If you don't want a field to be mapped to or from JSON there are some metadata properties that you can apply to your types in order to do so.
+The first, `transient`, completely disables field from mapping in either direction.
+
+If you want more finer grained control, the metadata properties `noSerialize` and `noDeserialize` can be used instead.
+The `noSerialize` property instructs #BRL.JConv not to serialize a particular field to JSON, but it allows data from a JSON object to be
+deserialized into the #Field.
+On the other hand, `noDeserialize` prevents data from a JSON object from deserializing into the #Field, but does allow it to be serialized into
+a JSON object.
+
+We'll apply some properties to the `TUser` object to demonstrate the options :
+```blitzmax
+Type TUser
+	Field name:String
+	Field email:String { noSerialize }
+	Field age:int { noDeserialize }
+	Field passwordHash:String { transient }
+End Type
+```
+Based on the above example, when serializing an instance of `TUser`, only the `name` and `age` fields would be mapped to JSON.
+Similarly, only the `name` and `email` fields would be mapped from a JSON object.
+
+The following is a complete example of these properties in action :
+```blitzmax
+SuperStrict
+
+Framework BRL.StandardIO
+Import BRL.JConv
+
+Local user:TUser = New TUser("bob", "bob@example.com", 30, "xxxx")
+
+Local jconv:TJConv = New TJConvBuilder.Build()
+
+Local json:String = jconv.ToJson(user)
+
+Print "json  : " + json
+
+json = "{~qname~q: ~qbob~q, ~qemail~q: ~qbob@example.com~q, ~qage~q: 30, ~qpasswordHash~q: ~qxxxx~q}"
+
+user = TUser(jconv.FromJson(json, "TUser"))
+
+Print "name  : " + user.name
+Print "email : " + user.email
+Print "age   : " + user.age
+Print "hash  : " + user.passwordHash
+
+Type TUser
+	Field name:String
+	Field email:String { noSerialize }
+	Field age:Int { noDeserialize }
+	Field passwordHash:String { transient }
+
+	Method New(name:String, email:String, age:Int, ph:String)
+		Self.name = name
+		Self.email = email
+		Self.age = age
+		Self.passwordHash = ph
+	End Method
+End Type
+```
+
