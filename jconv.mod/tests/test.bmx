@@ -43,6 +43,8 @@ Type TArrayTest Extends TJConvTest
 	Const JSON_PREC:String = "{~qp1~q: 5.352, ~qp2~q: 65.698}"
 	Const JSON_SER_NAME_COMPACT:String = "{~qname~q:~qone~q,~qname1~q:~qtwo~q,~qc~q:~qthree~q}"
 	Const JSON_SER_NAME_PRETTY:String = "{~n  ~qname~q: ~qone~q,~n  ~qname1~q: ~qtwo~q,~n  ~qc~q: ~qthree~q~n}"
+	Const JSON_TRANS_NO_B:String = "{~qa~q: ~qone~q, ~qc~q: ~qthree~q}"
+	Const JSON_TRANS:String = "{~qa~q: ~qone~q, ~qb~q: ~qtwo~q, ~qc~q: ~qthree~q}"
 
 	Method testEmptyObject() { test }
 		Local obj:Object
@@ -344,7 +346,31 @@ Type TArrayTest Extends TJConvTest
 		assertEquals(JSON_SER_NAME_PRETTY, jconv.ToJson(name1))
 		
 	End Method
+
+	Method testDepth() { test }
 	
+		Local deep:TDeep = New TDeep
+		deep.inner = New TInner
+		deep.inner.deepest = New TDeepest
+		deep.inner.deepest.option1 = New TBool(True)
+				
+	End Method
+
+	Method testTransient() { test }
+		
+		Local trans:TTransient = New TTransient
+		trans.a = "one"
+		trans.b = "two"
+		trans.c = "three"
+		
+		assertEquals(JSON_TRANS_NO_B, jconv.ToJson(trans))
+		
+		trans = TTransient(jconv.FromJson(JSON_TRANS, "TTransient"))
+		assertEquals("one", trans.a)
+		assertNull(trans.b)
+		assertEquals("three", trans.c)
+	End Method
+
 End Type
 
 Type TData
@@ -503,4 +529,28 @@ Type TPrec
 		Self.p2 = p2
 	End Method
 	
+End Type
+
+Type TDeep
+
+	Field inner:TInner
+
+End Type
+
+Type TInner
+
+	Field deepest:TDeepest
+
+End Type
+
+Type TDeepest
+
+	Field option1:TBool
+
+End Type
+
+Type TTransient
+	Field a:String
+	Field b:String { transient }
+	Field c:String
 End Type

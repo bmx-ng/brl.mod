@@ -1,4 +1,4 @@
-' Copyright (c) 2019 Bruce A Henderson
+' Copyright (c) 2019-2020 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -24,13 +24,15 @@ SuperStrict
 Rem
 bbdoc: JSON Object de/serializer.
 End Rem
-Module brl.jconv
+Module BRL.JConv
 
-ModuleInfo "Version: 1.05"
+ModuleInfo "Version: 1.06"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib/png"
-ModuleInfo "Copyright: 2019 Bruce A Henderson"
+ModuleInfo "Copyright: 2019-2020 Bruce A Henderson"
 
+ModuleInfo "History: 1.06"
+ModuleInfo "History: Added support for transient field metadata."
 ModuleInfo "History: 1.05"
 ModuleInfo "History: Added boxing for nullable primitives."
 ModuleInfo "History: 1.04"
@@ -328,6 +330,10 @@ Type TJConv
 		For Local f:TField = EachIn typeId.EnumFields()
 			Local j:TJSON
 			
+			If f.Metadata("transient") Then
+				Continue
+			End If
+			
 			Local fieldType:TTypeId = f.TypeId()
 			
 			Local serializer:TJConvSerializer = TJConvSerializer(options.serializers.ValueForKey(fieldType.Name()))
@@ -612,6 +618,10 @@ Type TJConvSerializer
 				End If
 
 				If f Then
+					If f.Metadata("transient") Then
+						Continue
+					End If
+					
 					Local fieldType:TTypeId = f.TypeId()
 
 					If TJSONInteger(j) Then
