@@ -992,3 +992,7 @@ int bbStringEquals( BBString *x,BBString *y ){
 	return 1;
 }
 #endif
+
+int bbObjectIsEmptyString(BBObject * o) {
+	return (BBString*)o == &bbEmptyString;
+}

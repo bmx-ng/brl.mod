@@ -91,6 +91,8 @@ inline int bbStringEquals( BBString *x,BBString *y ){
 int bbStringEquals( BBString *x,BBString *y );
 #endif
 
+int bbObjectIsEmptyString(BBObject * o);
+
 #ifdef __cplusplus
 }
 #endif

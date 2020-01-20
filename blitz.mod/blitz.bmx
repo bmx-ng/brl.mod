@@ -563,6 +563,11 @@ bbdoc: Determines whether the #Object @obj is an empty array.
 returns: #True if @obj is an empty array, or #False otherwise.
 End Rem
 Function IsEmptyArray:Int(obj:Object)="int bbObjectIsEmptyArray(BBOBJECT)!"
+Rem
+bbdoc: Determines whether the #Object @obj is an empty #String.
+returns: #True if @obj is an empty #String, or #False otherwise.
+End Rem
+Function IsEmptyString:Int(obj:Object)="int bbObjectIsEmptyString(BBOBJECT)!"
 
 Function DumpObjectCounts(buffer:Byte Ptr, size:Int, includeZeros:Int)="bbObjectDumpInstanceCounts"
 Global CountObjectInstances:Int="bbCountInstances"
