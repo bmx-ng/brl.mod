@@ -71,15 +71,16 @@ BBClass bbStringClass={
 	bbStringToUInt,
 	bbStringFromUInt,
 	bbStringToULong,
-	bbStringFromULong
+	bbStringFromULong,
 	
-#ifdef _WIN32	
-	,
+#ifdef _WIN32
 	bbStringToWParam,
 	bbStringFromWParam,
 	bbStringToLParam,
-	bbStringFromLParam
+	bbStringFromLParam,
 #endif
+
+	bbStringToUTF8StringBuffer
 };
 
 BBString bbEmptyString={
@@ -810,7 +811,14 @@ BBChar *bbStringToWString( BBString *str ){
 
 char *bbStringToUTF8String( BBString *str ){
 	int i=0,len=str->length;
-	char *buf=(char*)bbMemAlloc( len*4+1 );
+	int buflen = len * 4 + 1;
+	char *buf=(char*)bbMemAlloc( buflen );
+	return bbStringToUTF8StringBuffer(str, buf, &buflen);
+}
+
+char *bbStringToUTF8StringBuffer( BBString *str, char * buf, size_t * length ){
+	int i=0,len=str->length;
+	size_t buflen = *length;
 	char *q=buf;
 	unsigned short *p=str->buf;
 	while (i < len) {
@@ -825,16 +833,21 @@ char *bbStringToUTF8String( BBString *str ){
 				++i;
 			}
 		}
+		int n = q - buf;
 		if( c<0x80 ){
+			if (buflen <= n+1) break;
 			*q++=c;
 		}else if( c<0x800 ){
+			if (buflen <= n+2) break;
 			*q++=0xc0|(c>>6);
 			*q++=0x80|(c&0x3f);
 		}else if(c < 0x10000) { 
+			if (buflen <= n+3) break;
 			*q++=0xe0|(c>>12);
 			*q++=0x80|((c>>6)&0x3f);
 			*q++=0x80|(c&0x3f);
 		}else if(c <= 0x10ffff) {
+			if (buflen <= n+4) break;
 			*q++ = 0xf0|(c>>18);
 			*q++ = 0x80|((c>>12)&0x3f);
 			*q++ = 0x80|((c>>6)&0x3f);
@@ -845,6 +858,7 @@ char *bbStringToUTF8String( BBString *str ){
 		++i;
 	}
 	*q=0;
+	*length = q - buf;
 	return buf;
 }
 

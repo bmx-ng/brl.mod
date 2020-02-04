@@ -67,6 +67,8 @@ String^Object{
 	-ToLParam:LParam()="bbStringToLParam"
 	+FromLParam:String( lparamValue:LParam )="bbStringFromLParam"
 
+	-ToUTF8StringBuffer:Byte Ptr(buf:Byte Ptr, length:Size_T Var)="bbStringToUTF8StringBuffer"
+		
 }AF="bbStringClass"
 
 ___Array^Object{

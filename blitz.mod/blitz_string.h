@@ -92,6 +92,7 @@ int bbStringEquals( BBString *x,BBString *y );
 #endif
 
 int bbObjectIsEmptyString(BBObject * o);
+char *bbStringToUTF8StringBuffer( BBString *str, char * buf, size_t * length );
 
 #ifdef __cplusplus
 }
