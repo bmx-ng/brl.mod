@@ -811,7 +811,7 @@ BBChar *bbStringToWString( BBString *str ){
 
 char *bbStringToUTF8String( BBString *str ){
 	int i=0,len=str->length;
-	int buflen = len * 4 + 1;
+	size_t buflen = len * 4 + 1;
 	char *buf=(char*)bbMemAlloc( buflen );
 	return bbStringToUTF8StringBuffer(str, buf, &buflen);
 }
