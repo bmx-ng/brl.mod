@@ -1,4 +1,4 @@
-' Copyright (c) 2018-2019 Bruce A Henderson
+' Copyright (c) 2018-2020 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.12"
+ModuleInfo "Version: 1.13"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2018-2019 Bruce A Henderson"
+ModuleInfo "Copyright: 2018-2020 Bruce A Henderson"
 
+ModuleInfo "History: 1.13"
+ModuleInfo "History: Changes for low-level external use - header, exposing buffer."
 ModuleInfo "History: 1.12"
 ModuleInfo "History: Improved equality checks."
 ModuleInfo "History: 1.11"
@@ -63,9 +65,9 @@ It is an order of magnitude faster to append Strings to a TStringBuilder than it
 End Rem	
 Type TStringBuilder
 
-Private
 	' the char buffer
 	Field buffer:Byte Ptr
+Private
 	
 	Field newLine:String
 	Field nullText:String

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2019 Bruce A Henderson
+  Copyright (c) 2018-2020 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -18,21 +18,7 @@
   3. This notice may not be removed or altered from any source distribution.
 */ 
 
-#include "brl.mod/blitz.mod/blitz.h"
-#include "brl.mod/blitz.mod/blitz_unicode.h"
-
-struct MaxStringBuilder {
-	BBChar * buffer;
-	int count;
-	int capacity;
-};
-
-struct MaxSplitBuffer {
-	struct MaxStringBuilder * buffer;
-	int count;
-	int * startIndex;
-	int * endIndex;
-};
+#include "glue.h"
 
 void bmx_stringbuilder_free(struct MaxStringBuilder * buf) {
 	free(buf->buffer);
