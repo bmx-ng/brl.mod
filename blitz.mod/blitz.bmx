@@ -1181,5 +1181,8 @@ about: This memory is automatically freed on leaving the function where it was c
 It should not be freed, or returned from the function.
 End Rem
 
-
+Rem
+bbdoc: Returns the offset in bytes for a field of the specified #Type or #Struct.
+keyword: "FieldOffset"
+End Rem
 
