@@ -1186,3 +1186,7 @@ bbdoc: Returns the offset in bytes for a field of the specified #Type or #Struct
 keyword: "FieldOffset"
 End Rem
 
+Rem
+bbdoc: Denotes an array as a static array, with its content allocated on the stack.
+keyword: "StaticArray"
+End Rem
