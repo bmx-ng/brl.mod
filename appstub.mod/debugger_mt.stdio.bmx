@@ -52,7 +52,7 @@ Extern
 	Function bmx_debugger_DebugDecl_ConstValue:String( decl:Int Ptr )
 	Function bmx_debugger_DebugDecl_FieldOffset:Byte Ptr(decl:Int Ptr, inst:Byte Ptr)
 	Function bmx_debugger_DebugDecl_StringFromAddress:String( addr:Byte Ptr )
-	Function bmx_debugger_DebugDeclTypeChar:Int( decl:Int Ptr )
+	Function bmx_debugger_DebugDeclTypeChar:Int( decl:Int Ptr, index:Int )
 	Function bmx_debugger_DebugDecl_ArraySize:Int( decl:Byte Ptr )
 	Function bmx_debugger_DebugDecl_ArrayDecl:Byte Ptr(inst:Byte Ptr)
 	Function bmx_debugger_DebugDecl_ArrayDeclIndexedPart(decl:Byte Ptr, inst:Byte Ptr, index:Int)
@@ -184,13 +184,22 @@ Function TypeName$( tag$ Var )
 	Case "*"
 		Return TypeName( tag )+" Ptr"
 	Case "["
+		Local length:Int
 		While tag[..1]=","
 			tag=tag[1..]
 			t:+","
 		Wend
+		While IsNumeric(tag[0])
+			length = length * 10 + Int(tag[..1])
+			tag=tag[1..]
+		Wend
 		If tag[..1]<>"]" DebugError "Invalid array typetag"
 		tag=tag[1..]
-		Return TypeName( tag )+t+"]"
+		If length Then
+			Return TypeName( tag )+t+length+"]"
+		Else
+			Return TypeName( tag )+t+"]"
+		End If
 	Case "("
 		If tag[..1]<>")"
 			t:+TypeName( tag )
@@ -266,7 +275,7 @@ End Function
 
 Function DebugDeclSize:Int( decl:Int Ptr )
 
-	Local tag:Int=bmx_debugger_DebugDeclTypeChar(decl)
+	Local tag:Int=bmx_debugger_DebugDeclTypeChar(decl, 0)
 
 	Select tag
 	Case Asc("b") Return 1
@@ -328,7 +337,7 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		DebugError "Invalid decl kind"
 	End Select
 	
-	Local tag:Int=bmx_debugger_DebugDeclTypeChar(decl)
+	Local tag:Int=bmx_debugger_DebugDeclTypeChar(decl, 0)
 	
 	Select tag
 	Case Asc("b")
@@ -387,6 +396,19 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 	Case Asc("[")
 		p=(Byte Ptr Ptr p)[0]
 		If Not p Return "Null"
+		If IsNumeric(bmx_debugger_DebugDeclTypeChar(decl, 1)) Then
+			Local index:Int = 1
+			Local length:Int
+			While IsNumeric(bmx_debugger_DebugDeclTypeChar(decl, index))
+				length = length * 10 + Int(Chr(bmx_debugger_DebugDeclTypeChar(decl, index)))
+				index :+ 1
+			Wend
+?Not ptr64
+			Return "$"+ToHex( Int p ) + "^" + length
+?ptr64
+			Return "$"+ToHex( Long p ) + "^" + length
+?		
+		End If
 		If Not bmx_debugger_DebugDecl_ArraySize(p) Return "Null"
 	Case Asc("@")
 ?Not ptr64
@@ -776,13 +798,20 @@ Function UpdateDebug( msg$ )
 			EndIf
 			
 			Local structType:String
+			Local saLength:Int
 			Local n:Int = t.Find("@")
 			If n <> -1 Then
 				structType = t[n+1..]
 				t = t[..n]
 			Else
-				If t[..1]="$" t=t[1..].Trim()
-				If t[..2].ToLower()="0x" t=t[2..].Trim()
+				n = t.Find("^")
+				If n <> -1 Then
+					saLength = Int(t[n+1..])
+					t = t[..n]
+				Else
+					If t[..1]="$" t=t[1..].Trim()
+					If t[..2].ToLower()="0x" t=t[2..].Trim()
+				End If
 			End If
 
 ?Not ptr64
@@ -791,6 +820,7 @@ Function UpdateDebug( msg$ )
 			Local pointer:Long = Long( "$"+t )
 ?
 			If Not structType And Not (pointer And bbGCValidate(Byte Ptr(pointer))) Then Continue
+			If saLength Continue
 ?Not ptr64
 			Local inst:Int Ptr=Int Ptr pointer
 			Local cmd$="ObjectDump@"+ToHex( Int inst )

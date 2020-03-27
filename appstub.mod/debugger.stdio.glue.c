@@ -49,8 +49,8 @@ BBString * bmx_debugger_DebugDecl_StringFromAddress(BBString * p) {
 	return p;
 }
 
-int bmx_debugger_DebugDeclTypeChar(struct BBDebugDecl * decl) {
-	return decl->type_tag[0];
+int bmx_debugger_DebugDeclTypeChar(struct BBDebugDecl * decl, int index) {
+	return decl->type_tag[index];
 }
 
 int bmx_debugger_DebugDecl_ArraySize(BBArray * array) {
