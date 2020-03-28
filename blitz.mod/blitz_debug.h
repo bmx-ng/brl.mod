@@ -56,9 +56,16 @@ struct BBDebugScope{
 };
 
 struct BBDebugStm{
-	const char		*source_file;
-	int				line_num,char_num;
+	BBULONG      id;
+	int          line_num,char_num;
 };
+
+typedef struct BBSource {
+	BBULONG id;
+	char * file;
+	unsigned int count;
+	unsigned int lines[32];
+} BBSource;
 
 extern void bbCAssertEx();
 
@@ -70,6 +77,9 @@ extern void (*bbOnDebugLeaveScope)();
 extern void (*bbOnDebugPushExState)();
 extern void (*bbOnDebugPopExState)();
 extern void (*bbOnDebugUnhandledEx)( BBObject *ex );
+
+void bbRegisterSource(BBULONG sourceId, const char * source);
+BBSource * bbSourceForId(BBULONG id);
 
 #ifdef __cplusplus
 }

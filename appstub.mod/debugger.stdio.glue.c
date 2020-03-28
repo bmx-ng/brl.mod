@@ -134,7 +134,8 @@ BBString * bmx_debugger_DebugEnumDeclValue(struct BBDebugDecl * decl, void * val
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 BBString * bmx_debugger_DebugStmFile(struct BBDebugStm * stmt) {
-	return bbStringFromCString(stmt->source_file);
+	BBSource * src = bbSourceForId(stmt->id);
+	return bbStringFromCString(src->file);
 }
 
 int bmx_debugger_DebugStmLine(struct BBDebugStm * stmt) {
