@@ -80,6 +80,7 @@ extern void (*bbOnDebugUnhandledEx)( BBObject *ex );
 
 void bbRegisterSource(BBULONG sourceId, const char * source);
 BBSource * bbSourceForId(BBULONG id);
+BBSource * bbSourceForName(BBString * filename);
 
 #ifdef __cplusplus
 }

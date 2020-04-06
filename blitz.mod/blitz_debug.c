@@ -80,23 +80,42 @@ void bbRegisterSource(BBULONG sourceId, const char * source) {
 }
 
 BBSource * bbSourceForId(BBULONG id) {
-	unsigned first = 0;
-	unsigned last = bpCount - 1;
-	unsigned index = 0;
-	
-	while (first <= last) {
-		index = (first + last) / 2;
-		if (sources[index].id == id) {
-			return &sources[index];
-		} else {
-			if (sources[index].id < id) {
-				first = index + 1;
+	if (bpCount > 0) {
+		unsigned int first = 0;
+		unsigned int last = bpCount - 1;
+		unsigned int index = 0;
+		
+		while (first <= last) {
+			index = (first + last) / 2;
+			if (sources[index].id == id) {
+				return &sources[index];
 			} else {
-				last = index - 1;
+				if (sources[index].id < id) {
+					first = index + 1;
+				} else {
+					if (index == 0) {
+						return 0;
+					}
+					last = index - 1;
+				}
 			}
 		}
 	}
-
-	return "<Error:Unmapped source>";
+	return 0;
 }
 
+BBSource * bbSourceForName(BBString * filename) {
+	if (bpCount > 0) {
+		char path[512];
+		size_t len = 512;
+		bbStringToUTF8StringBuffer(filename, path, &len);
+		path[len] = 0;
+		
+		for (int i = 0; i < bpCount; i++) {
+			if (strcmp(path, sources[i].file) == 0) {
+				return &sources[i];
+			}
+		}
+	}
+	return 0;
+}
