@@ -34,6 +34,7 @@ int		bbMilliSecs();
 int		bbIsMainThread();
 #if __STDC_VERSION__ >= 199901L
 #ifndef _WIN32
+#include <unistd.h>
 inline void bbUDelay( int microseconds ) {
 	if( microseconds<0 ) return;
 	usleep( microseconds );
