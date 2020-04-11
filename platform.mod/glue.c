@@ -5,6 +5,7 @@ int bmx_os_getproccount() {
 	int procCount = 0;
 
 #ifdef __APPLE__
+	uint32_t cpuCount;
 	int name[2] = { CTL_HW, HW_NCPU };
 
 	size_t size = sizeof(cpuCount);
