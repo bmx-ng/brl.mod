@@ -42,6 +42,7 @@ int threads_TryLockMutex( bb_mutex_t *mutex ){
 }
 
 //***** Semaphores *****
+#ifndef __APPLE__
 bb_sem_t *threads_CreateSemaphore( int count ){
 	bb_sem_t *sem=malloc( sizeof(bb_sem_t) );
 	if( bb_sem_init( sem,count ) ) return sem;
@@ -61,7 +62,7 @@ void threads_WaitSemaphore( bb_sem_t *sem ){
 void threads_PostSemaphore( bb_sem_t *sem ){
 	bb_sem_post( sem );
 }
-
+#endif
 //***** CondVars *****
 #ifdef _WIN32
 
@@ -230,11 +231,6 @@ int threads_TimedWaitCond(pthread_cond_t *cond,bb_mutex_t *mutex, int millisecs)
 	return -1;	
 }
 
-#endif
-
-#ifdef __APPLE__
-int threads_TimedWaitSemaphore( bb_sem_t *sem, int millisecs ){
-}
 #endif
 
 #if __linux

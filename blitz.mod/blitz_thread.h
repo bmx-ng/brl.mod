@@ -63,18 +63,6 @@ extern pthread_mutexattr_t _bb_mutexattr;
 
 #endif
 
-#ifdef __APPLE__
-
-#include <mach/semaphore.h>
-#include <mach/task.h>
-typedef semaphore_t bb_sem_t;
-#define bb_sem_init(SEMPTR,COUNT) (semaphore_create( mach_task_self(),(SEMPTR),SYNC_POLICY_FIFO,(COUNT) )>=0)
-#define bb_sem_destroy(SEMPTR) semaphore_destroy( mach_task_self(),*(SEMPTR) )
-#define bb_sem_wait(SEMPTR) semaphore_wait( *(SEMPTR) )
-#define bb_sem_post(SEMPTR) semaphore_signal( *(SEMPTR) )
-
-#endif
-
 #ifdef __linux
 
 #include <semaphore.h>
