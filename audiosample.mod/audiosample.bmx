@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Audio/Audio samples
@@ -32,22 +32,25 @@ Type TAudioSample
 	Rem
 	bbdoc: Length, in samples, of the sample data
 	end rem
-	Field length
+	Field length:Int
 	
 	Rem
 	bbdoc: Sample rate
 	end rem
-	Field hertz
+	Field hertz:Int
 	
 	Rem
 	bbdoc: Sample format
 	end rem
-	Field format
+	Field format:Int
 	
+	Rem
+	bbdoc: Allocated memory in bytes
+	End Rem
 	Field capacity:Long
 
 	Method Delete()
-		If capacity>=0 MemFree samples
+		If capacity>=0 Then MemFree( samples )
 	End Method
 
 	Rem
@@ -55,8 +58,8 @@ Type TAudioSample
 	returns: A new audio sample object
 	end rem
 	Method Copy:TAudioSample()
-		Local t:TAudioSample=Create( length,hertz,format )
-		CopySamples samples,t.samples,format,length
+		Local t:TAudioSample = Create( length,hertz,format )
+		CopySamples( samples,t.samples,format,length )
 		Return t
 	End Method
 
@@ -64,9 +67,9 @@ Type TAudioSample
 	bbdoc: Convert audio sample
 	returns: A new audio sample object in the specified format
 	end rem
-	Method Convert:TAudioSample( to_format )
-		Local t:TAudioSample=Create( length,hertz,to_format )
-		ConvertSamples samples,format,t.samples,to_format,length
+	Method Convert:TAudioSample( to_format:Int )
+		Local t:TAudioSample = Create( length,hertz,to_format )
+		ConvertSamples( samples,format,t.samples,to_format,length )
 		Return t
 	End Method
 
@@ -74,14 +77,14 @@ Type TAudioSample
 	bbdoc: Create an audio sample
 	returns: A new audio sample object
 	end rem
-	Function Create:TAudioSample( length,hertz,format )
-		Local t:TAudioSample=New TAudioSample
-		Local capacity:Long=length*BytesPerSample[format]
-		t.samples=MemAlloc( Size_T(capacity) )
-		t.length=length
-		t.hertz=hertz
-		t.format=format
-		t.capacity=capacity
+	Function Create:TAudioSample( length:Int,hertz:Int,format:Int )
+		Local t:TAudioSample = New TAudioSample
+		Local capacity:Long = length*BytesPerSample[format]
+		t.samples = MemAlloc( Size_T(capacity) )
+		t.length = length
+		t.hertz = hertz
+		t.format = format
+		t.capacity = capacity
 		Return t
 	End Function
 
@@ -89,13 +92,13 @@ Type TAudioSample
 	bbdoc: Create a static audio sample
 	returns: A new audio sample object that references an existing block of memory
 	end rem
-	Function CreateStatic:TAudioSample( samples:Byte Ptr,length,hertz,format )
-		Local t:TAudioSample=New TAudioSample
-		t.samples=samples
-		t.length=length
-		t.hertz=hertz
-		t.format=format
-		t.capacity=-1
+	Function CreateStatic:TAudioSample( samples:Byte Ptr,length:Int,hertz:Int,format:Int )
+		Local t:TAudioSample = New TAudioSample
+		t.samples = samples
+		t.length = length
+		t.hertz = hertz
+		t.format = format
+		t.capacity = -1
 		Return t
 	End Function
 
@@ -122,8 +125,8 @@ Type TAudioSampleLoader
 	Field _succ:TAudioSampleLoader
 	
 	Method New()
-		_succ=sample_loaders
-		sample_loaders=Self
+		_succ = sample_loaders
+		sample_loaders = Self
 	End Method
 	
 	Rem
@@ -157,7 +160,7 @@ the audio sample will be played. @format should be one of:
 * &SF_STEREO16BE | Stereo signed 16 bit big endian
 ]
 End Rem
-Function CreateAudioSample:TAudioSample( length,hertz,format )
+Function CreateAudioSample:TAudioSample( length:Int,hertz:Int,format:Int )
 	Return TAudioSample.Create( length,hertz,format )
 End Function
 
@@ -170,7 +173,7 @@ deleted.
 
 See #CreateAudioSample for possile @format values.
 End Rem
-Function CreateStaticAudioSample:TAudioSample( samples:Byte Ptr,length,hertz,format )
+Function CreateStaticAudioSample:TAudioSample( samples:Byte Ptr,length:Int,hertz:Int,format:Int )
 	Return TAudioSample.CreateStatic( samples,length,hertz,format )
 End Function
 
@@ -180,24 +183,24 @@ returns: An audio sample object
 end rem
 Function LoadAudioSample:TAudioSample( url:Object )
 
-	Local stream:TStream=ReadStream( url )
-	If Not stream Return
+	Local stream:TStream = ReadStream( url )
+	If Not stream then Return Null
 
-	Local pos:Long=stream.Pos()
-	If pos=-1 RuntimeError "Stream is not seekable"
-
+	Local pos:Long = stream.Pos()
+	If pos = -1 Then RuntimeError "Stream is not seekable"
+	
 	Local sample:TAudioSample
-	Local loader:TAudioSampleLoader=sample_loaders
+	Local loader:TAudioSampleLoader = sample_loaders
 	
 	While loader
-		stream.Seek pos
+		stream.Seek( pos )
 		Try
-			sample=loader.LoadAudioSample( stream )
+			sample = loader.LoadAudioSample( stream )
 		Catch ex:TStreamException
 		End Try
-		If sample Exit
-		loader=loader._succ
+		If sample Then Exit
+		loader = loader._succ
 	Wend
-	stream.Close
+	stream.Close()
 	Return sample
 End Function

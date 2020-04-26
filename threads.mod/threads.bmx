@@ -6,14 +6,20 @@ bbdoc: System/Threads
 End Rem
 Module BRL.Threads
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Changed to use macOS dispatch semphores."
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Use Byte Ptr instead of Int handles."
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial release."
+
+?Threaded And macos
+
+Import "threads_mac.m"
 
 ?Threaded
 
@@ -581,3 +587,4 @@ Function AtomicSwap:Int( target:Int Var,value:Int )
 End Function
 
 ?
+
