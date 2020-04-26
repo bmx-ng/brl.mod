@@ -1716,58 +1716,32 @@ Struct SMat4F
 	bbdoc: Creates a perspective projection matrix.
 	End Rem
 	Function Perspective:SMat4F(fov:Float, w:Float, h:Float, n:Float, f:Float)
-		Local ft:Float = 1.0 / Tan(fov * 0.5)
-		Local nf:Float = 1.0 / (n - f)
-		Return New SMat4F(ft, 0, 0, 0, ..
-			0, ft * w / h, 0, 0, ..
-			0, 0, (f + n) * nf, -1, ..
-			0, 0, (2.0 * f * n) * nf, 0) 
+		Local tf:Float = Tan(fov / 2)
+		Return New SMat4F(1 / ((w / h) * tf), 0, 0, 0, ..
+			0, 1 / tf, 0, 0, ..
+			0, 0, - (f + n) / (f - n), -1, ..
+			0, 0, - (2 * f * n) / (f - n), 0)
 	End Function
 	
 	Rem
 	bbdoc: Creates a rotation matrix, rotated @angle degrees around the point @axis.
 	End Rem
 	Method Rotate:SMat4F(axis:SVec3F, angle:Double)
-		Local x:Float = axis.x
-		Local y:Float = axis.y
-		Local z:Float = axis.z
-		Local a00:Float = a
-		Local a01:Float = b
-		Local a02:Float = c
-		Local a03:Float = d
-		Local a10:Float = e
-		Local a11:Float = f
-		Local a12:Float = g
-		Local a13:Float = h
-		Local a20:Float = i
-		Local a21:Float = j
-		Local a22:Float = k
-		Local a23:Float = l
-		Local sa:Double = Sin(angle)
-		Local ca:Double = Cos(angle)
-		Local t:Float = 1 - ca
-		Local b00:Float = x * x * t + ca
-		Local b01:Float = y * x * t + z * sa
-		Local b02:Float = z * x * t - y * sa
-		Local b10:Float = x * y * t - z * sa
-		Local b11:Float = y * y * t + ca
-		Local b12:Float = z * y * t + x * sa
-		Local b20:Float = x * z * t + y * sa
-		Local b21:Float = y * z * t - x * sa
-		Local b22:Float = z * z * t + ca
-		Return New SMat4F(a00 * b00 + a10 * b01 + a20 * b02, ..
-			a01 * b00 + a11 * b01 + a21 * b02, ..
-			a02 * b00 + a12 * b01 + a22 * b02, ..
-			a03 * b00 + a13 * b01 + a23 * b02, ..
-			a00 * b10 + a10 * b11 + a20 * b12, ..
-			a01 * b10 + a11 * b11 + a21 * b12, ..
-			a02 * b10 + a12 * b11 + a22 * b12, ..
-			a03 * b10 + a13 * b11 + a23 * b12, ..
-			a00 * b20 + a10 * b21 + a20 * b22, ..
-			a01 * b20 + a11 * b21 + a21 * b22, ..
-			a02 * b20 + a12 * b21 + a22 * b22, ..
-			a03 * b20 + a13 * b21 + a23 * b22, ..
-			m, n, o, p)
+		Local c:Float = Cos(angle)
+		Local ic:Float = 1 - c
+		Local s:Float = Sin(angle)
+
+		Local norm:SVec3F = axis.Normal()
+
+		Local x:Float = ic * norm.x
+		Local y:Float = ic * norm.y
+		Local z:Float = ic * norm.z
+		Local mat:SMat4F = New SMat4F(c + x * norm.x, x * norm.y + s * norm.z, x * norm.z - s * norm.y, 0, ..
+				y * norm.x - s * norm.z, c + y * norm.y, y * norm.z + s * norm.x, 0, ..
+				z * norm.x + s * norm.y, z * norm.y - s * norm.x, c + z * norm.z, 0, ..
+				0, 0, 0, 1)
+		
+		Return Self * mat
 	End Method
 	
 	Rem
