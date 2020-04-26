@@ -1640,64 +1640,32 @@ Struct SMat4F
 	bbdoc: Computes a transformation matrix that corresponds to a camera viewing the @eye from the @pos.
 	about: The right-hand vector is perpendicular to the up vector.
 	End Rem
-	Function LookAt:SMat4F(eye:SVec3F, pos:SVec3F, up:SVec3F)
-		Local ex:Float = eye.x
-		Local ey:Float = eye.y
-		Local ez:Float = eye.z
-		Local px:Float = pos.x
-		Local py:Float = pos.y
-		Local pz:Float = pos.z
-		Local ux:Float = up.x
-		Local uy:Float = up.y
-		Local uz:Float = up.z
-		Local z0:Float = ex - px
-		Local z1:Float = ey - py
-		Local z2:Float = ez - pz
+	Function LookAt:SMat4F(eye:SVec3F, pos:SVec3F, upDir:SVec3F)
+		Local forward:SVec3F = (eye - pos).Normal()
+		Local lft:SVec3F = upDir.Cross(forward).Normal()
 		
-		If z0 = 0 Or z1 = 0 Or z2 = 0 Then
-			Return Identity()
-		End If
+		Local up:SVec3F = forward.Cross(lft)
 		
-		Local length:Float = Sqr(z0 * z0 + z1 * z1 + z2 * z2)
-		z0 :* length
-		z1 :* length
-		z2 :* length
+		Local mat:SMat4F = SMat4F.Identity()
 		
-		Local x0:Float = uy * z2 - uz * z1
-		Local x1:Float = uz * z0 - ux * z2
-		Local x2:Float = ux * z1 - uy * z0
-		
-		length = Sqr(x0 * x0 + x1 * x1 + x2 * x2)
-		
-		If length = 0 Then
-			x0 = 0
-			x1 = 0
-			x2 = 0
-		Else
-			length = 1 / length
-			x0 :* length
-			x1 :* length
-			x2 :* length
-		End If
-		
-		Local y0:Float = z1 * x2 - z2 * x1
-		Local y1:Float = z2 * x0 - z0 * x2
-		Local y2:Float = z0 * x1 - z1 * x0
-		
-		length = Sqr(y0 * y0 + y1 * y1 + y2 * y2)
-		If length = 0 Then
-			y0 = 0
-			y1 = 0
-			y2 = 0
-		Else
-			length = 1 / length
-			y0 :* length
-			y1 :* length
-			y2 :* length
-		End If
-		
-		Return New SMat4F(x0, y0, z0, 0, x1, y1, z1, 0, x2, y2, z2, 0, ..
-			-(x0 * ex + x1 * ey + x2 * ez), -(y0 * ex + y1 * ey + y2 * ez), -(z0 * ex + z1 * ey + z2 * ez), 1)
+		Local a00:Float = lft.x
+		Local a01:Float = up.x
+		Local a02:Float = forward.x
+		Local a03:Float = mat.d
+		Local a10:Float = lft.y
+		Local a11:Float = up.y
+		Local a12:Float = forward.y
+		Local a13:Float = mat.h
+		Local a20:Float = lft.z
+		Local a21:Float = up.z
+		Local a22:Float = forward.z
+		Local a23:Float = mat.l
+		Local a30:Float = -lft.x * eye.x - lft.y * eye.y - lft.z * eye.z
+		Local a31:Float = -up.x * eye.x - up.y * eye.y - up.z * eye.z
+		Local a32:Float = -forward.x * eye.x - forward.y * eye.y - forward.z * eye.z
+		Local a33:Float = mat.p
+
+		Return New SMat4F(a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33)
 	End Function
 	
 	Rem
