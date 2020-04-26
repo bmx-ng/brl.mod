@@ -713,64 +713,32 @@ Struct SMat4D
 	bbdoc: Computes a transformation matrix that corresponds to a camera viewing the @eye from the @pos.
 	about: The right-hand vector is perpendicular to the up vector.
 	End Rem
-	Function LookAt:SMat4D(eye:SVec3D, pos:SVec3D, up:SVec3D)
-		Local ex:Double = eye.x
-		Local ey:Double = eye.y
-		Local ez:Double = eye.z
-		Local px:Double = pos.x
-		Local py:Double = pos.y
-		Local pz:Double = pos.z
-		Local ux:Double = up.x
-		Local uy:Double = up.y
-		Local uz:Double = up.z
-		Local z0:Double = ex - px
-		Local z1:Double = ey - py
-		Local z2:Double = ez - pz
+	Function LookAt:SMat4D(eye:SVec3D, pos:SVec3D, upDir:SVec3D)
+		Local forward:SVec3D = (eye - pos).Normal()
+		Local lft:SVec3D = upDir.Cross(forward).Normal()
 		
-		If z0 = 0 Or z1 = 0 Or z2 = 0 Then
-			Return Identity()
-		End If
+		Local up:SVec3D = forward.Cross(lft)
 		
-		Local length:Double = Sqr(z0 * z0 + z1 * z1 + z2 * z2)
-		z0 :* length
-		z1 :* length
-		z2 :* length
+		Local mat:SMat4D = SMat4D.Identity()
 		
-		Local x0:Double = uy * z2 - uz * z1
-		Local x1:Double = uz * z0 - ux * z2
-		Local x2:Double = ux * z1 - uy * z0
-		
-		length = Sqr(x0 * x0 + x1 * x1 + x2 * x2)
-		
-		If length = 0 Then
-			x0 = 0
-			x1 = 0
-			x2 = 0
-		Else
-			length = 1 / length
-			x0 :* length
-			x1 :* length
-			x2 :* length
-		End If
-		
-		Local y0:Double = z1 * x2 - z2 * x1
-		Local y1:Double = z2 * x0 - z0 * x2
-		Local y2:Double = z0 * x1 - z1 * x0
-		
-		length = Sqr(y0 * y0 + y1 * y1 + y2 * y2)
-		If length = 0 Then
-			y0 = 0
-			y1 = 0
-			y2 = 0
-		Else
-			length = 1 / length
-			y0 :* length
-			y1 :* length
-			y2 :* length
-		End If
-		
-		Return New SMat4D(x0, y0, z0, 0, x1, y1, z1, 0, x2, y2, z2, 0, ..
-			-(x0 * ex + x1 * ey + x2 * ez), -(y0 * ex + y1 * ey + y2 * ez), -(z0 * ex + z1 * ey + z2 * ez), 1)
+		Local a00:Double = lft.x
+		Local a01:Double = up.x
+		Local a02:Double = forward.x
+		Local a03:Double = mat.d
+		Local a10:Double = lft.y
+		Local a11:Double = up.y
+		Local a12:Double = forward.y
+		Local a13:Double = mat.h
+		Local a20:Double = lft.z
+		Local a21:Double = up.z
+		Local a22:Double = forward.z
+		Local a23:Double = mat.l
+		Local a30:Double = -lft.x * eye.x - lft.y * eye.y - lft.z * eye.z
+		Local a31:Double = -up.x * eye.x - up.y * eye.y - up.z * eye.z
+		Local a32:Double = -forward.x * eye.x - forward.y * eye.y - forward.z * eye.z
+		Local a33:Double = mat.p
+
+		Return New SMat4D(a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33)
 	End Function
 	
 	Rem
@@ -789,58 +757,32 @@ Struct SMat4D
 	bbdoc: Creates a perspective projection matrix.
 	End Rem
 	Function Perspective:SMat4D(fov:Double, w:Double, h:Double, n:Double, f:Double)
-		Local ft:Double = 1.0 / Tan(fov * 0.5)
-		Local nf:Double = 1.0 / (n - f)
-		Return New SMat4D(ft, 0, 0, 0, ..
-			0, ft * w / h, 0, 0, ..
-			0, 0, (f + n) * nf, -1, ..
-			0, 0, (2.0 * f * n) * nf, 0) 
+		Local tf:Double = Tan(fov / 2)
+		Return New SMat4D(1 / ((w / h) * tf), 0, 0, 0, ..
+			0, 1 / tf, 0, 0, ..
+			0, 0, - (f + n) / (f - n), -1, ..
+			0, 0, - (2 * f * n) / (f - n), 0)
 	End Function
 	
 	Rem
 	bbdoc: Creates a rotation matrix, rotated @angle degrees around the point @axis.
 	End Rem
 	Method Rotate:SMat4D(axis:SVec3D, angle:Double)
-		Local x:Double = axis.x
-		Local y:Double = axis.y
-		Local z:Double = axis.z
-		Local a00:Double = a
-		Local a01:Double = b
-		Local a02:Double = c
-		Local a03:Double = d
-		Local a10:Double = e
-		Local a11:Double = f
-		Local a12:Double = g
-		Local a13:Double = h
-		Local a20:Double = i
-		Local a21:Double = j
-		Local a22:Double = k
-		Local a23:Double = l
-		Local sa:Double = Sin(angle)
-		Local ca:Double = Cos(angle)
-		Local t:Double = 1 - ca
-		Local b00:Double = x * x * t + ca
-		Local b01:Double = y * x * t + z * sa
-		Local b02:Double = z * x * t - y * sa
-		Local b10:Double = x * y * t - z * sa
-		Local b11:Double = y * y * t + ca
-		Local b12:Double = z * y * t + x * sa
-		Local b20:Double = x * z * t + y * sa
-		Local b21:Double = y * z * t - x * sa
-		Local b22:Double = z * z * t + ca
-		Return New SMat4D(a00 * b00 + a10 * b01 + a20 * b02, ..
-			a01 * b00 + a11 * b01 + a21 * b02, ..
-			a02 * b00 + a12 * b01 + a22 * b02, ..
-			a03 * b00 + a13 * b01 + a23 * b02, ..
-			a00 * b10 + a10 * b11 + a20 * b12, ..
-			a01 * b10 + a11 * b11 + a21 * b12, ..
-			a02 * b10 + a12 * b11 + a22 * b12, ..
-			a03 * b10 + a13 * b11 + a23 * b12, ..
-			a00 * b20 + a10 * b21 + a20 * b22, ..
-			a01 * b20 + a11 * b21 + a21 * b22, ..
-			a02 * b20 + a12 * b21 + a22 * b22, ..
-			a03 * b20 + a13 * b21 + a23 * b22, ..
-			m, n, o, p)
+		Local c:Double = Cos(angle)
+		Local ic:Double = 1 - c
+		Local s:Double = Sin(angle)
+
+		Local norm:SVec3D = axis.Normal()
+
+		Local x:Double = ic * norm.x
+		Local y:Double = ic * norm.y
+		Local z:Double = ic * norm.z
+		Local mat:SMat4D = New SMat4D(c + x * norm.x, x * norm.y + s * norm.z, x * norm.z - s * norm.y, 0, ..
+				y * norm.x - s * norm.z, c + y * norm.y, y * norm.z + s * norm.x, 0, ..
+				z * norm.x + s * norm.y, z * norm.y - s * norm.x, c + z * norm.z, 0, ..
+				0, 0, 0, 1)
+		
+		Return Self * mat
 	End Method
 	
 	Rem
