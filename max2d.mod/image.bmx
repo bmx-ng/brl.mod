@@ -20,6 +20,7 @@ Type TImage
 	End Method
 	
 	Method Frame:TImageFrame( index )
+		Assert index < seqs.length And index < frames.length Else "Index out of bounds"
 		If seqs[index]=GraphicsSeq Return frames[index]
 		frames[index]=_max2dDriver.CreateFrameFromPixmap( Lock(index,True,False),flags )
 		If frames[index] seqs[index]=GraphicsSeq Else seqs[index]=0
@@ -27,6 +28,7 @@ Type TImage
 	End Method
 	
 	Method Lock:TPixmap( index,read,write )
+		Assert index < seqs.length And index < frames.length Else "Index out of bounds"
 		If write
 			seqs[index]=0
 			frames[index]=Null
@@ -38,6 +40,7 @@ Type TImage
 	End Method
 	
 	Method SetPixmap( index,pixmap:TPixmap )
+		Assert index < seqs.length And index < frames.length And index < pixmaps.length Else "Index out of bounds"
 		If (flags & MASKEDIMAGE) And AlphaBitsPerPixel[pixmap.format]=0
 			pixmap=MaskPixmap( pixmap,mask_r,mask_g,mask_b )
 		EndIf
@@ -49,6 +52,7 @@ Type TImage
 	End Method
 	
 	Function Create:TImage( width,height,frames,flags,mr,mg,mb )
+		Assert width > 0 And height > 0 Else "Image dimensions out of bounds"
 		Local t:TImage=New TImage
 		t.width=width
 		t.height=height
@@ -72,6 +76,7 @@ Type TImage
 	End Function
 
 	Function LoadAnim:TImage( url:Object,cell_width,cell_height,first,count,flags,mr,mg,mb )
+		Assert cell_width > 0 And cell_height > 0 Else "Cell dimensions out of bounds"
 		Local pixmap:TPixmap=TPixmap(url)
 		If Not pixmap pixmap=LoadPixmap(url)
 		If Not pixmap Return
