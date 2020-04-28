@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2019 Bruce A Henderson
+' Copyright (c) 2007-2020 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -32,11 +32,9 @@ Extern
 	Function _endmntent:Int(file:Int) = "endmntent"
 	Function _statvfs:Int(path:Byte Ptr, stat:Byte Ptr) = "statvfs"
 	
-	Function _getuid:Int() = "getuid"
-	Function _getpwuid:Byte Ptr(uid:Int) = "getpwuid"
-	
 	Function bmx_userdirlookup:String(dirType:String)
 	Function bmx_volumes_volspace_refresh:Int(vol:String, _size:Long Ptr, _free:Long Ptr)
+	Function bmx_volumes_gethome:String()
 End Extern
 
 Type Tmntent
@@ -61,17 +59,6 @@ Type Tstatvfs
 	Field f_flag:Int     ' mount flags 
 	Field f_namemax:Int  ' maximum filename length 
 End Type
-
-Type TPasswdEntry
-	Field pw_name:Byte Ptr		' user name 
-	Field pw_passwd:Byte Ptr	' user password 
-	Field pw_uid:Int			' user id 
-	Field pw_gid:Int			' group id 
-	Field pw_gecos:Byte Ptr	' real name 
-	Field pw_dir:Byte Ptr		' home directory 
-	Field pw_shell:Byte Ptr	' shell program 
-End Type
-
 
 Global linuxVolume_driver:TLinuxVolumeDriver = New TLinuxVolumeDriver
 
@@ -199,16 +186,8 @@ Type TLinuxVolume Extends TVolume
 		If Not dir Or dir.length = 0 Then
 			' work it out ourselves...
 			
-			Local pwdptr:Byte Ptr = _getpwuid(_getuid())
-			
-			If pwdptr Then
-			
-				Local pwd:TPasswdEntry = New TPasswdEntry
-				MemCopy pwd, pwdptr, Size_T(SizeOf pwd)
+			dir = bmx_volumes_gethome()
 
-				dir = String.FromUTF8String(pwd.pw_dir)
-			
-			End If
 		End If
 		
 		Return dir

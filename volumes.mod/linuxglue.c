@@ -1,8 +1,6 @@
 /*
-  This file is not licenced under the GPL like the rest of the code.
-  Its is under the MIT license, to encourage reuse by cut-and-paste.
-
   Copyright (c) 2007 Red Hat, inc
+  Copyright (c) 2010-2020 Bruce A Henderson
 
   Permission is hereby granted, free of charge, to any person
   obtaining a copy of this software and associated documentation files
@@ -260,4 +258,19 @@ int bmx_volumes_volspace_refresh(BBString * vol, BBInt64 * _size, BBInt64 * _fre
 	return res;
 }
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
+BBString * bmx_volumes_gethome() {
+
+	BBString * res = &bbEmptyString;
+
+	struct passwd * pwd = getpwuid(getuid());
+	
+	if (pwd != NULL) {
+		res = bbStringFromUTF8String(pwd->pw_dir);
+	}
+	
+	return res;
+}
