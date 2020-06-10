@@ -27,7 +27,9 @@ BBClass bbObjectClass={
 	bbObjectSendMessage,
 	0,             //interface
 	0,             //extra
-	0              //obj_size
+	0,             //obj_size
+	0,             //instance_count
+	sizeof(void*)  //fields_offset
 };
 
 BBObject bbNullObject={
@@ -104,12 +106,20 @@ BBObject *bbObjectStringcast( BBObject *o ){
 	}
 }
 
+int bbObjectIsString( BBObject *o ){
+	return o->clas == &bbStringClass;
+}
+
 BBObject *bbObjectArraycast( BBObject *o ){
 	if (o->clas == &bbArrayClass) {
 		return o;
 	} else {
 		return (BBObject *)&bbEmptyArray;
 	}
+}
+
+int bbObjectIsArray( BBObject *o ){
+	return o->clas == &bbArrayClass;
 }
 
 BBObject *bbObjectDowncast( BBObject *o,BBClass *t ){
@@ -300,3 +310,11 @@ BBDebugScope * bbObjectEnumInfo( char * name ) {
 	
 	return 0;
 }
+
+#if __STDC_VERSION__ >= 199901L
+extern void * bbObjectToFieldOffset(BBOBJECT o);
+#else
+void * bbObjectToFieldOffset(BBOBJECT o) {
+	return (void*)(((unsigned char*)o) + o->clas->fields_offset);
+}
+#endif

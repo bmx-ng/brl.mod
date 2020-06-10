@@ -569,6 +569,12 @@ returns: #True if @obj is an empty #String, or #False otherwise.
 End Rem
 Function IsEmptyString:Int(obj:Object)="int bbObjectIsEmptyString(BBOBJECT)!"
 
+Rem
+bbdoc: Determines whether the #Object @obj is a #String.
+returns: #True if @obj is a #String, or #False otherwise.
+End Rem
+Function ObjectIsString:Int(obj:Object)="int bbObjectIsString(BBOBJECT)!"
+
 Function DumpObjectCounts(buffer:Byte Ptr, size:Int, includeZeros:Int)="bbObjectDumpInstanceCounts"
 Global CountObjectInstances:Int="bbCountInstances"
 

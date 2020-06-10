@@ -32,6 +32,7 @@ struct BBClass{
 	void*   extra;
 	unsigned int obj_size;
 	unsigned int instance_count;
+	unsigned int fields_offset;
 
 	void*	vfns[32];
 };
@@ -78,6 +79,8 @@ void		bbObjectReserved();
 BBObject*	bbObjectDowncast( BBObject *o,BBClass *t );
 BBObject*	bbObjectStringcast( BBObject *o );
 BBObject*	bbObjectArraycast( BBObject *o );
+int bbObjectIsString( BBObject *o );
+int bbObjectIsArray( BBObject *o );
 
 void		bbObjectRegisterType( BBClass *clas );
 BBClass**	bbObjectRegisteredTypes( int *count );
@@ -108,6 +111,14 @@ struct enum_node {
 
 void bbObjectRegisterEnum( BBDebugScope *p );
 BBDebugScope * bbObjectEnumInfo( char * name );
+
+#if __STDC_VERSION__ >= 199901L
+inline void * bbObjectToFieldOffset(BBOBJECT o) {
+	return (void*)(((unsigned char*)o) + o->clas->fields_offset);
+}
+#else
+void * bbObjectToFieldOffset(BBOBJECT o);
+#endif
 
 #ifdef __cplusplus
 }

@@ -28,6 +28,7 @@ BBClass bbStringClass={
 	0,              //extra
 	0,
 	0,          //instance_count
+	offsetof(BBString, length), //fields_offset
 	
 	bbStringFind,
 	bbStringFindLast,
