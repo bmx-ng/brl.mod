@@ -1,7 +1,7 @@
 SuperStrict
 
 For Local f:Float=-0.4 Until 0.4 Step 0.2
-    If IsInf(1.0 / f) = True Then
+    If IsInf(1.0 / f) Then
        Print "Divide by Zero"
     Else
        Print "inverse of "+f+" = "+String(1.0/f)
