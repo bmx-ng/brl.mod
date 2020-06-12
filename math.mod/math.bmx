@@ -30,13 +30,13 @@ Rem
 bbdoc: Check if a value is NAN
 returns: True if @x is 'not a number' (eg: Sqr(-1))
 End Rem
-Function IsNan( x:Double )="int bbIsNan(double)!"
+Function IsNan:Int( x:Double )="int bbIsNan(double)!"
 
 Rem
 bbdoc: Check if a value is infinite (eg: 1.0/0.0)
 returns: True if @x is infinite
 End Rem
-Function IsInf( x:Double )="int bbIsInf(double)!"
+Function IsInf:Int( x:Double )="int bbIsInf(double)!"
 
 Rem
 bbdoc: Square root of @x
