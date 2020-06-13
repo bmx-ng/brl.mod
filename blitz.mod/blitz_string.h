@@ -87,11 +87,15 @@ inline int bbStringEquals( BBString *x,BBString *y ){
 	if (x->length-y->length != 0) return 0;
 	return memcmp(x->buf, y->buf, x->length * sizeof(BBChar)) == 0;
 }
+
+inline int bbObjectIsEmptyString(BBObject * o) {
+	return (BBString*)o == &bbEmptyString;
+}
 #else
 int bbStringEquals( BBString *x,BBString *y );
+int bbObjectIsEmptyString(BBObject * o);
 #endif
 
-int bbObjectIsEmptyString(BBObject * o);
 char *bbStringToUTF8StringBuffer( BBString *str, char * buf, size_t * length );
 
 #ifdef __cplusplus
