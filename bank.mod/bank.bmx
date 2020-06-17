@@ -37,7 +37,7 @@ Type TBank
 	
 	Method Delete()
 		Assert Not _locked
-		If _capacity>=0 MemFree _buf
+		If _capacity>=0 And Not _static MemFree _buf
 	End Method
 
 	Rem
