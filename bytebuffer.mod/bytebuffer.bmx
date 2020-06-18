@@ -23,10 +23,12 @@ bbdoc: Byte Buffer
 End Rem
 Module BRL.ByteBuffer
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2020 Bruce A Henderson"
 
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Added GetBytes() and PutBytes()"
 ModuleInfo "History: 1.00 Initial Release"
 
 
@@ -272,6 +274,11 @@ Type TByteBuffer Extends TBuffer
 	Method GetDouble:Double() Abstract
 	
 	Rem
+	bbdoc: Copies @length bytes into @dst at the curent position, and increments the position by @length.
+	End Rem
+	Method GetBytes(dst:Byte Ptr, length:UInt) Abstract
+	
+	Rem
 	bbdoc: Writes the specified #Byte to the current position and increments the position by 1.
 	End Rem
 	Method Put:TByteBuffer(value:Byte) Abstract
@@ -315,6 +322,11 @@ Type TByteBuffer Extends TBuffer
 	bbdoc: Writes the specified #Double to the current position and increments the position by 8.
 	End Rem
 	Method PutDouble:TByteBuffer(value:Double) Abstract
+	
+	Rem
+	bbdoc: Writes the specified number of bytes to the current position.
+	End Rem
+	Method PutBytes:TByteBuffer(bytes:Byte Ptr, length:UInt) Abstract
 
 	Rem
 	bbdoc: Returns a sliced #TByteBuffer that shares its content with this one.
@@ -467,6 +479,18 @@ Type TBytePtrBuffer Extends TByteBuffer
 ?Not ptr64
 		Return Size_T(GetUInt())
 ?
+	End Method
+	
+	Method GetBytes(dst:Byte Ptr, length:UInt)
+		Local newPosition:Int = _position + length
+		If newPosition > _limit Then
+			Throw New TBufferUnderflowException
+		End If
+		
+		Local pos:Int = _position + _offset
+		MemCopy(dst, _data + pos, Size_T(length))
+		
+		_position = newPosition
 	End Method
 
 	Method Put:TByteBuffer(value:Byte) Override
@@ -652,6 +676,23 @@ Type TBytePtrBuffer Extends TByteBuffer
 
 	Method PutDouble:TByteBuffer(value:Double) Override
 		Return PutLong(bmx_bytebuffer_doubletolongbits(value))
+	End Method
+
+	Method PutBytes:TByteBuffer(bytes:Byte Ptr, length:UInt) Override
+		If _readOnly Then
+			Throw New TReadOnlyBufferException
+		End If
+
+		Local newPosition:Int = _position + length
+		If newPosition > _limit Then
+			Throw New TBufferOverflowException
+		End If
+		
+		Local pos:Int = _offset + _position
+		MemCopy(_data + pos, bytes, Size_T(length))
+		
+		_position = newPosition
+		Return Self
 	End Method
 
 	Method Slice:TByteBuffer() Override
