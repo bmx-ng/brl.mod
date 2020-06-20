@@ -1,4 +1,4 @@
-' Copyright (c) 2019 Bruce A Henderson
+' Copyright (c) 2019-2020 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -26,10 +26,12 @@ bbdoc: Platform utils
 End Rem
 Module BRL.Platform
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Fixed for Android."
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Added LogicalProcessorCount()."
 ModuleInfo "History: 1.00"
