@@ -6,12 +6,14 @@ bbdoc: Networking/Sockets
 End Rem
 Module BRL.Socket
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.04"
 ModuleInfo "Author: Mark Sibly and Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Fixed for Android."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Added IPV6 support."
 ModuleInfo "History: 1.02 Release"
@@ -28,9 +30,12 @@ Function ioctl_( socket,opt,buf:Byte Ptr )="int ioctlsocket(SOCKET ,long ,u_long
 ?MacOS
 Const FIONREAD=$4004667F
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
-?Linux
+?Linux And Not android
 Const FIONREAD=$541b
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
+?android
+Const FIONREAD=$541b
+Function ioctl_( socket,opt,buf:Byte Ptr )="int ioctl(int, int, BBBYTE*)!"
 ?emscripten
 Const FIONREAD=$541b
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
