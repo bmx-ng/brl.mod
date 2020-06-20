@@ -37,10 +37,13 @@ ModuleInfo "History: Initial Release"
 
 Import BRL.TextStream
 Import Pub.macos
+?android
+Import SDL.SDL
+?
 
 ?win32
 Import "win32_glue.c"
-?Not win32
+?Not win32 And Not android
 Import "glue.c"
 ?
 
@@ -69,7 +72,7 @@ End Function
 Function LinuxVersion:String()
 ?Not linux
 	Return ""
-?linux
+?linux And Not android
 	If _version Then
 		Return _version
 	End If
@@ -84,6 +87,8 @@ Function LinuxVersion:String()
 			End If
 		End If
 	Next
+?android
+	Return "Android"
 ?
 End Function
 
@@ -131,7 +136,11 @@ bbdoc: Returns the number of logical processors available.
 about: Logical processors are the number of physical processors times the number of threads that can run on each.
 End Rem
 Function LogicalProcessorCount:Int()
+?Not android
 	Return bmx_os_getproccount()
+?android
+	Return SDLGetCPUCount()
+?
 End Function
 
 
