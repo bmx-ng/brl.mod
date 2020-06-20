@@ -1,4 +1,4 @@
-' Copyright (c) 2018-2019 Bruce A Henderson
+' Copyright (c) 2018-2020 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -25,18 +25,20 @@ bbdoc: Cross-platform clipboards.
 End Rem
 Module BRL.Clipboard
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "License: MIT"
 ModuleInfo "Copyright: libclipboard - Copyright (C) 2016-2019 Jeremy Tan."
-ModuleInfo "Copyright: Wrapper - 2018-2019 Bruce A Henderson"
+ModuleInfo "Copyright: Wrapper - 2018-2020 Bruce A Henderson"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Fixed for Android."
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Updated to latest libclipboard 1.0.efaa094"
 ModuleInfo "History: 1.00 Initial Release"
 
 ?win32
 ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_WIN32"
-?linux
+?linux And Not android
 ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_X11"
 ?macos
 ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_COCOA"
@@ -46,8 +48,11 @@ ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_COCOA"
 ' build notes :
 ' clipboard_cocoa.c renamed to clipboard_cocoa.m
 '
-
+?Not android
 Import "common.bmx"
+?android
+Import SDL.SDL
+?
 
 Rem
 bbdoc: Options to be passed on instantiation.
@@ -95,6 +100,7 @@ Type TX11ClipboardOpts Extends TClipboardOpts
 
 End Type
 
+?Not android
 Rem
 bbdoc: A clipboard context.
 End Rem
@@ -185,7 +191,44 @@ Type TClipboard
 	End Method
 	
 End Type
+?android
+Const LCB_CLIPBOARD:Int = 0
+Const LCB_PRIMARY:Int = 1
+Const LCB_SECONDARY:Int = 2
+Type TClipboard
+	
+	Method Create:TClipboard(opts:TClipboardOpts = Null)
+		Return Self
+	End Method
 
+	Method Clear(clipboardMode:Int = LCB_CLIPBOARD)
+		SDLSetClipboardText("")
+	End Method
+	
+	Method HasOwnership:Int(clipboardMode:Int = LCB_CLIPBOARD)
+		Return True
+	End Method
+	
+	Method Text:String()
+		Return SDLGetClipboardText()
+	End Method
+	
+	Method TextEx:String(length:Int Var, clipboardMode:Int = LCB_CLIPBOARD)
+		Local txt:String = SDLGetClipboardText()
+		length = txt.length
+		Return txt
+	End Method
+
+	Method SetText:Int(src:String)
+		Return SDLSetClipboardText(src)
+	End Method
+	
+	Method SetTextEx:Int(src:String, clipboardMode:Int = LCB_CLIPBOARD)
+		Return SDLSetClipboardText(src)
+	End Method
+	
+End Type
+?
 
 
 
