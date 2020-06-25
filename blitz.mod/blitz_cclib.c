@@ -1,6 +1,5 @@
 
 #include "blitz.h"
-#include <math.h>
 
 #if __STDC_VERSION__ >= 199901L
 

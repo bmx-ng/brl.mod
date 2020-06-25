@@ -3,7 +3,7 @@
 #define BLITZ_CCLIB_H
 
 #include "blitz_types.h"
-
+#include <math.h>
 
 #ifdef __cplusplus
 extern "C"{
