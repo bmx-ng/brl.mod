@@ -1,4 +1,4 @@
-' Copyright (c) 2019 Bruce A Henderson
+' Copyright (c) 2020 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -26,11 +26,13 @@ bbdoc: Math/Quaternion
 End Rem
 Module BRL.Quaternion
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib"
-ModuleInfo "Copyright: 2019 Bruce A Henderson"
+ModuleInfo "Copyright: 2020 Bruce A Henderson"
 
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Fixed Euler conversions."
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release"
 
@@ -278,12 +280,12 @@ Struct SQuatD
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerXYZ:SQuatD(rot:SVec3D)
-		Local cx:Double = Cos(rot.x)
-		Local cy:Double = Cos(rot.y)
-		Local cz:Double = Cos(rot.z)
-		Local sx:Double = Sin(rot.x)
-		Local sy:Double = Sin(rot.y)
-		Local sz:Double = Sin(rot.z)
+		Local cx:Double = Cos(rot.x * .5)
+		Local cy:Double = Cos(rot.y * .5)
+		Local cz:Double = Cos(rot.z * .5)
+		Local sx:Double = Sin(rot.x * .5)
+		Local sy:Double = Sin(rot.y * .5)
+		Local sz:Double = Sin(rot.z * .5)
 		Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
 			cx * sy * cz - sx * cy * sz, ..
 			cx * cy * sz + sx * sy * cz, ..
@@ -294,12 +296,12 @@ Struct SQuatD
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerXZY:SQuatD(rot:SVec3D)
-		Local cx:Double = Cos(rot.x)
-		Local cy:Double = Cos(rot.y)
-		Local cz:Double = Cos(rot.z)
-		Local sx:Double = Sin(rot.x)
-		Local sy:Double = Sin(rot.y)
-		Local sz:Double = Sin(rot.z)
+		Local cx:Double = Cos(rot.x * .5)
+		Local cy:Double = Cos(rot.y * .5)
+		Local cz:Double = Cos(rot.z * .5)
+		Local sx:Double = Sin(rot.x * .5)
+		Local sy:Double = Sin(rot.y * .5)
+		Local sz:Double = Sin(rot.z * .5)
 		Return New SQuatD(sx * cy * cz - cx * sy * sz, ..
 			cx * sy * cz - sx * cy * sz, ..
 			cx * cy * sz + sx * sy * cz, ..
@@ -310,12 +312,12 @@ Struct SQuatD
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerYXZ:SQuatD(rot:SVec3D)
-		Local cx:Double = Cos(rot.x)
-		Local cy:Double = Cos(rot.y)
-		Local cz:Double = Cos(rot.z)
-		Local sx:Double = Sin(rot.x)
-		Local sy:Double = Sin(rot.y)
-		Local sz:Double = Sin(rot.z)
+		Local cx:Double = Cos(rot.x * .5)
+		Local cy:Double = Cos(rot.y * .5)
+		Local cz:Double = Cos(rot.z * .5)
+		Local sx:Double = Sin(rot.x * .5)
+		Local sy:Double = Sin(rot.y * .5)
+		Local sz:Double = Sin(rot.z * .5)
 		Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
 			cx * sy * cz - sx * cy * sz, ..
 			cx * cy * sz - sx * sy * cz, ..
@@ -326,12 +328,12 @@ Struct SQuatD
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerYZX:SQuatD(rot:SVec3D)
-		Local cx:Double = Cos(rot.x)
-		Local cy:Double = Cos(rot.y)
-		Local cz:Double = Cos(rot.z)
-		Local sx:Double = Sin(rot.x)
-		Local sy:Double = Sin(rot.y)
-		Local sz:Double = Sin(rot.z)
+		Local cx:Double = Cos(rot.x * .5)
+		Local cy:Double = Cos(rot.y * .5)
+		Local cz:Double = Cos(rot.z * .5)
+		Local sx:Double = Sin(rot.x * .5)
+		Local sy:Double = Sin(rot.y * .5)
+		Local sz:Double = Sin(rot.z * .5)
 		Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
 			cx * sy * cz + sx * cy * sz, ..
 			cx * cy * sz - sx * sy * cz, ..
@@ -342,12 +344,12 @@ Struct SQuatD
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerZXY:SQuatD(rot:SVec3D)
-		Local cx:Double = Cos(rot.x)
-		Local cy:Double = Cos(rot.y)
-		Local cz:Double = Cos(rot.z)
-		Local sx:Double = Sin(rot.x)
-		Local sy:Double = Sin(rot.y)
-		Local sz:Double = Sin(rot.z)
+		Local cx:Double = Cos(rot.x * .5)
+		Local cy:Double = Cos(rot.y * .5)
+		Local cz:Double = Cos(rot.z * .5)
+		Local sx:Double = Sin(rot.x * .5)
+		Local sy:Double = Sin(rot.y * .5)
+		Local sz:Double = Sin(rot.z * .5)
 		Return New SQuatD(sx * cy * cz - cx * sy * sz, ..
 			cx * sy * cz + sx * cy * sz, ..
 			cx * cy * sz + sx * sy * cz, ..
@@ -358,16 +360,41 @@ Struct SQuatD
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerZYX:SQuatD(rot:SVec3D)
-		Local cx:Double = Cos(rot.x)
-		Local cy:Double = Cos(rot.y)
-		Local cz:Double = Cos(rot.z)
-		Local sx:Double = Sin(rot.x)
-		Local sy:Double = Sin(rot.y)
-		Local sz:Double = Sin(rot.z)
+		Local cx:Double = Cos(rot.x * .5)
+		Local cy:Double = Cos(rot.y * .5)
+		Local cz:Double = Cos(rot.z * .5)
+		Local sx:Double = Sin(rot.x * .5)
+		Local sy:Double = Sin(rot.y * .5)
+		Local sz:Double = Sin(rot.z * .5)
 		Return New SQuatD(sx * cy * cz - cx * sy * sz, ..
 			cx * sy * cz + sx * cy * sz, ..
 			cx * cy * sz - sx * sy * cz, ..
 			cx * cy * cz + sx * sy * sz)
+	End Method
+
+	Rem
+	bbdoc: Returns the quaternion converted to Euler angles.
+	End Rem
+	Method ToEulerXYZ:SVec3D()
+		
+		Local roll:Double = ATan2( 2 * (w * x + y * z), 1 - 2 * (x * x + y * y) )
+		
+		Local sp:Double = 2 * (w * y - z * x)
+		
+		Local pitch:Double
+		If Abs(sp) >= 1 Then
+			If sp < 0 Then
+				pitch = -90
+			Else
+				pitch = 90
+			End If
+		Else
+			pitch = ASin(sp)
+		End If
+		
+		Local yaw:Double = ATan2( 2 * (w * z + x * y), 1 - 2 * (y * y + z * z) )
+		
+		Return New SVec3D(roll, pitch, yaw)
 	End Method
 	
 End Struct
@@ -610,12 +637,12 @@ Struct SQuatF
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerXYZ:SQuatF(rot:SVec3F)
-		Local cx:Float = Cos(rot.x)
-		Local cy:Float = Cos(rot.y)
-		Local cz:Float = Cos(rot.z)
-		Local sx:Float = Sin(rot.x)
-		Local sy:Float = Sin(rot.y)
-		Local sz:Float = Sin(rot.z)
+		Local cx:Float = Cos(rot.x * .5)
+		Local cy:Float = Cos(rot.y * .5)
+		Local cz:Float = Cos(rot.z * .5)
+		Local sx:Float = Sin(rot.x * .5)
+		Local sy:Float = Sin(rot.y * .5)
+		Local sz:Float = Sin(rot.z * .5)
 		Return New SQuatF(sx * cy * cz + cx * sy * sz, ..
 			cx * sy * cz - sx * cy * sz, ..
 			cx * cy * sz + sx * sy * cz, ..
@@ -626,12 +653,12 @@ Struct SQuatF
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerXZY:SQuatF(rot:SVec3F)
-		Local cx:Float = Cos(rot.x)
-		Local cy:Float = Cos(rot.y)
-		Local cz:Float = Cos(rot.z)
-		Local sx:Float = Sin(rot.x)
-		Local sy:Float = Sin(rot.y)
-		Local sz:Float = Sin(rot.z)
+		Local cx:Float = Cos(rot.x * .5)
+		Local cy:Float = Cos(rot.y * .5)
+		Local cz:Float = Cos(rot.z * .5)
+		Local sx:Float = Sin(rot.x * .5)
+		Local sy:Float = Sin(rot.y * .5)
+		Local sz:Float = Sin(rot.z * .5)
 		Return New SQuatF(sx * cy * cz - cx * sy * sz, ..
 			cx * sy * cz - sx * cy * sz, ..
 			cx * cy * sz + sx * sy * cz, ..
@@ -642,12 +669,12 @@ Struct SQuatF
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerYXZ:SQuatF(rot:SVec3F)
-		Local cx:Float = Cos(rot.x)
-		Local cy:Float = Cos(rot.y)
-		Local cz:Float = Cos(rot.z)
-		Local sx:Float = Sin(rot.x)
-		Local sy:Float = Sin(rot.y)
-		Local sz:Float = Sin(rot.z)
+		Local cx:Float = Cos(rot.x * .5)
+		Local cy:Float = Cos(rot.y * .5)
+		Local cz:Float = Cos(rot.z * .5)
+		Local sx:Float = Sin(rot.x * .5)
+		Local sy:Float = Sin(rot.y * .5)
+		Local sz:Float = Sin(rot.z * .5)
 		Return New SQuatF(sx * cy * cz + cx * sy * sz, ..
 			cx * sy * cz - sx * cy * sz, ..
 			cx * cy * sz - sx * sy * cz, ..
@@ -658,12 +685,12 @@ Struct SQuatF
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerYZX:SQuatF(rot:SVec3F)
-		Local cx:Float = Cos(rot.x)
-		Local cy:Float = Cos(rot.y)
-		Local cz:Float = Cos(rot.z)
-		Local sx:Float = Sin(rot.x)
-		Local sy:Float = Sin(rot.y)
-		Local sz:Float = Sin(rot.z)
+		Local cx:Float = Cos(rot.x * .5)
+		Local cy:Float = Cos(rot.y * .5)
+		Local cz:Float = Cos(rot.z * .5)
+		Local sx:Float = Sin(rot.x * .5)
+		Local sy:Float = Sin(rot.y * .5)
+		Local sz:Float = Sin(rot.z * .5)
 		Return New SQuatF(sx * cy * cz + cx * sy * sz, ..
 			cx * sy * cz + sx * cy * sz, ..
 			cx * cy * sz - sx * sy * cz, ..
@@ -674,12 +701,12 @@ Struct SQuatF
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerZXY:SQuatF(rot:SVec3F)
-		Local cx:Float = Cos(rot.x)
-		Local cy:Float = Cos(rot.y)
-		Local cz:Float = Cos(rot.z)
-		Local sx:Float = Sin(rot.x)
-		Local sy:Float = Sin(rot.y)
-		Local sz:Float = Sin(rot.z)
+		Local cx:Float = Cos(rot.x * .5)
+		Local cy:Float = Cos(rot.y * .5)
+		Local cz:Float = Cos(rot.z * .5)
+		Local sx:Float = Sin(rot.x * .5)
+		Local sy:Float = Sin(rot.y * .5)
+		Local sz:Float = Sin(rot.z * .5)
 		Return New SQuatF(sx * cy * cz - cx * sy * sz, ..
 			cx * sy * cz + sx * cy * sz, ..
 			cx * cy * sz + sx * sy * cz, ..
@@ -690,16 +717,41 @@ Struct SQuatF
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerZYX:SQuatF(rot:SVec3F)
-		Local cx:Float = Cos(rot.x)
-		Local cy:Float = Cos(rot.y)
-		Local cz:Float = Cos(rot.z)
-		Local sx:Float = Sin(rot.x)
-		Local sy:Float = Sin(rot.y)
-		Local sz:Float = Sin(rot.z)
+		Local cx:Float = Cos(rot.x * .5)
+		Local cy:Float = Cos(rot.y * .5)
+		Local cz:Float = Cos(rot.z * .5)
+		Local sx:Float = Sin(rot.x * .5)
+		Local sy:Float = Sin(rot.y * .5)
+		Local sz:Float = Sin(rot.z * .5)
 		Return New SQuatF(sx * cy * cz - cx * sy * sz, ..
 			cx * sy * cz + sx * cy * sz, ..
 			cx * cy * sz - sx * sy * cz, ..
 			cx * cy * cz + sx * sy * sz)
+	End Method
+	
+	Rem
+	bbdoc: Returns the quaternion converted to Euler angles.
+	End Rem
+	Method ToEulerXYZ:SVec3F()
+		
+		Local roll:Float = ATan2( 2 * (w * x + y * z), 1 - 2 * (x * x + y * y) )
+		
+		Local sp:Float = 2 * (w * y - z * x)
+		
+		Local pitch:Float
+		If Abs(sp) >= 1 Then
+			If sp < 0 Then
+				pitch = -90
+			Else
+				pitch = 90
+			End If
+		Else
+			pitch = ASin(sp)
+		End If
+		
+		Local yaw:Float = ATan2( 2 * (w * z + x * y), 1 - 2 * (y * y + z * z) )
+		
+		Return New SVec3F(roll, pitch, yaw)
 	End Method
 	
 End Struct
@@ -942,12 +994,12 @@ Struct SQuatI
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerXYZ:SQuatI(rot:SVec3I)
-		Local cx:Double = Cos(rot.x)
-		Local cy:Double = Cos(rot.y)
-		Local cz:Double = Cos(rot.z)
-		Local sx:Double = Sin(rot.x)
-		Local sy:Double = Sin(rot.y)
-		Local sz:Double = Sin(rot.z)
+		Local cx:Double = Cos(rot.x * .5)
+		Local cy:Double = Cos(rot.y * .5)
+		Local cz:Double = Cos(rot.z * .5)
+		Local sx:Double = Sin(rot.x * .5)
+		Local sy:Double = Sin(rot.y * .5)
+		Local sz:Double = Sin(rot.z * .5)
 		Return New SQuatI(Int(sx * cy * cz + cx * sy * sz), ..
 			Int(cx * sy * cz - sx * cy * sz), ..
 			Int(cx * cy * sz + sx * sy * cz), ..
@@ -958,12 +1010,12 @@ Struct SQuatI
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerXZY:SQuatI(rot:SVec3I)
-		Local cx:Double = Cos(rot.x)
-		Local cy:Double = Cos(rot.y)
-		Local cz:Double = Cos(rot.z)
-		Local sx:Double = Sin(rot.x)
-		Local sy:Double = Sin(rot.y)
-		Local sz:Double = Sin(rot.z)
+		Local cx:Double = Cos(rot.x * .5)
+		Local cy:Double = Cos(rot.y * .5)
+		Local cz:Double = Cos(rot.z * .5)
+		Local sx:Double = Sin(rot.x * .5)
+		Local sy:Double = Sin(rot.y * .5)
+		Local sz:Double = Sin(rot.z * .5)
 		Return New SQuatI(Int(sx * cy * cz - cx * sy * sz), ..
 			Int(cx * sy * cz - sx * cy * sz), ..
 			Int(cx * cy * sz + sx * sy * cz), ..
@@ -974,12 +1026,12 @@ Struct SQuatI
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerYXZ:SQuatI(rot:SVec3I)
-		Local cx:Double = Cos(rot.x)
-		Local cy:Double = Cos(rot.y)
-		Local cz:Double = Cos(rot.z)
-		Local sx:Double = Sin(rot.x)
-		Local sy:Double = Sin(rot.y)
-		Local sz:Double = Sin(rot.z)
+		Local cx:Double = Cos(rot.x * .5)
+		Local cy:Double = Cos(rot.y * .5)
+		Local cz:Double = Cos(rot.z * .5)
+		Local sx:Double = Sin(rot.x * .5)
+		Local sy:Double = Sin(rot.y * .5)
+		Local sz:Double = Sin(rot.z * .5)
 		Return New SQuatI(Int(sx * cy * cz + cx * sy * sz), ..
 			Int(cx * sy * cz - sx * cy * sz), ..
 			Int(cx * cy * sz - sx * sy * cz), ..
@@ -990,12 +1042,12 @@ Struct SQuatI
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerYZX:SQuatI(rot:SVec3I)
-		Local cx:Double = Cos(rot.x)
-		Local cy:Double = Cos(rot.y)
-		Local cz:Double = Cos(rot.z)
-		Local sx:Double = Sin(rot.x)
-		Local sy:Double = Sin(rot.y)
-		Local sz:Double = Sin(rot.z)
+		Local cx:Double = Cos(rot.x * .5)
+		Local cy:Double = Cos(rot.y * .5)
+		Local cz:Double = Cos(rot.z * .5)
+		Local sx:Double = Sin(rot.x * .5)
+		Local sy:Double = Sin(rot.y * .5)
+		Local sz:Double = Sin(rot.z * .5)
 		Return New SQuatI(Int(sx * cy * cz + cx * sy * sz), ..
 			Int(cx * sy * cz + sx * cy * sz), ..
 			Int(cx * cy * sz - sx * sy * cz), ..
@@ -1006,12 +1058,12 @@ Struct SQuatI
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerZXY:SQuatI(rot:SVec3I)
-		Local cx:Double = Cos(rot.x)
-		Local cy:Double = Cos(rot.y)
-		Local cz:Double = Cos(rot.z)
-		Local sx:Double = Sin(rot.x)
-		Local sy:Double = Sin(rot.y)
-		Local sz:Double = Sin(rot.z)
+		Local cx:Double = Cos(rot.x * .5)
+		Local cy:Double = Cos(rot.y * .5)
+		Local cz:Double = Cos(rot.z * .5)
+		Local sx:Double = Sin(rot.x * .5)
+		Local sy:Double = Sin(rot.y * .5)
+		Local sz:Double = Sin(rot.z * .5)
 		Return New SQuatI(Int(sx * cy * cz - cx * sy * sz), ..
 			Int(cx * sy * cz + sx * cy * sz), ..
 			Int(cx * cy * sz + sx * sy * cz), ..
@@ -1022,16 +1074,41 @@ Struct SQuatI
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
 	Method EulerZYX:SQuatI(rot:SVec3I)
-		Local cx:Double = Cos(rot.x)
-		Local cy:Double = Cos(rot.y)
-		Local cz:Double = Cos(rot.z)
-		Local sx:Double = Sin(rot.x)
-		Local sy:Double = Sin(rot.y)
-		Local sz:Double = Sin(rot.z)
+		Local cx:Double = Cos(rot.x * .5)
+		Local cy:Double = Cos(rot.y * .5)
+		Local cz:Double = Cos(rot.z * .5)
+		Local sx:Double = Sin(rot.x * .5)
+		Local sy:Double = Sin(rot.y * .5)
+		Local sz:Double = Sin(rot.z * .5)
 		Return New SQuatI(Int(sx * cy * cz - cx * sy * sz), ..
 			Int(cx * sy * cz + sx * cy * sz), ..
 			Int(cx * cy * sz - sx * sy * cz), ..
 			Int(cx * cy * cz + sx * sy * sz))
+	End Method
+
+	Rem
+	bbdoc: Returns the quaternion converted to Euler angles.
+	End Rem
+	Method ToEulerXYZ:SVec3I()
+		
+		Local roll:Int = ATan2( 2 * (w * x + y * z), 1 - 2 * (x * x + y * y) )
+		
+		Local sp:Double = 2 * (w * y - z * x)
+		
+		Local pitch:Int
+		If Abs(sp) >= 1 Then
+			If sp < 0 Then
+				pitch = -90
+			Else
+				pitch = 90
+			End If
+		Else
+			pitch = ASin(sp)
+		End If
+		
+		Local yaw:Int = ATan2( 2 * (w * z + x * y), 1 - 2 * (y * y + z * z) )
+		
+		Return New SVec3I(roll, pitch, yaw)
 	End Method
 	
 End Struct
