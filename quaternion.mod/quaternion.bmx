@@ -26,11 +26,14 @@ bbdoc: Math/Quaternion
 End Rem
 Module BRL.Quaternion
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib"
 ModuleInfo "Copyright: 2020 Bruce A Henderson"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Fixed Normal()."
+ModuleInfo "History: Refactored Euler methods. Added rotation enum."
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Fixed Euler conversions."
 ModuleInfo "History: 1.00"
@@ -236,7 +239,7 @@ Struct SQuatD
 	Method Normal:SQuatD()
 		Local length:Double = x * x + y * y + z * z + w * w
 		If length > 0 Then
-			length = Sqr(length)
+			length = 1 / Sqr(length)
 			Return New SQuatD(x * length, y * length, z * length, w * length)
 		End If
 		Return Self
@@ -275,127 +278,129 @@ Struct SQuatD
 		
 		Return New SQuatD(scale0 * x + scale1 * bx, scale0 * y + scale1 * by, scale0 * z + scale1 * bz, scale0 * w + scale1 * bw)
 	End Method
-	
-	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
-	End Rem
-	Method EulerXYZ:SQuatD(rot:SVec3D)
-		Local cx:Double = Cos(rot.x * .5)
-		Local cy:Double = Cos(rot.y * .5)
-		Local cz:Double = Cos(rot.z * .5)
-		Local sx:Double = Sin(rot.x * .5)
-		Local sy:Double = Sin(rot.y * .5)
-		Local sz:Double = Sin(rot.z * .5)
-		Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
-			cx * sy * cz - sx * cy * sz, ..
-			cx * cy * sz + sx * sy * cz, ..
-			cx * cy * cz - sx * sy * sz)
-	End Method
-	
-	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
-	End Rem
-	Method EulerXZY:SQuatD(rot:SVec3D)
-		Local cx:Double = Cos(rot.x * .5)
-		Local cy:Double = Cos(rot.y * .5)
-		Local cz:Double = Cos(rot.z * .5)
-		Local sx:Double = Sin(rot.x * .5)
-		Local sy:Double = Sin(rot.y * .5)
-		Local sz:Double = Sin(rot.z * .5)
-		Return New SQuatD(sx * cy * cz - cx * sy * sz, ..
-			cx * sy * cz - sx * cy * sz, ..
-			cx * cy * sz + sx * sy * cz, ..
-			cx * cy * cz + sx * sy * sz)
-	End Method
 
 	Rem
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
-	Method EulerYXZ:SQuatD(rot:SVec3D)
+	Method EulerRotate:SQuatD(rot:SVec3D, order:ERotationOrder = ERotationOrder.XYZ)
 		Local cx:Double = Cos(rot.x * .5)
 		Local cy:Double = Cos(rot.y * .5)
 		Local cz:Double = Cos(rot.z * .5)
 		Local sx:Double = Sin(rot.x * .5)
 		Local sy:Double = Sin(rot.y * .5)
 		Local sz:Double = Sin(rot.z * .5)
-		Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
-			cx * sy * cz - sx * cy * sz, ..
-			cx * cy * sz - sx * sy * cz, ..
-			cx * cy * cz + sx * sy * sz)
+		
+		Select order
+			Case ERotationOrder.XYZ
+				Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
+					cx * sy * cz - sx * cy * sz, ..
+					cx * cy * sz + sx * sy * cz, ..
+					cx * cy * cz - sx * sy * sz)
+			Case ERotationOrder.XZY
+				Return New SQuatD(sx * cy * cz - cx * sy * sz, ..
+					cx * sy * cz - sx * cy * sz, ..
+					cx * cy * sz + sx * sy * cz, ..
+					cx * cy * cz + sx * sy * sz)
+			Case ERotationOrder.YXZ
+				Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
+					cx * sy * cz - sx * cy * sz, ..
+					cx * cy * sz - sx * sy * cz, ..
+					cx * cy * cz + sx * sy * sz)
+			Case ERotationOrder.YZX
+				Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
+					cx * sy * cz + sx * cy * sz, ..
+					cx * cy * sz - sx * sy * cz, ..
+					cx * cy * cz - sx * sy * sz)
+			Case ERotationOrder.ZXY
+				Return New SQuatD(sx * cy * cz - cx * sy * sz, ..
+					cx * sy * cz + sx * cy * sz, ..
+					cx * cy * sz + sx * sy * cz, ..
+					cx * cy * cz - sx * sy * sz)
+			Case ERotationOrder.ZYX
+				Return New SQuatD(sx * cy * cz - cx * sy * sz, ..
+					cx * sy * cz + sx * cy * sz, ..
+					cx * cy * sz - sx * sy * cz, ..
+					cx * cy * cz + sx * sy * sz)
+		End Select
 	End Method
 
 	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
+	bbdoc: Returns the quaternion converted to Euler angles, using the specified rotation @order.
 	End Rem
-	Method EulerYZX:SQuatD(rot:SVec3D)
-		Local cx:Double = Cos(rot.x * .5)
-		Local cy:Double = Cos(rot.y * .5)
-		Local cz:Double = Cos(rot.z * .5)
-		Local sx:Double = Sin(rot.x * .5)
-		Local sy:Double = Sin(rot.y * .5)
-		Local sz:Double = Sin(rot.z * .5)
-		Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
-			cx * sy * cz + sx * cy * sz, ..
-			cx * cy * sz - sx * sy * cz, ..
-			cx * cy * cz - sx * sy * sz)
+	Method ToEuler:SVec3D(order:ERotationOrder = ERotationOrder.XYZ)
+		Local q:SQuatD = Normal()
+		Local mat:SMat4D = ToMat4(q)
+		
+		Local x:Double
+		Local y:Double
+		Local z:Double
+
+		Select order
+			Case ERotationOrder.XYZ
+				y = ASin( Max( -1, Min( 1, mat.i ) ) )
+		
+				If Abs(mat.i) < 0.9999999 Then
+					x = ATan2( -mat.j, mat.k )
+					z = ATan2( -mat.e, mat.a )
+				Else
+					x = ATan2( mat.g, mat.f )
+				End If
+				
+			Case ERotationOrder.XZY
+				z = ASin( -Max( -1, Min( 1, mat.e ) ) )
+
+				If Abs(mat.e) < 0.9999999 Then
+					x = ATan2( mat.g, mat.f )
+					y = ATan2( mat.i, mat.a )
+				Else
+					x = ATan2( -mat.j, mat.k )
+				End If
+
+			Case ERotationOrder.YXZ
+				x = ASin( -Max( -1, Min( 1, mat.j ) ) )
+		
+				If Abs(mat.j) < 0.9999999 Then
+					y = ATan2( mat.i, mat.k )
+					z = ATan2( mat.b, mat.f )
+				Else
+					y = ATan2( -mat.c, mat.a )
+				End If
+			
+			Case ERotationOrder.YZX
+				z = ASin( Max( -1, Min( 1, mat.b ) ) )
+		
+				If Abs(mat.b) < 0.9999999 Then
+					x = ATan2( -mat.j, mat.f )
+					y = ATan2( -mat.c, mat.a )
+				Else
+					y = ATan2( mat.i, mat.k )
+				End If
+			
+			Case ERotationOrder.ZXY
+				x = ASin( Max( -1, Min( 1, mat.g ) ) )
+		
+				If Abs(mat.g) < 0.9999999 Then
+					y = ATan2( -mat.c, mat.k )
+					z = ATan2( -mat.e, mat.f )
+				Else
+					z = ATan2( mat.b, mat.a )
+				End If
+			
+			Case ERotationOrder.ZYX
+				y = ASin( -Max( -1, Min( 1, mat.c ) ) )
+		
+				If Abs(mat.c) < 0.9999999 Then
+					x = ATan2( mat.g, mat.k )
+					z = ATan2( mat.b, mat.a )
+				Else
+					z = ATan2( -mat.e, mat.f )
+				End If
+			
+		End Select
+		
+		Return New SVec3D(x, y, z)
 	End Method
 
-	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
-	End Rem
-	Method EulerZXY:SQuatD(rot:SVec3D)
-		Local cx:Double = Cos(rot.x * .5)
-		Local cy:Double = Cos(rot.y * .5)
-		Local cz:Double = Cos(rot.z * .5)
-		Local sx:Double = Sin(rot.x * .5)
-		Local sy:Double = Sin(rot.y * .5)
-		Local sz:Double = Sin(rot.z * .5)
-		Return New SQuatD(sx * cy * cz - cx * sy * sz, ..
-			cx * sy * cz + sx * cy * sz, ..
-			cx * cy * sz + sx * sy * cz, ..
-			cx * cy * cz - sx * sy * sz)
-	End Method
-
-	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
-	End Rem
-	Method EulerZYX:SQuatD(rot:SVec3D)
-		Local cx:Double = Cos(rot.x * .5)
-		Local cy:Double = Cos(rot.y * .5)
-		Local cz:Double = Cos(rot.z * .5)
-		Local sx:Double = Sin(rot.x * .5)
-		Local sy:Double = Sin(rot.y * .5)
-		Local sz:Double = Sin(rot.z * .5)
-		Return New SQuatD(sx * cy * cz - cx * sy * sz, ..
-			cx * sy * cz + sx * cy * sz, ..
-			cx * cy * sz - sx * sy * cz, ..
-			cx * cy * cz + sx * sy * sz)
-	End Method
-
-	Rem
-	bbdoc: Returns the quaternion converted to Euler angles.
-	End Rem
-	Method ToEulerXYZ:SVec3D()
-		
-		Local roll:Double = ATan2( 2 * (w * x + y * z), 1 - 2 * (x * x + y * y) )
-		
-		Local sp:Double = 2 * (w * y - z * x)
-		
-		Local pitch:Double
-		If Abs(sp) >= 1 Then
-			If sp < 0 Then
-				pitch = -90
-			Else
-				pitch = 90
-			End If
-		Else
-			pitch = ASin(sp)
-		End If
-		
-		Local yaw:Double = ATan2( 2 * (w * z + x * y), 1 - 2 * (y * y + z * z) )
-		
-		Return New SVec3D(roll, pitch, yaw)
-	End Method
 	
 End Struct
 
@@ -463,9 +468,9 @@ Struct SQuatF
 		Local awx:Float = aw * ax2
 		Local awy:Float = aw * ay2
 		Local awz:Float = aw * az2
-		Return New SMat4F(1.0 - ayy - azz, ayx + awz, azx - awy, 0, ..
-			ayx - awz, 1.0 - axx - azz, azy + awx, 0, ..
-			azx + awy, azy - awx, 1.0 - axx - ayy, 0, ..
+		Return New SMat4F(1.0 - (ayy + azz), ayx + awz, azx - awy, 0, ..
+			ayx - awz, 1.0 - (axx + azz), azy + awx, 0, ..
+			azx + awy, azy - awx, 1.0 - (axx + ayy), 0, ..
 			0, 0, 0, 1)
 	End Function	
 
@@ -593,7 +598,7 @@ Struct SQuatF
 	Method Normal:SQuatF()
 		Local length:Float = x * x + y * y + z * z + w * w
 		If length > 0 Then
-			length = Sqr(length)
+			length = 1 / Sqr(length)
 			Return New SQuatF(x * length, y * length, z * length, w * length)
 		End If
 		Return Self
@@ -636,124 +641,136 @@ Struct SQuatF
 	Rem
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
-	Method EulerXYZ:SQuatF(rot:SVec3F)
+	Method EulerRotate:SQuatF(rot:SVec3F, order:ERotationOrder = ERotationOrder.XYZ)
 		Local cx:Float = Cos(rot.x * .5)
 		Local cy:Float = Cos(rot.y * .5)
 		Local cz:Float = Cos(rot.z * .5)
 		Local sx:Float = Sin(rot.x * .5)
 		Local sy:Float = Sin(rot.y * .5)
 		Local sz:Float = Sin(rot.z * .5)
-		Return New SQuatF(sx * cy * cz + cx * sy * sz, ..
-			cx * sy * cz - sx * cy * sz, ..
-			cx * cy * sz + sx * sy * cz, ..
-			cx * cy * cz - sx * sy * sz)
-	End Method
-	
-	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
-	End Rem
-	Method EulerXZY:SQuatF(rot:SVec3F)
-		Local cx:Float = Cos(rot.x * .5)
-		Local cy:Float = Cos(rot.y * .5)
-		Local cz:Float = Cos(rot.z * .5)
-		Local sx:Float = Sin(rot.x * .5)
-		Local sy:Float = Sin(rot.y * .5)
-		Local sz:Float = Sin(rot.z * .5)
-		Return New SQuatF(sx * cy * cz - cx * sy * sz, ..
-			cx * sy * cz - sx * cy * sz, ..
-			cx * cy * sz + sx * sy * cz, ..
-			cx * cy * cz + sx * sy * sz)
+		
+		Select order
+			Case ERotationOrder.XYZ
+				Return New SQuatF(sx * cy * cz + cx * sy * sz, ..
+					cx * sy * cz - sx * cy * sz, ..
+					cx * cy * sz + sx * sy * cz, ..
+					cx * cy * cz - sx * sy * sz)
+			Case ERotationOrder.XZY
+				Return New SQuatF(sx * cy * cz - cx * sy * sz, ..
+					cx * sy * cz - sx * cy * sz, ..
+					cx * cy * sz + sx * sy * cz, ..
+					cx * cy * cz + sx * sy * sz)
+			Case ERotationOrder.YXZ
+				Return New SQuatF(sx * cy * cz + cx * sy * sz, ..
+					cx * sy * cz - sx * cy * sz, ..
+					cx * cy * sz - sx * sy * cz, ..
+					cx * cy * cz + sx * sy * sz)
+			Case ERotationOrder.YZX
+				Return New SQuatF(sx * cy * cz + cx * sy * sz, ..
+					cx * sy * cz + sx * cy * sz, ..
+					cx * cy * sz - sx * sy * cz, ..
+					cx * cy * cz - sx * sy * sz)
+			Case ERotationOrder.ZXY
+				Return New SQuatF(sx * cy * cz - cx * sy * sz, ..
+					cx * sy * cz + sx * cy * sz, ..
+					cx * cy * sz + sx * sy * cz, ..
+					cx * cy * cz - sx * sy * sz)
+			Case ERotationOrder.ZYX
+				Return New SQuatF(sx * cy * cz - cx * sy * sz, ..
+					cx * sy * cz + sx * cy * sz, ..
+					cx * cy * sz - sx * sy * cz, ..
+					cx * cy * cz + sx * sy * sz)
+		End Select
 	End Method
 
 	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
+	bbdoc: Returns the quaternion converted to Euler angles, using the specified rotation @order.
 	End Rem
-	Method EulerYXZ:SQuatF(rot:SVec3F)
-		Local cx:Float = Cos(rot.x * .5)
-		Local cy:Float = Cos(rot.y * .5)
-		Local cz:Float = Cos(rot.z * .5)
-		Local sx:Float = Sin(rot.x * .5)
-		Local sy:Float = Sin(rot.y * .5)
-		Local sz:Float = Sin(rot.z * .5)
-		Return New SQuatF(sx * cy * cz + cx * sy * sz, ..
-			cx * sy * cz - sx * cy * sz, ..
-			cx * cy * sz - sx * sy * cz, ..
-			cx * cy * cz + sx * sy * sz)
+	Method ToEuler:SVec3F(order:ERotationOrder = ERotationOrder.XYZ)
+		Local q:SQuatF = Normal()
+		Local mat:SMat4F = ToMat4(q)
+		
+		Local x:Float
+		Local y:Float
+		Local z:Float
+
+		Select order
+			Case ERotationOrder.XYZ
+				y = ASin( Max( -1, Min( 1, mat.i ) ) )
+		
+				If Abs(mat.i) < 0.9999999 Then
+					x = ATan2( -mat.j, mat.k )
+					z = ATan2( -mat.e, mat.a )
+				Else
+					x = ATan2( mat.g, mat.f )
+				End If
+				
+			Case ERotationOrder.XZY
+				z = ASin( -Max( -1, Min( 1, mat.e ) ) )
+
+				If Abs(mat.e) < 0.9999999 Then
+					x = ATan2( mat.g, mat.f )
+					y = ATan2( mat.i, mat.a )
+				Else
+					x = ATan2( -mat.j, mat.k )
+				End If
+
+			Case ERotationOrder.YXZ
+				x = ASin( -Max( -1, Min( 1, mat.j ) ) )
+		
+				If Abs(mat.j) < 0.9999999 Then
+					y = ATan2( mat.i, mat.k )
+					z = ATan2( mat.b, mat.f )
+				Else
+					y = ATan2( -mat.c, mat.a )
+				End If
+			
+			Case ERotationOrder.YZX
+				z = ASin( Max( -1, Min( 1, mat.b ) ) )
+		
+				If Abs(mat.b) < 0.9999999 Then
+					x = ATan2( -mat.j, mat.f )
+					y = ATan2( -mat.c, mat.a )
+				Else
+					y = ATan2( mat.i, mat.k )
+				End If
+			
+			Case ERotationOrder.ZXY
+				x = ASin( Max( -1, Min( 1, mat.g ) ) )
+		
+				If Abs(mat.g) < 0.9999999 Then
+					y = ATan2( -mat.c, mat.k )
+					z = ATan2( -mat.e, mat.f )
+				Else
+					z = ATan2( mat.b, mat.a )
+				End If
+			
+			Case ERotationOrder.ZYX
+				y = ASin( -Max( -1, Min( 1, mat.c ) ) )
+		
+				If Abs(mat.c) < 0.9999999 Then
+					x = ATan2( mat.g, mat.k )
+					z = ATan2( mat.b, mat.a )
+				Else
+					z = ATan2( -mat.e, mat.f )
+				End If
+			
+		End Select
+		
+		Return New SVec3F(x, y, z)
 	End Method
 
 	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
+	bbdoc: Returns a #String representation of the quaternion.
 	End Rem
-	Method EulerYZX:SQuatF(rot:SVec3F)
-		Local cx:Float = Cos(rot.x * .5)
-		Local cy:Float = Cos(rot.y * .5)
-		Local cz:Float = Cos(rot.z * .5)
-		Local sx:Float = Sin(rot.x * .5)
-		Local sy:Float = Sin(rot.y * .5)
-		Local sz:Float = Sin(rot.z * .5)
-		Return New SQuatF(sx * cy * cz + cx * sy * sz, ..
-			cx * sy * cz + sx * cy * sz, ..
-			cx * cy * sz - sx * sy * cz, ..
-			cx * cy * cz - sx * sy * sz)
+	Method ToString:String() Override
+		Local sb:TStringBuilder = New TStringBuilder
+		
+		sb.Append("(").Append(x).Append(", ").Append(y).Append(", ").Append(z).Append(", ").Append(w).Append(")")
+		
+		Return sb.ToString()
 	End Method
 
-	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
-	End Rem
-	Method EulerZXY:SQuatF(rot:SVec3F)
-		Local cx:Float = Cos(rot.x * .5)
-		Local cy:Float = Cos(rot.y * .5)
-		Local cz:Float = Cos(rot.z * .5)
-		Local sx:Float = Sin(rot.x * .5)
-		Local sy:Float = Sin(rot.y * .5)
-		Local sz:Float = Sin(rot.z * .5)
-		Return New SQuatF(sx * cy * cz - cx * sy * sz, ..
-			cx * sy * cz + sx * cy * sz, ..
-			cx * cy * sz + sx * sy * cz, ..
-			cx * cy * cz - sx * sy * sz)
-	End Method
-
-	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
-	End Rem
-	Method EulerZYX:SQuatF(rot:SVec3F)
-		Local cx:Float = Cos(rot.x * .5)
-		Local cy:Float = Cos(rot.y * .5)
-		Local cz:Float = Cos(rot.z * .5)
-		Local sx:Float = Sin(rot.x * .5)
-		Local sy:Float = Sin(rot.y * .5)
-		Local sz:Float = Sin(rot.z * .5)
-		Return New SQuatF(sx * cy * cz - cx * sy * sz, ..
-			cx * sy * cz + sx * cy * sz, ..
-			cx * cy * sz - sx * sy * cz, ..
-			cx * cy * cz + sx * sy * sz)
-	End Method
-	
-	Rem
-	bbdoc: Returns the quaternion converted to Euler angles.
-	End Rem
-	Method ToEulerXYZ:SVec3F()
-		
-		Local roll:Float = ATan2( 2 * (w * x + y * z), 1 - 2 * (x * x + y * y) )
-		
-		Local sp:Float = 2 * (w * y - z * x)
-		
-		Local pitch:Float
-		If Abs(sp) >= 1 Then
-			If sp < 0 Then
-				pitch = -90
-			Else
-				pitch = 90
-			End If
-		Else
-			pitch = ASin(sp)
-		End If
-		
-		Local yaw:Float = ATan2( 2 * (w * z + x * y), 1 - 2 * (y * y + z * z) )
-		
-		Return New SVec3F(roll, pitch, yaw)
-	End Method
-	
 End Struct
 
 Rem
@@ -950,7 +967,7 @@ Struct SQuatI
 	Method Normal:SQuatI()
 		Local length:Double = x * x + y * y + z * z + w * w
 		If length > 0 Then
-			length = Sqr(length)
+			length = 1 / Sqr(length)
 			Return New SQuatI(Int(x * length), Int(y * length), Int(z * length), Int(w * length))
 		End If
 		Return Self
@@ -993,125 +1010,139 @@ Struct SQuatI
 	Rem
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
-	Method EulerXYZ:SQuatI(rot:SVec3I)
+	Method EulerRotate:SQuatI(rot:SVec3D, order:ERotationOrder = ERotationOrder.XYZ)
 		Local cx:Double = Cos(rot.x * .5)
 		Local cy:Double = Cos(rot.y * .5)
 		Local cz:Double = Cos(rot.z * .5)
 		Local sx:Double = Sin(rot.x * .5)
 		Local sy:Double = Sin(rot.y * .5)
 		Local sz:Double = Sin(rot.z * .5)
-		Return New SQuatI(Int(sx * cy * cz + cx * sy * sz), ..
-			Int(cx * sy * cz - sx * cy * sz), ..
-			Int(cx * cy * sz + sx * sy * cz), ..
-			Int(cx * cy * cz - sx * sy * sz))
-	End Method
-	
-	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
-	End Rem
-	Method EulerXZY:SQuatI(rot:SVec3I)
-		Local cx:Double = Cos(rot.x * .5)
-		Local cy:Double = Cos(rot.y * .5)
-		Local cz:Double = Cos(rot.z * .5)
-		Local sx:Double = Sin(rot.x * .5)
-		Local sy:Double = Sin(rot.y * .5)
-		Local sz:Double = Sin(rot.z * .5)
-		Return New SQuatI(Int(sx * cy * cz - cx * sy * sz), ..
-			Int(cx * sy * cz - sx * cy * sz), ..
-			Int(cx * cy * sz + sx * sy * cz), ..
-			Int(cx * cy * cz + sx * sy * sz))
+		
+		Select order
+			Case ERotationOrder.XYZ
+				Return New SQuatI(Int(sx * cy * cz + cx * sy * sz), ..
+					Int(cx * sy * cz - sx * cy * sz), ..
+					Int(cx * cy * sz + sx * sy * cz), ..
+					Int(cx * cy * cz - sx * sy * sz))
+			Case ERotationOrder.XZY
+				Return New SQuatI(Int(sx * cy * cz - cx * sy * sz), ..
+					Int(cx * sy * cz - sx * cy * sz), ..
+					Int(cx * cy * sz + sx * sy * cz), ..
+					Int(cx * cy * cz + sx * sy * sz))
+			Case ERotationOrder.YXZ
+				Return New SQuatI(Int(sx * cy * cz + cx * sy * sz), ..
+					Int(cx * sy * cz - sx * cy * sz), ..
+					Int(cx * cy * sz - sx * sy * cz), ..
+					Int(cx * cy * cz + sx * sy * sz))
+			Case ERotationOrder.YZX
+				Return New SQuatI(Int(sx * cy * cz + cx * sy * sz), ..
+					Int(cx * sy * cz + sx * cy * sz), ..
+					Int(cx * cy * sz - sx * sy * cz), ..
+					Int(cx * cy * cz - sx * sy * sz))
+			Case ERotationOrder.ZXY
+				Return New SQuatI(Int(sx * cy * cz - cx * sy * sz), ..
+					Int(cx * sy * cz + sx * cy * sz), ..
+					Int(cx * cy * sz + sx * sy * cz), ..
+					Int(cx * cy * cz - sx * sy * sz))
+			Case ERotationOrder.ZYX
+				Return New SQuatI(Int(sx * cy * cz - cx * sy * sz), ..
+					Int(cx * sy * cz + sx * cy * sz), ..
+					Int(cx * cy * sz - sx * sy * cz), ..
+					Int(cx * cy * cz + sx * sy * sz))
+		End Select
 	End Method
 
 	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
+	bbdoc: Returns the quaternion converted to Euler angles, using the specified rotation @order.
 	End Rem
-	Method EulerYXZ:SQuatI(rot:SVec3I)
-		Local cx:Double = Cos(rot.x * .5)
-		Local cy:Double = Cos(rot.y * .5)
-		Local cz:Double = Cos(rot.z * .5)
-		Local sx:Double = Sin(rot.x * .5)
-		Local sy:Double = Sin(rot.y * .5)
-		Local sz:Double = Sin(rot.z * .5)
-		Return New SQuatI(Int(sx * cy * cz + cx * sy * sz), ..
-			Int(cx * sy * cz - sx * cy * sz), ..
-			Int(cx * cy * sz - sx * sy * cz), ..
-			Int(cx * cy * cz + sx * sy * sz))
-	End Method
+	Method ToEuler:SVec3I(order:ERotationOrder = ERotationOrder.XYZ)
+		Local q:SQuatI = Normal()
+		Local mat:SMat4I = ToMat4(q)
+		
+		Local x:Int
+		Local y:Int
+		Local z:Int
 
-	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
-	End Rem
-	Method EulerYZX:SQuatI(rot:SVec3I)
-		Local cx:Double = Cos(rot.x * .5)
-		Local cy:Double = Cos(rot.y * .5)
-		Local cz:Double = Cos(rot.z * .5)
-		Local sx:Double = Sin(rot.x * .5)
-		Local sy:Double = Sin(rot.y * .5)
-		Local sz:Double = Sin(rot.z * .5)
-		Return New SQuatI(Int(sx * cy * cz + cx * sy * sz), ..
-			Int(cx * sy * cz + sx * cy * sz), ..
-			Int(cx * cy * sz - sx * sy * cz), ..
-			Int(cx * cy * cz - sx * sy * sz))
-	End Method
+		Select order
+			Case ERotationOrder.XYZ
+				y = ASin( Max( -1, Min( 1, mat.i ) ) )
+		
+				If Abs(mat.i) < 0.9999999 Then
+					x = ATan2( -mat.j, mat.k )
+					z = ATan2( -mat.e, mat.a )
+				Else
+					x = ATan2( mat.g, mat.f )
+				End If
+				
+			Case ERotationOrder.XZY
+				z = ASin( -Max( -1, Min( 1, mat.e ) ) )
 
-	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
-	End Rem
-	Method EulerZXY:SQuatI(rot:SVec3I)
-		Local cx:Double = Cos(rot.x * .5)
-		Local cy:Double = Cos(rot.y * .5)
-		Local cz:Double = Cos(rot.z * .5)
-		Local sx:Double = Sin(rot.x * .5)
-		Local sy:Double = Sin(rot.y * .5)
-		Local sz:Double = Sin(rot.z * .5)
-		Return New SQuatI(Int(sx * cy * cz - cx * sy * sz), ..
-			Int(cx * sy * cz + sx * cy * sz), ..
-			Int(cx * cy * sz + sx * sy * cz), ..
-			Int(cx * cy * cz - sx * sy * sz))
-	End Method
+				If Abs(mat.e) < 0.9999999 Then
+					x = ATan2( mat.g, mat.f )
+					y = ATan2( mat.i, mat.a )
+				Else
+					x = ATan2( -mat.j, mat.k )
+				End If
 
-	Rem
-	bbdoc: Returns a rotation that rotates around @rot.
-	End Rem
-	Method EulerZYX:SQuatI(rot:SVec3I)
-		Local cx:Double = Cos(rot.x * .5)
-		Local cy:Double = Cos(rot.y * .5)
-		Local cz:Double = Cos(rot.z * .5)
-		Local sx:Double = Sin(rot.x * .5)
-		Local sy:Double = Sin(rot.y * .5)
-		Local sz:Double = Sin(rot.z * .5)
-		Return New SQuatI(Int(sx * cy * cz - cx * sy * sz), ..
-			Int(cx * sy * cz + sx * cy * sz), ..
-			Int(cx * cy * sz - sx * sy * cz), ..
-			Int(cx * cy * cz + sx * sy * sz))
-	End Method
-
-	Rem
-	bbdoc: Returns the quaternion converted to Euler angles.
-	End Rem
-	Method ToEulerXYZ:SVec3I()
+			Case ERotationOrder.YXZ
+				x = ASin( -Max( -1, Min( 1, mat.j ) ) )
 		
-		Local roll:Int = ATan2( 2 * (w * x + y * z), 1 - 2 * (x * x + y * y) )
+				If Abs(mat.j) < 0.9999999 Then
+					y = ATan2( mat.i, mat.k )
+					z = ATan2( mat.b, mat.f )
+				Else
+					y = ATan2( -mat.c, mat.a )
+				End If
+			
+			Case ERotationOrder.YZX
+				z = ASin( Max( -1, Min( 1, mat.b ) ) )
 		
-		Local sp:Double = 2 * (w * y - z * x)
+				If Abs(mat.b) < 0.9999999 Then
+					x = ATan2( -mat.j, mat.f )
+					y = ATan2( -mat.c, mat.a )
+				Else
+					y = ATan2( mat.i, mat.k )
+				End If
+			
+			Case ERotationOrder.ZXY
+				x = ASin( Max( -1, Min( 1, mat.g ) ) )
 		
-		Local pitch:Int
-		If Abs(sp) >= 1 Then
-			If sp < 0 Then
-				pitch = -90
-			Else
-				pitch = 90
-			End If
-		Else
-			pitch = ASin(sp)
-		End If
+				If Abs(mat.g) < 0.9999999 Then
+					y = ATan2( -mat.c, mat.k )
+					z = ATan2( -mat.e, mat.f )
+				Else
+					z = ATan2( mat.b, mat.a )
+				End If
+			
+			Case ERotationOrder.ZYX
+				y = ASin( -Max( -1, Min( 1, mat.c ) ) )
 		
-		Local yaw:Int = ATan2( 2 * (w * z + x * y), 1 - 2 * (y * y + z * z) )
+				If Abs(mat.c) < 0.9999999 Then
+					x = ATan2( mat.g, mat.k )
+					z = ATan2( mat.b, mat.a )
+				Else
+					z = ATan2( -mat.e, mat.f )
+				End If
+			
+		End Select
 		
-		Return New SVec3I(roll, pitch, yaw)
+		Return New SVec3I(x, y, z)
 	End Method
 	
 End Struct
+
+Rem
+bbdoc: The order in which to apply rotations.
+End Rem
+Enum ERotationOrder
+	XYZ
+	XZY
+	YXZ
+	YZX
+	ZXY
+	ZYX
+End Enum
+
 
 Private
 Function Lerp:Double(a:Double, b:Double, t:Double)
