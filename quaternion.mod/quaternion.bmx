@@ -56,15 +56,61 @@ Struct SQuatD
 	Field z:Double
 	Field w:Double
 	
+	Method New()
+		Self.w = 1
+	End Method
+	
 	Rem
 	bbdoc: Creates a new #SQuatD from the supplied arguments.
 	End Rem
-	Method New(x:Double, y:Double, z:Double, w:Double)
+	Method New(x:Double, y:Double, z:Double, w:Double = 1)
 		Self.x = x
 		Self.y = y
 		Self.z = z
 		Self.w = w
 	End Method
+	
+	Rem
+	bbdoc: Creates a new #SQuatD from the rotation specified by the @euler angle and @order.
+	End Rem
+	Function CreateFromEuler:SQuatD(euler:SVec3D, order:ERotationOrder = ERotationOrder.XYZ)
+		Return New SQuatD.EulerRotate(euler, order)
+	End Function
+	
+	Rem
+	bbdoc: Creates a new #SQuatD from the rotation component of matrix @mat.
+	about: see http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+	End Rem
+	Function CreateFromRotation:SQuatD(mat:SMat4D)
+		Local trace:Double = mat.a + mat.f + mat.k
+		
+		If trace > 0 Then
+		
+			Local s:Double = 0.5 / Sqr( trace + 1 )
+			
+			Return New SQuatD((mat.g - mat.j) * s, (mat.i - mat.c) * s, (mat.b - mat.e) * s, 0.25 / s)
+		
+		Else If mat.a > mat.f And mat.a > mat.k Then
+		
+			Local s:Double = 2.0 * Sqr(1.0 + mat.a - mat.f - mat.k)
+			
+			Return New SQuatD(0.25 * s, (mat.e + mat.b) / s, (mat.i + mat.c) / s, (mat.g - mat.j) / s)
+		
+		Else If mat.f > mat.k Then
+		
+			Local s:Double = 2.0 * Sqr(1.0 + mat.f - mat.a - mat.k)
+		
+			Return New SQuatD((mat.e + mat.b) / s, 0.25 * s, (mat.j + mat.g) / s, (mat.i - mat.c) / s)
+		
+		Else
+		
+			Local s:Double = 2.0 * Sqr( 1.0 + mat.k - mat.a - mat.f )
+		
+			Return New SQuatD((mat.i + mat.c) / s, (mat.j + mat.g) / s, 0.25 * s, (mat.b - mat.e) / s)
+			
+		End If
+		
+	End Function
 
 	Rem
 	bbdoc: Applies the quaternion @a to the matrix, returning a new matrix.
@@ -86,7 +132,7 @@ Struct SQuatD
 		Local awx:Double = aw * ax2
 		Local awy:Double = aw * ay2
 		Local awz:Double = aw * az2
-		Return New SMat3D(1 - ayy - azz, ayx + awz, azx - awy, ayx - awz, 1.0 - axx - azz, azy + awx, azx + awy, azy - awx, 1.0 - axx - ayy)
+		Return New SMat3D(1 - (ayy + azz), ayx + awz, azx - awy, ayx - awz, 1.0 - (axx + azz), azy + awx, azx + awy, azy - awx, 1.0 - (axx + ayy))
 	End Function
 
 	Rem
@@ -109,9 +155,9 @@ Struct SQuatD
 		Local awx:Double = aw * ax2
 		Local awy:Double = aw * ay2
 		Local awz:Double = aw * az2
-		Return New SMat4D(1.0 - ayy - azz, ayx + awz, azx - awy, 0, ..
-			ayx - awz, 1.0 - axx - azz, azy + awx, 0, ..
-			azx + awy, azy - awx, 1.0 - axx - ayy, 0, ..
+		Return New SMat4D(1.0 - (ayy + azz), ayx + awz, azx - awy, 0, ..
+			ayx - awz, 1.0 - (axx + azz), azy + awx, 0, ..
+			azx + awy, azy - awx, 1.0 - (axx + ayy), 0, ..
 			0, 0, 0, 1)
 	End Function	
 
@@ -136,9 +182,9 @@ Struct SQuatD
 		Local awx:Double = aw * ax2
 		Local awy:Double = aw * ay2
 		Local awz:Double = aw * az2
-		Return New SMat4D(1.0 - ayy - azz, axy + awz, axz - awy, 0, ..
-			axy - awz, 1.0 - axx - azz, ayz + awx, 0, ..
-			axz + awy, ayz - awx, 1.0 - axx - ayy, 0, ..
+		Return New SMat4D(1.0 - (ayy + azz), axy + awz, axz - awy, 0, ..
+			axy - awz, 1.0 - (axx + azz), ayz + awx, 0, ..
+			axz + awy, ayz - awx, 1.0 - (axx + ayy), 0, ..
 			s.x, s.y, s.z, 1)
 	End Function
 	
@@ -166,15 +212,15 @@ Struct SQuatD
 		Local ox:Double = origin.x
 		Local oy:Double = origin.y
 		Local oz:Double = origin.z
-		Local o00:Double = 1.0 - ayy - azz
+		Local o00:Double = 1.0 - (ayy + azz)
 		Local o01:Double = axy + awz
 		Local o02:Double = axz - awy
 		Local o10:Double = axy - awz
-		Local o11:Double = 1.0 - axx - azz
+		Local o11:Double = 1.0 - (axx + azz)
 		Local o12:Double = ayz + awx
 		Local o20:Double = axz + awy
 		Local o21:Double = ayz - awx
-		Local o22:Double = 1.0 - axx - ayy
+		Local o22:Double = 1.0 - (axx + ayy)
 		Return New SMat4D(o00, o01, o02, 0, ..
 			o10, o11, o12, 0, ..
 			o20, o21, o22, 0, ..
@@ -183,6 +229,14 @@ Struct SQuatD
 			s.z + oz - (o02 * ox + o12 * oy + o22 * oz), 1)
 	End Function
 
+	Rem
+	bbdoc: Returns the angle between ths quaternion and the quaternion @quat.
+	End Rem
+	Method AngleTo:Double(quat:SQuatD)
+		Local d:Double = Max(-1, Min( 1, dot(quat)))
+		Return 114.591559026:Double * _acos(Abs(d))
+	End Method
+	
 	Rem
 	bbdoc: The dot product between two rotations.
 	End Rem
@@ -207,6 +261,22 @@ Struct SQuatD
 	End Rem
 	Method Interpolate:SQuatD(b:SQuatD, t:Double)
 		Return New SQuatD(Lerp(x, b.x, t), Lerp(y, b.y, t), Lerp(z, b.z, t), Lerp(w, b.w, t))
+	End Method
+	
+	Rem
+	bbdoc: Computes the length of this quaternion, considered as a 4 dimensional vector.
+	End Rem
+	Method Length:Double()
+		Return Sqr(x * x + y * y + z * z + w * w)
+	End Method
+	
+	Rem
+	bbdoc: Computes the length of this quaternion, considered as a 4 dimensional vector.
+	about: Calculating the squared length instead of the length is much faster.
+	Often if you are comparing lengths of two quaternions you can just compare their squared lengths.
+	End Rem
+	Method LengthSquared:Double()
+		Return x * x + y * y + z * z + w * w
 	End Method
 	
 	Rem
@@ -238,11 +308,27 @@ Struct SQuatD
 	End Rem
 	Method Normal:SQuatD()
 		Local length:Double = x * x + y * y + z * z + w * w
-		If length > 0 Then
+		If length = 0 Then
+			Return New SQuatD(0, 0, 0, 1)
+		Else
 			length = 1 / Sqr(length)
 			Return New SQuatD(x * length, y * length, z * length, w * length)
 		End If
-		Return Self
+	End Method
+	
+	Rem
+	bbdoc: Rotates this quaternion by a given angular step @s to the specified quaternion @quat.
+	End Rem
+	Method RotateTowards:SQuatD(quat:SQuatD, s:Double)
+		Local angle:Double = AngleTo(quat)
+		
+		If angle = 0 Then
+			Return Self
+		End If
+		
+		Local t:Double = Min(1, s / angle)
+		
+		Return SphericalInterpolate(quat, t)
 	End Method
 	
 	Rem
@@ -289,7 +375,7 @@ Struct SQuatD
 		Local sx:Double = Sin(rot.x * .5)
 		Local sy:Double = Sin(rot.y * .5)
 		Local sz:Double = Sin(rot.z * .5)
-		
+
 		Select order
 			Case ERotationOrder.XYZ
 				Return New SQuatD(sx * cy * cz + cx * sy * sz, ..
@@ -401,7 +487,17 @@ Struct SQuatD
 		Return New SVec3D(x, y, z)
 	End Method
 
-	
+	Rem
+	bbdoc: Returns a #String representation of the quaternion.
+	End Rem
+	Method ToString:String() Override
+		Local sb:TStringBuilder = New TStringBuilder
+		
+		sb.Append("(").Append(x).Append(", ").Append(y).Append(", ").Append(z).Append(", ").Append(w).Append(")")
+		
+		Return sb.ToString()
+	End Method
+
 End Struct
 
 Rem
@@ -414,7 +510,11 @@ Struct SQuatF
 	Field y:Float
 	Field z:Float
 	Field w:Float
-	
+
+	Method New()
+		Self.w = 1
+	End Method
+
 	Rem
 	bbdoc: Creates a new #SQuatF from the supplied arguments.
 	End Rem
@@ -424,6 +524,48 @@ Struct SQuatF
 		Self.z = z
 		Self.w = w
 	End Method
+
+	Rem
+	bbdoc: Creates a new #SQuatF from the rotation specified by the @euler angle and @order.
+	End Rem
+	Function CreateFromEuler:SQuatF(euler:SVec3F, order:ERotationOrder = ERotationOrder.XYZ)
+		Return New SQuatF.EulerRotate(euler, order)
+	End Function
+	
+	Rem
+	bbdoc: Creates a new #SQuatD from the rotation component of matrix @mat.
+	about: see http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+	End Rem
+	Function CreateFromRotation:SQuatF(mat:SMat4F)
+		Local trace:Float = mat.a + mat.f + mat.k
+		
+		If trace > 0 Then
+		
+			Local s:Float = 0.5 / Sqr( trace + 1 )
+			
+			Return New SQuatF((mat.g - mat.j) * s, (mat.i - mat.c) * s, (mat.b - mat.e) * s, 0.25 / s)
+		
+		Else If mat.a > mat.f And mat.a > mat.k Then
+		
+			Local s:Float = 2.0 * Sqr(1.0 + mat.a - mat.f - mat.k)
+			
+			Return New SQuatF(0.25 * s, (mat.e + mat.b) / s, (mat.i + mat.c) / s, (mat.g - mat.j) / s)
+		
+		Else If mat.f > mat.k Then
+		
+			Local s:Float = 2.0 * Sqr(1.0 + mat.f - mat.a - mat.k)
+		
+			Return New SQuatF((mat.e + mat.b) / s, 0.25 * s, (mat.j + mat.g) / s, (mat.i - mat.c) / s)
+		
+		Else
+		
+			Local s:Float = 2.0 * Sqr( 1.0 + mat.k - mat.a - mat.f )
+		
+			Return New SQuatF((mat.i + mat.c) / s, (mat.j + mat.g) / s, 0.25 * s, (mat.b - mat.e) / s)
+			
+		End If
+		
+	End Function
 
 	Rem
 	bbdoc: Applies the quaternion @a to the matrix, returning a new matrix.
@@ -543,6 +685,14 @@ Struct SQuatF
 	End Function
 
 	Rem
+	bbdoc: Returns the angle between ths quaternion and the quaternion @quat.
+	End Rem
+	Method AngleTo:Float(quat:SQuatF)
+		Local d:Float = Max(-1, Min( 1, dot(quat)))
+		Return 114.591559026 * _acos(Abs(d))
+	End Method
+
+	Rem
 	bbdoc: The dot product between two rotations.
 	End Rem
 	Method Dot:Float(b:SQuatF)
@@ -567,7 +717,23 @@ Struct SQuatF
 	Method Interpolate:SQuatF(b:SQuatF, t:Float)
 		Return New SQuatF(LerpF(x, b.x, t), LerpF(y, b.y, t), LerpF(z, b.z, t), LerpF(w, b.w, t))
 	End Method
+
+	Rem
+	bbdoc: Computes the length of this quaternion, considered as a 4 dimensional vector.
+	End Rem
+	Method Length:Float()
+		Return Sqr(x * x + y * y + z * z + w * w)
+	End Method
 	
+	Rem
+	bbdoc: Computes the length of this quaternion, considered as a 4 dimensional vector.
+	about: Calculating the squared length instead of the length is much faster.
+	Often if you are comparing lengths of two quaternions you can just compare their squared lengths.
+	End Rem
+	Method LengthSquared:Float()
+		Return x * x + y * y + z * z + w * w
+	End Method
+
 	Rem
 	bbdoc: Multiplies the quaternion by @b, returning a new quaternion.
 	End Rem
@@ -597,13 +763,30 @@ Struct SQuatF
 	End Rem
 	Method Normal:SQuatF()
 		Local length:Float = x * x + y * y + z * z + w * w
-		If length > 0 Then
+		If length = 0 Then
+			Return New SQuatF(0, 0, 0, 1)
+		Else
 			length = 1 / Sqr(length)
+
 			Return New SQuatF(x * length, y * length, z * length, w * length)
 		End If
-		Return Self
 	End Method
-	
+
+	Rem
+	bbdoc: Rotates this quaternion by a given angular step @s to the specified quaternion @quat.
+	End Rem
+	Method RotateTowards:SQuatF(quat:SQuatF, s:Float)
+		Local angle:Float = AngleTo(quat)
+		
+		If angle = 0 Then
+			Return Self
+		End If
+		
+		Local t:Float = Min(1, s / angle)
+		
+		Return SphericalInterpolate(quat, t)
+	End Method
+
 	Rem
 	bbdoc: Spherically interpolates between this SQuatF and @b by @t.
 	End Rem
@@ -783,6 +966,10 @@ Struct SQuatI
 	Field y:Int
 	Field z:Int
 	Field w:Int
+
+	Method New()
+		Self.w = 1
+	End Method
 	
 	Rem
 	bbdoc: Creates a new #SQuatI from the supplied arguments.
@@ -793,6 +980,48 @@ Struct SQuatI
 		Self.z = z
 		Self.w = w
 	End Method
+
+	Rem
+	bbdoc: Creates a new #SQuatI from the rotation specified by the @euler angle and @order.
+	End Rem
+	Function CreateFromEuler:SQuatI(euler:SVec3I, order:ERotationOrder = ERotationOrder.XYZ)
+		Return New SQuatI.EulerRotate(euler, order)
+	End Function
+	
+	Rem
+	bbdoc: Creates a new #SQuatI from the rotation component of matrix @mat.
+	about: see http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+	End Rem
+	Function CreateFromRotation:SQuatI(mat:SMat4I)
+		Local trace:Double = mat.a + mat.f + mat.k
+		
+		If trace > 0 Then
+		
+			Local s:Double = 0.5 / Sqr( trace + 1 )
+			
+			Return New SQuatI(Int((mat.g - mat.j) * s), Int((mat.i - mat.c) * s), Int((mat.b - mat.e) * s), Int(0.25 / s))
+		
+		Else If mat.a > mat.f And mat.a > mat.k Then
+		
+			Local s:Double = 2.0 * Sqr(1.0 + mat.a - mat.f - mat.k)
+			
+			Return New SQuatI(Int(0.25 * s), Int((mat.e + mat.b) / s), Int((mat.i + mat.c) / s), Int((mat.g - mat.j) / s))
+		
+		Else If mat.f > mat.k Then
+		
+			Local s:Double = 2.0 * Sqr(1.0 + mat.f - mat.a - mat.k)
+		
+			Return New SQuatI(Int((mat.e + mat.b) / s), Int(0.25 * s), Int((mat.j + mat.g) / s), Int((mat.i - mat.c) / s))
+		
+		Else
+		
+			Local s:Double = 2.0 * Sqr( 1.0 + mat.k - mat.a - mat.f )
+		
+			Return New SQuatI(Int((mat.i + mat.c) / s), Int((mat.j + mat.g) / s), Int(0.25 * s), Int((mat.b - mat.e) / s))
+			
+		End If
+		
+	End Function
 
 	Rem
 	bbdoc: Applies the quaternion @a to the matrix, returning a new matrix.
@@ -912,6 +1141,14 @@ Struct SQuatI
 	End Function
 
 	Rem
+	bbdoc: Returns the angle between ths quaternion and the quaternion @quat.
+	End Rem
+	Method AngleTo:Double(quat:SQuatI)
+		Local d:Double = Max(-1, Min( 1, dot(quat)))
+		Return 114.591559026:Double * _acos(Abs(d))
+	End Method
+
+	Rem
 	bbdoc: The dot product between two rotations.
 	End Rem
 	Method Dot:Int(b:SQuatI)
@@ -936,7 +1173,23 @@ Struct SQuatI
 	Method Interpolate:SQuatI(b:SQuatI, t:Int)
 		Return New SQuatI(LerpI(x, b.x, t), LerpI(y, b.y, t), LerpI(z, b.z, t), LerpI(w, b.w, t))
 	End Method
+
+	Rem
+	bbdoc: Computes the length of this quaternion, considered as a 4 dimensional vector.
+	End Rem
+	Method Length:Double()
+		Return Sqr(x * x + y * y + z * z + w * w)
+	End Method
 	
+	Rem
+	bbdoc: Computes the length of this quaternion, considered as a 4 dimensional vector.
+	about: Calculating the squared length instead of the length is much faster.
+	Often if you are comparing lengths of two quaternions you can just compare their squared lengths.
+	End Rem
+	Method LengthSquared:Double()
+		Return x * x + y * y + z * z + w * w
+	End Method
+
 	Rem
 	bbdoc: Multiplies the quaternion by @b, returning a new quaternion.
 	End Rem
@@ -966,17 +1219,34 @@ Struct SQuatI
 	End Rem
 	Method Normal:SQuatI()
 		Local length:Double = x * x + y * y + z * z + w * w
-		If length > 0 Then
+		If length = 0 Then
+			Return New SQuatI(0, 0, 0, 1)
+		Else
 			length = 1 / Sqr(length)
 			Return New SQuatI(Int(x * length), Int(y * length), Int(z * length), Int(w * length))
 		End If
 		Return Self
 	End Method
+
+	Rem
+	bbdoc: Rotates this quaternion by a given angular step @s to the specified quaternion @quat.
+	End Rem
+	Method RotateTowards:SQuatI(quat:SQuatI, s:Double)
+		Local angle:Double = AngleTo(quat)
+		
+		If angle = 0 Then
+			Return Self
+		End If
+		
+		Local t:Double = Min(1, s / angle)
+		
+		Return SphericalInterpolate(quat, t)
+	End Method
 	
 	Rem
 	bbdoc: Spherically interpolates between this SQuatI and @b by @t.
 	End Rem
-	Method SphericalInterpolate:SQuatI(b:SQuatI, t:Int)
+	Method SphericalInterpolate:SQuatI(b:SQuatI, t:Double)
 		Local bx:Int = b.x
 		Local by:Int = b.y
 		Local bz:Int = b.z
@@ -1010,7 +1280,7 @@ Struct SQuatI
 	Rem
 	bbdoc: Returns a rotation that rotates around @rot.
 	End Rem
-	Method EulerRotate:SQuatI(rot:SVec3D, order:ERotationOrder = ERotationOrder.XYZ)
+	Method EulerRotate:SQuatI(rot:SVec3I, order:ERotationOrder = ERotationOrder.XYZ)
 		Local cx:Double = Cos(rot.x * .5)
 		Local cy:Double = Cos(rot.y * .5)
 		Local cz:Double = Cos(rot.z * .5)
@@ -1127,6 +1397,17 @@ Struct SQuatI
 		End Select
 		
 		Return New SVec3I(x, y, z)
+	End Method
+
+	Rem
+	bbdoc: Returns a #String representation of the quaternion.
+	End Rem
+	Method ToString:String() Override
+		Local sb:TStringBuilder = New TStringBuilder
+		
+		sb.Append("(").Append(x).Append(", ").Append(y).Append(", ").Append(z).Append(", ").Append(w).Append(")")
+		
+		Return sb.ToString()
 	End Method
 	
 End Struct
