@@ -51,6 +51,7 @@ typedef void (*BBArrayStructInit)(void * ref);
 BBArray*	bbArrayNew1DStruct( const char *type,int length, unsigned short data_size, BBArrayStructInit init );
 BBArray*	bbArrayNewStruct( const char *type,unsigned short data_size, BBArrayStructInit init, int dims, ... );
 BBArray*	bbArrayFromDataStruct( const char *type,int length,void *data, unsigned short data_size );
+BBArray*	bbArraySliceStruct( const char *type,BBArray *inarr,int beg,int end, unsigned short data_size, BBArrayStructInit structInit );
 
 void bbArrayCopy(BBArray * srcArr, int srcPos, BBArray * dstArr, int dstPos, int length);
 

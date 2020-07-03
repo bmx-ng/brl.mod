@@ -219,7 +219,10 @@ BBArray *bbArrayNew1DStruct( const char *type,int length, unsigned short data_si
 }
 
 BBArray *bbArraySlice( const char *type,BBArray *inarr,int beg,int end ){
+	return bbArraySliceStruct(type, inarr, beg, end, 0, 0);
+}
 
+BBArray *bbArraySliceStruct( const char *type,BBArray *inarr,int beg,int end, unsigned short data_size, BBArrayStructInit structInit ){
 	char *p;
 	void *init;
 	BBArray *arr;
@@ -228,13 +231,13 @@ BBArray *bbArraySlice( const char *type,BBArray *inarr,int beg,int end ){
 
 	if( length<=0 ) return &bbEmptyArray;
 	
-	arr=allocateArray( type,1,&length,0 );
+	arr=allocateArray( type,1,&length,data_size );
 
 	el_size=arr->size/length;
 	
 	init=arrayInitializer( arr );
 	p=(char*)BBARRAYDATA( arr,1 );
-
+	
 	n=-beg;
 	if( n>0 ){
 		if( beg+n>end ) n=end-beg;
@@ -244,6 +247,13 @@ BBArray *bbArraySlice( const char *type,BBArray *inarr,int beg,int end ){
 			p=(char*)dst;
 		}else{
 			memset( p,0,n*el_size );
+			if (structInit) {
+				char * s = (char*)p;
+				for( k=0;k<n;++k ) {
+					structInit(s);
+					s += arr->data_size;
+				}
+			}
 			p+=n*el_size;
 		}
 		beg+=n;
@@ -266,6 +276,13 @@ BBArray *bbArraySlice( const char *type,BBArray *inarr,int beg,int end ){
 			for( k=0;k<n;++k ) *dst++=init;
 		}else{
 			memset( p,0,n*el_size );
+			if (structInit) {
+				char * s = (char*)p;
+				for( k=0;k<n;++k ) {
+					structInit(s);
+					s += arr->data_size;
+				}
+			}
 		}
 	}
 	return arr;
