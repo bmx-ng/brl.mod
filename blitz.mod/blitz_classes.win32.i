@@ -68,6 +68,7 @@ String^Object{
 	+FromLParam:String( lparamValue:LParam )="bbStringFromLParam"
 
 	-ToUTF8StringBuffer:Byte Ptr(buf:Byte Ptr, length:Size_T Var)="bbStringToUTF8StringBuffer"
+	-Hash:ULong()="bbStringHash"
 		
 }AF="bbStringClass"
 

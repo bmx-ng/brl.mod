@@ -5,6 +5,11 @@
 
 #include "blitz_unicode.h"
 
+#define XXH_IMPLEMENTATION
+#define XXH_STATIC_LINKING_ONLY
+
+#include "hash/xxh3.h"
+
 static void bbStringFree( BBObject *o );
 
 static BBDebugScope debugScope={
@@ -28,7 +33,7 @@ BBClass bbStringClass={
 	0,              //extra
 	0,
 	0,          //instance_count
-	offsetof(BBString, length), //fields_offset
+	offsetof(BBString, hash), //fields_offset
 	
 	bbStringFind,
 	bbStringFindLast,
@@ -81,11 +86,13 @@ BBClass bbStringClass={
 	bbStringFromLParam,
 #endif
 
-	bbStringToUTF8StringBuffer
+	bbStringToUTF8StringBuffer,
+	bbStringHash
 };
 
 BBString bbEmptyString={
 	&bbStringClass, //clas
+	0,
 	0				//length
 };
 
@@ -998,6 +1005,7 @@ char *bbTmpUTF8String( BBString *str ){
 #if __STDC_VERSION__ >= 199901L
 extern int bbStringEquals( BBString *x,BBString *y);
 extern int bbObjectIsEmptyString(BBObject * o);
+extern BBULONG bbStringHash( BBString * x );
 #else
 int bbStringEquals( BBString *x,BBString *y ){
 	if (x->length-y->length != 0) return 0;
@@ -1011,4 +1019,11 @@ int bbStringEquals( BBString *x,BBString *y ){
 int bbObjectIsEmptyString(BBObject * o) {
 	return (BBString*)o == &bbEmptyString;
 }
+
+BBULONG bbStringHash( BBString * x ) {
+	if (x->hash > 0) return x->hash;
+	x->hash = XXH3_64bits(x->buf, x->length * sizeof(BBChar));
+	return x->hash;
+}
+
 #endif

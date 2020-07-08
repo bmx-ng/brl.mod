@@ -4,6 +4,9 @@
 
 #include "blitz_types.h"
 
+#define XXH_STATIC_LINKING_ONLY
+#include "hash/xxhash.h"
+
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -12,6 +15,7 @@ extern "C"{
 
 struct BBString{
 	BBClass*	clas;
+	BBULONG hash;
 	int		length;
 	BBChar	buf[];
 };
@@ -85,15 +89,23 @@ char*	bbTmpUTF8String( BBString *str );
 #if __STDC_VERSION__ >= 199901L
 inline int bbStringEquals( BBString *x,BBString *y ){
 	if (x->length-y->length != 0) return 0;
+	if (x->hash != 0 && x->hash == y->hash) return 1;
 	return memcmp(x->buf, y->buf, x->length * sizeof(BBChar)) == 0;
 }
 
 inline int bbObjectIsEmptyString(BBObject * o) {
 	return (BBString*)o == &bbEmptyString;
 }
+
+inline BBULONG bbStringHash( BBString * x ) {
+	if (x->hash > 0) return x->hash;
+	x->hash = XXH3_64bits(x->buf, x->length * sizeof(BBChar));
+	return x->hash;
+}
 #else
 int bbStringEquals( BBString *x,BBString *y );
 int bbObjectIsEmptyString(BBObject * o);
+BBULONG bbStringHash( BBString * x );
 #endif
 
 char *bbStringToUTF8StringBuffer( BBString *str, char * buf, size_t * length );
