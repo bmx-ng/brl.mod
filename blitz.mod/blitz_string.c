@@ -122,6 +122,7 @@ BBString *bbStringNew( int len ){
 	BBString *str;
 	if( !len ) return &bbEmptyString;
 	str=(BBString*)bbGCAllocObject( sizeof(BBString)+len*sizeof(BBChar),&bbStringClass,BBGC_ATOMIC );
+	str->hash=0;
 	str->length=len;
 	return str;
 }
@@ -1009,6 +1010,7 @@ extern BBULONG bbStringHash( BBString * x );
 #else
 int bbStringEquals( BBString *x,BBString *y ){
 	if (x->length-y->length != 0) return 0;
+	if (x->hash != 0 && x->hash == y->hash) return 1;
 	BBChar * bx = x->buf;
 	BBChar * by = y->buf;
 	int k = x->length;
