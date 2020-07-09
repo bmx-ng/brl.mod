@@ -92,7 +92,7 @@ BBClass bbStringClass={
 
 BBString bbEmptyString={
 	&bbStringClass, //clas
-	0,
+	0x776eddfb6bfd9195, // hash
 	0				//length
 };
 
