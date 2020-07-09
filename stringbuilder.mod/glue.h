@@ -27,6 +27,7 @@ struct MaxStringBuilder {
 	BBChar * buffer;
 	int count;
 	int capacity;
+	BBULONG hash;
 };
 
 struct MaxSplitBuffer {

@@ -31,6 +31,7 @@ struct MaxStringBuilder * bmx_stringbuilder_new(int initial) {
 	buf->count = 0;
 	buf->capacity = initial;
 	buf->buffer = malloc(initial * sizeof(BBChar));
+	buf->hash = 0;
 	
 	return buf;
 }
@@ -52,6 +53,7 @@ void bmx_stringbuilder_resize(struct MaxStringBuilder * buf, int size) {
 		
 		buf->buffer = newBuffer;
 		buf->capacity = size;
+		buf->hash = 0;
 	}
 }
 
@@ -68,6 +70,7 @@ void bmx_stringbuilder_setlength(struct MaxStringBuilder * buf, int length) {
 	bmx_stringbuilder_resize(buf, length);
 	if (length < buf->count) {
 		buf->count = length;
+		buf->hash = 0;
 	}
 }
 
@@ -86,6 +89,7 @@ void bmx_stringbuilder_append_string(struct MaxStringBuilder * buf, BBString * v
 		memcpy(p, value->buf, value->length * sizeof(BBChar));
 		
 		buf->count += value->length;
+		buf->hash = 0;
 	}	
 }
 
@@ -105,6 +109,7 @@ void bmx_stringbuilder_remove(struct MaxStringBuilder * buf, int start, int end)
 	}
 	
 	buf->count -= end - start;
+	buf->hash = 0;
 }
 
 void bmx_stringbuilder_insert(struct MaxStringBuilder * buf, int offset, BBString * value) {
@@ -124,6 +129,7 @@ void bmx_stringbuilder_insert(struct MaxStringBuilder * buf, int offset, BBStrin
 		memcpy(buf->buffer + offset, value->buf, length * sizeof(BBChar));
 		
 		buf->count += length;
+		buf->hash = 0;
 	}
 }
 
@@ -136,6 +142,7 @@ void bmx_stringbuilder_reverse(struct MaxStringBuilder * buf) {
 		buf->buffer[n] = c;
 		n++;
 	}
+	buf->hash = 0;
 }
 
 BBString * bmx_stringbuilder_substring(struct MaxStringBuilder * buf, int beginIndex, int endIndex) {
@@ -157,6 +164,7 @@ void bmx_stringbuilder_append_stringbuffer(struct MaxStringBuilder * buf, struct
 		memcpy(buf->buffer + buf->count, other->buffer, other->count * sizeof(BBChar));
 	
 		buf->count += other->count;
+		buf->hash = 0;
 	}
 }
 
@@ -242,6 +250,7 @@ void bmx_stringbuilder_tolower(struct MaxStringBuilder * buf) {
 		}
 		buf->buffer[i]=c;
 	}
+	buf->hash = 0;
 }
 
 void bmx_stringbuilder_toupper(struct MaxStringBuilder * buf) {
@@ -266,6 +275,7 @@ void bmx_stringbuilder_toupper(struct MaxStringBuilder * buf) {
 		}
 		buf->buffer[i]=c;
 	}
+	buf->hash = 0;
 }
 
 void bmx_stringbuilder_trim(struct MaxStringBuilder * buf) {
@@ -276,6 +286,7 @@ void bmx_stringbuilder_trim(struct MaxStringBuilder * buf) {
 	}
 	if (start == end ) {
 		buf->count = 0;
+		buf->hash = 0;
 		return;
 	}
 	while (buf->buffer[end - 1] <= ' ') {
@@ -287,6 +298,7 @@ void bmx_stringbuilder_trim(struct MaxStringBuilder * buf) {
 
 	memmove(buf->buffer, buf->buffer + start, (end - start) * sizeof(BBChar));
 	buf->count = end - start;	
+	buf->hash = 0;
 }
 
 void bmx_stringbuilder_replace(struct MaxStringBuilder * buf, BBString * subString, BBString *  withString) {
@@ -419,6 +431,7 @@ void bmx_stringbuilder_setcharat(struct MaxStringBuilder * buf, int index, int c
 	}
 
 	buf->buffer[index] = ch;
+	buf->hash = 0;
 }
 
 int bmx_stringbuilder_charat(struct MaxStringBuilder * buf, int index) {
@@ -439,7 +452,7 @@ void bmx_stringbuilder_removecharat(struct MaxStringBuilder * buf, int index) {
 	}
 	
 	buf->count--;
-
+	buf->hash = 0;
 }
 
 void bmx_stringbuilder_append_cstring(struct MaxStringBuilder * buf, const char * chars) {
@@ -456,6 +469,7 @@ void bmx_stringbuilder_append_cstring(struct MaxStringBuilder * buf, const char 
 		}
 		
 		buf->count += count;
+		buf->hash = 0;
 	}
 }
 
@@ -493,6 +507,7 @@ void bmx_stringbuilder_append_utf8string(struct MaxStringBuilder * buf, const ch
 		}
 
 		buf->count += count;
+		buf->hash = 0;
 	}
 }
 
@@ -563,6 +578,7 @@ void bmx_stringbuilder_append_shorts(struct MaxStringBuilder * buf, BBSHORT * sh
 		memcpy(p, shorts, length * sizeof(BBChar));
 		
 		buf->count += length;
+		buf->hash = 0;
 	}	
 }
 
@@ -571,6 +587,7 @@ void bmx_stringbuilder_append_char(struct MaxStringBuilder * buf, int value) {
 	BBChar * p = buf->buffer + buf->count;
 	*p = (BBChar)value;
 	buf->count++;
+	buf->hash = 0;
 }
 
 BBString * bmx_stringbuilder_left(struct MaxStringBuilder * buf, int length) {
@@ -613,6 +630,7 @@ int bmx_stringbuilder_equals(struct MaxStringBuilder * buf1, struct MaxStringBui
 		return 1;
 	}
 	if (buf1->count-buf2->count != 0) return 0;
+	if (buf1->hash > 0 && buf1->hash == buf2->hash) return 1;
 	return memcmp(buf1->buffer, buf2->buffer, buf1->count * sizeof(BBChar)) == 0;
 }
 
@@ -632,6 +650,7 @@ void bmx_stringbuilder_leftalign(struct MaxStringBuilder * buf, int length) {
 	}
 	
 	buf->count = length;
+	buf->hash = 0;
 }
 
 void bmx_stringbuilder_rightalign(struct MaxStringBuilder * buf, int length) {
@@ -659,6 +678,7 @@ void bmx_stringbuilder_rightalign(struct MaxStringBuilder * buf, int length) {
 	}
 
 	buf->count = length;
+	buf->hash = 0;
 }
 
 char * bmx_stringbuilder_toutf8string(struct MaxStringBuilder * buf) {
@@ -852,7 +872,9 @@ void bmx_stringbuilder_format_double(struct MaxStringBuilder * buf, BBString * f
 }
 
 BBULONG bmx_stringbuilder_hash(struct MaxStringBuilder * buf) {
-	return XXH3_64bits(buf->buffer, buf->count * sizeof(BBChar));
+	if (buf->hash > 0) return buf->hash;
+	buf->hash = XXH3_64bits(buf->buffer, buf->count * sizeof(BBChar));
+	return buf->hash;
 }
 
 /* ----------------------------------------------------- */
