@@ -851,6 +851,10 @@ void bmx_stringbuilder_format_double(struct MaxStringBuilder * buf, BBString * f
 	bmx_stringbuilder_append_utf8string(buf, buffer);
 }
 
+BBULONG bmx_stringbuilder_hash(struct MaxStringBuilder * buf) {
+	return XXH3_64bits(buf->buffer, buf->count * sizeof(BBChar));
+}
+
 /* ----------------------------------------------------- */
 
 int bmx_stringbuilder_splitbuffer_length(struct MaxSplitBuffer * buf) {

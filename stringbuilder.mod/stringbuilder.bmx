@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.13"
+ModuleInfo "Version: 1.14"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2018-2020 Bruce A Henderson"
 
+ModuleInfo "History: 1.14"
+ModuleInfo "History: Added Hash() method."
 ModuleInfo "History: 1.13"
 ModuleInfo "History: Changes for low-level external use - header, exposing buffer."
 ModuleInfo "History: 1.12"
@@ -598,6 +600,13 @@ Public
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Returns the calculated hash for the content of the string builder.
+	End Rem
+	Method Hash:ULong()
+		Return bmx_stringbuilder_hash(buffer)
+	End Method
+	
 	Rem
 	bbdoc: Extracts the leftmost characters from the string builder.
 	about: This method extracts the left @length characters from the builder. If this many characters are not available, the whole builder is returned.
