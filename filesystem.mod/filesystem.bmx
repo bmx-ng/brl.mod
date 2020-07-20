@@ -38,6 +38,9 @@ Const FILETIME_MODIFIED:Int=0,FILETIME_CREATED:Int=1
 Private
 
 Function _RootPath$( path$ )
+	If MaxIO.ioInitialized Then
+		Return "/"
+	End If
 ?Win32
 	If path.StartsWith( "//" )
 		Return path[ ..path.Find( "/",2 )+1 ]
@@ -68,6 +71,7 @@ Public
 
 Function FixPath( path$ Var,dirPath:Int=False )
 	path=path.Replace("\","/")
+	If Not MaxIO.ioInitialized Then
 ?Win32
 	If path.StartsWith( "//" )
 		If path.Find( "/",2 )=-1 path:+"/"
@@ -79,6 +83,7 @@ Function FixPath( path$ Var,dirPath:Int=False )
 		EndIf
 	EndIf
 ?
+	End If
 	If dirPath And path.EndsWith( "/" ) 
 		If Not _IsRootPath( path ) path=path[..path.length-1]
 	EndIf
@@ -152,6 +157,9 @@ bbdoc: Get Current Directory
 returns: The current directory
 End Rem
 Function CurrentDir$()
+	If MaxIO.ioInitialized Then
+		Return "/"
+	End If
 	Local path$=getcwd_()
 	FixPath path
 	Return path
@@ -200,12 +208,21 @@ returns: 0 if file at @path doesn't exist, FILETYPE_FILE (1) if the file is a pl
 End Rem
 Function FileType:Int( path$ )
 	FixPath path
-	Local Mode:Int,size:Long,mtime:Int,ctime:Int
-	If stat_( path,Mode,size,mtime,ctime ) Return 0
-	Select Mode & S_IFMT_
-	Case S_IFREG_ Return FILETYPE_FILE
-	Case S_IFDIR_ Return FILETYPE_DIR
-	End Select
+	If MaxIO.ioInitialized Then
+		Local stat:SMaxIO_Stat
+		If Not MaxIO.Stat(path, stat) Return 0
+		Select stat._filetype
+			Case EMaxIOFileType.REGULAR Return FILETYPE_FILE
+			Case EMaxIOFileType.DIRECTORY Return FILETYPE_DIR
+		End Select
+	Else
+		Local Mode:Int,size:Long,mtime:Int,ctime:Int
+		If stat_( path,Mode,size,mtime,ctime ) Return 0
+		Select Mode & S_IFMT_
+		Case S_IFREG_ Return FILETYPE_FILE
+		Case S_IFDIR_ Return FILETYPE_DIR
+		End Select
+	End If
 	Return FILETYPE_NONE
 End Function
 
@@ -213,15 +230,25 @@ Rem
 bbdoc: Get file time
 returns: The time the file at @path was last modified 
 End Rem
-Function FileTime:Int( path$, timetype:Int=FILETIME_MODIFIED )
+Function FileTime:Long( path$, timetype:Int=FILETIME_MODIFIED )
 	FixPath path
-	Local Mode:Int,size:Long,mtime:Int,ctime:Int
-	If stat_( path,Mode,size,mtime,ctime ) Return 0
-	If(timetype = FILETIME_CREATED)
-		Return ctime
+	If MaxIO.ioInitialized Then
+		Local stat:SMaxIO_Stat
+		If Not MaxIO.Stat(path, stat) Return 0
+		If timetype = FILETIME_CREATED Then
+			Return stat._createtime
+		Else
+			Return stat._modtime
+		End If
 	Else
-		Return mtime
-	EndIf
+		Local Mode:Int,size:Long,mtime:Int,ctime:Int
+		If stat_( path,Mode,size,mtime,ctime ) Return 0
+		If(timetype = FILETIME_CREATED)
+			Return ctime
+		Else
+			Return mtime
+		EndIf
+	End If
 End Function
 
 Rem
@@ -230,9 +257,15 @@ returns: Size, in bytes, of the file at @path, or -1 if the file does not exist
 end rem
 Function FileSize:Long( path$ )
 	FixPath path
-	Local Mode:Int,size:Long,mtime:Int,ctime:Int
-	If stat_( path,Mode,size,mtime,ctime ) Return -1
-	Return size
+	If MaxIO.ioInitialized Then
+		Local stat:SMaxIO_Stat
+		If Not MaxIO.Stat(path, stat) Return -1
+		Return stat._filesize
+	Else
+		Local Mode:Int,size:Long,mtime:Int,ctime:Int
+		If stat_( path,Mode,size,mtime,ctime ) Return -1
+		Return size
+	End If
 End Function
 
 Rem
@@ -241,9 +274,11 @@ returns: file mode flags
 end rem
 Function FileMode:Int( path$ )
 	FixPath path
-	Local Mode:Int,size:Long,mtime:Int,ctime:Int
-	If stat_( path,Mode,size,mtime,ctime ) Return -1
-	Return Mode & 511
+	If Not MaxIO.ioInitialized Then
+		Local Mode:Int,size:Long,mtime:Int,ctime:Int
+		If stat_( path,Mode,size,mtime,ctime ) Return -1
+		Return Mode & 511
+	End If
 End Function
 
 Rem
@@ -251,7 +286,9 @@ bbdoc: Set file mode
 end rem
 Function SetFileMode( path$,Mode:Int )
 	FixPath path
-	chmod_ path,Mode
+	If Not MaxIO.ioInitialized Then
+		chmod_ path,Mode
+	End If
 End Function
 
 Rem
@@ -260,9 +297,15 @@ returns: True if successful
 End Rem
 Function CreateFile:Int( path$ )
 	FixPath path
-	remove_ path
-	Local t:Byte Ptr=fopen_( path,"wb" )
-	If t fclose_ t
+	If MaxIO.ioInitialized Then
+		MaxIO.DeletePath(path)
+		Local t:Byte Ptr = MaxIO.OpenWrite(path)
+		If t MaxIO.Close(t)
+	Else
+		remove_ path
+		Local t:Byte Ptr=fopen_( path,"wb" )
+		If t fclose_ t
+	End If
 	If FileType( path )=FILETYPE_FILE Return True
 End Function
 
@@ -274,27 +317,31 @@ If @recurse is true, any required subdirectories are also created.
 End Rem
 Function CreateDir:Int( path$,recurse:Int=False )
 	FixPath path,True
-	If Not recurse
-		mkdir_ path,1023
-		Return FileType(path)=FILETYPE_DIR
-	EndIf
-	Local t$
-	path=RealPath(path)+"/"
-	While path
-		Local i:Int=path.find("/")+1
-		t:+path[..i]
-		path=path[i..]
-		Select FileType(t)
-		Case FILETYPE_DIR
-		Case FILETYPE_NONE
-			Local s$=StripSlash(t)
-			mkdir_ StripSlash(s),1023
-			If FileType(s)<>FILETYPE_DIR Return False
-		Default
-			Return False
-		End Select
-	Wend
-	Return True
+	If MaxIO.ioInitialized Then
+		Return MaxIO.MkDir(path)
+	Else
+		If Not recurse
+			mkdir_ path,1023
+			Return FileType(path)=FILETYPE_DIR
+		EndIf
+		Local t$
+		path=RealPath(path)+"/"
+		While path
+			Local i:Int=path.find("/")+1
+			t:+path[..i]
+			path=path[i..]
+			Select FileType(t)
+			Case FILETYPE_DIR
+			Case FILETYPE_NONE
+				Local s$=StripSlash(t)
+				mkdir_ StripSlash(s),1023
+				If FileType(s)<>FILETYPE_DIR Return False
+			Default
+				Return False
+			End Select
+		Wend
+		Return True
+	End If
 End Function
 
 Rem
@@ -303,7 +350,11 @@ returns: True if successful
 End Rem
 Function DeleteFile:Int( path$ )
 	FixPath path
-	remove_ path
+	If MaxIO.ioInitialized Then
+		MaxIO.DeletePath(path)
+	Else
+		remove_ path
+	End If
 	Return FileType(path)=FILETYPE_NONE
 End Function
 
@@ -312,6 +363,9 @@ bbdoc: Renames a file
 returns: True if successful
 End Rem
 Function RenameFile:Int( oldpath$,newpath$ )
+	If MaxIO.ioInitialized Then
+		Return False
+	End If
 	FixPath oldpath
 	FixPath newpath
 	Return rename_( oldpath,newpath)=0
@@ -399,17 +453,25 @@ bbdoc: Change current directory
 returns: True if successful
 End Rem
 Function ChangeDir:Int( path$ )
-	FixPath path,True
-	If chdir_( path )=0 Return True
+	If MaxIO.ioInitialized Then
+		Return False
+	Else
+		FixPath path,True
+		If chdir_( path )=0 Return True
+	End If
 End Function
 
 Rem
 bbdoc: Open a directory
-returns: A directory handle, or 0 if the directory does not exist
+returns: A directory handle, or Null if the directory does not exist
 End Rem
 Function ReadDir:Byte Ptr( path$ )
 	FixPath path,True
-	Return opendir_( path )
+	If MaxIO.ioInitialized Then
+		Return bmx_blitzio_readdir(path)
+	Else
+		Return opendir_( path )
+	End If
 End Function
 
 Rem
@@ -417,14 +479,22 @@ bbdoc: Return next file in a directory
 returns: File name of next file in directory opened using #ReadDir, or an empty string if there are no more files to read.
 End Rem
 Function NextFile$( dir:Byte Ptr )
-	Return readdir_( dir )
+	If MaxIO.ioInitialized Then
+		Return bmx_blitzio_nextFile(dir)
+	Else
+		Return readdir_( dir )
+	End If
 End Function
 
 Rem
 bbdoc: Close a directory
 End Rem
 Function CloseDir( dir:Byte Ptr )
-	closedir_ dir
+	If MaxIO.ioInitialized Then
+		bmx_blitzio_closeDir(dir)
+	Else
+		closedir_ dir
+	End If
 End Function
 
 Rem

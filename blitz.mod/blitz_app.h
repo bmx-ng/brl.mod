@@ -22,6 +22,8 @@ extern BBArray*	bbAppArgs;
 
 extern void**		bbGCStackTop;
 
+extern char * bbArgv0;
+
 void		bbEnd();
 void		bbOnEnd( void(*f)() );
 

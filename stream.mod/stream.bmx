@@ -35,6 +35,7 @@ ModuleInfo "History: Added LoadString"
 ModuleInfo "History: Added LoadByteArray"
 ModuleInfo "History: Cleaned up docs a bit"
 
+Import BRL.IO
 Import Pub.StdC
 
 Rem
@@ -594,18 +595,14 @@ Type TStreamStream Extends TStreamWrapper
 	
 End Type
 
-Rem
-bbdoc: Standard C file stream type
-about:
-End Rem
-Type TCStream Extends TStream
+Type TFileStream Extends TStream
 
 	Const MODE_READ:Int=1
 	Const MODE_WRITE:Int=2
 	Const MODE_APPEND:Int = 4
 	
 	Field _pos:Long,_size:Long,_mode:Int
-	Field _cstream:Byte Ptr
+	Field _stream:Byte Ptr
 
 	Method Pos:Long() Override
 		Return _pos
@@ -614,67 +611,13 @@ Type TCStream Extends TStream
 	Method Size:Long() Override
 		Return _size
 	End Method
-
-	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ ) Override
-		Assert _cstream Else "Attempt to seek closed stream"
-		fseek_ _cstream,pos,whence
-		_pos=ftell_( _cstream )
-		Return _pos
-	End Method
-
-	Method Read:Long( buf:Byte Ptr,count:Long ) Override
-		Assert _cstream Else "Attempt to read from closed stream"
-		Assert _mode & MODE_READ Else "Attempt to read from write-only stream"
-		count=fread_( buf,1,count,_cstream )	
-		_pos:+count
-		Return count
-	End Method
-
-	Method Write:Long( buf:Byte Ptr,count:Long ) Override
-		Assert _cstream Else "Attempt to write to closed stream"
-		Assert _mode & (MODE_WRITE | MODE_APPEND) Else "Attempt to write to read-only stream"
-		count=fwrite_( buf,1,count,_cstream )
-		_pos:+count
-		If _pos>_size _size=_pos
-		Return count
-	End Method
-
-	Method Flush() Override
-		If _cstream fflush_ _cstream
-	End Method
-
-	Method Close() Override
-		If Not _cstream Return
-		Flush
-		fclose_ _cstream
-		_pos=0
-		_size=0
-		_cstream=Null
-	End Method
-
-	Method SetSize:Int(size:Long) Override
-		If Not _cstream Return 0
-		Flush()
-		If _size > size Then
-			Seek(size)
-		End If
-		Local res:Int = ftruncate_(_cstream, size)
-		Flush()
-		If Not res Then
-			_size = size
-		End If
-		Return res = 0
-	End Method
 	
 	Method Delete()
 		Close
 	End Method
 
-	Rem
-	bbdoc: Create a TCStream from a 'C' filename
-	End Rem
-	Function OpenFile:TCStream( path$,readable:Int,writeMode:Int )
-		Local Mode$,_mode:Int
+	Function GetMode:String(readable:Int,writeMode:Int, _mode:Int Var)
+		Local Mode$
 		If readable And writeMode = WRITE_MODE_OVERWRITE
 			Mode="r+b"
 			_mode=MODE_READ|MODE_WRITE
@@ -691,6 +634,74 @@ Type TCStream Extends TStream
 			Mode="rb"
 			_mode=MODE_READ
 		EndIf
+		Return Mode
+	End Function
+
+End Type
+
+Rem
+bbdoc: Standard C file stream type
+about:
+End Rem
+Type TCStream Extends TFileStream
+
+	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ ) Override
+		Assert _stream Else "Attempt to seek closed stream"
+		fseek_ _stream,pos,whence
+		_pos=ftell_( _stream )
+		Return _pos
+	End Method
+
+	Method Read:Long( buf:Byte Ptr,count:Long ) Override
+		Assert _stream Else "Attempt to read from closed stream"
+		Assert _mode & MODE_READ Else "Attempt to read from write-only stream"
+		count=fread_( buf,1,count,_stream )	
+		_pos:+count
+		Return count
+	End Method
+
+	Method Write:Long( buf:Byte Ptr,count:Long ) Override
+		Assert _stream Else "Attempt to write to closed stream"
+		Assert _mode & (MODE_WRITE | MODE_APPEND) Else "Attempt to write to read-only stream"
+		count=fwrite_( buf,1,count,_stream )
+		_pos:+count
+		If _pos>_size _size=_pos
+		Return count
+	End Method
+
+	Method Flush() Override
+		If _stream fflush_ _stream
+	End Method
+
+	Method Close() Override
+		If Not _stream Return
+		Flush
+		fclose_ _stream
+		_pos=0
+		_size=0
+		_stream=Null
+	End Method
+
+	Method SetSize:Int(size:Long) Override
+		If Not _stream Return 0
+		Flush()
+		If _size > size Then
+			Seek(size)
+		End If
+		Local res:Int = ftruncate_(_stream, size)
+		Flush()
+		If Not res Then
+			_size = size
+		End If
+		Return res = 0
+	End Method
+
+	Rem
+	bbdoc: Create a TCStream from a 'C' filename
+	End Rem
+	Function OpenFile:TCStream( path$,readable:Int,writeMode:Int )
+		Local Mode$,_mode:Int
+		Mode = GetMode(readable, writeMode, _mode)
 		path=path.Replace( "\","/" )
 		Local cstream:Byte Ptr=fopen_( path,Mode )
 ?Linux
@@ -707,7 +718,7 @@ Type TCStream Extends TStream
 	end rem
 	Function CreateWithCStream:TCStream( cstream:Byte Ptr,Mode:Int )
 		Local stream:TCStream=New TCStream
-		stream._cstream=cstream
+		stream._stream=cstream
 		stream._pos=ftell_( cstream )
 		fseek_ cstream,0,SEEK_END_
 		stream._size=ftell_( cstream )
@@ -780,7 +791,13 @@ Function OpenStream:TStream( url:Object,readable:Int=True,writeMode:Int=WRITE_MO
 	Local str$=String( url ),proto$,path$
 	If str
 		Local i:Int=str.Find( "::",0 )
-		If i=-1 Return TCStream.OpenFile( str,readable,writeMode )
+		If i=-1 Then
+			If MaxIO.ioInitialized Then
+				Return TIOStream.OpenFile(str, readable, writemode)
+			Else
+				Return TCStream.OpenFile( str,readable,writeMode )
+			End If
+		End If
 		proto$=str[..i].ToLower()
 		path$=str[i+2..]
 	EndIf
@@ -1201,3 +1218,100 @@ bbdoc: Opens a file for appending with all output operations writing data at the
 about: Repositioning operations such as #Seek affects the next input operations, but output operations move the position back to the end of file.
 End Rem
 Const WRITE_MODE_APPEND:Int = 2
+
+
+Type TIOStream Extends TFileStream
+
+	Method Pos:Long() Override
+		Return _pos
+	End Method
+
+	Method Size:Long() Override
+		Return _size
+	End Method
+
+	Method Seek:Long( pos:Long, whence:Int = SEEK_SET_ ) Override
+		Assert _stream Else "Attempt to seek closed stream"
+		'fseek_ _cstream,pos,whence
+		Local newPos:Long = pos
+		If whence = SEEK_END_ Then
+			newPos = _size
+		Else If whence = SEEK_CUR_ Then
+			newPos = _pos + pos
+		End If
+		PHYSFS_seek(_stream, newPos)
+
+		_pos = PHYSFS_tell(_stream)
+		Return _pos
+	End Method
+
+	Method Read:Long( buf:Byte Ptr,count:Long ) Override
+		Assert _stream Else "Attempt to read from closed stream"
+		Assert _mode & MODE_READ Else "Attempt to read from write-only stream"
+		count=PHYSFS_readBytes(_stream, buf,ULong(count))	
+		_pos:+count
+		Return count
+	End Method
+
+	Method Write:Long( buf:Byte Ptr,count:Long ) Override
+		Assert _stream Else "Attempt to write to closed stream"
+		Assert _mode & (MODE_WRITE | MODE_APPEND) Else "Attempt to write to read-only stream"
+		count=PHYSFS_writeBytes(_stream, buf, ULong(count))
+		_pos:+count
+		If _pos>_size _size=_pos
+		Return count
+	End Method
+
+	Method Flush() Override
+		If _stream PHYSFS_flush(_stream)
+	End Method
+
+	Method Close() Override
+		If Not _stream Return
+		Flush
+		PHYSFS_close(_stream)
+		_pos=0
+		_size=0
+		_stream=Null
+	End Method
+
+	Method SetSize:Int(size:Long) Override
+		Return 0
+	End Method
+
+	Function OpenFile:TIOStream( path$,readable:Int,writeMode:Int )
+		Local Mode$,_mode:Int
+		Mode = GetMode(readable, writeMode, _mode)
+		path=path.Replace( "\","/" )
+		
+		Local stream:Byte Ptr
+		If _mode & MODE_APPEND Then
+			stream = bmx_PHYSFS_openAppend(path)
+		Else If _mode & MODE_WRITE Then
+			stream = bmx_PHYSFS_openWrite(path)
+		Else
+			stream = bmx_PHYSFS_openRead(path)
+			If stream
+				PHYSFS_setBuffer(stream, 4096)
+			End If
+		End If
+
+'?Linux
+'		If (Not cstream) And (Not writeMode)
+'			path=CasedFileName(path)
+'			If path cstream=fopen_( path,Mode )
+'		EndIf
+'?
+		If stream Return CreateWithIOStream( stream,_mode )
+	End Function
+
+	Function CreateWithIOStream:TIOStream( _stream:Byte Ptr,Mode:Int )
+		Local stream:TIOStream=New TIOStream
+		stream._stream=_stream
+		stream._pos=PHYSFS_tell( _stream )
+		stream._size=PHYSFS_fileLength(_stream)
+		stream._mode=Mode
+		Return stream
+	End Function
+
+End Type

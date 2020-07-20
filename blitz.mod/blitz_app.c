@@ -11,6 +11,8 @@ BBArray*	bbAppArgs=BBNULLARRAY;
 
 void **bbGCStackTop;
 
+char * bbArgv0 = NULL;
+
 void bbEnd(){
 	exit(0);
 }
@@ -348,6 +350,8 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 
 	int i,k;
 	BBString **p;
+	
+	bbArgv0 = argv[0];
 	
 	//Start up GC and create bbAppFile, bbAppDir and bbLaunchDir
 	
