@@ -52,6 +52,23 @@ Type MaxIO
 		End If
 		ioInitialized = True
 	End Function
+	
+	Rem
+	bbdoc: Deinitializes the abstraction layer.
+	about: This closes any files opened via the abstraction layer, blanks the search/write paths, frees memory, and invalidates all of your file handles.
+
+	Note that this call can FAIL if there's a file open for writing that refuses to close (for example, the underlying operating system was
+	buffering writes to network filesystem, and the fileserver has crashed, or a hard drive has failed, etc). It is usually best to close
+	all write handles yourself before calling this function, so that you can gracefully handle a specific failure.
+
+	Once successfully deinitialized, #Init() can be called again to restart the subsystem. All default API states are restored at this point.
+	End Rem
+	Function DeInit:Int()
+		If ioInitialized Then
+			ioInitialized = False
+			Return PHYSFS_deinit()
+		End If
+	End Function
 
 	Rem
 	bbdoc: Adds an archive or directory to the search path.
@@ -128,6 +145,16 @@ Type MaxIO
 	End Rem
 	Function GetPrefDir:String(org:String, app:String)
 		Return bmx_PHYSFS_getPrefDir(org, app)
+	End Function
+	
+	Rem
+	bbdoc: Indicates where files may be written.
+	about: Sets a new write dir. This will override the previous setting.
+
+	This call will fail (and fail to change the write dir) if the current write dir still has files open in it.
+	End Rem
+	Function SetWriteDir:Int(newDir:String)
+		Return bmx_PHYSFS_setWriteDir(newDir)
 	End Function
 
 	Rem

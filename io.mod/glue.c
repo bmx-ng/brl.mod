@@ -151,3 +151,10 @@ void bmx_blitzio_closeDir(struct MaxFilesEnumeration * mfe) {
 	PHYSFS_freeList(mfe->files);
 	free(mfe);
 }
+
+int bmx_PHYSFS_setWriteDir(BBString * newDir) {
+	char buf[1024];
+	size_t len = 1024;
+	bbStringToUTF8StringBuffer(newDir, buf, &len);
+	return PHYSFS_setWriteDir(buf);
+}
