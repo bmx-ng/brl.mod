@@ -157,6 +157,7 @@ Type TStringMap
 	about: If the map does not contain @key, a #Null object is returned.
 	End Rem
 	Method Operator[]:Object(key:String)
+		key.Hash()
 		Return bmx_map_stringmap_valueforkey(key, Varptr _root)
 	End Method
 	
@@ -165,6 +166,7 @@ Type TStringMap
 	about: If the map already contains @key, its value is overwritten with @value. 
 	End Rem
 	Method Operator[]=(key:String, value:Object)
+		key.Hash()
 		bmx_map_stringmap_insert(key, value, Varptr _root)
 	End Method
 
