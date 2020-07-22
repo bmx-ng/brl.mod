@@ -30,11 +30,6 @@ Type TStringMap
 	about: Removes all keys and values.
 	End Rem
 	Method Clear()
-?ngcmod
-		If Not IsEmpty() Then
-			_modCount :+ 1
-		End If
-?
 		bmx_map_stringmap_clear(Varptr _root)
 	End Method
 	
@@ -51,10 +46,8 @@ Type TStringMap
 	about: If the map already contains @key, its value is overwritten with @value. 
 	End Rem
 	Method Insert( key:String,value:Object )
+		key.Hash()
 		bmx_map_stringmap_insert(key, value, Varptr _root)
-?ngcmod
-		_modCount :+ 1
-?
 	End Method
 
 	Rem
@@ -62,6 +55,7 @@ Type TStringMap
 	returns: #True if the map contains @key.
 	End Rem
 	Method Contains:Int( key:String )
+		key.Hash()
 		Return bmx_map_stringmap_contains(key, Varptr _root)
 	End Method
 	
@@ -71,6 +65,7 @@ Type TStringMap
 	about: If the map does not contain @key, a #Null object is returned.
 	End Rem
 	Method ValueForKey:Object( key:String )
+		key.Hash()
 		Return bmx_map_stringmap_valueforkey(key, Varptr _root)
 	End Method
 	
@@ -79,9 +74,7 @@ Type TStringMap
 	returns: #True if @key was removed, or #False otherwise.
 	End Rem
 	Method Remove:Int( key:String )
-?ngcmod
-		_modCount :+ 1
-?
+		key.Hash()
 		Return bmx_map_stringmap_remove(key, Varptr _root)
 	End Method
 
@@ -111,9 +104,6 @@ Type TStringMap
 		Local mapenum:TStringMapEnumerator=New TStringMapEnumerator
 		mapenum._enumerator=nodeenum
 		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
 		Return mapenum
 	End Method
 	
@@ -133,9 +123,6 @@ Type TStringMap
 		Local mapenum:TStringMapEnumerator=New TStringMapEnumerator
 		mapenum._enumerator=nodeenum
 		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
 		Return mapenum
 	End Method
 	
@@ -183,10 +170,6 @@ Type TStringMap
 
 	Field _root:Byte Ptr
 
-?ngcmod
-	Field _modCount:Int
-?
-
 End Type
 
 Type TStringNode
@@ -227,9 +210,6 @@ Type TStringNodeEnumerator
 	End Method
 	
 	Method NextObject:Object()
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TStringMap Concurrent Modification"
-?
 		Local node:TStringNode=_node
 		_node=_node.NextNode()
 		Return node
@@ -240,16 +220,10 @@ Type TStringNodeEnumerator
 	Field _node:TStringNode	
 
 	Field _map:TStringMap
-?ngcmod
-	Field _expectedModCount:Int
-?
 End Type
 
 Type TStringKeyEnumerator Extends TStringNodeEnumerator
 	Method NextObject:Object() Override
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TStringMap Concurrent Modification"
-?
 		Local node:TStringNode=_node
 		_node=_node.NextNode()
 		Return node.Key()
@@ -258,9 +232,6 @@ End Type
 
 Type TStringValueEnumerator Extends TStringNodeEnumerator
 	Method NextObject:Object() Override
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TStringMap Concurrent Modification"
-?
 		Local node:TStringNode=_node
 		_node=_node.NextNode()
 		Return node.Value()

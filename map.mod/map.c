@@ -255,7 +255,7 @@ static int compare_stringmap_nodes(const void *x, const void *y) {
         struct stringmap_node * node_x = (struct stringmap_node *)x;
         struct stringmap_node * node_y = (struct stringmap_node *)y;
 
-        return bbStringCompare(node_x->key, node_y->key);
+		return generic_compare(node_x->key->hash, node_y->key->hash);
 }
 
 void bmx_map_stringmap_clear(struct avl_root ** root) {
