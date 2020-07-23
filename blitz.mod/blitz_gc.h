@@ -36,7 +36,7 @@ extern "C"{
 void*	bbGCRootRegs( void *p );
 
 #ifdef BBCC_ALLOCCOUNT
-BBUInt64 bbGCAllocCount;
+extern BBUInt64 bbGCAllocCount;
 #endif
 
 typedef struct BBGCMem BBGCMem;
