@@ -464,6 +464,213 @@ Struct SVec3D
 End Struct
 
 Rem
+bbdoc: A 4-element structure.
+End Rem
+Struct SVec4D
+	Field ReadOnly x:Double
+	Field ReadOnly y:Double
+	Field ReadOnly z:Double
+	Field ReadOnly w:Double
+	
+	Rem
+	bbdoc: Creates a new #SVec4D from the supplied arguments.
+	End Rem
+	Method New(x:Double, y:Double, z:Double, w:Double)
+		Self.x = x
+		Self.y = y
+		Self.z = z
+		Self.w = w
+	End Method
+	
+	Rem
+	bbdoc: Adds @b to this vector, returning a new vector.
+	End Rem
+	Method Operator+:SVec4D(b:SVec4D)
+		Return New SVec4D(x + b.x, y + b.y, z + b.z, w + b.w)
+	End Method
+	
+	Rem
+	bbdoc: Subtracts @b from this vector, returning a new vector.
+	End Rem
+	Method Operator-:SVec4D(b:SVec4D)
+		Return New SVec4D(x - b.x, y - b.y, z - b.z, w - b.w)
+	End Method
+	
+	Rem
+	bbdoc: Multiplies the vector by @b, returning a new vector.
+	End Rem
+	Method Operator*:SVec4D(b:SVec4D)
+		Return New SVec4D(x * b.x, y * b.y, z * b.z, w * b.w)
+	End Method
+
+	Rem
+	bbdoc: Devides the vector by @b, returning a new vector.
+	End Rem
+	Method Operator/:SVec4D(b:SVec4D)
+		Return New SVec4D(x / b.x, y / b.y, z / b.z, w / b.w)
+	End Method
+	
+	Rem
+	bbdoc: Returns a negated version of this vector.
+	End Rem
+	Method Operator-:SVec4D()
+		Return New SVec4D(-x, -y, -z, -w)
+	End Method
+
+	Rem
+	bbdoc: Multiplies the vector by @s, returning a new vector.
+	End Rem
+	Method Operator*:SVec4D(s:Double)
+		Return New SVec4D(x * s, y * s, z * s, w * s)
+	End Method
+
+	Rem
+	bbdoc: Divides the vector by @s, returning a new vector.
+	End Rem
+	Method Operator/:SVec4D(s:Double)
+		Return New SVec4D(x / s, y / s, z/s, w/s)
+	End Method
+
+	Rem
+	bbdoc: Retrieves the x, y, z or w component using [0], [1], [2] or [3] respectively.
+	End Rem
+	Method Operator[]:Double(index:Int)
+		Select index
+			Case 0
+				Return x
+			Case 1
+				Return y
+			Case 2
+				Return z
+			Case 3
+				Return w
+		End Select
+		
+		Throw New TArrayBoundsException
+	End Method
+
+	Rem
+	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
+	End Rem
+	Method Clamp:SVec4D(minv:SVec4D, maxv:SVec4D)
+		Return New SVec4D(Clamp(x, minv.x, maxv.x), Clamp(y, minv.y, maxv.y), Clamp(z, minv.z, maxv.z), Clamp(w, minv.w, maxv.w))
+	End Method
+	
+	Rem
+	bbdoc: Returns the Cross Product of the two vectors.
+	End Rem
+	Method Cross:SVec4D(b:SVec4D)
+		Return New SVec4D(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x, Sqr(w * b.w))
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector that is made from the smallest components of the two vectors.
+	End Rem
+	Method Min:SVec4D(b:SVec4D)
+		Return New SVec4D(Min(x, b.x), Min(y, b.y), Min(z, b.z), Min(w, b.w))
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector that is made from the largest components of the two vectors.
+	End Rem
+	Method Max:SVec4D(b:SVec4D)
+		Return New SVec4D(Max(x, b.x), Max(y, b.y), Max(z, b.z), Max(w, b.w))
+	End Method
+	
+	Rem
+	bbdoc: Linearly interpolates between two vectors.
+	about: Interpolates between this vector and @b by the interpolant @t.
+	This is commonly used to find a point some fraction of the way along a line between two endpoints (e.g. to move an object gradually between those points).
+	End Rem
+	Method Interpolate:SVec4D(b:SVec4D, t:Double)
+		Return New SVec4D(Lerp(x, b.x, t), Lerp(y, b.y, t), Lerp(z, b.z, t), Lerp(w, b.w, t))
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector with a magnitude of 1.
+	about: When normalized, a vector keeps the same direction but its length is 1.0.
+	End Rem
+	Method Normal:SVec4D()
+		Local length:Double = x * x + y * y + z * z + w * w
+		If length > 0 Then
+			length = Sqr(length)
+			Return New SVec4D(x / length, y / length, z / length, w / length)
+		End If
+		Return Self
+	End Method
+	
+	Rem
+	bbdoc: Returns the dot product of two vectors.
+	about: For normalized vectors Dot returns 1 if they point in exactly the same direction, -1 if they point in completely opposite directions,
+	and a number in between for other cases (e.g. Dot returns zero if vectors are perpendicular).
+	End Rem
+	Method Dot:Double(b:SVec4D)
+		Return x * b.x + y * b.y + z * b.z + w * b.w
+	End Method
+	
+	Rem
+	bbdoc: Returns the length of the vector.
+	End Rem
+	Method Length:Double()
+		Return Float(Sqr(LengthSquared()))
+	End Method
+	
+	Rem
+	bbdoc: Returns the squared length of the vector.
+	about: Calculating the squared length instead of the length is much faster.
+	Often if you are comparing lengths of two vectors you can just compare their squared lengths.
+	End Rem
+	Method LengthSquared:Double()
+		Return x * x + y * y + z * z + w * w
+	End Method
+	
+	Rem
+	bbdoc: Returns the distance between the vector and @b.
+	End Rem
+	Method DistanceTo:Double(b:SVec4D)
+		Return (Self - b).Length()
+	End Method
+	
+	Rem
+	bbdoc: Returns the squared distance between the vector and @b.
+	End Rem
+	Method DistanceToSquared:Double(b:SVec4D)
+		Return (Self - b).LengthSquared()
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector reflected from the given plane, specified by its normal vector.
+	End Rem
+	Method Reflect:SVec4D(n:SVec4D)
+		Return n * Dot(n) * 2.0 - Self
+	End Method
+	
+	Rem
+	bbdoc: 
+	End Rem
+	Method Orthogonal:SVec4D(b:SVec4D)
+		Return Cross(b).Normal()
+	End Method
+
+	Rem
+	bbdoc: Returns a #String representation of the vector.
+	End Rem
+	Method ToString:String() Override
+		Local sb:TStringBuilder = New TStringBuilder
+		
+		sb.Append("(")
+		sb.Append(x).Append(", ")
+		sb.Append(y).Append(", ")
+		sb.Append(z).Append(", ")
+		sb.Append(w)
+		sb.Append(")")
+		
+		Return sb.ToString()
+	End Method
+
+End Struct
+
+Rem
 bbdoc: A #Float backed 2-element structure that can be used to represent positions and directions in 2D-space.
 End Rem
 Struct SVec2F
@@ -887,6 +1094,213 @@ Struct SVec3F
 		Return sb.ToString()
 	End Method
 	
+End Struct
+
+Rem
+bbdoc: A 4-element structure.
+End Rem
+Struct SVec4F
+	Field ReadOnly x:Float
+	Field ReadOnly y:Float
+	Field ReadOnly z:Float
+	Field ReadOnly w:Float
+	
+	Rem
+	bbdoc: Creates a new #SVec4F from the supplied arguments.
+	End Rem
+	Method New(x:Float, y:Float, z:Float, w:Float)
+		Self.x = x
+		Self.y = y
+		Self.z = z
+		Self.w = w
+	End Method
+	
+	Rem
+	bbdoc: Adds @b to this vector, returning a new vector.
+	End Rem
+	Method Operator+:SVec4F(b:SVec4F)
+		Return New SVec4F(x + b.x, y + b.y, z + b.z, w + b.w)
+	End Method
+	
+	Rem
+	bbdoc: Subtracts @b from this vector, returning a new vector.
+	End Rem
+	Method Operator-:SVec4F(b:SVec4F)
+		Return New SVec4F(x - b.x, y - b.y, z - b.z, w - b.w)
+	End Method
+	
+	Rem
+	bbdoc: Multiplies the vector by @b, returning a new vector.
+	End Rem
+	Method Operator*:SVec4F(b:SVec4F)
+		Return New SVec4F(x * b.x, y * b.y, z * b.z, w * b.w)
+	End Method
+
+	Rem
+	bbdoc: Devides the vector by @b, returning a new vector.
+	End Rem
+	Method Operator/:SVec4F(b:SVec4F)
+		Return New SVec4F(x / b.x, y / b.y, z / b.z, w / b.w)
+	End Method
+	
+	Rem
+	bbdoc: Returns a negated version of this vector.
+	End Rem
+	Method Operator-:SVec4F()
+		Return New SVec4F(-x, -y, -z, -w)
+	End Method
+
+	Rem
+	bbdoc: Multiplies the vector by @s, returning a new vector.
+	End Rem
+	Method Operator*:SVec4F(s:Float)
+		Return New SVec4F(x * s, y * s, z * s, w * s)
+	End Method
+
+	Rem
+	bbdoc: Divides the vector by @s, returning a new vector.
+	End Rem
+	Method Operator/:SVec4F(s:Float)
+		Return New SVec4F(x / s, y / s, z/s, w/s)
+	End Method
+
+	Rem
+	bbdoc: Retrieves the x, y, z or w component using [0], [1], [2] or [3] respectively.
+	End Rem
+	Method Operator[]:Float(index:Int)
+		Select index
+			Case 0
+				Return x
+			Case 1
+				Return y
+			Case 2
+				Return z
+			Case 3
+				Return w
+		End Select
+		
+		Throw New TArrayBoundsException
+	End Method
+
+	Rem
+	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
+	End Rem
+	Method Clamp:SVec4F(minv:SVec4F, maxv:SVec4F)
+		Return New SVec4F(ClampF(x, minv.x, maxv.x), ClampF(y, minv.y, maxv.y), ClampF(z, minv.z, maxv.z), ClampF(w, minv.w, maxv.w))
+	End Method
+	
+	Rem
+	bbdoc: Returns the Cross Product of the two vectors.
+	End Rem
+	Method Cross:SVec4F(b:SVec4F)
+		Return New SVec4F(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x, Float(Sqr(w * b.w)))
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector that is made from the smallest components of the two vectors.
+	End Rem
+	Method Min:SVec4F(b:SVec4F)
+		Return New SVec4F(Min(x, b.x), Min(y, b.y), Min(z, b.z), Min(w, b.w))
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector that is made from the largest components of the two vectors.
+	End Rem
+	Method Max:SVec4F(b:SVec4F)
+		Return New SVec4F(Max(x, b.x), Max(y, b.y), Max(z, b.z), Max(w, b.w))
+	End Method
+	
+	Rem
+	bbdoc: Linearly interpolates between two vectors.
+	about: Interpolates between this vector and @b by the interpolant @t.
+	This is commonly used to find a point some fraction of the way along a line between two endpoints (e.g. to move an object gradually between those points).
+	End Rem
+	Method Interpolate:SVec4F(b:SVec4F, t:Float)
+		Return New SVec4F(LerpF(x, b.x, t), LerpF(y, b.y, t), LerpF(z, b.z, t), LerpF(w, b.w, t))
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector with a magnitude of 1.
+	about: When normalized, a vector keeps the same direction but its length is 1.0.
+	End Rem
+	Method Normal:SVec4F()
+		Local length:Float = x * x + y * y + z * z + w * w
+		If length > 0 Then
+			length = Sqr(length)
+			Return New SVec4F(x / length, y / length, z / length, w / length)
+		End If
+		Return Self
+	End Method
+	
+	Rem
+	bbdoc: Returns the dot product of two vectors.
+	about: For normalized vectors Dot returns 1 if they point in exactly the same direction, -1 if they point in completely opposite directions,
+	and a number in between for other cases (e.g. Dot returns zero if vectors are perpendicular).
+	End Rem
+	Method Dot:Float(b:SVec4F)
+		Return x * b.x + y * b.y + z * b.z + w * b.w
+	End Method
+	
+	Rem
+	bbdoc: Returns the length of the vector.
+	End Rem
+	Method Length:Float()
+		Return Float(Sqr(LengthSquared()))
+	End Method
+	
+	Rem
+	bbdoc: Returns the squared length of the vector.
+	about: Calculating the squared length instead of the length is much faster.
+	Often if you are comparing lengths of two vectors you can just compare their squared lengths.
+	End Rem
+	Method LengthSquared:Float()
+		Return x * x + y * y + z * z + w * w
+	End Method
+	
+	Rem
+	bbdoc: Returns the distance between the vector and @b.
+	End Rem
+	Method DistanceTo:Float(b:SVec4F)
+		Return (Self - b).Length()
+	End Method
+	
+	Rem
+	bbdoc: Returns the squared distance between the vector and @b.
+	End Rem
+	Method DistanceToSquared:Float(b:SVec4F)
+		Return (Self - b).LengthSquared()
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector reflected from the given plane, specified by its normal vector.
+	End Rem
+	Method Reflect:SVec4F(n:SVec4F)
+		Return n * Dot(n) * 2.0 - Self
+	End Method
+	
+	Rem
+	bbdoc: 
+	End Rem
+	Method Orthogonal:SVec4F(b:SVec4F)
+		Return Cross(b).Normal()
+	End Method
+
+	Rem
+	bbdoc: Returns a #String representation of the vector.
+	End Rem
+	Method ToString:String() Override
+		Local sb:TStringBuilder = New TStringBuilder
+		
+		sb.Append("(")
+		sb.Append(x).Append(", ")
+		sb.Append(y).Append(", ")
+		sb.Append(z).Append(", ")
+		sb.Append(w)
+		sb.Append(")")
+		
+		Return sb.ToString()
+	End Method
+
 End Struct
 
 Rem
@@ -1327,6 +1741,213 @@ Struct SVec3I
 		Return sb.ToString()
 	End Method
 	
+End Struct
+
+Rem
+bbdoc: A 4-element structure.
+End Rem
+Struct SVec4I
+	Field ReadOnly x:Int
+	Field ReadOnly y:Int
+	Field ReadOnly z:Int
+	Field ReadOnly w:Int
+	
+	Rem
+	bbdoc: Creates a new #SVec4I from the supplied arguments.
+	End Rem
+	Method New(x:Int, y:Int, z:Int, w:Int)
+		Self.x = x
+		Self.y = y
+		Self.z = z
+		Self.w = w
+	End Method
+	
+	Rem
+	bbdoc: Adds @b to this vector, returning a new vector.
+	End Rem
+	Method Operator+:SVec4I(b:SVec4I)
+		Return New SVec4I(x + b.x, y + b.y, z + b.z, w + b.w)
+	End Method
+	
+	Rem
+	bbdoc: Subtracts @b from this vector, returning a new vector.
+	End Rem
+	Method Operator-:SVec4I(b:SVec4I)
+		Return New SVec4I(x - b.x, y - b.y, z - b.z, w - b.w)
+	End Method
+	
+	Rem
+	bbdoc: Multiplies the vector by @b, returning a new vector.
+	End Rem
+	Method Operator*:SVec4I(b:SVec4I)
+		Return New SVec4I(x * b.x, y * b.y, z * b.z, w * b.w)
+	End Method
+
+	Rem
+	bbdoc: Devides the vector by @b, returning a new vector.
+	End Rem
+	Method Operator/:SVec4I(b:SVec4I)
+		Return New SVec4I(x / b.x, y / b.y, z / b.z, w / b.w)
+	End Method
+	
+	Rem
+	bbdoc: Returns a negated version of this vector.
+	End Rem
+	Method Operator-:SVec4I()
+		Return New SVec4I(-x, -y, -z, -w)
+	End Method
+
+	Rem
+	bbdoc: Multiplies the vector by @s, returning a new vector.
+	End Rem
+	Method Operator*:SVec4I(s:Int)
+		Return New SVec4I(x * s, y * s, z * s, w * s)
+	End Method
+
+	Rem
+	bbdoc: Divides the vector by @s, returning a new vector.
+	End Rem
+	Method Operator/:SVec4I(s:Int)
+		Return New SVec4I(x / s, y / s, z/s, w/s)
+	End Method
+
+	Rem
+	bbdoc: Retrieves the x, y, z or w component using [0], [1], [2] or [3] respectively.
+	End Rem
+	Method Operator[]:Int(index:Int)
+		Select index
+			Case 0
+				Return x
+			Case 1
+				Return y
+			Case 2
+				Return z
+			Case 3
+				Return w
+		End Select
+		
+		Throw New TArrayBoundsException
+	End Method
+
+	Rem
+	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
+	End Rem
+	Method Clamp:SVec4I(minv:SVec4I, maxv:SVec4I)
+		Return New SVec4I(ClampI(x, minv.x, maxv.x), ClampI(y, minv.y, maxv.y), ClampI(z, minv.z, maxv.z), ClampI(w, minv.w, maxv.w))
+	End Method
+	
+	Rem
+	bbdoc: Returns the Cross Product of the two vectors.
+	End Rem
+	Method Cross:SVec4I(b:SVec4I)
+		Return New SVec4I(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x, Int(Sqr(w * b.w)))
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector that is made from the smallest components of the two vectors.
+	End Rem
+	Method Min:SVec4I(b:SVec4I)
+		Return New SVec4I(Min(x, b.x), Min(y, b.y), Min(z, b.z), Min(w, b.w))
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector that is made from the largest components of the two vectors.
+	End Rem
+	Method Max:SVec4I(b:SVec4I)
+		Return New SVec4I(Max(x, b.x), Max(y, b.y), Max(z, b.z), Max(w, b.w))
+	End Method
+	
+	Rem
+	bbdoc: Linearly interpolates between two vectors.
+	about: Interpolates between this vector and @b by the interpolant @t.
+	This is commonly used to find a point some fraction of the way along a line between two endpoints (e.g. to move an object gradually between those points).
+	End Rem
+	Method Interpolate:SVec4I(b:SVec4I, t:Int)
+		Return New SVec4I(LerpI(x, b.x, t), LerpI(y, b.y, t), LerpI(z, b.z, t), LerpI(w, b.w, t))
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector with a magnitude of 1.
+	about: When normalized, a vector keeps the same direction but its length is 1.0.
+	End Rem
+	Method Normal:SVec4I()
+		Local length:Int = x * x + y * y + z * z + w * w
+		If length > 0 Then
+			length = Sqr(length)
+			Return New SVec4I(x / length, y / length, z / length, w / length)
+		End If
+		Return Self
+	End Method
+	
+	Rem
+	bbdoc: Returns the dot product of two vectors.
+	about: For normalized vectors Dot returns 1 if they point in exactly the same direction, -1 if they point in completely opposite directions,
+	and a number in between for other cases (e.g. Dot returns zero if vectors are perpendicular).
+	End Rem
+	Method Dot:Int(b:SVec4I)
+		Return x * b.x + y * b.y + z * b.z + w * b.w
+	End Method
+	
+	Rem
+	bbdoc: Returns the length of the vector.
+	End Rem
+	Method Length:Int()
+		Return Int(Sqr(LengthSquared()))
+	End Method
+	
+	Rem
+	bbdoc: Returns the squared length of the vector.
+	about: Calculating the squared length instead of the length is much faster.
+	Often if you are comparing lengths of two vectors you can just compare their squared lengths.
+	End Rem
+	Method LengthSquared:Int()
+		Return x * x + y * y + z * z + w * w
+	End Method
+	
+	Rem
+	bbdoc: Returns the distance between the vector and @b.
+	End Rem
+	Method DistanceTo:Int(b:SVec4I)
+		Return (Self - b).Length()
+	End Method
+	
+	Rem
+	bbdoc: Returns the squared distance between the vector and @b.
+	End Rem
+	Method DistanceToSquared:Int(b:SVec4I)
+		Return (Self - b).LengthSquared()
+	End Method
+	
+	Rem
+	bbdoc: Returns a vector reflected from the given plane, specified by its normal vector.
+	End Rem
+	Method Reflect:SVec4I(n:SVec4I)
+		Return n * Dot(n) * 2 - Self
+	End Method
+	
+	Rem
+	bbdoc: 
+	End Rem
+	Method Orthogonal:SVec4I(b:SVec4I)
+		Return Cross(b).Normal()
+	End Method
+
+	Rem
+	bbdoc: Returns a #String representation of the vector.
+	End Rem
+	Method ToString:String() Override
+		Local sb:TStringBuilder = New TStringBuilder
+		
+		sb.Append("(")
+		sb.Append(x).Append(", ")
+		sb.Append(y).Append(", ")
+		sb.Append(z).Append(", ")
+		sb.Append(w)
+		sb.Append(")")
+		
+		Return sb.ToString()
+	End Method
+
 End Struct
 
 Private
