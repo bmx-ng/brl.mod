@@ -1,4 +1,4 @@
-' Copyright (c) 2019 Bruce A Henderson
+' Copyright (c) 2019-2020 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -29,7 +29,7 @@ Module BRL.Matrix
 ModuleInfo "Version: 1.00"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib"
-ModuleInfo "Copyright: 2019 Bruce A Henderson"
+ModuleInfo "Copyright: 2019-2020 Bruce A Henderson"
 
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release"
@@ -219,6 +219,13 @@ Struct SMat3D
 	End Rem
 	Method Apply:SVec3D(v:SVec3D)
 		Return New SVec3D(v.x * a + v.y * d + v.z * g, v.x * b + v.y * e + v.z * h, v.x * c + v.y * f + v.z * i)
+	End Method
+
+	Rem
+	bbdoc: Applies the matrix to the vector @v, returning a new vector.
+	End Rem
+	Method Apply:SVec4D(v:SVec4D)
+		Return New SVec4D(v.x * a + v.y * d + v.z * g, v.x * b + v.y * e + v.z * h, v.x * c + v.y * f + v.z * i, 0)
 	End Method
 
 	Rem
@@ -470,6 +477,16 @@ Struct SMat4D
 		Return New SVec3D((a * v.x + e * v.y + i * v.z + m) * w, ..
 			(b * v.x + f * v.y + j * v.z + n) * w, ..
 			(c * v.x + g * v.y + k * v.z + o) * w)
+	End Method
+
+	Rem
+	bbdoc: Applies the 4x4 matrix @b to the vector, returning a new vector.
+	End Rem
+	Method Apply:SVec4D(v:SVec4D)
+		Return New SVec4D(a * v.x + e * v.y + i * v.z + m * v.w, ..
+			b * v.x + f * v.y + j * v.z + n * v.w, ..
+			c * v.x + g * v.y + k * v.z + o * v.w, ..
+			d * v.x + h * v.y + l * v.z + p * v.w)
 	End Method
 
 	Rem
@@ -1075,6 +1092,13 @@ Struct SMat3F
 	End Method
 
 	Rem
+	bbdoc: Applies the matrix to the vector @v, returning a new vector.
+	End Rem
+	Method Apply:SVec4F(v:SVec4F)
+		Return New SVec4F(v.x * a + v.y * d + v.z * g, v.x * b + v.y * e + v.z * h, v.x * c + v.y * f + v.z * i, 0)
+	End Method
+
+	Rem
 	bbdoc: Return the 3x3 identity matrix.
 	End Rem
 	Function Identity:SMat3F()
@@ -1339,6 +1363,16 @@ Struct SMat4F
 		Return New SVec3F((a * v.x + e * v.y + i * v.z + m) * w, ..
 			(b * v.x + f * v.y + j * v.z + n) * w, ..
 			(c * v.x + g * v.y + k * v.z + o) * w)
+	End Method
+
+	Rem
+	bbdoc: Applies the 4x4 matrix @b to the vector, returning a new vector.
+	End Rem
+	Method Apply:SVec4F(v:SVec4F)
+		Return New SVec4F(a * v.x + e * v.y + i * v.z + m * v.w, ..
+			b * v.x + f * v.y + j * v.z + n * v.w, ..
+			c * v.x + g * v.y + k * v.z + o * v.w, ..
+			d * v.x + h * v.y + l * v.z + p * v.w)
 	End Method
 
 	Rem
@@ -1988,6 +2022,13 @@ Struct SMat3I
 	End Method
 
 	Rem
+	bbdoc: Applies the matrix to the vector @v, returning a new vector.
+	End Rem
+	Method Apply:SVec4I(v:SVec4I)
+		Return New SVec4I(v.x * a + v.y * d + v.z * g, v.x * b + v.y * e + v.z * h, v.x * c + v.y * f + v.z * i, 0)
+	End Method
+
+	Rem
 	bbdoc: Return the 3x3 identity matrix.
 	End Rem
 	Function Identity:SMat3I()
@@ -2268,6 +2309,16 @@ Struct SMat4I
 		Return New SVec3I(Int((a * v.x + e * v.y + i * v.z + m) * w), ..
 			Int((b * v.x + f * v.y + j * v.z + n) * w), ..
 			Int((c * v.x + g * v.y + k * v.z + o) * w))
+	End Method
+
+	Rem
+	bbdoc: Applies the 4x4 matrix @b to the vector, returning a new vector.
+	End Rem
+	Method Apply:SVec4I(v:SVec4I)
+		Return New SVec4I(a * v.x + e * v.y + i * v.z + m * v.w, ..
+			b * v.x + f * v.y + j * v.z + n * v.w, ..
+			c * v.x + g * v.y + k * v.z + o * v.w, ..
+			d * v.x + h * v.y + l * v.z + p * v.w)
 	End Method
 
 	Rem

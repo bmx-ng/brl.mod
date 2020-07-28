@@ -1,4 +1,4 @@
-' Copyright (c) 2019 Bruce A Henderson
+' Copyright (c) 2019-2020 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -29,7 +29,7 @@ Module BRL.Vector
 ModuleInfo "Version: 1.00"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib"
-ModuleInfo "Copyright: 2019 Bruce A Henderson"
+ModuleInfo "Copyright: 2019-2020 Bruce A Henderson"
 
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release"
