@@ -28,7 +28,7 @@ Extern
 
 	Function bmx_PHYSFS_init:Int()
 	Function PHYSFS_deinit:Int()
-	Function bmx_PHYSHS_getLastError:String()
+	Function bmx_PHYSFS_getLastError:String()
 	Function bmx_PHYSFS_mount:Int(newDir:String, mountPoint:String, appendToPath:Int)
 	Function bmx_PHYSFS_getBaseDir:String()
 	Function bmx_PHYSFS_getPrefDir:String(org:String, app:String)

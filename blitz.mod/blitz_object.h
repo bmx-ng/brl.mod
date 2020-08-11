@@ -34,7 +34,7 @@ struct BBClass{
 	unsigned int instance_count;
 	unsigned int fields_offset;
 
-	void*	vfns[32];
+	void*	vfns[40];
 };
 
 struct BBObject{

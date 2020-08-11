@@ -47,7 +47,7 @@ Type MaxIO
 	Function Init()
 		If Not ioInitialized Then
 			If Not bmx_PHYSFS_init() Then
-				Throw bmx_PHYSHS_getLastError()
+				Throw bmx_PHYSFS_getLastError()
 			End If
 		End If
 		ioInitialized = True
@@ -72,6 +72,7 @@ Type MaxIO
 
 	Rem
 	bbdoc: Adds an archive or directory to the search path.
+	returns: Nonzero if added to path, zero on failure (bogus archive, dir missing, etc). 
 	about: If this is a duplicate, the entry is not added again, even though the function succeeds.
 	You may not add the same archive to two different mountpoints: duplicate checking is done against the archive and not the mountpoint.
 	
@@ -213,6 +214,13 @@ Type MaxIO
 	End Rem
 	Function MkDir:Int(dirName:String)
 		Return bmx_PHYSFS_mkdir(dirName)
+	End Function
+
+	Rem
+	bbdoc: Return the last error message.
+	End Rem
+	Function GetLastError:String()
+		Return bmx_PHYSFS_getLastError()
 	End Function
 	
 End Type

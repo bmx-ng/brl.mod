@@ -29,12 +29,12 @@ int bmx_PHYSFS_init() {
 	return PHYSFS_init(bbArgv0);
 }
 
-BBString * bmx_PHYSHS_getLastError() {
+BBString * bmx_PHYSFS_getLastError() {
 	int code = PHYSFS_getLastErrorCode();
 	if (code == PHYSFS_ERR_OK) {
 		return &bbEmptyString;
 	}
-	return bbStringToUTF8String(PHYSFS_getErrorByCode(code));
+	return bbStringFromUTF8String(PHYSFS_getErrorByCode(code));
 }
 
 int bmx_PHYSFS_mount(BBString * newDir, BBString * mountPoint, int appendToPath) {
