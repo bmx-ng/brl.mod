@@ -15,6 +15,7 @@ static void createAppMenu( NSString *appName ){
 	NSMenu *mainMenu;
 	NSMenu *appMenu;
 	NSMenu *serviceMenu;
+	NSMenu *viewMenu;
 	NSMenu *windowMenu;
 	NSMenuItem *item;
 	NSString *title;
@@ -64,6 +65,20 @@ static void createAppMenu( NSString *appName ){
 	[item release];
 	
 	[NSApp performSelector:NSSelectorFromString(@"setAppleMenu:") withObject:appMenu];
+
+	viewMenu = [[NSMenu alloc] initWithTitle:@"View"];
+
+	if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6) {
+		item = [[NSMenuItem alloc] initWithTitle:@"Toggle Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"];
+		[item setKeyEquivalentModifierMask:NSEventModifierFlagControl | NSEventModifierFlagCommand];
+		[viewMenu addItem:item];
+		[item release];
+	}
+
+	item = [[NSMenuItem alloc] initWithTitle:@"View" action:nil keyEquivalent:@""];
+	[item setSubmenu:viewMenu];
+	[[NSApp mainMenu] addItem:item];
+	[item release];
 	
 	windowMenu = [[NSMenu alloc] initWithTitle:@"Window"];
 	
@@ -72,13 +87,6 @@ static void createAppMenu( NSString *appName ){
 	[windowMenu addItemWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
 	
 	[windowMenu addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
-
-   if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6) {
-        item = [[NSMenuItem alloc] initWithTitle:@"Toggle Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"];
-        [item setKeyEquivalentModifierMask:NSEventModifierFlagControl | NSEventModifierFlagCommand];
-        [windowMenu addItem:item];
-        [item release];
-    }
 
 	item = [[NSMenuItem alloc] initWithTitle:@"Window" action:nil keyEquivalent:@""];
 	[item setSubmenu:windowMenu];
