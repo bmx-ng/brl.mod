@@ -12,14 +12,39 @@ static NSMutableArray *_appArgs;
 
 static void createAppMenu( NSString *appName ){
 
+	NSMenu *mainMenu;
 	NSMenu *appMenu;
+	NSMenu *serviceMenu;
+	NSMenu *windowMenu;
 	NSMenuItem *item;
 	NSString *title;
 	
-	[NSApp setMainMenu:[NSMenu new]];
+	mainMenu = [[NSMenu alloc] init];
 	
-	appMenu=[NSMenu new];
+	[NSApp setMainMenu:mainMenu];
 	
+	[mainMenu release];
+	
+	appMenu=[[NSMenu alloc] initWithTitle:@""];
+	
+	title=[@"About " stringByAppendingString:appName];
+    [appMenu addItemWithTitle:title action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
+
+    [appMenu addItem:[NSMenuItem separatorItem]];
+
+	[appMenu addItemWithTitle:@"Preferences…" action:nil keyEquivalent:@","];
+
+    [appMenu addItem:[NSMenuItem separatorItem]];
+
+    serviceMenu = [[NSMenu alloc] initWithTitle:@""];
+    item = (NSMenuItem *)[appMenu addItemWithTitle:@"Services" action:nil keyEquivalent:@""];
+    [item setSubmenu:serviceMenu];
+
+    [NSApp setServicesMenu:serviceMenu];
+    [serviceMenu release];
+
+    [appMenu addItem:[NSMenuItem separatorItem]];
+
 	title=[@"Hide " stringByAppendingString:appName];
 	[appMenu addItemWithTitle:@"Hide" action:@selector(hide:) keyEquivalent:@"h"];
 
@@ -33,11 +58,35 @@ static void createAppMenu( NSString *appName ){
 	title=[@"Quit " stringByAppendingString:appName];
 	[appMenu addItemWithTitle:title action:@selector(terminate:) keyEquivalent:@"q"];
 	
-	item=[NSMenuItem new];
+	item=[[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
 	[item setSubmenu:appMenu];
 	[[NSApp mainMenu] addItem:item];
+	[item release];
 	
 	[NSApp performSelector:NSSelectorFromString(@"setAppleMenu:") withObject:appMenu];
+	
+	windowMenu = [[NSMenu alloc] initWithTitle:@"Window"];
+	
+	[windowMenu addItemWithTitle:@"Close" action:@selector(performClose:) keyEquivalent:@"w"];
+	
+	[windowMenu addItemWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
+	
+	[windowMenu addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
+
+   if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6) {
+        item = [[NSMenuItem alloc] initWithTitle:@"Toggle Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"];
+        [item setKeyEquivalentModifierMask:NSEventModifierFlagControl | NSEventModifierFlagCommand];
+        [windowMenu addItem:item];
+        [item release];
+    }
+
+	item = [[NSMenuItem alloc] initWithTitle:@"Window" action:nil keyEquivalent:@""];
+	[item setSubmenu:windowMenu];
+	[[NSApp mainMenu] addItem:item];
+	[item release];
+
+	[NSApp setWindowsMenu:windowMenu];
+	[windowMenu release];
 }
 
 static void run(){
@@ -118,7 +167,7 @@ int main( int argc,char *argv[] ){
 			}else{
 				 p=app_file;
 			}
-			createAppMenu( [NSString stringWithCString:p] );
+			createAppMenu( [NSString stringWithCString:p encoding:NSUTF8StringEncoding] );
 			free( app_file );
 		
 			[NSApp setDelegate:[[BlitzMaxAppDelegate alloc] init]];
