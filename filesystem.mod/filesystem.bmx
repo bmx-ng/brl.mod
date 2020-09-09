@@ -91,7 +91,7 @@ Function FixPath( path$ Var,dirPath:Int=False )
 End Function
 
 Rem
-bbdoc: Strip directory from a file path
+bbdoc: Strips the directory from a file path
 End Rem
 Function StripDir$( path$ )
 	FixPath path
@@ -101,7 +101,7 @@ Function StripDir$( path$ )
 End Function
 
 Rem
-bbdoc: Strip extension from a file path
+bbdoc: Strips the extension from a file path
 End Rem
 Function StripExt$( path$ )
 	FixPath path
@@ -111,14 +111,14 @@ Function StripExt$( path$ )
 End Function
 
 Rem
-bbdoc: Strip directory and extension from a file path
+bbdoc: Strips the directory and extension from a file path
 End Rem
 Function StripAll$( path$ )
 	Return StripDir( StripExt( path ) )
 End Function
 
 Rem
-bbdoc: Strip trailing slash from a file path
+bbdoc: Strips trailing slash from a file path
 about:
 #StripSlash will not remove the trailing slash from a 'root' path. For example, "/"
 or (on Win32 only) "C:/".
@@ -130,7 +130,7 @@ Function StripSlash$( path$ )
 End Function
 
 Rem
-bbdoc: Extract directory from a file path
+bbdoc: Extracts the directory from a file path
 End Rem
 Function ExtractDir$( path$ )
 	FixPath path
@@ -144,7 +144,7 @@ Function ExtractDir$( path$ )
 End Function
 
 Rem
-bbdoc: Extract extension from a file path
+bbdoc: Extracts the extension from a file path
 End Rem
 Function ExtractExt$( path$ )
 	FixPath path
@@ -153,7 +153,7 @@ Function ExtractExt$( path$ )
 End Function
 
 Rem
-bbdoc: Get Current Directory
+bbdoc: Gets the Current Directory
 returns: The current directory
 End Rem
 Function CurrentDir$()
@@ -166,7 +166,7 @@ Function CurrentDir$()
 End Function
 
 Rem
-bbdoc: Get real, absolute path of a file path
+bbdoc: Gets the real, absolute path of a file path
 End Rem
 Function RealPath$( path$ )
 ?Win32
@@ -203,7 +203,7 @@ Function RealPath$( path$ )
 End Function
 
 Rem
-bbdoc: Get file type
+bbdoc: Gets the file type
 returns: 0 if file at @path doesn't exist, FILETYPE_FILE (1) if the file is a plain file or FILETYPE_DIR (2) if the file is a directory
 End Rem
 Function FileType:Int( path$ )
@@ -227,7 +227,7 @@ Function FileType:Int( path$ )
 End Function
 
 Rem
-bbdoc: Get file time
+bbdoc: Gets file time
 returns: The time the file at @path was last modified 
 End Rem
 Function FileTime:Long( path$, timetype:Int=FILETIME_MODIFIED )
@@ -252,9 +252,9 @@ Function FileTime:Long( path$, timetype:Int=FILETIME_MODIFIED )
 End Function
 
 Rem
-bbdoc: Get file size
-returns: Size, in bytes, of the file at @path, or -1 if the file does not exist
-end rem
+bbdoc: Gets the file size
+returns: The size, in bytes, of the file at @path, or -1 if the file does not exist
+End Rem
 Function FileSize:Long( path$ )
 	FixPath path
 	If MaxIO.ioInitialized Then
@@ -269,9 +269,9 @@ Function FileSize:Long( path$ )
 End Function
 
 Rem
-bbdoc: Get file mode
-returns: file mode flags
-end rem
+bbdoc: Gets the file mode
+returns: The file mode flags
+End Rem
 Function FileMode:Int( path$ )
 	FixPath path
 	If Not MaxIO.ioInitialized Then
@@ -282,8 +282,8 @@ Function FileMode:Int( path$ )
 End Function
 
 Rem
-bbdoc: Set file mode
-end rem
+bbdoc: Sets file mode
+End Rem
 Function SetFileMode( path$,Mode:Int )
 	FixPath path
 	If Not MaxIO.ioInitialized Then
@@ -292,8 +292,8 @@ Function SetFileMode( path$,Mode:Int )
 End Function
 
 Rem
-bbdoc: Create a file
-returns: True if successful
+bbdoc: Creates a file
+returns: #True if successful
 End Rem
 Function CreateFile:Int( path$ )
 	FixPath path
@@ -310,10 +310,10 @@ Function CreateFile:Int( path$ )
 End Function
 
 Rem
-bbdoc: Create a directory
-returns: True if successful
+bbdoc: Creates a directory
+returns: #True if successful
 about:
-If @recurse is true, any required subdirectories are also created.
+If @recurse is #True, any required subdirectories are also created.
 End Rem
 Function CreateDir:Int( path$,recurse:Int=False )
 	FixPath path,True
@@ -345,8 +345,8 @@ Function CreateDir:Int( path$,recurse:Int=False )
 End Function
 
 Rem
-bbdoc: Delete a file
-returns: True if successful
+bbdoc: Deletes a file
+returns: #True if successful
 End Rem
 Function DeleteFile:Int( path$ )
 	FixPath path
@@ -360,7 +360,7 @@ End Function
 
 Rem
 bbdoc: Renames a file
-returns: True if successful
+returns: #True if successful
 End Rem
 Function RenameFile:Int( oldpath$,newpath$ )
 	If MaxIO.ioInitialized Then
@@ -372,8 +372,8 @@ Function RenameFile:Int( oldpath$,newpath$ )
 End Function
 
 Rem
-bbdoc: Copy a file
-returns: True if successful
+bbdoc: Copies a file
+returns: #True if successful
 End Rem
 Function CopyFile:Int( src$,dst$ )
 	Local in:TStream=ReadStream( src ),ok:Int
@@ -393,8 +393,8 @@ Function CopyFile:Int( src$,dst$ )
 End Function
 
 Rem
-bbdoc: Copy a directory
-returns: True if successful
+bbdoc: Copies a directory
+returns: #True if successful
 End Rem
 Function CopyDir:Int( src$,dst$ )
 
@@ -422,9 +422,9 @@ Function CopyDir:Int( src$,dst$ )
 End Function
 
 Rem
-bbdoc: Delete a directory
-returns: True if successful
-about: Set @recurse to true to delete all subdirectories and files recursively - 
+bbdoc: Deletes a directory
+returns: #True if successful
+about: Set @recurse to #True to delete all subdirectories and files recursively - 
 but be careful!
 End Rem
 Function DeleteDir:Int( path$,recurse:Int=False )
@@ -449,7 +449,7 @@ Function DeleteDir:Int( path$,recurse:Int=False )
 End Function
 
 Rem
-bbdoc: Change current directory
+bbdoc: Changes the current directory
 returns: True if successful
 End Rem
 Function ChangeDir:Int( path$ )
@@ -462,8 +462,10 @@ Function ChangeDir:Int( path$ )
 End Function
 
 Rem
-bbdoc: Open a directory
-returns: A directory handle, or Null if the directory does not exist
+bbdoc: Opens a directory
+returns: A directory handle, or #Null if the directory does not exist
+about: Use #NextFile to get the next file in the directory.
+The directory must be closed with #CloseDir.
 End Rem
 Function ReadDir:Byte Ptr( path$ )
 	FixPath path,True
@@ -475,8 +477,8 @@ Function ReadDir:Byte Ptr( path$ )
 End Function
 
 Rem
-bbdoc: Return next file in a directory
-returns: File name of next file in directory opened using #ReadDir, or an empty string if there are no more files to read.
+bbdoc: Returns the next file in a directory
+returns: File name of next file in the directory opened using #ReadDir, or an empty #String if there are no more files to read.
 End Rem
 Function NextFile$( dir:Byte Ptr )
 	If MaxIO.ioInitialized Then
@@ -487,7 +489,8 @@ Function NextFile$( dir:Byte Ptr )
 End Function
 
 Rem
-bbdoc: Close a directory
+bbdoc: Closes a directory.
+about: Closes a directory opened with #ReadDir.
 End Rem
 Function CloseDir( dir:Byte Ptr )
 	If MaxIO.ioInitialized Then
@@ -498,11 +501,11 @@ Function CloseDir( dir:Byte Ptr )
 End Function
 
 Rem
-bbdoc: Load a directory
+bbdoc: Loads a directory
 returns: A string array containing contents of @dir
 about: The @skip_dots parameter, if true, removes the '.' (current) and '..'
 (parent) directories from the returned array.
-end rem
+End Rem
 Function LoadDir$[]( dir$,skip_dots:Int=True )
 	FixPath dir,True
 	Local d:Byte Ptr=ReadDir( dir )
@@ -521,7 +524,7 @@ Function LoadDir$[]( dir$,skip_dots:Int=True )
 End Function
 
 Rem
-bbdoc: Open a file for input and/or output.
+bbdoc: Opens a file for input and/or output.
 about:
 This command is similar to the #OpenStream command but will attempt
 to cache the contents of the file to ensure serial streams such as 
@@ -536,7 +539,7 @@ Function OpenFile:TStream( url:Object,readable:Int=True,writeable:Int=True )
 End Function
 
 Rem
-bbdoc: Open a file For Input.
+bbdoc: Opens a file For Input.
 about:
 This command is similar to the #ReadStream command but will attempt
 to cache the contents of the file to ensure serial streams such as 
@@ -548,7 +551,7 @@ Function ReadFile:TStream( url:Object )
 End Function
 
 Rem
-bbdoc: Open a file for output.
+bbdoc: Opens a file for output.
 about:
 This command is identical to the #WriteStream command.
 End Rem
