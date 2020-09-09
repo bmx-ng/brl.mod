@@ -52,8 +52,11 @@ GC_INNER ptr_t GC_alloc_large(size_t lb, int k, unsigned flags)
       LOCK();
     }
     /* Do our share of marking work */
-        if (GC_incremental && !GC_dont_gc)
+        if (GC_incremental && !GC_dont_gc) {
+            ENTER_GC();
             GC_collect_a_little_inner((int)n_blocks);
+            EXIT_GC();
+        }
     h = GC_allochblk(lb, k, flags);
 #   ifdef USE_MUNMAP
         if (0 == h) {
@@ -381,14 +384,11 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
         }
         GC_ASSERT(0 == op || GC_is_marked(op));
     } else {
-        hdr * hhdr;
-
-        op = GC_generic_malloc(lb, k);
-        if (NULL == op)
-            return NULL;
+      op = GC_generic_malloc(lb, k);
+      if (op /* != NULL */) { /* CPPCHECK */
+        hdr * hhdr = HDR(op);
 
         GC_ASSERT(((word)op & (HBLKSIZE - 1)) == 0); /* large block */
-        hhdr = HDR(op);
         /* We don't need the lock here, since we have an undisguised    */
         /* pointer.  We do need to hold the lock while we adjust        */
         /* mark bits.                                                   */
@@ -401,6 +401,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_uncollectable(
 #       endif
         hhdr -> hb_n_marks = 1;
         UNLOCK();
+      }
     }
     return op;
 }
@@ -564,8 +565,13 @@ GC_API void GC_CALL GC_free(void * p)
     struct obj_kind * ok;
     DCL_LOCK_STATE;
 
-    if (p == 0) return;
+    if (p /* != NULL */) {
+        /* CPPCHECK */
+    } else {
         /* Required by ANSI.  It's not my fault ...     */
+        return;
+    }
+
 #   ifdef LOG_ALLOCS
       GC_log_printf("GC_free(%p) after GC #%lu\n",
                     p, (unsigned long)GC_gc_no);

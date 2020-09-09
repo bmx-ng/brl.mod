@@ -71,7 +71,7 @@ typedef struct GC_Thread_Rep {
       volatile AO_t suspended_ext;  /* Thread was suspended externally. */
 #   endif
 
-    unsigned char flags;
+    unsigned char flags;        /* Protected by GC lock.                */
 #       define FINISHED 1       /* Thread has exited.                   */
 #       define DETACHED 2       /* Thread is treated as detached.       */
                                 /* Thread may really be detached, or    */
@@ -132,7 +132,7 @@ typedef struct GC_Thread_Rep {
                                 /* and detach.                          */
 
 #   ifdef THREAD_LOCAL_ALLOC
-        struct thread_local_freelists tlfs;
+        struct thread_local_freelists tlfs GC_ATTR_WORD_ALIGNED;
 #   endif
 } * GC_thread;
 

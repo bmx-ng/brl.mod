@@ -50,20 +50,12 @@ STATIC int GC_array_kind = 0;
                         /* Object kind for objects with complex         */
                         /* descriptors and GC_array_mark_proc.          */
 
-/* Extended descriptors.  GC_typed_mark_proc understands these. */
-/* These are used for simple objects that are larger than what  */
-/* can be described by a BITMAP_BITS sized bitmap.              */
-typedef struct {
-        word ed_bitmap; /* lsb corresponds to first word.       */
-        GC_bool ed_continued;   /* next entry is continuation.  */
-} ext_descr;
-
 /* Array descriptors.  GC_array_mark_proc understands these.    */
 /* We may eventually need to add provisions for headers and     */
 /* trailers.  Hence we provide for tree structured descriptors, */
 /* though we don't really use them currently.                   */
 
-    struct LeafDescriptor {     /* Describes simple array       */
+struct LeafDescriptor {         /* Describes simple array.      */
         word ld_tag;
 #       define LEAF_TAG 1
         size_t ld_size;         /* bytes per element            */
@@ -71,21 +63,21 @@ typedef struct {
         size_t ld_nelements;    /* Number of elements.          */
         GC_descr ld_descriptor; /* A simple length, bitmap,     */
                                 /* or procedure descriptor.     */
-    };
+};
 
-    struct ComplexArrayDescriptor {
+struct ComplexArrayDescriptor {
         word ad_tag;
 #       define ARRAY_TAG 2
         size_t ad_nelements;
         union ComplexDescriptor * ad_element_descr;
-    };
+};
 
-    struct SequenceDescriptor {
+struct SequenceDescriptor {
         word sd_tag;
 #       define SEQUENCE_TAG 3
         union ComplexDescriptor * sd_first;
         union ComplexDescriptor * sd_second;
-    };
+};
 
 typedef union ComplexDescriptor {
     struct LeafDescriptor ld;
@@ -94,23 +86,10 @@ typedef union ComplexDescriptor {
 } complex_descriptor;
 #define TAG ad.ad_tag
 
-STATIC ext_descr * GC_ext_descriptors = NULL;
-                                        /* Points to array of extended  */
-                                        /* descriptors.                 */
-
-STATIC size_t GC_ed_size = 0;   /* Current size of above arrays.        */
 #define ED_INITIAL_SIZE 100
-
-STATIC size_t GC_avail_descr = 0;       /* Next available slot.         */
 
 STATIC int GC_typed_mark_proc_index = 0; /* Indices of my mark          */
 STATIC int GC_array_mark_proc_index = 0; /* procedures.                 */
-
-#ifdef AO_HAVE_load_acquire
-  STATIC volatile AO_t GC_explicit_typing_initialized = FALSE;
-#else
-  STATIC GC_bool GC_explicit_typing_initialized = FALSE;
-#endif
 
 STATIC void GC_push_typed_structures_proc(void)
 {
@@ -132,7 +111,7 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
 
     LOCK();
     while (GC_avail_descr + nwords >= GC_ed_size) {
-        ext_descr * newExtD;
+        typed_ext_descr_t *newExtD;
         size_t new_size;
         word ed_size = GC_ed_size;
 
@@ -146,14 +125,15 @@ STATIC signed_word GC_add_ext_descriptor(const word * bm, word nbits)
             new_size = 2 * ed_size;
             if (new_size > MAX_ENV) return(-1);
         }
-        newExtD = (ext_descr *)GC_malloc_atomic(new_size * sizeof(ext_descr));
+        newExtD = (typed_ext_descr_t*)GC_malloc_atomic(new_size
+                                                * sizeof(typed_ext_descr_t));
         if (NULL == newExtD)
             return -1;
         LOCK();
         if (ed_size == GC_ed_size) {
             if (GC_avail_descr != 0) {
                 BCOPY(GC_ext_descriptors, newExtD,
-                      GC_avail_descr * sizeof(ext_descr));
+                      GC_avail_descr * sizeof(typed_ext_descr_t));
             }
             GC_ed_size = new_size;
             GC_ext_descriptors = newExtD;
@@ -332,8 +312,6 @@ GC_make_sequence_descriptor(complex_descriptor *first,
     return((complex_descriptor *)result);
 }
 
-STATIC ptr_t * GC_eobjfreelist = NULL;
-
 STATIC mse * GC_typed_mark_proc(word * addr, mse * mark_stack_ptr,
                                 mse * mark_stack_limit, word env);
 
@@ -346,9 +324,7 @@ STATIC void GC_init_explicit_typing(void)
 
     GC_STATIC_ASSERT(sizeof(struct LeafDescriptor) % sizeof(word) == 0);
     /* Set up object kind with simple indirect descriptor. */
-      GC_eobjfreelist = (ptr_t *)GC_new_free_list_inner();
-      GC_explicit_kind = GC_new_kind_inner(
-                            (void **)GC_eobjfreelist,
+      GC_explicit_kind = GC_new_kind_inner(GC_new_free_list_inner(),
                             (WORDS_TO_BYTES((word)-1) | GC_DS_PER_OBJECT),
                             TRUE, TRUE);
                 /* Descriptors are in the last word of the object. */
@@ -625,10 +601,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
     GC_ASSERT(GC_explicit_typing_initialized);
     lb = SIZET_SAT_ADD(lb, TYPD_EXTRA_BYTES);
     if (SMALL_OBJ(lb)) {
+        void **opp;
+
         GC_DBG_COLLECT_AT_MALLOC(lb);
         LOCK();
         lg = GC_size_map[lb];
-        op = GC_eobjfreelist[lg];
+        opp = &GC_obj_kinds[GC_explicit_kind].ok_freelist[lg];
+        op = (ptr_t)(*opp);
         if (EXPECT(0 == op, FALSE)) {
             UNLOCK();
             op = (ptr_t)GENERAL_MALLOC_IOP(lb, GC_explicit_kind);
@@ -636,7 +615,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
             /* See the comment in GC_malloc_explicitly_typed.   */
             lg = BYTES_TO_GRANULES(GC_size(op));
         } else {
-            GC_eobjfreelist[lg] = (ptr_t)obj_link(op);
+            *opp = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES((word)lg);
             UNLOCK();

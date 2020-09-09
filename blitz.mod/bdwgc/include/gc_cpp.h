@@ -135,7 +135,7 @@ uses explicit invocation.
 5. GC name conflicts:
 
 Many other systems seem to use the identifier "GC" as an abbreviation
-for "Graphics Context".  Since version 5.0, GC placement has been replaced
+for "Graphics Context".  Thus, GC placement has been replaced
 by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 
 ****************************************************************************/
@@ -172,22 +172,6 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
     && (!defined(_MSC_VER) || _MSC_VER > 1020)
 # define GC_PLACEMENT_DELETE
 #endif
-
-#ifndef GC_NOEXCEPT
-# if defined(__DMC__) || (defined(__BORLANDC__) \
-        && (defined(_RWSTD_NO_EXCEPTIONS) || defined(_RWSTD_NO_EX_SPEC))) \
-     || (defined(_MSC_VER) && defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS) \
-     || (defined(__WATCOMC__) && !defined(_CPPUNWIND))
-#   define GC_NOEXCEPT /* empty */
-#   ifndef GC_NEW_ABORTS_ON_OOM
-#     define GC_NEW_ABORTS_ON_OOM
-#   endif
-# elif __cplusplus >= 201103L
-#   define GC_NOEXCEPT noexcept
-# else
-#   define GC_NOEXCEPT throw()
-# endif
-#endif // !GC_NOEXCEPT
 
 #if defined(GC_NEW_ABORTS_ON_OOM) || defined(_LIBCPP_NO_EXCEPTIONS)
 # define GC_OP_NEW_OOM_CHECK(obj) \
@@ -306,14 +290,13 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
                               void*) GC_NOEXCEPT;
 #endif
 
+#ifndef GC_NO_INLINE_STD_NEW
+
 #if defined(_MSC_VER) || defined(__DMC__) \
-    || ((defined(__CYGWIN32__) || defined(__CYGWIN__) \
-        || defined(__MINGW32__)) && !defined(GC_BUILD) && !defined(GC_NOT_DLL))
-  // The following ensures that the system default operator new[] does not
-  // get undefined, which is what seems to happen on VC++ 6 for some reason
-  // if we define a multi-argument operator new[].
-  // There seems to be no way to redirect new in this environment without
-  // including this everywhere.
+    || ((defined(__BORLANDC__) || defined(__CYGWIN__) \
+         || defined(__CYGWIN32__) || defined(__MINGW32__) \
+         || defined(__WATCOMC__)) \
+        && !defined(GC_BUILD) && !defined(GC_NOT_DLL))
   // Inlining done to avoid mix up of new and delete operators by VC++ 9 (due
   // to arbitrary ordering during linking).
 
@@ -343,7 +326,7 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
     GC_FREE(obj);
   }
 
-# if __cplusplus > 201103L // C++14
+# if __cplusplus >= 201402L || _MSVC_LANG >= 201402L // C++14
     inline void operator delete(void* obj, size_t size) GC_NOEXCEPT {
       (void)size; // size is ignored
       GC_FREE(obj);
@@ -389,6 +372,24 @@ inline void* operator new(size_t size, GC_NS_QUALIFY(GCPlacement) gcp,
 # endif
 
 #endif // _MSC_VER
+
+#elif defined(_MSC_VER)
+  // The following ensures that the system default operator new[] does not
+  // get undefined, which is what seems to happen on VC++ 6 for some reason
+  // if we define a multi-argument operator new[].
+  // There seems to be no way to redirect new in this environment without
+  // including this everywhere.
+# ifdef GC_OPERATOR_NEW_ARRAY
+    void *operator new[](size_t size);
+    void operator delete[](void* obj);
+# endif
+
+  void* operator new(size_t size);
+  void operator delete(void* obj);
+
+  void* operator new(size_t size, int /* nBlockUse */,
+                     const char * szFileName, int nLine);
+#endif // GC_NO_INLINE_STD_NEW && _MSC_VER
 
 #ifdef GC_OPERATOR_NEW_ARRAY
   // The operator new for arrays, identical to the above.

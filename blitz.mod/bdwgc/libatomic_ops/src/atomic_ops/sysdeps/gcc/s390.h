@@ -15,7 +15,15 @@
  *
  */
 
-/* FIXME: untested.                                             */
+#if (AO_GNUC_PREREQ(5, 4) || AO_CLANG_PREREQ(8, 0)) && defined(__s390x__) \
+    && !defined(AO_DISABLE_GCC_ATOMICS)
+  /* Probably, it could be enabled for earlier clang/gcc versions.      */
+  /* But, e.g., clang-3.8.0 produces a backend error for AtomicFence.   */
+
+# include "generic.h"
+
+#else /* AO_DISABLE_GCC_ATOMICS */
+
 /* The relevant documentation appears to be at                  */
 /* http://publibz.boulder.ibm.com/epubs/pdf/dz9zr003.pdf        */
 /* around page 5-96.  Apparently:                               */
@@ -35,7 +43,7 @@
 #include "../ordered_except_wr.h"
 
 #include "../test_and_set_t_is_ao_t.h"
-/* FIXME: Is there a way to do byte-sized test-and-set? */
+/* TODO: Is there a way to do byte-sized test-and-set? */
 
 /* TODO: AO_nop_full should probably be implemented directly.   */
 /* It appears that certain BCR instructions have that effect.   */
@@ -78,5 +86,7 @@ AO_fetch_compare_and_swap_full(volatile AO_t *addr,
   return old;
 }
 #define AO_HAVE_fetch_compare_and_swap_full
+
+#endif /* AO_DISABLE_GCC_ATOMICS */
 
 /* TODO: Add double-wide operations for 32-bit executables.       */

@@ -3,6 +3,7 @@
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 2008-2020 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -48,16 +49,6 @@
 # define GC_AMIGA_DEF
 # include "extra/AmigaOS.c"
 # undef GC_AMIGA_DEF
-#endif
-
-#if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-# ifndef WIN32_LEAN_AND_MEAN
-#   define WIN32_LEAN_AND_MEAN 1
-# endif
-# define NOSERVICE
-# include <windows.h>
-  /* It's not clear this is completely kosher under Cygwin.  But it     */
-  /* allows us to get a working GC_get_stack_base.                      */
 #endif
 
 #ifdef MACOS
@@ -209,7 +200,12 @@ GC_INNER char * GC_get_maps(void)
             int f;
 
             while (maps_size >= maps_buf_sz) {
-              GC_scratch_recycle_no_gww(maps_buf, maps_buf_sz);
+#             ifdef LINT2
+                /* Workaround passing tainted maps_buf to a tainted sink. */
+                GC_noop1((word)maps_buf);
+#             else
+                GC_scratch_recycle_no_gww(maps_buf, maps_buf_sz);
+#             endif
               /* Grow only by powers of 2, since we leak "too small" buffers.*/
               while (maps_size >= maps_buf_sz) maps_buf_sz *= 2;
               maps_buf = GC_scratch_alloc(maps_buf_sz);
@@ -231,13 +227,13 @@ GC_INNER char * GC_get_maps(void)
             maps_size = 0;
             do {
                 result = GC_repeat_read(f, maps_buf, maps_buf_sz-1);
-                if (result <= 0)
-                  break;
+                if (result <= 0) {
+                    close(f);
+                    return 0;
+                }
                 maps_size += result;
             } while ((size_t)result == maps_buf_sz-1);
             close(f);
-            if (result <= 0)
-              return 0;
 #           ifdef THREADS
               if (maps_size > old_maps_size) {
                 /* This might be caused by e.g. thread creation. */
@@ -303,10 +299,12 @@ GC_INNER char * GC_get_maps(void)
     GC_ASSERT(*p == 'r' || *p == '-');
     *prot = (char *)p;
     /* Skip past protection field to offset field */
-       while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
+    while (!isspace(*p)) ++p;
+    while (isspace(*p)) p++;
     GC_ASSERT(isxdigit(*p));
     /* Skip past offset field, which we ignore */
-          while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
+    while (!isspace(*p)) ++p;
+    while (isspace(*p)) p++;
     maj_dev_start = p;
     GC_ASSERT(isxdigit(*maj_dev_start));
     *maj_dev = strtoul((char *)maj_dev_start, NULL, 16);
@@ -429,8 +427,12 @@ GC_INNER char * GC_get_maps(void)
   {
     ptr_t data_end = DATAEND;
 
-#   if (defined(LINUX) || defined(HURD)) && !defined(IGNORE_PROG_DATA_START)
+#   if (defined(LINUX) || defined(HURD)) && defined(USE_PROG_DATA_START)
       /* Try the easy approaches first: */
+      /* However, this may lead to wrong data start value if libgc  */
+      /* code is put into a shared library (directly or indirectly) */
+      /* which is linked with -Bsymbolic-functions option.  Thus,   */
+      /* the following is not used by default.                      */
       if (COVERT_DATAFLOW(__data_start) != 0) {
         GC_data_start = (ptr_t)(__data_start);
       } else {
@@ -574,12 +576,13 @@ GC_INNER char * GC_get_maps(void)
     return(result);
   }
 
+  static volatile int firstpass;
+
   /* Return first addressable location > p or bound.    */
   /* Requires the allocation lock.                      */
   STATIC ptr_t GC_skip_hole_openbsd(ptr_t p, ptr_t bound)
   {
     static volatile ptr_t result;
-    static volatile int firstpass;
 
     struct sigaction act;
     word pgsz = (word)sysconf(_SC_PAGESIZE);
@@ -710,7 +713,7 @@ GC_INNER size_t GC_page_size = 0;
   GC_INNER void GC_setpagesize(void)
   {
     GetSystemInfo(&GC_sysinfo);
-#   if defined(CYGWIN32) && defined(USE_MUNMAP)
+#   if defined(CYGWIN32) && (defined(MPROTECT_VDB) || defined(USE_MUNMAP))
       /* Allocations made with mmap() are aligned to the allocation     */
       /* granularity, which (at least on 64-bit Windows OS) is not the  */
       /* same as the page size.  Probably a separate variable could     */
@@ -967,6 +970,7 @@ GC_INNER size_t GC_page_size = 0;
     /* the smallest location q s.t. [q,p) is addressable (!up). */
     /* We assume that p (up) or p-1 (!up) is addressable.       */
     /* Requires allocation lock.                                */
+    GC_ATTR_NO_SANITIZE_ADDR
     STATIC ptr_t GC_find_limit_with_bound(ptr_t p, GC_bool up, ptr_t bound)
     {
         static volatile ptr_t result;
@@ -1017,6 +1021,29 @@ GC_INNER size_t GC_page_size = 0;
                                         up ? (ptr_t)GC_WORD_MAX : 0);
     }
 # endif /* NEED_FIND_LIMIT || USE_PROC_FOR_LIBRARIES */
+
+#ifdef HPUX_MAIN_STACKBOTTOM
+# include <sys/param.h>
+# include <sys/pstat.h>
+
+  STATIC ptr_t GC_hpux_main_stack_base(void)
+  {
+    struct pst_vm_status vm_status;
+    int i = 0;
+
+    while (pstat_getprocvm(&vm_status, sizeof(vm_status), 0, i++) == 1) {
+      if (vm_status.pst_type == PS_STACK)
+        return (ptr_t)vm_status.pst_vaddr;
+    }
+
+    /* Old way to get the stack bottom. */
+#   ifdef STACK_GROWS_UP
+      return (ptr_t)GC_find_limit(GC_approx_sp(), /* up= */ FALSE);
+#   else /* not HP_PA */
+      return (ptr_t)GC_find_limit(GC_approx_sp(), TRUE);
+#   endif
+  }
+#endif /* HPUX_MAIN_STACKBOTTOM */
 
 #ifdef HPUX_STACKBOTTOM
 
@@ -1078,9 +1105,7 @@ GC_INNER size_t GC_page_size = 0;
       result = backing_store_base_from_proc();
       if (0 == result) {
           result = (ptr_t)GC_find_limit(GC_save_regs_in_stack(), FALSE);
-          /* Now seems to work better than constant displacement        */
-          /* heuristic used in 6.X versions.  The latter seems to       */
-          /* fail for 2.6 kernels.                                      */
+          /* This works better than a constant displacement heuristic.  */
       }
       return result;
     }
@@ -1088,7 +1113,7 @@ GC_INNER size_t GC_page_size = 0;
 
   STATIC ptr_t GC_linux_main_stack_base(void)
   {
-    /* We read the stack base value from /proc/self/stat.  We do this   */
+    /* We read the stack bottom value from /proc/self/stat.  We do this */
     /* using direct I/O system calls in order to avoid calling malloc   */
     /* in case REDIRECT_MALLOC is defined.                              */
 #   ifndef STAT_READ
@@ -1249,18 +1274,20 @@ GC_INNER size_t GC_page_size = 0;
 #   ifdef STACKBOTTOM
       result = STACKBOTTOM;
 #   else
-#     define STACKBOTTOM_ALIGNMENT_M1 ((word)STACK_GRAN - 1)
 #     ifdef HEURISTIC1
+#       define STACKBOTTOM_ALIGNMENT_M1 ((word)STACK_GRAN - 1)
 #       ifdef STACK_GROWS_DOWN
           result = (ptr_t)(((word)GC_approx_sp() + STACKBOTTOM_ALIGNMENT_M1)
                            & ~STACKBOTTOM_ALIGNMENT_M1);
 #       else
           result = (ptr_t)((word)GC_approx_sp() & ~STACKBOTTOM_ALIGNMENT_M1);
 #       endif
+#     elif defined(HPUX_MAIN_STACKBOTTOM)
+        result = GC_hpux_main_stack_base();
 #     elif defined(LINUX_STACKBOTTOM)
-         result = GC_linux_main_stack_base();
+        result = GC_linux_main_stack_base();
 #     elif defined(FREEBSD_STACKBOTTOM)
-         result = GC_freebsd_main_stack_base();
+        result = GC_freebsd_main_stack_base();
 #     elif defined(HEURISTIC2)
         {
           ptr_t sp = GC_approx_sp();
@@ -1292,7 +1319,9 @@ GC_INNER size_t GC_page_size = 0;
           result = (ptr_t)(signed_word)(-sizeof(ptr_t));
 #     endif
 #   endif
-    GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)result);
+#   if !defined(CPPCHECK)
+      GC_ASSERT((word)GC_approx_sp() HOTTER_THAN (word)result);
+#   endif
     return(result);
   }
 # define GET_MAIN_STACKBASE_SPECIAL
@@ -1434,8 +1463,8 @@ GC_INNER size_t GC_page_size = 0;
 
     if (!stackbase_main_self && thr_main() != 0)
       {
-        /* Cache the stack base value for the primordial thread (this   */
-        /* is done during GC_init, so there is no race).                */
+        /* Cache the stack bottom pointer for the primordial thread     */
+        /* (this is done during GC_init, so there is no race).          */
         stackbase_main_ss_sp = s.ss_sp;
         stackbase_main_self = self;
       }
@@ -1457,7 +1486,7 @@ GC_INNER size_t GC_page_size = 0;
 
 #ifndef HAVE_GET_STACK_BASE
 # ifdef NEED_FIND_LIMIT
-    /* Retrieve stack base.                                             */
+    /* Retrieve the stack bottom.                                       */
     /* Using the GC_find_limit version is risky.                        */
     /* On IA64, for example, there is no guard page between the         */
     /* stack of one thread and the register backing store of the        */
@@ -1613,10 +1642,10 @@ void GC_register_data_segments(void)
     typedef UINT (WINAPI * GetWriteWatch_type)(
                                 DWORD, PVOID, GC_ULONG_PTR /* SIZE_T */,
                                 PVOID *, GC_ULONG_PTR *, PULONG);
-    static GetWriteWatch_type GetWriteWatch_func;
+    static FARPROC GetWriteWatch_func;
     static DWORD GetWriteWatch_alloc_flag;
 
-#   define GC_GWW_AVAILABLE() (GetWriteWatch_func != NULL)
+#   define GC_GWW_AVAILABLE() (GetWriteWatch_func != 0)
 
     static void detect_GetWriteWatch(void)
     {
@@ -1658,8 +1687,7 @@ void GC_register_data_segments(void)
         hK32 = GetModuleHandle(TEXT("kernel32.dll"));
 #     endif
       if (hK32 != (HMODULE)0 &&
-          (GetWriteWatch_func = (GetWriteWatch_type)GetProcAddress(hK32,
-                                                "GetWriteWatch")) != NULL) {
+          (GetWriteWatch_func = GetProcAddress(hK32, "GetWriteWatch")) != 0) {
         /* Also check whether VirtualAlloc accepts MEM_WRITE_WATCH,   */
         /* as some versions of kernel32.dll have one but not the      */
         /* other, making the feature completely broken.               */
@@ -1671,26 +1699,25 @@ void GC_register_data_segments(void)
           GC_ULONG_PTR count = 16;
           DWORD page_size;
           /* Check that it actually works.  In spite of some            */
-          /* documentation it actually seems to exist on W2K.           */
+          /* documentation it actually seems to exist on Win2K.         */
           /* This test may be unnecessary, but ...                      */
-          if (GetWriteWatch_func(WRITE_WATCH_FLAG_RESET,
-                                 page, GC_page_size,
-                                 pages,
-                                 &count,
-                                 &page_size) != 0) {
+          if ((*(GetWriteWatch_type)(word)GetWriteWatch_func)(
+                                        WRITE_WATCH_FLAG_RESET, page,
+                                        GC_page_size, pages, &count,
+                                        &page_size) != 0) {
             /* GetWriteWatch always fails. */
-            GetWriteWatch_func = NULL;
+            GetWriteWatch_func = 0;
           } else {
             GetWriteWatch_alloc_flag = MEM_WRITE_WATCH;
           }
           VirtualFree(page, 0 /* dwSize */, MEM_RELEASE);
         } else {
           /* GetWriteWatch will be useless. */
-          GetWriteWatch_func = NULL;
+          GetWriteWatch_func = 0;
         }
       }
 #     ifndef SMALL_CONFIG
-        if (GetWriteWatch_func == NULL) {
+        if (!GetWriteWatch_func) {
           GC_COND_LOG_PRINTF("Did not find a usable GetWriteWatch()\n");
         } else {
           GC_COND_LOG_PRINTF("Using GetWriteWatch()\n");
@@ -1719,7 +1746,7 @@ void GC_register_data_segments(void)
         /* assembly code to do that right.                              */
 
   GC_INNER GC_bool GC_wnt = FALSE;
-         /* This is a Windows NT derivative, i.e. NT, W2K, XP or later. */
+         /* This is a Windows NT derivative, i.e. NT, Win2K, XP or later. */
 
   GC_INNER void GC_init_win32(void)
   {
@@ -1768,7 +1795,7 @@ void GC_register_data_segments(void)
   }
 # endif /* MSWIN32 */
 
-# ifndef REDIRECT_MALLOC
+# if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
   /* We maintain a linked list of AllocationBase values that we know    */
   /* correspond to malloc heap sections.  Currently this is only called */
   /* during a GC.  But there is some hope that for long running         */
@@ -1780,7 +1807,6 @@ void GC_register_data_segments(void)
 
   STATIC size_t GC_max_root_size = 100000; /* Appr. largest root size.  */
 
-# ifdef USE_WINALLOC
   /* In the long run, a better data structure would also be nice ...    */
   STATIC struct GC_malloc_heap_list {
     void * allocation_base;
@@ -1843,24 +1869,35 @@ void GC_register_data_segments(void)
     new_l -> next = GC_malloc_heap_l;
     GC_malloc_heap_l = new_l;
   }
-# endif /* USE_WINALLOC */
 
-# endif /* !REDIRECT_MALLOC */
+  /* Free all the linked list nodes. Could be invoked at process exit   */
+  /* to avoid memory leak complains of a dynamic code analysis tool.    */
+  STATIC void GC_free_malloc_heap_list(void)
+  {
+    struct GC_malloc_heap_list *q = GC_malloc_heap_l;
 
-  STATIC word GC_n_heap_bases = 0;      /* See GC_heap_bases.   */
+    GC_malloc_heap_l = NULL;
+    while (q != NULL) {
+      struct GC_malloc_heap_list *next = q -> next;
+      free(q);
+      q = next;
+    }
+  }
+# endif /* USE_WINALLOC && !REDIRECT_MALLOC */
 
   /* Is p the start of either the malloc heap, or of one of our */
   /* heap sections?                                             */
   GC_INNER GC_bool GC_is_heap_base(void *p)
   {
-     unsigned i;
-#    ifndef REDIRECT_MALLOC
-       if (GC_root_size > GC_max_root_size) GC_max_root_size = GC_root_size;
-#      ifdef USE_WINALLOC
-         if (GC_is_malloc_heap_base(p)) return TRUE;
-#      endif
+     int i;
+
+#    if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC)
+       if (GC_root_size > GC_max_root_size)
+         GC_max_root_size = GC_root_size;
+       if (GC_is_malloc_heap_base(p))
+         return TRUE;
 #    endif
-     for (i = 0; i < GC_n_heap_bases; i++) {
+     for (i = 0; i < (int)GC_n_heap_bases; i++) {
          if (GC_heap_bases[i] == p) return TRUE;
      }
      return FALSE;
@@ -2334,8 +2371,8 @@ void * os2_alloc(size_t bytes)
                                 GC_pages_executable ? PAGE_EXECUTE_READWRITE :
                                                       PAGE_READWRITE);
         if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
-            /* If I read the documentation correctly, this can  */
-            /* only happen if HBLKSIZE > 64k or not a power of 2.       */
+            /* If I read the documentation correctly, this can          */
+            /* only happen if HBLKSIZE > 64 KB or not a power of 2.     */
         if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
         if (result == NULL) return NULL;
         GC_heap_bases[GC_n_heap_bases] = result;
@@ -2370,7 +2407,7 @@ void * os2_alloc(size_t bytes)
     DWORD GC_mem_top_down = MEM_TOP_DOWN;
                            /* Use GC_USE_MEM_TOP_DOWN for better 64-bit */
                            /* testing.  Otherwise all addresses tend to */
-                           /* end up in first 4GB, hiding bugs.         */
+                           /* end up in first 4 GB, hiding bugs.        */
 # else
 #   define GC_mem_top_down 0
 # endif /* !GC_USE_MEM_TOP_DOWN */
@@ -2431,39 +2468,49 @@ void * os2_alloc(size_t bytes)
 # endif /* USE_WINALLOC */
     if (HBLKDISPL(result) != 0) ABORT("Bad VirtualAlloc result");
         /* If I read the documentation correctly, this can      */
-        /* only happen if HBLKSIZE > 64k or not a power of 2.   */
+        /* only happen if HBLKSIZE > 64 KB or not a power of 2. */
     if (GC_n_heap_bases >= MAX_HEAP_SECTS) ABORT("Too many heap sections");
     if (0 != result) GC_heap_bases[GC_n_heap_bases++] = result;
     return(result);
   }
+#endif /* USE_WINALLOC || CYGWIN32 */
 
+#if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32) \
+    || defined(MSWIN_XBOX1)
   GC_API void GC_CALL GC_win32_free_heap(void)
   {
-#   ifndef MSWINRT_FLAVOR
+#   if defined(USE_WINALLOC) && !defined(REDIRECT_MALLOC) \
+       && !defined(MSWIN_XBOX1)
+      GC_free_malloc_heap_list();
+#   endif
+#   if (defined(USE_WINALLOC) && !defined(MSWIN_XBOX1) \
+        && !defined(MSWINCE)) || defined(CYGWIN32)
+#     ifndef MSWINRT_FLAVOR
+#       ifndef CYGWIN32
+          if (GLOBAL_ALLOC_TEST)
+#       endif
+        {
+          while (GC_n_heap_bases-- > 0) {
+#           ifdef CYGWIN32
+              /* FIXME: Is it OK to use non-GC free() here? */
+#           else
+              GlobalFree(GC_heap_bases[GC_n_heap_bases]);
+#           endif
+            GC_heap_bases[GC_n_heap_bases] = 0;
+          }
+          return;
+        }
+#     endif /* !MSWINRT_FLAVOR */
 #     ifndef CYGWIN32
-        if (GLOBAL_ALLOC_TEST)
-#     endif
-      {
-        while (GC_n_heap_bases-- > 0) {
-#         ifdef CYGWIN32
-            /* FIXME: Is it OK to use non-GC free() here? */
-#         else
-            GlobalFree(GC_heap_bases[GC_n_heap_bases]);
-#         endif
+        /* Avoiding VirtualAlloc leak.  */
+        while (GC_n_heap_bases > 0) {
+          VirtualFree(GC_heap_bases[--GC_n_heap_bases], 0, MEM_RELEASE);
           GC_heap_bases[GC_n_heap_bases] = 0;
         }
-        return;
-      }
-#   endif
-#   ifndef CYGWIN32
-      /* Avoiding VirtualAlloc leak. */
-      while (GC_n_heap_bases > 0) {
-        VirtualFree(GC_heap_bases[--GC_n_heap_bases], 0, MEM_RELEASE);
-        GC_heap_bases[GC_n_heap_bases] = 0;
-      }
-#   endif
+#     endif
+#   endif /* USE_WINALLOC || CYGWIN32 */
   }
-#endif /* USE_WINALLOC || CYGWIN32 */
+#endif /* Windows */
 
 #ifdef AMIGA
 # define GC_AMIGA_AM
@@ -2560,9 +2607,12 @@ GC_INNER void GC_unmap(ptr_t start, size_t bytes)
       /* We immediately remap it to prevent an intervening mmap from    */
       /* accidentally grabbing the same address space.                  */
       {
-#       ifdef CYGWIN32
-          /* Calling mmap() with the new protection flags on an         */
-          /* existing memory map with MAP_FIXED is broken on Cygwin.    */
+#       if defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
+           || defined(HPUX)
+          /* On AIX, mmap(PROT_NONE) fails with ENOMEM unless the       */
+          /* environment variable XPG_SUS_ENV is set to ON.             */
+          /* On Cygwin, calling mmap() with the new protection flags on */
+          /* an existing memory map with MAP_FIXED is broken.           */
           /* However, calling mprotect() on the given address range     */
           /* with PROT_NONE seems to work fine.                         */
           if (mprotect(start_addr, len, PROT_NONE))
@@ -2688,7 +2738,8 @@ GC_INNER void GC_unmap_gap(ptr_t start1, size_t bytes1, ptr_t start2,
 #   else
       if (len != 0) {
         /* Immediately remap as above. */
-#       ifdef CYGWIN32
+#       if defined(AIX) || defined(CYGWIN32) || defined(HAIKU) \
+           || defined(HPUX)
           if (mprotect(start_addr, len, PROT_NONE))
             ABORT("mprotect(PROT_NONE) failed");
 #       else
@@ -2874,8 +2925,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         count = GC_GWW_BUF_LEN;
         /* GetWriteWatch is documented as returning non-zero when it    */
         /* fails, but the documentation doesn't explicitly say why it   */
-        /* would fail or what its behaviour will be if it fails.        */
-        /* It does appear to fail, at least on recent W2K instances, if */
+        /* would fail or what its behavior will be if it fails.  It     */
+        /* does appear to fail, at least on recent Win2K instances, if  */
         /* the underlying memory was not allocated with the appropriate */
         /* flag.  This is common if GC_enable_incremental is called     */
         /* shortly after GC initialization.  To avoid modifying the     */
@@ -2886,12 +2937,11 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
         /* loop condition. Since each partial call will reset the       */
         /* status of some pages, this should eventually terminate even  */
         /* in the overflow case.                                        */
-        if (GetWriteWatch_func(WRITE_WATCH_FLAG_RESET,
-                               GC_heap_sects[i].hs_start,
-                               GC_heap_sects[i].hs_bytes,
-                               pages,
-                               &count,
-                               &page_size) != 0) {
+        if ((*(GetWriteWatch_type)(word)GetWriteWatch_func)(
+                                        WRITE_WATCH_FLAG_RESET,
+                                        GC_heap_sects[i].hs_start,
+                                        GC_heap_sects[i].hs_bytes,
+                                        pages, &count, &page_size) != 0) {
           static int warn_count = 0;
           struct hblk * start = (struct hblk *)GC_heap_sects[i].hs_start;
           static struct hblk *last_warned = 0;
@@ -3073,11 +3123,13 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #ifndef DARWIN
   STATIC SIG_HNDLR_PTR GC_old_segv_handler = 0;
                         /* Also old MSWIN32 ACCESS_VIOLATION filter */
-# if !defined(MSWIN32) && !defined(MSWINCE)
+# if defined(FREEBSD) || defined(HPUX) || defined(HURD) || defined(LINUX)
     STATIC SIG_HNDLR_PTR GC_old_bus_handler = 0;
-#   if defined(FREEBSD) || defined(HURD) || defined(HPUX)
+#   ifndef LINUX
       STATIC GC_bool GC_old_bus_handler_used_si = FALSE;
 #   endif
+# endif
+# if !defined(MSWIN32) && !defined(MSWINCE)
     STATIC GC_bool GC_old_segv_handler_used_si = FALSE;
 # endif /* !MSWIN32 */
 #endif /* !DARWIN */
@@ -3278,33 +3330,8 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 # endif
 #endif /* !DARWIN */
 
-#ifdef USE_MUNMAP
-  /* MPROTECT_VDB cannot deal with address space holes (for now),   */
-  /* so if the collector is configured with both MPROTECT_VDB and   */
-  /* USE_MUNMAP then, as a work around, select only one of them     */
-  /* during GC_init or GC_enable_incremental.                       */
-  GC_INNER GC_bool GC_dirty_init(void)
-  {
-    if (GC_unmap_threshold != 0) {
-      if (GETENV("GC_UNMAP_THRESHOLD") != NULL
-          || GETENV("GC_FORCE_UNMAP_ON_GCOLLECT") != NULL
-          || GC_has_unmapped_memory()) {
-        WARN("Can't maintain mprotect-based dirty bits"
-             " in case of unmapping\n", 0);
-        return FALSE;
-      }
-      GC_unmap_threshold = 0; /* in favor of incremental collection */
-      WARN("Memory unmapping is disabled as incompatible"
-           " with MPROTECT_VDB\n", 0);
-    }
-    return GC_mprotect_dirty_init();
-  }
-#else
-# define GC_mprotect_dirty_init GC_dirty_init
-#endif /* !USE_MUNMAP */
-
 #if !defined(DARWIN)
-  GC_INNER GC_bool GC_mprotect_dirty_init(void)
+  GC_INNER GC_bool GC_dirty_init(void)
   {
 #   if !defined(MSWIN32) && !defined(MSWINCE)
       struct sigaction act, oldact;
@@ -3359,9 +3386,6 @@ GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void)
 #       endif
       } else {
         GC_old_bus_handler = (SIG_HNDLR_PTR)(signed_word)oldact.sa_handler;
-#       if !defined(LINUX)
-          GC_old_bus_handler_used_si = FALSE;
-#       endif
       }
       if (GC_old_bus_handler == (SIG_HNDLR_PTR)(signed_word)SIG_IGN) {
         WARN("Previously ignored bus error!?\n", 0);
@@ -4043,6 +4067,9 @@ STATIC void *GC_mprotect_thread(void *arg)
     msg.data[0] = 0;
 # endif
 
+# if defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
+    (void)pthread_setname_np("GC-mprotect");
+# endif
 # if defined(THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
     GC_darwin_register_mach_handler_thread(mach_thread_self());
 # endif
@@ -4135,7 +4162,7 @@ STATIC void *GC_mprotect_thread(void *arg)
   }
 #endif /* BROKEN_EXCEPTION_HANDLING */
 
-GC_INNER GC_bool GC_mprotect_dirty_init(void)
+GC_INNER GC_bool GC_dirty_init(void)
 {
   kern_return_t r;
   mach_port_t me;
@@ -4225,6 +4252,9 @@ GC_INNER GC_bool GC_mprotect_dirty_init(void)
       }
     }
 # endif /* BROKEN_EXCEPTION_HANDLING  */
+# if defined(CPPCHECK)
+    GC_noop1((word)GC_ports.os_callback[0]);
+# endif
   return TRUE;
 }
 
@@ -4446,6 +4476,7 @@ catch_exception_raise(mach_port_t exception_port GC_ATTR_UNUSED,
 #ifndef HAVE_INCREMENTAL_PROTECTION_NEEDS
   GC_API int GC_CALL GC_incremental_protection_needs(void)
   {
+    GC_ASSERT(GC_is_initialized);
     return GC_PROTECTS_NONE;
   }
 #endif /* !HAVE_INCREMENTAL_PROTECTION_NEEDS */
@@ -4622,7 +4653,11 @@ GC_INNER void GC_save_callers(struct callinfo info[NFRAMES])
 #endif
 
    for (; !((word)fp HOTTER_THAN (word)frame)
-          && !((word)GC_stackbottom HOTTER_THAN (word)fp)
+#         ifndef THREADS
+            && !((word)GC_stackbottom HOTTER_THAN (word)fp)
+#         elif defined(STACK_GROWS_UP)
+            && fp != NULL
+#         endif
           && nframes < NFRAMES;
         fp = (struct frame *)((long) fp -> FR_SAVFP + BIAS), nframes++) {
 #     if NARGS > 0
@@ -4650,7 +4685,6 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
 {
     int i;
     static int reentry_count = 0;
-    GC_bool stop = FALSE;
     DCL_LOCK_STATE;
 
     /* FIXME: This should probably use a different lock, so that we     */
@@ -4664,8 +4698,13 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
 #   else
       GC_err_printf("\tCall chain at allocation:\n");
 #   endif
-    for (i = 0; i < NFRAMES && !stop; i++) {
-        if (info[i].ci_pc == 0) break;
+    for (i = 0; i < NFRAMES; i++) {
+#       if defined(LINUX) && !defined(SMALL_CONFIG)
+          GC_bool stop = FALSE;
+#       endif
+
+        if (0 == info[i].ci_pc)
+          break;
 #       if NARGS > 0
         {
           int j;
@@ -4705,7 +4744,7 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
           }
 #         if defined(LINUX) && !defined(SMALL_CONFIG)
             /* Try for a line number. */
-            {
+            do {
                 FILE *pipe;
 #               define EXE_SZ 100
                 static char exe_name[EXE_SZ];
@@ -4719,16 +4758,18 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
                 char preload_buf[PRELOAD_SZ];
                 static GC_bool found_exe_name = FALSE;
                 static GC_bool will_fail = FALSE;
-                int ret_code;
+
                 /* Try to get it via a hairy and expensive scheme.      */
                 /* First we get the name of the executable:             */
-                if (will_fail) goto out;
+                if (will_fail)
+                  break;
                 if (!found_exe_name) {
-                  ret_code = readlink("/proc/self/exe", exe_name, EXE_SZ);
+                  int ret_code = readlink("/proc/self/exe", exe_name, EXE_SZ);
+
                   if (ret_code < 0 || ret_code >= EXE_SZ
                       || exe_name[0] != '/') {
                     will_fail = TRUE;   /* Don't try again. */
-                    goto out;
+                    break;
                   }
                   exe_name[ret_code] = '\0';
                   found_exe_name = TRUE;
@@ -4745,7 +4786,7 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
                   size_t old_len = strlen(old_preload);
                   if (old_len >= PRELOAD_SZ) {
                     will_fail = TRUE;
-                    goto out;
+                    break;
                   }
                   BCOPY(old_preload, preload_buf, old_len + 1);
                   unsetenv ("LD_PRELOAD");
@@ -4755,21 +4796,22 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
                     && 0 != setenv ("LD_PRELOAD", preload_buf, 0)) {
                   WARN("Failed to reset LD_PRELOAD\n", 0);
                 }
-                if (pipe == NULL
-                    || (result_len = fread(result_buf, 1,
-                                           RESULT_SZ - 1, pipe)) == 0) {
-                  if (pipe != NULL) pclose(pipe);
+                if (NULL == pipe) {
                   will_fail = TRUE;
-                  goto out;
+                  break;
+                }
+                result_len = fread(result_buf, 1, RESULT_SZ - 1, pipe);
+                (void)pclose(pipe);
+                if (0 == result_len) {
+                  will_fail = TRUE;
+                  break;
                 }
                 if (result_buf[result_len - 1] == '\n') --result_len;
                 result_buf[result_len] = 0;
                 if (result_buf[0] == '?'
                     || (result_buf[result_len-2] == ':'
-                        && result_buf[result_len-1] == '0')) {
-                    pclose(pipe);
-                    goto out;
-                }
+                        && result_buf[result_len-1] == '0'))
+                  break;
                 /* Get rid of embedded newline, if any.  Test for "main" */
                 {
                   char * nl = strchr(result_buf, '\n');
@@ -4778,8 +4820,10 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
                     *nl = ':';
                   }
                   if (strncmp(result_buf, "main",
-                              nl != NULL ? (size_t)(nl - result_buf)
-                                         : result_len) == 0) {
+                              nl != NULL
+                                ? (size_t)((word)nl /* a cppcheck workaround */
+                                           - COVERT_DATAFLOW(result_buf))
+                                : result_len) == 0) {
                     stop = TRUE;
                   }
                 }
@@ -4790,10 +4834,12 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
                                  " [0x%lx]", (unsigned long)info[i].ci_pc);
                   result_buf[sizeof(result_buf) - 1] = '\0';
                 }
+#               if defined(CPPCHECK)
+                  GC_noop1((unsigned char)name[0]);
+                                /* name computed previously is discarded */
+#               endif
                 name = result_buf;
-                pclose(pipe);
-                out:;
-            }
+            } while (0);
 #         endif /* LINUX */
           GC_err_printf("\t\t%s\n", name);
 #         if defined(GC_HAVE_BUILTIN_BACKTRACE) \
@@ -4802,6 +4848,10 @@ GC_INNER void GC_print_callers(struct callinfo info[NFRAMES])
               free(sym_name);   /* May call GC_[debug_]free; that's OK  */
 #         endif
         }
+#       if defined(LINUX) && !defined(SMALL_CONFIG)
+          if (stop)
+            break;
+#       endif
     }
     LOCK();
       --reentry_count;

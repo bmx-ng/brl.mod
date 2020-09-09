@@ -4,6 +4,7 @@
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
  * Copyright (c) 2000-2009 by Hewlett-Packard Development Company.
  * All rights reserved.
+ * Copyright (c) 2008-2020 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -176,11 +177,20 @@
 
 #if defined(GC_DLL) && !defined(GC_API)
 
-# if defined(__MINGW32__) || defined(__CEGCC__)
-#   if defined(GC_BUILD) || defined(__MINGW32_DELAY_LOAD__)
+# if defined(__CEGCC__)
+#   if defined(GC_BUILD)
 #     define GC_API __declspec(dllexport)
 #   else
 #     define GC_API __declspec(dllimport)
+#   endif
+
+# elif defined(__MINGW32__)
+#   if defined(__cplusplus) && defined(GC_BUILD)
+#     define GC_API extern __declspec(dllexport)
+#   elif defined(GC_BUILD) || defined(__MINGW32_DELAY_LOAD__)
+#     define GC_API __declspec(dllexport)
+#   else
+#     define GC_API extern __declspec(dllimport)
 #   endif
 
 # elif defined(_MSC_VER) || defined(__DMC__) || defined(__BORLANDC__) \
@@ -273,6 +283,14 @@
 #   define GC_ATTR_NONNULL(argnum) __attribute__((__nonnull__(argnum)))
 # else
 #   define GC_ATTR_NONNULL(argnum) /* empty */
+# endif
+#endif
+
+#ifndef GC_ATTR_CONST
+# if GC_GNUC_PREREQ(4, 0)
+#   define GC_ATTR_CONST __attribute__((__const__))
+# else
+#   define GC_ATTR_CONST /* empty */
 # endif
 #endif
 
@@ -403,5 +421,34 @@
 # endif
 
 #endif /* GC_PTHREADS */
+
+#ifdef __cplusplus
+
+#ifndef GC_ATTR_EXPLICIT
+# if __cplusplus >= 201103L && !defined(__clang__) || _MSVC_LANG >= 201103L \
+     || defined(CPPCHECK)
+#   define GC_ATTR_EXPLICIT explicit
+# else
+#   define GC_ATTR_EXPLICIT /* empty */
+# endif
+#endif
+
+#ifndef GC_NOEXCEPT
+# if defined(__DMC__) || (defined(__BORLANDC__) \
+        && (defined(_RWSTD_NO_EXCEPTIONS) || defined(_RWSTD_NO_EX_SPEC))) \
+     || (defined(_MSC_VER) && defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS) \
+     || (defined(__WATCOMC__) && !defined(_CPPUNWIND))
+#   define GC_NOEXCEPT /* empty */
+#   ifndef GC_NEW_ABORTS_ON_OOM
+#     define GC_NEW_ABORTS_ON_OOM
+#   endif
+# elif __cplusplus >= 201103L || _MSVC_LANG >= 201103L
+#   define GC_NOEXCEPT noexcept
+# else
+#   define GC_NOEXCEPT throw()
+# endif
+#endif
+
+#endif /* __cplusplus */
 
 #endif

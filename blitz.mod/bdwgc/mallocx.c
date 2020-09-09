@@ -27,13 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef MSWINCE
-# ifndef WIN32_LEAN_AND_MEAN
-#   define WIN32_LEAN_AND_MEAN 1
-# endif
-# define NOSERVICE
-# include <windows.h>
-#else
+#ifndef MSWINCE
 # include <errno.h>
 #endif
 
@@ -349,8 +343,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
         struct hblk * hbp;
         hdr * hhdr;
 
-        rlh += lg;
-        while ((hbp = *rlh) != 0) {
+        for (rlh += lg; (hbp = *rlh) != NULL; ) {
             hhdr = HDR(hbp);
             *rlh = hhdr -> hb_next;
             GC_ASSERT(hhdr -> hb_sz == lb);
@@ -441,7 +434,7 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
     /* Next try to allocate a new block worth of objects of this size.  */
     {
         struct hblk *h = GC_allochblk(lb, k, 0);
-        if (h != 0) {
+        if (h /* != NULL */) { /* CPPCHECK */
           if (IS_UNCOLLECTABLE(k)) GC_set_hdr_marks(HDR(h));
           GC_bytes_allocd += HBLKSIZE - HBLKSIZE % lb;
 #         ifdef PARALLEL_MARK
@@ -610,15 +603,17 @@ GC_API GC_ATTR_MALLOC char * GC_CALL GC_strndup(const char *str, size_t size)
   }
 #endif /* GC_REQUIRE_WCSDUP */
 
-GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
-{
-  return GC_malloc(lb);
-}
+#ifndef CPPCHECK
+  GC_API void * GC_CALL GC_malloc_stubborn(size_t lb)
+  {
+    return GC_malloc(lb);
+  }
 
-GC_API void GC_CALL GC_change_stubborn(const void *p GC_ATTR_UNUSED)
-{
-  /* Empty. */
-}
+  GC_API void GC_CALL GC_change_stubborn(const void *p GC_ATTR_UNUSED)
+  {
+    /* Empty. */
+  }
+#endif /* !CPPCHECK */
 
 GC_API void GC_CALL GC_end_stubborn_change(const void *p)
 {

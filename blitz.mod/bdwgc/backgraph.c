@@ -63,9 +63,9 @@ typedef struct back_edges_struct {
   signed_word height;
                 /* Longest path through unreachable nodes to this node  */
                 /* that we found using depth first search.              */
+# define HEIGHT_UNKNOWN      (-2)
+# define HEIGHT_IN_PROGRESS  (-1)
 
-#   define HEIGHT_UNKNOWN ((signed_word)(-2))
-#   define HEIGHT_IN_PROGRESS ((signed_word)(-1))
   ptr_t edges[MAX_IN];
   struct back_edges_struct *cont;
                 /* Pointer to continuation structure; we use only the   */
@@ -240,7 +240,7 @@ static void add_edge(ptr_t p, ptr_t q)
 
       if (((word)pred & FLAG_MANY) != 0) {
         n_edges = e -> n_edges;
-      } else if (pred != NULL && ((word)pred & 1) == 0) {
+      } else if (((word)COVERT_DATAFLOW(pred) & 1) == 0) {
         /* A misinterpreted freelist link.      */
         n_edges = 1;
         local = -1;

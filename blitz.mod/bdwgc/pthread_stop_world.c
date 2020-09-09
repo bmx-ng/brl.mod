@@ -4,6 +4,7 @@
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
  * Copyright (c) 2000-2009 by Hewlett-Packard Development Company.
  * All rights reserved.
+ * Copyright (c) 2008-2020 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -1179,17 +1180,17 @@ GC_INNER void GC_start_world(void)
                     /* the list of functions which synchronize memory). */
 #   endif
     n_live_threads = GC_restart_all();
-#   ifndef GC_OPENBSD_UTHREADS
+#   ifdef GC_OPENBSD_UTHREADS
+      (void)n_live_threads;
+#   elif defined(GC_NETBSD_THREADS_WORKAROUND)
       if (GC_retry_signals)
         n_live_threads = resend_lost_signals(n_live_threads, GC_restart_all);
-#     ifdef GC_NETBSD_THREADS_WORKAROUND
-        suspend_restart_barrier(n_live_threads);
-#     else
-        if (GC_retry_signals)
-          suspend_restart_barrier(n_live_threads);
-#     endif
+      suspend_restart_barrier(n_live_threads);
 #   else
-      (void)n_live_threads;
+      if (GC_retry_signals) {
+        n_live_threads = resend_lost_signals(n_live_threads, GC_restart_all);
+        suspend_restart_barrier(n_live_threads);
+      }
 #   endif
 #   ifdef DEBUG_THREADS
       GC_log_printf("World started\n");

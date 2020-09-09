@@ -1,5 +1,5 @@
 # Copyright (c) 2005-2006 Hewlett-Packard Development Company, L.P.
-# Copyright (c) 2009-2018 Ivan Maidanski
+# Copyright (c) 2009-2019 Ivan Maidanski
 #
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -12,7 +12,7 @@
 
 dnl Process this file with autoconf to produce configure.
 
-AC_INIT([libatomic_ops],[7.6.10],https://github.com/ivmai/libatomic_ops/issues)
+AC_INIT([libatomic_ops],[7.7.0],https://github.com/ivmai/libatomic_ops/issues)
 
 AC_PREREQ(2.61)
 AC_CANONICAL_TARGET([])
@@ -42,7 +42,7 @@ if test "$GCC" = yes; then
   fi
 
   case "$host" in
-    *-*-cygwin* | *-*-mingw*)
+    *-*-cygwin* | *-*-mingw* | *-*-msys*)
       # Cygwin and Mingw[-w32/64] do not need -fPIC.
       AC_MSG_RESULT([not needed])
       ;;
@@ -219,7 +219,7 @@ if test x$have_pthreads = xtrue; then
       # against it.
       THREADDLLIBS=
       ;;
-    *-*-mingw*)
+    *-*-mingw* | *-*-msys*)
       # Use Win32 threads for tests anyway.
       THREADDLLIBS=
       # Skip test_atomic_pthreads.

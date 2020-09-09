@@ -36,9 +36,6 @@ struct roots GC_static_roots[MAX_ROOT_SETS];
 
 int GC_no_dls = 0;      /* Register dynamic library data segments.      */
 
-static int n_root_sets = 0;
-        /* GC_static_roots[0..n_root_sets) contains the valid root sets. */
-
 #if !defined(NO_DEBUGGING) || defined(GC_ASSERTIONS)
   /* Should return the same value as GC_root_size.      */
   GC_INNER word GC_compute_root_size(void)
@@ -271,15 +268,15 @@ void GC_add_roots_inner(ptr_t b, ptr_t e, GC_bool tmp)
     n_root_sets++;
 }
 
-static GC_bool roots_were_cleared = FALSE;
-
 GC_API void GC_CALL GC_clear_roots(void)
 {
     DCL_LOCK_STATE;
 
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
     LOCK();
-    roots_were_cleared = TRUE;
+#   ifdef THREADS
+      GC_roots_were_cleared = TRUE;
+#   endif
     n_root_sets = 0;
     GC_root_size = 0;
 #   if !defined(MSWIN32) && !defined(MSWINCE) && !defined(CYGWIN32)
@@ -502,8 +499,11 @@ STATIC void GC_remove_tmp_roots(void)
 GC_INNER ptr_t GC_approx_sp(void)
 {
     volatile word sp;
-#   if defined(CPPCHECK) || (__GNUC__ >= 4 /* GC_GNUC_PREREQ(4, 0) */ \
-                             && !defined(STACK_NOT_SCANNED))
+#   if defined(S390) && !defined(CPPCHECK) && (__clang_major__ < 8)
+        /* Workaround a crash in SystemZTargetLowering of libLLVM-3.8.  */
+        sp = (word)&sp;
+#   elif defined(CPPCHECK) || (__GNUC__ >= 4 /* GC_GNUC_PREREQ(4, 0) */ \
+                               && !defined(STACK_NOT_SCANNED))
         /* TODO: Use GC_GNUC_PREREQ after fixing a bug in cppcheck. */
         sp = (word)__builtin_frame_address(0);
 #   else
@@ -529,7 +529,10 @@ struct exclusion GC_excl_table[MAX_EXCLUSIONS];
                                         -- address order.
 */
 
-STATIC size_t GC_excl_table_entries = 0;/* Number of entries in use.      */
+GC_API void GC_CALL GC_clear_exclusion_table(void)
+{
+    GC_excl_table_entries = 0;
+}
 
 /* Return the first exclusion range that includes an address >= start_addr */
 /* Assumes the exclusion table contains at least one entry (namely the     */
@@ -537,8 +540,10 @@ STATIC size_t GC_excl_table_entries = 0;/* Number of entries in use.      */
 STATIC struct exclusion * GC_next_exclusion(ptr_t start_addr)
 {
     size_t low = 0;
-    size_t high = GC_excl_table_entries - 1;
+    size_t high;
 
+    GC_ASSERT(GC_excl_table_entries > 0);
+    high = GC_excl_table_entries - 1;
     while (high > low) {
         size_t mid = (low + high) >> 1;
 
@@ -773,27 +778,19 @@ STATIC void GC_push_all_stack_part_eager_sections(ptr_t lo, ptr_t hi,
 
 #endif /* !THREADS */
 
-                        /* Push enough of the current stack eagerly to  */
-                        /* ensure that callee-save registers saved in   */
-                        /* GC frames are scanned.                       */
-                        /* In the non-threads case, schedule entire     */
-                        /* stack for scanning.                          */
-                        /* The second argument is a pointer to the      */
-                        /* (possibly null) thread context, for          */
-                        /* (currently hypothetical) more precise        */
-                        /* stack scanning.                              */
-/*
- * In the absence of threads, push the stack contents.
- * In the presence of threads, push enough of the current stack
- * to ensure that callee-save registers saved in collector frames have been
- * seen.
- * TODO: Merge it with per-thread stuff.
- */
+/* Push enough of the current stack eagerly to ensure that callee-save  */
+/* registers saved in GC frames are scanned.  In the non-threads case,  */
+/* schedule entire stack for scanning.  The 2nd argument is a pointer   */
+/* to the (possibly null) thread context, for (currently hypothetical)  */
+/* more precise stack scanning.  In the presence of threads, push       */
+/* enough of the current stack to ensure that callee-save registers     */
+/* saved in collector frames have been seen.                            */
+/* TODO: Merge it with per-thread stuff. */
 STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
                                   void * context GC_ATTR_UNUSED)
 {
 #   if defined(THREADS)
-        if (0 == cold_gc_frame) return;
+        /* cold_gc_frame is non-NULL.   */
 #       ifdef STACK_GROWS_DOWN
           GC_push_all_eager(GC_approx_sp(), cold_gc_frame);
           /* For IA64, the register stack backing store is handled      */
@@ -838,27 +835,6 @@ STATIC void GC_push_current_stack(ptr_t cold_gc_frame,
 
 GC_INNER void (*GC_push_typed_structures)(void) = 0;
 
-                        /* Push GC internal roots.  These are normally  */
-                        /* included in the static data segment, and     */
-                        /* Thus implicitly pushed.  But we must do this */
-                        /* explicitly if normal root processing is      */
-                        /* disabled.                                    */
-/*
- * Push GC internal roots.  Only called if there is some reason to believe
- * these would not otherwise get registered.
- */
-STATIC void GC_push_gc_structures(void)
-{
-#   ifndef GC_NO_FINALIZATION
-      GC_push_finalizer_structures();
-#   endif
-#   if defined(THREADS)
-      GC_push_thread_structures();
-#   endif
-    if( GC_push_typed_structures )
-      GC_push_typed_structures();
-}
-
 GC_INNER void GC_cond_register_dynamic_libraries(void)
 {
 # if (defined(DYNAMIC_LOADING) && !defined(MSWIN_XBOX1)) \
@@ -873,85 +849,91 @@ GC_INNER void GC_cond_register_dynamic_libraries(void)
 
 STATIC void GC_push_regs_and_stack(ptr_t cold_gc_frame)
 {
+#   ifdef THREADS
+      if (NULL == cold_gc_frame)
+        return; /* GC_push_all_stacks should push registers and stack */
+#   endif
     GC_with_callee_saves_pushed(GC_push_current_stack, cold_gc_frame);
 }
 
-/*
- * Call the mark routines (GC_push_one for a single pointer,
- * GC_push_conditional on groups of pointers) on every top level
- * accessible pointer.
- * If all is FALSE, arrange to push only possibly altered values.
- * Cold_gc_frame is an address inside a GC frame that
- * remains valid until all marking is complete.
- * A zero value indicates that it's OK to miss some
- * register values.
- */
+/* Call the mark routines (GC_push_one for a single pointer,            */
+/* GC_push_conditional on groups of pointers) on every top level        */
+/* accessible pointer.  If all is false, arrange to push only possibly  */
+/* altered values.  Cold_gc_frame is an address inside a GC frame that  */
+/* remains valid until all marking is complete; a NULL value indicates  */
+/* that it is OK to miss some register values.  Called with the         */
+/* allocation lock held.                                                */
 GC_INNER void GC_push_roots(GC_bool all, ptr_t cold_gc_frame GC_ATTR_UNUSED)
 {
     int i;
     unsigned kind;
 
-    /*
-     * Next push static data.  This must happen early on, since it's
-     * not robust against mark stack overflow.
-     */
-     /* Re-register dynamic libraries, in case one got added.           */
-     /* There is some argument for doing this as late as possible,      */
-     /* especially on win32, where it can change asynchronously.        */
-     /* In those cases, we do it here.  But on other platforms, it's    */
-     /* not safe with the world stopped, so we do it earlier.           */
-#      if !defined(REGISTER_LIBRARIES_EARLY)
-         GC_cond_register_dynamic_libraries();
-#      endif
+    /* Next push static data.  This must happen early on, since it is   */
+    /* not robust against mark stack overflow.                          */
+    /* Re-register dynamic libraries, in case one got added.            */
+    /* There is some argument for doing this as late as possible,       */
+    /* especially on win32, where it can change asynchronously.         */
+    /* In those cases, we do it here.  But on other platforms, it's     */
+    /* not safe with the world stopped, so we do it earlier.            */
+#   if !defined(REGISTER_LIBRARIES_EARLY)
+        GC_cond_register_dynamic_libraries();
+#   endif
 
-     /* Mark everything in static data areas                             */
-       for (i = 0; i < n_root_sets; i++) {
-         GC_push_conditional_with_exclusions(
+    /* Mark everything in static data areas.                            */
+    for (i = 0; i < n_root_sets; i++) {
+        GC_push_conditional_with_exclusions(
                              GC_static_roots[i].r_start,
                              GC_static_roots[i].r_end, all);
-       }
+    }
 
-     /* Mark all free list header blocks, if those were allocated from  */
-     /* the garbage collected heap.  This makes sure they don't         */
-     /* disappear if we are not marking from static data.  It also      */
-     /* saves us the trouble of scanning them, and possibly that of     */
-     /* marking the freelists.                                          */
-       for (kind = 0; kind < GC_n_kinds; kind++) {
-         void *base = GC_base(GC_obj_kinds[kind].ok_freelist);
-         if (0 != base) {
-           GC_set_mark_bit(base);
-         }
-       }
+    /* Mark all free list header blocks, if those were allocated from   */
+    /* the garbage collected heap.  This makes sure they don't          */
+    /* disappear if we are not marking from static data.  It also       */
+    /* saves us the trouble of scanning them, and possibly that of      */
+    /* marking the freelists.                                           */
+    for (kind = 0; kind < GC_n_kinds; kind++) {
+        void *base = GC_base(GC_obj_kinds[kind].ok_freelist);
+        if (base != NULL) {
+            GC_set_mark_bit(base);
+        }
+    }
 
-     /* Mark from GC internal roots if those might otherwise have       */
-     /* been excluded.                                                  */
-       if (GC_no_dls || roots_were_cleared) {
-           GC_push_gc_structures();
-       }
+    /* Mark from GC internal roots if those might otherwise have        */
+    /* been excluded.                                                   */
+#   ifndef GC_NO_FINALIZATION
+        GC_push_finalizer_structures();
+#   endif
+#   ifdef THREADS
+        if (GC_no_dls || GC_roots_were_cleared)
+            GC_push_thread_structures();
+#   endif
+    if (GC_push_typed_structures)
+        GC_push_typed_structures();
 
-     /* Mark thread local free lists, even if their mark        */
-     /* descriptor excludes the link field.                     */
-     /* If the world is not stopped, this is unsafe.  It is     */
-     /* also unnecessary, since we will do this again with the  */
-     /* world stopped.                                          */
-#      if defined(THREAD_LOCAL_ALLOC)
-         if (GC_world_stopped) GC_mark_thread_local_free_lists();
-#      endif
+    /* Mark thread local free lists, even if their mark        */
+    /* descriptor excludes the link field.                     */
+    /* If the world is not stopped, this is unsafe.  It is     */
+    /* also unnecessary, since we will do this again with the  */
+    /* world stopped.                                          */
+#   if defined(THREAD_LOCAL_ALLOC)
+        if (GC_world_stopped)
+            GC_mark_thread_local_free_lists();
+#   endif
 
-    /*
-     * Now traverse stacks, and mark from register contents.
-     * These must be done last, since they can legitimately overflow
-     * the mark stack.
-     * This is usually done by saving the current context on the
-     * stack, and then just tracing from the stack.
-     */
-#    ifndef STACK_NOT_SCANNED
-       GC_push_regs_and_stack(cold_gc_frame);
-#    endif
+    /* Now traverse stacks, and mark from register contents.    */
+    /* These must be done last, since they can legitimately     */
+    /* overflow the mark stack.  This is usually done by saving */
+    /* the current context on the stack, and then just tracing  */
+    /* from the stack.                                          */
+#   ifndef STACK_NOT_SCANNED
+        GC_push_regs_and_stack(cold_gc_frame);
+#   endif
 
-    if (GC_push_other_roots != 0) (*GC_push_other_roots)();
+    if (GC_push_other_roots != 0) {
         /* In the threads case, this also pushes thread stacks. */
         /* Note that without interior pointer recognition lots  */
         /* of stuff may have been pushed already, and this      */
         /* should be careful about mark stack overflows.        */
+        (*GC_push_other_roots)();
+    }
 }

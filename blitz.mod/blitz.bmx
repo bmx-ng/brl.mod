@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.21"
+ModuleInfo "Version: 1.22"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 '
+ModuleInfo "History: 1.22"
+ModuleInfo "History: Update to bdwgc 8.1.0.fbcdf44"
 ModuleInfo "History: 1.21"
 ModuleInfo "History: Update to bdwgc 7.7.0.d76816e"
 ModuleInfo "History: 1.20"
