@@ -33,7 +33,7 @@ ModuleInfo "History: Ripped out a bunch of dead code"
 ModuleInfo "History: 1.05 Release"
 ModuleInfo "History: Added checks to prevent invalid textures deletes"
 
-?Not opengles And Not nx And Not raspberrypi
+?Not opengles And Not nx And Not raspberrypi And Not haiku
 
 Import BRL.Max2D
 Import BRL.GLGraphics

@@ -73,6 +73,15 @@ typedef sem_t bb_sem_t;
 #define bb_sem_post sem_post
 #define bb_sem_timed_wait sem_timedwait
 
+#elif __HAIKU__
+#include <semaphore.h>
+typedef sem_t bb_sem_t;
+#define bb_sem_init(SEMPTR,COUNT) (sem_init((SEMPTR),0,(COUNT))>=0)
+#define bb_sem_destroy sem_destroy
+#define bb_sem_wait sem_wait
+#define bb_sem_post sem_post
+#define bb_sem_timed_wait sem_timedwait
+
 #endif
 
 #ifdef _WIN32
@@ -106,6 +115,7 @@ struct BBThread{
 #endif
 };
 
+void bbThreadPreStartup();
 void			bbThreadStartup();
 
 BBThread*		bbThreadCreate( BBThreadProc entry,BBObject *data );

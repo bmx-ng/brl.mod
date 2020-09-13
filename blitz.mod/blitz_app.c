@@ -343,6 +343,67 @@ int bbIsMainThread(){
 //	return pthread_self()==_mainThread;
 }
 
+#elif __HAIKU__
+
+#include <unistd.h>
+#include <pthread.h>
+#include <limits.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <kernel/OS.h>
+
+static int base_time;
+static pthread_t _mainThread;
+
+static void startup(){
+	
+	_mainThread=pthread_self();
+
+	bigtime_t uptime = system_time();
+	base_time=bbMilliSecs()-uptime/1000;
+}
+
+//***** ThreadSafe! *****
+void bbDelay( int millis ){
+	int i,e;
+	
+	if( millis<0 ) return;
+
+	e=bbMilliSecs()+millis;
+	
+	for( i=0;;++i ){
+		int t=e-bbMilliSecs();
+		if( t<=0 ){
+			if( !i ) usleep( 0 );	//always sleep at least once.
+			break;
+		}
+		usleep( t*1000 );
+	}
+}
+
+#if __STDC_VERSION__ >= 199901L
+extern void bbUDelay( int microseconds );
+#else
+void bbUDelay( int microseconds ) {
+	if (microseconds <0) return
+	usleep( microseconds );
+}
+#endif
+
+//***** ThreadSafe! *****
+int bbMilliSecs(){
+	int t;
+	struct timeval tv;
+	gettimeofday(&tv,0);
+	t=tv.tv_sec*1000;
+	t+=tv.tv_usec/1000;
+	return t-base_time;
+}
+
+int bbIsMainThread(){
+	return pthread_self()==_mainThread;
+}
+
 #endif
 
 
@@ -429,6 +490,7 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	
 	bbGCStackTop=ebp+28;
 	
+	bbThreadPreStartup();
 	bbGCStartup();
 	bbThreadStartup();
 	
@@ -499,7 +561,39 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 
 //	bbThreadStartup();
 	bbGCStartup();
+
+#elif __HAIKU__
+
+	#include <kernel/image.h>
+
+	bbThreadPreStartup();
+	bbGCStartup();
+	bbThreadStartup();
+
+	char buf[MAXPATHLEN];
+
+	getcwd( buf,MAXPATHLEN );
+	bbLaunchDir=bbStringFromUTF8String( buf );
 	
+	image_info info;
+	int cookie;
+	get_next_image_info(B_CURRENT_TEAM, &cookie, &info);
+	
+	snprintf(buf, PATH_MAX, "%s", info.name);
+	char *e;
+	bbAppFile=bbStringFromUTF8String( buf );
+	e=strrchr( buf,'/' );
+	if( e ){
+		*e=0;
+		bbAppDir=bbStringFromUTF8String( buf );
+	}else{
+		bbAppDir=&bbEmptyString;
+	}
+
+	char *d=bbStringToUTF8String( bbAppDir );
+	chdir( d );
+	bbMemFree(d);
+
 #endif
 
 	BBINCREFS( bbLaunchDir );

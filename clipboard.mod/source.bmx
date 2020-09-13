@@ -30,6 +30,8 @@ Import "libclipboard/src/clipboard_win32.c"
 Import "libclipboard/src/clipboard_x11.c"
 ?macos
 Import "libclipboard/src/clipboard_cocoa.m"
+?haiku
+Import "libclipboard/src/clipboard_haiku.cpp"
 ?
 
 Import "glue.c"

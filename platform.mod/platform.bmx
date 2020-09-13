@@ -45,8 +45,10 @@ Import SDL.SDL
 
 ?win32
 Import "win32_glue.c"
-?Not win32 And Not android
+?Not win32 And Not android And Not haiku
 Import "glue.c"
+?haiku
+Import "haiku_glue.c"
 ?
 
 Private
@@ -68,6 +70,8 @@ Function OSVersion:String()
 	Return MacOSVersion()
 ?win32
 	Return WindowsVersion()
+?haiku
+	Return HaikuVersion()
 ?
 End Function
 
@@ -110,11 +114,12 @@ Function MacOSVersion:String()
 End Function
 
 Private
-?win32
 Extern
+?win32
 	Function bmx_os_getwindowsversion(major:Int Var, minor:Int Var)
+?haiku
+	Function bmx_os_gethaikuversion:String()
 End Extern
-?
 Public
 
 Function WindowsVersion:String()
@@ -129,6 +134,19 @@ Function WindowsVersion:String()
 	Local minor:Int
 	bmx_os_getwindowsversion(major, minor)
 	_version = major + "." + minor
+	Return _version
+?
+End Function
+
+Function HaikuVersion:String()
+?Not haiku
+	Return ""
+?haiku
+	If _version Then
+		Return _version
+	End If
+	
+	_version = bmx_os_gethaikuversion()
 	Return _version
 ?
 End Function

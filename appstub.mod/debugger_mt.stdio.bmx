@@ -10,6 +10,8 @@ Include "deref_win32.bmx"
 Include "deref_linux.bmx"
 ?macos
 Include "deref_macos.bmx"
+?haiku
+Include "deref_haiku.bmx"
 ?
 
 
@@ -495,6 +497,8 @@ Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
 	result = DebugDerefPointerLinux(dataSize, ptrDepth, pointer, buffer, res)
 	?macos
 	result = DebugDerefPointerMacos(dataSize, ptrDepth, pointer, buffer, res)
+	?haiku
+	result = DebugDerefPointerHaiku(dataSize, ptrDepth, pointer, buffer, res)
 	?
 
 	If Not res Then
