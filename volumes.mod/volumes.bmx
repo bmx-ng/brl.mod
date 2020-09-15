@@ -69,6 +69,6 @@ Import "vol_win.bmx"
 ?macos
 ModuleInfo "CC_OPTS: -D_DARWIN_FEATURE_64_BIT_INODE"
 Import "vol_mac.bmx"
-?linux
+?haiku
 Import "vol_haiku.bmx"
 ?

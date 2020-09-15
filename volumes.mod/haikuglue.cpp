@@ -24,6 +24,8 @@
 
 #include <FindDirectory.h>
 #include <Path.h>
+#include <VolumeRoster.h>
+#include <StorageDefs.h>
 #include <brl.mod/blitz.mod/blitz.h>
 
 extern "C" {
@@ -38,5 +40,58 @@ BBString * bmx_volumes_getdir(directory_which which) {
 	}
 }
 
-	
+BVolume * bmx_volumes_bvolume_new(BBString * name) {
+	char * n = bbStringToUTF8String(name);
+	BVolumeRoster roster;
+	BVolume vol;
+	while (roster.GetNextVolume(&vol) == B_OK) {
+		char vname[B_FILE_NAME_LENGTH];
+		vol.GetName(vname);
+		if (strcmp(n, vname) == 0) {
+			bbMemFree(n);
+			return new BVolume(vol);
+		}
+	}
+	bbMemFree(n);
+	return NULL;
+}
+
+BBString * bmx_volumes_bvolume_name(BVolume * vol) {
+	char name[B_FILE_NAME_LENGTH];
+	if (vol->GetName(name) == B_OK) {
+		return bbStringFromUTF8String(name);
+	}
+	else {
+		return &bbEmptyString;
+	}
+}
+
+BBLONG bmx_volumes_bvolume_size(BVolume * vol) {
+	return vol->Capacity();
+}
+
+BBLONG bmx_volumes_bvolume_freebytes(BVolume * vol) {
+	return vol->FreeBytes();
+}
+
+void bmx_volumes_bvolume_free(BVolume * vol) {
+	delete vol;
+}
+
+BVolumeRoster * bmx_volumes_list_init() {
+	return new BVolumeRoster();
+}
+
+BVolume * bmx_volumes_next_vol(BVolumeRoster * rost) {
+	BVolume vol;
+	if (rost->GetNextVolume(&vol) == B_OK) {
+		return new BVolume(vol);
+	}
+	return NULL;
+}
+
+void bmx_volumes_list_free(BVolumeRoster * rost) {
+	delete rost;
+}
+
 }

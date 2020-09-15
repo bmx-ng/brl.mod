@@ -28,6 +28,15 @@ Import "haikuglue.cpp"
 
 Extern
 	Function bmx_volumes_getdir:String(which:Int)
+	Function bmx_volumes_bvolume_new:Byte Ptr(name:String)
+	Function bmx_volumes_bvolume_name:String(handle:Byte Ptr)
+	Function bmx_volumes_bvolume_size:Long(handle:Byte Ptr)
+	Function bmx_volumes_bvolume_freebytes:Long(handle:Byte Ptr)
+	Function bmx_volumes_bvolume_free(handle:Byte Ptr)
+	
+	Function bmx_volumes_list_init:Byte Ptr()
+	Function bmx_volumes_next_vol:Byte Ptr(rost:Byte Ptr)
+	Function bmx_volumes_list_free(rost:Byte Ptr)
 End Extern
 
 Global haikuVolume_driver:THaikuVolumeDriver = New THaikuVolumeDriver
@@ -42,38 +51,83 @@ End Type
 
 Type THaikuVolume Extends TVolume
 
-	Field vs:TVolSpace
+	Field vol:TBVolume
 
 	Function Create:THaikuVolume()
-		Local this:THaikuVolume = New THaikuVolume
-		
-		Return this
+		Return New THaikuVolume
 	End Function
 
-
-	
 	Method ListVolumes:TList() Override
-		Local volumes:TList
+		Local volumes:TList = New TList
 		
+		Local vptr:Byte Ptr = bmx_volumes_list_init()
+		
+		While True
+			Local volPtr:Byte Ptr = bmx_volumes_next_vol(vptr)
+			
+			If Not volPtr Then
+				Exit
+			End If
+			
+			Local bvol:TBVolume = New TBVolume(volPtr)
+			If bvol.Name() Then
+			
+				Local volume:THaikuVolume = New THaikuVolume
+				volume.vol = bvol
 
+				volume.volumeName = bvol.Name()
+
+				volume.volumeSize = bvol.Size()
+				volume.volumeFree = bvol.Free()
+			
+				volume.available = True
+
+				volumes.AddLast(volume)
+			End If
+		Wend
+		
+		bmx_volumes_list_free(vptr)
 		
 		Return volumes
 	End Method
 	
 	Method GetVolumeFreeSpace:Long(vol:String) Override
-	
+		Local volume:TBVolume = New TBVolume(vol)
+		If volume.Valid() Then
+			Return volume.Free()
+		End If
+		Return 0
 	End Method
 	
 	Method GetVolumeSize:Long(vol:String) Override
-	
+		Local volume:TBVolume = New TBVolume(vol)
+		If volume.Valid() Then
+			Return volume.Size()
+		End If
+		Return 0
 	End Method
 
 	Method GetVolumeInfo:TVolume(vol:String) Override
+		Local volume:TBVolume = New TBVolume(vol)
+		If volume.Valid() Then
+			Local hv:THaikuVolume = New THaikuVolume
+			hv.vol = volume
 
+			hv.volumeName = volume.Name()
+			'hv.volumeDevice = vs.fs.mountedFileSystem()
+			'volume.volumeType = vs.fs.fileSystemType()
+
+			hv.volumeSize = volume.Size()
+			hv.volumeFree = volume.Free()
+			
+			hv.available = True
+			Return hv
+		End If
+		Return Null
 	End Method
 	
 	Method Refresh() Override
-
+		' noop
 	End Method
 	
 	Method GetUserHomeDir:String() Override
@@ -81,7 +135,7 @@ Type THaikuVolume Extends TVolume
 	End Method
 	
 	Method GetUserDesktopDir:String() Override
-		Return bmx_volumes_getdir(B_USER_DIRECTORY)
+		Return bmx_volumes_getdir(B_USER_DIRECTORY) + "/Desktop"
 	End Method
 	
 	Method GetUserAppDir:String() Override
@@ -98,34 +152,43 @@ Type THaikuVolume Extends TVolume
 
 End Type
 
-Type TVolSpace
-	Field vol:String	
-	Field _size:Long
-	Field _free:Long
-	
-	Function _create:TVolSpace() {  }
-		Local this:TVolSpace = New TVolSpace
-		
-		'this.vol = vol
-		If this.refresh() <> 0 Then
-			Return Null
-		End If
+Type TBVolume
 
-		Return this
-	End Function
+	Field volPtr:Byte Ptr
 	
-	Method refresh:Int()
-		'Return bmx_volumes_volspace_refresh(vol, Varptr _size, Varptr _free)
+	Method New(name:String)
+		volPtr = bmx_volumes_bvolume_new(name)
 	End Method
 	
-	Method size:Long()
-		Return _size
+	Method New(volPtr:Byte Ptr)
+		Self.VolPtr = volPtr
 	End Method
 	
-	Method free:Long()
-		Return _free
+	Method Valid:Int()
+		Return volPtr <> Null
 	End Method
+	
+	Method Name:String()
+		Return bmx_volumes_bvolume_name(volPtr)
+	End Method
+	
+	Method Size:Long()
+		Return bmx_volumes_bvolume_size(volPtr)
+	End Method
+	
+	Method Free:Long()
+		Return bmx_volumes_bvolume_freebytes(volPtr)
+	End Method
+	
+	Method Delete()
+		If volPtr Then
+			bmx_volumes_bvolume_free(volPtr)
+			volPtr = Null
+		End If
+	End Method
+
 End Type
+
 
 Private
 
