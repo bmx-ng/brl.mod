@@ -576,7 +576,7 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	bbLaunchDir=bbStringFromUTF8String( buf );
 	
 	image_info info;
-	int cookie;
+	int cookie = 0;
 	get_next_image_info(B_CURRENT_TEAM, &cookie, &info);
 	
 	snprintf(buf, PATH_MAX, "%s", info.name);
