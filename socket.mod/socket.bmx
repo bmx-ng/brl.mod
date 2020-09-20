@@ -42,6 +42,9 @@ Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
 ?nx
 Const FIONREAD=$4004667F
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
+?haiku
+Const FIONREAD=$be000001
+Function ioctl_( socket,opt,buf:Byte Ptr )="int ioctl(int, unsigned long, BBBYTE*)!"
 ?
 End Extern
 

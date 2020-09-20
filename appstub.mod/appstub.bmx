@@ -68,6 +68,8 @@ Import "appstub.linux.c"
 Import "appstub.linux.c"
 ?nx
 Import "appstub.nx.c"
+?haiku
+Import "appstub.haiku.c"
 ?
 
 Extern

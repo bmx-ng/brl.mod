@@ -233,7 +233,7 @@ int threads_TimedWaitCond(pthread_cond_t *cond,bb_mutex_t *mutex, int millisecs)
 
 #endif
 
-#if __linux
+#if __linux || __HAIKU__
 int threads_TimedWaitSemaphore( bb_sem_t *sem, int millisecs ){
 	struct timespec ts;
 	

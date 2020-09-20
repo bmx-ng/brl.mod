@@ -104,6 +104,9 @@ static DWORD WINAPI threadProc( void *p ){
 	return 0;
 }
 
+void bbThreadPreStartup(){
+}
+
 void bbThreadStartup(){
 
 	if( bb_mutex_init( &_bbLock )<0 ) exit(-1);
@@ -218,6 +221,9 @@ void bbThreadUnregister( BBThread * thread ) {
 
 static __thread BBThread * bbThread;
 
+void bbThreadPreStartup(){
+}
+
 void bbThreadStartup() {
 
 	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
@@ -315,6 +321,8 @@ int bbThreadResume( BBThread *thread ) {
 #define MUTEX_RECURSIVE 2
 #elif __SWITCH__
 #define MUTEX_RECURSIVE 1
+#elif __HAIKU__
+#define MUTEX_RECURSIVE 3
 #endif
 
 pthread_mutexattr_t _bb_mutexattr;
@@ -322,11 +330,13 @@ pthread_mutexattr_t _bb_mutexattr;
 static BBThread *threads;
 static pthread_key_t curThreadTls;
 
-void bbThreadStartup(){
-
+void bbThreadPreStartup(){
 	if( pthread_mutexattr_init( &_bb_mutexattr )<0 ) exit(-1);
 	if( pthread_mutexattr_settype( &_bb_mutexattr,MUTEX_RECURSIVE )<0 ) exit(-1);
-	
+}
+
+void bbThreadStartup(){
+
 	if( pthread_key_create( &curThreadTls,0 )<0 ) exit(-1);
 
 	if( bb_mutex_init( &_bbLock )<0 ) exit(-1);
