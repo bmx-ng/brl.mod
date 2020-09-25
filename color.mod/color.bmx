@@ -87,6 +87,20 @@ Struct SColor8
 		ToHSVL(hue, saturation, value, True)	
 	End Method
 	
+	Rem
+	bbdoc: Returns #True if the components of this color and @col are equal.
+	End Rem
+	Method Operator = :Int(col:SColor8)
+		Return r = col.r And g = col.g And b = col.b And a = col.a
+	End Method
+
+	Rem
+	bbdoc: Returns #True if the components of this color and @col are not equal.
+	End Rem
+	Method Operator <> :Int(col:SColor8)
+		Return r <> col.r Or g <> col.g Or b <> col.b Or a <> col.a
+	End Method
+	
 Private
 	Method ToHSVL(hue:Float Var, saturation:Float Var, value:Float Var, isValue:Int)
 		Local rf:Float = r / 255.0
