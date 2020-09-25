@@ -119,6 +119,7 @@ Extern
 	Function bmx_os_getwindowsversion(major:Int Var, minor:Int Var)
 ?haiku
 	Function bmx_os_gethaikuversion:String()
+?
 End Extern
 Public
 
