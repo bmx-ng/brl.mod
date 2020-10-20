@@ -292,7 +292,7 @@ Type TMacVolume Extends TVolume
 	End Method
 	
 	Method GetPath:String(folderType:Int, flags:Int = 0)
-		Local buf:Byte[1024],ref:Byte[80]
+		Local buf:Byte[1025],ref:Byte[80]
 		
 		If flags Then
 			If FSFindFolder( flags, folderType, False, ref ) Return Null
