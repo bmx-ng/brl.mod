@@ -391,8 +391,8 @@ Function LoadText$( url:Object, checkForUTF8:Int = True )
 		Local data:Byte[1024]
 		data[0]=c;data[1]=d;data[2]=e
 		While Not stream.Eof()
-			If size=data.length data=data[..size*2]
-			size:+stream.Read( (Byte Ptr data)+size,data.length-size )
+			If size=data.length-1 data=data[..size*2]
+			size:+stream.Read( (Byte Ptr data)+size,data.length-size-1 )
 		Wend
 		stream.Close
 		If checkForUTF8 And IsProbablyUTF8(data, size) Then
