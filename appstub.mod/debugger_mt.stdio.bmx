@@ -813,15 +813,24 @@ Function UpdateDebug( msg$ )
 					saLength = Int(t[n+1..])
 					t = t[..n]
 				Else
-					If t[..1]="$" t=t[1..].Trim()
 					If t[..2].ToLower()="0x" t=t[2..].Trim()
 				End If
 			End If
 
 ?Not ptr64
-			Local pointer:Int = Int( "$"+t )
+			Local pointer:Int
+			If t.StartsWith("$") Then
+				pointer = Int( t )
+			Else
+				pointer = Int( "$"+t )
+			End If
 ?ptr64
-			Local pointer:Long = Long( "$"+t )
+			Local pointer:Long
+			If t.StartsWith("$") Then
+				pointer = Long( t )
+			Else
+				pointer = Long( "$"+t )
+			End If
 ?
 			If Not structType And Not (pointer And bbGCValidate(Byte Ptr(pointer))) Then Continue
 			If saLength Continue
