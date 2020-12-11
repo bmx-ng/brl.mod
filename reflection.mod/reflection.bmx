@@ -3239,7 +3239,9 @@ Type TTypeId
 			If name.EndsWith( "]" )
 				' TODO
 				name=name[..name.length-2]
-				Return TTypeId( _nameMap.ValueForKey( name.ToLower() ) ).ArrayType()
+				Local nameType:TTypeID = TTypeId( _nameMap.ValueForKey( name.ToLower() ) )
+				If Not nameType Then Return Null
+				Return nameType.ArrayType()
 			' pointers
 			ElseIf name.EndsWith( "Ptr" )
 				name=name[..name.length-4].Trim()
