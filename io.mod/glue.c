@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2020 Bruce A Henderson
+  Copyright (c) 2020-2021 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -29,12 +29,20 @@ int bmx_PHYSFS_init() {
 	return PHYSFS_init(bbArgv0);
 }
 
+int bmx_PHYSFS_getLastErrorCode() {
+	return PHYSFS_getLastErrorCode();
+}
+
+BBString * bmx_PHYSFS_getErrorForCode(int code) {
+	return bbStringFromUTF8String(PHYSFS_getErrorByCode(code));
+}
+
 BBString * bmx_PHYSFS_getLastError() {
 	int code = PHYSFS_getLastErrorCode();
 	if (code == PHYSFS_ERR_OK) {
 		return &bbEmptyString;
 	}
-	return bbStringFromUTF8String(PHYSFS_getErrorByCode(code));
+	return bmx_PHYSFS_getErrorForCode(code);
 }
 
 int bmx_PHYSFS_mount(BBString * newDir, BBString * mountPoint, int appendToPath) {

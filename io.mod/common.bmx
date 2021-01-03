@@ -1,4 +1,4 @@
-' Copyright (c) 2020 Bruce A Henderson
+' Copyright (c) 2020-2021 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -28,7 +28,9 @@ Extern
 
 	Function bmx_PHYSFS_init:Int()
 	Function PHYSFS_deinit:Int()
+	Function bmx_PHYSFS_getErrorForCode:String(errorCode:EMaxIOErrorCode)
 	Function bmx_PHYSFS_getLastError:String()
+	Function bmx_PHYSFS_getLastErrorCode:EMaxIOErrorCode()
 	Function bmx_PHYSFS_mount:Int(newDir:String, mountPoint:String, appendToPath:Int)
 	Function bmx_PHYSFS_getBaseDir:String()
 	Function bmx_PHYSFS_getPrefDir:String(org:String, app:String)
@@ -72,4 +74,37 @@ Enum EMaxIOFileType:Int
 	DIRECTORY
 	SYMLINK
 	OTHER
+End Enum
+
+Enum EMaxIOErrorCode:Int
+	OK
+	OTHER_ERROR
+	OUT_OF_MEMORY
+	NOT_INITIALIZED
+	IS_INITIALIZED
+	ARGV0_IS_NULL
+	UNSUPPORTED
+	PAST_EOF
+	FILES_STILL_OPEN
+	INVALID_ARGUMENT
+	NOT_MOUNTED
+	NOT_FOUND
+	SYMLINK_FORBIDDEN
+	NO_WRITE_DIR
+	OPEN_FOR_READING
+	OPEN_FOR_WRITING
+	NOT_A_FILE
+	READ_ONLY
+	CORRUPT
+	SYMLINK_LOOP
+	IO
+	PERMISSION
+	NO_SPACE
+	BAD_FILENAME
+	BUSY
+	DIR_NOT_EMPTY
+	OS_ERROR
+	DUPLICATE
+	BAD_PASSWORD
+	APP_CALLBACK
 End Enum

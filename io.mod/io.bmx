@@ -1,4 +1,4 @@
-' Copyright (c) 2020 Bruce A Henderson
+' Copyright (c) 2020-2021 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -217,10 +217,26 @@ Type MaxIO
 	End Function
 
 	Rem
-	bbdoc: Return the last error message.
+	bbdoc: Returns the last error code.
+	about: Calling this function resets the last error code.
+	End Rem
+	Function GetLastErrorCode:EMaxIOErrorCode()
+		Return bmx_PHYSFS_getLastErrorCode()
+	End Function
+
+	Rem
+	bbdoc: Returns the message for the specified @errorCode.
+	End Rem
+	Function GetErrorForCode:String(errorCode:EMaxIOErrorCode)
+		Return bmx_PHYSFS_getErrorForCode(errorCode)
+	End Function
+
+	Rem
+	bbdoc: Returns the last error message, or #Null if there is none.
+	about: Calling this function resets the last error.
 	End Rem
 	Function GetLastError:String()
 		Return bmx_PHYSFS_getLastError()
 	End Function
-	
+
 End Type
