@@ -56,7 +56,7 @@ void		bbGCStartup();
 void		bbGCSetMode( int mode );
 void		bbGCSetDebug( int debug );
 void*	bbGCMalloc( int size,int flags );
-BBObject*	bbGCAllocObject( int size,BBClass *clas,int flags );
+BBObject*	bbGCAllocObject( unsigned int size,BBClass *clas,int flags );
 int 		bbGCValidate( void *p );
 size_t		bbGCMemAlloced();
 size_t		bbGCCollect();

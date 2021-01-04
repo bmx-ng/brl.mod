@@ -83,7 +83,7 @@ void bbGCStartup( void *spTop ){
 	bbReleaseRetainGuard = bb_create_mutex();
 }
 
-BBGCMem *bbGCAlloc( int sz,BBGCPool *pool ){
+BBGCMem *bbGCAlloc( unsigned int sz,BBGCPool *pool ){
 	GC_finalization_proc ofn;
 	void *ocd;
 	BBGCMem *q=(BBGCMem*) GC_MALLOC( sz );
@@ -96,7 +96,7 @@ BBGCMem *bbGCAlloc( int sz,BBGCPool *pool ){
 	return q;
 }
 
-BBObject * bbGCAllocObject( int sz,BBClass *clas,int flags ){
+BBObject * bbGCAllocObject( unsigned int sz,BBClass *clas,int flags ){
 	BBObject *q;
 	if( flags & BBGC_ATOMIC ){
 		q=(BBObject*)GC_MALLOC_ATOMIC( sz );

@@ -84,7 +84,7 @@ static int arrayCellSize(const char * type, unsigned short data_size, int * flag
 
 static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned short data_size ){
 	int k,*len;
-	int size=4;
+	unsigned int size=4;
 	int length=1;
 	int flags=BBGC_ATOMIC;
 	BBArray *arr;
