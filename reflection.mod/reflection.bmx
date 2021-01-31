@@ -2509,7 +2509,7 @@ Type TTypeId
 	Method EnumGlobals:TList( list:TList=Null )
 		If Not list list=New TList
 		If _super _super.EnumGlobals list
-		For Local t:TField=EachIn _globalsList '.Values()
+		For Local t:TGlobal=EachIn _globalsList '.Values()
 			list.AddLast t
 		Next
 		Return list
