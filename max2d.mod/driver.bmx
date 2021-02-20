@@ -29,6 +29,14 @@ End Type
 Type TMax2DDriver Extends TGraphicsDriver
 
 	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags ) Abstract
+
+	'Backend specific!
+	'implement this function in each TMax2D-extending type (OpenGL, DX, ..)
+	Method CreateRenderImageContext:Object(g:TGraphics)
+		Throw "Feature ~qRender2Texture~q not yet implemented in this graphics driver (" + ToString() + ")." 
+		Return Null
+	End Method
+
 	
 	Method SetBlend( blend ) Abstract
 	Method SetAlpha( alpha# ) Abstract

@@ -61,6 +61,7 @@ Import BRL.LinkedList
 Import BRL.Hook
 
 Import "image.bmx"
+Import "renderimage.bmx"
 Import "driver.bmx"
 Import "imagefont.bmx"
 
@@ -107,6 +108,7 @@ Type TMax2DGraphics Extends TGraphics
 	Global auto_imageflags=MASKEDIMAGE|FILTEREDIMAGE
 
 	Field _graphics:TGraphics,_driver:TMax2DDriver,_setup
+	Field _ric:TRenderImageContext
 	
 	Method Driver:TMax2DDriver() Override
 		Return _driver
@@ -227,6 +229,104 @@ Type TMax2DGraphics Extends TGraphics
 	
 	Method Position(x:Int, y:Int) Override
 		_graphics.Position(x, y)
+	End Method
+
+
+	Method CreateRenderImage:TRenderImage(width:Int, height:Int, UseLinearFlitering:Int = True, max2DGraphics:TGraphics = Null)
+		If Not max2DGraphics Then max2DGraphics = self
+		Local max2D:TMax2DGraphics = TMax2DGraphics(max2DGraphics)
+		If Not max2D Then Return Null 'only supporting Max2D graphics
+		
+		If _ric And _ric.GraphicsContext() <> max2D._graphics
+			_ric.Destroy()
+			_ric = Null
+		EndIf
+		
+		If Not _ric	
+			_ric = TRenderImageContext(max2D._driver.CreateRenderImageContext(max2D._graphics))
+		EndIf
+		
+		'sanity check
+		?debug
+		Assert _ric <> Null, "The code for the current TGraphics instance doesn't exist yet for rendering to a texture, feel free to write one."
+		?
+
+		Return _ric.CreateRenderImage(width, height, UseLinearFlitering)
+	End Method
+
+	
+	Method DestroyRenderImage(renderImage:TRenderImage)
+		' sanity check
+		?debug
+		Assert _ric <> Null, "No TRenderImage instances have been created"
+		?
+
+		_ric.DestroyRenderImage(renderImage)
+	End Method
+
+
+	Method SetRenderImage(renderimage:TRenderImage)
+		' sanity check
+		?debug
+		Assert _ric <> Null, "No TRenderImage instances have been created"
+		?
+
+		_ric.SetRenderImage(renderimage)
+	End Method
+
+
+	Method CreatePixmapFromRenderImage:TPixmap(renderimage:TRenderImage)
+		' sanity check
+		?debug
+		Assert _ric <> Null, "No TRenderImage instances have been created"
+		?
+
+		Return _ric.CreatePixmapFromRenderImage(renderimage)
+	End Method
+
+
+	Method SetRenderImageViewport(renderimage:TRenderimage, x:Int, y:Int, width:Int, height:Int)
+		' sanity check
+		?debug
+		Assert _ric <> Null, "No TRenderImage instances have been created"
+		?
+
+		renderimage.SetViewport(x, y, width, height)
+	End Method
+
+
+	Method ClearRenderImage(renderimage:TRenderimage, r:Int=0, g:Int=0, b:Int=0, a:Float=0.0)
+		' sanity check
+		?debug
+		Assert _ric <> Null, "No TRenderImage instances have been created"
+		?
+
+		renderimage.Clear(r,g,b,a)
+	End Method
+
+
+	Method CreateRenderImageFromPixmap:TRenderImage(Pixmap:TPixmap, UseLinearFlitering:Int = True, max2DGraphics:TGraphics = Null)
+		If Not max2DGraphics then max2DGraphics = self
+		Local max2d:TMax2DGraphics = TMax2DGraphics(max2DGraphics)
+		If Not max2d Then Return Null ' only supports Max2D
+	
+		If _ric And _ric.GraphicsContext() <> max2d._graphics
+			_ric.Destroy()
+			_ric = Null
+		EndIf
+		
+		If Not _ric 
+			_ric = TRenderImageContext(max2D._driver.CreateRenderImageContext(max2D._graphics))
+		EndIf
+		
+		'sanity check
+		?debug
+		Assert _ric <> Null, "The code for the current TGraphics instance doesn't exist yet for rendering to a texture, feel free to write one."
+		Assert Pixmap <> Null, "Invalid pixmap"
+		Assert Pixmap.Width <> 0 And Pixmap.Height <> 0, "Invalid pixmap"
+		?
+
+		Return _ric.CreateRenderImageFromPixmap(Pixmap, UseLinearFlitering)
 	End Method
 End Type
 
@@ -1045,6 +1145,141 @@ end rem
 Function GrabPixmap:TPixmap( x,y,width,height )
 	Return _max2dDriver.GrabPixmap( x,y,width,height )
 End Function
+
+
+Rem
+bbdoc: Create a new render image
+about:
+@width, @height specify the dimensions of the render image.
+
+@useLinearFlitering defines the image flag to filter images when scaling.
+
+@max2DGraphics is an optional parameter to pass a custom Max2DGraphics context.
+
+returns: #TRenderImage with the given dimension
+End Rem
+Function CreateRenderImage:TRenderImage(width:Int, height:Int, useLinearFlitering:Int = True, max2DGraphics:TMax2DGraphics = Null)
+	Return gc.CreateRenderImage(width, height, useLinearFlitering, max2DGraphics)
+End Function
+
+Rem
+bbdoc: Create a render image from a given #TPixmap
+about:
+@pixmap defines the #TPixmap to create a new #TRenderImage from.
+
+@useLinearFlitering defines the image flag to filter images when scaling.
+
+@max2DGraphics is an optional parameter to pass a custom Max2DGraphics context.
+
+returns: #TRenderImage with the content of the passed #TPixmap
+End Rem
+Function CreateRenderImageFromPixmap:TRenderImage(pixmap:TPixmap, useLinearFlitering:Int = True, max2DGraphics:TMax2DGraphics = Null)
+	Return gc.CreateRenderImageFromPixmap(pixmap, useLinearFlitering, max2DGraphics)
+EndFunction
+
+Rem
+bbdoc: Destroy a no longer needed render image
+End Rem
+Function DestroyRenderImage(renderImage:TRenderImage)
+	gc.DestroyRenderImage(renderImage)
+End Function
+
+Rem
+bbdoc: Set a render image as currently active render target
+about:
+@renderImage defines the render image to use as target. Set to Null to render on the default graphics buffer again.
+End Rem
+Function SetRenderImage(renderImage:TRenderImage)
+	gc.SetRenderImage(renderImage)
+End Function
+
+Rem
+bbdoc: Clear content of the passed render image
+about:
+@renderImage defines the render image to clear.
+
+@r, @g, @b define the red, green and blue components of the clear color. Range is 0 - 255.
+
+@a defines the alpha value and is ranged 0.0 to 1.0.
+End Rem
+Function ClearRenderImage(renderImage:TRenderImage, r:Int=0, g:Int=0, b:Int=0, a:Float=0.0)
+	gc.ClearRenderImage(renderImage, r,g,b,a)
+End Function
+
+Rem
+bbdoc: Create a #TPixmap from a render image
+about:
+@renderImage defines the render image from where the #TPixmap is to generate
+
+returns: #TPixmap of the render image
+End Rem
+Function CreatePixmapFromRenderImage:TPixmap(renderImage:TRenderImage)
+	Return gc.CreatePixmapFromRenderImage(renderImage)
+End Function
+
+Rem
+bbdoc: Set the viewport of the given render image
+about:
+@renderImage defines the render image to set the viewport for
+
+@x, @y, @width, @height define the dimension of the viewport
+End Rem
+Function SetRenderImageViewport(renderImage:TRenderImage, x:Int, y:Int, width:Int, height:Int)
+	gc.SetRenderImageViewport(renderImage, x, y, width, height)
+End Function
+
+Rem
+bbdoc: Backup the render image (from GPU to RAM)
+about:
+When a running application is suspended (eg user logs out from the OS or hibernation) 
+then Direct3D-graphics loose their context ("D3DERR_DEVICELOST").
+To enable restoration an render image needs to "persist" as else after resume the texture
+will be blank.
+Use this for dynamically created render image content which you do not re-draw each frame.
+Also use #RenderImageValid() to check if content needs to be recreated.
+
+@renderImage defines the render image to backup
+End Rem
+Function PersistRenderImage:Int(renderImage:TRenderImage)
+	If renderImage Then Return renderImage.Persist()
+	Return False
+End Function
+
+Rem
+bbdoc: Check if render image content is still valid
+about:
+When a running application is suspended (eg user logs out from the OS or hibernation) 
+then Direct3D-graphics loose their context ("D3DERR_DEVICELOST") and so the textures.
+If that happens, the render image is flagged to no longer be valid.
+
+@renderImage defines the render image to backup
+
+returns: False if content the render image needs to be recreated
+End Rem
+Function RenderImageValid:Int(renderImage:TRenderImage)
+	If renderImage Then Return renderImage.Valid()
+	Return False
+End Function
+
+Rem
+bbdoc: Mark a render image (in-)valid
+about:
+When a running application is suspended (eg user logs out from the OS or hibernation) 
+then Direct3D-graphics loose their context ("D3DERR_DEVICELOST") and so the textures.
+Once you restored/recreated the content of your render image you can set it
+to be valid again.
+
+@renderImage defines the render image to backup
+
+@bool defines the new state of the valid flag (True or False)
+End Rem
+Function SetRenderImageValid(renderImage:TRenderImage, bool:Int = True)
+	If renderImage Then renderImage.SetValid(bool)
+End Function
+
+
+
+
 
 Const COLLISION_LAYER_ALL=0
 Const COLLISION_LAYER_1=$0001
