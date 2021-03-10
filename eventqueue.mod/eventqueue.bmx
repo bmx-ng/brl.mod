@@ -124,7 +124,7 @@ queue, the existing event will be updated instead of @event
 being added to the event queue. This can be useful to prevent high frequency
 events such as timer events from flooding the event queue.
 End Rem
-Function PostEvent( event:TEvent,update:Int=False )
+Function PostEvent:Int( event:TEvent,update:Int=False )
 	If update
 		Local i:Int=queue_get
 		While i<>queue_put
@@ -135,12 +135,12 @@ Function PostEvent( event:TEvent,update:Int=False )
 				t.x=event.x
 				t.y=event.y
 				t.extra=event.extra
-				Return
+				Return True
 			EndIf
 			i:+1
 		Wend
 	EndIf
-	If queue_put-queue_get=QUEUESIZE Return
+	If queue_put-queue_get=QUEUESIZE Return False
 	Local q:TEvent = queue[queue_put & QUEUEMASK]
 	If Not q Then
 		q = New TEvent
@@ -154,6 +154,7 @@ Function PostEvent( event:TEvent,update:Int=False )
 	q.y=event.y
 	q.extra=event.extra
 	queue_put:+1
+	Return True
 End Function
 
 Rem
