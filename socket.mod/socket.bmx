@@ -6,12 +6,14 @@ bbdoc: Networking/Sockets
 End Rem
 Module BRL.Socket
 
-ModuleInfo "Version: 1.04"
+ModuleInfo "Version: 1.05"
 ModuleInfo "Author: Mark Sibly and Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.05"
+ModuleInfo "History: Added ShutdownSocket()."
 ModuleInfo "History: 1.04"
 ModuleInfo "History: Fixed for Android."
 ModuleInfo "History: 1.03"
@@ -180,6 +182,13 @@ Type TSocket
 	
 	Method RemotePort:Int()
 		Return _remotePort
+	End Method
+	
+	Method Shutdown(how:Int)
+		If _socket < 0 Then
+			Return
+		End If
+		shutdown_(_socket, how)
 	End Method
 	
 	Method UpdateLocalName:Int()
@@ -441,4 +450,20 @@ Function AddrInfo:TAddrInfo[](host:String, service:String, hints:TAddrInfo)
 	Return getaddrinfo_hints(host, service, hints.infoPtr)
 End Function
 
+Rem
+bbdoc: Disables sends or receives on a socket.
+about: Typically, #ShutdownSocket should be called before #CloseSocket to assure that all data is sent
+and received on a connected socket before it is closed.
 
+@how is one of the following options :
+
+| Value      | Meaning                                   |
+|------------|-------------------------------------------|
+| SD_RECEIVE | Shutdown receive operations               |
+| SD_SEND    | Shutdown send operations                  |
+| SD_BOTH    | Shutdown both send and receive operations |
+
+End Rem
+Function ShutdownSocket( socket:TSocket, how:Int=SD_SEND )
+	socket.Shutdown(how)
+End Function
