@@ -15,14 +15,35 @@ void*	bbArgp( int offset );
 #endif
 #endif
 
-jmp_buf*	bbExEnter();
-void		bbExThrow( BBObject *p );
-void		bbExThrowCString( const char *p );
-void		bbExLeave();
-BBObject*   bbExObject();
+#ifdef __MINGW64__
+typedef intptr_t BBExJmpBuf[5];
+#else
+typedef jmp_buf BBExJmpBuf;
+#endif
 
-BBObject* bbExCatchAndReenter();
-BBObject* bbExCatch();
+// bbExTry can't be a function due to how setjmp works, so a macro it is
+#ifdef __MINGW64__
+#define bbExTry \
+	BBExJmpBuf* buf = bbExEnter(); \
+	int jmp_status = 0; \
+	if(__builtin_setjmp(*buf)) jmp_status = bbExStatus(); \
+	switch(jmp_status)
+#elif __APPLE__
+#define bbExTry \
+	BBExJmpBuf* buf = bbExEnter(); \
+	switch(_setjmp(*buf))
+#else
+#define bbExTry \
+	BBExJmpBuf* buf = bbExEnter(); \
+	switch(setjmp(*buf))
+#endif
+BBExJmpBuf* bbExEnter();
+void        bbExThrow( BBObject *p );
+void        bbExThrowCString( const char *p );
+void        bbExLeave();
+int         bbExStatus();
+BBObject*   bbExCatchAndReenter();
+BBObject*   bbExCatch();
 
 //void	_bbExEnter( void *_cpu_state );
 //void*	_bbExThrow( void *_cpu_state,void *p );

@@ -5,7 +5,7 @@
 #define EX_GROW 10
 
 typedef struct BBExEnv{
-	jmp_buf buf;
+	BBExJmpBuf buf;
 	BBObject * ex;
 	int jmp_status;
 }BBExEnv;
@@ -88,7 +88,7 @@ static void freeExStack( BBExStack *st ){
 	setExStack( 0 );
 }
 
-jmp_buf *bbExEnter(){
+BBExJmpBuf *bbExEnter(){
 	BBExStack *st=exStack();
 	
 	if( st->ex_sp==st->ex_end ){
@@ -137,11 +137,18 @@ void bbExThrow( BBObject *p ){
 	
 	--st->ex_sp;
 	st->ex_sp->ex = p;
-#ifndef __APPLE__
-	longjmp(st->ex_sp->buf, st->ex_sp->jmp_status);
-#else
+#ifdef __MINGW64__
+	__builtin_longjmp(st->ex_sp->buf, 1); // only allows status 1
+#elif __APPLE__
 	_longjmp(st->ex_sp->buf, st->ex_sp->jmp_status);
+#else
+	longjmp(st->ex_sp->buf, st->ex_sp->jmp_status);
 #endif
+}
+
+int bbExStatus(){
+	BBExStack *st=getExStack();
+	return st->ex_sp->jmp_status;
 }
 
 void bbExThrowCString( const char *p ){
