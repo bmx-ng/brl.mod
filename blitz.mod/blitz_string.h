@@ -20,7 +20,32 @@ struct BBString{
 	BBChar	buf[];
 };
 
-extern	BBClass bbStringClass;
+struct BBClass_String{
+	//extends BBGCPool
+	BBClass*	super;
+	void		(*free)( BBObject *o );
+	
+	BBDebugScope*debug_scope;
+
+	unsigned int instance_size;
+
+	void		(*ctor)( BBObject *o );
+	void		(*dtor)( BBObject *o );
+	
+	BBString*	(*ToString)( BBObject *x );
+	int		(*Compare)( BBObject *x,BBObject *y );
+	BBObject*	(*SendMessage)( BBObject * o, BBObject *m,BBObject *s );
+
+	BBINTERFACETABLE itable;
+	void*   extra;
+	unsigned int obj_size;
+	unsigned int instance_count;
+	unsigned int fields_offset;
+
+	void*	vfns[40];
+};
+
+extern	struct BBClass_String bbStringClass;
 extern	BBString bbEmptyString;
 
 BBString*bbStringNew( int len );
@@ -33,15 +58,15 @@ BBString*	bbStringFromULong( BBUInt64 n );
 BBString*	bbStringFromSizet( BBSIZET n );
 BBString*bbStringFromFloat( float n );
 BBString*	bbStringFromDouble( double n );
-BBString*	bbStringFromBytes( const char *p,int n );
+BBString*	bbStringFromBytes( const unsigned char *p,int n );
 BBString*	bbStringFromShorts( const unsigned short *p,int n );
 BBString*	bbStringFromInts( const int *p,int n );
 BBString*	bbStringFromUInts( const unsigned int *p,int n );
 BBString*bbStringFromArray( BBArray *arr );
 BBString*	bbStringFromCString( const char *p );
 BBString*bbStringFromWString( const BBChar *p );
-BBString*bbStringFromUTF8String( const char *p );
-BBString *bbStringFromUTF8Bytes( const char *p,int n );
+BBString*bbStringFromUTF8String( const unsigned char *p );
+BBString *bbStringFromUTF8Bytes( const unsigned char *p,int n );
 
 BBString*	bbStringToString( BBString *t );
 int		bbStringCompare( BBString *x,BBString *y );
@@ -68,9 +93,9 @@ double	bbStringToDouble( BBString *str );
 BBInt64 bbStringToLong( BBString *str );
 BBUInt64 bbStringToULong( BBString *str );
 BBSIZET bbStringToSizet( BBString *str );
-char*	bbStringToCString( BBString *str );
+unsigned char* bbStringToCString( BBString *str );
 BBChar*	bbStringToWString( BBString *str );
-char*	bbStringToUTF8String( BBString *str );
+unsigned char* bbStringToUTF8String( BBString *str );
 
 #ifdef _WIN32
 WPARAM  bbStringToWParam( BBString *str );
@@ -108,7 +133,7 @@ int bbObjectIsEmptyString(BBObject * o);
 BBULONG bbStringHash( BBString * x );
 #endif
 
-char *bbStringToUTF8StringBuffer( BBString *str, char * buf, size_t * length );
+unsigned char *bbStringToUTF8StringBuffer( BBString *str, unsigned char * buf, size_t * length );
 
 #ifdef __cplusplus
 }

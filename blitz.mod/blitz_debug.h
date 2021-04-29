@@ -37,6 +37,7 @@ struct BBDebugDecl{
 		BBString*    const_value;
 		unsigned int field_offset;
 		void*        var_address;
+		BBFuncPtr    func_ptr;
 	};
 };
 

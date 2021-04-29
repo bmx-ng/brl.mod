@@ -41,6 +41,7 @@ typedef BBArray*		BBARRAY;
 typedef BBInterfaceTable*	BBINTERFACETABLE;
 typedef BBInterface*	BBINTERFACE;
 typedef BBInterfaceOffsets * BBINTERFACEOFFSETS;
+typedef void (*BBFuncPtr)(void);
 
 #ifdef __x86_64__
 #include <immintrin.h>
