@@ -221,7 +221,7 @@ void avl_del(struct avl_root *entry, struct avl_root **root);
  * @ptr is the pointer to the embedded struct of which the name is
  * provided by @member, and @type indicates the host struct type. */
 #define tree_entry(ptr, type, member)					\
-	((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
+	((type *)((char *)(ptr)-(uintptr_t)(&((type *)0)->member)))
 
 #define avl_entry(ptr, type, member) tree_entry(ptr, type, member)
 
