@@ -43,7 +43,7 @@ void bmx_stringbuilder_resize(struct MaxStringBuilder * buf, int size) {
 		if (buf->capacity * 2  > size) {
 			size = buf->capacity * 2;
 		}
-		short * newBuffer = malloc(size * sizeof(BBChar));
+		BBChar * newBuffer = (BBChar *)malloc(size * sizeof(BBChar));
 		
 		/* copy text to new buffer */
 		memcpy(newBuffer, buf->buffer, buf->count * sizeof(BBChar));
@@ -484,7 +484,7 @@ void bmx_stringbuilder_append_utf8string(struct MaxStringBuilder * buf, const ch
 		const char * p = chars;
 		BBChar * b = buf->buffer + buf->count;
 		
-		while( c=*p++ & 0xff ){
+		while( (c=*p++ & 0xff) ){
 			if( c<0x80 ){
 				*b++=c;
 			}else{
@@ -618,7 +618,7 @@ int bmx_stringbuilder_compare(struct MaxStringBuilder * buf1, struct MaxStringBu
 	int c = buf1->count < buf2->count ? buf1->count : buf2->count;
 	int n = 0;
 	for (int i=0; i < c; ++i) {
-		if (n = buf1->buffer[i] - buf2->buffer[i]) {
+		if ((n = buf1->buffer[i] - buf2->buffer[i])) {
 			return n;
 		}
 	}
@@ -726,7 +726,6 @@ char * bmx_stringbuilder_toutf8string(struct MaxStringBuilder * buf) {
 }
 
 BBChar * bmx_stringbuilder_towstring(struct MaxStringBuilder * buf) {
-	int k;
 	int count = buf->count;
 	if (count == 0) {
 		return NULL;
