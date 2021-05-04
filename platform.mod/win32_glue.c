@@ -22,7 +22,7 @@
 */
 #include "windows.h"
 
-bmx_os_getwindowsversion(int * major, int * minor) {
+void bmx_os_getwindowsversion(int * major, int * minor) {
 
 	OSVERSIONINFOEX versionInfo = {0};
 	versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
