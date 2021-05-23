@@ -149,6 +149,8 @@ extern bb_mutex_t _bbLock;
 #define BB_LOCK if( _bbNeedsLock ){ bb_mutex_lock( &_bbLock ); }
 #define BB_UNLOCK if( _bbNeedsLock ){ bb_mutex_unlock( &_bbLock ); }
 
+#define BBThreadLocal __thread
+
 #ifdef __cplusplus
 }
 #endif

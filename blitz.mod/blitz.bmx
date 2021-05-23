@@ -872,6 +872,12 @@ keyword: "Global"
 End Rem
 
 Rem
+bbdoc: Declare a threaded global variable
+about: Each thread will have its own copy of the variable - any changes to the variable will be visible only within the thread the change was made.
+keyword: "ThreadedGlobal"
+End Rem
+
+Rem
 bbdoc: Declare a field variable
 keyword: "Field"
 End Rem
