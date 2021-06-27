@@ -27,7 +27,33 @@ struct BBArray{
 	int    scales[1];  // [dims]
 };
 
-extern		BBClass bbArrayClass;
+struct BBClass_Array{
+	//extends BBGCPool
+	BBClass*	super;
+	void		(*free)( BBObject *o );
+	
+	BBDebugScope*debug_scope;
+
+	unsigned int instance_size;
+
+	void		(*ctor)( BBObject *o );
+	void		(*dtor)( BBObject *o );
+	
+	BBString*	(*ToString)( BBObject *x );
+	int		(*Compare)( BBObject *x,BBObject *y );
+	BBObject*	(*SendMessage)( BBObject * o, BBObject *m,BBObject *s );
+
+	BBINTERFACETABLE itable;
+	void*   extra;
+	unsigned int obj_size;
+	unsigned int instance_count;
+	unsigned int fields_offset;
+
+	void (*bbArraySort)( BBArray *arr,int ascending );
+	BBArray* (*bbArrayDimensions)( BBArray *arr );
+};
+
+extern	struct BBClass_Array bbArrayClass;
 extern		BBArray bbEmptyArray;
 
 BBArray*	bbArrayNew( const char *type,int dims,... );

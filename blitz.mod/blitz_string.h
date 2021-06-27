@@ -42,7 +42,59 @@ struct BBClass_String{
 	unsigned int instance_count;
 	unsigned int fields_offset;
 
-	void*	vfns[40];
+	int (*bbStringFind)( BBString *x,BBString *y,int i );
+	int (*bbStringFindLast)( BBString *x,BBString *y,int i );
+	BBString* (*bbStringTrim)( BBString *str );
+	BBString* (*bbStringReplace)( BBString *str,BBString *sub,BBString *rep );
+
+	BBString* (*bbStringToLower)( BBString *str );
+	BBString* (*bbStringToUpper)( BBString *str );
+
+	int (*bbStringToInt)( BBString *t );
+	BBInt64 (*bbStringToLong)( BBString *t );
+	float (*bbStringToFloat)( BBString *t );
+	double (*bbStringToDouble)( BBString *t );
+	unsigned char* (*bbStringToCString)( BBString *str );
+	BBChar* (*bbStringToWString)( BBString *str );
+
+	BBString* (*bbStringFromInt)( int n );
+	BBString* (*bbStringFromLong)( BBInt64 n );
+	BBString* (*bbStringFromFloat)( float n );
+	BBString* (*bbStringFromDouble)( double n );
+	BBString* (*bbStringFromCString)( const char *p );
+	BBString* (*bbStringFromWString)( const BBChar *p );
+
+	BBString* (*bbStringFromBytes)( const unsigned char *p,int n );
+	BBString* (*bbStringFromShorts)( const unsigned short *p,int n );
+
+	int (*bbStringStartsWith)( BBString *x,BBString *y );
+	int (*bbStringEndsWith)( BBString *x,BBString *y );
+	int (*bbStringContains)( BBString *x,BBString *y );
+
+	BBArray* (*bbStringSplit)( BBString *str,BBString *sep );
+	BBString* (*bbStringJoin)( BBString *sep,BBArray *bits );
+
+	BBString* (*bbStringFromUTF8String)( const unsigned char *p );
+	unsigned char* (*bbStringToUTF8String)( BBString *str );
+	BBString* (*bbStringFromUTF8Bytes)( const unsigned char *p,int n );
+
+	BBSIZET (*bbStringToSizet)( BBString *t );
+	BBString* (*bbStringFromSizet)( BBSIZET n );
+
+	unsigned int (*bbStringToUInt)( BBString *t );
+	BBString* (*bbStringFromUInt)( unsigned int n );
+	BBUInt64 (*bbStringToULong)( BBString *t );
+	BBString* (*bbStringFromULong)( BBUInt64 n );
+
+#ifdef _WIN32
+	WPARAM (*bbStringToWParam)( BBString *t );
+	BBString* (*bbStringFromWParam)( WPARAM n );
+	LPARAM (*bbStringToLParam)( BBString *t );
+	BBString* (*bbStringFromLParam)( LPARAM n );
+#endif
+
+	unsigned char* (*bbStringToUTF8StringBuffer)( BBString *str, unsigned char * buf, size_t * length );
+	BBULONG (*bbStringHash)( BBString * x );
 };
 
 extern	struct BBClass_String bbStringClass;

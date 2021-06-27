@@ -25,6 +25,7 @@ typedef struct BBInterface BBInterface;
 typedef struct BBInterfaceOffsets BBInterfaceOffsets;
 typedef struct BBEnum BBEnum;
 typedef struct BBClass_String BBClass_String;
+typedef struct BBClass_Array BBClass_Array;
 
 typedef unsigned char	BBBYTE;
 typedef unsigned short	BBSHORT;

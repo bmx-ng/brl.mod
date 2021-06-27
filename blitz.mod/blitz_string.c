@@ -95,7 +95,7 @@ struct BBClass_String bbStringClass={
 };
 
 BBString bbEmptyString={
-	&bbStringClass, //clas
+	(BBClass*)&bbStringClass, //clas
 	0x776eddfb6bfd9195, // hash
 	0				//length
 };
@@ -117,14 +117,14 @@ static int charsEqual( unsigned short *a,unsigned short *b,int n ){
 //***** Note: Not called in THREADED mode.
 static void bbStringFree( BBObject *o ){
 	if (bbCountInstances) {
-		bbAtomicAdd(&bbStringClass.instance_count, -1);
+		bbAtomicAdd((int*)&bbStringClass.instance_count, -1);
 	}
 }
 
 BBString *bbStringNew( int len ){
 	BBString *str;
 	if( !len ) return &bbEmptyString;
-	str=(BBString*)bbGCAllocObject( sizeof(BBString)+len*sizeof(BBChar),&bbStringClass,BBGC_ATOMIC );
+	str=(BBString*)bbGCAllocObject( sizeof(BBString)+len*sizeof(BBChar),(BBClass*)&bbStringClass,BBGC_ATOMIC );
 	str->hash=0;
 	str->length=len;
 	return str;
@@ -250,7 +250,7 @@ BBString *bbStringFromWString( const BBChar *p ){
 }
 
 BBString *bbStringFromUTF8String( const unsigned char *p ){
-	return p ? bbStringFromUTF8Bytes( p,strlen(p) ) : &bbEmptyString;
+	return p ? bbStringFromUTF8Bytes( p,strlen((char*)p) ) : &bbEmptyString;
 }
 
 BBString *bbStringFromUTF8Bytes( const unsigned char *p,int n ){
