@@ -22,14 +22,14 @@ void bbOnEnd( void (*f)() ){
 }
 
 void bbWriteStdout( BBString *t ){
-	char *p=bbStringToUTF8String( t );
+	char *p=(char*)bbStringToUTF8String( t );
 	fprintf( stdout,"%s",p );
 	fflush( stdout );
 	bbMemFree(p);
 }
 
 void bbWriteStderr( BBString *t ){
-	char *p=bbStringToUTF8String( t );
+	char *p=(char*)bbStringToUTF8String( t );
 	fprintf( stderr,"%s",p );
 	fflush( stderr );
 	bbMemFree(p);
@@ -46,7 +46,7 @@ BBString *bbReadStdin(){
 		char buf[BUF_SIZE],*p;
 		fgets( buf,BUF_SIZE,stdin );
 		buf[BUF_SIZE-1]=0;
-		if( p=strchr( buf,'\n' ) ){
+		if( (p=strchr( buf,'\n' )) ){
 			t_sz=p-buf;
 			if( t_sz && isspace(buf[t_sz-1]) ) --t_sz;
 		}else{
@@ -57,7 +57,7 @@ BBString *bbReadStdin(){
 		sz+=t_sz;
 		if( t_sz<BUF_SIZE-1 ) break;
 	}
-	if( sz ) t=bbStringFromBytes( str,sz );
+	if( sz ) t=bbStringFromBytes( (unsigned char*)str,sz );
 	else t=&bbEmptyString;
 	bbMemFree( str );
 	return t;
@@ -132,17 +132,17 @@ int bbMilliSecs(){
 }
 
 void bbUDelay( int microseconds ) {
-	__int64 time1 = 0;
-	__int64 time2 = 0;
-	__int64 freq = 0;
+	LARGE_INTEGER time1;
+	LARGE_INTEGER time2;
+	LARGE_INTEGER freq;
 
-	QueryPerformanceCounter((LARGE_INTEGER *) &time1);
+	QueryPerformanceCounter(&time1);
 	QueryPerformanceFrequency(&freq);
 
 	do {
 		Sleep(0);
-		QueryPerformanceCounter((LARGE_INTEGER *) &time2);
-	} while(time2-time1 < microseconds*freq/1000000);
+		QueryPerformanceCounter(&time2);
+	} while(time2.QuadPart-time1.QuadPart < microseconds*freq.QuadPart/1000000);
 }
 
 int bbIsMainThread(){
@@ -418,12 +418,7 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	
 #if _WIN32
 
-	char *ebp;
 	OSVERSIONINFO os={ sizeof(os) };
-	
-	//asm( "movl %%ebp,%0;":"=r"(ebp) );//::"%ebp" );
-	
-	//bbGCStackTop=ebp+28;
 	
 	bbGCStartup();
 	bbThreadStartup();
@@ -435,7 +430,6 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	}
 	
 	if( _bbusew ){
-		int e=0;
 		wchar_t buf[MAX_PATH];
 		
 		_wgetcwd( buf,MAX_PATH );
@@ -469,12 +463,12 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 
 		if( e ){
 			if( buf[e-1]==':' ) ++e;
-			bbAppDir=bbStringFromBytes( buf,e );
+			bbAppDir=bbStringFromBytes( (unsigned char*)buf,e );
 		}else{
 			bbAppDir=&bbEmptyString;
 		}
 
-		char *p=bbStringToCString( bbAppDir );
+		char *p=(char*)bbStringToCString( bbAppDir );
 		_chdir( p );
 		bbMemFree(p);
 	}

@@ -8,10 +8,14 @@ static void bbArrayFree( BBObject *o );
 static BBDebugScope debugScope={
 	BBDEBUGSCOPE_USERTYPE,
 	"Array",
-	BBDEBUGDECL_END
+	{
+		{
+			BBDEBUGDECL_END
+		}
+	}
 };
 
-BBClass bbArrayClass={
+BBClass_Array bbArrayClass={
 	&bbObjectClass, //extends
 	bbArrayFree,	//free
 	&debugScope,	//DebugScope
@@ -33,7 +37,7 @@ BBClass bbArrayClass={
 };
 
 BBArray bbEmptyArray={
-	&bbArrayClass,	//clas
+	(BBClass*)&bbArrayClass,	//clas
 	//BBGC_MANYREFS,	//refs
 	"",			//type
 	0,			//dims
@@ -46,7 +50,7 @@ BBArray bbEmptyArray={
 //***** Note: Only used by ref counting GC.
 static void bbArrayFree( BBObject *o ){
 	if (bbCountInstances) {
-		bbAtomicAdd(&bbArrayClass.instance_count, -1);
+		bbAtomicAdd((int*)&bbArrayClass.instance_count, -1);
 	}
 }
 
@@ -100,7 +104,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned sho
 	int base_size = size;
 	size*=length;
 
-	arr=(BBArray*)bbGCAllocObject( BBARRAYSIZE(size,dims),&bbArrayClass,flags );
+	arr=(BBArray*)bbGCAllocObject( BBARRAYSIZE(size,dims),(BBClass*)&bbArrayClass,flags );
 
 	arr->type=type;
 	arr->dims=dims;
@@ -344,7 +348,6 @@ BBArray *bbArrayConcat( const char *type,BBArray *x,BBArray *y ){
 
 BBArray *bbArrayFromData( const char *type,int length,void *data ){
 
-	int k;
 	BBArray *arr;
 
 	if( length<=0 ) return &bbEmptyArray;
@@ -358,7 +361,6 @@ BBArray *bbArrayFromData( const char *type,int length,void *data ){
 
 BBArray *bbArrayFromDataStruct( const char *type,int length,void *data, unsigned short data_size ){
 
-	int k;
 	BBArray *arr;
 
 	if( length<=0 ) return &bbEmptyArray;
@@ -396,7 +398,7 @@ void * bbArrayIndex( BBArray * arr, int offset, int index) {
 BBArray *bbArrayCastFromObject( BBObject *o,const char *type ){
 	BBArray *arr=(BBArray*)o;
 	if( arr==&bbEmptyArray ) return arr;
-	if( arr->clas!=&bbArrayClass ) return &bbEmptyArray;
+	if( arr->clas!=(BBClass*)&bbArrayClass ) return &bbEmptyArray;
 	if( arr->type[0]==':' && type[0]==':' ) return arr;
 	if( strcmp( arr->type,type ) ) return &bbEmptyArray;
 	return arr;
@@ -444,36 +446,36 @@ QSORTARRAY( unsigned char,_qsort_b )
 QSORTARRAY( unsigned short,_qsort_s )
 QSORTARRAY( int,qsort_i )
 QSORTARRAY( unsigned int,qsort_u )
-QSORTARRAY( BBInt64,qsort_l );
-QSORTARRAY( BBUInt64,qsort_y );
-QSORTARRAY( float,qsort_f );
-QSORTARRAY( double,qsort_d );
-QSORTARRAY( BBSIZET,qsort_z );
+QSORTARRAY( BBInt64,qsort_l )
+QSORTARRAY( BBUInt64,qsort_y )
+QSORTARRAY( float,qsort_f )
+QSORTARRAY( double,qsort_d )
+QSORTARRAY( BBSIZET,qsort_z )
 #ifdef _WIN32
-QSORTARRAY( WPARAM,qsort_w );
-QSORTARRAY( LPARAM,qsort_x );
+QSORTARRAY( WPARAM,qsort_w )
+QSORTARRAY( LPARAM,qsort_x )
 #endif
 #undef LESSTHAN
 #define LESSTHAN(X,Y) ((*X)->clas->Compare(*(X),*(Y))<0)
-QSORTARRAY( BBObject*,qsort_obj );
+QSORTARRAY( BBObject*,qsort_obj )
 #undef LESSTHAN
 #define LESSTHAN(X,Y) (*(X)>*(Y))
 QSORTARRAY( unsigned char,qsort_b_d )
 QSORTARRAY( unsigned short,qsort_s_d )
 QSORTARRAY( int,qsort_i_d )
 QSORTARRAY( unsigned int,qsort_u_d )
-QSORTARRAY( BBInt64,qsort_l_d );
-QSORTARRAY( BBUInt64,qsort_y_d );
-QSORTARRAY( float,qsort_f_d );
-QSORTARRAY( double,qsort_d_d );
-QSORTARRAY( BBSIZET,qsort_z_d );
+QSORTARRAY( BBInt64,qsort_l_d )
+QSORTARRAY( BBUInt64,qsort_y_d )
+QSORTARRAY( float,qsort_f_d )
+QSORTARRAY( double,qsort_d_d )
+QSORTARRAY( BBSIZET,qsort_z_d )
 #ifdef _WIN32
-QSORTARRAY( WPARAM,qsort_w_d );
-QSORTARRAY( LPARAM,qsort_x_d );
+QSORTARRAY( WPARAM,qsort_w_d )
+QSORTARRAY( LPARAM,qsort_x_d )
 #endif
 #undef LESSTHAN
 #define LESSTHAN(X,Y) ((*X)->clas->Compare(*(X),*(Y))>0)
-QSORTARRAY( BBObject*,qsort_obj_d );
+QSORTARRAY( BBObject*,qsort_obj_d )
 
 void bbArraySort( BBArray *arr,int ascending ){
 	int n;
