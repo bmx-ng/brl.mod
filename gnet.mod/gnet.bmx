@@ -481,7 +481,7 @@ Type TGNetHost
 			Select ev.event()
 			Case ENET_EVENT_TYPE_CONNECT
 				Assert Not peer Else "GNet error"
-				peer=AddPeer( ev.peer )
+				peer=AddPeer( ev.peer() )
 			Case ENET_EVENT_TYPE_DISCONNECT
 				If peer				
 					For Local obj:TGNetObject=EachIn _objects			
@@ -497,7 +497,7 @@ Type TGNetHost
 			Case ENET_EVENT_TYPE_RECEIVE
 				Assert peer Else "GNet error"
 				Local msg:TGNetMsg=peer.RecvMsg( ev.packet() )
-				enet_packet_destroy ev.packet
+				enet_packet_destroy ev.packet()
 				Select msg.state
 				Case GNET_MESSAGE
 					Local obj:TGNetObject=_idMap[msg.id]
