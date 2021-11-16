@@ -84,31 +84,7 @@ struct BBDebugDecl * bmx_debugger_DebugDecl_ArrayDecl(BBArray  * arr) {
 }
 
 void bmx_debugger_DebugDecl_ArrayDeclIndexedPart(struct BBDebugDecl * decl, BBArray  * arr, int index) {
-	
-	int size = 4;
-	switch( arr->type[0] ){
-		case 'b':size=1;break;
-		case 's':size=2;break;
-		case 'l':size=8;break;
-		case 'y':size=8;break;
-		case 'd':size=8;break;
-		case 'h':size=8;break;
-		case 'j':size=16;break;
-		case 'k':size=16;break;
-		case 'm':size=16;break;
-		case '*':size=sizeof(void*);break;
-		case ':':size=sizeof(void*);break;
-		case '$':size=sizeof(void*);break;
-		case '[':size=sizeof(void*);break;
-		case '(':size=sizeof(void*);break;
-		case 'z':size=sizeof(BBSIZET);break;
-#ifdef _WIN32
-		case 'w':size=sizeof(WPARAM);break;
-		case 'x':size=sizeof(LPARAM);break;
-#endif
-	}
-
-	decl->var_address = ((char*)BBARRAYDATA(arr, arr->dims)) + size * index;
+	decl->var_address = ((char*)BBARRAYDATA(arr, arr->dims)) + arr->data_size * index;
 }
 
 void bmx_debugger_DebugDecl_ArrayDeclFree(struct BBDebugDecl * decl) {
