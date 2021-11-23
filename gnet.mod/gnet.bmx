@@ -6,12 +6,14 @@ bbdoc: Networking/GameNet
 End Rem
 Module BRL.GNet
 
-ModuleInfo "Version: 1.07"
+ModuleInfo "Version: 1.08"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.08"
+ModuleInfo "History: Fixed list issue."
 ModuleInfo "History: 1.07"
 ModuleInfo "History: Updated for NG."
 ModuleInfo "History: Made SuperStrict."
@@ -31,7 +33,6 @@ Import Pub.ENet
 Import BRL.Socket
 Import BRL.LinkedList
 Import BRL.System
-Import BRL.Collections
 Import brl.standardio
 
 Private
@@ -431,7 +432,7 @@ Type TGNetHost
 		Repeat
 			Local ev:ENetEvent=New ENetEvent
 			If Not enet_host_service( _enetHost,ev.eventPtr,0 ) Return
-			_enetEvents.Add(ev)
+			_enetEvents.AddLast(ev)
 		Forever
 	End Method
 
@@ -467,8 +468,7 @@ Type TGNetHost
 			
 			If _enetEvents.IsEmpty() Return
 	
-			Local ev:ENetEvent=_enetEvents[0]
-			_enetEvents.RemoveAt(0)
+			Local ev:ENetEvent=ENetEvent(_enetEvents.RemoveFirst())
 
 			Local peer:TGNetPeer
 			For Local t:TGNetPeer=EachIn _peers
@@ -648,17 +648,13 @@ Type TGNetHost
 			timeout:+MilliSecs()
 			While timeout-MilliSecs()>0
 				UpdateENetEvents
-				Local i:Int
-				While i < _enetEvents.Count()
-				'For Local ev:ENetEvent=EachIn _enetEvents
-					Local ev:ENetEvent = _enetEvents[i]
+				For Local ev:ENetEvent=EachIn _enetEvents
 					If ev.event()=ENET_EVENT_TYPE_CONNECT And ev.peer()=peer
-						_enetEvents.RemoveAt(i)
+						_enetEvents.Remove(ev)
 						AddPeer peer
 						Return True
 					EndIf
-					i :+ 1
-				Wend
+				next
 			Wend
 		EndIf
 		enet_host_destroy _enetHost
@@ -676,17 +672,13 @@ Type TGNetHost
 			timeout:+MilliSecs()
 			While timeout-MilliSecs()>0
 				UpdateENetEvents
-				Local i:Int = 0
-				While i < _enetEvents.Count()
-				'For Local ev:ENetEvent=EachIn _enetEvents
-					Local ev:ENetEvent = _enetEvents[i]
+				For Local ev:ENetEvent=EachIn _enetEvents
 					If ev.event()=ENET_EVENT_TYPE_CONNECT And ev.peer()=peer
-						_enetEvents.RemoveAt(i)
+						_enetEvents.Remove(ev)
 						AddPeer peer
 						Return True
 					EndIf
-					i :+ 1
-				Wend
+				next
 			Wend
 		EndIf
 		enet_host_destroy _enetHost
@@ -699,7 +691,7 @@ Type TGNetHost
 	End Function
 	
 	Field _enetHost:Byte Ptr
-	Field _enetEvents:TArrayList<EnetEvent> = New TArrayList<EnetEvent>
+	Field _enetEvents:TList = New TList
 	
 	Field _peers:TList=New TList	'active peers
 	Field _objects:TList=New TList		'all objects
