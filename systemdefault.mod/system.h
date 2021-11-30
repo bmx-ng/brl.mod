@@ -34,6 +34,11 @@ void bbSystemEmitOSEvent( HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam,BBObjec
 
 #ifdef __OBJC__
 #include <AppKit/AppKit.h>
+
+@interface BBSystemAppDelegate : NSObject{
+}
+@end
+
 #else
 typedef void *NSView;
 typedef void *NSEvent;

@@ -66,10 +66,6 @@ typedef struct AsyncOp{
 	BBObject *syncInfo;
 }AsyncOp;
 
-@interface BBSystemAppDelegate : NSObject{
-}
-@end
-
 static BBSystemAppDelegate *appDelegate;
 
 static NSString *tmpNSString( BBString *str ){
