@@ -1,5 +1,5 @@
 # Copyright (c) 2005-2006 Hewlett-Packard Development Company, L.P.
-# Copyright (c) 2009-2019 Ivan Maidanski
+# Copyright (c) 2009-2021 Ivan Maidanski
 #
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -124,10 +124,10 @@ fi
 
 AC_ARG_ENABLE(atomic-intrinsics,
         [AC_HELP_STRING([--disable-atomic-intrinsics],
-                        [Do not use C11 atomic intrinsics])])
+                        [Do not use GCC atomic intrinsics])])
 if test "$enable_atomic_intrinsics" = no; then
   AC_DEFINE([AO_DISABLE_GCC_ATOMICS], 1,
-            [Define to avoid C11 atomic intrinsics even if available.])
+            [Define to avoid GCC atomic intrinsics even if available.])
 fi
 
 AC_ARG_ENABLE(gcov, AC_HELP_STRING([--enable-gcov],
@@ -137,6 +137,11 @@ if test "$enable_gcov" = "yes"; then
   # Turn off code optimization to get accurate line numbers.
   CFLAGS=`echo "$CFLAGS" | sed -e 's/-O\(1\|2\|3\|4\|s\|fast\)\?//g'`
 fi
+
+AC_ARG_ENABLE(gpl,
+        [AC_HELP_STRING([--disable-gpl],
+                        [Do not build atomic_ops_gpl library])])
+AM_CONDITIONAL(ENABLE_GPL, test x$enable_gpl != xno)
 
 AC_ARG_ENABLE(docs,
         [AC_HELP_STRING([--disable-docs],
@@ -170,22 +175,14 @@ AH_TEMPLATE([AO_PREFER_GENERALIZED],
 AH_TEMPLATE([AO_USE_PTHREAD_DEFS],
         [Emulate atomic operations via slow and async-signal-unsafe \
          pthread locking])
-AH_TEMPLATE([AO_ASM_X64_AVAILABLE],
-        [Inline assembly available (only VC/x86_64)])
-AH_TEMPLATE([AO_ASSUME_VISTA],
-        [Assume Windows Server 2003, Vista or later target (only VC/x86)])
 AH_TEMPLATE([AO_CMPXCHG16B_AVAILABLE],
         [Assume target is not old AMD Opteron chip (only x86_64)])
 AH_TEMPLATE([AO_FORCE_USE_SWP],
         [Force test_and_set to use SWP instruction instead of LDREX/STREX \
          (only arm v6+)])
 AH_TEMPLATE([AO_NO_SPARC_V9], [Assume target is not sparc v9+ (only sparc)])
-AH_TEMPLATE([AO_OLD_STYLE_INTERLOCKED_COMPARE_EXCHANGE],
-        [Assume ancient MS VS Win32 headers (only VC/arm v6+, VC/x86)])
-AH_TEMPLATE([AO_UNIPROCESSOR], [Assume single-core target (only arm v6+)])
-AH_TEMPLATE([AO_USE_INTERLOCKED_INTRINSICS],
-        [Assume Win32 _Interlocked primitives available as intrinsics \
-         (only VC/arm)])
+AH_TEMPLATE([AO_UNIPROCESSOR],
+        [Assume single-core target (only arm v6+ or GCC intrinsics)])
 AH_TEMPLATE([AO_USE_PENTIUM4_INSTRS],
         [Use Pentium 4 'mfence' instruction (only x86)])
 AH_TEMPLATE([AO_USE_SYNC_CAS_BUILTIN],
@@ -195,9 +192,9 @@ AH_TEMPLATE([AO_WEAK_DOUBLE_CAS_EMULATION],
         [Emulate double-width CAS via pthread locking in case of no hardware \
          support (only gcc/x86_64, the emulation is unsafe)])
 AH_TEMPLATE([AO_PREFER_BUILTIN_ATOMICS],
-        [Prefer C11 atomic intrinsics over assembly-based implementation \
+        [Prefer GCC atomic intrinsics over assembly-based implementation \
         even in case of inefficient implementation (do not use assembly for \
-        any atomic_ops primitive if C11/GCC atomic intrinsics available)])
+        any atomic_ops primitive if the atomic intrinsics are available)])
 
 AC_DEFINE(_REENTRANT, 1, [Required define if using POSIX threads.])
 
@@ -233,13 +230,18 @@ else
 fi
 AC_SUBST(THREADDLLIBS)
 
+# AO API symbols export control.
+# Compile with AO_DLL defined unless building static libraries.
+if test x$enable_shared = xyes -a x$enable_static = xno; then
+  CFLAGS="-DAO_DLL $CFLAGS"
+fi
+
 AM_CONDITIONAL(ENABLE_SHARED, test x$enable_shared = xyes)
 AM_CONDITIONAL(HAVE_PTHREAD_H, test x$have_pthreads = xtrue)
 AM_CONDITIONAL(NEED_ASM, test x$need_asm = xtrue)
 
 AC_CONFIG_FILES([
         Makefile
-        doc/Makefile
         src/Makefile
         tests/Makefile
         pkgconfig/atomic_ops.pc

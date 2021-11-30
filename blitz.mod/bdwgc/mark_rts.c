@@ -1,6 +1,7 @@
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 2009-2021 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -63,7 +64,7 @@ int GC_no_dls = 0;      /* Register dynamic library data segments.      */
                   (void *)GC_static_roots[i].r_end,
                   GC_static_roots[i].r_tmp ? " (temporary)" : "");
     }
-    GC_printf("GC_root_size: %lu\n", (unsigned long)GC_root_size);
+    GC_printf("GC_root_size= %lu\n", (unsigned long)GC_root_size);
 
     if ((size = GC_compute_root_size()) != GC_root_size)
       GC_err_printf("GC_root_size incorrect!! Should be: %lu\n",
@@ -619,18 +620,14 @@ GC_API void GC_CALL GC_exclude_static_roots(void *b, void *e)
 # define GC_PUSH_CONDITIONAL(b, t, all) \
                 (GC_parallel \
                     ? GC_push_conditional_eager(b, t, all) \
-                    : GC_push_conditional(b, t, all))
-#elif defined(GC_DISABLE_INCREMENTAL)
-# define GC_PUSH_CONDITIONAL(b, t, all) GC_push_all(b, t)
+                    : GC_push_conditional_static(b, t, all))
 #else
-# define GC_PUSH_CONDITIONAL(b, t, all) GC_push_conditional(b, t, all)
-                        /* Do either of GC_push_all or GC_push_selected */
-                        /* depending on the third arg.                  */
+# define GC_PUSH_CONDITIONAL(b, t, all) GC_push_conditional_static(b, t, all)
 #endif
 
 /* Invoke push_conditional on ranges that are not excluded. */
 STATIC void GC_push_conditional_with_exclusions(ptr_t bottom, ptr_t top,
-                                                GC_bool all GC_ATTR_UNUSED)
+                                                GC_bool all)
 {
     while ((word)bottom < (word)top) {
         struct exclusion *next = GC_next_exclusion(bottom);

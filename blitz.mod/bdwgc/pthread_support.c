@@ -3,7 +3,7 @@
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
  * Copyright (c) 2000-2005 by Hewlett-Packard Company.  All rights reserved.
- * Copyright (c) 2008-2020 Ivan Maidanski
+ * Copyright (c) 2008-2021 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -47,7 +47,7 @@
 # endif
 # include <signal.h>
 
-# include "gc_inline.h"
+# include "gc/gc_inline.h"
 
 #if defined(GC_DARWIN_THREADS)
 # include "private/darwin_semaphore.h"
@@ -312,16 +312,21 @@ STATIC int GC_nprocs = 1;
 
 #endif /* THREAD_LOCAL_ALLOC */
 
-#ifdef PARALLEL_MARK
-
 # ifndef MAX_MARKERS
 #   define MAX_MARKERS 16
 # endif
 
-static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
-#ifdef IA64
-  static ptr_t marker_bsp[MAX_MARKERS - 1] = {0};
-#endif
+#ifdef PARALLEL_MARK
+
+# if defined(USE_PROC_FOR_LIBRARIES) \
+     || (defined(IA64) && (defined(HAVE_PTHREAD_ATTR_GET_NP) \
+                           || defined(HAVE_PTHREAD_GETATTR_NP)))
+    static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
+# endif
+
+# if defined(IA64) && defined(USE_PROC_FOR_LIBRARIES)
+    static ptr_t marker_bsp[MAX_MARKERS - 1] = {0};
+# endif
 
 #if defined(GC_DARWIN_THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
   static mach_port_t marker_mach_threads[MAX_MARKERS - 1] = {0};
@@ -344,7 +349,7 @@ static ptr_t marker_sp[MAX_MARKERS - 1] = {0};
     int err = pthread_setname_np(pthread_self(), "GC-marker-%zu",
                                  (void*)(size_t)id);
     if (err != 0)
-      WARN("pthread_setname_np failed, errno = %" WARN_PRIdPTR "\n", err);
+      WARN("pthread_setname_np failed, errno= %" WARN_PRIdPTR "\n", err);
   }
 #elif defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID) \
       || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
@@ -382,8 +387,12 @@ STATIC void * GC_mark_thread(void * id)
                          /* Mark threads are not cancellable; they      */
                          /* should be invisible to client.              */
   set_marker_thread_name((unsigned)(word)id);
-  marker_sp[(word)id] = GC_approx_sp();
-# ifdef IA64
+# if defined(USE_PROC_FOR_LIBRARIES) \
+     || (defined(IA64) && (defined(HAVE_PTHREAD_ATTR_GET_NP) \
+                           || defined(HAVE_PTHREAD_GETATTR_NP)))
+    marker_sp[(word)id] = GC_approx_sp();
+# endif
+# if defined(IA64) && defined(USE_PROC_FOR_LIBRARIES)
     marker_bsp[(word)id] = GC_save_regs_in_stack();
 # endif
 # if defined(GC_DARWIN_THREADS) && !defined(GC_NO_THREADS_DISCOVERY)
@@ -408,8 +417,8 @@ STATIC void * GC_mark_thread(void * id)
         my_mark_no = GC_mark_no;
     }
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Starting mark helper for mark number %lu\n",
-                    (unsigned long)my_mark_no);
+      GC_log_printf("Starting helper for mark number %lu (thread %u)\n",
+                    (unsigned long)my_mark_no, (unsigned)(word)id);
 #   endif
     GC_help_marker(my_mark_no);
   }
@@ -491,7 +500,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
 
       if (REAL_FUNC(pthread_sigmask)(SIG_BLOCK, &set, &oldset) < 0) {
         WARN("pthread_sigmask set failed, no markers started,"
-             " errno = %" WARN_PRIdPTR "\n", errno);
+             " errno= %" WARN_PRIdPTR "\n", errno);
         GC_markers_m1 = 0;
         (void)pthread_attr_destroy(&attr);
         return;
@@ -505,8 +514,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
     for (i = 0; i < available_markers_m1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
-        WARN("Marker thread creation failed, errno = %" WARN_PRIdPTR "\n",
-             errno);
+        WARN("Marker thread %" WARN_PRIdPTR " creation failed\n", i);
         /* Don't try to create other marker threads.    */
         GC_markers_m1 = i;
         break;
@@ -516,7 +524,7 @@ GC_INNER void GC_start_mark_threads_inner(void)
 #   ifndef NO_MARKER_SPECIAL_SIGMASK
       /* Restore previous signal mask.  */
       if (REAL_FUNC(pthread_sigmask)(SIG_SETMASK, &oldset, NULL) < 0) {
-        WARN("pthread_sigmask restore failed, errno = %" WARN_PRIdPTR "\n",
+        WARN("pthread_sigmask restore failed, errno= %" WARN_PRIdPTR "\n",
              errno);
       }
 #   endif
@@ -618,7 +626,7 @@ STATIC void GC_delete_thread(pthread_t id)
     GC_thread prev = NULL;
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Deleting thread %p, n_threads = %d\n",
+      GC_log_printf("Deleting thread %p, n_threads= %d\n",
                     (void *)id, GC_count_threads());
 #   endif
 
@@ -676,7 +684,7 @@ STATIC void GC_delete_gc_thread(GC_thread t)
     GC_INTERNAL_FREE(p);
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Deleted thread %p, n_threads = %d\n",
+      GC_log_printf("Deleted thread %p, n_threads= %d\n",
                     (void *)id, GC_count_threads());
 #   endif
 }
@@ -894,7 +902,8 @@ STATIC void GC_remove_all_threads_but_me(void)
   }
 #endif /* USE_PROC_FOR_LIBRARIES */
 
-#ifdef IA64
+#if (defined(HAVE_PTHREAD_ATTR_GET_NP) || defined(HAVE_PTHREAD_GETATTR_NP)) \
+    && defined(IA64)
   /* Find the largest stack_base smaller than bound.  May be used       */
   /* to find the boundary between a register stack and adjacent         */
   /* immediately preceding memory stack.                                */
@@ -925,8 +934,6 @@ STATIC void GC_remove_all_threads_but_me(void)
 #endif /* IA64 */
 
 #ifndef STAT_READ
-  /* Also defined in os_dep.c.  */
-# define STAT_BUF_SIZE 4096
 # define STAT_READ read
         /* If read is wrapped, this may need to be redefined to call    */
         /* the real one.                                                */
@@ -958,16 +965,27 @@ STATIC void GC_remove_all_threads_but_me(void)
     /* Should be "return sysconf(_SC_NPROCESSORS_ONLN);" but that     */
     /* appears to be buggy in many cases.                             */
     /* We look for lines "cpu<n>" in /proc/stat.                      */
-    char stat_buf[STAT_BUF_SIZE];
+#   define PROC_STAT_BUF_SZ ((1 + MAX_MARKERS) * 100) /* should be enough */
+    /* No need to read the entire /proc/stat to get maximum cpu<N> as   */
+    /* - the requested lines are located at the beginning of the file;  */
+    /* - the lines with cpu<N> where N > MAX_MARKERS are not needed.    */
+    char stat_buf[PROC_STAT_BUF_SZ+1];
     int f;
     int result, i, len;
 
     f = open("/proc/stat", O_RDONLY);
     if (f < 0) {
-      WARN("Couldn't read /proc/stat\n", 0);
+      WARN("Could not open /proc/stat\n", 0);
       return 1; /* assume an uniprocessor */
     }
-    len = STAT_READ(f, stat_buf, STAT_BUF_SIZE);
+    len = STAT_READ(f, stat_buf, sizeof(stat_buf)-1);
+    /* Unlikely that we need to retry because of an incomplete read here. */
+    if (len < 0) {
+      WARN("Failed to read /proc/stat, errno= %" WARN_PRIdPTR "\n", errno);
+      close(f);
+      return 1;
+    }
+    stat_buf[len] = '\0'; /* to avoid potential buffer overrun by atoi() */
     close(f);
 
     result = 1;
@@ -975,7 +993,7 @@ STATIC void GC_remove_all_threads_but_me(void)
         /* entry in /proc/stat.  We identify those as           */
         /* uniprocessors.                                       */
 
-    for (i = 0; i < len - 100; ++i) {
+    for (i = 0; i < len - 4; ++i) {
       if (stat_buf[i] == '\n' && stat_buf[i+1] == 'c'
           && stat_buf[i+2] == 'p' && stat_buf[i+3] == 'u') {
         int cpu_no = atoi(&stat_buf[i + 4]);
@@ -1161,7 +1179,10 @@ static void fork_child_proc(void)
       /* Turn off parallel marking in the child, since we are probably  */
       /* just going to exec, and we would have to restart mark threads. */
         GC_parallel = FALSE;
-#   endif /* PARALLEL_MARK */
+#   endif
+#   ifndef GC_DISABLE_INCREMENTAL
+      GC_dirty_update_child();
+#   endif
     RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
     /* Even though after a fork the child only inherits the single      */
@@ -1291,11 +1312,7 @@ GC_INNER void GC_thr_init(void)
     }
   }
 
-# ifndef GC_DARWIN_THREADS
-    GC_stop_init();
-# endif
-
-  /* Set GC_nprocs.     */
+  /* Set GC_nprocs and available_markers_m1.    */
   {
     char * nprocs_string = GETENV("GC_NPROCS");
     GC_nprocs = -1;
@@ -1346,7 +1363,44 @@ GC_INNER void GC_thr_init(void)
       }
 #   endif
   }
-  GC_COND_LOG_PRINTF("Number of processors = %d\n", GC_nprocs);
+  GC_COND_LOG_PRINTF("Number of processors: %d\n", GC_nprocs);
+
+# if defined(BASE_ATOMIC_OPS_EMULATED) && !defined(GC_DARWIN_THREADS) \
+     && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
+     && !defined(PLATFORM_STOP_WORLD) && !defined(SN_TARGET_PSP2)
+    /* Ensure the process is running on just one CPU core.      */
+    /* This is needed because the AO primitives emulated with   */
+    /* locks cannot be used inside signal handlers.             */
+    {
+      cpu_set_t mask;
+      int cpu_set_cnt = 0;
+      int cpu_lowest_set = 0;
+      int i = GC_nprocs > 1 ? GC_nprocs : 2; /* check at least 2 cores */
+
+      if (sched_getaffinity(0 /* current process */,
+                            sizeof(mask), &mask) == -1)
+        ABORT_ARG1("sched_getaffinity failed", ": errno= %d", errno);
+      while (i-- > 0)
+        if (CPU_ISSET(i, &mask)) {
+          cpu_lowest_set = i;
+          cpu_set_cnt++;
+        }
+      if (0 == cpu_set_cnt)
+        ABORT("sched_getaffinity returned empty mask");
+      if (cpu_set_cnt > 1) {
+        CPU_ZERO(&mask);
+        CPU_SET(cpu_lowest_set, &mask); /* select just one CPU */
+        if (sched_setaffinity(0, sizeof(mask), &mask) == -1)
+          ABORT_ARG1("sched_setaffinity failed", ": errno= %d", errno);
+        WARN("CPU affinity mask is set to %p\n", (word)1 << cpu_lowest_set);
+      }
+    }
+# endif /* BASE_ATOMIC_OPS_EMULATED */
+
+# ifndef GC_DARWIN_THREADS
+    GC_stop_init();
+# endif
+
 # ifdef PARALLEL_MARK
     if (available_markers_m1 <= 0) {
       /* Disable parallel marking.      */
@@ -1581,9 +1635,10 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 
 STATIC void GC_unregister_my_thread_inner(GC_thread me)
 {
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef DEBUG_THREADS
       GC_log_printf(
-                "Unregistering thread %p, gc_thread = %p, n_threads = %d\n",
+                "Unregistering thread %p, gc_thread= %p, n_threads= %d\n",
                 (void *)me->id, (void *)me, GC_count_threads());
 #   endif
     GC_ASSERT(!(me -> flags & FINISHED));
@@ -1624,7 +1679,7 @@ GC_API int GC_CALL GC_unregister_my_thread(void)
     me = GC_lookup_thread(self);
 #   ifdef DEBUG_THREADS
         GC_log_printf(
-                "Called GC_unregister_my_thread on %p, gc_thread = %p\n",
+                "Called GC_unregister_my_thread on %p, gc_thread= %p\n",
                 (void *)self, (void *)me);
 #   endif
     GC_ASSERT(THREAD_EQUAL(me->id, self));
@@ -1645,7 +1700,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
     DCL_LOCK_STATE;
 
 #   ifdef DEBUG_THREADS
-        GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread = %p\n",
+        GC_log_printf("Called GC_thread_exit_proc on %p, gc_thread= %p\n",
                       (void *)((GC_thread)arg)->id, arg);
 #   endif
     LOCK();
@@ -1665,7 +1720,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
 
     ASSERT_SYMS_INITIALIZED();
     LOCK();
-    t = GC_lookup_thread(thread);
+    t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
     /* This is guaranteed to be the intended one, since the thread id   */
     /* can't have been recycled by pthreads.                            */
     UNLOCK();
@@ -1701,7 +1756,7 @@ GC_INNER_PTHRSTART void GC_thread_exit_proc(void *arg)
 
     ASSERT_SYMS_INITIALIZED();
     LOCK();
-    t = GC_lookup_thread(thread);
+    t = (GC_thread)COVERT_DATAFLOW(GC_lookup_thread(thread));
     UNLOCK();
     result = REAL_FUNC(pthread_detach)(thread);
     if (result == 0) {
@@ -1891,7 +1946,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     DCL_LOCK_STATE;
 
 #   ifdef DEBUG_THREADS
-      GC_log_printf("Starting thread %p, pid = %ld, sp = %p\n",
+      GC_log_printf("Starting thread %p, pid= %ld, sp= %p\n",
                     (void *)self, (long)getpid(), (void *)&arg);
 #   endif
     LOCK();
@@ -1903,7 +1958,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     UNLOCK();
     *pstart = si -> start_routine;
 #   ifdef DEBUG_THREADS
-      GC_log_printf("start_routine = %p\n", (void *)(signed_word)(*pstart));
+      GC_log_printf("start_routine= %p\n", (void *)(signed_word)(*pstart));
 #   endif
     *pstart_arg = si -> arg;
     sem_post(&(si -> registered));      /* Last action on si.   */
@@ -2267,37 +2322,12 @@ yield:
 
 static pthread_cond_t builder_cv = PTHREAD_COND_INITIALIZER;
 
-#ifdef GLIBC_2_19_TSX_BUG
-  /* Parse string like <major>[.<minor>[<tail>]] and return major value. */
-  static int parse_version(int *pminor, const char *pverstr) {
-    char *endp;
-    unsigned long value = strtoul(pverstr, &endp, 10);
-    int major = (int)value;
-
-    if (major < 0 || (char *)pverstr == endp || (unsigned)major != value) {
-      /* Parse error */
-      return -1;
-    }
-    if (*endp != '.') {
-      /* No minor part. */
-      *pminor = -1;
-    } else {
-      value = strtoul(endp + 1, &endp, 10);
-      *pminor = (int)value;
-      if (*pminor < 0 || (unsigned)(*pminor) != value) {
-        return -1;
-      }
-    }
-    return major;
-  }
-#endif /* GLIBC_2_19_TSX_BUG */
-
 static void setup_mark_lock(void)
 {
 # ifdef GLIBC_2_19_TSX_BUG
     pthread_mutexattr_t mattr;
     int glibc_minor = -1;
-    int glibc_major = parse_version(&glibc_minor, gnu_get_libc_version());
+    int glibc_major = GC_parse_version(&glibc_minor, gnu_get_libc_version());
 
     if (glibc_major > 2 || (glibc_major == 2 && glibc_minor >= 19)) {
       /* TODO: disable this workaround for glibc with fixed TSX */

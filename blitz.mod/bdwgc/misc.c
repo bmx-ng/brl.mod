@@ -2,7 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1999-2001 by Hewlett-Packard Company. All rights reserved.
- * Copyright (c) 2008-2020 Ivan Maidanski
+ * Copyright (c) 2008-2021 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -49,7 +49,7 @@
     GC_INNER PCR_Th_ML GC_allocate_ml;
 # elif defined(SN_TARGET_PSP2)
     GC_INNER WapiMutex GC_allocate_ml_PSP2 = { 0, NULL };
-# elif defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3)
+# elif defined(GC_DEFN_ALLOCATE_ML) || defined(SN_TARGET_PS3)
 #   include <pthread.h>
     GC_INNER pthread_mutex_t GC_allocate_ml;
 # endif
@@ -190,8 +190,6 @@ GC_oom_func GC_oom_fn = GC_default_oom_fn;
 # endif
 
 #elif !defined(HAVE_NO_FORK)
-
-  /* Same as above but with GC_CALL calling conventions.  */
   GC_API void GC_CALL GC_atfork_prepare(void)
   {
 #   ifdef THREADS
@@ -484,6 +482,11 @@ GC_API size_t GC_CALL GC_get_heap_size(void)
     return (size_t)(GC_heapsize - GC_unmapped_bytes);
 }
 
+GC_API size_t GC_CALL GC_get_obtained_from_os_bytes(void)
+{
+    return (size_t)GC_our_mem_bytes;
+}
+
 GC_API size_t GC_CALL GC_get_free_bytes(void)
 {
     /* ignore the memory space returned to OS */
@@ -558,6 +561,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
                                         (word)GC_bytes_found : 0;
     pstats->reclaimed_bytes_before_gc = GC_reclaimed_bytes_before_gc;
     pstats->expl_freed_bytes_since_gc = GC_bytes_freed; /* since gc-7.7 */
+    pstats->obtained_from_os_bytes = GC_our_mem_bytes; /* since gc-8.2 */
   }
 
 # include <string.h> /* for memset() */
@@ -666,6 +670,8 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
       unsigned len;
       DWORD nBytesRead;
       TCHAR path[_MAX_PATH + 0x10]; /* buffer for path + ext */
+      size_t bytes_to_get;
+
       len = (unsigned)GetModuleFileName(NULL /* hModule */, path,
                                         _MAX_PATH + 1);
       /* If GetModuleFileName() has failed then len is 0. */
@@ -686,11 +692,14 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
       }
       /* At this execution point, GC_setpagesize() and GC_init_win32()  */
       /* must already be called (for GET_MEM() to work correctly).      */
-      content = (char *)GET_MEM(ROUNDUP_PAGESIZE_IF_MMAP((size_t)len + 1));
+      GC_ASSERT(GC_page_size != 0);
+      bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP((size_t)len + 1);
+      content = (char *)GET_MEM(bytes_to_get);
       if (content == NULL) {
         CloseHandle(hFile);
         return; /* allocation failure */
       }
+      GC_add_to_our_memory(content, bytes_to_get);
       ofs = 0;
       nBytesRead = (DWORD)-1L;
           /* Last ReadFile() call should clear nBytesRead on success. */
@@ -700,8 +709,10 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
           break;
       }
       CloseHandle(hFile);
-      if (ofs != len || nBytesRead != 0)
+      if (ofs != len || nBytesRead != 0) {
+        /* TODO: recycle content */
         return; /* read operation is failed - ignoring the file content */
+      }
       content[ofs] = '\0';
       while (ofs-- > 0) {
        if (content[ofs] == '\r' || content[ofs] == '\n')
@@ -1068,7 +1079,11 @@ GC_API void GC_CALL GC_init(void)
       GC_all_interior_pointers = 1;
     }
     if (0 != GETENV("GC_DONT_GC")) {
-      GC_dont_gc = 1;
+#     ifdef LINT2
+        GC_disable();
+#     else
+        GC_dont_gc = 1;
+#     endif
     }
     if (0 != GETENV("GC_PRINT_BACK_HEIGHT")) {
       GC_print_back_height = TRUE;
@@ -1239,6 +1254,7 @@ GC_API void GC_CALL GC_init(void)
 #   ifndef THREADS
       GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)GC_approx_sp()));
 #   endif
+    GC_init_headers();
 #   ifndef GC_DISABLE_INCREMENTAL
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
 #       if defined(BASE_ATOMIC_OPS_EMULATED) || defined(CHECKSUMS) \
@@ -1263,7 +1279,6 @@ GC_API void GC_CALL GC_init(void)
     /* Add initial guess of root sets.  Do this first, since sbrk(0)    */
     /* might be used.                                                   */
       if (GC_REGISTER_MAIN_STATIC_DATA()) GC_register_data_segments();
-    GC_init_headers();
     GC_bl_init();
     GC_mark_init();
     {
@@ -1317,7 +1332,14 @@ GC_API void GC_CALL GC_init(void)
 #   endif
     GC_is_initialized = TRUE;
 #   if defined(GC_PTHREADS) || defined(GC_WIN32_THREADS)
-        GC_thr_init();
+#       if defined(LINT2) \
+           && !(defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED))
+          LOCK();
+          GC_thr_init();
+          UNLOCK();
+#       else
+          GC_thr_init();
+#       endif
 #       ifdef PARALLEL_MARK
           /* Actually start helper threads.     */
 #         if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
@@ -1728,7 +1750,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
 #else
 
-# if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+# if !defined(GC_NO_TYPES) && !defined(SN_TARGET_PSP2)
 #   if !defined(AMIGA) && !defined(MSWIN32) && !defined(MSWIN_XBOX1) \
        && !defined(__CC_ARM)
 #     include <unistd.h>
@@ -1736,11 +1758,11 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #   if !defined(ECOS) && !defined(NOSYS)
 #     include <errno.h>
 #   endif
-# endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
+# endif /* !GC_NO_TYPES && !SN_TARGET_PSP2 */
 
   STATIC int GC_write(int fd, const char *buf, size_t len)
   {
-#   if defined(ECOS) || defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PSP2) \
+#   if defined(ECOS) || defined(PLATFORM_WRITE) || defined(SN_TARGET_PSP2) \
        || defined(NOSYS)
 #     ifdef ECOS
         /* FIXME: This seems to be defined nowhere at present.  */

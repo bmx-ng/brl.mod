@@ -19,6 +19,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#ifndef AO_BUILD
+# define AO_BUILD
+#endif
+
 #define AO_REQUIRE_CAS
 #include "atomic_ops_stack.h"
 
@@ -36,7 +40,15 @@
 
 #ifdef AO_USE_ALMOST_LOCK_FREE
 
-  void AO_pause(int); /* defined in atomic_ops.c */
+# ifdef __cplusplus
+    extern "C" {
+# endif
+
+  AO_API void AO_pause(int); /* defined in atomic_ops.c */
+
+# ifdef __cplusplus
+    } /* extern "C" */
+# endif
 
 /* LIFO linked lists based on compare-and-swap.  We need to avoid       */
 /* the case of a node deletion and reinsertion while I'm deleting       */
@@ -58,8 +70,8 @@
 /* to be inserted.                                                      */
 /* Both list headers and link fields contain "perturbed" pointers, i.e. */
 /* pointers with extra bits "or"ed into the low order bits.             */
-void AO_stack_push_explicit_aux_release(volatile AO_t *list, AO_t *x,
-                                        AO_stack_aux *a)
+AO_API void AO_stack_push_explicit_aux_release(volatile AO_t *list, AO_t *x,
+                                               AO_stack_aux *a)
 {
   AO_t x_bits = (AO_t)x;
   AO_t next;
@@ -130,7 +142,7 @@ void AO_stack_push_explicit_aux_release(volatile AO_t *list, AO_t *x,
 /* data race (reported by TSan) is OK because it results in a retry.    */
 #ifdef AO_THREAD_SANITIZER
   AO_ATTR_NO_SANITIZE_THREAD
-  static AO_t AO_load_next(volatile AO_t *first_ptr)
+  static AO_t AO_load_next(const volatile AO_t *first_ptr)
   {
     /* Assuming an architecture on which loads of word type are atomic. */
     /* AO_load cannot be used here because it cannot be instructed to   */
@@ -141,8 +153,8 @@ void AO_stack_push_explicit_aux_release(volatile AO_t *list, AO_t *x,
 # define AO_load_next AO_load
 #endif
 
-AO_t *
-AO_stack_pop_explicit_aux_acquire(volatile AO_t *list, AO_stack_aux * a)
+AO_API AO_t *AO_stack_pop_explicit_aux_acquire(volatile AO_t *list,
+                                               AO_stack_aux *a)
 {
   unsigned i;
   int j = 0;
@@ -256,7 +268,7 @@ AO_stack_pop_explicit_aux_acquire(volatile AO_t *list, AO_stack_aux * a)
   volatile /* non-static */ AO_t AO_noop_sink;
 #endif
 
-void AO_stack_push_release(AO_stack_t *list, AO_t *element)
+AO_API void AO_stack_push_release(AO_stack_t *list, AO_t *element)
 {
     AO_t next;
 
@@ -275,7 +287,7 @@ void AO_stack_push_release(AO_stack_t *list, AO_t *element)
 #   endif
 }
 
-AO_t *AO_stack_pop_acquire(AO_stack_t *list)
+AO_API AO_t *AO_stack_pop_acquire(AO_stack_t *list)
 {
 #   if defined(__clang__) && !AO_CLANG_PREREQ(3, 5)
       AO_t *volatile cptr;
@@ -309,7 +321,7 @@ AO_t *AO_stack_pop_acquire(AO_stack_t *list)
 /* We have a wide CAS, but only does an AO_t-wide comparison.   */
 /* We can't use the Treiber optimization, since we only check   */
 /* for an unchanged version number, not an unchanged pointer.   */
-void AO_stack_push_release(AO_stack_t *list, AO_t *element)
+AO_API void AO_stack_push_release(AO_stack_t *list, AO_t *element)
 {
     AO_t version;
 
@@ -325,7 +337,7 @@ void AO_stack_push_release(AO_stack_t *list, AO_t *element)
                            version+1, (AO_t) element));
 }
 
-AO_t *AO_stack_pop_acquire(AO_stack_t *list)
+AO_API AO_t *AO_stack_pop_acquire(AO_stack_t *list)
 {
     AO_t *cptr;
     AO_t next;

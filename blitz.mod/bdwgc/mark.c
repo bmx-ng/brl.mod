@@ -2,7 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 2000 by Hewlett-Packard Company.  All rights reserved.
- * Copyright (c) 2008-2020 Ivan Maidanski
+ * Copyright (c) 2008-2021 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -525,7 +525,12 @@ static void alloc_mark_stack(size_t);
       /* avoid otherwise.                                               */
 #     ifndef DEFAULT_VDB
         if (GC_auto_incremental) {
-          WARN("Incremental GC incompatible with /proc roots\n", 0);
+          static GC_bool is_warned = FALSE;
+
+          if (!is_warned) {
+            is_warned = TRUE;
+            WARN("Incremental GC incompatible with /proc roots\n", 0);
+          }
           /* I'm not sure if this could still work ...  */
         }
 #     endif
@@ -586,7 +591,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp)
 #   else
       GC_mark_stack_too_small = TRUE;
 #   endif
-    GC_COND_LOG_PRINTF("Mark stack overflow; current size = %lu entries\n",
+    GC_COND_LOG_PRINTF("Mark stack overflow; current size: %lu entries\n",
                        (unsigned long)GC_mark_stack_size);
     return(msp - GC_MARK_STACK_DISCARDS);
 }
@@ -665,9 +670,9 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #             ifdef ENABLE_TRACE
                 if ((word)GC_trace_addr >= (word)current_p
                     && (word)GC_trace_addr < (word)(current_p + descr)) {
-                  GC_log_printf("GC #%u: large section; start %p, len %lu,"
+                  GC_log_printf("GC #%lu: large section; start %p, len %lu,"
                                 " splitting (parallel) at %p\n",
-                                (unsigned)GC_gc_no, (void *)current_p,
+                                (unsigned long)GC_gc_no, (void *)current_p,
                                 (unsigned long)descr,
                                 (void *)(current_p + new_size));
                 }
@@ -684,9 +689,9 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #         ifdef ENABLE_TRACE
             if ((word)GC_trace_addr >= (word)current_p
                 && (word)GC_trace_addr < (word)(current_p + descr)) {
-              GC_log_printf("GC #%u: large section; start %p, len %lu,"
+              GC_log_printf("GC #%lu: large section; start %p, len %lu,"
                             " splitting at %p\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (unsigned long)descr, (void *)limit);
             }
 #         endif
@@ -700,8 +705,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             if ((word)GC_trace_addr >= (word)current_p
                 && (word)GC_trace_addr < (word)(current_p
                                                 + WORDS_TO_BYTES(WORDSZ-2))) {
-              GC_log_printf("GC #%u: tracing from %p bitmap descr %lu\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+              GC_log_printf("GC #%lu: tracing from %p bitmap descr %lu\n",
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (unsigned long)descr);
             }
 #         endif /* ENABLE_TRACE */
@@ -715,8 +720,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                 PREFETCH((ptr_t)current);
 #               ifdef ENABLE_TRACE
                   if (GC_trace_addr == current_p) {
-                    GC_log_printf("GC #%u: considering(3) %p -> %p\n",
-                                  (unsigned)GC_gc_no, (void *)current_p,
+                    GC_log_printf("GC #%lu: considering(3) %p -> %p\n",
+                                  (unsigned long)GC_gc_no, (void *)current_p,
                                   (void *)current);
                   }
 #               endif /* ENABLE_TRACE */
@@ -734,8 +739,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
             if ((word)GC_trace_addr >= (word)current_p
                 && GC_base(current_p) != 0
                 && GC_base(current_p) == GC_base(GC_trace_addr)) {
-              GC_log_printf("GC #%u: tracing from %p, proc descr %lu\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+              GC_log_printf("GC #%lu: tracing from %p, proc descr %lu\n",
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (unsigned long)descr);
             }
 #         endif /* ENABLE_TRACE */
@@ -784,8 +789,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
 #     ifdef ENABLE_TRACE
         if ((word)GC_trace_addr >= (word)current_p
             && (word)GC_trace_addr < (word)(current_p + descr)) {
-          GC_log_printf("GC #%u: small object; start %p, len %lu\n",
-                        (unsigned)GC_gc_no, (void *)current_p,
+          GC_log_printf("GC #%lu: small object; start %p, len %lu\n",
+                        (unsigned long)GC_gc_no, (void *)current_p,
                         (unsigned long)descr);
         }
 #     endif
@@ -844,8 +849,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
           PREFETCH((ptr_t)current);
 #         ifdef ENABLE_TRACE
             if (GC_trace_addr == current_p) {
-              GC_log_printf("GC #%u: considering(1) %p -> %p\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+              GC_log_printf("GC #%lu: considering(1) %p -> %p\n",
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (void *)current);
             }
 #         endif /* ENABLE_TRACE */
@@ -861,8 +866,8 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
         /* validity test.                                               */
 #       ifdef ENABLE_TRACE
             if (GC_trace_addr == current_p) {
-              GC_log_printf("GC #%u: considering(2) %p -> %p\n",
-                            (unsigned)GC_gc_no, (void *)current_p,
+              GC_log_printf("GC #%lu: considering(2) %p -> %p\n",
+                            (unsigned long)GC_gc_no, (void *)current_p,
                             (void *)deferred);
             }
 #       endif /* ENABLE_TRACE */
@@ -916,6 +921,8 @@ GC_INNER void GC_wait_for_markers_init(void)
   {
     size_t bytes_to_get =
                 ROUNDUP_PAGESIZE_IF_MMAP(LOCAL_MARK_STACK_SIZE * sizeof(mse));
+
+    GC_ASSERT(GC_page_size != 0);
     GC_main_local_mark_stack = (mse *)GET_MEM(bytes_to_get);
     if (NULL == GC_main_local_mark_stack)
       ABORT("Insufficient memory for main local_mark_stack");
@@ -1232,26 +1239,6 @@ GC_INNER void GC_help_marker(word my_mark_no)
 
 #endif /* PARALLEL_MARK */
 
-GC_INNER void GC_scratch_recycle_inner(void *ptr, size_t bytes)
-{
-  if (ptr != NULL) {
-    size_t page_offset = (word)ptr & (GC_page_size - 1);
-    size_t displ = 0;
-    size_t recycled_bytes;
-
-    GC_ASSERT(bytes != 0);
-    GC_ASSERT(GC_page_size != 0);
-    /* TODO: Assert correct memory flags if GWW_VDB */
-    if (page_offset != 0)
-      displ = GC_page_size - page_offset;
-    recycled_bytes = (bytes - displ) & ~(GC_page_size - 1);
-    GC_COND_LOG_PRINTF("Recycle %lu scratch-allocated bytes at %p\n",
-                       (unsigned long)recycled_bytes, ptr);
-    if (recycled_bytes > 0)
-      GC_add_to_heap((struct hblk *)((word)ptr + displ), recycled_bytes);
-  }
-}
-
 /* Allocate or reallocate space for mark stack of size n entries.  */
 /* May silently fail.                                              */
 static void alloc_mark_stack(size_t n)
@@ -1400,6 +1387,37 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
       }
     }
   }
+
+# ifndef NO_VDB_FOR_STATIC_ROOTS
+#   ifndef PROC_VDB
+      /* Same as GC_page_was_dirty but h is allowed to point to some    */
+      /* page in the registered static roots only.  Not used if         */
+      /* manual VDB is on.                                              */
+      STATIC GC_bool GC_static_page_was_dirty(struct hblk *h)
+      {
+        return get_pht_entry_from_index(GC_grungy_pages, PHT_HASH(h));
+      }
+#   endif
+
+    GC_INNER void GC_push_conditional_static(void *bottom, void *top,
+                                             GC_bool all)
+    {
+#     ifdef PROC_VDB
+        /* Just redirect to the generic routine because PROC_VDB        */
+        /* implementation gets the dirty bits map for the whole         */
+        /* process memory.                                              */
+        GC_push_conditional(bottom, top, all);
+#     else
+        if (all || !GC_is_vdb_for_static_roots()) {
+          GC_push_all(bottom, top);
+        } else {
+          GC_push_selected((ptr_t)bottom, (ptr_t)top,
+                           GC_static_page_was_dirty);
+        }
+#     endif
+    }
+# endif /* !NO_VDB_FOR_STATIC_ROOTS */
+
 #else
   GC_API void GC_CALL GC_push_conditional(void *bottom, void *top,
                                           int all GC_ATTR_UNUSED)
@@ -1551,9 +1569,7 @@ GC_API void GC_CALL GC_print_trace(word gc_no)
 GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY GC_ATTR_NO_SANITIZE_THREAD
 GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 {
-    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
-    REGISTER word *p;
+    REGISTER ptr_t current_p;
     REGISTER word *lim;
     REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
     REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
@@ -1563,13 +1579,13 @@ GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
     if (top == 0) return;
 
     /* Check all pointers in range and push if they appear to be valid. */
-      lim = t - 1 /* longword */;
-      for (p = b; (word)p <= (word)lim;
-           p = (word *)(((ptr_t)p) + ALIGNMENT)) {
-        REGISTER word q = *p;
+    lim = (word *)(((word)top) & ~(ALIGNMENT-1)) - 1;
+    for (current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
+         (word)current_p <= (word)lim; current_p += ALIGNMENT) {
+      REGISTER word q = *(word *)current_p;
 
-        GC_PUSH_ONE_STACK(q, p);
-      }
+      GC_PUSH_ONE_STACK(q, current_p);
+    }
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr
 }
@@ -1598,9 +1614,7 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
   GC_INNER void GC_push_conditional_eager(void *bottom, void *top,
                                           GC_bool all)
   {
-    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
-    REGISTER word *p;
+    REGISTER ptr_t current_p;
     REGISTER word *lim;
     REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
     REGISTER ptr_t least_ha = (ptr_t)GC_least_plausible_heap_addr;
@@ -1611,11 +1625,12 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
       return;
     (void)all; /* TODO: If !all then scan only dirty pages. */
 
-    lim = t - 1;
-    for (p = b; (word)p <= (word)lim; p = (word *)((ptr_t)p + ALIGNMENT)) {
-      REGISTER word q = *p;
+    lim = (word *)(((word)top) & ~(ALIGNMENT-1)) - 1;
+    for (current_p = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
+         (word)current_p <= (word)lim; current_p += ALIGNMENT) {
+      REGISTER word q = *(word *)current_p;
 
-      GC_PUSH_ONE_HEAP(q, p, GC_mark_stack_top);
+      GC_PUSH_ONE_HEAP(q, current_p, GC_mark_stack_top);
     }
 #   undef GC_greatest_plausible_heap_addr
 #   undef GC_least_plausible_heap_addr
@@ -1937,8 +1952,8 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
     hdr * hhdr = HDR(h);
 
     if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr) || HBLK_IS_FREE(hhdr), FALSE)) {
-      h = GC_next_used_block(h);
-      if (h == 0) return(0);
+      h = GC_next_block(h, FALSE);
+      if (NULL == h) return NULL;
       hhdr = GC_find_header((ptr_t)h);
     } else {
 #     ifdef LINT2
@@ -1959,8 +1974,8 @@ STATIC struct hblk * GC_push_next_marked(struct hblk *h)
     for (;;) {
         if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr)
                    || HBLK_IS_FREE(hhdr), FALSE)) {
-          h = GC_next_used_block(h);
-          if (h == 0) return(0);
+          h = GC_next_block(h, FALSE);
+          if (NULL == h) return NULL;
           hhdr = GC_find_header((ptr_t)h);
         } else {
 #         ifdef LINT2
@@ -2000,8 +2015,8 @@ STATIC struct hblk * GC_push_next_marked_uncollectable(struct hblk *h)
     for (;;) {
         if (EXPECT(IS_FORWARDING_ADDR_OR_NIL(hhdr)
                    || HBLK_IS_FREE(hhdr), FALSE)) {
-          h = GC_next_used_block(h);
-          if (h == 0) return(0);
+          h = GC_next_block(h, FALSE);
+          if (NULL == h) return NULL;
           hhdr = GC_find_header((ptr_t)h);
         } else {
 #         ifdef LINT2

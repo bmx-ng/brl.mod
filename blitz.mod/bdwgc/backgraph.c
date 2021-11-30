@@ -30,8 +30,6 @@
 
 #define MAX_IN  10      /* Maximum in-degree we handle directly */
 
-/* #include <unistd.h> */
-
 #if (!defined(DBG_HDRS_ALL) || (ALIGNMENT != CPP_WORDSZ/8) \
      /* || !defined(UNIX_LIKE) */) && !defined(CPPCHECK)
 # error The configuration does not support MAKE_BACK_GRAPH
@@ -90,6 +88,7 @@ static back_edges * new_back_edges(void)
     size_t bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(MAX_BACK_EDGE_STRUCTS
                                                    * sizeof(back_edges));
 
+    GC_ASSERT(GC_page_size != 0);
     back_edge_space = (back_edges *)GET_MEM(bytes_to_get);
     if (NULL == back_edge_space)
       ABORT("Insufficient memory for back edges");
@@ -132,6 +131,7 @@ static void push_in_progress(ptr_t p)
   if (n_in_progress >= in_progress_size) {
     ptr_t * new_in_progress_space;
 
+    GC_ASSERT(GC_page_size != 0);
     if (NULL == in_progress_space) {
       in_progress_size = ROUNDUP_PAGESIZE_IF_MMAP(INITIAL_IN_PROGRESS
                                                         * sizeof(ptr_t))
@@ -146,8 +146,9 @@ static void push_in_progress(ptr_t p)
         BCOPY(in_progress_space, new_in_progress_space,
               n_in_progress * sizeof(ptr_t));
     }
-    GC_add_to_our_memory((ptr_t)new_in_progress_space,
-                         in_progress_size * sizeof(ptr_t));
+    if (EXPECT(new_in_progress_space != NULL, TRUE))
+      GC_add_to_our_memory((ptr_t)new_in_progress_space,
+                           in_progress_size * sizeof(ptr_t));
 #   ifndef GWW_VDB
       GC_scratch_recycle_no_gww(in_progress_space,
                                 n_in_progress * sizeof(ptr_t));
@@ -532,8 +533,9 @@ GC_INNER void GC_traverse_back_graph(void)
 void GC_print_back_graph_stats(void)
 {
   GC_ASSERT(I_HOLD_LOCK());
-  GC_printf("Maximum backwards height of reachable objects at GC %lu is %lu\n",
-            (unsigned long) GC_gc_no, (unsigned long)GC_max_height);
+  GC_printf("Maximum backwards height of reachable objects"
+            " at GC #%lu is %lu\n",
+            (unsigned long)GC_gc_no, (unsigned long)GC_max_height);
   if (GC_max_height > GC_max_max_height) {
     ptr_t obj = GC_deepest_obj;
 

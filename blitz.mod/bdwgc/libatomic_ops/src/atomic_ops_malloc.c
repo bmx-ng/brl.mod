@@ -19,6 +19,10 @@
 # undef HAVE_MMAP
 #endif
 
+#ifndef AO_BUILD
+# define AO_BUILD
+#endif
+
 #define AO_REQUIRE_CAS
 #include "atomic_ops_malloc.h"
 
@@ -116,7 +120,7 @@ static volatile AO_t initial_heap_ptr = (AO_t)AO_initial_heap;
 
 static volatile AO_t mmap_enabled = 0;
 
-void
+AO_API void
 AO_malloc_enable_mmap(void)
 {
 # if defined(__sun)
@@ -200,7 +204,7 @@ AO_free_large(char * p)
 
 #else /*  No MMAP */
 
-void
+AO_API void
 AO_malloc_enable_mmap(void)
 {
 }
@@ -248,7 +252,7 @@ get_chunk(void)
 
 /* Object free lists.  Ith entry corresponds to objects         */
 /* of total size 2**i bytes.                                    */
-AO_stack_t AO_free_list[LOG_MAX_SIZE+1];
+static AO_stack_t AO_free_list[LOG_MAX_SIZE+1];
 
 /* Break up the chunk, and add it to the object free list for   */
 /* the given size.  We have exclusive access to chunk.          */
@@ -319,6 +323,7 @@ static unsigned msb(size_t s)
   return result;
 }
 
+AO_API AO_ATTR_MALLOC AO_ATTR_ALLOC_SIZE(1)
 void *
 AO_malloc(size_t sz)
 {
@@ -348,7 +353,7 @@ AO_malloc(size_t sz)
   return result + 1;
 }
 
-void
+AO_API void
 AO_free(void *p)
 {
   AO_t *base;

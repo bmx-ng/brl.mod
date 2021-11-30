@@ -2,7 +2,7 @@
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
- * Copyright (C) 2007 Free Software Foundation, Inc
+ * Copyright (c) 2007 Free Software Foundation, Inc.
  * Copyright (c) 2008-2020 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
@@ -18,7 +18,7 @@
 #include "private/gc_pmark.h"
 
 #ifndef GC_NO_FINALIZATION
-# include "javaxfc.h" /* to get GC_finalize_all() as extern "C" */
+# include "gc/javaxfc.h" /* to get GC_finalize_all() as extern "C" */
 
 /* Type of mark procedure used for marking from finalizable object.     */
 /* This procedure normally does not mark the object, only its           */
@@ -600,29 +600,14 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 
 /* Possible finalization_marker procedures.  Note that mark stack       */
 /* overflow is handled by the caller, and is not a disaster.            */
+#if defined(_MSC_VER) && defined(I386)
+  GC_ATTR_NOINLINE
+  /* Otherwise some optimizer bug is tickled in VC for X86 (v19, at least). */
+#endif
 STATIC void GC_normal_finalize_mark_proc(ptr_t p)
 {
-# if defined(_MSC_VER) && defined(I386)
-    hdr * hhdr = HDR(p);
-    /* This is a manually inlined variant of GC_push_obj().  Otherwise  */
-    /* some optimizer bug is tickled in VC for X86 (v19, at least).     */
-#   define mark_stack_top GC_mark_stack_top
-    mse * mark_stack_limit = GC_mark_stack + GC_mark_stack_size;
-    word descr = hhdr -> hb_descr;
-
-    if (descr != 0) {
-      mark_stack_top++;
-      if ((word)mark_stack_top >= (word)mark_stack_limit) {
-        mark_stack_top = GC_signal_mark_stack_overflow(mark_stack_top);
-      }
-      mark_stack_top -> mse_start = p;
-      mark_stack_top -> mse_descr.w = descr;
-    }
-#   undef mark_stack_top
-# else
     GC_mark_stack_top = GC_push_obj(p, HDR(p), GC_mark_stack_top,
                                     GC_mark_stack + GC_mark_stack_size);
-# endif
 }
 
 /* This only pays very partial attention to the mark descriptor.        */

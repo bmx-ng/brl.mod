@@ -14,7 +14,7 @@
 
 #include "private/gc_priv.h"
 
-#if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+#if !defined(PLATFORM_MACH_DEP) && !defined(SN_TARGET_PSP2)
 
 #include <stdio.h>
 
@@ -232,6 +232,8 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 
 # if defined(HAVE_PUSH_REGS)
     GC_push_regs();
+# elif defined(EMSCRIPTEN)
+    /* No-op, "registers" are pushed in GC_push_other_roots().  */
 # else
 #   if defined(UNIX_LIKE) && !defined(NO_GETCONTEXT)
       /* Older versions of Darwin seem to lack getcontext().    */
@@ -310,7 +312,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
         word * i = (word *)&regs;
         ptr_t lim = (ptr_t)(&regs) + sizeof(regs);
 
-        /* Setjmp doesn't always clear all of the buffer.               */
+        /* setjmp doesn't always clear all of the buffer.               */
         /* That tends to preserve garbage.  Clear it.                   */
         for (; (word)i < (word)lim; i++) {
             *i = 0;
@@ -337,4 +339,4 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
   GC_noop1(COVERT_DATAFLOW(&dummy));
 }
 
-#endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
+#endif /* !PLATFORM_MACH_DEP && !SN_TARGET_PSP2 */

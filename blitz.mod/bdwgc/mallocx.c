@@ -3,6 +3,7 @@
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 2000 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 2009-2021 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -15,7 +16,7 @@
  */
 
 #include "private/gc_priv.h"
-#include "gc_inline.h" /* for GC_malloc_kind */
+#include "gc/gc_inline.h" /* for GC_malloc_kind */
 
 /*
  * These are extra allocation routines which are likely to be less
@@ -34,7 +35,7 @@
 /* Some externally visible but unadvertised variables to allow access to */
 /* free lists from inlined allocators without including gc_priv.h        */
 /* or introducing dependencies on internal data structure layouts.       */
-#include "gc_alloc_ptrs.h"
+#include "private/gc_alloc_ptrs.h"
 void ** const GC_objfreelist_ptr = GC_objfreelist;
 void ** const GC_aobjfreelist_ptr = GC_aobjfreelist;
 void ** const GC_uobjfreelist_ptr = GC_uobjfreelist;
@@ -249,13 +250,13 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
 
 /* Increment GC_bytes_allocd from code that doesn't have direct access  */
 /* to GC_arrays.                                                        */
-GC_API void GC_CALL GC_incr_bytes_allocd(size_t n)
+void GC_CALL GC_incr_bytes_allocd(size_t n)
 {
     GC_bytes_allocd += n;
 }
 
 /* The same for GC_bytes_freed.                         */
-GC_API void GC_CALL GC_incr_bytes_freed(size_t n)
+void GC_CALL GC_incr_bytes_freed(size_t n)
 {
     GC_bytes_freed += n;
 }
@@ -343,9 +344,9 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
         struct hblk * hbp;
         hdr * hhdr;
 
-        for (rlh += lg; (hbp = *rlh) != NULL; ) {
+        while ((hbp = rlh[lg]) != NULL) {
             hhdr = HDR(hbp);
-            *rlh = hhdr -> hb_next;
+            rlh[lg] = hhdr -> hb_next;
             GC_ASSERT(hhdr -> hb_sz == lb);
             hhdr -> hb_last_reclaimed = (unsigned short) GC_gc_no;
 #           ifdef PARALLEL_MARK
@@ -409,6 +410,9 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t lb, int k, void **result)
                 /* GC lock is needed for reclaim list access.   We      */
                 /* must decrement fl_builder_count before reacquiring   */
                 /* the lock.  Hopefully this path is rare.              */
+
+                rlh = ok -> ok_reclaim_list; /* reload rlh after locking */
+                if (NULL == rlh) break;
               }
 #           endif
         }
