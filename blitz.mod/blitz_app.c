@@ -526,6 +526,7 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 //#endif
 
 	bbGCStartup();
+	bbThreadPreStartup();
 	bbThreadStartup();
 	
 	getcwd( buf,PATH_MAX );
