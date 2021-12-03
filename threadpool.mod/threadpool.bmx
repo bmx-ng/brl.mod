@@ -264,6 +264,19 @@ Type TThreadPoolExecutor Extends TExecutor
 
 	End Method
 	
+	Rem
+	bbdoc: Returns the approximate number of threads that are actively executing tasks.
+	end rem
+	Method getActiveCount:Int()
+		countLock.Lock()
+		Local count:Int = threadsWorking
+		countLock.unlock()
+		return count
+	End Method
+	
+	Method IsQueueEmpty:Int()
+		return jobQueue.IsEmpty()
+	end method
 End Type
 
 Private
@@ -358,6 +371,13 @@ Type TJobQueue
 		End If
 		
 		Return job
+	End Method
+
+	Method IsEmpty:Int()
+		Lock()
+		Local empty:Int = jobs.IsEmpty()
+		UnLock()
+		return empty
 	End Method
 
 	Method Lock()
