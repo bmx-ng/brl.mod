@@ -1,17 +1,20 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Graphics/Graphics
 End Rem
 Module BRL.Graphics
 
-ModuleInfo "Version: 1.08"
+ModuleInfo "Version: 1.09"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.09"
+ModuleInfo "History: Changed to SuperStrict"
+ModuleInfo "History: Extended flags to Long"
 ModuleInfo "History: 1.08 Release"
 ModuleInfo "History: Mouse repositioned only in fullscreen mode"
 ModuleInfo "History: 1.07 Release"
@@ -38,14 +41,14 @@ about:
 Use this id with #AddHook to register a function that
 is called every #Flip.
 End Rem
-Global FlipHook=AllocHookId()
+Global FlipHook:Int=AllocHookId()
 
-Const GRAPHICS_BACKBUFFER=	$2
-Const GRAPHICS_ALPHABUFFER=	$4
-Const GRAPHICS_DEPTHBUFFER=	$8
-Const GRAPHICS_STENCILBUFFER=	$10
-Const GRAPHICS_ACCUMBUFFER=	$20
-Const GRAPHICS_BORDERLESS=$40
+Const GRAPHICS_BACKBUFFER:Int=	$2
+Const GRAPHICS_ALPHABUFFER:Int=	$4
+Const GRAPHICS_DEPTHBUFFER:Int=	$8
+Const GRAPHICS_STENCILBUFFER:Int=	$10
+Const GRAPHICS_ACCUMBUFFER:Int=	$20
+Const GRAPHICS_BORDERLESS:Int=$40
 
 'Const GRAPHICS_SWAPINTERVAL0=	$40
 'Const GRAPHICS_SWAPINTERVAL1=	$80
@@ -59,7 +62,7 @@ Type TGraphics
 
 	Method Driver:TGraphicsDriver() Abstract
 
-	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var, x Var, y Var ) Abstract
+	Method GetSettings( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Long Var, x:Int Var, y:Int Var ) Abstract
 
 	Method Close() Abstract
 	
@@ -71,10 +74,11 @@ End Type
 
 Type TGraphicsMode
 
-	Field width,height,depth,hertz
+	Field width:Int,height:Int,depth:Int,hertz:Int
+	Field display:Int
 	
 	Method ToString$() Override
-		Return width+","+height+","+depth+" "+hertz+"Hz"
+		Return width+","+height+","+depth+" "+hertz+"Hz (" + display + ")"
 	End Method
 
 End Type
@@ -83,13 +87,13 @@ Type TGraphicsDriver
 
 	Method GraphicsModes:TGraphicsMode[]() Abstract
 	
-	Method AttachGraphics:TGraphics( widget:Byte Ptr,flags ) Abstract
+	Method AttachGraphics:TGraphics( widget:Byte Ptr,flags:Long ) Abstract
 	
-	Method CreateGraphics:TGraphics( width,height,depth,hertz,flags,x,y ) Abstract
+	Method CreateGraphics:TGraphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Long,x:Int,y:Int ) Abstract
 	
 	Method SetGraphics( g:TGraphics ) Abstract
 	
-	Method Flip( sync ) Abstract
+	Method Flip:Int( sync:Int ) Abstract
 	
 	Method CanResize:Int()
 		Return False
@@ -99,19 +103,19 @@ End Type
 
 Private
 
-Global _defaultFlags
+Global _defaultFlags:Long
 Global _driver:TGraphicsDriver
 Global _graphicsModes:TGraphicsMode[]
-Global _graphics:TGraphics,_gWidth,_gHeight,_gDepth,_gHertz,_gFlags,_gx,_gy
+Global _graphics:TGraphics,_gWidth:Int,_gHeight:Int,_gDepth:Int,_gHertz:Int,_gFlags:Long,_gx:Int,_gy:Int
 
 Global _exGraphics:TGraphics
 
 'Only valid if _exGraphics=_graphics
-Global _softSync,_hardSync,_syncRate,_syncPeriod,_syncFrac,_syncAccum,_syncTime
+Global _softSync:Int,_hardSync:Int,_syncRate:Int,_syncPeriod:Int,_syncFrac:Int,_syncAccum:Int,_syncTime:Int
 
 Public
 
-Global GraphicsSeq=1
+Global GraphicsSeq:Int=1
 
 Function BumpGraphicsSeq()
 	GraphicsSeq:+1
@@ -130,7 +134,7 @@ used to obtain a graphics driver.
 The @defaultFlags parameter allows you to specify graphics flags that will be applied to any
 graphics created with #CreateGraphics or #Graphics.
 End Rem
-Function SetGraphicsDriver( driver:TGraphicsDriver,defaultFlags=GRAPHICS_BACKBUFFER )
+Function SetGraphicsDriver( driver:TGraphicsDriver,defaultFlags:Long=GRAPHICS_BACKBUFFER )
 	BumpGraphicsSeq
 	If driver<>_driver
 		If _driver And _graphics _driver.SetGraphics Null
@@ -160,7 +164,7 @@ End Function
 Rem
 bbdoc: Get current default graphics flags
 End Rem
-Function DefaultGraphicsFlags()
+Function DefaultGraphicsFlags:Long()
 	Return _defaultFlags
 End Function
 
@@ -181,7 +185,7 @@ returns: Number of available Graphics modes
 about:
 Use #GetGraphicsMode To obtain information about an individual Graphics mode
 End Rem
-Function CountGraphicsModes()
+Function CountGraphicsModes:Int()
 	Return GraphicsModes().length
 End Function
 
@@ -191,7 +195,7 @@ about:
 #GetGraphicsMode returns information about a specific graphics mode. @mode should be
 in the range 0 (inclusive) to the value returned by #CountGraphicsModes (exclusive).
 End Rem
-Function GetGraphicsMode( index,width Var,height Var,depth Var,hertz Var )
+Function GetGraphicsMode( index:Int,width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var )
 	Local Mode:TGraphicsMode=GraphicsModes()[index]
 	width=Mode.width
 	height=Mode.height
@@ -206,7 +210,7 @@ about:
 A value of 0 for any of @width, @height, @depth or @hertz will cause that
 parameter to be ignored.
 End Rem
-Function GraphicsModeExists( width,height,depth=0,hertz=0 )
+Function GraphicsModeExists:Int( width:Int,height:Int,depth:Int=0,hertz:Int=0 )
 	For Local Mode:TGraphicsMode=EachIn GraphicsModes()
 		If width And width<>Mode.width Continue
 		If height And height<>Mode.height Continue
@@ -227,7 +231,7 @@ first have to select it using #SetGraphics.
 The kind of graphics object returned depends upon the current graphics driver as set by
 #SetGraphicsDriver.
 End Rem
-Function CreateGraphics:TGraphics( width,height,depth,hertz,flags,x,y )
+Function CreateGraphics:TGraphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Long,x:Int,y:Int )
 	flags:|_defaultFlags
 	Local g:TGraphics
 	Try
@@ -240,7 +244,7 @@ Function CreateGraphics:TGraphics( width,height,depth,hertz,flags,x,y )
 	Return g
 End Function
 
-Function AttachGraphics:TGraphics( widget:Byte Ptr,flags )
+Function AttachGraphics:TGraphics( widget:Byte Ptr,flags:Long )
 	flags:|_defaultFlags
 	Local g:TGraphics
 	Try
@@ -322,7 +326,7 @@ returns: The width, in pixels, of the current graphics object
 about:
 The current graphics object can be changed using #SetGraphics.
 End Rem
-Function GraphicsWidth()
+Function GraphicsWidth:Int()
 	Return _gWidth
 End Function
 
@@ -332,7 +336,7 @@ returns: The height, in pixels, of the current graphics object
 about:
 The current graphics object can be changed using #SetGraphics.
 End Rem
-Function GraphicsHeight()
+Function GraphicsHeight:Int()
 	Return _gHeight
 End Function
 
@@ -342,7 +346,7 @@ returns: The depth, in bits, of the current graphics object
 about:
 The current graphics object can be changed using #SetGraphics.
 End Rem
-Function GraphicsDepth()
+Function GraphicsDepth:Int()
 	Return _gDepth
 End Function
 
@@ -352,7 +356,7 @@ returns: The refresh rate, in frames per second, of the current graphics object
 about:
 The current graphics object can be changed using #SetGraphics.
 End Rem
-Function GraphicsHertz()
+Function GraphicsHertz:Int()
 	Return _gHertz
 End Function
 
@@ -362,7 +366,7 @@ returns: The flags of the current graphics object
 about:
 The current graphics object can be changed using #SetGraphics.
 End Rem
-Function GraphicsFlags()
+Function GraphicsFlags:Long()
 	Return _gFlags
 End Function
 
@@ -389,7 +393,7 @@ created with a refresh rate of 0 in which case flip occurs immediately.
 If @sync is -1 and the current graphics object was NOT created with the #Graphics command,
 then the flip will occur on the next vertical blank.
 End Rem
-Function Flip( sync=-1 )
+Function Flip( sync:Int=-1 )
 	RunHooks FlipHook,Null
 
 	If sync<>-1
@@ -409,7 +413,7 @@ Function Flip( sync=-1 )
 			_syncAccum:-_syncRate
 			_syncTime:+1
 		EndIf
-		Local dt=_syncTime-MilliSecs()
+		Local dt:Int=_syncTime-MilliSecs()
 		If dt>0
 			Delay dt
 		Else
@@ -466,12 +470,12 @@ Once #Graphics has executed, you can begin rendering immediately without any nee
 #Graphics also enables #{polled input} mode, providing a simple way to monitor the keyboard
 and mouse.
 End Rem
-Function Graphics:TGraphics( width,height,depth=0,hertz=60,flags=0,x=-1,y=-1 )
+Function Graphics:TGraphics( width:Int,height:Int,depth:Int=0,hertz:Int=60,flags:Long=0,x:Int=-1,y:Int=-1 )
 	EndGraphics
 	flags:|_defaultFlags
 	
 	Local g:TGraphics=CreateGraphics( width,height,depth,hertz,flags,x,y )
-	If Not g Return
+	If Not g Return Null
 	
 	BumpGraphicsSeq
 
@@ -498,7 +502,7 @@ Function Graphics:TGraphics( width,height,depth=0,hertz=60,flags=0,x=-1,y=-1 )
 	
 	_exGraphics=g
 	
-	Global _onEnd
+	Global _onEnd:Int
 	If Not _onEnd
 		_onEnd=True
 		OnEnd EndGraphics

@@ -50,7 +50,9 @@ enum{
 typedef struct BBGLContext BBGLContext;
 
 struct BBGLContext{
-	int mode,width,height,depth,hertz,flags,sync;
+	int mode,width,height,depth,hertz;
+	BBInt64 flags;
+	int sync;
 	Window window;
 	GLXContext glContext;
 };
@@ -58,9 +60,9 @@ struct BBGLContext{
 // glgraphics.bmx interface
 
 int bbGLGraphicsGraphicsModes( int *imodes,int maxcount );
-BBGLContext *bbGLGraphicsAttachGraphics( void * window,int flags );
-BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,int flags, int x, int y );
-void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hz,int *flags );
+BBGLContext *bbGLGraphicsAttachGraphics( void * window,BBInt64 flags );
+BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,BBInt64 flags, int x, int y );
+void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hz,BBInt64 *flags );
 void bbGLGraphicsClose( BBGLContext *context );
 void bbGLGraphicsSetGraphics( BBGLContext *context );
 void bbGLGraphicsFlip( int sync );
@@ -84,7 +86,7 @@ int _calchertz(XF86VidModeModeInfo *m){
 }
 
 int _initDisplay(){
-	int		major,minor;
+	int major,minor;
 	if (xdisplay) return 0;
 	xdisplay=bbSystemDisplay();
 	if (!xdisplay) return -1;
@@ -130,7 +132,7 @@ static void _swapBuffers( BBGLContext *context ){
 	bbSystemPoll();
 }
 
-BBGLContext *bbGLGraphicsAttachGraphics( void * window,int flags ){
+BBGLContext *bbGLGraphicsAttachGraphics( void * window,BBInt64 flags ){
 	BBGLContext *context=(BBGLContext*)malloc( sizeof(BBGLContext) );
 	memset( context,0,sizeof(BBGLContext) );
 	context->mode=MODE_WIDGET;
@@ -140,7 +142,7 @@ BBGLContext *bbGLGraphicsAttachGraphics( void * window,int flags ){
 	return context;
 }
 
-XVisualInfo *_chooseVisual(flags){
+XVisualInfo *_chooseVisual(BBInt64 flags){
 	int glspec[32],*s;
 	s=glspec;
 	*s++=GLX_RGBA;
@@ -210,7 +212,7 @@ void bbGLGraphicsShareContexts(){
 	_sharedContext=bbGLGraphicsCreateGraphics(0,0,0,0,0,0,0);
 }
 
-BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,int flags, int x, int y ){
+BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,BBInt64 flags, int x, int y ){
 	XSetWindowAttributes swa;
 	XVisualInfo *vizinfo;
 	XEvent event;

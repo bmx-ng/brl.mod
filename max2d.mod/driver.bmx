@@ -1,21 +1,21 @@
 
-Strict
+SuperStrict
 
 Import BRL.Pixmap
 Import BRL.Graphics
 
 'modes for SetBlend
-Const MASKBLEND=1
-Const SOLIDBLEND=2
-Const ALPHABLEND=3
-Const LIGHTBLEND=4
-Const SHADEBLEND=5
+Const MASKBLEND:Int=1
+Const SOLIDBLEND:Int=2
+Const ALPHABLEND:Int=3
+Const LIGHTBLEND:Int=4
+Const SHADEBLEND:Int=5
 
 'flags for frames/images
-Const MASKEDIMAGE=		$1
-Const FILTEREDIMAGE=	$2
-Const MIPMAPPEDIMAGE=	$4
-Const DYNAMICIMAGE=		$8
+Const MASKEDIMAGE:Int=		$1
+Const FILTEREDIMAGE:Int=	$2
+Const MIPMAPPEDIMAGE:Int=	$4
+Const DYNAMICIMAGE:Int=		$8
 
 'current driver
 Global _max2dDriver:TMax2DDriver
@@ -28,13 +28,13 @@ End Type
 
 Type TMax2DDriver Extends TGraphicsDriver
 
-	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags ) Abstract
+	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags:Int ) Abstract
 	
-	Method SetBlend( blend ) Abstract
+	Method SetBlend( blend:Int ) Abstract
 	Method SetAlpha( alpha# ) Abstract
-	Method SetColor( red,green,blue ) Abstract
-	Method SetClsColor( red,green,blue ) Abstract
-	Method SetViewport( x,y,width,height ) Abstract
+	Method SetColor( red:Int,green:Int,blue:Int ) Abstract
+	Method SetClsColor( red:Int,green:Int,blue:Int ) Abstract
+	Method SetViewport( x:Int,y:Int,width:Int,height:Int ) Abstract
 	Method SetTransform( xx#,xy#,yx#,yy# ) Abstract
 	Method SetLineWidth( width# ) Abstract
 
@@ -52,8 +52,8 @@ Type TMax2DDriver Extends TGraphicsDriver
 	Method DrawOval( x0#,y0#,x1#,y1#,tx#,ty# ) Abstract
 	Method DrawPoly( xy#[],handlex#,handley#,originx#,originy# ) Abstract
 		
-	Method DrawPixmap( pixmap:TPixmap,x,y ) Abstract
-	Method GrabPixmap:TPixmap( x,y,width,height ) Abstract
+	Method DrawPixmap( pixmap:TPixmap,x:Int,y:Int ) Abstract
+	Method GrabPixmap:TPixmap( x:Int,y:Int,width:Int,height:Int ) Abstract
 	
 	Method SetResolution( width#,height# ) Abstract
 

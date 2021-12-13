@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Graphics/OpenGL Max2D
@@ -8,12 +8,15 @@ The OpenGL Max2D module provides an OpenGL driver for #Max2D.
 End Rem
 Module BRL.GLMax2D
 
-ModuleInfo "Version: 1.13"
+ModuleInfo "Version: 1.14"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.14"
+ModuleInfo "History: Changed to SuperStrict"
+ModuleInfo "History: Extended flags to Long"
 ModuleInfo "History: 1.13 Release"
 ModuleInfo "History: Cleaned up SetGraphics"
 ModuleInfo "History: 1.12 Release"
@@ -44,25 +47,25 @@ Private
 Global _driver:TGLMax2DDriver
 
 'Naughty!
-Const GL_BGR=$80E0
-Const GL_BGRA=$80E1
-Const GL_CLAMP_TO_EDGE=$812F
-Const GL_CLAMP_TO_BORDER=$812D
+Const GL_BGR:Int=$80E0
+Const GL_BGRA:Int=$80E1
+Const GL_CLAMP_TO_EDGE:Int=$812F
+Const GL_CLAMP_TO_BORDER:Int=$812D
 
 Global ix#,iy#,jx#,jy#
 Global color4ub:Byte[4]
 
-Global state_blend
-Global state_boundtex
-Global state_texenabled
+Global state_blend:Int
+Global state_boundtex:Int
+Global state_texenabled:Int
 
-Function BindTex( name )
+Function BindTex( name:Int )
 	If name=state_boundtex Return
 	glBindTexture GL_TEXTURE_2D,name
 	state_boundtex=name
 End Function
 
-Function EnableTex( name )
+Function EnableTex( name:Int )
 	BindTex name
 	If state_texenabled Return
 	glEnable GL_TEXTURE_2D
@@ -75,32 +78,32 @@ Function DisableTex()
 	state_texenabled=False
 End Function
 
-Function Pow2Size( n )
-	Local t=1
+Function Pow2Size:Int( n:Int )
+	Local t:Int=1
 	While t<n
 		t:*2
 	Wend
 	Return t
 End Function
 
-Global dead_texs:TDynamicArray = New TDynamicArray(32),dead_tex_seq
+Global dead_texs:TDynamicArray = New TDynamicArray(32),dead_tex_seq:Int
 
 Extern
 	Function bbAtomicAdd:Int( target:Int Ptr,value:Int )="int bbAtomicAdd( int *,int )!"
 End Extern
 
 'Enqueues a texture for deletion, to prevent release textures on wrong thread.
-Function DeleteTex( name,seq )
+Function DeleteTex( name:Int,seq:Int )
 	If seq<>dead_tex_seq Return
 
 	dead_texs.AddLast(name)
 End Function
 
-Function CreateTex( width,height,flags,pixmap:TPixmap )
+Function CreateTex:Int( width:Int,height:Int,flags:Int,pixmap:TPixmap )
 	If pixmap.dds_fmt<>0 Return pixmap.tex_name ' if dds texture already exists
 	
 	'alloc new tex
-	Local name
+	Local name:Int
 	glGenTextures 1,Varptr name
 	
 	'flush dead texs
@@ -137,7 +140,7 @@ Function CreateTex( width,height,flags,pixmap:TPixmap )
 		EndIf
 	EndIf
 
-	Local mip_level
+	Local mip_level:Int
 
 	Repeat
 		glTexImage2D GL_TEXTURE_2D,mip_level,GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,Null
@@ -151,8 +154,8 @@ Function CreateTex( width,height,flags,pixmap:TPixmap )
 	Return name
 End Function
 
-Function UploadTex( pixmap:TPixmap,flags )
-	Local mip_level
+Function UploadTex( pixmap:TPixmap,flags:Int )
+	Local mip_level:Int
 	If pixmap.dds_fmt<>0 Return ' if dds texture already exists
 	Repeat
 		glPixelStorei GL_UNPACK_ROW_LENGTH,pixmap.pitch/BytesPerPixel[pixmap.format]
@@ -172,12 +175,12 @@ Function UploadTex( pixmap:TPixmap,flags )
 	glPixelStorei GL_UNPACK_ROW_LENGTH,0
 End Function
 
-Function AdjustTexSize( width Var,height Var )
+Function AdjustTexSize( width:Int Var,height:Int Var )
 	'calc texture size
 	width=Pow2Size( width )
 	height=Pow2Size( height )
 	Repeat
-		Local t
+		Local t:Int
 		glTexImage2D GL_PROXY_TEXTURE_2D,0,4,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,Null
 		glGetTexLevelParameteriv GL_PROXY_TEXTURE_2D,0,GL_TEXTURE_WIDTH,Varptr t
 		If t Return
@@ -250,7 +253,7 @@ Type TGLImageFrame Extends TImageFrame
 
 	Field u0#,v0#,u1#,v1#,uscale#,vscale#
 
-	Field name,seq
+	Field name:Int,seq:Int
 	
 	Method New()
 		seq=GraphicsSeq
@@ -283,15 +286,15 @@ Type TGLImageFrame Extends TImageFrame
 		glEnd
 	End Method
 	
-	Function CreateFromPixmap:TGLImageFrame( src:TPixmap,flags )
+	Function CreateFromPixmap:TGLImageFrame( src:TPixmap,flags:Int )
 		'determine tex size
-		Local tex_w=src.width
-		Local tex_h=src.height
+		Local tex_w:Int=src.width
+		Local tex_h:Int=src.height
 		AdjustTexSize tex_w,tex_h
 		
 		'make sure pixmap fits texture
-		Local width=Min( src.width,tex_w )
-		Local height=Min( src.height,tex_h )
+		Local width:Int=Min( src.width,tex_w )
+		Local height:Int=Min( src.height,tex_h )
 		If src.width<>width Or src.height<>height src=ResizePixmap( src,width,height )
 
 		'create texture pixmap
@@ -317,7 +320,7 @@ Type TGLImageFrame Extends TImageFrame
 		EndIf
 		
 		'create tex
-		Local name=CreateTex( tex_w,tex_h,flags,tex )
+		Local name:Int=CreateTex( tex_w,tex_h,flags,tex )
 		
 		'upload it
 		UploadTex tex,flags
@@ -348,12 +351,12 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		Return GLGraphicsDriver().GraphicsModes()
 	End Method
 	
-	Method AttachGraphics:TMax2DGraphics( widget:Byte Ptr,flags ) Override
+	Method AttachGraphics:TMax2DGraphics( widget:Byte Ptr,flags:Long ) Override
 		Local g:TGLGraphics=GLGraphicsDriver().AttachGraphics( widget,flags )
 		If g Return TMax2DGraphics.Create( g,Self )
 	End Method
 	
-	Method CreateGraphics:TMax2DGraphics( width,height,depth,hertz,flags,x,y ) Override
+	Method CreateGraphics:TMax2DGraphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Long,x:Int,y:Int ) Override
 		Local g:TGLGraphics=GLGraphicsDriver().CreateGraphics( width,height,depth,hertz,flags,x,y )
 		If g Return TMax2DGraphics.Create( g,Self )
 	End Method
@@ -376,7 +379,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	End Method
 	
 	Method ResetGLContext( g:TGraphics )
-		Local gw,gh,gd,gr,gf,gx,gy
+		Local gw:Int,gh:Int,gd:Int,gr:Int,gf:Long,gx:Int,gy:Int
 		g.GetSettings gw,gh,gd,gr,gf,gx,gy
 		
 		state_blend=0
@@ -391,7 +394,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glViewport 0,0,gw,gh
 	End Method
 	
-	Method Flip( sync ) Override
+	Method Flip:Int( sync:Int ) Override
 		GLGraphicsDriver().Flip sync
 	End Method
 	
@@ -399,13 +402,13 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		Return "OpenGL"
 	End Method
 
-	Method CreateFrameFromPixmap:TGLImageFrame( pixmap:TPixmap,flags ) Override
+	Method CreateFrameFromPixmap:TGLImageFrame( pixmap:TPixmap,flags:Int ) Override
 		Local frame:TGLImageFrame
 		frame=TGLImageFrame.CreateFromPixmap( pixmap,flags )
 		Return frame
 	End Method
 
-	Method SetBlend( blend ) Override
+	Method SetBlend( blend:Int ) Override
 		If blend=state_blend Return
 		state_blend=blend
 		Select blend
@@ -445,7 +448,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glLineWidth width
 	End Method
 	
-	Method SetColor( red,green,blue ) Override
+	Method SetColor( red:Int,green:Int,blue:Int ) Override
 		color4ub[0]=Min(Max(red,0),255)
 		color4ub[1]=Min(Max(green,0),255)
 		color4ub[2]=Min(Max(blue,0),255)
@@ -459,7 +462,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glColor4ubv color4ub
 	End Method
 
-	Method SetClsColor( red,green,blue ) Override
+	Method SetClsColor( red:Int,green:Int,blue:Int ) Override
 		red=Min(Max(red,0),255)
 		green=Min(Max(green,0),255)
 		blue=Min(Max(blue,0),255)
@@ -470,7 +473,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glClearColor color.r/255.0,color.g/255.0,color.b/255.0,1.0
 	End Method
 	
-	Method SetViewport( x,y,w,h ) Override
+	Method SetViewport( x:Int,y:Int,w:Int,h:Int ) Override
 		If x=0 And y=0 And w=GraphicsWidth() And h=GraphicsHeight()
 			glDisable GL_SCISSOR_TEST
 		Else
@@ -519,7 +522,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	
 		Local xr#=(x1-x0)*.5
 		Local yr#=(y1-y0)*.5
-		Local segs=Abs(xr)+Abs(yr)
+		Local segs:Int=Abs(xr)+Abs(yr)
 		
 		segs=Max(segs,12)&~3
 
@@ -528,7 +531,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		
 		DisableTex
 		glBegin GL_POLYGON
-		For Local i=0 Until segs
+		For Local i:Int=0 Until segs
 			Local th#=i*360#/segs
 			Local x#=x0+Cos(th)*xr
 			Local y#=y0-Sin(th)*yr
@@ -543,7 +546,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		
 		DisableTex
 		glBegin GL_POLYGON
-		For Local i=0 Until Len xy Step 2
+		For Local i:Int=0 Until Len xy Step 2
 			Local x#=xy[i+0]+handle_x
 			Local y#=xy[i+1]+handle_y
 			glVertex2f x*ix+y*iy+origin_x,x*jx+y*jy+origin_y
@@ -551,8 +554,8 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glEnd
 	End Method
 		
-	Method DrawPixmap( p:TPixmap,x,y ) Override
-		Local blend=state_blend
+	Method DrawPixmap( p:TPixmap,x:Int,y:Int ) Override
+		Local blend:Int=state_blend
 		DisableTex
 		SetBlend SOLIDBLEND
 	
@@ -570,8 +573,8 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		SetBlend blend
 	End Method
 
-	Method GrabPixmap:TPixmap( x,y,w,h ) Override
-		Local blend=state_blend
+	Method GrabPixmap:TPixmap( x:Int,y:Int,w:Int,h:Int ) Override
+		Local blend:Int=state_blend
 		SetBlend SOLIDBLEND
 		Local p:TPixmap=CreatePixmap( w,h,PF_RGBA8888 )
 		glReadPixels x,GraphicsHeight()-h-y,w,h,GL_RGBA,GL_UNSIGNED_BYTE,p.pixels
@@ -596,7 +599,7 @@ The returned driver can be used with #SetGraphicsDriver to enable OpenGL Max2D
 rendering.
 End Rem
 Function GLMax2DDriver:TGLMax2DDriver()
-	Global _done
+	Global _done:Int
 	If Not _done
 		_driver=New TGLMax2DDriver.Create()
 		_done=True

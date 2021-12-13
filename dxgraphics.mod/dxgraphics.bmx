@@ -1,14 +1,17 @@
 
-Strict
+SuperStrict
 
 Module BRL.DXGraphics
 
-ModuleInfo "Version: 1.31"
+ModuleInfo "Version: 1.32"
 ModuleInfo "Author: Simon Armstrong, Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.32"
+ModuleInfo "History: Changed to SuperStrict"
+ModuleInfo "History: Extended flags to Long"
 ModuleInfo "History: 1.31"
 ModuleInfo "History: Added Occlussion Query render lag fix."
 ModuleInfo "History: 1.30 Release"

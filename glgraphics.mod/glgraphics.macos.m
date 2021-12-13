@@ -46,7 +46,9 @@ enum{
 typedef struct BBGLContext BBGLContext;
 
 struct BBGLContext{
-	int mode,width,height,depth,hertz,flags,sync;
+	int mode,width,height,depth,hertz;
+	BBInt64 flags;
+	int sync;
 
 	NSView *view;
 	BBGLWindow *window;
@@ -61,10 +63,10 @@ static CFDictionaryRef oldDisplayMode;
 extern void bbFlushAutoreleasePool();
 
 void bbGLGraphicsClose( BBGLContext *context );
-void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,int *flags );
+void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,BBInt64 *flags );
 void bbGLGraphicsSetGraphics( BBGLContext *context );
 
-static int _initAttrs( CGLPixelFormatAttribute attrs[16],int flags ){
+static int _initAttrs( CGLPixelFormatAttribute attrs[16],BBInt64 flags ){
 	int n=0;
 	if( flags & FLAGS_BACKBUFFER ) attrs[n++]=kCGLPFADoubleBuffer;
 	if( flags & FLAGS_ALPHABUFFER ){ attrs[n++]=kCGLPFAAlphaSize;attrs[n++]=1; }
@@ -99,7 +101,7 @@ static void _validateSize( BBGLContext *context ){
 }
 
 static void _validateContext( BBGLContext *context ){
-	int flags;
+	BBInt64 flags;
 	NSOpenGLContext *shared;
 	NSOpenGLContext *glContext;
 	NSOpenGLPixelFormat *glFormat;
@@ -200,7 +202,7 @@ int bbGLGraphicsGraphicsModes( int *modes,int count ){
 	return n;
 }
 
-BBGLContext *bbGLGraphicsAttachGraphics( NSView *view,int flags ){
+BBGLContext *bbGLGraphicsAttachGraphics( NSView *view,BBInt64 flags ){
 	NSRect rect;
 	BBGLContext *context;
 
@@ -220,7 +222,7 @@ BBGLContext *bbGLGraphicsAttachGraphics( NSView *view,int flags ){
 	return context;
 }
 
-BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hertz,int flags, int x, int y ){
+BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hertz,BBInt64 flags, int x, int y ){
 	int mode;
 	BBGLWindow *window=0;
 	BBGLContext *context;
@@ -305,7 +307,7 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 	return context;
 }
 
-void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz, int *flags ){
+void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz, BBInt64 *flags ){
 	_validateSize( context );
 	*width=context->width;
 	*height=context->height;

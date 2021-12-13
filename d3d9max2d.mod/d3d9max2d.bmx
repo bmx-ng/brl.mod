@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Graphics/Direct3D9 Max2D
@@ -8,10 +8,13 @@ The Direct3D9 Max2D module provides a Direct3D9 driver for #Max2D.
 End Rem
 Module BRL.D3D9Max2D
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Changed to SuperStrict"
+ModuleInfo "History: Extended flags to Long"
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Changed Assert to Throw. One can at least catch a Throw."
 
@@ -23,30 +26,30 @@ Import BRL.DXGraphics
 'Import BRL.D3D7Max2D
 
 
-Const LOG_ERRS=True'False
+Const LOG_ERRS:Int=True'False
 
 Private
 
-Global _gw,_gh,_gd,_gr,_gf,_gx,_gy
-Global _color
-Global _clscolor
+Global _gw:Int,_gh:Int,_gd:Int,_gr:Int,_gf:Long,_gx:Int,_gy:Int
+Global _color:Int
+Global _clscolor:Int
 Global _ix#,_iy#,_jx#,_jy#
 Global _fverts#[24]
 Global _iverts:Int Ptr=Int Ptr( Varptr _fverts[0] )
 Global _lineWidth#
 
 Global _bound_texture:IDirect3DTexture9
-Global _texture_enabled
+Global _texture_enabled:Int
 
-Global _active_blend
+Global _active_blend:Int
 
 Global _driver:TD3D9Max2DDriver
 Global _d3dDev:IDirect3DDevice9
 Global _d3d9Graphics:TD3D9Graphics
 Global _max2dGraphics:TMax2dGraphics
 
-Function Pow2Size( n )
-	Local t=1
+Function Pow2Size:Int( n:Int )
+	Local t:Int=1
 	While t<n
 		t:*2
 	Wend
@@ -81,10 +84,10 @@ Type TD3D9ImageFrame Extends TImageFrame
 		EndIf
 	End Method
 
-	Method Create:TD3D9ImageFrame( pixmap:TPixmap,flags )
+	Method Create:TD3D9ImageFrame( pixmap:TPixmap,flags:Int )
 
-		Local width=pixmap.width,pow2width=Pow2Size( width )
-		Local height=pixmap.height,pow2height=Pow2Size( height )
+		Local width:Int=pixmap.width,pow2width:Int=Pow2Size( width )
+		Local height:Int=pixmap.height,pow2height:Int=Pow2Size( height )
 		
 		If width<pow2width Or height<pow2height
 			Local src:TPixmap=pixmap
@@ -103,21 +106,21 @@ Type TD3D9ImageFrame Extends TImageFrame
 			If pixmap.Format<>PF_BGRA8888 pixmap=pixmap.Convert( PF_BGRA8888 )
 		EndIf
 
-		Local levels=(flags & MIPMAPPEDIMAGE)=0
-		Local format=D3DFMT_A8R8G8B8
-		Local usage=0
-		Local pool=D3DPOOL_MANAGED
+		Local levels:Int=(flags & MIPMAPPEDIMAGE)=0
+		Local format:Int=D3DFMT_A8R8G8B8
+		Local usage:Int=0
+		Local pool:Int=D3DPOOL_MANAGED
 		
 		'_texture = New IDirect3DTexture9
 		If _d3dDev.CreateTexture( pow2width,pow2height,levels,usage,format,pool,_texture,Null )<0
 			d3derr "Unable to create texture~n"
 			_texture = Null
-			Return
+			Return null
 		EndIf
 		
 		_d3d9Graphics.AutoRelease _texture
 
-		Local level
+		Local level:Int
 		Local dstsurf:IDirect3DSurface9' = New IDirect3DSurface9
 		Repeat
 			If _texture.GetSurfaceLevel( level,dstsurf )<0
@@ -132,7 +135,7 @@ Type TD3D9ImageFrame Extends TImageFrame
 				d3derr "dstsurf.LockRect failed~n"
 			EndIf
 		
-			For Local y=0 Until pixmap.height
+			For Local y:Int=0 Until pixmap.height
 				Local src:Byte Ptr=pixmap.pixels+y*pixmap.pitch
 				Local dst:Byte Ptr=lockedrect.pBits+y*lockedrect.Pitch
 				MemCopy dst,src,Size_T(pixmap.width*4)
@@ -231,9 +234,9 @@ Type TD3D9ImageFrame Extends TImageFrame
 		_d3dDev.DrawPrimitiveUP D3DPT_TRIANGLEFAN,2,_fverts,24
 	End Method
 	
-	Field _texture:IDirect3DTexture9,_seq
+	Field _texture:IDirect3DTexture9,_seq:Int
 	
-	Field _magfilter,_minfilter,_mipfilter,_uscale#,_vscale#
+	Field _magfilter:Int,_minfilter:Int,_mipfilter:Int,_uscale#,_vscale#
 	
 	Field _fverts#[24],_iverts:Int Ptr=Int Ptr( Varptr _fverts[0] )
 
@@ -263,12 +266,12 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		Return D3D9GraphicsDriver().GraphicsModes()
 	End Method
 	
-	Method AttachGraphics:TGraphics( widget:Byte Ptr,flags ) Override
+	Method AttachGraphics:TGraphics( widget:Byte Ptr,flags:Long ) Override
 		Local g:TD3D9Graphics=D3D9GraphicsDriver().AttachGraphics( widget,flags )
 		If g Return TMax2DGraphics.Create( g,Self )
 	End Method
 	
-	Method CreateGraphics:TGraphics( width,height,depth,hertz,flags,x,y ) Override
+	Method CreateGraphics:TGraphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Long,x:Int,y:Int ) Override
 		Local g:TD3D9Graphics=D3D9GraphicsDriver().CreateGraphics( width,height,depth,hertz,flags,x,y )
 		If Not g Return Null
 		Return TMax2DGraphics.Create( g,Self )
@@ -308,7 +311,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		
 	End Method
 	
-	Method Flip( sync ) Override
+	Method Flip:Int( sync:Int ) Override
 		_d3dDev.EndScene
 		If D3D9GraphicsDriver().Flip( sync )
 			_d3dDev.BeginScene
@@ -366,11 +369,11 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 
 	'***** TMax2DDriver *****
-	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags ) Override
+	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags:Int ) Override
 		Return New TD3D9ImageFrame.Create( pixmap,flags )
 	End Method
 	
-	Method SetBlend( blend ) Override
+	Method SetBlend( blend:Int ) Override
 		If blend=_active_blend Return
 		Select blend
 		Case SOLIDBLEND
@@ -407,7 +410,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_iverts[21]=_color
 	End Method
 	
-	Method SetColor( red,green,blue ) Override
+	Method SetColor( red:Int,green:Int,blue:Int ) Override
 		red=Max(Min(red,255),0)
 		green=Max(Min(green,255),0)
 		blue=Max(Min(blue,255),0)
@@ -426,7 +429,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_iverts[21]=_color
 	End Method
 	
-	Method SetClsColor( red,green,blue ) Override
+	Method SetClsColor( red:Int,green:Int,blue:Int ) Override
 		red=Max(Min(red,255),0)
 		green=Max(Min(green,255),0)
 		blue=Max(Min(blue,255),0)
@@ -437,12 +440,12 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_clscolor=$ff000000|color.ToARGB()
 	End Method
 	
-	Method SetViewport( x,y,width,height ) Override
+	Method SetViewport( x:Int,y:Int,width:Int,height:Int ) Override
 		If x=0 And y=0 And width=_gw And height=_gh 'GraphicsWidth() And height=GraphicsHeight()
 			_d3dDev.SetRenderState D3DRS_SCISSORTESTENABLE,False
 		Else
 			_d3dDev.SetRenderState D3DRS_SCISSORTESTENABLE,True
-			Local rect[]=[x,y,x+width,y+height]
+			Local rect:Int[]=[x,y,x+width,y+height]
 			_d3dDev.SetScissorRect rect
 		EndIf
 	End Method
@@ -523,13 +526,13 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	Method DrawOval( x0#,y0#,x1#,y1#,tx#,ty# ) Override
 		Local xr#=(x1-x0)*.5
 		Local yr#=(y1-y0)*.5
-		Local segs=Abs(xr)+Abs(yr)
+		Local segs:Int=Abs(xr)+Abs(yr)
 		segs=Max(segs,12)&~3
 		x0:+xr
 		y0:+yr
 		Local fverts#[segs*6]
 		Local iverts:Int Ptr=Int Ptr( Varptr fverts[0] )
-		For Local i=0 Until segs
+		For Local i:Int=0 Until segs
 			Local th#=-i*360#/segs
 			Local x#=x0+Cos(th)*xr
 			Local y#=y0-Sin(th)*yr
@@ -543,10 +546,10 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	
 	Method DrawPoly( verts#[],handlex#,handley#,tx#,ty# ) Override
 		If verts.length<6 Or (verts.length&1) Return
-		Local segs=verts.length/2
+		Local segs:Int=verts.length/2
 		Local fverts#[segs*6]
 		Local iverts:Int Ptr=Int Ptr( Varptr fverts[0] )
-		For Local i=0 Until segs
+		For Local i:Int=0 Until segs
 			Local x#=verts[i*2+0]+handlex
 			Local y#=verts[i*2+1]+handley
 			fverts[i*6+0]= x*_ix + y*_iy + tx
@@ -558,8 +561,8 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 		
 	'GetDC/BitBlt MUCH faster than locking backbuffer!	
-	Method DrawPixmap( pixmap:TPixmap,x,y ) Override
-		Local width=pixmap.width,height=pixmap.height
+	Method DrawPixmap( pixmap:TPixmap,x:Int,y:Int ) Override
+		Local width:Int=pixmap.width,height:Int=pixmap.height
 	
 		Local dstsurf:IDirect3DSurface9' = New IDirect3DSurface9
 		If _d3dDev.GetRenderTarget( 0,dstsurf )<0
@@ -572,7 +575,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 			d3derr "GetDesc failed~n"
 		EndIf
 		
-		Local rect[]=[x,y,x+width,y+height]
+		Local rect:Int[]=[x,y,x+width,y+height]
 		Local lockedrect:D3DLOCKED_RECT=New D3DLOCKED_RECT
 		If dstsurf.LockRect( lockedrect,rect,0 )<0
 			d3derr "Unable to lock render target surface~n"
@@ -589,7 +592,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 
 	'GetDC/BitBlt MUCH faster than locking backbuffer!	
-	Method GrabPixmap:TPixmap( x,y,width,height ) Override
+	Method GrabPixmap:TPixmap( x:Int,y:Int,width:Int,height:Int ) Override
 	
 		Local srcsurf:IDirect3DSurface9
 		If _d3dDev.GetRenderTarget( 0,srcsurf )<0
@@ -624,10 +627,10 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		Local pixmap:TPixmap=CreatePixmap( width,height,PF_BGRA8888 )
 		
 		'Copy and set alpha in the process...
-		For Local y=0 Until height
+		For Local y:Int=0 Until height
 			Local src:Int Ptr=Int Ptr( lockedrect.pBits+y*lockedrect.Pitch )
 			Local dst:Int Ptr=Int Ptr( pixmap.PixelPtr( 0,y ) )
-			For Local x=0 Until width
+			For Local x:Int=0 Until width
 				dst[x]=src[x] | $ff000000
 			Next
 		Next
@@ -656,7 +659,7 @@ about:
 The returned driver can be used with #SetGraphicsDriver to enable Direct3D9 Max2D rendering.
 End Rem
 Function D3D9Max2DDriver:TD3D9Max2DDriver()
-	Global _done
+	Global _done:Int
 	If Not _done
 		_driver=New TD3D9Max2DDriver.Create()
 		_done=True

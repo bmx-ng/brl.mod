@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Import BRL.Graphics
 
@@ -52,7 +52,7 @@ Function D3D9WndProc:Byte Ptr( hwnd:Byte Ptr,msg:UInt,wp:WParam,lp:LParam) "win3
 
 End Function
 
-Function OpenD3DDevice:Int( hwnd:Byte Ptr,width:Int,height:Int,depth:Int,hertz:Int,flags:Int)
+Function OpenD3DDevice:Int( hwnd:Byte Ptr,width:Int,height:Int,depth:Int,hertz:Int,flags:Long)
 	If _d3dDevRefs
 		If Not _presentParams.Windowed Return False
 		If depth<>0 Return False
@@ -162,7 +162,7 @@ Global UseDX9RenderLagFix:Int = 0
 
 Type TD3D9Graphics Extends TGraphics
 
-	Method Attach:TD3D9Graphics( hwnd:Byte Ptr,flags:Int )
+	Method Attach:TD3D9Graphics( hwnd:Byte Ptr,flags:Long )
 		Local rect:Int[4]
 		GetClientRect hwnd,rect
 		Local width:Int=rect[2]-rect[0]
@@ -179,7 +179,7 @@ Type TD3D9Graphics Extends TGraphics
 		Return Self
 	End Method
 	
-	Method Create:TD3D9Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Int,x:Int,y:Int)
+	Method Create:TD3D9Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Long,x:Int,y:Int)
 		Const SM_CYCAPTION:Int = 4
 		Const SM_CXBORDER:Int = 5
 		Const SM_CYFIXEDFRAME:Int = 8
@@ -300,7 +300,7 @@ Type TD3D9Graphics Extends TGraphics
 		Return _driver
 	End Method
 	
-	Method GetSettings:Int( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Int Var, x:Int Var, y:Int Var ) Override
+	Method GetSettings( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Long Var, x:Int Var, y:Int Var ) Override
 		'
 		ValidateSize
 		'
@@ -311,8 +311,8 @@ Type TD3D9Graphics Extends TGraphics
 		flags=_flags
 	End Method
 
-	Method Close:Int() Override
-		If Not _hwnd Return False
+	Method Close() Override
+		If Not _hwnd Return
 		CloseD3DDevice
 		If Not _attached DestroyWindow( _hwnd )
 		_hwnd=0
@@ -408,11 +408,11 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		Return _modes
 	End Method
 	
-	Method AttachGraphics:TD3D9Graphics( widget:Byte Ptr,flags:Int ) Override
-		Return New TD3D9Graphics.Attach( widget:Byte Ptr,flags:Int )
+	Method AttachGraphics:TD3D9Graphics( widget:Byte Ptr,flags:Long ) Override
+		Return New TD3D9Graphics.Attach( widget,flags )
 	End Method
 	
-	Method CreateGraphics:TD3D9Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Int,x:Int,y:Int) Override
+	Method CreateGraphics:TD3D9Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Long,x:Int,y:Int) Override
 		Return New TD3D9Graphics.Create( width,height,depth,hertz,flags,x,y )
 	End Method
 
@@ -424,7 +424,7 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		_graphics=TD3D9Graphics( g )
 	End Method
 	
-	Method Flip( sync:Int ) Override
+	Method Flip:Int( sync:Int ) Override
 		Local present:Int = _graphics.Flip(sync)
 		If UseDX9RenderLagFix Then
 			Local pixelsdrawn:Int

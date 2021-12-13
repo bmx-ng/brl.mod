@@ -1,17 +1,20 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Graphics/OpenGL Graphics
 End Rem
 Module BRL.GLGraphics
 
-ModuleInfo "Version: 1.15"
+ModuleInfo "Version: 1.16"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.16"
+ModuleInfo "History: Changed to SuperStrict"
+ModuleInfo "History: Extended flags to Long"
 ModuleInfo "History: 1.15 Release"
 ModuleInfo "History: Increased OS X depth buffer size to 24 bits"
 ModuleInfo "History: 1.14 Release"

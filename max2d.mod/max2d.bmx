@@ -1,17 +1,20 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Graphics/Max2D
 End Rem
 Module BRL.Max2D
 
-ModuleInfo "Version: 1.22"
+ModuleInfo "Version: 1.23"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.23"
+ModuleInfo "History: Changed to SuperStrict"
+ModuleInfo "History: Extended flags to Long"
 ModuleInfo "History: 1.22 Release"
 ModuleInfo "History: fixed ResetCollision not resetting recycled collision quads"
 ModuleInfo "History: 1.21 Release"
@@ -91,29 +94,29 @@ Type TMax2DGraphics Extends TGraphics
 	Field line_width#
 	Field tform_rot#,tform_scale_x#,tform_scale_y#
 	Field tform_ix#,tform_iy#,tform_jx#,tform_jy#
-	Field viewport_x,viewport_y,viewport_w,viewport_h
+	Field viewport_x:Int,viewport_y:Int,viewport_w:Int,viewport_h:Int
 	Field origin_x#,origin_y#
 	Field handle_x#,handle_y#
 	Field image_font:TImageFont
-	Field blend_mode
+	Field blend_mode:Int
 	Field vres_width#,vres_height#
 	Field vres_mousexscale#,vres_mouseyscale#
 
-	Field g_width,g_height
+	Field g_width:Int,g_height:Int
 
 	Global default_font:TImageFont
-	Global mask_red,mask_green,mask_blue
-	Global auto_midhandle
-	Global auto_imageflags=MASKEDIMAGE|FILTEREDIMAGE
+	Global mask_red:Int,mask_green:Int,mask_blue:Int
+	Global auto_midhandle:Int
+	Global auto_imageflags:Int=MASKEDIMAGE|FILTEREDIMAGE
 
-	Field _graphics:TGraphics,_driver:TMax2DDriver,_setup
+	Field _graphics:TGraphics,_driver:TMax2DDriver,_setup:Int
 	
 	Method Driver:TMax2DDriver() Override
 		Return _driver
 	End Method
 	
-	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var, x Var, y Var ) Override
-		Local w,h,d,r,f,xp,yp
+	Method GetSettings( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Long Var, x:Int Var, y:Int Var ) Override
+		Local w:Int,h:Int,d:Int,r:Int,f:Long,xp:Int,yp:Int
 		_graphics.GetSettings w,h,d,r,f,xp,yp
 		width=w
 		height=h
@@ -132,7 +135,7 @@ Type TMax2DGraphics Extends TGraphics
 	End Method
 	
 	Method Validate()
-		Local w,h,d,r,f,xp,yp
+		Local w:Int,h:Int,d:Int,r:Int,f:Long,xp:Int,yp:Int
 		_graphics.GetSettings w,h,d,r,f,xp,yp
 		If w<>g_width Or h<>g_height
 			g_width=w
@@ -179,7 +182,7 @@ Type TMax2DGraphics Extends TGraphics
 	End Function
 	
 	Function Create:TMax2DGraphics( g:TGraphics,d:TMax2DDriver )
-		Local gw,gh,gd,gr,gf,gx,gy
+		Local gw:Int,gh:Int,gd:Int,gr:Int,gf:Long,gx:Int,gy:Int
 		g.GetSettings gw,gh,gd,gr,gf,gx,gy
 		
 		If Not default_font default_font=TImageFont.CreateDefault()
@@ -246,7 +249,7 @@ The @red, @green and @blue parameters should be in the range of 0 to 255.
 
 The default cls color is black.
 End Rem
-Function SetClsColor( red,green,blue )
+Function SetClsColor( red:Int,green:Int,blue:Int )
 	gc.clscolor = New SColor8(red, green, blue)
 	_max2dDriver.SetClsColor red,green,blue
 End Function
@@ -260,7 +263,7 @@ Rem
 bbdoc: Get red, green and blue component of current cls color.
 returns: Red, green and blue values in the range 0..255 in the variables supplied.
 End Rem
-Function GetClsColor( red Var,green Var,blue Var )
+Function GetClsColor( red:Int Var,green:Int Var,blue:Int Var )
 	red=gc.clscolor.r
 	green=gc.clscolor.g
 	blue=gc.clscolor.b
@@ -303,7 +306,7 @@ BlitzMax commands that affect the drawing of lines include #SetLineWidth, #SetCo
 The optional @draw_last_pixel parameter can be used to control whether the last pixel of the line is drawn or not.
 Not drawing the last pixel can be useful if you are using certain blending modes.
 End Rem 
-Function DrawLine( x#,y#,x2#,y2#,draw_last_pixel=True )
+Function DrawLine( x#,y#,x2#,y2#,draw_last_pixel:Int=True )
 	_max2dDriver.DrawLine..
 	gc.handle_x,gc.handle_y,..
 	gc.handle_x+x2-x,gc.handle_y+y2-y,..
@@ -373,7 +376,7 @@ Drawing is affected by the current blend mode, color, scale and rotation.
 If the blend mode is ALPHABLEND the image is affected by the current alpha value
 and images with alpha channels are blended correctly with the background.
 End Rem
-Function DrawImage( image:TImage,x#,y#,frame=0 )
+Function DrawImage( image:TImage,x#,y#,frame:Int=0 )
 	Local x0#=-image.handle_x,x1#=x0+image.width
 	Local y0#=-image.handle_y,y1#=y0+image.height
 	Local iframe:TImageFrame=image.Frame(frame)
@@ -391,7 +394,7 @@ Drawing is affected by the current blend mode, color, scale and rotation.
 
 If the blend mode is ALPHABLEND, then the image is also affected by the current alpha value.
 End Rem
-Function DrawImageRect( image:TImage,x#,y#,w#,h#,frame=0 )
+Function DrawImageRect( image:TImage,x#,y#,w#,h#,frame:Int=0 )
 	Local x0#=-image.handle_x,x1#=x0+w
 	Local y0#=-image.handle_y,y1#=y0+h
 	Local iframe:TImageFrame=image.Frame(frame)
@@ -413,7 +416,7 @@ Drawing is affected by the current blend mode, color, scale and rotation.
 
 If the blend mode is ALPHABLEND, then the image is also affected by the current alpha value.
 End Rem
-Function DrawSubImageRect( image:TImage,x#,y#,w#,h#,sx#,sy#,sw#,sh#,hx#=0,hy#=0,frame=0 )
+Function DrawSubImageRect( image:TImage,x#,y#,w#,h#,sx#,sy#,sw#,sh#,hx#=0,hy#=0,frame:Int=0 )
 	Local x0#=-hx*w/sw,x1#=x0+w
 	Local y0#=-hy*h/sh,y1#=y0+h
 	Local iframe:TImageFrame=image.Frame(frame)
@@ -425,31 +428,31 @@ bbdoc: Draw an image in a tiled pattern
 about:
 #TileImage draws an image in a repeating, tiled pattern, filling the current viewport.
 End Rem
-Function TileImage( image:TImage,x#=0#,y#=0#,frame=0 )
+Function TileImage( image:TImage,x#=0#,y#=0#,frame:Int=0 )
 	Local iframe:TImageFrame=image.Frame(frame)
 	If Not iframe Return
 	
 	_max2dDriver.SetTransform 1,0,0,1
 
-	Local w=image.width
-	Local h=image.height
-	Local ox=gc.viewport_x-w+1
-	Local oy=gc.viewport_y-h+1
+	Local w:Int=image.width
+	Local h:Int=image.height
+	Local ox:Int=gc.viewport_x-w+1
+	Local oy:Int=gc.viewport_y-h+1
 	Local px#=x+gc.origin_x-image.handle_x
 	Local py#=y+gc.origin_y-image.handle_y
 	Local fx#=px-Floor(px)
 	Local fy#=py-Floor(py)
-	Local tx=Floor(px)-ox
-	Local ty=Floor(py)-oy
+	Local tx:Int=Floor(px)-ox
+	Local ty:Int=Floor(py)-oy
 
 	If tx>=0 tx=tx Mod w + ox Else tx=w - -tx Mod w + ox
 	If ty>=0 ty=ty Mod h + oy Else ty=h - -ty Mod h + oy
 
-	Local vr=gc.viewport_x+gc.viewport_w,vb=gc.viewport_y+gc.viewport_h
+	Local vr:Int=gc.viewport_x+gc.viewport_w,vb:Int=gc.viewport_y+gc.viewport_h
 
-	Local iy=ty
+	Local iy:Int=ty
 	While iy<vb
-		Local ix=tx
+		Local ix:Int=tx
 		While ix<vr
 			iframe.Draw 0,0,w,h,ix+fx,iy+fy,0,0,w,h
 			ix=ix+w
@@ -469,7 +472,7 @@ The #SetColor command affects the color of #Plot, #DrawRect, #DrawLine, #DrawTex
 
 The @red, @green and @blue parameters should be in the range of 0 to 255.
 End Rem
-Function SetColor( red,green,blue )
+Function SetColor( red:Int,green:Int,blue:Int )
 	gc.color = New SColor8(red, green, blue)
 	_max2dDriver.SetColor red,green,blue
 End Function
@@ -483,7 +486,7 @@ Rem
 bbdoc: Get red, green and blue component of current color.
 returns: Red, green and blue values in the range 0..255 in the variables supplied.
 End Rem
-Function GetColor( red Var,green Var,blue Var )
+Function GetColor( red:Int Var,green:Int Var,blue:Int Var )
 	red=gc.color.r
 	green=gc.color.g
 	blue=gc.color.b
@@ -509,7 +512,7 @@ commands are used in BlitzMax.
 * SHADEBLEND | Pixel colors are multiplied with backbuffer pixel colors, giving a 'shading' effect
 ]
 End Rem
-Function SetBlend( blend )
+Function SetBlend( blend:Int )
 	gc.blend_mode=blend
 	_max2dDriver.SetBlend blend
 End Function
@@ -520,7 +523,7 @@ returns: The current blend mode.
 About:
 See #SetBlend for possible return values.
 End Rem
-Function GetBlend()
+Function GetBlend:Int()
 	Return gc.blend_mode
 End Function
 
@@ -568,7 +571,7 @@ about:
 The current mask color is used to build an alpha mask when images are loaded or modified.
 The @red, @green and @blue parameters should be in the range of 0 to 255.
 End Rem
-Function SetMaskColor( red,green,blue )
+Function SetMaskColor( red:Int,green:Int,blue:Int )
 	gc.mask_red=red
 	gc.mask_green=green
 	gc.mask_blue=blue
@@ -578,7 +581,7 @@ Rem
 bbdoc: Get red, green and blue component of current mask color
 returns: Red, green and blue values in the range 0..255 
 End Rem
-Function GetMaskColor( red Var,green Var,blue Var )
+Function GetMaskColor( red:Int Var,green:Int Var,blue:Int Var )
 	red=gc.mask_red
 	green=gc.mask_green
 	blue=gc.mask_blue
@@ -655,15 +658,15 @@ about:
 The current ViewPort defines an area within the back buffer that all drawing is clipped to. Any
 regions of a DrawCommand that fall outside the current ViewPort are not drawn.
 End Rem
-Function SetViewport( x,y,width,height )
+Function SetViewport( x:Int,y:Int,width:Int,height:Int )
 	gc.viewport_x=x
 	gc.viewport_y=y
 	gc.viewport_w=width
 	gc.viewport_h=height
-	Local x0=Floor( x / gc.vres_mousexscale )
-	Local y0=Floor( y / gc.vres_mouseyscale )
-	Local x1=Floor( (x+width) / gc.vres_mousexscale )
-	Local y1=Floor( (y+height) / gc.vres_mouseyscale )
+	Local x0:Int=Floor( x / gc.vres_mousexscale )
+	Local y0:Int=Floor( y / gc.vres_mouseyscale )
+	Local x1:Int=Floor( (x+width) / gc.vres_mousexscale )
+	Local y1:Int=Floor( (y+height) / gc.vres_mouseyscale )
 	_max2dDriver.SetViewport x0,y0,(x1-x0),(y1-y0)
 End Function
 
@@ -671,7 +674,7 @@ Rem
 bbdoc: Get dimensions of current Viewport.
 returns: The horizontal, vertical, width and height values of the current Viewport in the variables supplied.
 End Rem
-Function GetViewport( x Var,y Var,width Var,height Var )
+Function GetViewport( x:Int Var,y:Int Var,width:Int Var,height:Int Var )
 	x=gc.viewport_x
 	y=gc.viewport_y
 	width=gc.viewport_w
@@ -799,7 +802,7 @@ about:
 flags. Use the SMOOTHFONT flag for improved filtering if the font is to be rotated or
 scaled.
 End Rem
-Function LoadImageFont:TImageFont( url:Object,size,style=SMOOTHFONT )
+Function LoadImageFont:TImageFont( url:Object,size:Int,style:Int=SMOOTHFONT )
 	Return TImageFont.Load( url,size,style )
 End Function
 
@@ -831,10 +834,10 @@ about:
 This command is useful for calculating horizontal alignment of text when using 
 the #DrawText command.
 End Rem
-Function TextWidth( Text$ )
-	Local width=0
-	For Local n=0 Until Text.length
-		Local i=gc.image_font.CharToGlyph( Text[n] )
+Function TextWidth:Int( Text$ )
+	Local width:Int=0
+	For Local n:Int=0 Until Text.length
+		Local i:Int=gc.image_font.CharToGlyph( Text[n] )
 		If i<0 Continue
 		width:+gc.image_font.LoadGlyph(i).Advance()
 	Next
@@ -848,7 +851,7 @@ about:
 This command is useful for calculating vertical alignment of text when using 
 the #DrawText command.
 End Rem
-Function TextHeight( Text$ )
+Function TextHeight:Int( Text$ )
 	Return gc.image_font.Height()
 	Rem
 	Local height=0
@@ -891,10 +894,10 @@ If flags is -1, the auto image flags are used: See #AutoImageFlags.
 
 To combine flags, use the | (boolean OR) operator.
 End Rem
-Function LoadImage:TImage( url:Object,flags=-1 )
+Function LoadImage:TImage( url:Object,flags:Int=-1 )
 	If flags=-1 flags=gc.auto_imageflags
 	Local image:TImage=TImage.Load( url,flags,gc.mask_red,gc.mask_green,gc.mask_blue )
-	If Not image Return
+	If Not image Return null
 	If gc.auto_midhandle MidHandleImage image
 	Return image
 End Function
@@ -908,10 +911,10 @@ existing pixmap.
 
 See #LoadImage for valid @flags values.
 End Rem
-Function LoadAnimImage:TImage( url:Object,cell_width,cell_height,first_cell,cell_count,flags=-1 )
+Function LoadAnimImage:TImage( url:Object,cell_width:Int,cell_height:Int,first_cell:Int,cell_count:Int,flags:Int=-1 )
 	If flags=-1 flags=gc.auto_imageflags
 	Local image:TImage=TImage.LoadAnim( url,cell_width,cell_height,first_cell,cell_count,flags,gc.mask_red,gc.mask_green,gc.mask_blue )
-	If Not image Return
+	If Not image Return null
 	If gc.auto_midhandle MidHandleImage image
 	Return image
 End Function 
@@ -935,7 +938,7 @@ when they are created. If auto midhandle mode is disabled, images are handled by
 
 AutoMidHandle defaults to False after calling #Graphics.
 End Rem
-Function AutoMidHandle( enable )
+Function AutoMidHandle( enable:Int )
 	gc.auto_midhandle=enable
 End Function
 
@@ -946,7 +949,7 @@ The auto image flags are used by #LoadImage and #CreateImage when no image
 flags are specified. See #LoadImage for a full list of valid image flags. 
 AutoImageFlags defaults to MASKEDIMAGE | FILTEREDIMAGE.
 End Rem
-Function AutoImageFlags( flags )
+Function AutoImageFlags( flags:Int )
 	If flags=-1 Return
 	gc.auto_imageflags=flags
 End Function
@@ -967,7 +970,7 @@ Rem
 bbdoc: Get width of an image
 returns: The width, in pixels, of @image
 End Rem
-Function ImageWidth( image:TImage )
+Function ImageWidth:Int( image:TImage )
 	Return image.width
 End Function
 
@@ -975,7 +978,7 @@ Rem
 bbdoc: Get height of an image
 returns: The height, in pixels, of @image
 End Rem
-Function ImageHeight( image:TImage )
+Function ImageHeight:Int( image:TImage )
 	Return image.height
 End Function
 
@@ -988,7 +991,7 @@ before being drawn.
 
 Please refer to #LoadImage for valid @flags values. The @flags value is always combined with DYNAMICIMAGE.
 End Rem
-Function CreateImage:TImage( width,height,frames=1,flags=-1 )
+Function CreateImage:TImage( width:Int,height:Int,frames:Int=1,flags:Int=-1 )
 	If flags=-1 flags=gc.auto_imageflags
 	Local image:TImage=TImage.Create( width,height,frames,flags|DYNAMICIMAGE,gc.mask_red,gc.mask_green,gc.mask_blue )
 	If gc.auto_midhandle MidHandleImage image
@@ -1005,7 +1008,7 @@ Only images created with the DYNAMICIMAGE flag can be locked.
 
 Locked images must eventually be unlocked with #UnlockImage before they can be drawn.
 End Rem
-Function LockImage:TPixmap( image:TImage,frame=0,read_lock=True,write_lock=True )
+Function LockImage:TPixmap( image:TImage,frame:Int=0,read_lock:Int=True,write_lock:Int=True )
 	Return image.Lock( frame,read_lock,write_lock )
 End Function
 
@@ -1014,7 +1017,7 @@ bbdoc: Unlock an image
 about:
 Unlocks an image previously locked with #LockImage.
 end rem
-Function UnlockImage( image:TImage,frame=0 )
+Function UnlockImage( image:TImage,frame:Int=0 )
 End Function
 
 Rem
@@ -1024,7 +1027,7 @@ Copies pixels from the back buffer to an image frame.
 
 Only images created with the DYNAMICIMAGE flag can be grabbed.
 End Rem
-Function GrabImage( image:TImage,x,y,frame=0 )
+Function GrabImage( image:TImage,x:Int,y:Int,frame:Int=0 )
 	Local pixmap:TPixmap=_max2dDriver.GrabPixmap( x,y,image.width,image.height )
 	If image.flags&MASKEDIMAGE 
 		pixmap=MaskPixmap( pixmap,gc.mask_red,gc.mask_green,gc.mask_blue )
@@ -1035,50 +1038,50 @@ End Function
 Rem
 bbdoc: Draw pixmap
 end rem
-Function DrawPixmap( pixmap:TPixmap,x,y )
+Function DrawPixmap( pixmap:TPixmap,x:Int,y:Int )
 	_max2dDriver.DrawPixmap pixmap,x,y
 End Function
 
 Rem
 bbdoc: Grab pixmap
 end rem
-Function GrabPixmap:TPixmap( x,y,width,height )
+Function GrabPixmap:TPixmap( x:Int,y:Int,width:Int,height:Int )
 	Return _max2dDriver.GrabPixmap( x,y,width,height )
 End Function
 
-Const COLLISION_LAYER_ALL=0
-Const COLLISION_LAYER_1=$0001
-Const COLLISION_LAYER_2=$0002
-Const COLLISION_LAYER_3=$0004
-Const COLLISION_LAYER_4=$0008
-Const COLLISION_LAYER_5=$0010
-Const COLLISION_LAYER_6=$0020
-Const COLLISION_LAYER_7=$0040
-Const COLLISION_LAYER_8=$0080
-Const COLLISION_LAYER_9=$0100
-Const COLLISION_LAYER_10=$0200
-Const COLLISION_LAYER_11=$0400
-Const COLLISION_LAYER_12=$0800
-Const COLLISION_LAYER_13=$1000
-Const COLLISION_LAYER_14=$2000
-Const COLLISION_LAYER_15=$4000
-Const COLLISION_LAYER_16=$8000
-Const COLLISION_LAYER_17=$00010000
-Const COLLISION_LAYER_18=$00020000
-Const COLLISION_LAYER_19=$00040000
-Const COLLISION_LAYER_20=$00080000
-Const COLLISION_LAYER_21=$00100000
-Const COLLISION_LAYER_22=$00200000
-Const COLLISION_LAYER_23=$00400000
-Const COLLISION_LAYER_24=$00800000
-Const COLLISION_LAYER_25=$01000000
-Const COLLISION_LAYER_26=$02000000
-Const COLLISION_LAYER_27=$04000000
-Const COLLISION_LAYER_28=$08000000
-Const COLLISION_LAYER_29=$10000000
-Const COLLISION_LAYER_30=$20000000
-Const COLLISION_LAYER_31=$40000000
-Const COLLISION_LAYER_32=$80000000
+Const COLLISION_LAYER_ALL:Int=0
+Const COLLISION_LAYER_1:Int=$0001
+Const COLLISION_LAYER_2:Int=$0002
+Const COLLISION_LAYER_3:Int=$0004
+Const COLLISION_LAYER_4:Int=$0008
+Const COLLISION_LAYER_5:Int=$0010
+Const COLLISION_LAYER_6:Int=$0020
+Const COLLISION_LAYER_7:Int=$0040
+Const COLLISION_LAYER_8:Int=$0080
+Const COLLISION_LAYER_9:Int=$0100
+Const COLLISION_LAYER_10:Int=$0200
+Const COLLISION_LAYER_11:Int=$0400
+Const COLLISION_LAYER_12:Int=$0800
+Const COLLISION_LAYER_13:Int=$1000
+Const COLLISION_LAYER_14:Int=$2000
+Const COLLISION_LAYER_15:Int=$4000
+Const COLLISION_LAYER_16:Int=$8000
+Const COLLISION_LAYER_17:Int=$00010000
+Const COLLISION_LAYER_18:Int=$00020000
+Const COLLISION_LAYER_19:Int=$00040000
+Const COLLISION_LAYER_20:Int=$00080000
+Const COLLISION_LAYER_21:Int=$00100000
+Const COLLISION_LAYER_22:Int=$00200000
+Const COLLISION_LAYER_23:Int=$00400000
+Const COLLISION_LAYER_24:Int=$00800000
+Const COLLISION_LAYER_25:Int=$01000000
+Const COLLISION_LAYER_26:Int=$02000000
+Const COLLISION_LAYER_27:Int=$04000000
+Const COLLISION_LAYER_28:Int=$08000000
+Const COLLISION_LAYER_29:Int=$10000000
+Const COLLISION_LAYER_30:Int=$20000000
+Const COLLISION_LAYER_31:Int=$40000000
+Const COLLISION_LAYER_32:Int=$80000000
 
 Rem
 bbdoc: Tests if two images collide
@@ -1087,7 +1090,7 @@ about:
 #ImagesCollide uses the current Rotation and Scale factors from the most previous
 call to #SetScale and #SetRotation to calculate at a pixel level if the two images collide. 
 End Rem
-Function ImagesCollide(image1:TImage,x1,y1,frame1,image2:TImage,x2,y2,frame2)
+Function ImagesCollide:Int(image1:TImage,x1:Int,y1:Int,frame1:Int,image2:TImage,x2:Int,y2:Int,frame2:Int)
 	ResetCollisions COLLISION_LAYER_32
 	CollideImage image1,x1,y1,frame1,0,COLLISION_LAYER_32
 	If CollideImage(image2,x2,y2,frame2,COLLISION_LAYER_32,0) Return True
@@ -1100,8 +1103,8 @@ about:
 #ImagesCollide2 uses the specified Rotation and Scale paramteters
 to calculate at a pixel level if the two images collide (overlap).
 End Rem
-Function ImagesCollide2(image1:TImage,x1,y1,frame1,rot1#,scalex1#,scaley1#,image2:TImage,x2,y2,frame2,rot2#,scalex2#,scaley2#)
-	Local	_scalex#,_scaley#,_rot#,res
+Function ImagesCollide2:Int(image1:TImage,x1:Int,y1:Int,frame1:Int,rot1#,scalex1#,scaley1#,image2:TImage,x2:Int,y2:Int,frame2:Int,rot2#,scalex2#,scaley2#)
+	Local	_scalex#,_scaley#,_rot#,res:Int
 	_rot=GetRotation()
 	GetScale _scalex,_scaley
 	ResetCollisions COLLISION_LAYER_32
@@ -1146,7 +1149,7 @@ Note: COLLISION_LAYER_32 is used by the #ImagesCollide and #ImagesCollide2 comma
 ]
 EndRem
 Function ResetCollisions(mask%=0)
-	Local	i,q:TQuad
+	Local	i:Int,q:TQuad
 	For i=0 To 31
 		If mask=0 Or mask&(1 Shl i)
 			q=quadlayer[i]
@@ -1176,7 +1179,7 @@ The @writemask specifies which if any collision layers the @image is added to in
 
 The id specifies an object to be returned to future #CollideImage calls when collisions occur. 
 EndRem
-Function CollideImage:Object[](image:TImage,x,y,frame,collidemask%,writemask%,id:Object=Null) 
+Function CollideImage:Object[](image:TImage,x:Int,y:Int,frame:Int,collidemask%,writemask%,id:Object=Null) 
 	Local	q:TQuad
 	q=CreateQuad(image,frame,x,y,image.width,image.height,id)
 	Return CollideQuad(q,collidemask,writemask)
@@ -1191,7 +1194,7 @@ The @writemask specifies which if any collision layers the @image is added to in
 
 The @id specifies an object to be returned to future #CollideImage calls when collisions occur.
 EndRem
-Function CollideRect:Object[](x,y,w,h,collidemask%,writemask%,id:Object=Null) 
+Function CollideRect:Object[](x:Int,y:Int,w:Int,h:Int,collidemask%,writemask%,id:Object=Null) 
 	Local	q:TQuad
 	q=CreateQuad(Null,0,x,y,w,h,id)
 	Return CollideQuad(q,collidemask,writemask)
@@ -1209,22 +1212,22 @@ Function SetCollisions2DTransform(ix#,iy#,jx#,jy#)	'callback from module Blitz2D
 End Function
 
 Global TextureMaps:TPixmap[]
-Global LineBuffer[]
+Global LineBuffer:Int[]
 Global quadlayer:TQuad[32]
 Global freequads:TQuad
 
-Const POLYX=0
-Const POLYY=1
-Const POLYU=2
-Const POLYV=3
+Const POLYX:Int=0
+Const POLYY:Int=1
+Const POLYU:Int=2
+Const POLYV:Int=3
 
-Function DotProduct(x0#,y0#,x1#,y1#,x2#,y2#)
+Function DotProduct:Int(x0#,y0#,x1#,y1#,x2#,y2#)
 	Return (((x2-x1)*(y1-y0))-((x1-x0)*(y2-y1)))
 End Function
 
-Function ClockwisePoly(data#[],channels)	'flips order if anticlockwise
-	Local	count,clk,i,j
-	Local	r0,r1,r2
+Function ClockwisePoly(data#[],channels:Int)	'flips order if anticlockwise
+	Local	count:Int,clk:Int,i:Int,j:Int
+	Local	r0:Int,r1:Int,r2:Int
 	Local	t#
 	
 	count=Len(data)/channels
@@ -1255,18 +1258,18 @@ End Function
 Type rpoly
 	Field	texture:TPixmap
 	Field	data#[]
-	Field	channels,count,size
+	Field	channels:Int,count:Int,size:Int
 	Field	ldat#[],ladd#[]
 	Field	rdat#[],radd#[]
-	Field	Left,Right,top
-	Field	state
+	Field	Left:Int,Right:Int,top:Int
+	Field	state:Int
 End Type
 
-Function RenderPolys(vdata#[][],channels[],textures:TPixmap[],renderspans(polys:TList,count,ypos))
-	Local	polys:rpoly[],p:rpoly,pcount
+Function RenderPolys:Int(vdata#[][],channels:Int[],textures:TPixmap[],renderspans:Int(polys:TList,count:Int,ypos:Int))
+	Local	polys:rpoly[],p:rpoly,pcount:Int
 	Local	active:TList
-	Local	top,bot
-	Local	n,y,h,i,j,res
+	Local	top:Int,bot:Int
+	Local	n:Int,y:Int,h:Int,i:Int,j:Int,res:Int
 	Local	data#[]
 
 	bot=$80000000
@@ -1382,15 +1385,15 @@ Function RenderPolys(vdata#[][],channels[],textures:TPixmap[],renderspans(polys:
 	Return res
 End Function
 
-Function CollideSpans(polys:TList,count,y)
+Function CollideSpans:Int(polys:TList,count:Int,y:Int)
 	Local	p:rpoly
-	Local	startx,endx
-	Local	x0,x1,w,x
+	Local	startx:Int,endx:Int
+	Local	x0:Int,x1:Int,w:Int,x:Int
 	Local	u#,v#,ui#,vi#
-	Local	pix Ptr
+	Local	pix:Int Ptr
 	Local	src:TPixmap
-	Local	tw,th,tp,argb
-	Local	width,skip#
+	Local	tw:Int,th:Int,tp:Int,argb:Int
+	Local	width:Int,skip#
 	
 
 	startx=$7fffffff
@@ -1459,7 +1462,7 @@ Type TQuad
 	Field	link:TQuad
 	Field	id:Object
 	Field	mask:TPixmap
-	Field	frame	
+	Field	frame:Int
 	Field	minx#,miny#,maxx#,maxy#
 	Field	xyuv#[16]
 		
@@ -1487,11 +1490,11 @@ Type TQuad
 	End Method
 End Type
 
-Function QuadsCollide(p:TQuad,q:TQuad)
+Function QuadsCollide:Int(p:TQuad,q:TQuad)
 	If p.maxx<q.minx Or p.maxy<q.miny Or p.minx>q.maxx Or p.miny>q.maxy Return False
 	Local	vertlist#[][2]
 	Local	textures:TPixmap[2]
-	Local	channels[2]	
+	Local	channels:Int[2]	
 	vertlist[0]=p.xyuv	
 	vertlist[1]=q.xyuv	
 	textures[0]=p.mask
@@ -1501,7 +1504,7 @@ Function QuadsCollide(p:TQuad,q:TQuad)
 	Return RenderPolys(vertlist,channels,textures,CollideSpans)
 End Function
 
-Function CreateQuad:TQuad(image:TImage,frame,x#,y#,w#,h#,id:Object)
+Function CreateQuad:TQuad(image:TImage,frame:Int,x#,y#,w#,h#,id:Object)
 	Local	x0#,y0#,x1#,y1#,tx#,ty#
 	Local	tx0#,ty0#,tx1#,ty1#,tx2#,ty2#,tx3#,ty3#
 	Local	minx#,miny#,maxx#,maxy#
@@ -1543,7 +1546,7 @@ End Function
 Function CollideQuad:Object[](pquad:TQuad,collidemask%,writemask%) 
 	Local	result:Object[]
 	Local	p:TQuad,q:TQuad
-	Local	i,j,count
+	Local	i:Int,j:Int,count:Int
 
 	p=pquad				'CreateImageQuad(image,frame,x,y)
 ' check for collisions

@@ -142,7 +142,8 @@ typedef struct BBGLContext BBGLContext;
 
 struct BBGLContext{
 	BBGLContext *succ;
-	int mode,width,height,depth,hertz,flags;
+	int mode,width,height,depth,hertz;
+	BBInt64 flags;
 	
 	HDC hdc;
 	HWND hwnd;
@@ -156,10 +157,10 @@ static BBGLContext *_currentContext;
 typedef BOOL (APIENTRY * WGLSWAPINTERVALEXT) (int);
 
 void bbGLGraphicsClose( BBGLContext *context );
-void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,int *flags );
+void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,BBInt64 *flags );
 void bbGLGraphicsSetGraphics( BBGLContext *context );
 
-static void _initPfd( PIXELFORMATDESCRIPTOR *pfd,int flags ){
+static void _initPfd( PIXELFORMATDESCRIPTOR *pfd,BBInt64 flags ){
 
 	memset( pfd,0,sizeof(*pfd) );
 
@@ -358,7 +359,7 @@ int bbGLGraphicsGraphicsModes( int *modes,int count ){
 	return n;
 }
 
-BBGLContext *bbGLGraphicsAttachGraphics( HWND hwnd,int flags ){
+BBGLContext *bbGLGraphicsAttachGraphics( HWND hwnd,BBInt64 flags ){
 	BBGLContext *context;
 	
 	HDC hdc;
@@ -509,7 +510,7 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 	return context;
 }
 
-void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,int *flags ){
+void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,BBInt64 *flags ){
 	_validateSize( context );
 	*width=context->width;
 	*height=context->height;
