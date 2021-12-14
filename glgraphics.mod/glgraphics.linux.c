@@ -194,7 +194,7 @@ static void _validateContext( BBGLContext *context ){
 	bbSetSystemWindow(context->window);
 }
 
-void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,int *flags ){
+void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,BBInt64 *flags ){
 	_validateSize( context );
 	*width=context->width;
 	*height=context->height;
