@@ -97,7 +97,7 @@ tree_predecessor(struct tree_root *entry)
 	return pred;
 }
 
-static inline void
+static void
 __rotate_left(struct tree_root *entry, struct tree_root **root)
 {
 	struct tree_root *child;
@@ -117,7 +117,7 @@ __rotate_left(struct tree_root *entry, struct tree_root **root)
 	entry->parent = child;
 }
 
-static inline void
+static void
 __rotate_right(struct tree_root *entry,
 	       struct tree_root **root)
 {
@@ -549,7 +549,7 @@ splay_map_np(struct tree_root_np *new,
 	return head;
 }
 
-static inline void
+static void
 __avl_balance(struct avl_root *new, struct avl_root **root)
 {
 	int balance = 0;
