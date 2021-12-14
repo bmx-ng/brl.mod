@@ -448,6 +448,7 @@ Function SaveText:Int( str$,url:Object, format:ETextStreamFormat = ETextStreamFo
 		Case ETextStreamFormat.UTF8
 			stream.WriteByte $ef
 			stream.WriteByte $bb
+			stream.WriteByte $bf
 		Case ETextStreamFormat.UTF16BE
 			stream.WriteByte $fe
 			stream.WriteByte $ff
