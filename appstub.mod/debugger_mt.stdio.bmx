@@ -475,7 +475,7 @@ Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
 		Case "Size_T"    dataSize = SizeOf(Size_T Null)
 		Case "Float"     dataSize = SizeOf(Float Null)
 		Case "Double"    dataSize = SizeOf(Double Null)
-	? Ptr64
+	? x64
 		Case "Float64"   dataSize = SizeOf(Float64 Null)
 		Case "Float128"  dataSize = SizeOf(Float128 Null)
 		Case "Double128" dataSize = SizeOf(Double128 Null)
