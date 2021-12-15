@@ -96,7 +96,15 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 	Method CharToGlyph:Int( char:Int ) Override
 		Return FT_Get_Char_Index( _ft_face,char )-1
 	End Method
-	
+
+	Method FamilyName:String()
+		return bmx_freetype_Face_family_name(_ft_face)
+	End Method
+
+	Method StyleName:String()
+		return bmx_freetype_Face_style_name(_ft_face)
+	End Method
+
 	Method LoadGlyph:TFreeTypeGlyph( index:Int ) Override
 	
 		Local glyph:TFreeTypeGlyph=_glyphs[index]
