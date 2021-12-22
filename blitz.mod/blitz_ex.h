@@ -23,10 +23,15 @@ typedef jmp_buf BBExJmpBuf;
 
 // bbExTry can't be a function due to how setjmp works, so a macro it is
 #ifdef __MINGW64__
+#ifdef __aarch64__
+#define _jumpfunc setjmp
+#else
+#define _jumpfunc __builtin_setjmp
+#endif
 #define bbExTry \
 	BBExJmpBuf* buf = bbExEnter(); \
 	int jmp_status = 0; \
-	if(__builtin_setjmp(*buf)) jmp_status = bbExStatus(); \
+	if(_jumpfunc(*buf)) jmp_status = bbExStatus(); \
 	switch(jmp_status)
 #elif __APPLE__
 #define bbExTry \

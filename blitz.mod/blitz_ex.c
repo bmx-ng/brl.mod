@@ -138,7 +138,11 @@ void bbExThrow( BBObject *p ){
 	--st->ex_sp;
 	st->ex_sp->ex = p;
 #ifdef __MINGW64__
+#ifdef __aarch64__
+	longjmp(st->ex_sp->buf, 1); // only allows status 1
+#else
 	__builtin_longjmp(st->ex_sp->buf, 1); // only allows status 1
+#endif
 #elif __APPLE__
 	_longjmp(st->ex_sp->buf, st->ex_sp->jmp_status);
 #else
