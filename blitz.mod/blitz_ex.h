@@ -16,23 +16,28 @@ void*	bbArgp( int offset );
 #endif
 
 #ifdef __MINGW64__
+#if __clang__
+typedef jmp_buf BBExJmpBuf;
+#else
 typedef intptr_t BBExJmpBuf[5];
+#endif
 #else
 typedef jmp_buf BBExJmpBuf;
 #endif
 
 // bbExTry can't be a function due to how setjmp works, so a macro it is
 #ifdef __MINGW64__
-#ifdef __aarch64__
-#define _jumpfunc setjmp
+#ifdef __clang__
+#define bbExTry \
+	BBExJmpBuf* buf = bbExEnter(); \
+	switch(setjmp(*buf))
 #else
-#define _jumpfunc __builtin_setjmp
-#endif
 #define bbExTry \
 	BBExJmpBuf* buf = bbExEnter(); \
 	int jmp_status = 0; \
-	if(_jumpfunc(*buf)) jmp_status = bbExStatus(); \
+	if(__builtin_setjmp(*buf)) jmp_status = bbExStatus(); \
 	switch(jmp_status)
+#endif
 #elif __APPLE__
 #define bbExTry \
 	BBExJmpBuf* buf = bbExEnter(); \
