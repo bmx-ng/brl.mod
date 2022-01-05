@@ -15,6 +15,7 @@ Type TImage
 
 	Field frames:TImageFrame[]
 	Field seqs:Int[]
+	Field frameDuration:Int[]
 	
 	Method _pad()
 	End Method
@@ -39,7 +40,7 @@ Type TImage
 		Return pixmaps[index]
 	End Method
 	
-	Method SetPixmap( index:Int,pixmap:TPixmap )
+	Method SetPixmap( index:Int,pixmap:TPixmap, duration:Int = 0 )
 		Assert index < seqs.length And index < frames.length And index < pixmaps.length Else "Index out of bounds"
 		If (flags & MASKEDIMAGE) And AlphaBitsPerPixel[pixmap.format]=0
 			pixmap=MaskPixmap( pixmap,mask_r,mask_g,mask_b )
@@ -49,6 +50,7 @@ Type TImage
 		pixmaps[index]=pixmap
 		seqs[index]=0
 		frames[index]=Null
+		frameDuration[index]=duration
 	End Method
 	
 	Function Create:TImage( width:Int,height:Int,frames:Int,flags:Int,mr:Int,mg:Int,mb:Int )
@@ -63,6 +65,7 @@ Type TImage
 		t.pixmaps=New TPixmap[frames]
 		t.frames=New TImageFrame[frames]
 		t.seqs=New Int[frames]
+		t.frameDuration=New Int[frames]
 		Return t
 	End Function
 	
