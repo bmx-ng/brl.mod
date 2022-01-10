@@ -393,6 +393,10 @@ Type TStream Extends TIO
 	or null character.
 	End Rem
 	Method ReadLine$()
+		return ReadLine(False)
+	End Method
+
+	Method ReadLine$(asUTF8:Int)
 		Local buf:Byte[1024],sz:Int
 		Repeat
 			Local ch:Byte
@@ -402,7 +406,11 @@ Type TStream Extends TIO
 			buf[sz]=ch
 			sz:+1
 		Forever
-		Return String.FromBytes( buf,sz )
+		If asUTF8 Then
+			Return String.FromUTF8Bytes( buf,sz )
+		Else
+			Return String.FromBytes( buf,sz )
+		End If
 	End Method
 
 	Rem
@@ -412,7 +420,19 @@ Type TStream Extends TIO
 	followed by the line terminating sequence "~r~n".
 	End Rem
 	Method WriteLine:Int( str$ )
-		Local buf:Byte Ptr=str.ToCString()
+		Return WriteLine(str, False)
+	End Method
+
+	Method WriteLine:Int( str$, asUTF8:Int )
+		Local buf:Byte Ptr
+		Local length:Int
+		If asUTF8 Then
+			buf=str.ToUTF8String()
+			length = strlen_(buf)
+		Else
+			buf=str.ToCString()
+			length = str.length
+		End If
 		Local ok:Int=Write( buf,str.length )=str.length And Write( [13:Byte,10:Byte],2 )=2
 		MemFree buf
 		Return ok
@@ -424,21 +444,41 @@ Type TStream Extends TIO
 	about:
 	A #TStreamReadException is thrown if not all bytes could be read.
 	End Rem
-	Method ReadString$( length:Int )
+	Method ReadString:String( length:Int )
+		Return ReadString(length, False)
+	End Method
+
+	Method ReadString:String( length:Int, asUTF8:Int )
 		Assert length>=0 Else "Illegal String length"
 		Local buf:Byte[length]
 		Readbytes buf,length
-		Return String.FromBytes( buf,length )
+		If asUTF8 Then
+			Return String.FromUTF8Bytes( buf,length )
+		Else
+			Return String.FromBytes( buf,length )
+		End If
 	End Method
-	
+
 	Rem
 	bbdoc: Write characters to the stream
 	about:
 	A #TStreamWriteException is thrown if not all bytes could be written.
 	End Rem
 	Method WriteString( str$ )
-		Local buf:Byte Ptr=str.ToCString()
-		WriteBytes buf,str.length
+		WriteString(str, False)
+	End Method
+
+	Method WriteString( str$, asUTF8:Int )
+		Local buf:Byte Ptr
+		Local length:Int
+		If asUTF8 Then
+			buf=str.ToUTF8String()
+			length = strlen_(buf)
+		Else
+			buf=str.ToCString()
+			length = str.length
+		End If
+		WriteBytes buf,length
 		MemFree buf
 	End Method
 	
@@ -552,20 +592,36 @@ Type TStreamWrapper Extends TStream
 		_stream.WriteDouble n
 	End Method
 	
-	Method ReadLine$() Override
+	Method ReadLine:String() Override
 		Return _stream.ReadLine()
 	End Method
-	
-	Method WriteLine:Int( t$ ) Override
+
+	Method ReadLine:String(asUTF8:Int) Override
+		Return _stream.ReadLine(asUTF8)
+	End Method
+
+	Method WriteLine:Int( t:String ) Override
 		Return _stream.WriteLine( t )
 	End Method
-	
-	Method ReadString$( n:Int ) Override
+
+	Method WriteLine:Int( t:String, asUTF8:Int ) Override
+		Return _stream.WriteLine( t, asUTF8 )
+	End Method
+
+	Method ReadString:String( n:Int ) Override
 		Return _stream.ReadString( n )
 	End Method
-	
-	Method WriteString( t$ ) Override
-		_stream.WriteString t
+
+	Method ReadString:String( n:Int, asUTF8:Int ) Override
+		Return _stream.ReadString( n, asUTF8 )
+	End Method
+
+	Method WriteString( t:String ) Override
+		_stream.WriteString(t)
+	End Method
+
+	Method WriteString( t:String, asUTF8:Int ) Override
+		_stream.WriteString(t, asUTF8)
 	End Method
 	
 	Method ReadObject:Object() Override
@@ -617,7 +673,7 @@ Type TFileStream Extends TStream
 	End Method
 
 	Function GetMode:String(readable:Int,writeMode:Int, _mode:Int Var)
-		Local Mode$
+		Local Mode:String
 		If readable And writeMode = WRITE_MODE_OVERWRITE
 			Mode="r+b"
 			_mode=MODE_READ|MODE_WRITE
@@ -699,8 +755,8 @@ Type TCStream Extends TFileStream
 	Rem
 	bbdoc: Create a TCStream from a 'C' filename
 	End Rem
-	Function OpenFile:TCStream( path$,readable:Int,writeMode:Int )
-		Local Mode$,_mode:Int
+	Function OpenFile:TCStream( path:String,readable:Int,writeMode:Int )
+		Local Mode:String,_mode:Int
 		Mode = GetMode(readable, writeMode, _mode)
 		path=path.Replace( "\","/" )
 		Local cstream:Byte Ptr=fopen_( path,Mode )
@@ -771,7 +827,7 @@ Type TStreamFactory
 	
 	If @url is not a string, both @proto and @path will be Null.
 	End Rem
-	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeMode:Int ) Abstract
+	Method CreateStream:TStream( url:Object,proto:String,path:String,readable:Int,writeMode:Int ) Abstract
 
 End Type
 
@@ -788,7 +844,7 @@ Function OpenStream:TStream( url:Object,readable:Int=True,writeMode:Int=WRITE_MO
 		Return TStreamStream.Create( stream )
 	EndIf
 
-	Local str$=String( url ),proto$,path$
+	Local str:String=String( url ),proto:String,path:String
 	If str
 		Local i:Int=str.Find( "::",0 )
 		If i=-1 Then
@@ -798,8 +854,8 @@ Function OpenStream:TStream( url:Object,readable:Int=True,writeMode:Int=WRITE_MO
 				Return TCStream.OpenFile( str,readable,writeMode )
 			End If
 		End If
-		proto$=str[..i].ToLower()
-		path$=str[i+2..]
+		proto=str[..i].ToLower()
+		path=str[i+2..]
 	EndIf
 
 	Local factory:TStreamFactory=stream_factories
@@ -1011,8 +1067,12 @@ returns: A String of length @length
 about:
 A #TStreamReadException is thrown if not all bytes could be read.
 end rem
-Function ReadString$( stream:TStream,length:Int )
+Function ReadString:String( stream:TStream,length:Int )
 	Return stream.ReadString( length )
+End Function
+
+Function ReadString:String( stream:TStream,length:Int, asUTF8:Int )
+	Return stream.ReadString( length, asUTF8 )
 End Function
 
 Rem
@@ -1022,8 +1082,12 @@ Each character in @str is written to @stream.
 
 A #TStreamWriteException is thrown if not all bytes could be written.
 End Rem
-Function WriteString( stream:TStream,str$ )
-	stream.WriteString str
+Function WriteString( stream:TStream,str:String )
+	stream.WriteString(str)
+End Function
+
+Function WriteString( stream:TStream,str:String, asUTF8:Int )
+	stream.WriteString(str, asUTF8)
 End Function
 
 Rem
@@ -1038,8 +1102,12 @@ Carriage Return characters (ascii code 13) are silently ignored.
 The bytes read are returned in the form of a string, excluding any terminating newline
 or null character.
 End Rem
-Function ReadLine$( stream:TStream )
+Function ReadLine:String( stream:TStream )
 	Return stream.ReadLine()
+End Function
+
+Function ReadLine:String( stream:TStream, asUTF8:Int )
+	Return stream.ReadLine(asUTF8)
 End Function
 
 Rem
@@ -1049,8 +1117,12 @@ about:
 A sequence of bytes is written to the stream (one for each character in @str)
 followed by the line terminating sequence "~r~n".
 End Rem
-Function WriteLine:Int( stream:TStream,str$ )
+Function WriteLine:Int( stream:TStream,str:String )
 	Return stream.WriteLine( str )
+End Function
+
+Function WriteLine:Int( stream:TStream,str:String, asUTF8:Int )
+	Return stream.WriteLine( str, asUTF8 )
 End Function
 
 Rem
@@ -1062,9 +1134,18 @@ The specified @url is opened for reading, and each byte in the resultant stream
 
 A #TStreamReadException is thrown if the stream could not be read.
 End Rem
-Function LoadString$( url:Object )
+Function LoadString:String( url:Object )
 	Local t:Byte[]=LoadByteArray(url)
 	Return String.FromBytes( t,t.length )
+End Function
+
+Function LoadString:String( url:Object, asUTF8:Int )
+	Local t:Byte[]=LoadByteArray(url)
+	If asUTF8 Then
+		Return String.FromUTF8Bytes( t,t.length )
+	Else
+		Return String.FromBytes( t,t.length )
+	End If
 End Function
 
 Rem
@@ -1079,6 +1160,20 @@ Function SaveString( str$,url:Object )
 	Local stream:TStream=WriteStream( url )
 	If Not stream Throw New TStreamWriteException
 	Local t:Byte Ptr=str.ToCString()
+	stream.WriteBytes t,str.length	'Should be in a try block...or t is leaked!
+	MemFree t
+	stream.Close
+End Function
+
+Function SaveString( str$,url:Object, asUTF8:Int )
+	Local stream:TStream=WriteStream( url )
+	If Not stream Throw New TStreamWriteException
+	Local t:Byte Ptr
+	If asUTF8 Then
+		t=str.ToUTF8String()
+	Else
+		t=str.ToCString()
+	End If
 	stream.WriteBytes t,str.length	'Should be in a try block...or t is leaked!
 	MemFree t
 	stream.Close
