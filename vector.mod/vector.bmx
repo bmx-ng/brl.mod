@@ -1391,7 +1391,7 @@ Struct SVec2I
 	bbdoc: Returns #True if the vector and @b are aproximately equal.
 	End Rem
 	Method Operator=:Int(b:SVec2I)
-		Return (Self - b).LengthSquared() < 0.00000001
+		Return x = b.x And y = b.y
 	End Method
 
 	Rem
@@ -1696,7 +1696,7 @@ Struct SVec3I
 	bbdoc: Returns #True if the vector and @b are aproximately equal.
 	End Rem
 	Method Operator=:Int(b:SVec3I)
-		Return (Self - b).LengthSquared() < 0.00000001
+		Return x = b.x And y = b.y And z = b.z
 	End Method
 
 	Rem
@@ -1917,7 +1917,7 @@ Struct SVec4I
 	bbdoc: Returns #True if the vector and @b are aproximately equal.
 	End Rem
 	Method Operator=:Int(b:SVec4I)
-		Return (Self - b).LengthSquared() < 0.00000001
+		Return x = b.x And y = b.y And z = b.z And w = b.w
 	End Method
 
 	Rem
