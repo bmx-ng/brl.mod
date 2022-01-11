@@ -1,4 +1,4 @@
-' Copyright (c) 2019-2020 Bruce A Henderson
+' Copyright (c) 2019-2022 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -26,11 +26,13 @@ bbdoc: Math/Vector
 End Rem
 Module BRL.Vector
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib"
-ModuleInfo "Copyright: 2019-2020 Bruce A Henderson"
+ModuleInfo "Copyright: 2019-2022 Bruce A Henderson"
 
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Added <> and = Operators for Vec3 and Vec4"
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release"
 
@@ -344,6 +346,20 @@ Struct SVec3D
 	End Method
 
 	Rem
+	bbdoc: Returns #True if @b is different.
+	End Rem
+	Method Operator<>:Int(b:SVec3D)
+		Return x <> b.x Or y <> b.y Or z <> b.z
+	End Method
+
+	Rem
+	bbdoc: Returns #True if the vector and @b are aproximately equal.
+	End Rem
+	Method Operator=:Int(b:SVec3D)
+		Return (Self - b).LengthSquared() < 0.00000001
+	End Method
+
+	Rem
 	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
 	End Rem
 	Method Clamp:SVec3D(minv:SVec3D, maxv:SVec3D)
@@ -352,6 +368,7 @@ Struct SVec3D
 	
 	Rem
 	bbdoc: Returns the Cross Product of the two vectors.
+	about: A cross product of zero indicates that the two vectors are parallel.
 	End Rem
 	Method Cross:SVec3D(b:SVec3D)
 		Return New SVec3D(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x)
@@ -550,6 +567,20 @@ Struct SVec4D
 	End Method
 
 	Rem
+	bbdoc: Returns #True if @b is different.
+	End Rem
+	Method Operator<>:Int(b:SVec4D)
+		Return x <> b.x Or y <> b.y Or z <> b.z Or w <> b.w
+	End Method
+
+	Rem
+	bbdoc: Returns #True if the vector and @b are aproximately equal.
+	End Rem
+	Method Operator=:Int(b:SVec4D)
+		Return (Self - b).LengthSquared() < 0.00000001
+	End Method
+
+	Rem
 	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
 	End Rem
 	Method Clamp:SVec4D(minv:SVec4D, maxv:SVec4D)
@@ -558,6 +589,7 @@ Struct SVec4D
 	
 	Rem
 	bbdoc: Returns the Cross Product of the two vectors.
+	about: A cross product of zero indicates that the two vectors are parallel.
 	End Rem
 	Method Cross:SVec4D(b:SVec4D)
 		Return New SVec4D(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x, Sqr(w * b.w))
@@ -977,6 +1009,20 @@ Struct SVec3F
 	End Method
 	
 	Rem
+	bbdoc: Returns #True if @b is different.
+	End Rem
+	Method Operator<>:Int(b:SVec3F)
+		Return x <> b.x Or y <> b.y Or z <> b.z
+	End Method
+
+	Rem
+	bbdoc: Returns #True if the vector and @b are aproximately equal.
+	End Rem
+	Method Operator=:Int(b:SVec3F)
+		Return (Self - b).LengthSquared() < 0.00000001
+	End Method
+
+	Rem
 	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
 	End Rem
 	Method Clamp:SVec3F(minv:SVec3F, maxv:SVec3F)
@@ -985,6 +1031,7 @@ Struct SVec3F
 	
 	Rem
 	bbdoc: Returns the Cross Product of the two vectors.
+	about: A cross product of zero indicates that the two vectors are parallel.
 	End Rem
 	Method Cross:SVec3F(b:SVec3F)
 		Return New SVec3F(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x)
@@ -1183,6 +1230,20 @@ Struct SVec4F
 	End Method
 
 	Rem
+	bbdoc: Returns #True if @b is different.
+	End Rem
+	Method Operator<>:Int(b:SVec4F)
+		Return x <> b.x Or y <> b.y Or z <> b.z Or w <> b.w
+	End Method
+
+	Rem
+	bbdoc: Returns #True if the vector and @b are aproximately equal.
+	End Rem
+	Method Operator=:Int(b:SVec4F)
+		Return (Self - b).LengthSquared() < 0.00000001
+	End Method
+
+	Rem
 	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
 	End Rem
 	Method Clamp:SVec4F(minv:SVec4F, maxv:SVec4F)
@@ -1191,6 +1252,7 @@ Struct SVec4F
 	
 	Rem
 	bbdoc: Returns the Cross Product of the two vectors.
+	about: A cross product of zero indicates that the two vectors are parallel.
 	End Rem
 	Method Cross:SVec4F(b:SVec4F)
 		Return New SVec4F(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x, Float(Sqr(w * b.w)))
@@ -1622,7 +1684,21 @@ Struct SVec3I
 		
 		Throw New TArrayBoundsException
 	End Method
-		
+
+	Rem
+	bbdoc: Returns #True if @b is different.
+	End Rem
+	Method Operator<>:Int(b:SVec3I)
+		Return x <> b.x Or y <> b.y Or z <> b.z
+	End Method
+
+	Rem
+	bbdoc: Returns #True if the vector and @b are aproximately equal.
+	End Rem
+	Method Operator=:Int(b:SVec3I)
+		Return (Self - b).LengthSquared() < 0.00000001
+	End Method
+
 	Rem
 	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
 	End Rem
@@ -1632,6 +1708,7 @@ Struct SVec3I
 	
 	Rem
 	bbdoc: Returns the Cross Product of the two vectors.
+	about: A cross product of zero indicates that the two vectors are parallel.
 	End Rem
 	Method Cross:SVec3I(b:SVec3I)
 		Return New SVec3I(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x)
@@ -1830,6 +1907,20 @@ Struct SVec4I
 	End Method
 
 	Rem
+	bbdoc: Returns #True if @b is different.
+	End Rem
+	Method Operator<>:Int(b:SVec4I)
+		Return x <> b.x Or y <> b.y Or z <> b.z Or w <> b.w
+	End Method
+
+	Rem
+	bbdoc: Returns #True if the vector and @b are aproximately equal.
+	End Rem
+	Method Operator=:Int(b:SVec4I)
+		Return (Self - b).LengthSquared() < 0.00000001
+	End Method
+
+	Rem
 	bbdoc: Returns a vector clamped between the vectors @minv and @maxv.
 	End Rem
 	Method Clamp:SVec4I(minv:SVec4I, maxv:SVec4I)
@@ -1838,6 +1929,7 @@ Struct SVec4I
 	
 	Rem
 	bbdoc: Returns the Cross Product of the two vectors.
+	about: A cross product of zero indicates that the two vectors are parallel.
 	End Rem
 	Method Cross:SVec4I(b:SVec4I)
 		Return New SVec4I(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x, Int(Sqr(w * b.w)))
