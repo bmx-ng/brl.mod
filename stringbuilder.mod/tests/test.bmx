@@ -9,7 +9,7 @@ New TTestSuite.run()
 Type TStringBuilderTest Extends TTest
 
 	Field unicode:Int[] = [1055, 1088, 1080, 1074, 1077, 1090]
-	Field utf8:Byte[] = [208, 159, 209, 128, 208, 184, 208, 178, 208, 181, 209, 130]
+	Field utf8:Byte[] = [208, 159, 209, 128, 208, 184, 208, 178, 208, 181, 209, 130, 0]
 
 	Field sb:TStringBuilder
 	
@@ -56,7 +56,7 @@ Type TStringBuilderTest Extends TTest
 		Local b2:Byte Ptr = sb.ToUTF8String()
 		
 		assertNotNull(b2)
-		assertEquals(utf8.length, strlen_(b2))
+		assertEquals(utf8.length - 1, strlen_(b2))
 		assertEquals(strlen_(b1), strlen_(b2))
 		
 		For Local i:Int = 0 Until strlen_(b1)
@@ -132,4 +132,20 @@ Type TStringBuilderTest Extends TTest
 		assertTrue(sb <> sb1)
 	End Method
 
+	Method testFromUTF8String() { test }
+		Local b:Byte Ptr = utf8
+
+		sb.AppendUTF8String(b)
+
+		assertEquals("Привет", sb.ToString())
+	End Method
+
+	Method testFromUTF8Bytes() { test }
+		Local b:Byte Ptr = utf8
+
+		sb.AppendUTF8Bytes(b, 12)
+
+		assertEquals("Привет", sb.ToString())
+	End Method
+	
 End Type

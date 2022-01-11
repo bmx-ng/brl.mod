@@ -1,4 +1,4 @@
-' Copyright (c) 2018-2020 Bruce A Henderson
+' Copyright (c) 2018-2022 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.14"
+ModuleInfo "Version: 1.15"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2018-2020 Bruce A Henderson"
+ModuleInfo "Copyright: 2018-2022 Bruce A Henderson"
 
+ModuleInfo "History: 1.15"
+ModuleInfo "History: Added AppendUTF8Bytes() method."
 ModuleInfo "History: 1.14"
 ModuleInfo "History: Added Hash() method."
 ModuleInfo "History: 1.13"
@@ -369,6 +371,14 @@ Public
 	End Rem
 	Method AppendUTF8String:TStringBuilder(chars:Byte Ptr)
 		bmx_stringbuilder_append_utf8string(buffer, chars)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a UTF-8 string of @length bytes onto the string builder.
+	End Rem
+	Method AppendUTF8Bytes:TStringBuilder(chars:Byte Ptr, length:Int)
+		bmx_stringbuilder_append_utf8bytes(buffer, chars, length)
 		Return Self
 	End Method
 

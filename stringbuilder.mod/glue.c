@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2020 Bruce A Henderson
+  Copyright (c) 2018-2022 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -475,6 +475,10 @@ void bmx_stringbuilder_append_cstring(struct MaxStringBuilder * buf, const char 
 
 void bmx_stringbuilder_append_utf8string(struct MaxStringBuilder * buf, const char * chars) {
 	int length = strlen(chars);
+	bmx_stringbuilder_append_utf8bytes(buf, chars, length);
+}
+
+void bmx_stringbuilder_append_utf8bytes(struct MaxStringBuilder * buf, const char * chars, int length) {
 	if (length > 0) {
 		int count = 0;
 		

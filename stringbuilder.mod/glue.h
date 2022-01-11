@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2020 Bruce A Henderson
+  Copyright (c) 2018-2022 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -67,6 +67,7 @@ int bmx_stringbuilder_charat(struct MaxStringBuilder * buf, int index);
 void bmx_stringbuilder_removecharat(struct MaxStringBuilder * buf, int index);
 void bmx_stringbuilder_append_cstring(struct MaxStringBuilder * buf, const char * chars);
 void bmx_stringbuilder_append_utf8string(struct MaxStringBuilder * buf, const char * chars);
+void bmx_stringbuilder_append_utf8bytes(struct MaxStringBuilder * buf, const char * chars, int length);
 void bmx_stringbuilder_append_double(struct MaxStringBuilder * buf, double value);
 void bmx_stringbuilder_append_float(struct MaxStringBuilder * buf, float value);
 void bmx_stringbuilder_append_int(struct MaxStringBuilder * buf, int value);
