@@ -239,15 +239,15 @@ bbdoc: Runtime exception
 about: Thrown by #RuntimeError.
 End Rem
 Type TRuntimeException Extends TBlitzException
-	Field error$
-	Method ToString$() Override
+	Field error:String
+
+	Method New(error:String)
+		Self.error = error
+	End Method
+
+	Method ToString:String() Override
 		Return error
 	End Method
-	Function Create:TRuntimeException( error$ )
-		Local t:TRuntimeException=New TRuntimeException
-		t.error=error
-		Return t
-	End Function
 End Type
 
 Rem
@@ -289,7 +289,7 @@ bbdoc: Generate a runtime error
 about: Throws a #TRuntimeException.
 End Rem
 Function RuntimeError( message$ )
-	Throw TRuntimeException.Create( message )
+	Throw New TRuntimeException( message )
 End Function
 
 Rem
