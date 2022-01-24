@@ -91,7 +91,11 @@ struct BBClass_String bbStringClass={
 #endif
 
 	bbStringToUTF8StringBuffer,
-	bbStringHash
+	bbStringHash,
+
+	bbStringToUTF32String,
+	bbStringFromUTF32String,
+	bbStringFromUTF32Bytes
 };
 
 BBString bbEmptyString={
@@ -102,6 +106,12 @@ BBString bbEmptyString={
 
 static int wstrlen( const BBChar *p ){
 	const BBChar *t=p;
+	while( *t ) ++t;
+	return t-p;
+}
+
+static int utf32strlen( const BBUINT *p ){
+	const BBUINT *t=p;
 	while( *t ) ++t;
 	return t-p;
 }
@@ -1032,3 +1042,63 @@ BBULONG bbStringHash( BBString * x ) {
 }
 
 #endif
+
+BBUINT* bbStringToUTF32String( BBString *str ) {
+	int len=str->length;
+	int n = 0;
+	size_t buflen = len * 4 + 4;
+	BBUINT *buf=(BBUINT*)bbMemAlloc( buflen );
+
+	BBChar *p=str->buf;
+	BBUINT *bp = buf;
+	while( *p ) {
+		n++;
+		BBChar c = *p++;
+		if (!((c - 0xd800u) < 2048u)) {
+			*bp++ = c;
+		} else {
+			if (((c & 0xfffffc00) == 0xd800) && n < len && ((*p & 0xfffffc00) == 0xdc00)) {
+				*bp++ = (c << 10) + (*p++) - 0x35fdc00;
+			} else {
+				bbExThrowCString( "Failed to create UTF32. Invalid surrogate pair." );
+			}
+		}
+	}
+	*bp = 0;
+	return buf;
+}
+
+BBString* bbStringFromUTF32String( const BBUINT *p ) {
+	return p ? bbStringFromUTF32Bytes(p, utf32strlen(p)) : &bbEmptyString;
+}
+
+BBString* bbStringFromUTF32Bytes( const BBUINT *p, int n ) {
+	if( !p || n <= 0 ) return &bbEmptyString;
+	
+	int len = n * 2;
+	unsigned short * d=(unsigned short*)malloc( n * sizeof(BBChar) * 2 );
+	unsigned short * q=d;
+
+	BBUINT* bp = p;
+
+	int i = 0;
+	while (i++ < n) {
+		BBUINT c = *bp++;
+		if (c <= 0xffffu) {
+			if (c >= 0xd800u && c <= 0xdfffu) {
+				*q++ = 0xfffd;
+			} else {
+          		*q++ = c;
+			}
+		} else if (c > 0x0010ffffu) {
+			*q++ = 0xfffd;
+		} else {
+			c -= 0x0010000u;
+        	*q++ = (BBChar)((c >> 10) + 0xd800);
+        	*q++ = (BBChar)((c & 0x3ffu) + 0xdc00);
+		}
+	}
+	BBString * str=bbStringFromShorts( d,q-d );
+	free( d );
+	return str;
+}

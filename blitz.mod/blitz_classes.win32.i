@@ -69,7 +69,11 @@ String^Object{
 
 	-ToUTF8StringBuffer:Byte Ptr(buf:Byte Ptr, length:Size_T Var)="bbStringToUTF8StringBuffer"
 	-Hash:ULong()="bbStringHash"
-		
+
+	-ToUTF32String:UInt Ptr()="bbStringToUTF32String"
+	+FromUTF32String:String( utf32String:UInt Ptr )="bbStringFromUTF32String"
+	+FromUTF32Bytes:String( utf32String:UInt Ptr, count )="bbStringFromUTF32Bytes"
+
 }AF="bbStringClass"
 
 ___Array^Object{

@@ -95,6 +95,9 @@ struct BBClass_String{
 
 	unsigned char* (*bbStringToUTF8StringBuffer)( BBString *str, unsigned char * buf, size_t * length );
 	BBULONG (*bbStringHash)( BBString * x );
+	BBUINT* (*bbStringToUTF32String)( BBString *str );
+	BBString* (*bbStringFromUTF32String)( const BBUINT *p );
+	BBString* (*bbStringFromUTF32Bytes)( const BBUINT *p, int n );
 };
 
 extern	struct BBClass_String bbStringClass;
@@ -148,6 +151,10 @@ BBSIZET bbStringToSizet( BBString *str );
 unsigned char* bbStringToCString( BBString *str );
 BBChar*	bbStringToWString( BBString *str );
 unsigned char* bbStringToUTF8String( BBString *str );
+
+BBUINT* bbStringToUTF32String( BBString *str );
+BBString* bbStringFromUTF32String( const BBUINT *p );
+BBString* bbStringFromUTF32Bytes( const BBUINT *p, int n );
 
 #ifdef _WIN32
 WPARAM  bbStringToWParam( BBString *str );
