@@ -8,6 +8,7 @@ New TTestSuite.run()
 
 Type TStringBuilderTest Extends TTest
 
+	Field bigUnicode:UInt[] = [$10300, $10301, $10302, $10303, $10304, $10305, 0]
 	Field unicode:Int[] = [1055, 1088, 1080, 1074, 1077, 1090]
 	Field utf8:Byte[] = [208, 159, 209, 128, 208, 184, 208, 178, 208, 181, 209, 130, 0]
 
@@ -147,5 +148,29 @@ Type TStringBuilderTest Extends TTest
 
 		assertEquals("Привет", sb.ToString())
 	End Method
-	
+
+	Method testfromUTF32() { test }
+		Local b:UInt Ptr = bigUnicode
+
+		sb.AppendUTF32String(b)
+		
+		Local buf:UInt Ptr = sb.ToString().ToUTF32String()
+		For Local i:Int = 0 Until 7
+			assertEquals( bigUnicode[i], buf[i] )
+		Next
+		MemFree(buf)
+	End Method
+
+	Method testfromUTF32Bytes() { test }
+		Local b:UInt Ptr = bigUnicode
+
+		sb.AppendUTF32Bytes(b, 7)
+		
+		Local buf:UInt Ptr = sb.ToString().ToUTF32String()
+		For Local i:Int = 0 Until 7
+			assertEquals( bigUnicode[i], buf[i] )
+		Next
+		MemFree(buf)
+	End Method
+
 End Type

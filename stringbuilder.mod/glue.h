@@ -99,6 +99,8 @@ void bmx_stringbuilder_format_sizet(struct MaxStringBuilder * buf, BBString * fo
 void bmx_stringbuilder_format_float(struct MaxStringBuilder * buf, BBString * formatText, float value);
 void bmx_stringbuilder_format_double(struct MaxStringBuilder * buf, BBString * formatText, double value);
 BBULONG bmx_stringbuilder_hash(struct MaxStringBuilder * buf);
+void bmx_stringbuilder_append_utf32string(struct MaxStringBuilder * buf, BBUINT * chars);
+void bmx_stringbuilder_append_utf32bytes(struct MaxStringBuilder * buf, BBUINT * chars, int length);
 
 /* ----------------------------------------------------- */
 

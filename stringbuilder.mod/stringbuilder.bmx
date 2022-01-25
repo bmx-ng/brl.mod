@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.15"
+ModuleInfo "Version: 1.16"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2018-2022 Bruce A Henderson"
 
+ModuleInfo "History: 1.16"
+ModuleInfo "History: Added AppendUTF32() and AppendUTF32Bytes() method."
 ModuleInfo "History: 1.15"
 ModuleInfo "History: Added AppendUTF8Bytes() method."
 ModuleInfo "History: 1.14"
@@ -395,6 +397,22 @@ Public
 	End Rem
 	Method AppendChar:TStringBuilder(char:Int)
 		bmx_stringbuilder_append_char(buffer, char)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a null-terminated UTF-32 string onto the string builder.
+	End Rem
+	Method AppendUTF32String:TStringBuilder(chars:UInt Ptr)
+		bmx_stringbuilder_append_utf32string(buffer, chars)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a UTF-32 string of @length characters (n bytes / 4) onto the string builder.
+	End Rem
+	Method AppendUTF32Bytes:TStringBuilder(chars:UInt Ptr, length:Int)
+		bmx_stringbuilder_append_utf32bytes(buffer, chars, length)
 		Return Self
 	End Method
 

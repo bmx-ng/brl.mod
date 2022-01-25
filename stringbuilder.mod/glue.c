@@ -20,6 +20,12 @@
 
 #include "glue.h"
 
+static int utf32strlen( const BBUINT *p ){
+	const BBUINT *t=p;
+	while( *t ) ++t;
+	return t-p;
+}
+
 void bmx_stringbuilder_free(struct MaxStringBuilder * buf) {
 	free(buf->buffer);
 	free(buf);
@@ -878,6 +884,43 @@ BBULONG bmx_stringbuilder_hash(struct MaxStringBuilder * buf) {
 	if (buf->hash > 0) return buf->hash;
 	buf->hash = XXH3_64bits(buf->buffer, buf->count * sizeof(BBChar));
 	return buf->hash;
+}
+
+void bmx_stringbuilder_append_utf32string(struct MaxStringBuilder * buf, BBUINT * chars) {
+	int length = utf32strlen(chars);
+	bmx_stringbuilder_append_utf32bytes(buf, chars, length);
+}
+
+void bmx_stringbuilder_append_utf32bytes(struct MaxStringBuilder * buf, BBUINT * chars, int length) {
+	if( !chars || length <= 0 ) return;
+	
+	int len = length * 2;
+	bmx_stringbuilder_resize(buf, buf->count + len);
+
+	BBChar * be = buf->buffer + buf->count;
+	BBChar * q = be;
+	BBUINT* bp = chars;
+
+	int i = 0;
+	while (i++ < length) {
+		BBUINT c = *bp++;
+		if (c <= 0xffffu) {
+			if (c >= 0xd800u && c <= 0xdfffu) {
+				*q++ = 0xfffd;
+			} else {
+          		*q++ = c;
+			}
+		} else if (c > 0x0010ffffu) {
+			*q++ = 0xfffd;
+		} else {
+			c -= 0x0010000u;
+        	*q++ = (BBChar)((c >> 10) + 0xd800);
+        	*q++ = (BBChar)((c & 0x3ffu) + 0xdc00);
+		}
+	}
+			
+	buf->count += (q - be);
+	buf->hash = 0;
 }
 
 /* ----------------------------------------------------- */
