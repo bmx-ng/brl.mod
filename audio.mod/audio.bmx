@@ -386,3 +386,10 @@ Function SetAudioDriver:Int( name$ )
 		t=t._succ
 	Wend
 End Function
+
+Rem
+bbdoc: Returns the current audio driver.
+End Rem
+Function GetAudioDriver:TAudioDriver()
+	Return Driver()
+End Function
