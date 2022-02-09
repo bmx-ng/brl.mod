@@ -445,7 +445,11 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 	Method GetDirect3D:IDirect3D9()
 		Return _d3d
 	End Method
-	
+
+	Method ToString:String() Override
+		Return "TD3D9GraphicsDriver"
+	End Method
+
 End Type
 
 Function D3D9GraphicsDriver:TD3D9GraphicsDriver()

@@ -100,6 +100,9 @@ Type TGLGraphicsDriver Extends TGraphicsDriver
 		bbGLGraphicsFlip sync
 	End Method
 	
+	Method ToString:String() Override
+		Return "TGLGraphicsDriver"
+	End Method
 End Type
 
 Rem

@@ -99,7 +99,17 @@ Type TGraphicsDriver
 		Return False
 	End Method
 
+	Method ToString:String() Abstract
+
+	Method GetHandle:Byte Ptr(handleType:EGraphicsHandleType = EGraphicsHandleType.Window)
+		Return Null
+	End Method
 End Type
+
+Enum EGraphicsHandleType
+	Window
+	Display
+End Enum
 
 Private
 
