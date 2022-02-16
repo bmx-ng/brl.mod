@@ -12,6 +12,8 @@ enum{
 	FLAGS_DEPTHBUFFER=	0x8,
 	FLAGS_STENCILBUFFER=0x10,
 	FLAGS_ACCUMBUFFER=	0x20,
+	FLAGS_BORDERLESS=	0x40,
+	FLAGS_FULLSCREEN_DESKTOP=	0x80,
 	FLAGS_FULLSCREEN=	0x80000000
 };
 
@@ -266,10 +268,13 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 	}else{
 		if (x < 0) x = 0;
 		if (y < 0) y = 0;
+
+		NSWindowStyleMask mask = (flags & FLAGS_BORDERLESS) ? 0 : NSTitledWindowMask|NSClosableWindowMask;
+		if (flags & FLAGS_FULLSCREEN_DESKTOP) mask |= NSWindowStyleMaskFullScreen;
 		
 		window=[[BBGLWindow alloc]
 			initWithContentRect:NSMakeRect( x, y,width,height )
-			styleMask:NSTitledWindowMask|NSClosableWindowMask
+			styleMask:mask
 			backing:NSBackingStoreBuffered
 			defer:YES];
 

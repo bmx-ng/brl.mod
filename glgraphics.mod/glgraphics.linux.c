@@ -44,7 +44,8 @@ enum{
 	FLAGS_DEPTHBUFFER=	0x8,
 	FLAGS_STENCILBUFFER=0x10,
 	FLAGS_ACCUMBUFFER=	0x20,
-	FLAGS_FULLSCREEN=0x80000000
+	FLAGS_BORDERLESS=	0x40,
+	FLAGS_FULLSCREEN_DESKTOP=0x80
 };
 
 typedef struct BBGLContext BBGLContext;
@@ -280,6 +281,8 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,B
 		XF86VidModeSwitchToMode(xdisplay,xscreen,mode);
 		XF86VidModeSetViewPort(xdisplay,xscreen,0,0);
 
+		int border = (flags & FLAGS_BORDERLESS) ? 0 | CWBorderPixel;
+
 		window=XCreateWindow(
 			xdisplay,
 			RootWindow(xdisplay,xscreen),
@@ -290,7 +293,7 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,B
 			vizinfo->depth,
 			InputOutput,
 			vizinfo->visual,
-			CWBorderPixel|CWEventMask|CWColormap|CWOverrideRedirect,
+			border|CWEventMask|CWColormap|CWOverrideRedirect,
 			&swa
 		);
 
