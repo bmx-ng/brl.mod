@@ -332,7 +332,9 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,B
 
 		//Set window min/max size		
 		hints=XAllocSizeHints();
-		hints->flags=PMinSize|PMaxSize;
+		hints->flags=PMinSize|PMaxSize|PPosition;
+		hints->x = x;
+		hints->y = y;
 		hints->min_width=hints->max_width=width;
 		hints->min_height=hints->max_height=height;
 		XSetWMNormalHints( xdisplay,window,hints );
