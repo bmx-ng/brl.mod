@@ -281,7 +281,7 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,B
 		XF86VidModeSwitchToMode(xdisplay,xscreen,mode);
 		XF86VidModeSetViewPort(xdisplay,xscreen,0,0);
 
-		int border = (flags & FLAGS_BORDERLESS) ? 0 | CWBorderPixel;
+		int border = (flags & FLAGS_BORDERLESS) ? 0 : CWBorderPixel;
 
 		window=XCreateWindow(
 			xdisplay,
