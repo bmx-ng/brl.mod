@@ -243,6 +243,8 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,B
 
 	vizinfo=_chooseVisual(flags);
 
+	int border = (flags & FLAGS_BORDERLESS) ? 0 : CWBorderPixel;
+
 	if (depth)
 	{
 		XF86VidModeGetModeLine(xdisplay,xscreen,&_oldMode.dotclock,(XF86VidModeModeLine*)&_oldMode.hdisplay );
@@ -280,8 +282,6 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,B
 
 		XF86VidModeSwitchToMode(xdisplay,xscreen,mode);
 		XF86VidModeSetViewPort(xdisplay,xscreen,0,0);
-
-		int border = (flags & FLAGS_BORDERLESS) ? 0 : CWBorderPixel;
 
 		window=XCreateWindow(
 			xdisplay,
