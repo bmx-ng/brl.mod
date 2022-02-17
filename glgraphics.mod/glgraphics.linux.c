@@ -322,7 +322,7 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,B
 			vizinfo->depth,
 			InputOutput,
 			vizinfo->visual,
-			CWBorderPixel|CWColormap|CWEventMask,
+			border|CWColormap|CWEventMask,
 			&swa
 		);
 
