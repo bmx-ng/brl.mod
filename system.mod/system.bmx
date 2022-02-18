@@ -297,16 +297,16 @@ Rem
 bbdoc: Get desktop width
 returns: Width of the desktop, in pixels
 End Rem
-Function DesktopWidth()
-	Return SystemDriver().DesktopWidth()
+Function DesktopWidth(display:Int = 0)
+	Return SystemDriver().DesktopWidth(display)
 End Function
 
 Rem
 bbdoc: Get desktop height
 returns: Height of the desktop, in pixels
 End Rem
-Function DesktopHeight()
-	Return SystemDriver().DesktopHeight()
+Function DesktopHeight(display:Int = 0)
+	Return SystemDriver().DesktopHeight(display)
 End Function
 
 Rem
@@ -317,8 +317,8 @@ The depth of the desktop is the number of bits per pixel.
 
 Note that on some platforms this function may return 0 if the desktop depth cannot be determined.
 End Rem
-Function DesktopDepth()
-	Return SystemDriver().DesktopDepth()
+Function DesktopDepth(display:Int = 0)
+	Return SystemDriver().DesktopDepth(display)
 End Function
 
 Rem
@@ -327,8 +327,8 @@ returns: Refresh rate, in cycles per second, of the desktop
 about:
 Note that on some platforms this function may return 0 if the desktop refresh rate cannot be determined.
 End Rem
-Function DesktopHertz()
-	Return SystemDriver().DesktopHertz()
+Function DesktopHertz(display:Int = 0)
+	Return SystemDriver().DesktopHertz(display)
 End Function
 
 'End Extern

@@ -111,19 +111,19 @@ Type TLinuxSystemDriver Extends TSystemDriver
 		EndIf
 	End Method
 
-	Method DesktopWidth:Int() Override
+	Method DesktopWidth:Int(display:Int) Override
 		Return bbSystemDesktopWidth()
 	End Method
 	
-	Method DesktopHeight:Int() Override
+	Method DesktopHeight:Int(display:Int) Override
 		Return bbSystemDesktopHeight()
 	End Method
 	
-	Method DesktopDepth:Int() Override
+	Method DesktopDepth:Int(display:Int) Override
 		Return bbSystemDesktopDepth()
 	End Method
 	
-	Method DesktopHertz:Int() Override
+	Method DesktopHertz:Int(display:Int) Override
 		Return bbSystemDesktopHertz()
 	End Method
 

@@ -19,10 +19,10 @@ Type TSystemDriver
 
 	Method OpenURL:Int( url$ ) Abstract	
 
-	Method DesktopWidth:Int() Abstract
-	Method DesktopHeight:Int() Abstract
-	Method DesktopDepth:Int() Abstract
-	Method DesktopHertz:Int() Abstract
+	Method DesktopWidth:Int(display:Int) Abstract
+	Method DesktopHeight:Int(display:Int) Abstract
+	Method DesktopDepth:Int(display:Int) Abstract
+	Method DesktopHertz:Int(display:Int) Abstract
 
 	Method ToString:String() Override
 		Return Name()
