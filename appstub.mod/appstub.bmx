@@ -59,6 +59,7 @@ Import "appstub.macos.m"
 Import "-framework Cocoa"
 Import "-framework Carbon"
 ?ios
+Import "../../sdl.mod/sdl.mod/SDL/include/*.h"
 Import "appstub.ios.c"
 ?Win32
 Import "appstub.win32.c"
