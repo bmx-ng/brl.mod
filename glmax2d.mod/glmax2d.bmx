@@ -347,14 +347,25 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 	EndMethod
 	
 	Method Clear(r:Int=0, g:Int=0, b:Int=0, a:Float=0.0)
-		'backup current
-		Local c:Float[4]
-		glGetFloatv(GL_COLOR_CLEAR_VALUE, c)		
+		'backup current state
+		Local prevC:Float[4]
+		Local prevFBO:Int
+		Local prevTexture:Int
+		glGetFloatv(GL_COLOR_CLEAR_VALUE, prevC)		
+		glGetIntegerv(GL_FRAMEBUFFER_BINDING, Varptr prevFBO)
+		glGetIntegerv(GL_TEXTURE_BINDING_2D,Varptr prevTexture)
 
+		'set render target active
+		glBindTexture(GL_TEXTURE_2D, name)
+		glBindFramebuffer(GL_FRAMEBUFFER, _fbo)
+		'clear content
 		glClearColor(r/255.0, g/255.0, b/255.0, a)
 		glClear(GL_COLOR_BUFFER_BIT)
 
-		glClearColor(c[0], c[1], c[2], c[3])
+		'restore last previous state
+		glClearColor(prevC[0], prevC[1], prevC[2], prevC[3])
+		glBindTexture(GL_TEXTURE_2D, prevTexture)
+		glBindFramebuffer(GL_FRAMEBUFFER, prevFBO)
 	End Method
 
 	Method CreateRenderTarget:TGLRenderImageFrame(width:Int, height:Int, UseImageFiltering:Int, pixmap:TPixmap)
@@ -406,7 +417,6 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 	
 	Method ToPixmap:TPixmap(width:Int, height:Int)
 		Local prevTexture:Int
-		Local prevFBO:Int
 		
 		glGetIntegerv(GL_TEXTURE_BINDING_2D,Varptr prevTexture)
 		glBindTexture(GL_TEXTURE_2D,name)
