@@ -717,7 +717,7 @@ Type TD3D9RenderImage Extends TRenderImage
 			_d3ddev.SetRenderState(D3DRS_SCISSORTESTENABLE, False)
 		Else
 			_d3ddev.SetRenderState(D3DRS_SCISSORTESTENABLE, True)
-			Local rect[] = [x , y, x + width, y + height]
+			Local rect:Int[] = [x , y, x + width, y + height]
 			_d3ddev.SetScissorRect(rect)
 		EndIf
 
