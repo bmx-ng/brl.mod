@@ -83,7 +83,7 @@ Function OpenD3DDevice:Int( hwnd:Byte Ptr,width:Int,height:Int,depth:Int,hertz:I
 	
 	'_d3dDev' = New IDirect3DDevice9
 
-	Function CheckDepthFormat(format:Int)
+	Function CheckDepthFormat:Int(format:Int)
 	    Return _d3d.CheckDeviceFormat(0,D3DDEVTYPE_HAL,D3DFMT_X8R8G8B8,D3DUSAGE_DEPTHSTENCIL,D3DRTYPE_SURFACE,format)=D3D_OK
 	End Function
 
