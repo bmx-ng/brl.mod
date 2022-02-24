@@ -28,7 +28,14 @@ Private
 Extern "os"
 ?Win32
 Const FIONREAD=$4004667F
+?win32 and ptr32
+Const INVALID_SOCKET:Int = ~0
 Function ioctl_( socket,opt,buf:Byte Ptr )="int ioctlsocket(SOCKET ,long ,u_long *)!"
+?win32 and ptr64
+Const INVALID_SOCKET:Long = ~0
+Function ioctl_( socket:Long,opt,buf:Byte Ptr )="int ioctlsocket(SOCKET ,long ,u_long *)!"
+?not win32
+Const INVALID_SOCKET:Int = -1
 ?MacOS
 Const FIONREAD=$4004667F
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
@@ -81,9 +88,9 @@ Type TSocket
 	End Method
 
 	Method Close()
-		If _socket<0 Return
+		If _socket=INVALID_SOCKET Return
 		If _autoClose closesocket_ _socket
-		_socket=-1
+		_socket=INVALID_SOCKET
 		_localIp=""
 		_localPort=-1
 		_remoteIp=""
@@ -91,9 +98,15 @@ Type TSocket
 	End Method
 	
 	Method Connected()
-		If _socket<0 Return False
-		Local Read=_socket
-		If select_( 1,Varptr Read,0,Null,0,Null,0 )<>1 Or ReadAvail()<>0 Return True
+		If _socket=INVALID_SOCKET Return False
+?not win32
+		Local Read:Int = _socket
+?win32 and ptr32
+		Local Read:Int = _socket
+?win32 and ptr64
+		Local Read:Long = _socket
+?
+	If select_( 1,Varptr Read,0,Null,0,Null,0 )<>1 Or ReadAvail()<>0 Return True
 		Close
 		Return False
 	End Method		
@@ -125,7 +138,13 @@ Type TSocket
 	
 	Method Accept:TSocket( timeout:Int = -1, storage:TSockaddrStorage = Null )
 		If timeout >= 0 Then
+?not win32
 			Local Read:Int = _socket
+?win32 and ptr32
+			Local Read:Int = _socket
+?win32 and ptr64
+			Local Read:Long = _socket
+?
 			If select_( 1,Varptr Read,0,Null,0,Null,timeout )<>1 Then
 				Return
 			End If
@@ -163,8 +182,14 @@ Type TSocket
 		End If
 		Return True
 	End Method
-	
+
+?not win32
 	Method Socket:Int()
+?win32 and ptr32
+	Method Socket:Int()
+?win32 and ptr64
+	Method Socket:Long()
+?
 		Return _socket
 	End Method
 	
@@ -185,7 +210,7 @@ Type TSocket
 	End Method
 	
 	Method Shutdown(how:Int)
-		If _socket < 0 Then
+		If _socket = INVALID_SOCKET Then
 			Return
 		End If
 		shutdown_(_socket, how)
@@ -205,8 +230,14 @@ Type TSocket
 		Return True
 	End Method
 	
+?not win32
 	Function Create:TSocket( socket:Int, autoClose:Int = True )
-		If socket < 0 Then
+?win32 and ptr32
+	Function Create:TSocket( socket:Int, autoClose:Int = True )
+?win32 and ptr64
+	Function Create:TSocket( socket:Long, autoClose:Int = True )
+?
+		If socket = INVALID_SOCKET Then
 			Return
 		End If
 		Local addr:Byte[16],size:Int
@@ -219,26 +250,51 @@ Type TSocket
 	End Function
 	
 	Function CreateUDP:TSocket(family:Int = AF_INET_)
-		Local socket=socket_( family,SOCK_DGRAM_,0 )
-		If socket>=0 Return Create( socket,True )
+?not win32
+		Local socket:Int=socket_( family,SOCK_DGRAM_,0 )
+?win32 and ptr32
+		Local socket:Int=socket_( family,SOCK_DGRAM_,0 )
+?win32 and ptr64
+		Local socket:Long=socket_( family,SOCK_DGRAM_,0 )
+?
+		If socket<>INVALID_SOCKET Return Create( socket,True )
 	End Function
 	
 	Function CreateTCP:TSocket(family:Int = AF_INET_)
-		Local socket=socket_( family,SOCK_STREAM_,0 )
-		If socket>=0 Return Create( socket,True )
+?not win32
+		Local socket:Int=socket_( family,SOCK_STREAM_,0 )
+?win32 and ptr32
+		Local socket:Int=socket_( family,SOCK_STREAM_,0 )
+?win32 and ptr64
+		Local socket:Long=socket_( family,SOCK_STREAM_,0 )
+?
+		If socket<>INVALID_SOCKET Return Create( socket,True )
 	End Function
 
 	Rem
 	bbdoc: 
 	End Rem
 	Function Create:TSocket(info:TAddrInfo)
+?not win32
 		Local socket:Int = socket_( info.family(),info.sockType(),info.protocol() )
-		If socket >= 0 Then
+?win32 and ptr32
+		Local socket:Int = socket_( info.family(),info.sockType(),info.protocol() )
+?win32 and ptr64
+		Local socket:Long = socket_( info.family(),info.sockType(),info.protocol() )
+?
+		If socket <> INVALID_SOCKET Then
 			Return Create( socket, True )
 		End If
 	End Function
 
-	Field _socket:Int,_autoClose:Int
+?not win32
+	Field _socket:Int
+?win32 and ptr32
+	Field _socket:Int
+?win32 and ptr64
+	Field _socket:Long
+?
+	Field _autoClose:Int
 	
 	Field _localIp:String,_localPort:Int
 	Field _remoteIp:String,_remotePort:Int
