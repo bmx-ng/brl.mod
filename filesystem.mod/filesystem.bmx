@@ -6,12 +6,14 @@ bbdoc: System/File system
 End Rem
 Module BRL.FileSystem
 
-ModuleInfo "Version: 1.10"
+ModuleInfo "Version: 1.12"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.12"
+ModuleInfo "History: Added file tree walker"
 ModuleInfo "History: 1.11"
 ModuleInfo "History: Added optional parameter timetype to FileTime"
 ModuleInfo "History: 1.10"
@@ -32,7 +34,9 @@ ModuleInfo "History: Added optional resurse parameter to CreateDir"
 Import Pub.StdC
 Import BRL.BankStream
 
-Const FILETYPE_NONE:Int=0,FILETYPE_FILE:Int=1,FILETYPE_DIR:Int=2
+Import "glue.c"
+
+Const FILETYPE_NONE:Int=0,FILETYPE_FILE:Int=1,FILETYPE_DIR:Int=2,FILETYPE_SYM:Int=3
 Const FILETIME_MODIFIED:Int=0,FILETIME_CREATED:Int=1
 
 Private
@@ -569,3 +573,98 @@ End Rem
 Function CloseFile( stream:TStream )
 	stream.Close
 End Function
+
+Rem
+bbdoc: Walks a file tree.
+End Rem
+Function WalkFileTree:Int(path:String, fileWalker:IFileWalker, options:EFileWalkOption = EFileWalkOption.None, maxDepth:Int = 0)
+	If MaxIO.ioInitialized Then
+		' TODO
+	Else
+		FixPath(path)
+		Return bmx_filesystem_walkfiletree(path, _walkfile, fileWalker, options, maxDepth)
+	End If
+End Function
+
+Rem
+bbdoc: An interface for file tree traversal.
+End rem
+Interface IFileWalker
+	Rem
+	bbdoc: Called once for each file/folder traversed.
+	about: Return EFileWalkResult.OK to continue the tree traversal, or EFileWalkResult.Terminate to exit early.
+
+	The contents of @attributes is only valid for the duration of the call.
+	End Rem
+	Method WalkFile:EFileWalkResult(attributes:SFileAttributes Var)
+End Interface
+
+Rem
+bbdoc: File attributes
+End rem
+Struct SFileAttributes
+?win32
+	Field StaticArray name:Short[8192]
+?not win32
+	Field StaticArray name:Byte[8192]
+?
+	Field fileType:short
+	Field depth:short
+	Rem
+	bbdoc: The size, in bytes, of the file.
+	End Rem
+	Field size:ULong
+	Field creationTime:Int
+	Field modifiedTime:Int
+
+	Rem
+	bbdoc: Returns the name of the file/directory.
+	End rem
+	Method GetName:String()
+?win32
+		Return String.FromWString(name)
+?not win32
+		Return String.FromUTF8String(name)
+?
+	End Method
+
+	Method IsRegularFile:Int()
+		Return fileType = FILETYPE_FILE
+	End Method
+
+	Method IsDirectory:Int()
+		Return fileType = FILETYPE_DIR
+	End Method
+
+	Method IsSymbolicLink:Int()
+		Return fileType = FILETYPE_SYM
+	End Method
+
+End Struct
+
+Rem
+bbdoc: 
+End rem
+Enum EFileWalkOption
+	None
+	FollowLinks
+End Enum
+
+Rem
+bbdoc: 
+End rem
+Enum EFileWalkResult
+	OK
+	Terminate
+	SkipSubtree
+	SkipSiblings
+End Enum
+
+Private
+Function _walkFile:EFileWalkResult(fileWalker:IFileWalker, attributes:SFileAttributes Var) { nomangle }
+	Return fileWalker.WalkFile(attributes)
+End Function
+
+Extern
+	Function bmx_filesystem_walkfiletree:Int(path:String, callback:EFileWalkResult(fileWalker:IFileWalker, attributes:SFileAttributes Var), walker:IFileWalker, options:EFileWalkOption, maxDepth:Int)
+End Extern
