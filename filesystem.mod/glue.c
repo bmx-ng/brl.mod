@@ -142,6 +142,8 @@ struct SFileAttributes {
 	int modifiedTime;
 };
 
+static const struct SFileAttributes emptyAttributes;
+
 extern int brl_filesystem__walkFile(BBObject * fileWalker, struct SFileAttributes * attributes);
 
 typedef int (*WalkFile)(BBObject * walker, struct SFileAttributes * attributes);
@@ -178,9 +180,10 @@ int bmx_filesystem_walkfiletree(BBString * path, WalkFile walkFile, BBObject * w
                     break;
                 }
 
+                attributes = emptyAttributes;
+
                 snprintf(attributes.name, 8192, "%s%s", child->fts_path, child->fts_name);
                 if (child->fts_statp != NULL) {
-                    attributes.size = child->fts_statp->st_size;
                     attributes.creationTime = child->fts_statp->st_ctime;
                     attributes.modifiedTime = child->fts_statp->st_mtime;
                 }
@@ -191,6 +194,9 @@ int bmx_filesystem_walkfiletree(BBString * path, WalkFile walkFile, BBObject * w
                         break;
                     case FTS_F:
                         attributes.fileType = FILETYPE_FILE;
+                        if (child->fts_statp != NULL) {
+                            attributes.size = child->fts_statp->st_size;
+                        }
                         break;
                     case FTS_SL:
                     case FTS_SLNONE:
