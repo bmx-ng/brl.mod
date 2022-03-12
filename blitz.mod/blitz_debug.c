@@ -36,7 +36,8 @@ static void swap(BBSource* a, BBSource* b) {
 static int partition (BBSource arr[], int low, int high) {
 	BBULONG pivot = arr[high].id;
 	int i = (low - 1);
-	for (int j = low; j <= high- 1; j++) {
+	int j;
+	for (j = low; j <= high- 1; j++) {
 		if (arr[j].id < pivot) {
 			i++;
 			swap(&arr[i], &arr[j]);
@@ -111,7 +112,8 @@ BBSource * bbSourceForName(BBString * filename) {
 		bbStringToUTF8StringBuffer(filename, path, &len);
 		path[len] = 0;
 		
-		for (int i = 0; i < bpCount; i++) {
+		int i;
+		for (i = 0; i < bpCount; i++) {
 			if (strcmp(path, sources[i].file) == 0) {
 				return &sources[i];
 			}

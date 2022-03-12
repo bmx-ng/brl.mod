@@ -27,6 +27,7 @@
 #define _ULIB_TREE_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 #define new _new_

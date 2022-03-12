@@ -627,7 +627,8 @@ int bmx_stringbuilder_compare(struct MaxStringBuilder * buf1, struct MaxStringBu
 	
 	int c = buf1->count < buf2->count ? buf1->count : buf2->count;
 	int n = 0;
-	for (int i=0; i < c; ++i) {
+	int i;
+	for (i=0; i < c; ++i) {
 		if ((n = buf1->buffer[i] - buf2->buffer[i])) {
 			return n;
 		}
@@ -653,8 +654,8 @@ void bmx_stringbuilder_leftalign(struct MaxStringBuilder * buf, int length) {
 		int c = length - buf->count;
 
 		BBChar * p = buf->buffer + buf->count;
-
-		for (int i=0; i < c; ++i) {
+		int i;
+		for (i=0; i < c; ++i) {
 			*p++ = (BBChar)' ';
 		}
 	}
@@ -681,8 +682,8 @@ void bmx_stringbuilder_rightalign(struct MaxStringBuilder * buf, int length) {
 		memmove(buf->buffer + offset, buf->buffer, buf->count * sizeof(BBChar));
 
 		BBChar * p = buf->buffer;
-
-		for (int i=0; i < offset; ++i) {
+		int i;
+		for (i=0; i < offset; ++i) {
 			*p++ = (BBChar)' ';
 		}
 	}
