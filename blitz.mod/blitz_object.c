@@ -144,6 +144,7 @@ BBClass **bbObjectRegisteredTypes( int *count ){
 }
 
 void bbObjectDumpInstanceCounts(char * buf, int size, int includeZeros) {
+	int i;
 	int count = 0;
 	int offset = 0;
 	BBClass ** classes = bbObjectRegisteredTypes(&count);
@@ -154,7 +155,7 @@ void bbObjectDumpInstanceCounts(char * buf, int size, int includeZeros) {
 	if (bbArrayClass.instance_count > 0 || includeZeros) {
 		offset += snprintf(buf + offset, size - offset, "%s\t%d\n", bbArrayClass.debug_scope->name, bbArrayClass.instance_count);
 	}
-	for (int i = 0; i < count; i++) {
+	for (i = 0; i < count; i++) {
 		BBClass * clas = classes[i];
 		if (offset < size && (clas->instance_count > 0 || includeZeros)) {
 			offset += snprintf(buf + offset, size - offset, "%s\t%d\n", clas->debug_scope->name, clas->instance_count);

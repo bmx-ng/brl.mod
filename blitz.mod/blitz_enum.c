@@ -39,10 +39,11 @@ static BBString * bbAppend(BBString * x, BBString * y) {
 
 #define ENUM_TO_STRING(type,chr)\
 BBString * bbEnumToString_##chr(BBEnum * bbEnum, type ordinal) {\
+	int i;\
 	type * value = (type*)bbEnum->values;\
 	int flags = bbEnum->flags;\
 	BBString * val = &bbEmptyString;\
-	for (int i = 0; i < bbEnum->length; i++) {\
+	for (i = 0; i < bbEnum->length; i++) {\
 		if (flags) {\
 			type v = *value++;\
 			if (v == ordinal || (v & ordinal && v == (v & ordinal))) {\
