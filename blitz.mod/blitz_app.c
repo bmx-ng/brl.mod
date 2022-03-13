@@ -381,7 +381,7 @@ void bbDelay( int millis ){
 	}
 }
 
-#if __STDC_VERSION__ >= 199901L
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 extern void bbUDelay( int microseconds );
 #else
 void bbUDelay( int microseconds ) {

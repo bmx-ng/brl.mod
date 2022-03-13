@@ -1016,7 +1016,7 @@ char *bbTmpUTF8String( BBString *str ){
 	return p;
 }
 
-#if __STDC_VERSION__ >= 199901L
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 extern int bbStringEquals( BBString *x,BBString *y);
 extern int bbObjectIsEmptyString(BBObject * o);
 extern BBULONG bbStringHash( BBString * x );

@@ -112,7 +112,7 @@ struct enum_node {
 void bbObjectRegisterEnum( BBDebugScope *p );
 BBDebugScope * bbObjectEnumInfo( char * name );
 
-#if __STDC_VERSION__ >= 199901L
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 inline void * bbObjectToFieldOffset(BBOBJECT o) {
 	return (void*)(((unsigned char*)o) + o->clas->fields_offset);
 }

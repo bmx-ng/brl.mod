@@ -34,7 +34,7 @@ void		bbWriteStderr( BBString *t );
 void		bbDelay( int ms );
 int		bbMilliSecs();
 int		bbIsMainThread();
-#if __STDC_VERSION__ >= 199901L
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 #ifndef _WIN32
 #include <unistd.h>
 inline void bbUDelay( int microseconds ) {

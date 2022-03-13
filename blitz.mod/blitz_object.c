@@ -312,7 +312,7 @@ BBDebugScope * bbObjectEnumInfo( char * name ) {
 	return 0;
 }
 
-#if __STDC_VERSION__ >= 199901L
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 extern void * bbObjectToFieldOffset(BBOBJECT o);
 #else
 void * bbObjectToFieldOffset(BBOBJECT o) {

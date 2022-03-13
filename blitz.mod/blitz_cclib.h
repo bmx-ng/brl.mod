@@ -18,11 +18,7 @@ extern "C"{
 #define bbNEGINFf (-1.0f/0.0f)
 #define bbNEGINFd (-1.0/0.0)
 
-#ifndef __STDC_VERSION__
-	#define __STDC_VERSION__ 0
-#endif
-
-#if __STDC_VERSION__ >= 199901L
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 
 inline int bbIntAbs( int x ){
 	return x>=0 ? x : -x;

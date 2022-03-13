@@ -1,7 +1,7 @@
 
 #include "blitz.h"
 
-#if __STDC_VERSION__ >= 199901L
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 
 extern int bbIntAbs( int x );
 extern int bbIntSgn( int x );

@@ -170,7 +170,7 @@ char*	bbTmpCString( BBString *str );
 BBChar*	bbTmpWString( BBString *str );
 char*	bbTmpUTF8String( BBString *str );
 
-#if __STDC_VERSION__ >= 199901L
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 inline int bbStringEquals( BBString *x,BBString *y ){
 	if (x->length-y->length != 0) return 0;
 	if (x->hash != 0 && x->hash == y->hash) return 1;
