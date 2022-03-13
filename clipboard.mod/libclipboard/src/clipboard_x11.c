@@ -136,12 +136,13 @@ const char const *g_std_atom_names[X_ATOM_END] = {
  *  \return true iff all atoms were interned.
  */
 static bool x11_intern_atoms(xcb_connection_t *xc, atom_c *atoms, const char const **atom_names, int number) {
-    for (int i = 0; i < number; i++) {
+    int i;
+    for (i = 0; i < number; i++) {
         atoms[i].cookie = xcb_intern_atom(xc, 0,
                                           strlen(atom_names[i]), atom_names[i]);
     }
 
-    for (int i  = 0; i < number; i++) {
+    for (i  = 0; i < number; i++) {
         xcb_intern_atom_reply_t *reply = xcb_intern_atom_reply(xc,
                                          atoms[i].cookie, NULL);
         if (reply == NULL) {
@@ -188,7 +189,8 @@ static void x11_clear_selection(clipboard_c *cb, xcb_selection_clear_event_t *e)
         return;
     }
 
-    for (int i = 0; i < LCB_MODE_END; i++) {
+    int i;
+    for (i = 0; i < LCB_MODE_END; i++) {
         selection_c *sel = &cb->selections[i];
         if (sel->xmode == e->selection && (pthread_mutex_lock(&cb->mu) == 0)) {
             cb->free(sel->data);
@@ -269,7 +271,8 @@ static void x11_retrieve_selection(clipboard_c *cb, xcb_selection_notify_event_t
 
     if (buf != NULL && (pthread_mutex_lock(&cb->mu) == 0)) {
         selection_c *sel = NULL;
-        for (int i = 0; i < LCB_MODE_END; i++) {
+        int i;
+        for (i = 0; i < LCB_MODE_END; i++) {
             if (cb->selections[i].xmode == e->property) {
                 sel = &cb->selections[i];
                 break;
@@ -328,7 +331,8 @@ static bool x11_transmit_selection(clipboard_c *cb, xcb_selection_request_event_
             return false;
         }
 
-        for (int i = 0; i < LCB_MODE_END; i++) {
+        int i;
+        for (i = 0; i < LCB_MODE_END; i++) {
             if (cb->selections[i].xmode == e->selection) {
                 sel = &cb->selections[i];
                 break;
@@ -527,7 +531,8 @@ LCB_API void LCB_CC clipboard_free(clipboard_c *cb) {
     }
 
     /* Free selection data */
-    for (int i = 0; i < LCB_MODE_END; i++) {
+    int i;
+    for (i = 0; i < LCB_MODE_END; i++) {
         if (cb->selections[i].data != NULL) {
             cb->free(cb->selections[i].data);
         }
