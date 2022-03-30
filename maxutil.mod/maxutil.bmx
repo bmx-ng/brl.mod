@@ -111,12 +111,18 @@ Function MinGWPath:String()
 		cpuMinGW  ="/MinGW32x86"
 ?win32x64
 		cpuMinGW = "/MinGW32x64"
+?win32arm
+		cpuMinGW = "/llvm-mingw"
+?win32arm64
+		cpuMinGW = "/llvm-mingw"
 ?win32
-		path = BlitzMaxPath() + cpuMinGW + "/bin"
-		If FileType(path) = FILETYPE_DIR Then
-			' bin dir exists, go with that
-			_minGWPath = BlitzMaxPath() + cpuMinGW 
-			Return _minGWPath
+		If cpuMinGW Then
+			path = BlitzMaxPath() + cpuMinGW + "/bin"
+			If FileType(path) = FILETYPE_DIR Then
+				' bin dir exists, go with that
+				_minGWPath = BlitzMaxPath() + cpuMinGW 
+				Return _minGWPath
+			End If
 		End If
 		
 		path = BlitzMaxPath() + "/MinGW32/bin"
