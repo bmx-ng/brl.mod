@@ -126,6 +126,13 @@ Function MinGWPath:String()
 			Return _minGWPath
 		End If
 
+		path = BlitzMaxPath() + "/llvm-mingw/bin"
+		If FileType(path) = FILETYPE_DIR Then
+			' bin dir exists, go with that
+			_minGWPath = BlitzMaxPath() + "/llvm-mingw"
+			Return _minGWPath
+		End If
+
 		' try MINGW environment variable
 		path = getenv_("MINGW")
 		If path And FileType(path) = FILETYPE_DIR Then
