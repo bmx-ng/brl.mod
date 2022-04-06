@@ -396,8 +396,6 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 		If p=bmx_debugger_ref_bbEmptyArray() Return "Null[]"
 		If p=bmx_debugger_ref_bbEmptyString() Return "Null$"
 	Case Asc("[")
-		p=(Byte Ptr Ptr p)[0]
-		If Not p Return "Null"
 		If IsNumeric(bmx_debugger_DebugDeclTypeChar(decl, 1)) Then
 			Local index:Int = 1
 			Local length:Int
@@ -410,6 +408,9 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 ?ptr64
 			Return "$"+ToHex( Long p ) + "^" + length
 ?		
+		Else
+			p=(Byte Ptr Ptr p)[0]
+			If Not p Or p = bmx_debugger_ref_bbEmptyArray() Return "Null[]"	
 		End If
 		If Not bmx_debugger_DebugDecl_ArraySize(p) Return "Null"
 	Case Asc("@")
