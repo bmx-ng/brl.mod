@@ -713,8 +713,11 @@ Function DumpObject( inst:Byte Ptr,index:Int )
 		bmx_debugger_DebugDecl_ArrayDeclFree(decl)
 		
 		If index<length
-
-			WriteDebug "...=$"+ToHex(Int inst)+":"+index+"~n"
+?Not ptr64
+			WriteDebug "...=$"+ToHex(Int(inst))+":"+index+"~n"
+?ptr64
+			WriteDebug "...=$"+ToHex(Long(inst))+":"+index+"~n"
+?
 	
 		EndIf
 		
