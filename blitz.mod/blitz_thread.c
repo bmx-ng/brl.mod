@@ -319,6 +319,7 @@ int bbThreadResume( BBThread *thread ) {
 #define MUTEX_RECURSIVE 1
 #elif __APPLE__
 #define MUTEX_RECURSIVE 2
+#define MUTEX_POLICY_FIRSTFIT 3
 #elif __SWITCH__
 #define MUTEX_RECURSIVE 1
 #elif __HAIKU__
@@ -333,6 +334,10 @@ static pthread_key_t curThreadTls;
 void bbThreadPreStartup(){
 	if( pthread_mutexattr_init( &_bb_mutexattr )<0 ) exit(-1);
 	if( pthread_mutexattr_settype( &_bb_mutexattr,MUTEX_RECURSIVE )<0 ) exit(-1);
+#if __APPLE__
+	// can fail on 10.13 or lower, which we ignore
+	pthread_mutexattr_setpolicy_np(&_bb_mutexattr, MUTEX_POLICY_FIRSTFIT);
+#endif
 }
 
 void bbThreadStartup(){
