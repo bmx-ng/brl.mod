@@ -21,7 +21,9 @@
     distribution.
 */
 #include <unistd.h>
+#ifdef __APPLE__
 #include <sys/sysctl.h>
+#endif
 
 int bmx_os_getproccount() {
 	int procCount = 0;
