@@ -6,12 +6,14 @@ bbdoc: Random numbers - Default implementation
 End Rem
 Module BRL.Random
 
-ModuleInfo "Version: 1.09"
+ModuleInfo "Version: 1.10"
 ModuleInfo "Author: Mark Sibly, Floyd"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.10"
+ModuleInfo "History: Added GetName()."
 ModuleInfo "History: 1.09"
 ModuleInfo "History: Refactored back to BRL.Random."
 ModuleInfo "History: 1.08"
@@ -138,6 +140,9 @@ Type TRandomDefault Extends TRandom
 		Return rnd_state
 	End Method
 
+	Method GetName:String()
+		Return "Random"
+	End Method
 End Type
 
 Private
@@ -149,7 +154,7 @@ Type TRandomDefaultFactory Extends TRandomFactory
 	End Method
 	
 	Method GetName:String()
-		Return "RandomDefault"
+		Return "Random"
 	End Method
 	
 	Method Create:TRandom(seed:Int)
