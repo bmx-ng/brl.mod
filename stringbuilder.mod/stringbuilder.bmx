@@ -151,6 +151,14 @@ Public
 		bmx_stringbuilder_append_string(buffer, value)
 		Return Self
 	End Method
+	
+	Rem
+	bbdoc: Appends a #String onto the string builder with new line at the end.
+	End Rem	
+	Method AppendLine:TStringBuilder(value:String)
+		bmx_stringbuilder_append_string(buffer, value + "~r~n")
+		Return Self
+	End Method
 
 	Rem
 	bbdoc: Appends a #Byte value to the string builder.
