@@ -156,7 +156,8 @@ Public
 	bbdoc: Appends a #String onto the string builder with new line at the end.
 	End Rem	
 	Method AppendLine:TStringBuilder(value:String)
-		bmx_stringbuilder_append_string(buffer, value + "~r~n")
+		Append(value)
+		AppendNewLine()
 		Return Self
 	End Method
 
