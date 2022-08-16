@@ -34,17 +34,6 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Creates a new #TLinkedList initialised by @array.
-	End Rem
-	Method New(array:T[])
-		If array Then
-			For Local element:T = EachIn array
-				AddLast(element)
-			Next
-		End If
-	End Method
-
-	Rem
 	bbdoc: Returns an iterator that iterates through the #TLinkedList.
 	End Rem
 	Method GetIterator:IIterator<T>()
