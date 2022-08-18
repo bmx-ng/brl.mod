@@ -77,6 +77,46 @@ Public
 	End Method
 	
 	Rem
+	bbdoc: Gets the first value of the #TLinkedList.
+	End Rem
+	Method FirstValue:T()
+		If head Then
+			Return head.value
+		Else
+			Return Null
+		EndIf
+	EndMethod
+	
+	Rem
+	bbdoc: Gets the last value of the #TLinkedList.
+	End Rem
+	Method LastValue:T()
+		If head Then
+			Return head.PreviousNode.value
+		Else
+			Return Null
+		EndIf
+	EndMethod
+	
+	Rem
+	bbdoc: Removes the first value of the #TLinkedList and returns it.
+	EndRem
+	Method Shift:T()
+		Local val:T = FirstValue()
+		RemoveFirst()
+		Return val
+	EndMethod
+	
+	Rem
+	bbdoc: Removes the last value of the #TLinkedList and returns it.
+	EndRem
+	Method Pop:T()
+		Local val:T = LastValue()
+		RemoveLast()
+		Return val
+	EndMethod
+	
+	Rem
 	bbdoc: Adds a new node containing the specified @value after the specified existing @node in the #TLinkedList.
 	returns: The new node.
 	End Rem
