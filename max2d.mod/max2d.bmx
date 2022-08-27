@@ -565,6 +565,72 @@ Function TileImage( image:TImage,x#=0#,y#=0#,frame:Int=0 )
 End Function
 
 Rem
+bbdoc: Draw an image in a tiled pattern
+about:
+#TileImage draws an image in a repeating, tiled pattern, filling the current viewport.
+End Rem
+Function TileImageHorizontal( image:TImage,x#=0#,y#=0#,frame:Int=0 )
+	Local iframe:TImageFrame=image.Frame(frame)
+	If Not iframe Return
+	
+	_max2dDriver.SetTransform 1,0,0,1
+
+	Local w:Int=image.width
+	Local h:Int=image.height
+	Local ox:Int=gc.viewport_x-w+1
+	Local px#=x+gc.origin_x-image.handle_x
+	Local py#=y+gc.origin_y-image.handle_y
+	Local fx#=px-Floor(px)
+	Local tx:Int=Floor(px)-ox
+
+	If tx>=0 tx=tx Mod w + ox Else tx=w - -tx Mod w + ox
+
+	Local vr:Int=gc.viewport_x+gc.viewport_w
+
+	Local ix:Int=tx
+	While ix<vr
+		iframe.Draw 0,0,w,h,ix+fx,py,0,0,w,h 'iy+fy,0,0,w,h
+		ix=ix+w
+	Wend
+
+	UpdateTransform
+	
+End Function
+
+Rem
+bbdoc: Draw an image in a tiled vertical pattern
+about:
+#TileImage draws an image in a repeating, tiled pattern, filling the current viewport.
+End Rem
+Function TileImageVertical( image:TImage,x#=0#,y#=0#,frame:Int=0 )
+	Local iframe:TImageFrame=image.Frame(frame)
+	If Not iframe Return
+	
+	_max2dDriver.SetTransform 1,0,0,1
+
+	Local w:Int=image.width
+	Local h:Int=image.height
+	Local oy:Int=gc.viewport_y-h+1
+	Local px#=x+gc.origin_x-image.handle_x
+	Local py#=y+gc.origin_y-image.handle_y
+	Local fy#=py-Floor(py)
+	Local ty:Int=Floor(py)-oy
+
+	If ty>=0 ty=ty Mod h + oy Else ty=h - -ty Mod h + oy
+
+	Local vb:Int=gc.viewport_y+gc.viewport_h
+
+	Local iy:Int=ty
+	While iy<vb
+		iframe.Draw 0,0,w,h,px,iy+fy,0,0,w,h
+		iy=iy+h
+	Wend
+
+	UpdateTransform
+	
+End Function
+
+Rem
 bbdoc: Set current color
 about:
 The #SetColor command affects the color of #Plot, #DrawRect, #DrawLine, #DrawText,
