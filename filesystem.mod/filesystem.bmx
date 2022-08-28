@@ -37,7 +37,7 @@ Import BRL.BankStream
 Import "glue.c"
 
 Const FILETYPE_NONE:Int=0,FILETYPE_FILE:Int=1,FILETYPE_DIR:Int=2,FILETYPE_SYM:Int=3
-Const FILETIME_MODIFIED:Int=0,FILETIME_CREATED:Int=1
+Const FILETIME_MODIFIED:Int=0,FILETIME_CREATED:Int=1,FILETIME_ACCESSED:Int=2
 
 Private
 
@@ -220,8 +220,8 @@ Function FileType:Int( path$ )
 			Case EMaxIOFileType.DIRECTORY Return FILETYPE_DIR
 		End Select
 	Else
-		Local Mode:Int,size:Long,mtime:Int,ctime:Int
-		If stat_( path,Mode,size,mtime,ctime ) Return 0
+		Local Mode:Int,size:Long,mtime:Int,ctime:Int,atime:Int
+		If stat_( path,Mode,size,mtime,ctime,atime ) Return 0
 		Select Mode & S_IFMT_
 		Case S_IFREG_ Return FILETYPE_FILE
 		Case S_IFDIR_ Return FILETYPE_DIR
@@ -239,19 +239,25 @@ Function FileTime:Long( path$, timetype:Int=FILETIME_MODIFIED )
 	If MaxIO.ioInitialized Then
 		Local stat:SMaxIO_Stat
 		If Not MaxIO.Stat(path, stat) Return 0
-		If timetype = FILETIME_CREATED Then
-			Return stat._createtime
-		Else
-			Return stat._modtime
-		End If
+		Select timetype
+			Case FILETIME_CREATED
+				Return stat._createtime
+			Case FILETIME_MODIFIED
+				Return stat._modtime
+			Case FILETIME_ACCESSED
+				Return stat._accesstime
+		EndSelect
 	Else
-		Local Mode:Int,size:Long,mtime:Int,ctime:Int
-		If stat_( path,Mode,size,mtime,ctime ) Return 0
-		If(timetype = FILETIME_CREATED)
-			Return ctime
-		Else
-			Return mtime
-		EndIf
+		Local Mode:Int,size:Long,mtime:Int,ctime:Int,atime:Int
+		If stat_( path,Mode,size,mtime,ctime,atime ) Return 0
+		Select timetype
+			Case FILETIME_CREATED
+				Return ctime
+			Case FILETIME_MODIFIED
+				Return mtime
+			Case FILETIME_ACCESSED
+				Return atime
+		EndSelect
 	End If
 End Function
 
@@ -266,8 +272,8 @@ Function FileSize:Long( path$ )
 		If Not MaxIO.Stat(path, stat) Return -1
 		Return stat._filesize
 	Else
-		Local Mode:Int,size:Long,mtime:Int,ctime:Int
-		If stat_( path,Mode,size,mtime,ctime ) Return -1
+		Local Mode:Int,size:Long,mtime:Int,ctime:Int,atime:Int
+		If stat_( path,Mode,size,mtime,ctime,atime ) Return -1
 		Return size
 	End If
 End Function
@@ -279,8 +285,8 @@ End Rem
 Function FileMode:Int( path$ )
 	FixPath path
 	If Not MaxIO.ioInitialized Then
-		Local Mode:Int,size:Long,mtime:Int,ctime:Int
-		If stat_( path,Mode,size,mtime,ctime ) Return -1
+		Local Mode:Int,size:Long,mtime:Int,ctime:Int,atime:Int
+		If stat_( path,Mode,size,mtime,ctime,atime ) Return -1
 		Return Mode & 511
 	End If
 End Function
@@ -608,8 +614,8 @@ Struct SFileAttributes
 ?not win32
 	Field StaticArray name:Byte[8192]
 ?
-	Field fileType:short
-	Field depth:short
+	Field fileType:Short
+	Field depth:Short
 	Rem
 	bbdoc: The size, in bytes, of the file.
 	End Rem
