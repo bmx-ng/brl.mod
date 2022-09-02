@@ -1269,9 +1269,9 @@ End Rem
 Function CasedFileName$(path$)
 	Local	dir:Byte Ptr
 	Local   sub$,s$,f$,folder$,p:Int
-	Local	Mode:Int,size:Long,mtime:Int,ctime:Int
+	Local	Mode:Int,size:Long,mtime:Int,ctime:Int,atime:Int
         
-	If stat_( path,Mode,size,mtime,ctime )=0
+	If stat_( path,Mode,size,mtime,ctime,atime )=0
 		Mode:&S_IFMT_
 		If Mode=S_IFREG_ Or Mode=S_IFDIR_ Return path
 	EndIf
