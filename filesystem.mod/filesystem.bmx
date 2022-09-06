@@ -6,12 +6,15 @@ bbdoc: System/File system
 End Rem
 Module BRL.FileSystem
 
-ModuleInfo "Version: 1.12"
+ModuleInfo "Version: 1.13"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.13"
+ModuleInfo "History: Added SetFileTime"
+ModuleInfo "History: Added MaxIO file tree walking"
 ModuleInfo "History: 1.12"
 ModuleInfo "History: Added file tree walker"
 ModuleInfo "History: 1.11"
@@ -602,10 +605,12 @@ Rem
 bbdoc: Walks a file tree.
 End Rem
 Function WalkFileTree:Int(path:String, fileWalker:IFileWalker, options:EFileWalkOption = EFileWalkOption.None, maxDepth:Int = 0)
+	FixPath(path)
 	If MaxIO.ioInitialized Then
-		' TODO
+		If FileType(path) = FILETYPE_DIR Then
+			Return FSWalkFileTree(path, fileWalker, options, 0, maxDepth)
+		End If
 	Else
-		FixPath(path)
 		Return bmx_filesystem_walkfiletree(path, _walkfile, fileWalker, options, maxDepth)
 	End If
 End Function
@@ -687,6 +692,80 @@ End Enum
 Private
 Function _walkFile:EFileWalkResult(fileWalker:IFileWalker, attributes:SFileAttributes Var) { nomangle }
 	Return fileWalker.WalkFile(attributes)
+End Function
+
+Function FSWalkFileTree:Int(dir:string, fileWalker:IFileWalker, options:EFileWalkOption, depth:Int, maxDepth:Int)
+
+	Local attributes:SFileAttributes
+	ApplyAttributes(dir, depth, VarPtr attributes)
+
+	Local res:EFileWalkResult = fileWalker.WalkFile(attributes)
+
+	If res = EFileWalkResult.Terminate Then
+		Return 1
+	End If
+
+	Local d:Byte Ptr = ReadDir(dir)
+
+	If d Then
+		Local f:String = NextFile(d)
+
+		While f
+			Local path:String = dir + "/" + f
+
+			If ApplyAttributes(path, depth + 1, VarPtr attributes) Then
+				If attributes.fileType = FILETYPE_DIR Then
+					Local ret:Int = FSWalkFileTree(path, fileWalker, options, depth + 1, maxDepth)
+					If ret Then
+						CloseDir(d)
+						Return ret
+					End If
+				Else
+					res = fileWalker.WalkFile(attributes)
+
+					If res = EFileWalkResult.Terminate Then
+						CloseDir(d)
+						Return 1
+					End If
+				End If
+			End IF
+
+			f = NextFile(d)
+		Wend
+
+		CloseDir(d)
+	End If
+
+End Function
+
+Function ApplyAttributes:Int(path:String, depth:Int, attributes:SFileAttributes Ptr)
+	Local stat:SMaxIO_Stat
+	If Not MaxIO.Stat(path, stat) Then
+		Return False
+	End If
+
+	Select stat._filetype
+		Case EMaxIOFileType.REGULAR
+			attributes.fileType = FILETYPE_FILE
+		Case EMaxIOFileType.DIRECTORY
+			attributes.fileType = FILETYPE_DIR
+		Case EMaxIOFileType.SYMLINK
+			attributes.fileType = FILETYPE_SYM
+	End Select
+
+	Local length:Size_T = 8192
+?win32
+	path.ToWStringBuffer(attributes.name, length)
+?not win32
+	path.ToUTF8StringBuffer(attributes.name, length)
+?
+
+	attributes.depth = depth
+	attributes.size = stat._filesize
+	attributes.creationTime = stat._createtime
+	attributes.modifiedTime = stat._modtime
+
+	Return True
 End Function
 
 Extern
