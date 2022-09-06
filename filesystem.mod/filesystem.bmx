@@ -232,7 +232,7 @@ End Function
 
 Rem
 bbdoc: Gets file time
-returns: The time the file at @path was last modified 
+returns: The time the file at @path was last modified.
 End Rem
 Function FileTime:Long( path$, timetype:Int=FILETIME_MODIFIED )
 	FixPath path
@@ -258,6 +258,24 @@ Function FileTime:Long( path$, timetype:Int=FILETIME_MODIFIED )
 			Case FILETIME_ACCESSED
 				Return atime
 		EndSelect
+	End If
+End Function
+
+Rem
+bbdoc: Sets the file modified or last accessed time.
+about: @time should be number of seconds since epoch.
+End Rem
+Function SetFileTime( path:String, time:Long, timeType:Int=FILETIME_MODIFIED)
+	FixPath path
+	If MaxIO.ioInitialized Then
+		' Not available
+	Else
+		Select timetype
+			Case FILETIME_MODIFIED
+				utime_(path, timeType, time)
+			Case FILETIME_ACCESSED
+				utime_(path, timeType, time)
+		End Select
 	End If
 End Function
 
