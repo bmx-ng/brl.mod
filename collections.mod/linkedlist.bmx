@@ -103,7 +103,9 @@ Public
 	EndRem
 	Method Shift:T()
 		Local val:T = FirstValue()
-		RemoveFirst()
+		If val
+			RemoveFirst()
+		EndIf
 		Return val
 	EndMethod
 	
@@ -112,7 +114,9 @@ Public
 	EndRem
 	Method Pop:T()
 		Local val:T = LastValue()
-		RemoveLast()
+		If val
+			RemoveLast()
+		EndIf
 		Return val
 	EndMethod
 	
@@ -331,23 +335,27 @@ Public
 	Rem
 	bbdoc: Removes the node at the start of the #TLinkedList.
 	End Rem
-	Method RemoveFirst()
+	Method RemoveFirst:Int()
 		If Not head Then
-			Throw New TInvalidOperationException("list is empty")
+			Return False
 		End If
 		
 		RemoveNode(head)
+		
+		Return True
 	End Method
 	
 	Rem
 	bbdoc: Removes the node at the end of the #TLinkedList.
 	End Rem
-	Method RemoveLast()
+	Method RemoveLast:Int()
 		If Not head Then
-			Throw New TInvalidOperationException("list is empty")
+			Return False
 		End If
 		
-		RemoveNode(head.previousNode)		
+		RemoveNode(head.previousNode)
+		
+		Return True
 	End Method
 
 	Rem
@@ -444,8 +452,9 @@ Private
 				head = node.nextNode
 			End If
 			node.Clear()
-			size :- 1
 		End If
+		
+		size :- 1
 	End Method
 	
 	Method CreateHead(node:TLinkedListNode<T>)
