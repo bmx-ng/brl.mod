@@ -74,6 +74,7 @@ String^Object{
 	+FromUTF32String:String( utf32String:UInt Ptr )="bbStringFromUTF32String"
 	+FromUTF32Bytes:String( utf32String:UInt Ptr, count )="bbStringFromUTF32Bytes"
 
+	-ToWStringBuffer:Short Ptr(buf:Short Ptr, length:Size_T Var)="bbStringToWStringBuffer"
 }AF="bbStringClass"
 
 ___Array^Object{

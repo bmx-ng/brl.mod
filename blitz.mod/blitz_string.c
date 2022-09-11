@@ -95,7 +95,8 @@ struct BBClass_String bbStringClass={
 
 	bbStringToUTF32String,
 	bbStringFromUTF32String,
-	bbStringFromUTF32Bytes
+	bbStringFromUTF32Bytes,
+	bbStringToWStringBuffer,
 };
 
 BBString bbEmptyString={
@@ -824,10 +825,16 @@ unsigned char *bbStringToCString( BBString *str ){
 
 BBChar *bbStringToWString( BBString *str ){
 	BBChar *p;
-	int sz=str->length;
-	p=(BBChar*)bbMemAlloc( (sz+1)*sizeof(BBChar) );
+	size_t sz=str->length + 1;
+	p=(BBChar*)bbMemAlloc( sz * sizeof(BBChar) );
+	return bbStringToWStringBuffer(str, p, &sz);
+}
+
+BBChar *bbStringToWStringBuffer( BBString *str, BBChar * buf, size_t * length ){
+	size_t sz = str->length + 1 < *length ? str->length + 1 : *length;
+	BBChar * p = buf;
 	memcpy(p,str->buf,sz*sizeof(BBChar));
-	p[sz]=0;
+	p[sz-1]=0;
 	return p;
 }
 

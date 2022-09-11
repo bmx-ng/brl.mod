@@ -98,6 +98,7 @@ struct BBClass_String{
 	BBUINT* (*bbStringToUTF32String)( BBString *str );
 	BBString* (*bbStringFromUTF32String)( const BBUINT *p );
 	BBString* (*bbStringFromUTF32Bytes)( const BBUINT *p, int n );
+	BBChar* (*bbStringToWStringBuffer)( BBString *str, BBChar * buf, size_t * length );
 };
 
 extern	struct BBClass_String bbStringClass;
@@ -193,6 +194,7 @@ BBULONG bbStringHash( BBString * x );
 #endif
 
 unsigned char *bbStringToUTF8StringBuffer( BBString *str, unsigned char * buf, size_t * length );
+BBChar *bbStringToWStringBuffer( BBString *str, BBChar * buf, size_t * length );
 
 #ifdef __cplusplus
 }
