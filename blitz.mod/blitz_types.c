@@ -9,6 +9,8 @@ const char *bbUIntTypeTag="u";
 const char *bbLongTypeTag="l";
 const char *bbULongTypeTag="y";
 const char *bbSizetTypeTag="z";
+const char *bbLongIntTypeTag="v";
+const char *bbULongIntTypeTag="e";
 const char *bbFloatTypeTag="f";
 const char *bbDoubleTypeTag="d";
 const char *bbStringTypeTag="$";
@@ -24,6 +26,8 @@ BBINT bbConvertToInt( struct bbDataDef * data ){
 	case 'l':return data->l;
 	case 'y':return data->y;
 	case 'z':return data->z;
+	case 'v':return data->v;
+	case 'e':return data->e;
 	case 'f':return data->f;
 	case 'd':return data->d;
 	case '$':return bbStringToInt( data->t );
@@ -40,6 +44,8 @@ BBUINT bbConvertToUInt( struct bbDataDef * data ){
 	case 'l':return data->l;
 	case 'y':return data->y;
 	case 'z':return data->z;
+	case 'v':return data->v;
+	case 'e':return data->e;
 	case 'f':return data->f;
 	case 'd':return data->d;
 	case '$':return bbStringToUInt( data->t );
@@ -56,6 +62,8 @@ BBLONG bbConvertToLong( struct bbDataDef * data ){
 	case 'l':return data->l;
 	case 'y':return data->y;
 	case 'z':return data->z;
+	case 'v':return data->v;
+	case 'e':return data->e;
 	case 'f':return data->f;
 	case 'd':return data->d;
 	case '$':return bbStringToLong( data->t );
@@ -72,6 +80,8 @@ BBULONG bbConvertToULong( struct bbDataDef * data ){
 	case 'l':return data->l;
 	case 'y':return data->y;
 	case 'z':return data->z;
+	case 'v':return data->v;
+	case 'e':return data->e;
 	case 'f':return data->f;
 	case 'd':return data->d;
 	case '$':return bbStringToULong( data->t );
@@ -88,6 +98,8 @@ BBFLOAT bbConvertToFloat( struct bbDataDef * data ){
 	case 'l':return data->l;
 	case 'y':return data->y;
 	case 'z':return data->z;
+	case 'v':return data->v;
+	case 'e':return data->e;
 	case 'f':return data->f;
 	case 'd':return data->d;
 	case '$':return bbStringToFloat( data->t );
@@ -104,6 +116,8 @@ BBDOUBLE bbConvertToDouble( struct bbDataDef * data ){
 	case 'l':return data->l;
 	case 'y':return data->y;
 	case 'z':return data->z;
+	case 'v':return data->v;
+	case 'e':return data->e;
 	case 'f':return data->f;
 	case 'd':return data->d;
 	case '$':return bbStringToFloat( data->t );
@@ -120,6 +134,8 @@ BBSTRING bbConvertToString( struct bbDataDef * data ){
 	case 'l':return bbStringFromLong( data->l );
 	case 'y':return bbStringFromULong( data->y );
 	case 'z':return bbStringFromSizet( data->z );
+	case 'v':return bbStringFromLongInt( data->v );
+	case 'e':return bbStringFromULongInt( data->e );
 	case 'f':return bbStringFromFloat( data->f );
 	case 'd':return bbStringFromFloat( data->d );
 	case '$':return data->t;
@@ -136,9 +152,47 @@ BBSIZET bbConvertToSizet( struct bbDataDef * data ){
 	case 'l':return data->l;
 	case 'y':return data->y;
 	case 'z':return data->z;
+	case 'v':return data->v;
+	case 'e':return data->e;
 	case 'f':return data->f;
 	case 'd':return data->d;
 	case '$':return bbStringToSizet( data->t );
+	}
+	return 0;
+}
+
+BBLONGINT bbConvertToLongInt( struct bbDataDef * data ){
+	switch( data->type[0] ){
+	case 'b':return data->b;
+	case 's':return data->s;
+	case 'i':return data->i;
+	case 'u':return data->u;
+	case 'l':return data->l;
+	case 'y':return data->y;
+	case 'z':return data->z;
+	case 'v':return data->v;
+	case 'e':return data->e;
+	case 'f':return data->f;
+	case 'd':return data->d;
+	case '$':return bbStringToLongInt( data->t );
+	}
+	return 0;
+}
+
+BBULONGINT bbConvertToULongInt( struct bbDataDef * data ){
+	switch( data->type[0] ){
+	case 'b':return data->b;
+	case 's':return data->s;
+	case 'i':return data->i;
+	case 'u':return data->u;
+	case 'l':return data->l;
+	case 'y':return data->y;
+	case 'z':return data->z;
+	case 'v':return data->v;
+	case 'e':return data->e;
+	case 'f':return data->f;
+	case 'd':return data->d;
+	case '$':return bbStringToULongInt( data->t );
 	}
 	return 0;
 }

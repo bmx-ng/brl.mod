@@ -70,6 +70,11 @@ String^Object{
 	+FromUTF32Bytes:String( utf32String:UInt Ptr, count )="bbStringFromUTF32Bytes"
 
 	-ToWStringBuffer:Short Ptr(buf:Short Ptr, length:Size_T Var)="bbStringToWStringBuffer"
+
+	-ToLongInt:LongInt()="bbStringToLongInt"
+	+FromLongInt:String( longIntValue:LongInt )="bbStringFromLongInt"
+	-ToULongInt:ULongInt()="bbStringToULongInt"
+	+FromULongInt:String( ulongIntValue:ULongInt )="bbStringFromULongInt"
 }AF="bbStringClass"
 
 ___Array^Object{

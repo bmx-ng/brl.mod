@@ -69,6 +69,8 @@ static int arrayCellSize(const char * type, unsigned short data_size, int * flag
 		case '[':size=sizeof(void*);*flags=0;break;
 		case '(':size=sizeof(void*);break;
 		case 'z':size=sizeof(BBSIZET);break;
+		case 'v':size=sizeof(BBLONGINT);break;
+		case 'e':size=sizeof(BBULONGINT);break;
 		#ifdef _WIN32
 		case 'w':size=sizeof(WPARAM);break;
 		case 'x':size=sizeof(LPARAM);break;
@@ -451,6 +453,8 @@ QSORTARRAY( BBUInt64,qsort_y )
 QSORTARRAY( float,qsort_f )
 QSORTARRAY( double,qsort_d )
 QSORTARRAY( BBSIZET,qsort_z )
+QSORTARRAY( BBLONGINT,qsort_v )
+QSORTARRAY( BBULONGINT,qsort_e )
 #ifdef _WIN32
 QSORTARRAY( WPARAM,qsort_w )
 QSORTARRAY( LPARAM,qsort_x )
@@ -469,6 +473,8 @@ QSORTARRAY( BBUInt64,qsort_y_d )
 QSORTARRAY( float,qsort_f_d )
 QSORTARRAY( double,qsort_d_d )
 QSORTARRAY( BBSIZET,qsort_z_d )
+QSORTARRAY( BBLONGINT,qsort_v_d )
+QSORTARRAY( BBULONGINT,qsort_e_d )
 #ifdef _WIN32
 QSORTARRAY( WPARAM,qsort_w_d )
 QSORTARRAY( LPARAM,qsort_x_d )
@@ -495,6 +501,8 @@ void bbArraySort( BBArray *arr,int ascending ){
 		case 'd':qsort_d( (double*)p,(double*)p+n );break;
 		case '$':case ':':qsort_obj( (BBObject**)p,(BBObject**)p+n );break;
 		case 'z':qsort_z( (BBSIZET*)p,(BBSIZET*)p+n );break;
+		case 'v':qsort_v( (BBLONGINT*)p,(BBLONGINT*)p+n );break;
+		case 'e':qsort_e( (BBULONGINT*)p,(BBULONGINT*)p+n );break;
 #ifdef _WIN32
 		case 'w':qsort_w( (WPARAM*)p,(WPARAM*)p+n );break;
 		case 'x':qsort_x( (LPARAM*)p,(LPARAM*)p+n );break;
@@ -512,6 +520,8 @@ void bbArraySort( BBArray *arr,int ascending ){
 		case 'd':qsort_d_d( (double*)p,(double*)p+n );break;
 		case '$':case ':':qsort_obj_d( (BBObject**)p,(BBObject**)p+n );break;
 		case 'z':qsort_z_d( (BBSIZET*)p,(BBSIZET*)p+n );break;
+		case 'v':qsort_v_d( (BBLONGINT*)p,(BBLONGINT*)p+n );break;
+		case 'e':qsort_e_d( (BBULONGINT*)p,(BBULONGINT*)p+n );break;
 #ifdef _WIN32
 		case 'w':qsort_w_d( (WPARAM*)p,(WPARAM*)p+n );break;
 		case 'x':qsort_x_d( (LPARAM*)p,(LPARAM*)p+n );break;

@@ -97,6 +97,11 @@ struct BBClass_String bbStringClass={
 	bbStringFromUTF32String,
 	bbStringFromUTF32Bytes,
 	bbStringToWStringBuffer,
+
+	bbStringToLongInt,
+	bbStringFromLongInt,
+	bbStringToULongInt,
+	bbStringFromULongInt
 };
 
 BBString bbEmptyString={
@@ -189,6 +194,22 @@ BBString *bbStringFromSizet( BBSIZET n ){
 #endif
 
 	return bbStringFromBytes( (unsigned char*)buf, strlen(buf) );
+}
+
+BBString *bbStringFromLongInt( BBLONGINT n ){
+	char buf[64];
+
+	sprintf(buf, "%ld", n);
+
+	return bbStringFromBytes( (unsigned char*)buf,strlen(buf) );
+}
+
+BBString *bbStringFromULongInt( BBULONGINT n ){
+	char buf[64];
+
+	sprintf(buf, "%lu", n);
+
+	return bbStringFromBytes( (unsigned char*)buf,strlen(buf) );
 }
 
 BBString *bbStringFromFloat( float n ){
@@ -604,6 +625,75 @@ BBSIZET bbStringToSizet( BBString *t ){
 		}
 	}
 	//*r=neg ? -n : n;
+	return neg ? -n : n;
+}
+
+BBLONGINT bbStringToLongInt( BBString *t ){
+	int i=0,neg=0;
+	BBLONGINT n=0;
+	
+	while( i<t->length && isspace(t->buf[i]) ) ++i;
+	if( i==t->length ){ return 0; }
+	
+	if( t->buf[i]=='+' ) ++i;
+	else if( (neg=(t->buf[i]=='-')) ) ++i;
+	if( i==t->length ){ return 0; }
+	
+	if( t->buf[i]=='%' ){
+		for( ++i;i<t->length;++i ){
+			int c=t->buf[i];
+			if( c!='0' && c!='1' ) break;
+			n=n*2+(c-'0');
+		}
+	}else if( t->buf[i]=='$' ){
+		for( ++i;i<t->length;++i ){
+			int c=toupper(t->buf[i]);
+			if( !isxdigit(c) ) break;
+			if( c>='A' ) c-=('A'-'0'-10);
+			n=n*16+(c-'0');
+		}
+	}else{
+		for( ;i<t->length;++i ){
+			int c=t->buf[i];
+			if( !isdigit(c) ) break;
+			n=n*10+(c-'0');
+		}
+	}
+	//*r=neg ? -n : n;
+	return neg ? -n : n;
+}
+
+BBULONGINT bbStringToULongInt( BBString *t ){
+	int i=0,neg=0;
+	BBULONGINT n=0;
+	
+	while( i<t->length && isspace(t->buf[i]) ) ++i;
+	if( i==t->length ){ return 0; }
+	
+	if( t->buf[i]=='+' ) ++i;
+	else if( (neg = t->buf[i]=='-') ) ++i;
+	if( i==t->length ){ return 0; }
+	
+	if( t->buf[i]=='%' ){
+		for( ++i;i<t->length;++i ){
+			int c=t->buf[i];
+			if( c!='0' && c!='1' ) break;
+			n=n*2+(c-'0');
+		}
+	}else if( t->buf[i]=='$' ){
+		for( ++i;i<t->length;++i ){
+			int c=toupper(t->buf[i]);
+			if( !isxdigit(c) ) break;
+			if( c>='A' ) c-=('A'-'0'-10);
+			n=n*16+(c-'0');
+		}
+	}else{
+		for( ;i<t->length;++i ){
+			int c=t->buf[i];
+			if( !isdigit(c) ) break;
+			n=n*10+(c-'0');
+		}
+	}
 	return neg ? -n : n;
 }
 

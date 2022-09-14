@@ -99,6 +99,11 @@ struct BBClass_String{
 	BBString* (*bbStringFromUTF32String)( const BBUINT *p );
 	BBString* (*bbStringFromUTF32Bytes)( const BBUINT *p, int n );
 	BBChar* (*bbStringToWStringBuffer)( BBString *str, BBChar * buf, size_t * length );
+
+	BBLONGINT (*bbStringToLongInt)( BBString *t );
+	BBString* (*bbStringFromLongInt)( BBLONGINT n );
+	BBULONGINT (*bbStringToULongInt)( BBString *t );
+	BBString* (*bbStringFromULongInt)( BBULONGINT n );
 };
 
 extern	struct BBClass_String bbStringClass;
@@ -123,6 +128,8 @@ BBString*	bbStringFromCString( const char *p );
 BBString*bbStringFromWString( const BBChar *p );
 BBString*bbStringFromUTF8String( const unsigned char *p );
 BBString *bbStringFromUTF8Bytes( const unsigned char *p,int n );
+BBString*	bbStringFromLongInt( BBLONGINT n );
+BBString*	bbStringFromULongInt( BBULONGINT n );
 
 BBString*	bbStringToString( BBString *t );
 int		bbStringCompare( BBString *x,BBString *y );
@@ -152,6 +159,8 @@ BBSIZET bbStringToSizet( BBString *str );
 unsigned char* bbStringToCString( BBString *str );
 BBChar*	bbStringToWString( BBString *str );
 unsigned char* bbStringToUTF8String( BBString *str );
+BBLONGINT bbStringToLongInt( BBString *str );
+BBULONGINT bbStringToULongInt( BBString *str );
 
 BBUINT* bbStringToUTF32String( BBString *str );
 BBString* bbStringFromUTF32String( const BBUINT *p );
