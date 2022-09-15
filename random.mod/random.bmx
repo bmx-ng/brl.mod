@@ -6,12 +6,14 @@ bbdoc: Random numbers - Default implementation
 End Rem
 Module BRL.Random
 
-ModuleInfo "Version: 1.10"
+ModuleInfo "Version: 1.11"
 ModuleInfo "Author: Mark Sibly, Floyd"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.11"
+ModuleInfo "History: Improved range of Rand()"
 ModuleInfo "History: 1.10"
 ModuleInfo "History: Added GetName()."
 ModuleInfo "History: 1.09"
@@ -117,9 +119,9 @@ Type TRandomDefault Extends TRandom
 	]
 	End Rem
 	Method Rand:Int(minValue:Int, maxValue:Int = 1)
-		Local Range:Int=maxValue-minValue
-		If Range>0 Return Int( RndDouble()*(1+Range) )+minValue
-		Return Int( RndDouble()*(1-Range) )+maxValue
+		Local Range:Long=Long(maxValue)-minValue
+		If Range>0 Return Long( RndDouble()*(1+Range) )+minValue
+		Return Long( RndDouble()*(1-Range) )+maxValue
 	End Method
 	
 	Rem
