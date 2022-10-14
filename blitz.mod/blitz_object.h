@@ -114,6 +114,9 @@ BBDebugScope * bbObjectEnumInfo( char * name );
 
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 inline void * bbObjectToFieldOffset(BBOBJECT o) {
+	if ( !o->clas ) {
+		return &bbNullObject;
+	}
 	return (void*)(((unsigned char*)o) + o->clas->fields_offset);
 }
 #else

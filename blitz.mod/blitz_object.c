@@ -316,6 +316,9 @@ BBDebugScope * bbObjectEnumInfo( char * name ) {
 extern void * bbObjectToFieldOffset(BBOBJECT o);
 #else
 void * bbObjectToFieldOffset(BBOBJECT o) {
+	if ( !o->clas ) {
+		return &bbNullObject;
+	}
 	return (void*)(((unsigned char*)o) + o->clas->fields_offset);
 }
 #endif
