@@ -147,6 +147,22 @@ Type MaxIO
 	Function GetPrefDir:String(org:String, app:String)
 		Return bmx_PHYSFS_getPrefDir(org, app)
 	End Function
+
+	Rem
+	bbdoc: Gets the path where user data resides (eg. "/home/username" on linux).
+	End Rem
+	Function GetUserDir:String()
+		Assert ioInitialized Else "MaxIO not initialized"
+		Return bmx_PHYSFS_getUserDir()
+	End Function
+
+	Rem
+	bbdoc: Gets the path where files can be written to.
+	End Rem
+	Function GetWriteDir:String()
+		Assert ioInitialized Else "MaxIO not initialized"
+		Return bmx_PHYSFS_getWriteDir()
+	End Function
 	
 	Rem
 	bbdoc: Indicates where files may be written.

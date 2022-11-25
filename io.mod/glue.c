@@ -62,6 +62,10 @@ BBString * bmx_PHYSFS_getBaseDir() {
 	return bbStringFromUTF8String(PHYSFS_getBaseDir());
 }
 
+BBString * bmx_PHYSFS_getUserDir() {
+	return bbStringFromUTF8String(PHYSFS_getUserDir());
+}
+
 BBString * bmx_PHYSFS_getPrefDir(BBString * org, BBString * app) {
 	char obuf[128];
 	size_t olen = 128;
@@ -158,6 +162,10 @@ BBString * bmx_blitzio_nextFile(struct MaxFilesEnumeration * mfe) {
 void bmx_blitzio_closeDir(struct MaxFilesEnumeration * mfe) {
 	PHYSFS_freeList(mfe->files);
 	free(mfe);
+}
+
+BBString * bmx_PHYSFS_getWriteDir() {
+	return bbStringFromUTF8String(PHYSFS_getWriteDir());
 }
 
 int bmx_PHYSFS_setWriteDir(BBString * newDir) {
