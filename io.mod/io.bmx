@@ -1,4 +1,4 @@
-' Copyright (c) 2020-2021 Bruce A Henderson
+' Copyright (c) 2020-2022 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,10 +23,12 @@ bbdoc: IO Abstraction
 End Rem
 Module BRL.IO
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Bruce A Henderson"
 
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Added GetWriteDir(), GetRealDir(), IsInit(), GetMountPoint() & SetRoot()"
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release."
 
@@ -51,6 +53,16 @@ Type MaxIO
 			End If
 		End If
 		ioInitialized = True
+	End Function
+
+	Rem
+	bbdoc: Determines if the #MaxIO is initialized.
+	returns: non-zero if #MaxIO is initialized, zero if it is not.
+	about: Once #Init() returns successfully, this will return non-zero. Before a successful #Init() and after #DeInit() returns
+	successfully, this will return zero. This function is safe to call at any time.
+	End Rem
+	Function IsInit:Int()
+		Return ioInitialized And PHYSFS_isInit()
 	End Function
 	
 	Rem
@@ -106,6 +118,49 @@ Type MaxIO
 	End Function
 
 	Rem
+	bbdoc: Determines a mounted archive's mountpoint.
+	returns: The mount point if added to path, or #Null on failure (bogus archive, etc). Use #GetLastErrorCode() to obtain the specific error.
+	about: You give this function the name of an archive or dir you successfully
+ 	added to the search path, and it reports the location in the interpolated
+ 	tree where it is mounted. Files mounted with a #Null mountpoint will report "/".
+
+	@dir must exactly match the string used when adding, even if your string would also reference the same file with a different string of characters.
+	End Rem
+	Function GetMountPoint:String(dir:String)
+		Return bmx_PHYSFS_getMountPoint(dir)
+	End Function
+
+	Rem
+	bbdoc: Makes a subdirectory of an archive its root directory.
+	returns: Nonzero on success, zero on failure. Use #GetLastErrorCode() to obtain the specific error.
+	about: This lets you narrow down the accessible files in a specific archive.
+	
+	For example, if you have x.zip with a file in y/z.txt, mounted to /a, if you
+	call #SetRoot("x.zip", "/y"), then the call #OpenRead("/a/z.txt") will succeed.
+
+	You can change an archive's root at any time, altering the interpolated 
+	file tree (depending on where paths shift, a different archive may be
+	providing various files). If you set the root to #Null or "/", the
+	archive will be treated as if no special root was set (as if the archive
+	was just mounted normally).
+
+	Changing the root only affects future operations on pathnames; a file
+	that was opened from a path that changed due to a #SetRoot will not be affected.
+
+	Setting a new root is not limited to archives in the search path; you may
+	set one on the write dir, too, which might be useful if you have files
+	open for write and thus can't change the write dir at the moment.
+
+	It is not an error to set a subdirectory that does not exist to be the
+	root of an archive; however, no files will be visible in this case. If
+	the missing directories end up getting created (a mkdir to the physical
+	filesystem, etc) then this will be reflected in the interpolated tree.
+	End Rem
+	Function SetRoot:Int(archive:String, subdir:String)
+		Return bmx_PHYSFS_setRoot(archive, subdir)
+	End Function
+
+	Rem
 	bbdoc: Gets the path where the application resides.
 	End Rem
 	Function GetBaseDir:String()
@@ -115,6 +170,7 @@ Type MaxIO
 	
 	Rem
 	bbdoc: Gets the user-and-app-specific path where files can be written.
+	returns: The pref dir in platform-dependent notation, or #Null if there's a problem (creating directory failed, etc).
 	about: Get the "pref dir". This is meant to be where users can write personal files (preferences and save games, etc) that are specific
 	to your application. This directory is unique per user, per application.
 
@@ -142,7 +198,8 @@ Type MaxIO
 	Unicode characters are legal, as long as it's UTF-8 encoded, but...
 	...only use letters, numbers, and spaces. Avoid punctuation like "Game Name 2: Bad Guy's Revenge!" ... "Game Name 2" is sufficient.
 	
-	> You should assume the path returned by this function is the only safe place to write files.
+	> You should assume the path returned by this function is the only safe place to write files (and that #GetBaseDir(), 
+	while they might be writable, or even parents of the returned path, aren't where you should be writing things)..
 	End Rem
 	Function GetPrefDir:String(org:String, app:String)
 		Return bmx_PHYSFS_getPrefDir(org, app)
@@ -153,9 +210,33 @@ Type MaxIO
 	about: Sets a new write dir. This will override the previous setting.
 
 	This call will fail (and fail to change the write dir) if the current write dir still has files open in it.
+
+	The directory will be the root of the write dir, specified in platform-dependent notation.
+	Setting to #Null disables the write dir, so no files can be opened for writing.
 	End Rem
 	Function SetWriteDir:Int(newDir:String)
 		Return bmx_PHYSFS_setWriteDir(newDir)
+	End Function
+
+	Rem
+	bbdoc: Gets the path where files may be written.
+	about: Gets the current write dir. The default write dir is #Null.
+	End Rem
+	Function GetWriteDir:String()
+		Return bmx_PHYSFS_getWriteDir()
+	End Function
+
+	Rem
+	bbdoc: Figures out where in the search path a file resides.
+	returns: The file location, or #Null if not found.
+	about: The file is specified in platform-independent notation. The returned
+    filename will be the element of the search path where the file was found,
+    which may be a directory, or an archive. Even if there are multiple
+    matches in different parts of the search path, only the first one found
+    is used, just like when opening a file.
+	End Rem
+	Function GetRealDir:String(filename:String)
+		Return bmx_PHYSFS_getRealDir(filename)
 	End Function
 
 	Rem

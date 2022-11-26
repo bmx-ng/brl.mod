@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2020-2021 Bruce A Henderson
+  Copyright (c) 2020-2022 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -19,6 +19,14 @@
 */ 
 #include "physfs.h"
 #include "brl.mod/blitz.mod/blitz.h"
+
+static BBString * bmx_char_to_bbstring(char* txt) {
+	if (txt == NULL) {
+		return &bbEmptyString;
+	} else {
+		return bbStringFromUTF8String(txt);
+	}
+}
 
 struct MaxFilesEnumeration {
 	char ** files;
@@ -161,8 +169,55 @@ void bmx_blitzio_closeDir(struct MaxFilesEnumeration * mfe) {
 }
 
 int bmx_PHYSFS_setWriteDir(BBString * newDir) {
+	if (newDir == &bbEmptyString) {
+		return PHYSFS_setWriteDir(NULL);
+	} else {
+		char buf[1024];
+		size_t len = 1024;
+		bbStringToUTF8StringBuffer(newDir, buf, &len);
+		return PHYSFS_setWriteDir(buf);
+	}
+}
+
+BBString * bmx_PHYSFS_getWriteDir() {
+	char * dir = PHYSFS_getWriteDir();
+
+	return bmx_char_to_bbstring(dir);
+}
+
+BBString * bmx_PHYSFS_getRealDir(BBString * filename) {
 	char buf[1024];
 	size_t len = 1024;
-	bbStringToUTF8StringBuffer(newDir, buf, &len);
-	return PHYSFS_setWriteDir(buf);
+	bbStringToUTF8StringBuffer(filename, buf, &len);
+
+	char * dir = PHYSFS_getRealDir(buf);
+
+	return bmx_char_to_bbstring(dir);
+}
+
+BBString * bmx_PHYSFS_getMountPoint(BBString * dir) {
+	char buf[1024];
+	size_t len = 1024;
+	bbStringToUTF8StringBuffer(dir, buf, &len);
+
+	char * mount = PHYSFS_getMountPoint(buf);
+
+	return bmx_char_to_bbstring(mount);
+}
+
+int bmx_PHYSFS_setRoot(BBString * archive, BBString * subdir) {
+	char abuf[1024];
+	size_t len = 1024;
+	bbStringToUTF8StringBuffer(archive, abuf, &len);
+
+	char sbuf[1024];
+	size_t slen = 1024;
+
+	char * sd = 0;
+	if (subdir != &bbEmptyString) {
+		bbStringToUTF8StringBuffer(subdir, sbuf, &slen);
+		sd = &sbuf;
+	}
+
+	return PHYSFS_setRoot(abuf, sbuf);
 }

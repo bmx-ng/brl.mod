@@ -1,4 +1,4 @@
-' Copyright (c) 2020-2021 Bruce A Henderson
+' Copyright (c) 2020-2022 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -28,6 +28,7 @@ Extern
 
 	Function bmx_PHYSFS_init:Int()
 	Function PHYSFS_deinit:Int()
+	Function PHYSFS_isInit:Int()
 	Function bmx_PHYSFS_getErrorForCode:String(errorCode:EMaxIOErrorCode)
 	Function bmx_PHYSFS_getLastError:String()
 	Function bmx_PHYSFS_getLastErrorCode:EMaxIOErrorCode()
@@ -36,6 +37,10 @@ Extern
 	Function bmx_PHYSFS_getPrefDir:String(org:String, app:String)
 	Function bmx_PHYSFS_mountMemory:Int(dirPtr:Byte Ptr, dirLen:Int, newDir:String, mountPoint:String, appendToPath:Int)
 	Function bmx_PHYSFS_setWriteDir:Int(newDir:String)
+	Function bmx_PHYSFS_getWriteDir:String()
+	Function bmx_PHYSFS_getRealDir:String(filename:String)
+	Function bmx_PHYSFS_getMountPoint:String(dir:String)
+	Function bmx_PHYSFS_setRoot:Int(archive:String, subdir:String)
 	
 	Function PHYSFS_tell:Long(filePtr:Byte Ptr)
 	Function PHYSFS_seek:Int(filePtr:Byte Ptr, newPos:Long)
