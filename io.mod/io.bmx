@@ -29,6 +29,7 @@ ModuleInfo "Copyright: Bruce A Henderson"
 
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Added GetWriteDir(), GetRealDir(), IsInit(), GetMountPoint() & SetRoot()"
+ModuleInfo "History: Added Unmount() and GetSearchPath()"
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release."
 
@@ -115,6 +116,18 @@ Type MaxIO
 		Assert ioInitialized Else "MaxIO not initialized"
 		Assert IncbinPtr(newDir) Else "No Incbin for " + newDir
 		Return bmx_PHYSFS_mountMemory(IncbinPtr(newDir), IncbinLen(newDir), newDir, mountPoint, appendToPath)
+	End Function
+
+	Rem
+	bbdoc: Removes a directory or archive from the search path.
+	returns: Nonzero on success, zero on failure. Use #GetLastErrorCode() to obtain the specific error.
+	about: This must be a (case-sensitive) match to a dir or archive already in the
+	search path, specified in platform-dependent notation.
+
+	This call will fail (and fail to remove from the path) if the element still has files open in it.
+	End Rem
+	Function Unmount:Int(oldDir:String)
+		Return bmx_PHYSFS_unmount(oldDir)
 	End Function
 
 	Rem
@@ -205,6 +218,15 @@ Type MaxIO
 		Return bmx_PHYSFS_getPrefDir(org, app)
 	End Function
 	
+	Rem
+	bbdoc: Gets the current search path.
+	returns: An array of Strings.
+	about: The default search path is an empty list.
+	End Rem
+	Function GetSearchPath:String[]()
+		Return bmx_PHYSFS_getSearchPath()
+	End Function
+
 	Rem
 	bbdoc: Indicates where files may be written.
 	about: Sets a new write dir. This will override the previous setting.

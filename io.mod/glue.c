@@ -221,3 +221,34 @@ int bmx_PHYSFS_setRoot(BBString * archive, BBString * subdir) {
 
 	return PHYSFS_setRoot(abuf, sbuf);
 }
+
+int bmx_PHYSFS_unmount(BBString * oldDir) {
+	char buf[1024];
+	size_t len = 1024;
+	bbStringToUTF8StringBuffer(oldDir, buf, &len);
+
+	return PHYSFS_unmount(buf);
+}
+
+BBArray * bmx_PHYSFS_getSearchPath() {
+	char **list = PHYSFS_getSearchPath();
+	int count = 0;
+
+	char **i;
+	for (i = list; *i != NULL; i++) {
+		count++;
+	}
+
+	if (count == 0) {
+		return &bbEmptyArray;
+	}
+
+	int n = 0;
+	BBArray * p = bbArrayNew1D("$", count);
+	BBString **s=(BBString**)BBARRAYDATA( p,p->dims );
+	for (i = list; *i != NULL; i++) {
+		s[n++]=bbStringFromUTF8String( *i );
+	}
+	PHYSFS_freeList(list);
+	return p;
+}
