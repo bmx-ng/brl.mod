@@ -177,7 +177,7 @@ bbdoc: Gets the real, absolute path of a file path
 End Rem
 Function RealPath$( path$ )
 ?Win32
-	If path.StartsWith( "/" ) And Not path.StartsWith( "//" )
+	If Not MaxIO.ioInitialized And path.StartsWith( "/" ) And Not path.StartsWith( "//" )
 		path=_CurrentDrive()+":"+path
 	EndIf
 ?
@@ -185,7 +185,9 @@ Function RealPath$( path$ )
 	Local cd$=_RootPath( path )
 
 	If cd
-		path=path[cd.length..]
+		If Not MaxIO.ioInitialized Then
+			path=path[cd.length..]
+		End If
 	Else
 		cd=CurrentDir()
 	EndIf
