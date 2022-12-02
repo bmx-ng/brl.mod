@@ -349,12 +349,16 @@ BBArray *bbArrayConcat( const char *type,BBArray *x,BBArray *y ){
 }
 
 BBArray *bbArrayFromData( const char *type,int length,void *data ){
+	return bbArrayFromDataSize(type, length, data, 0);
+}
+
+BBArray *bbArrayFromDataSize( const char *type,int length,void *data, unsigned short data_size ){
 
 	BBArray *arr;
 
 	if( length<=0 ) return &bbEmptyArray;
 	
-	arr=allocateArray( type,1,&length,0 );
+	arr=allocateArray( type,1,&length,data_size );
 
 	memcpy( BBARRAYDATA( arr,1 ),data,arr->size );
 
