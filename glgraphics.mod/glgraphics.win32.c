@@ -84,9 +84,9 @@ enum{
 #define WGL_SAMPLE_BUFFERS_ARB              0x2041
 #define WGL_SAMPLES_ARB                     0x2042
 
-static BOOL _wglChoosePixelFormatARB( int hDC, const int *intAttribs, const FLOAT *floatAttribs, unsigned int maxFormats, int *lPixelFormat, unsigned int *numFormats){
+static BOOL _wglChoosePixelFormatARB( HDC hDC, const int *intAttribs, const FLOAT *floatAttribs, unsigned int maxFormats, int *lPixelFormat, unsigned int *numFormats){
 	//Define function pointer datatype
-	typedef BOOL (APIENTRY * WGLCHOOSEPIXELFORMATARB) (int hDC, const int *intAttribs, const FLOAT *floatAttribs, unsigned int maxFormats, int *lPixelFormat, unsigned int *numFormats);
+	typedef BOOL (APIENTRY * WGLCHOOSEPIXELFORMATARB) (HDC hDC, const int *intAttribs, const FLOAT *floatAttribs, unsigned int maxFormats, int *lPixelFormat, unsigned int *numFormats);
 
 	//Get the "wglChoosePixelFormatARB" function
 	WGLCHOOSEPIXELFORMATARB wglChoosePixelFormatARB = (WGLCHOOSEPIXELFORMATARB)wglGetProcAddress("wglChoosePixelFormatARB");
@@ -97,7 +97,7 @@ static BOOL _wglChoosePixelFormatARB( int hDC, const int *intAttribs, const FLOA
 	return 0;
 }
 
-static int MyChoosePixelFormat( int hDC, const int flags ){
+static int MyChoosePixelFormat( HDC hDC, const int flags ){
 	//Extract multisample mode from flags 
 	int multisample = 0;
 	if (_MULTISAMPLE2X & flags) multisample = 2;
