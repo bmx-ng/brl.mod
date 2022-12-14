@@ -230,7 +230,7 @@ void bbSystemEmitOSEvent( HWND hwnd,UINT msg,WPARAM wp,LPARAM lp,BBObject *sourc
 	case WM_ACTIVATE:
 		if( LOWORD(wp)==WA_INACTIVE || !IsIconic(hwnd) ){
 			DWORD proc;
-			GetWindowThreadProcessId( lp,&proc );
+			GetWindowThreadProcessId( hwnd,&proc );
 			if( proc!=GetCurrentProcessId() ){
 				id = (LOWORD(wp) == WA_INACTIVE) ? BBEVENT_APPSUSPEND : BBEVENT_APPRESUME;
 				break;
