@@ -463,6 +463,10 @@ void bmx_stringbuilder_removecharat(struct MaxStringBuilder * buf, int index) {
 
 void bmx_stringbuilder_append_cstring(struct MaxStringBuilder * buf, const char * chars) {
 	int length = strlen(chars);
+	bmx_stringbuilder_append_cstringbytes(buf, chars, length);
+}
+
+void bmx_stringbuilder_append_cstringbytes(struct MaxStringBuilder * buf, const char * chars, int length) {
 	if (length > 0) {
 		int count = length;
 		

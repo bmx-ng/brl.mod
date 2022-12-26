@@ -66,6 +66,7 @@ void bmx_stringbuilder_setcharat(struct MaxStringBuilder * buf, int index, int c
 int bmx_stringbuilder_charat(struct MaxStringBuilder * buf, int index);
 void bmx_stringbuilder_removecharat(struct MaxStringBuilder * buf, int index);
 void bmx_stringbuilder_append_cstring(struct MaxStringBuilder * buf, const char * chars);
+void bmx_stringbuilder_append_cstringbytes(struct MaxStringBuilder * buf, const char * chars, int length);
 void bmx_stringbuilder_append_utf8string(struct MaxStringBuilder * buf, const char * chars);
 void bmx_stringbuilder_append_utf8bytes(struct MaxStringBuilder * buf, const char * chars, int length);
 void bmx_stringbuilder_append_double(struct MaxStringBuilder * buf, double value);

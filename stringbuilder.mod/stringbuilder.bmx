@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.16"
+ModuleInfo "Version: 1.17"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2018-2022 Bruce A Henderson"
 
+ModuleInfo "History: 1.17"
+ModuleInfo "History: Added AppendCStringBytes() method."
 ModuleInfo "History: 1.16"
 ModuleInfo "History: Added AppendUTF32() and AppendUTF32Bytes() method."
 ModuleInfo "History: 1.15"
@@ -224,7 +226,15 @@ Public
 		bmx_stringbuilder_append_cstring(buffer, chars)
 		Return Self
 	End Method
-	
+
+	Rem
+	bbdoc: Appends a C string of @length bytes onto the string builder.
+	End Rem
+	Method AppendCStringBytes:TStringBuilder(chars:Byte Ptr, length:Int)
+		bmx_stringbuilder_append_cstringbytes(buffer, chars, length)
+		Return Self
+	End Method
+
 	Rem
 	bbdoc: Appends a #Double value to the string builder.
 	End Rem
