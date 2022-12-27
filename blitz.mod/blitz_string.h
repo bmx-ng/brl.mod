@@ -181,9 +181,20 @@ BBChar*	bbTmpWString( BBString *str );
 char*	bbTmpUTF8String( BBString *str );
 
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+inline BBULONG bbStringHash( BBString * x ) {
+	if (x->hash > 0) return x->hash;
+	x->hash = XXH3_64bits(x->buf, x->length * sizeof(BBChar));
+	return x->hash;
+}
+
 inline int bbStringEquals( BBString *x,BBString *y ){
+	if (x->clas != &bbStringClass || y->clas != &bbStringClass) return 0; // only strings with strings
+
 	if (x->length-y->length != 0) return 0;
-	if (x->hash != 0 && x->hash == y->hash) return 1;
+	if (x->hash != 0 ) {
+		if (!y->hash) bbStringHash(y);
+		return (x->hash == y->hash);
+	}
 	return memcmp(x->buf, y->buf, x->length * sizeof(BBChar)) == 0;
 }
 
@@ -191,11 +202,6 @@ inline int bbObjectIsEmptyString(BBObject * o) {
 	return (BBString*)o == &bbEmptyString;
 }
 
-inline BBULONG bbStringHash( BBString * x ) {
-	if (x->hash > 0) return x->hash;
-	x->hash = XXH3_64bits(x->buf, x->length * sizeof(BBChar));
-	return x->hash;
-}
 #else
 int bbStringEquals( BBString *x,BBString *y );
 int bbObjectIsEmptyString(BBObject * o);

@@ -130,6 +130,33 @@ static int charsEqual( unsigned short *a,unsigned short *b,int n ){
 	return 1;
 }
 
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+extern int bbStringEquals( BBString *x,BBString *y);
+extern int bbObjectIsEmptyString(BBObject * o);
+extern BBULONG bbStringHash( BBString * x );
+#else
+BBULONG bbStringHash( BBString * x ) {
+	if (x->hash > 0) return x->hash;
+	x->hash = XXH3_64bits(x->buf, x->length * sizeof(BBChar));
+	return x->hash;
+}
+
+int bbStringEquals( BBString *x,BBString *y ){
+	if (x->clas != &bbStringClass || y->clas != &bbStringClass) return 0; // only strings with strings
+
+	if (x->length-y->length != 0) return 0;
+	if (x->hash != 0 ) {
+		if (!y->hash) bbStringHash(y);
+		return (x->hash == y->hash);
+	}
+	return memcmp(x->buf, y->buf, x->length * sizeof(BBChar)) == 0;
+}
+
+int bbObjectIsEmptyString(BBObject * o) {
+	return (BBString*)o == &bbEmptyString;
+}
+#endif
+
 //***** Note: Not called in THREADED mode.
 static void bbStringFree( BBObject *o ){
 	if (bbCountInstances) {
@@ -336,7 +363,13 @@ BBString *bbStringToString( BBString *t ){
 
 int bbStringCompare( BBString *x,BBString *y ){
 	int k,n,sz;
+	if (x->clas != &bbStringClass || y->clas != &bbStringClass) return -1; // only compare strings with strings
+
 	sz=x->length<y->length ? x->length : y->length;
+	if (x->length == y->length && x->hash) {
+		if (!y->hash) bbStringHash(y);
+		if (x->hash == y->hash) return 0;
+	}
 	for( k=0;k<sz;++k ) if( (n=x->buf[k]-y->buf[k]) ) return n;
 	return x->length-y->length;
 }
@@ -1112,33 +1145,6 @@ char *bbTmpUTF8String( BBString *str ){
 	mktmp( p );
 	return p;
 }
-
-#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-extern int bbStringEquals( BBString *x,BBString *y);
-extern int bbObjectIsEmptyString(BBObject * o);
-extern BBULONG bbStringHash( BBString * x );
-#else
-int bbStringEquals( BBString *x,BBString *y ){
-	if (x->length-y->length != 0) return 0;
-	if (x->hash != 0 && x->hash == y->hash) return 1;
-	BBChar * bx = x->buf;
-	BBChar * by = y->buf;
-	int k = x->length;
-	while( k-- ) if ( *bx++ - *by++ != 0 ) return 0;
-	return 1;
-}
-
-int bbObjectIsEmptyString(BBObject * o) {
-	return (BBString*)o == &bbEmptyString;
-}
-
-BBULONG bbStringHash( BBString * x ) {
-	if (x->hash > 0) return x->hash;
-	x->hash = XXH3_64bits(x->buf, x->length * sizeof(BBChar));
-	return x->hash;
-}
-
-#endif
 
 BBUINT* bbStringToUTF32String( BBString *str ) {
 	int len=str->length;
