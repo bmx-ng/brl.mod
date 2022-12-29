@@ -1494,7 +1494,7 @@ Type TConstant Extends TMember
 	Rem
 	bbdoc: Get constant value as @Float
 	EndRem
-	Method GetFloat:Int()
+	Method GetFloat:Float()
 		Return GetString().ToFloat()
 	EndMethod
 
@@ -1529,7 +1529,7 @@ Type TConstant Extends TMember
 	Rem
 	bbdoc: Get constant value as @Double
 	EndRem
-	Method GetDouble:Int()
+	Method GetDouble:Double()
 		Return GetString().ToDouble()
 	EndMethod
 
