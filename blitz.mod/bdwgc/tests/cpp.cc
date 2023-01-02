@@ -5,23 +5,15 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  */
 
-/****************************************************************************
-usage: test_cpp number-of-iterations
-
-This program tries to test the specific C++ functionality provided by
-gc_cpp.h that isn't tested by the more general test routines of the
-collector.
-
-A recommended value for number-of-iterations is 10, which will take a
-few minutes to complete.
-
-***************************************************************************/
+// This program tries to test the specific C++ functionality provided by
+// gc_cpp.h that isn't tested by the more general test routines of the
+// collector.
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -70,14 +62,21 @@ extern "C" {
                     __LINE__ ); \
         exit( 1 ); }
 
+#if defined(__powerpc64__) && !defined(__clang__) && GC_GNUC_PREREQ(10, 0)
+  /* Suppress "layout of aggregates ... has changed" GCC note. */
+# define A_I_TYPE short
+#else
+# define A_I_TYPE int
+#endif
+
 class A {public:
     /* An uncollectible class. */
 
-    GC_ATTR_EXPLICIT A( int iArg ): i( iArg ) {}
+    GC_ATTR_EXPLICIT A(int iArg): i(static_cast<A_I_TYPE>(iArg)) {}
     void Test( int iArg ) {
         my_assert( i == iArg );}
     virtual ~A() {}
-    int i;};
+    A_I_TYPE i; };
 
 
 class B: public GC_NS_QUALIFY(gc), public A { public:
@@ -151,7 +150,9 @@ class C: public GC_NS_QUALIFY(gc_cleanup), public A { public:
           GC_gcollect();
         }
         my_assert(nFreed <= nAllocated);
-        my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
+#       ifndef GC_NO_FINALIZATION
+            my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
+#       endif
     }
 
     static int nFreed;
@@ -173,9 +174,13 @@ class D: public GC_NS_QUALIFY(gc) { public:
     static void CleanUp( void* obj, void* data ) {
         D* self = static_cast<D*>(obj);
         nFreed++;
-        my_assert( (GC_word)self->i == (GC_word)data );}
+        my_assert(static_cast<GC_word>(self->i)
+                    == reinterpret_cast<GC_word>(data));
+    }
     static void Test() {
-        my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
+#       ifndef GC_NO_FINALIZATION
+            my_assert(nFreed >= (nAllocated / 5) * 4 || GC_get_find_leak());
+#       endif
     }
 
     int i;
@@ -214,7 +219,9 @@ class F: public E {public:
     }
 
     static void Test() {
-        my_assert(nFreedF >= (nAllocatedF / 5) * 4 || GC_get_find_leak());
+#       ifndef GC_NO_FINALIZATION
+            my_assert(nFreedF >= (nAllocatedF / 5) * 4 || GC_get_find_leak());
+#       endif
         my_assert(2 * nFreedF == nFreed);
     }
 
@@ -228,10 +235,12 @@ int F::nAllocatedF = 0;
 
 
 GC_word Disguise( void* p ) {
-    return ~ (GC_word) p;}
+    return GC_HIDE_POINTER(p);
+}
 
 void* Undisguise( GC_word i ) {
-    return (void*) ~ i;}
+    return GC_REVEAL_POINTER(i);
+}
 
 #define GC_CHECKED_DELETE(p) \
     { \
@@ -240,6 +249,8 @@ void* Undisguise( GC_word i ) {
       size_t freed_after = GC_get_expl_freed_bytes_since_gc(); \
       my_assert(freed_before != freed_after); \
     }
+
+#define N_TESTS 7
 
 #if ((defined(MSWIN32) && !defined(__MINGW32__)) || defined(MSWINCE)) \
     && !defined(NO_WINMAIN_ENTRY)
@@ -250,10 +261,11 @@ void* Undisguise( GC_word i ) {
     char* argv[ 3 ];
 
 #   if defined(CPPCHECK)
-      GC_noop1((GC_word)&WinMain);
+      GC_noop1(reinterpret_cast<GC_word>(&WinMain));
 #   endif
     if (cmd != 0)
-      for (argc = 1; argc < (int)(sizeof(argv) / sizeof(argv[0])); argc++) {
+      for (argc = 1; argc < static_cast<int>(sizeof(argv) / sizeof(argv[0]));
+           argc++) {
         // Parse the command-line string.  Non-reentrant strtok() is not used
         // to avoid complains of static analysis tools.  (And, strtok_r() is
         // not available on some platforms.)  The code is equivalent to:
@@ -283,9 +295,9 @@ void* Undisguise( GC_word i ) {
       }
 #elif defined(MACOS)
   int main() {
-    char* argv_[] = {"test_cpp", "10"}; // MacOS doesn't have a command line
+    char* argv_[] = {"cpptest", "7"}; // MacOS doesn't have a command line
     argv = argv_;
-    argc = sizeof(argv_)/sizeof(argv_[0]);
+    argc = sizeof(argv_) / sizeof(argv_[0]);
 #else
   int main( int argc, char* argv[] ) {
 #endif
@@ -307,7 +319,7 @@ void* Undisguise( GC_word i ) {
     int *x = gc_allocator<int>().allocate(1);
     int *xio;
     xio = gc_allocator_ignore_off_page<int>().allocate(1);
-    (void)xio;
+    GC_reachable_here(xio);
     int **xptr = traceable_allocator<int *>().allocate(1);
     *x = 29;
     if (!xptr) {
@@ -317,11 +329,14 @@ void* Undisguise( GC_word i ) {
     GC_PTR_STORE_AND_DIRTY(xptr, x);
     x = 0;
     if (argc != 2
-        || (n = (int)COVERT_DATAFLOW(atoi(argv[1]))) <= 0) {
-      GC_printf("usage: test_cpp number-of-iterations\n"
-                "Assuming 10 iters\n");
-      n = 10;
+        || (n = atoi(argv[1])) <= 0) {
+      GC_printf("usage: cpptest <number-of-iterations>\n"
+                "Assuming %d iterations\n", N_TESTS);
+      n = N_TESTS;
     }
+#   ifdef LINT2
+      if (n > 100 * 1000) n = 100 * 1000;
+#   endif
 
     for (iters = 1; iters <= n; iters++) {
         GC_printf( "Starting iteration %d\n", iters );
@@ -342,8 +357,9 @@ void* Undisguise( GC_word i ) {
             C c1( 2 );           /* stack allocation should work too */
             D* d;
             F* f;
-            d = ::new (USE_GC, D::CleanUp, (void*)(GC_word)i) D( i );
-            (void)d;
+            d = ::new (USE_GC, D::CleanUp,
+                       reinterpret_cast<void*>(static_cast<GC_word>(i))) D(i);
+            GC_reachable_here(d);
             f = new F;
             F** fa = new F*[1];
             fa[0] = f;
@@ -359,7 +375,7 @@ void* Undisguise( GC_word i ) {
         for (i = 0; i < 1000000; i++) {
             A* a;
             a = new (USE_GC) A( i );
-            (void)a;
+            GC_reachable_here(a);
             B* b;
             b = new B( i );
             (void)b;
@@ -368,7 +384,7 @@ void* Undisguise( GC_word i ) {
                 B::Deleting( 1 );
                 GC_CHECKED_DELETE(b);
                 B::Deleting( 0 );}
-#           ifdef FINALIZE_ON_DEMAND
+#           if defined(FINALIZE_ON_DEMAND) && !defined(GC_NO_FINALIZATION)
               GC_invoke_finalizers();
 #           endif
             }
@@ -390,7 +406,7 @@ void* Undisguise( GC_word i ) {
             B::Deleting( 1 );
             GC_CHECKED_DELETE(b);
             B::Deleting( 0 );
-#           ifdef FINALIZE_ON_DEMAND
+#           if defined(FINALIZE_ON_DEMAND) && !defined(GC_NO_FINALIZATION)
                  GC_invoke_finalizers();
 #           endif
             }
@@ -402,7 +418,7 @@ void* Undisguise( GC_word i ) {
         F::Test();}
 
     x = *xptr;
-    my_assert (29 == x[0]);
-    GC_printf( "The test appears to have succeeded.\n" );
-    return( 0 );
+    my_assert(29 == x[0]);
+    GC_printf("The test appears to have succeeded.\n");
+    return 0;
 }

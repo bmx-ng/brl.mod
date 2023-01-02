@@ -74,7 +74,7 @@ int main(void)
     DWORD thread_id;
 # endif
 # if !(defined(BEOS) || defined(MSWIN32) || defined(MSWINCE) \
-       || defined(CYGWIN32) || defined(GC_OPENBSD_UTHREADS) \
+       || defined(CYGWIN32) \
        || (defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP)) \
        || ((defined(FREEBSD) || defined(LINUX) || defined(NETBSD) \
             || defined(HOST_ANDROID)) && !defined(NO_PTHREAD_GETATTR_NP) \
@@ -85,7 +85,7 @@ int main(void)
     /* GC_INIT() must be called from main thread only. */
     GC_INIT();
 # endif
-  (void)GC_get_parallel(); /* linking fails if no threads support */
+  (void)GC_get_suspend_signal(); /* linking fails if no threads support */
   if (GC_get_find_leak())
     printf("This test program is not designed for leak detection mode\n");
 # ifdef GC_PTHREADS
@@ -112,5 +112,6 @@ int main(void)
     }
     CloseHandle(t);
 # endif
+  printf("SUCCEEDED\n");
   return 0;
 }

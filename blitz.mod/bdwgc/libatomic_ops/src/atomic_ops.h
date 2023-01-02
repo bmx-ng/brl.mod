@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003-2011 Hewlett-Packard Development Company, L.P.
- * Copyright (c) 2008-2021 Ivan Maidanski
+ * Copyright (c) 2008-2022 Ivan Maidanski
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -364,6 +364,8 @@
 #   define AO_CAN_EMUL_CAS
 # elif defined(__avr32__)
 #   include "atomic_ops/sysdeps/gcc/avr32.h"
+# elif defined(__e2k__)
+#   include "atomic_ops/sysdeps/gcc/e2k.h"
 # elif defined(__hexagon__)
 #   include "atomic_ops/sysdeps/gcc/hexagon.h"
 # elif defined(__nios2__)

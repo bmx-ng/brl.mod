@@ -3,7 +3,7 @@
 # These numbers should be updated at most once just before the release,
 # and, optionally, at most once during the development (after the release).
 LIBATOMIC_OPS_VER_INFO = 2:1:1
-LIBATOMIC_OPS_GPL_VER_INFO = 2:2:1
+LIBATOMIC_OPS_GPL_VER_INFO = 2:3:1
 
 AM_CFLAGS=@PICFLAG@
 AM_CPPFLAGS = -I$(top_builddir)/src -I$(top_srcdir)/src
@@ -88,6 +88,7 @@ nobase_private_HEADERS = atomic_ops/ao_version.h \
           atomic_ops/sysdeps/gcc/arm.h \
           atomic_ops/sysdeps/gcc/avr32.h \
           atomic_ops/sysdeps/gcc/cris.h \
+          atomic_ops/sysdeps/gcc/e2k.h \
           atomic_ops/sysdeps/gcc/generic.h \
           atomic_ops/sysdeps/gcc/hexagon.h \
           atomic_ops/sysdeps/gcc/hppa.h \

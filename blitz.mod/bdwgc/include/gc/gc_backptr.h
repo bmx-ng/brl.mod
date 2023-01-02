@@ -9,7 +9,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -69,19 +69,19 @@ GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void * /* dest */,
                                 void ** /* base_p */, size_t * /* offset_p */)
                                 GC_ATTR_NONNULL(1);
 
-/* Generate a random heap address.            */
-/* The resulting address is in the heap, but  */
-/* not necessarily inside a valid object.     */
+/* Generate a random heap address.  The resulting address is    */
+/* in the heap, but not necessarily inside a valid object.      */
+/* The caller should hold the allocation lock.                  */
 GC_API void * GC_CALL GC_generate_random_heap_address(void);
 
 /* Generate a random address inside a valid marked heap object. */
+/* The caller should hold the allocation lock.                  */
 GC_API void * GC_CALL GC_generate_random_valid_address(void);
 
 /* Force a garbage collection and generate a backtrace from a   */
 /* random heap address.                                         */
 /* This uses the GC logging mechanism (GC_printf) to produce    */
-/* output.  It can often be called from a debugger.  The        */
-/* source in dbg_mlc.c also serves as a sample client.          */
+/* output.  It can often be called from a debugger.             */
 GC_API void GC_CALL GC_generate_random_backtrace(void);
 
 /* Print a backtrace from a specific address.  Used by the      */

@@ -4,7 +4,7 @@
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
 #
 # Permission is hereby granted to use or copy this program
-# for any purpose,  provided the above notices are retained on all copies.
+# for any purpose, provided the above notices are retained on all copies.
 # Permission to modify the code and to distribute modified code is granted,
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
@@ -14,7 +14,7 @@
 # Info (current:revision:age) for the Libtool versioning system.
 # These numbers should be updated at most once just before the release,
 # and, optionally, at most once during the development (after the release).
-LIBGC_VER_INFO = 6:0:5
+LIBGC_VER_INFO = 6:1:5
 LIBGCCPP_VER_INFO = 6:0:5
 
 ## FIXME: `make distcheck' in this directory will not currently work.
@@ -70,22 +70,24 @@ libgc_la_SOURCES = \
 # C Library: Architecture Dependent
 # ---------------------------------
 
+if THREADS
+
+libgc_la_SOURCES += pthread_start.c pthread_support.c
+
+if THREAD_LOCAL_ALLOC
+libgc_la_SOURCES += thread_local_alloc.c
+endif
+
 if WIN32_THREADS
 libgc_la_SOURCES += win32_threads.c
 else
-if PTHREADS
-# Not Cygwin or MinGW.
-libgc_la_SOURCES += pthread_start.c pthread_support.c
 if DARWIN_THREADS
 libgc_la_SOURCES += darwin_stop_world.c
 else
 libgc_la_SOURCES += pthread_stop_world.c
 endif
 endif
-endif
 
-if THREAD_LOCAL_ALLOC
-libgc_la_SOURCES += thread_local_alloc.c
 endif
 
 if MAKE_BACK_GRAPH
@@ -109,14 +111,13 @@ endif
 
 if USE_INTERNAL_LIBATOMIC_OPS
 nodist_libgc_la_SOURCES = libatomic_ops/src/atomic_ops.c
-endif
-
 if NEED_ATOMIC_OPS_ASM
-nodist_libgc_la_SOURCES = libatomic_ops/src/atomic_ops_sysdeps.S
+nodist_libgc_la_SOURCES += libatomic_ops/src/atomic_ops_sysdeps.S
+endif
 endif
 
 # Include THREADDLLIBS here to ensure that the correct versions of
-# linuxthread semaphore functions get linked:
+# linuxthread semaphore (and clock_gettime) functions get linked:
 libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS) $(ATOMIC_OPS_LIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info $(LIBGC_VER_INFO) \
@@ -148,7 +149,7 @@ EXTRA_DIST += gc_badalc.cpp gc_cpp.cpp
 # Misc
 # ----
 
-AM_CXXFLAGS = @GC_CFLAGS@
+AM_CXXFLAGS = $(WERROR_CFLAGS) @GC_CFLAGS@
 AM_CFLAGS = $(WERROR_CFLAGS) @GC_CFLAGS@
 
 CFLAGS += $(CFLAGS_EXTRA)
@@ -183,9 +184,8 @@ CCASFLAGS += $(DEFS)
 #
 
 # other makefiles
-EXTRA_DIST += NT_MAKEFILE OS2_MAKEFILE PCR-Makefile digimars.mak \
-    Makefile.direct SMakefile.amiga WCC_MAKEFILE autogen.sh CMakeLists.txt \
-    Config.cmake.in build/s60v3/bld.inf build/s60v3/libgc.mmp
+EXTRA_DIST += Makefile.direct NT_MAKEFILE WCC_MAKEFILE digimars.mak \
+    autogen.sh CMakeLists.txt Config.cmake.in
 
 # files used by makefiles other than Makefile.am
 #
@@ -216,28 +216,28 @@ dist_doc_DATA = \
     AUTHORS \
     LICENSE \
     README.md \
-    doc/README.DGUX386 \
-    doc/README.Mac \
-    doc/README.OS2 \
-    doc/README.aix \
-    doc/README.amiga \
-    doc/README.arm.cross \
+    doc/platforms/README.aix \
+    doc/platforms/README.amiga \
+    doc/platforms/README.arm_cross \
+    doc/platforms/README.darwin \
+    doc/platforms/README.dgux386 \
+    doc/platforms/README.emscripten \
+    doc/platforms/README.ews4800 \
+    doc/platforms/README.hp \
+    doc/platforms/README.linux \
+    doc/platforms/README.mac \
+    doc/platforms/README.os2 \
+    doc/platforms/README.sgi \
+    doc/platforms/README.solaris2 \
+    doc/platforms/README.symbian \
+    doc/platforms/README.uts \
+    doc/platforms/README.win32 \
+    doc/platforms/README.win64 \
     doc/README.autoconf \
     doc/README.cmake \
     doc/README.cords \
-    doc/README.darwin \
-    doc/README.emscripten \
     doc/README.environment \
-    doc/README.ews4800 \
-    doc/README.hp \
-    doc/README.linux \
     doc/README.macros \
-    doc/README.sgi \
-    doc/README.solaris2 \
-    doc/README.symbian \
-    doc/README.uts \
-    doc/README.win32 \
-    doc/README.win64 \
     doc/debugging.md \
     doc/finalization.md \
     doc/gcdescr.md \

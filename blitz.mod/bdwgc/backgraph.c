@@ -5,7 +5,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -84,6 +84,7 @@ static back_edges *avail_back_edges = 0;
 
 static back_edges * new_back_edges(void)
 {
+  GC_ASSERT(I_HOLD_LOCK());
   if (0 == back_edge_space) {
     size_t bytes_to_get = ROUNDUP_PAGESIZE_IF_MMAP(MAX_BACK_EDGE_STRUCTS
                                                    * sizeof(back_edges));
@@ -128,6 +129,7 @@ static size_t n_in_progress = 0;
 
 static void push_in_progress(ptr_t p)
 {
+  GC_ASSERT(I_HOLD_LOCK());
   if (n_in_progress >= in_progress_size) {
     ptr_t * new_in_progress_space;
 
@@ -164,7 +166,7 @@ static void push_in_progress(ptr_t p)
   in_progress_space[n_in_progress++] = p;
 }
 
-static GC_bool is_in_progress(ptr_t p)
+static GC_bool is_in_progress(const char *p)
 {
   size_t i;
   for (i = 0; i < n_in_progress; ++i) {
@@ -173,8 +175,11 @@ static GC_bool is_in_progress(ptr_t p)
   return FALSE;
 }
 
-GC_INLINE void pop_in_progress(ptr_t p GC_ATTR_UNUSED)
+GC_INLINE void pop_in_progress(ptr_t p)
 {
+# ifndef GC_ASSERTIONS
+    UNUSED_ARG(p);
+# endif
   --n_in_progress;
   GC_ASSERT(in_progress_space[n_in_progress] == p);
 }
@@ -281,7 +286,7 @@ static void add_edge(ptr_t p, ptr_t q)
 
 typedef void (*per_object_func)(ptr_t p, size_t n_bytes, word gc_descr);
 
-static void per_object_helper(struct hblk *h, word fn)
+static GC_CALLBACK void per_object_helper(struct hblk *h, GC_word fn)
 {
   hdr * hhdr = HDR(h);
   size_t sz = (size_t)hhdr->hb_sz;
@@ -300,9 +305,10 @@ GC_INLINE void GC_apply_to_each_object(per_object_func f)
   GC_apply_to_all_blocks(per_object_helper, (word)f);
 }
 
-static void reset_back_edge(ptr_t p, size_t n_bytes GC_ATTR_UNUSED,
-                            word gc_descr GC_ATTR_UNUSED)
+static void reset_back_edge(ptr_t p, size_t n_bytes, word gc_descr)
 {
+  UNUSED_ARG(n_bytes);
+  UNUSED_ARG(gc_descr);
   /* Skip any free list links, or dropped blocks */
   if (GC_HAS_DEBUG_INFO(p)) {
     ptr_t old_back_ptr = GET_OH_BG_PTR(p);
@@ -338,14 +344,17 @@ static void reset_back_edge(ptr_t p, size_t n_bytes GC_ATTR_UNUSED,
 
 static void add_back_edges(ptr_t p, size_t n_bytes, word gc_descr)
 {
-  word *currentp = (word *)(p + sizeof(oh));
+  ptr_t current_p = p + sizeof(oh);
 
   /* For now, fix up non-length descriptors conservatively.     */
     if((gc_descr & GC_DS_TAGS) != GC_DS_LENGTH) {
       gc_descr = n_bytes;
     }
-  while ((word)currentp < (word)(p + gc_descr)) {
-    word current = *currentp++;
+
+  for (; (word)current_p < (word)(p + gc_descr); current_p += sizeof(word)) {
+    word current;
+
+    LOAD_WORD_OR_CONTINUE(current, current_p);
     FIXUP_POINTER(current);
     if (current >= (word)GC_least_plausible_heap_addr &&
         current <= (word)GC_greatest_plausible_heap_addr) {
@@ -374,6 +383,7 @@ static word backwards_height(ptr_t p)
   ptr_t pred = GET_OH_BG_PTR(p);
   back_edges *be;
 
+  GC_ASSERT(I_HOLD_LOCK());
   if (NULL == pred)
     return 1;
   if (((word)pred & FLAG_MANY) == 0) {
@@ -447,9 +457,10 @@ STATIC ptr_t GC_deepest_obj = NULL;
 /* next GC.                                                             */
 /* Set GC_max_height to be the maximum height we encounter, and         */
 /* GC_deepest_obj to be the corresponding object.                       */
-static void update_max_height(ptr_t p, size_t n_bytes GC_ATTR_UNUSED,
-                              word gc_descr GC_ATTR_UNUSED)
+static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
 {
+  UNUSED_ARG(n_bytes);
+  UNUSED_ARG(gc_descr);
   if (GC_is_marked(p) && GC_HAS_DEBUG_INFO(p)) {
     word p_height = 0;
     ptr_t p_deepest_obj = 0;

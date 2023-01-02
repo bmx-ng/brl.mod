@@ -24,11 +24,15 @@ either include/private/gcconfig.h or in Makefile.direct.  Here is an attempt
 at documenting these macros:  (Thanks to Walter Bright for suggesting
 this.)
 
+
+The following macros are tested by the public headers (gc.h and others).
+
 MACRO           EXPLANATION
 -----           -----------
 
-GC_DEBUG        Tested by gc.h.  Causes all-upper-case macros to
-                expand to calls to debug versions of collector routines.
+GC_DEBUG        Tested by gc.h (and by gc_cpp.cc).  Causes all-upper-case
+                macros to expand to calls to debug versions of collector
+                routines.
 
 GC_NAMESPACE    Tested by gc_cpp.h. Causes gc_cpp symbols to be defined
                 in "boehmgc" namespace.
@@ -37,13 +41,14 @@ GC_DEBUG_REPLACEMENT    Tested by gc.h. Causes GC_MALLOC/REALLOC() to be
                 defined as GC_debug_malloc/realloc_replacement().
 
 GC_NO_THREAD_REDIRECTS  Tested by gc.h.  Prevents redirection of thread
-                creation routines etc. to GC_ versions.  Requires the
+                creation routines and friends to GC_ versions.  Requires the
                 programmer to explicitly handle thread registration.
 
-GC_NO_THREAD_DECLS      Tested by gc.h.  MS Windows only.  Do not declare
-                Windows thread creation routines and do not include windows.h.
+GC_NO_THREAD_DECLS      Tested by gc.h (and by dyn_load.c, win32_threads.c).
+                Do not declare thread creation (and related) routines and do
+                not include windows.h from gc.h.
 
-GC_DONT_INCLUDE_WINDOWS_H   Tested by gc.h.  MS Windows only.  Do not include
+GC_DONT_INCLUDE_WINDOWS_H   Tested by gc.h.  Windows only.  Do not include
                 windows.h from gc.h (but Windows-specific thread creation
                 routines are declared).
 
@@ -52,12 +57,16 @@ GC_UNDERSCORE_STDCALL   Tested by gc.h.  Explicitly prefix exported/imported
                 used with MinGW (for x86) compiler (in conjunction with
                 GC_DLL) to follow MS conventions for __stdcall symbols naming.
 
-_ENABLE_ARRAYNEW
-                #define'd by the Digital Mars C++ compiler when
-                operator new[] and delete[] are separately
-                overloadable. Used in gc_cpp.h.
+_ENABLE_ARRAYNEW    Tested by gc_cpp.h.  Predefined by the Digital Mars C++
+                compiler when operator new[] and delete[] are separately
+                overloadable.
 
-GC_NO_INLINE_STD_NEW    Tested by gc_cpp.cc and gc_cpp.h.  MS Windows only.
+GC_NO_OPERATOR_NEW_ARRAY    Tested by gc_cpp.h.  Declares that the C++
+                compiler does not support the new syntax "operator new[]" for
+                allocating and deleting arrays.  This is defined implicitly
+                in a few environments.
+
+GC_NO_INLINE_STD_NEW    Tested by gc_cpp.h (and by gc_cpp.cc).  Windows only.
                 Define the system-wide new and delete operators in gccpp.dll
                 instead of providing an inline version of the operators.
 
@@ -67,36 +76,48 @@ _DLL            Tested by gc_config_macros.h. Defined by Visual C++ if runtime
                 __declspec(dllimport) needs to be added to declarations
                 to support the case in which the collector is in a DLL.
 
-GC_DLL          Defined by user if dynamic libraries are being built
-                or used.  Also set by gc.h if _DLL is defined (except for
-                mingw) while GC_NOT_DLL and __GNUC__ are both undefined.
-                This is the macro that is tested internally to determine
-                whether the GC is in its own dynamic library.  May need
-                to be set by clients before including gc.h.  Note that
-                inside the GC implementation it indicates that the
-                collector is in its own dynamic library, should export
-                its symbols, etc.  But in clients it indicates that the
-                GC resides in a different DLL, its entry points should
-                be referenced accordingly, and precautions may need to
-                be taken to properly deal with statically allocated
-                variables in the main program.  Used for MS Windows.
-                Also used by GCC v4+ (only when the dynamic shared library
-                is being built) to hide internally used symbols.
+GC_DLL          Tested by cord.h, gc.h, gc_config_macros.h.  Defined by client
+                if dynamic libraries are being built or used.  Also set by
+                gc.h if _DLL is defined (except for mingw) when GC_NOT_DLL
+                and __GNUC__ are both undefined.  This is the macro that is
+                tested internally to determine whether the GC is in its own
+                dynamic library.  May need to be set by clients before
+                including gc.h.  Note that inside the GC implementation
+                it indicates that the collector is in its own dynamic library,
+                should export its symbols, etc.  But in clients, it indicates
+                that the GC resides in a different DLL, its entry points
+                should be referenced accordingly, and precautions may need to
+                be taken to properly deal with statically allocated variables
+                in the main program.  Used for Windows, and also by GCC v4+
+                (only when the dynamic shared library is being built) to hide
+                internally used symbols.
 
-GC_NOT_DLL      User-settable macro that overrides _DLL, e.g. if runtime
-                dynamic libraries are used, but the collector is in a static
-                library.  Tested by gc_config_macros.h.
+GC_NOT_DLL      Tested by gc_config_macros.h and gc_cpp.h.  Client-settable
+                macro that overrides _DLL, e.g. if runtime dynamic libraries
+                are used, but the collector is in a static library.
 
-GC_MARKERS=<n>  Set the desired number of marker threads.  If not defined or
-                defined to zero, then the collector decides based on the
-                number of CPU cores.  Only if compiled with PARALLEL_MARK.
+GC_NO_VALLOC    Tested by gc.h and leak_detector.h.  Do not provide GC_valloc
+                and GC_pvalloc functions, and do not redirect the
+                corresponding glibc functions in leak_detector.h.
+
+GC_REQUIRE_WCSDUP   Tested by gc.h and leak_detector.h (and by dbg_mlc.c and
+                mallocx.c).  Force GC to export GC_wcsdup() (the Unicode
+                version of GC_strdup); could be useful in the leak-finding
+                mode.  Clients should define it before including gc.h if the
+                function is needed.
+
+GC_MARKERS=<n>  Tested by gc.h.  Set the desired number of marker threads.
+                If not defined or defined to zero, then the collector decides
+                based on the number of CPU cores.  Only if compiled with
+                PARALLEL_MARK defined.
 
 
-These define arguments influence the collector configuration:
+The following macros (-D arguments passed to the compiler) are tested only
+in .c, .cpp files and private headers.  Some of them provide the default
+configuration values, others become hard-coded values for the library.
 
-GC_REQUIRE_WCSDUP       Force GC to export GC_wcsdup() (the Unicode version
-  of GC_strdup); could be useful in the leak-finding mode.  Clients should
-  define it before including gc.h if the function is needed.
+MACRO           EXPLANATION
+-----           -----------
 
 FIND_LEAK       Causes GC_find_leak to be initially set.  This causes the
   collector to assume that all inaccessible objects should have been
@@ -114,11 +135,11 @@ GC_ABORT_ON_LEAK        Causes the application to be terminated once leaked or
 
 SUNOS5SIGS      Solaris-like signal handling.  This is probably misnamed,
   since it really doesn't guarantee much more than POSIX.  Currently set only
-  for Solaris2.X, HPUX, and DRSNX.  Should probably be set for some other
-  platforms.
+  for DRSNX, FreeBSD, HP/UX and Solaris.
 
 PCR     Set if the collector is being built as part of the Xerox Portable
-  Common Runtime.
+  Common Runtime.  The client might need to define PCR_NO_RENAME and
+  PCR_NO_HOSTDEP_ERR as well.
 
 GC_THREADS      Should set the appropriate one of the below macros,
   except GC_WIN32_PTHREADS, which must be set explicitly.  Tested by gc.h.
@@ -160,8 +181,8 @@ GC_DARWIN_THREADS       Enables support for Mac OS X pthreads.  Deprecated,
 GC_AIX_THREADS  Enables support for IBM AIX threads.  Deprecated, use
   GC_THREADS instead.
 
-GC_DGUX386_THREADS      Enables support for DB/UX on I386 threads.
-  See README.DGUX386.  (Probably has not been tested recently.)  Deprecated,
+GC_DGUX386_THREADS      Enables support for DB/UX x86 threads.
+  See README.dgux386.  (Probably has not been tested recently.)  Deprecated,
   use GC_THREADS instead.
 
 GC_WIN32_THREADS        Enables support for Win32 threads.  Deprecated,
@@ -218,12 +239,6 @@ NO_EXECUTE_PERMISSION   May cause some or all of the heap to not
   GC_set_pages_executable(1) at the process initialization time if the
   execute permission is required.
 
-GC_NO_OPERATOR_NEW_ARRAY        Declares that the C++ compiler does not
-  support the new syntax "operator new[]" for allocating and deleting arrays.
-  See gc_cpp.h for details.  No effect on the C part of the collector.
-  This is defined implicitly in a few environments.  Must also be defined
-  by clients that use gc_cpp.h.
-
 REDIRECT_MALLOC=<X>     Causes malloc to be defined as alias for X.
   Unless the following macros are defined, realloc is also redirected
   to GC_realloc, and free is redirected to GC_free.
@@ -231,7 +246,7 @@ REDIRECT_MALLOC=<X>     Causes malloc to be defined as alias for X.
   be either GC_malloc or GC_malloc_uncollectable, or
   GC_debug_malloc_replacement.  (The latter invokes GC_debug_malloc
   with dummy source location information, but still results in
-  properly remembered call stacks on Linux/X86 and Solaris/SPARC.
+  properly remembered call stacks on Linux/x86 and Solaris/SPARC.
   It requires that the following two macros also be used.)
   The former is occasionally useful for working around leaks in code
   you don't want to (or can't) look at.  It may not work for
@@ -241,7 +256,7 @@ REDIRECT_MALLOC=<X>     Causes malloc to be defined as alias for X.
   you should only use GC_debug_malloc_replacement as a malloc
   replacement.
 
-REDIRECT_REALLOC=<X>    Causes GC_realloc to be redirected to X.
+REDIRECT_REALLOC=<X>    Causes realloc to be redirected to X.
   The canonical use is REDIRECT_REALLOC=GC_debug_realloc_replacement,
   together with REDIRECT_MALLOC=GC_debug_malloc_replacement to
   generate leak reports with call stacks for both malloc and realloc.
@@ -296,7 +311,7 @@ MARK_BIT_PER_OBJ        Requests that a mark bit be allocated for each
   MARK_BIT_PER_GRANULE.
 
 HBLKSIZE=<ddd>  Explicitly sets the heap block size (where ddd is a power of
-  2 between 512 and 16384).  Each heap block is devoted to a single size and
+  2 between 512 and 65536).  Each heap block is devoted to a single size and
   kind of object.  For the incremental collector it makes sense to match
   the most likely page size.  Otherwise large values result in more
   fragmentation, but generally better performance for large heaps.
@@ -311,9 +326,10 @@ USE_MUNMAP      Causes memory to be returned to the OS under the right
 USE_WINALLOC (Cygwin only)   Use Win32 VirtualAlloc (instead of sbrk or mmap)
   to get new memory.  Useful if memory unmapping (USE_MUNMAP) is enabled.
 
-MUNMAP_THRESHOLD=<value>        Set the desired memory blocks unmapping
-  threshold (the number of sequential garbage collections for which
-  a candidate block for unmapping should remain free).
+MUNMAP_THRESHOLD=<value>        Set the default threshold of memory blocks
+  unmapping (the number of sequential garbage collections during those
+  a candidate block for unmapping should be marked as free).  The special
+  value "0" completely disables unmapping.
 
 GC_FORCE_UNMAP_ON_GCOLLECT      Set "unmap as much as possible on explicit GC"
   mode on by default.  The mode could be changed at run-time.  Has no effect
@@ -356,9 +372,9 @@ SHORT_DBG_HDRS  Assume that all objects have debug headers.  Shorten
 SAVE_CALL_COUNT=<n>     Set the number of call frames saved with objects
   allocated through the debugging interface.  Affects the amount of
   information generated in leak reports.  Only matters on platforms
-  on which we can quickly generate call stacks, currently Linux/X86,
+  on which we can quickly generate call stacks, currently Linux/x86,
   Linux/SPARC, Solaris/SPARC, and platforms that provide execinfo.h.
-  Default is zero.  On X86, client code should NOT be compiled with
+  Default is zero.  On x86, client code should NOT be compiled with
   -fomit-frame-pointer.
 
 SAVE_CALL_NARGS=<n>     Set the number of functions arguments to be saved
@@ -373,10 +389,10 @@ GC_GCJ_SUPPORT  Includes support for gcj (and possibly other systems
   that include a pointer to a type descriptor in each allocated object).
 
 USE_I686_PREFETCH       Causes the collector to issue Pentium III style
-  prefetch instructions.  No effect except on Linux/X86 platforms.
+  prefetch instructions.  No effect except on Linux/x86 platforms.
   Empirically the code appears to still run correctly on Pentium II
   processors, though with no performance benefit.  May not run on other
-  X86 processors probably.  In some cases this improves performance by 15%
+  x86 processors probably.  In some cases this improves performance by 15%
   or so.
 
 USE_3DNOW_PREFETCH      Causes the collector to issue AMD 3DNow style
@@ -417,7 +433,6 @@ GC_BUILTIN_ATOMIC       Use GCC atomic intrinsics instead of libatomic_ops
   primitives.
 
 GC_ALWAYS_MULTITHREADED     Force multi-threaded mode at GC initialization.
-  (Turns GC_allow_register_threads into a no-op routine.)
 
 GC_ENABLE_SUSPEND_THREAD (Linux only)   Turn on thread suspend/resume API
 support.
@@ -603,3 +618,9 @@ USE_GET_STACKBASE_FOR_MAIN (Linux only)  Use pthread_attr_getstack() instead
   of __libc_stack_end (or instead of any hard-coded value) for getting the
   primordial thread stack bottom (useful if the client modifies the program's
   address space).
+
+EMSCRIPTEN_ASYNCIFY (Emscripten only)   Use Asyncify feature.  Note this is
+  a relatively rarely used feature of Emscripten, most developers do not use
+  it, and it does not scale well to moderate-to-large code bases.  But the
+  feature is needed to pass gctest, at least.  Requires -sASYNCIFY linker
+  flag.

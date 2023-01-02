@@ -5,15 +5,13 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
  *
  */
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 #ifdef HAVE_CONFIG_H
@@ -23,11 +21,12 @@
 #include "gc/gc_disclaim.h"
 
 #define NOT_GCBUILD
-#include "private/gc_priv.h" /* for CLOCK_TYPE, COVERT_DATAFLOW, GC_random */
+#include "private/gc_priv.h"
 
 #ifdef LINT2
 # undef rand
-# define rand() (int)GC_random()
+  static GC_RAND_STATE_T seed;
+# define rand() GC_RAND_NEXT(&seed)
 #endif
 
 #define my_assert(e) \
@@ -61,12 +60,14 @@ testobj_t testobj_new(int model)
 {
     testobj_t obj;
     switch (model) {
+#     ifndef GC_NO_FINALIZATION
         case 0:
             obj = GC_NEW(struct testobj_s);
             if (obj != NULL)
               GC_REGISTER_FINALIZER_NO_ORDER(obj, testobj_finalize,
                                              &free_count, NULL, NULL);
             break;
+#     endif
         case 1:
             obj = (testobj_t)GC_finalized_malloc(sizeof(struct testobj_s),
                                                  &fclos);
@@ -86,7 +87,7 @@ testobj_t testobj_new(int model)
     return obj;
 }
 
-#define ALLOC_CNT (4*1024*1024)
+#define ALLOC_CNT (2*1024*1024)
 #define KEEP_CNT      (32*1024)
 
 static char const *model_str[3] = {
@@ -115,9 +116,12 @@ int main(int argc, char **argv)
         model_min = model_max = (int)COVERT_DATAFLOW(atoi(argv[1]));
         if (model_min < 0 || model_max > 2)
             exit(2);
-    }
-    else {
+    } else {
+#     ifndef GC_NO_FINALIZATION
         model_min = 0;
+#     else
+        model_min = 1;
+#     endif
         model_max = 2;
     }
     if (GC_get_find_leak())

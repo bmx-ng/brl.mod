@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Ivan Maidanski
+# Copyright (c) 2021-2022 Ivan Maidanski
 ##
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,15 +29,24 @@ set(PACKAGE_VERSION 7.7.0)
 # Info (current:revision:age) for the Libtool versioning system.
 # These values should match those in src/Makefile.am.
 set(LIBATOMIC_OPS_VER_INFO      2:1:1)
-set(LIBATOMIC_OPS_GPL_VER_INFO  2:2:1)
+set(LIBATOMIC_OPS_GPL_VER_INFO  2:3:1)
 
 project(libatomic_ops C)
+
+if (POLICY CMP0057)
+  # Required for CheckLinkerFlag, at least.
+  cmake_policy(SET CMP0057 NEW)
+endif()
 
 include(CheckCCompilerFlag)
 include(CheckFunctionExists)
 include(CMakePackageConfigHelpers)
 include(CTest)
 include(GNUInstallDirs)
+
+if (NOT (${CMAKE_VERSION} VERSION_LESS "3.18.0"))
+  include(CheckLinkerFlag)
+endif()
 
 # Customize the build by passing "-D<option_name>=ON|OFF" in the command line.
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
@@ -48,6 +57,15 @@ option(enable_atomic_intrinsics "Use GCC atomic intrinsics" ON)
 option(enable_docs "Build and install documentation" ON)
 option(enable_gpl "Build atomic_ops_gpl library" ON)
 option(install_headers "Install header and pkg-config metadata files" ON)
+
+# Override the default build type to RelWithDebInfo (this instructs cmake to
+# pass -O2 -g -DNDEBUG options to the compiler).
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE
+      STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY
+               STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
+endif()
 
 # Convert VER_INFO values to [SO]VERSION ones.
 if (BUILD_SHARED_LIBS)
@@ -79,8 +97,6 @@ else()
   add_compile_options(-Wall -Wextra)
 endif()
 
-include_directories(src)
-
 find_package(Threads REQUIRED)
 message(STATUS "Thread library: ${CMAKE_THREAD_LIBS_INIT}")
 include_directories(${Threads_INCLUDE_DIR})
@@ -88,25 +104,28 @@ set(THREADDLLIBS_LIST ${CMAKE_THREAD_LIBS_INIT})
 
 if (CMAKE_USE_PTHREADS_INIT)
   # Required define if using POSIX threads.
-  add_definitions("-D_REENTRANT")
+  add_compile_options(-D_REENTRANT)
 else()
   # No pthreads library available.
-  add_definitions("-DAO_NO_PTHREADS")
+  add_compile_options(-DAO_NO_PTHREADS)
 endif()
 
-if (NOT enable_assertions)
+if (enable_assertions)
+  # In case NDEBUG macro is defined e.g. by cmake -DCMAKE_BUILD_TYPE=Release.
+  add_compile_options(-UNDEBUG)
+else()
   # Define to disable assertion checking.
-  add_definitions("-DNDEBUG")
+  add_compile_options(-DNDEBUG)
 endif()
 
 if (NOT enable_atomic_intrinsics)
   # Define to avoid GCC atomic intrinsics even if available.
-  add_definitions("-DAO_DISABLE_GCC_ATOMICS")
+  add_compile_options(-DAO_DISABLE_GCC_ATOMICS)
 endif()
 
 # AO API symbols export control.
 if (BUILD_SHARED_LIBS)
-  add_definitions("-DAO_DLL")
+  add_compile_options(-DAO_DLL)
 endif()
 
 if (enable_werror)
@@ -119,7 +138,8 @@ endif(enable_werror)
 
 # Extra user-defined flags to pass to the C compiler.
 if (DEFINED CFLAGS_EXTRA)
-  add_compile_options(${CFLAGS_EXTRA})
+  separate_arguments(CFLAGS_EXTRA_LIST UNIX_COMMAND "${CFLAGS_EXTRA}")
+  add_compile_options(${CFLAGS_EXTRA_LIST})
 endif()
 
 set(SRC src/atomic_ops.c)
@@ -131,21 +151,21 @@ endif()
 
 add_library(atomic_ops ${SRC})
 target_link_libraries(atomic_ops PRIVATE ${THREADDLLIBS_LIST})
-target_include_directories(atomic_ops INTERFACE
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
-        "$<INSTALL_INTERFACE:include>")
+target_include_directories(atomic_ops
+                PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
+                INTERFACE "$<INSTALL_INTERFACE:include>")
 
 if (enable_gpl)
-  check_function_exists(mmap HAVE_MMAP)
-  if (HAVE_MMAP)
-    add_definitions("-DHAVE_MMAP")
-  endif()
   set(AO_GPL_SRC src/atomic_ops_malloc.c src/atomic_ops_stack.c)
   add_library(atomic_ops_gpl ${AO_GPL_SRC})
+  check_function_exists(mmap HAVE_MMAP)
+  if (HAVE_MMAP)
+    target_compile_definitions(atomic_ops_gpl PRIVATE HAVE_MMAP)
+  endif()
   target_link_libraries(atomic_ops_gpl PRIVATE atomic_ops)
-  target_include_directories(atomic_ops_gpl INTERFACE
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
-        "$<INSTALL_INTERFACE:include>")
+  target_include_directories(atomic_ops_gpl
+                PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
+                INTERFACE "$<INSTALL_INTERFACE:include>")
   if (BUILD_SHARED_LIBS)
     set_property(TARGET atomic_ops_gpl PROPERTY VERSION ${AO_GPL_VERSION_PROP})
     set_property(TARGET atomic_ops_gpl PROPERTY SOVERSION ${AO_GPL_SOVERSION})
@@ -158,15 +178,27 @@ if (enable_gpl)
 endif(enable_gpl)
 
 if (BUILD_SHARED_LIBS)
-  check_c_compiler_flag(-Wl,--no-undefined HAVE_FLAG_WL_NO_UNDEFINED)
+  if (${CMAKE_VERSION} VERSION_LESS "3.18.0")
+    set(WL_NO_UNDEFINED_OPT "-Wl,--no-undefined")
+    check_c_compiler_flag(${WL_NO_UNDEFINED_OPT} HAVE_FLAG_WL_NO_UNDEFINED)
+  else()
+    set(WL_NO_UNDEFINED_OPT "LINKER:--no-undefined")
+    check_linker_flag(C "${WL_NO_UNDEFINED_OPT}" HAVE_FLAG_WL_NO_UNDEFINED)
+  endif()
   if (HAVE_FLAG_WL_NO_UNDEFINED)
     # Declare that the libraries do not refer to external symbols.
-    # TODO: use add_link_options() when cmake_minimum_required > 3.13
-    target_link_libraries(atomic_ops PRIVATE -Wl,--no-undefined)
-    if (enable_gpl)
-      target_link_libraries(atomic_ops_gpl PRIVATE -Wl,--no-undefined)
-    endif(enable_gpl)
-  endif()
+    if (${CMAKE_VERSION} VERSION_LESS "3.13.0")
+      target_link_libraries(atomic_ops PRIVATE ${WL_NO_UNDEFINED_OPT})
+      if (enable_gpl)
+        target_link_libraries(atomic_ops_gpl PRIVATE ${WL_NO_UNDEFINED_OPT})
+      endif(enable_gpl)
+    else()
+      target_link_options(atomic_ops PRIVATE ${WL_NO_UNDEFINED_OPT})
+      if (enable_gpl)
+        target_link_options(atomic_ops_gpl PRIVATE ${WL_NO_UNDEFINED_OPT})
+      endif(enable_gpl)
+    endif()
+  endif(HAVE_FLAG_WL_NO_UNDEFINED)
   set_property(TARGET atomic_ops PROPERTY VERSION ${AO_VERSION_PROP})
   set_property(TARGET atomic_ops PROPERTY SOVERSION ${AO_SOVERSION})
 endif(BUILD_SHARED_LIBS)
@@ -214,6 +246,7 @@ if (install_headers)
                 src/atomic_ops/sysdeps/gcc/arm.h
                 src/atomic_ops/sysdeps/gcc/avr32.h
                 src/atomic_ops/sysdeps/gcc/cris.h
+                src/atomic_ops/sysdeps/gcc/e2k.h
                 src/atomic_ops/sysdeps/gcc/generic-arithm.h
                 src/atomic_ops/sysdeps/gcc/generic-small.h
                 src/atomic_ops/sysdeps/gcc/generic.h
@@ -285,15 +318,16 @@ if (build_tests)
   add_test(NAME test_atomic COMMAND test_atomic)
 
   add_executable(test_atomic_generalized tests/test_atomic.c)
-  target_compile_options(test_atomic_generalized
-                         PRIVATE -DAO_PREFER_GENERALIZED -DAO_TEST_EMULATION)
+  target_compile_definitions(test_atomic_generalized
+                             PRIVATE AO_PREFER_GENERALIZED AO_TEST_EMULATION)
   target_link_libraries(test_atomic_generalized
                         PRIVATE atomic_ops ${THREADDLLIBS_LIST})
   add_test(NAME test_atomic_generalized COMMAND test_atomic_generalized)
 
   if (CMAKE_USE_PTHREADS_INIT)
     add_executable(test_atomic_pthreads tests/test_atomic.c)
-    target_compile_options(test_atomic_pthreads PRIVATE -DAO_USE_PTHREAD_DEFS)
+    target_compile_definitions(test_atomic_pthreads
+                               PRIVATE AO_USE_PTHREAD_DEFS)
     target_link_libraries(test_atomic_pthreads
                           PRIVATE atomic_ops ${THREADDLLIBS_LIST})
     add_test(NAME test_atomic_pthreads COMMAND test_atomic_pthreads)

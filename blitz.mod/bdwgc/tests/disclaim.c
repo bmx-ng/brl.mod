@@ -5,7 +5,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -28,21 +28,17 @@
 #undef GC_NO_THREAD_REDIRECTS
 #include "gc/gc_disclaim.h"
 
-#ifdef LINT2
-  /* Avoid include gc_priv.h. */
-# ifndef GC_API_PRIV
-#   define GC_API_PRIV GC_API
-# endif
-# ifdef __cplusplus
-    extern "C" {
-# endif
-  GC_API_PRIV long GC_random(void);
-# ifdef __cplusplus
-    } /* extern "C" */
-# endif
+#if defined(GC_PTHREADS) || defined(LINT2)
+# define NOT_GCBUILD
+# include "private/gc_priv.h"
+  /* Redefine the standard rand() with a trivial (yet sufficient for    */
+  /* the test purpose) implementation to avoid crashes inside rand()    */
+  /* on some targets (e.g. FreeBSD 13.0) when used concurrently.        */
+  /* The standard specifies rand() as not a thread-safe API function.   */
 # undef rand
-# define rand() (int)GC_random()
-#endif /* LINT2 */
+  static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
+# define rand() GC_RAND_NEXT(&seed)
+#endif /* GC_PTHREADS || LINT2 */
 
 #define my_assert(e) \
     if (!(e)) { \
@@ -61,6 +57,8 @@ int memeq(void *s, int c, size_t len)
     return 1;
 }
 
+#define MEM_FILL_BYTE 0x56
+
 void GC_CALLBACK misc_sizes_dct(void *obj, void *cd)
 {
     unsigned log_size = *(unsigned char *)obj;
@@ -69,7 +67,7 @@ void GC_CALLBACK misc_sizes_dct(void *obj, void *cd)
     my_assert(log_size < sizeof(size_t) * 8);
     my_assert(cd == NULL);
     size = (size_t)1 << log_size;
-    my_assert(memeq((char *)obj + 1, 0x56, size - 1));
+    my_assert(memeq((char *)obj + 1, MEM_FILL_BYTE, size - 1));
 }
 
 void test_misc_sizes(void)
@@ -83,7 +81,7 @@ void test_misc_sizes(void)
             exit(3);
         }
         my_assert(memeq(p, 0, (size_t)1 << i));
-        memset(p, 0x56, (size_t)1 << i);
+        memset(p, MEM_FILL_BYTE, (size_t)1 << i);
         *(unsigned char *)p = (unsigned char)i;
     }
 }
@@ -104,12 +102,13 @@ int is_pair(pair_t p)
     return memcmp(p->magic, pair_magic, sizeof(p->magic)) == 0;
 }
 
+#define CSUM_SEED 782
 #define PTR_HASH(p) (GC_HIDE_POINTER(p) >> 4)
 
 void GC_CALLBACK pair_dct(void *obj, void *cd)
 {
     pair_t p = (pair_t)obj;
-    int checksum;
+    int checksum = CSUM_SEED;
 
     my_assert(cd == (void *)PTR_HASH(p));
     /* Check that obj and its car and cdr are not trashed. */
@@ -121,7 +120,6 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     my_assert(is_pair(p));
     my_assert(!p->car || is_pair(p->car));
     my_assert(!p->cdr || is_pair(p->cdr));
-    checksum = 782;
     if (p->car) checksum += p->car->checksum;
     if (p->cdr) checksum += p->cdr->checksum;
     my_assert(p->checksum == checksum);
@@ -133,8 +131,7 @@ void GC_CALLBACK pair_dct(void *obj, void *cd)
     p->cdr = NULL;
 }
 
-pair_t
-pair_new(pair_t car, pair_t cdr)
+pair_t pair_new(pair_t car, pair_t cdr)
 {
     pair_t p;
     struct GC_finalizer_closure *pfc =
@@ -154,7 +151,8 @@ pair_new(pair_t car, pair_t cdr)
     my_assert(!is_pair(p));
     my_assert(memeq(p, 0, sizeof(struct pair_s)));
     memcpy(p->magic, pair_magic, sizeof(p->magic));
-    p->checksum = 782 + (car? car->checksum : 0) + (cdr? cdr->checksum : 0);
+    p->checksum = CSUM_SEED + (car != NULL ? car->checksum : 0)
+                    + (cdr != NULL ? cdr->checksum : 0);
     p->car = car;
     GC_ptr_store_and_dirty(&p->cdr, cdr);
     GC_reachable_here(car);
@@ -165,38 +163,31 @@ pair_new(pair_t car, pair_t cdr)
     return p;
 }
 
-void
-pair_check_rec(pair_t p)
+void pair_check_rec(pair_t p)
 {
     while (p) {
-        int checksum = 782;
+        int checksum = CSUM_SEED;
+
         if (p->car) checksum += p->car->checksum;
         if (p->cdr) checksum += p->cdr->checksum;
         my_assert(p->checksum == checksum);
-        if (rand() % 2)
-            p = p->car;
-        else
-            p = p->cdr;
+        p = (rand() & 1) != 0 ? p->cdr : p->car;
     }
 }
 
 #ifdef GC_PTHREADS
 # ifndef NTHREADS
-#   define NTHREADS 6
+#   define NTHREADS 5 /* Excludes main thread, which also runs a test. */
 # endif
 # include <errno.h> /* for EAGAIN */
 # include <pthread.h>
 #else
 # undef NTHREADS
-# define NTHREADS 1
+# define NTHREADS 0
 #endif
 
 #define POP_SIZE 1000
-#if NTHREADS > 1
-# define MUTATE_CNT (2000000/NTHREADS)
-#else
-# define MUTATE_CNT 10000000
-#endif
+#define MUTATE_CNT (6*1000000/(NTHREADS+1))
 #define GROW_LIMIT (MUTATE_CNT/10)
 
 void *test(void *data)
@@ -206,7 +197,9 @@ void *test(void *data)
     memset(pop, 0, sizeof(pop));
     for (i = 0; i < MUTATE_CNT; ++i) {
         int t = rand() % POP_SIZE;
-        switch (rand() % (i > GROW_LIMIT? 5 : 3)) {
+        int j;
+
+        switch (rand() % (i > GROW_LIMIT ? 5 : 3)) {
         case 0: case 3:
             if (pop[t])
                 pop[t] = pop[t]->car;
@@ -216,8 +209,8 @@ void *test(void *data)
                 pop[t] = pop[t]->cdr;
             break;
         case 2:
-            pop[t] = pair_new(pop[rand() % POP_SIZE],
-                              pop[rand() % POP_SIZE]);
+            j = rand() % POP_SIZE;
+            pop[t] = pair_new(pop[j], pop[rand() % POP_SIZE]);
             break;
         }
         if (rand() % 8 == 1)
@@ -228,10 +221,15 @@ void *test(void *data)
 
 int main(void)
 {
-# if NTHREADS > 1
+# if NTHREADS > 0
     pthread_t th[NTHREADS];
     int i, n;
 # endif
+
+    /* Test the same signal usage for threads suspend and restart on Linux. */
+#   ifdef GC_PTHREADS
+        GC_set_thr_restart_signal(GC_get_suspend_signal());
+#   endif
 
     GC_set_all_interior_pointers(0); /* for a stricter test */
 #   ifdef TEST_MANUAL_VDB
@@ -247,7 +245,7 @@ int main(void)
 
     test_misc_sizes();
 
-# if NTHREADS > 1
+# if NTHREADS > 0
     printf("Threaded disclaim test.\n");
     for (i = 0; i < NTHREADS; ++i) {
         int err = pthread_create(&th[i], NULL, test, NULL);
@@ -259,6 +257,9 @@ int main(void)
         }
     }
     n = i;
+# endif
+  test(NULL);
+# if NTHREADS > 0
     for (i = 0; i < n; ++i) {
         int err = pthread_join(th[i], NULL);
         if (err) {
@@ -267,9 +268,7 @@ int main(void)
             exit(69);
         }
     }
-# else
-    printf("Unthreaded disclaim test.\n");
-    test(NULL);
 # endif
+    printf("SUCCEEDED\n");
     return 0;
 }

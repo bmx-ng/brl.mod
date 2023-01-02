@@ -5,7 +5,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -51,18 +51,18 @@
         || (defined(__x86_64__) && !defined(__ILP32__)) \
         || defined(__alpha__) || defined(__powerpc64__) \
         || defined(__arch64__)
-#  define GC_GRANULE_BYTES 16
-#  define GC_GRANULE_WORDS 2
+#   define GC_GRANULE_BYTES 16
+#   define GC_GRANULE_WORDS 2
 # else
-#  define GC_GRANULE_BYTES 8
-#  define GC_GRANULE_WORDS 2
+#   define GC_GRANULE_BYTES 8
+#   define GC_GRANULE_WORDS 2
 # endif
 #endif /* !GC_GRANULE_BYTES */
 
 #if GC_GRANULE_WORDS == 2
-#  define GC_WORDS_TO_GRANULES(n) ((n)>>1)
+# define GC_WORDS_TO_GRANULES(n) ((n)>>1)
 #else
-#  define GC_WORDS_TO_GRANULES(n) ((n)*sizeof(void *)/GC_GRANULE_BYTES)
+# define GC_WORDS_TO_GRANULES(n) ((n)*sizeof(void *)/GC_GRANULE_BYTES)
 #endif
 
 /* A "tiny" free list header contains TINY_FREELISTS pointers to        */

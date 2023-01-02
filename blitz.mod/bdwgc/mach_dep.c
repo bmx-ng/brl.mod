@@ -1,12 +1,13 @@
 /*
  * Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
+ * Copyright (c) 2008-2022 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -16,8 +17,6 @@
 
 #if !defined(PLATFORM_MACH_DEP) && !defined(SN_TARGET_PSP2)
 
-#include <stdio.h>
-
 #ifdef AMIGA
 # ifndef __GNUC__
 #   include <dos.h>
@@ -25,6 +24,89 @@
 #   include <machine/reg.h>
 # endif
 #endif
+
+#ifdef E2K
+# include <errno.h>
+# include <asm/e2k_syswork.h>
+# include <sys/mman.h>
+# include <sys/syscall.h>
+
+  GC_INNER size_t GC_get_procedure_stack(ptr_t buf, size_t buf_sz) {
+    unsigned long long new_sz;
+
+    GC_ASSERT(0 == buf_sz || buf != NULL);
+    for (;;) {
+      unsigned long long stack_ofs;
+
+      new_sz = 0;
+      if (syscall(__NR_access_hw_stacks, E2K_GET_PROCEDURE_STACK_SIZE,
+                  NULL, NULL, 0, &new_sz) == -1) {
+        if (errno != EAGAIN)
+          ABORT_ARG1("Cannot get size of procedure stack",
+                     ": errno= %d", errno);
+        continue;
+      }
+      GC_ASSERT(new_sz > 0 && new_sz % sizeof(word) == 0);
+      if (new_sz > buf_sz)
+        break;
+      /* Immediately read the stack right after checking its size. */
+      stack_ofs = 0;
+      if (syscall(__NR_access_hw_stacks, E2K_READ_PROCEDURE_STACK_EX,
+                  &stack_ofs, buf, new_sz, NULL) != -1)
+        break;
+      if (errno != EAGAIN)
+        ABORT_ARG2("Cannot read procedure stack",
+                   ": new_sz= %lu, errno= %d", (unsigned long)new_sz, errno);
+    }
+    return (size_t)new_sz;
+  }
+
+  ptr_t GC_save_regs_in_stack(void) {
+    __asm__ __volatile__ ("flushr");
+    return NULL;
+  }
+
+  GC_INNER ptr_t GC_mmap_procedure_stack_buf(size_t aligned_sz)
+  {
+    void *buf = mmap(NULL, aligned_sz, PROT_READ | PROT_WRITE,
+                     MAP_PRIVATE | MAP_ANON, 0 /* fd */, 0 /* offset */);
+    if (MAP_FAILED == buf)
+      ABORT_ARG2("Could not map memory for procedure stack",
+                 ": requested %lu bytes, errno= %d",
+                 (unsigned long)aligned_sz, errno);
+    return (ptr_t)buf;
+  }
+
+  GC_INNER void GC_unmap_procedure_stack_buf(ptr_t buf, size_t sz)
+  {
+    if (munmap(buf, ROUNDUP_PAGESIZE(sz)) == -1)
+      ABORT_ARG1("munmap failed (for procedure stack space)",
+                 ": errno= %d", errno);
+  }
+
+# ifdef THREADS
+    GC_INNER size_t GC_alloc_and_get_procedure_stack(ptr_t *pbuf)
+    {
+      /* TODO: support saving from non-zero ofs in stack */
+      ptr_t buf = NULL;
+      size_t new_sz, buf_sz;
+
+      GC_ASSERT(I_HOLD_LOCK());
+      for (buf_sz = 0; ; buf_sz = new_sz) {
+        new_sz = GC_get_procedure_stack(buf, buf_sz);
+        if (new_sz <= buf_sz) break;
+
+        if (EXPECT(buf != NULL, FALSE))
+          GC_INTERNAL_FREE(buf);
+        buf = (ptr_t)GC_INTERNAL_MALLOC_IGNORE_OFF_PAGE(new_sz, PTRFREE);
+        if (NULL == buf)
+          ABORT("Could not allocate memory for procedure stack");
+      }
+      *pbuf = buf;
+      return new_sz;
+    }
+# endif /* THREADS */
+#endif /* E2K */
 
 #if defined(MACOS) && defined(__MWERKS__)
 
@@ -92,9 +174,8 @@
 
 #endif /* MACOS && __MWERKS__ */
 
-# if defined(SPARC) || defined(IA64)
-    /* Value returned from register flushing routine; either sp (SPARC) */
-    /* or ar.bsp (IA64).                                                */
+# if defined(IA64) && !defined(THREADS)
+    /* Value returned from register flushing routine (ar.bsp).  */
     GC_INNER ptr_t GC_save_regs_ret_val = NULL;
 # endif
 
@@ -223,6 +304,8 @@
 /* Ensure that either registers are pushed, or callee-save registers    */
 /* are somewhere on the stack, and then call fn(arg, ctxt).             */
 /* ctxt is either a pointer to a ucontext_t we generated, or NULL.      */
+/* Could be called with or w/o the GC lock held; could be called from   */
+/* a signal handler as well.                                            */
 GC_ATTR_NO_SANITIZE_ADDR
 GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
                                           volatile ptr_t arg)
@@ -243,7 +326,7 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
       ucontext_t ctxt;
 #     ifdef GETCONTEXT_FPU_EXCMASK_BUG
         /* Workaround a bug (clearing the FPU exception mask) in        */
-        /* getcontext on Linux/x86_64.                                  */
+        /* getcontext on Linux/x64.                                     */
 #       ifdef X86_64
           /* We manipulate FPU control word here just not to force the  */
           /* client application to use -lm linker option.               */
@@ -286,11 +369,14 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
             ABORT("feenableexcept failed");
 #       endif
 #     endif /* GETCONTEXT_FPU_EXCMASK_BUG */
-#     if defined(SPARC) || defined(IA64)
+#     if defined(E2K) || defined(IA64) || defined(SPARC)
         /* On a register window machine, we need to save register       */
         /* contents on the stack for this to work.  This may already be */
         /* subsumed by the getcontext() call.                           */
-        GC_save_regs_ret_val = GC_save_regs_in_stack();
+#       if defined(IA64) && !defined(THREADS)
+          GC_save_regs_ret_val =
+#       endif
+            GC_save_regs_in_stack();
 #     endif
       if (NULL == context) /* getcontext failed */
 #   endif /* !NO_GETCONTEXT */

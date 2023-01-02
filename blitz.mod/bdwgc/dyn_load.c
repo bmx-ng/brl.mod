@@ -1,13 +1,13 @@
 /*
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1997 by Silicon Graphics.  All rights reserved.
- * Copyright (c) 2009-2021 Ivan Maidanski
+ * Copyright (c) 2009-2022 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -68,7 +68,6 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 # error Additional SVR4 variants might not be too hard to add.
 #endif
 
-#include <stdio.h>
 #ifdef SOLARISDL
 #   include <sys/elf.h>
 #   include <dlfcn.h>
@@ -140,29 +139,29 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
 /* Newer versions of GNU/Linux define this macro.  We
  * define it similarly for any ELF systems that don't.  */
-#  ifndef ElfW
-#    if defined(FREEBSD)
-#      if __ELF_WORD_SIZE == 32
-#        define ElfW(type) Elf32_##type
-#      else
-#        define ElfW(type) Elf64_##type
-#      endif
-#    elif defined(NETBSD) || defined(OPENBSD)
-#      if ELFSIZE == 32
-#        define ElfW(type) Elf32_##type
-#      elif ELFSIZE == 64
-#        define ElfW(type) Elf64_##type
-#      else
-#        error Missing ELFSIZE define
-#      endif
-#    else
-#      if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
-#        define ElfW(type) Elf32_##type
-#      else
-#        define ElfW(type) Elf64_##type
-#      endif
-#    endif
-#  endif
+# ifndef ElfW
+#   if defined(FREEBSD)
+#     if __ELF_WORD_SIZE == 32
+#       define ElfW(type) Elf32_##type
+#     else
+#       define ElfW(type) Elf64_##type
+#     endif
+#   elif defined(NETBSD) || defined(OPENBSD)
+#     if ELFSIZE == 32
+#       define ElfW(type) Elf32_##type
+#     elif ELFSIZE == 64
+#       define ElfW(type) Elf64_##type
+#     else
+#       error Missing ELFSIZE define
+#     endif
+#   else
+#     if !defined(ELF_CLASS) || ELF_CLASS == ELFCLASS32
+#       define ElfW(type) Elf32_##type
+#     else
+#       define ElfW(type) Elf64_##type
+#     endif
+#   endif
+# endif
 
 #if defined(SOLARISDL) && !defined(USE_PROC_FOR_LIBRARIES)
 
@@ -193,7 +192,7 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 
     if (0 == COVERT_DATAFLOW(dynStructureAddr)) {
         /* _DYNAMIC symbol not resolved. */
-        return(0);
+        return NULL;
     }
     if (cachedResult == 0) {
         int tag;
@@ -232,6 +231,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 {
   struct link_map *lm;
 
+  GC_ASSERT(I_HOLD_LOCK());
   for (lm = GC_FirstDLOpenedLinkMap(); lm != 0; lm = lm->l_next) {
         ElfW(Ehdr) * e;
         ElfW(Phdr) * p;
@@ -258,7 +258,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
     }
 }
 
-# endif /* !USE_PROC ... */
+# endif /* !USE_PROC_FOR_LIBRARIES */
 # endif /* SOLARISDL */
 
 #if defined(SCO_ELF) || defined(DGUX) || defined(HURD) || defined(NACL) \
@@ -308,7 +308,7 @@ static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
 
 STATIC void GC_register_map_entries(const char *maps)
 {
-    const char *prot;
+    const char *prot, *path;
     ptr_t start, end;
     unsigned int maj_dev;
     ptr_t least_ha, greatest_ha;
@@ -321,7 +321,7 @@ STATIC void GC_register_map_entries(const char *maps)
                   + GC_our_memory[GC_n_memory-1].hs_bytes;
 
     for (;;) {
-        maps = GC_parse_map_entry(maps, &start, &end, &prot, &maj_dev, 0);
+        maps = GC_parse_map_entry(maps, &start, &end, &prot, &maj_dev, &path);
         if (NULL == maps) break;
 
         if (prot[1] == 'w') {
@@ -333,6 +333,15 @@ STATIC void GC_register_map_entries(const char *maps)
                 /* Stack mapping; discard       */
                 continue;
             }
+#           if defined(E2K) && defined(__ptr64__)
+              /* TODO: avoid hard-coded addresses */
+              if ((word)start == 0xc2fffffff000UL
+                  && (word)end == 0xc30000000000UL && path[0] == '\n')
+                continue; /* discard some special mapping */
+#           endif
+            if (path[0] == '[' && strncmp(path+1, "heap]", 5) != 0)
+              continue; /* discard if a pseudo-path unless "[heap]" */
+
 #           ifdef THREADS
               /* This may fail, since a thread may already be           */
               /* unregistered, but its thread stack may still be there. */
@@ -415,9 +424,8 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 /* for glibc 2.2.4+.  Unfortunately, it doesn't work for older  */
 /* versions.  Thanks to Jakub Jelinek for most of the code.     */
 
-#if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
-    || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)) \
-    || defined(HOST_ANDROID) /* Are others OK here, too? */
+#if GC_GLIBC_PREREQ(2, 3) || defined(HOST_ANDROID)
+                        /* Are others OK here, too? */
 # ifndef HAVE_DL_ITERATE_PHDR
 #   define HAVE_DL_ITERATE_PHDR
 # endif
@@ -686,7 +694,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
 #     define PF_W       2
 #   endif
 # elif !defined(HOST_ANDROID)
-#  include <elf.h>
+#   include <elf.h>
 # endif
 
 # ifndef HOST_ANDROID
@@ -709,9 +717,9 @@ GC_FirstDLOpenedLinkMap(void)
 
     if (0 == COVERT_DATAFLOW(_DYNAMIC)) {
         /* _DYNAMIC symbol not resolved. */
-        return(0);
+        return NULL;
     }
-    if( cachedResult == 0 ) {
+    if (NULL == cachedResult) {
 #     if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
 #       if defined(CPPCHECK)
 #         define GC_RTLD_DI_LINKMAP 2
@@ -753,6 +761,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 {
   struct link_map *lm;
 
+  GC_ASSERT(I_HOLD_LOCK());
 # ifdef HAVE_DL_ITERATE_PHDR
     if (GC_register_dynamic_libraries_dl_iterate_phdr()) {
         return;
@@ -811,9 +820,10 @@ GC_INNER void GC_register_dynamic_libraries(void)
 GC_INNER void GC_register_dynamic_libraries(void)
 {
     static int fd = -1;
-    char buf[30];
     static prmap_t * addr_map = 0;
     static int current_sz = 0;  /* Number of records currently in addr_map */
+
+    char buf[32];
     int needed_sz = 0;          /* Required size of addr_map            */
     int i;
     long flags;
@@ -826,6 +836,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #     define MA_PHYS 0
 #   endif /* SOLARISDL */
 
+    GC_ASSERT(I_HOLD_LOCK());
     if (fd < 0) {
       (void)snprintf(buf, sizeof(buf), "/proc/%ld", (long)getpid());
       buf[sizeof(buf) - 1] = '\0';
@@ -920,11 +931,9 @@ GC_INNER void GC_register_dynamic_libraries(void)
         fd = -1;
 }
 
-# endif /* USE_PROC || IRIX5 */
+# endif /* USE_PROC_FOR_LIBRARIES || IRIX5 */
 
 # if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-
-# include <stdlib.h>
 
   /* We traverse the entire address space and register all segments     */
   /* that could possibly have been written to.                          */
@@ -1005,6 +1014,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
     char * base;
     char * limit, * new_limit;
 
+    GC_ASSERT(I_HOLD_LOCK());
 #   ifdef MSWIN32
       if (GC_no_win32_dlls) return;
 #   endif
@@ -1308,7 +1318,6 @@ STATIC const char *GC_dyld_name_for_hdr(const struct GC_MACH_HEADER *hdr)
     return NULL;
 }
 
-/* This should never be called by a thread holding the lock.    */
 STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
                               intptr_t slide)
 {
@@ -1319,6 +1328,7 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
   GC_has_static_roots_func callback = GC_has_static_roots;
   DCL_LOCK_STATE;
 
+  GC_ASSERT(I_DONT_HOLD_LOCK());
   if (GC_no_dls) return;
 # ifdef DARWIN_DEBUG
     name = GC_dyld_name_for_hdr(hdr);
@@ -1378,7 +1388,6 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
 # endif
 }
 
-/* This should never be called by a thread holding the lock.    */
 STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
                                  intptr_t slide)
 {
@@ -1389,6 +1398,7 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
     DCL_LOCK_STATE;
 # endif
 
+  GC_ASSERT(I_DONT_HOLD_LOCK());
   for (i = 0; i < sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]); i++) {
     sec = GC_GETSECTBYNAME(hdr, GC_dyld_sections[i].seg,
                            GC_dyld_sections[i].sect);
@@ -1452,6 +1462,7 @@ GC_INNER void GC_init_dyld(void)
 {
   static GC_bool initialized = FALSE;
 
+  GC_ASSERT(I_DONT_HOLD_LOCK());
   if (initialized) return;
 
 # ifdef DARWIN_DEBUG

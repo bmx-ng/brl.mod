@@ -1,4 +1,4 @@
-# Makefile for Windows NT.  Assumes Microsoft compiler.
+# Makefile for Windows (Win32/64).  Assumes Microsoft compiler.
 # Should be invoked as "nmake -f NT_MAKEFILE [<args>]"; the optional arguments
 # are: "cpu=AMD64" - to target x64, "cpu=i386" - to target x86,
 # "enable_static=1" - to build it as a static library, "nodebug=1" - to produce
@@ -78,7 +78,7 @@ CFLAGS_EXTRA=
 
 CFLAGS_SPECIFIC=$(CFLAGS_DEBUG) $(CFLAGS_GCDLL) $(CFLAGS_MT)
 
-CFLAGS_DEFAULT=-DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION -DUSE_MUNMAP
+CFLAGS_DEFAULT=-DALL_INTERIOR_POINTERS -DENABLE_DISCLAIM -DGC_ATOMIC_UNCOLLECTABLE -DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION -DGC_REQUIRE_WCSDUP -DUSE_MUNMAP
 
 CXXFLAGS_SPECIFIC=/EHsc
 
@@ -87,14 +87,15 @@ CXXFLAGS_SPECIFIC=/EHsc
 .SUFFIXES:
 .SUFFIXES: .obj .cpp .c
 
-# Atomic_ops installation directory.  For win32, the source directory
+# Atomic_ops installation directory.  For Win32, the source directory
 # should do, since we only need the headers.
 # We assume this was manually unpacked.
 AO_SRC_DIR=libatomic_ops/src
 AO_INCLUDE_DIR=$(AO_SRC_DIR)
 
 !IFDEF ENABLE_STATIC
-OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gcj_mlc.obj mallocx.obj extra\msvc_dbg.obj thread_local_alloc.obj
+# pthread_start.obj is needed just in case client defines GC_WIN32_PTHREADS.
+OBJS= misc.obj win32_threads.obj alloc.obj reclaim.obj allchblk.obj mach_dep.obj os_dep.obj mark_rts.obj headers.obj mark.obj obj_map.obj blacklst.obj finalize.obj new_hblk.obj dbg_mlc.obj fnlz_mlc.obj malloc.obj dyn_load.obj typd_mlc.obj ptr_chck.obj gcj_mlc.obj mallocx.obj extra\msvc_dbg.obj pthread_start.obj pthread_support.obj thread_local_alloc.obj
 !ELSE
 OBJS= extra\gc.obj extra\msvc_dbg.obj
 !ENDIF
@@ -103,22 +104,22 @@ COBJS= cord\cordbscs.obj cord\cordxtra.obj cord\cordprnt.obj
 
 all: gc.lib cord.lib gccpp.lib gctba.lib
 
-check-deps: gctest.exe test_cpp.exe cordtest.exe de.exe
+check-deps: gctest.exe cpptest.exe cordtest.exe de.exe
 
 check: check-deps
 	gctest.exe
 	cordtest.exe
-	test_cpp.exe
+	cpptest.exe
 
 .c.obj:
-	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) $(CORDFLAG) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.c /Fo$*.obj /wd4100 /wd4127 /wd4701
+	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) $(CORDFLAG) -Iinclude -I$(AO_INCLUDE_DIR) $(CFLAGS_DEFAULT) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.c /Fo$*.obj /wd4127 /wd4701
 # Disable crt security warnings, since unfortunately they warn about all sorts
 # of safe uses of strncpy.  It would be nice to leave the rest enabled.
 
 .cpp.obj:
 	$(cc) $(cdebug) $(cflags) $(CFLAGS_SPECIFIC) -Iinclude $(CFLAGS_DEFAULT) $(CXXFLAGS_SPECIFIC) -D_CRT_SECURE_NO_DEPRECATE $(CFLAGS_EXTRA) $*.cpp /Fo$*.obj
 
-$(OBJS) tests\test.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc\gc_mark.h include\gc\gc_disclaim.h
+$(OBJS) tests\gctest.obj: include\private\gc_priv.h include\private\gc_hdrs.h include\gc.h include\private\gcconfig.h include\private\gc_locks.h include\private\gc_pmark.h include\gc\gc_mark.h include\gc\gc_disclaim.h
 
 !IFDEF ENABLE_STATIC
 
@@ -151,8 +152,8 @@ gctba.lib: gc_badalc.obj gc.lib
 
 !ENDIF
 
-gctest.exe: gc.lib tests\test.obj
-	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:$*.exe tests\test.obj gc.lib
+gctest.exe: gc.lib tests\gctest.obj
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:$*.exe tests\gctest.obj gc.lib
 #	mapsympe -n -o gctest.sym gctest.exe
 # This produces a GUI app that opens no window and writes to gctest.gc.log.
 
@@ -164,7 +165,7 @@ cord\tests\de.obj cord\tests\de_win.obj: include\gc\cord.h include\gc\cord_pos.h
 cord\tests\de_win.res: cord\tests\de_win.rc cord\tests\de_win.h cord\tests\de_cmds.h
 	$(rc) $(rcvars) -r -fo cord\tests\de_win.res cord\tests\de_win.rc
 
-# Cord/de is a real win32 GUI app.
+# Cord/de is a real Windows GUI app.
 de.exe: cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib cord.lib
 	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) -out:de.exe cord\tests\de.obj cord\tests\de_win.obj cord\tests\de_win.rbj gc.lib cord.lib gdi32.lib user32.lib
 
@@ -175,14 +176,14 @@ gc_badalc.obj: gc_badalc.cc include\gc_cpp.h include\gc.h
 
 gc_cpp.obj: gc_cpp.cc include\gc_cpp.h include\gc.h
 
-test_cpp.cpp: tests\test_cpp.cc
-	copy tests\test_cpp.cc test_cpp.cpp
+test_cpp.cpp: tests\cpp.cc
+	copy tests\cpp.cc test_cpp.cpp
 
 # This generates the C++ test executable.  The executable expects
 # a single numeric argument, which is the number of iterations.
-# The output appears in test_cpp.gc.log file.
-test_cpp.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib gccpp.lib
-	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:test_cpp.exe test_cpp.obj gc.lib gccpp.lib
+# The output appears in cpptest.gc.log file.
+cpptest.exe: test_cpp.obj include\gc_cpp.h include\gc.h gc.lib gccpp.lib
+	$(link) /MACHINE:$(CPU) /INCREMENTAL:NO $(ldebug) $(lflags) user32.lib -out:cpptest.exe test_cpp.obj gc.lib gccpp.lib
 
 $(AO_SRC_DIR):
 	tar xvfz $(AO_SRC_DIR).tar.gz

@@ -26,7 +26,7 @@
 
 int main(void)
 {
-  printf("threadkey_test skipped\n");
+  printf("test skipped\n");
   return 0;
 }
 
@@ -125,6 +125,7 @@ int main(void)
       }
     }
   }
+  printf("SUCCEEDED\n");
   return 0;
 }
 

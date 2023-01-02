@@ -13,7 +13,7 @@
 # define GC_TEST_IMPORT_API extern
 #endif
 
-/* Should match that in staticrootslib.c.       */
+/* Should match that in staticroots_lib.c.      */
 struct treenode {
     struct treenode *x;
     struct treenode *y;
@@ -69,9 +69,10 @@ int main(void)
       for (i = 0; i < (int)sizeof(struct treenode); ++i) {
         if (staticroot[i] != 0x42) {
           fprintf(stderr, "Memory check failed\n");
-          return -1;
+          return 1;
         }
       }
   }
+  printf("SUCCEEDED\n");
   return 0;
 }

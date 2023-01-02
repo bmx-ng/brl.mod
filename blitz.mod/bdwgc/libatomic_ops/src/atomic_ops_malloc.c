@@ -1,14 +1,19 @@
 /*
  * Copyright (c) 2005 Hewlett-Packard Development Company, L.P.
  *
- * This file may be redistributed and/or modified under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation; either version 2, or (at your option) any later version.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * It is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License in the
- * file COPYING for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -180,7 +185,8 @@ static char *get_mmaped(size_t sz)
 static char *
 AO_malloc_large(size_t sz)
 {
-  char *result;
+  void *result;
+
   /* The header will force us to waste ALIGNMENT bytes, incl. header.   */
   /* Round to multiple of CHUNK_SIZE.                                   */
   sz = SIZET_SAT_ADD(sz, ALIGNMENT + CHUNK_SIZE - 1) & ~(CHUNK_SIZE - 1);
@@ -188,16 +194,17 @@ AO_malloc_large(size_t sz)
   result = get_mmaped(sz);
   if (AO_EXPECT_FALSE(NULL == result))
     return NULL;
-  result += ALIGNMENT;
+
+  result = (AO_t *)result + ALIGNMENT / sizeof(AO_t);
   ((AO_t *)result)[-1] = (AO_t)sz;
-  return result;
+  return (char *)result;
 }
 
 static void
-AO_free_large(char * p)
+AO_free_large(void *p)
 {
   AO_t sz = ((AO_t *)p)[-1];
-  if (munmap(p - ALIGNMENT, (size_t)sz) != 0)
+  if (munmap((AO_t *)p - ALIGNMENT / sizeof(AO_t), (size_t)sz) != 0)
     abort();  /* Programmer error.  Not really async-signal-safe, but ... */
 }
 
@@ -261,12 +268,13 @@ static void add_chunk_as(void * chunk, unsigned log_sz)
   size_t ofs, limit;
   size_t sz = (size_t)1 << log_sz;
 
-  assert (CHUNK_SIZE >= sz);
+  assert(CHUNK_SIZE >= sz);
+  assert(sz % sizeof(AO_t) == 0);
   limit = (size_t)CHUNK_SIZE - sz;
   for (ofs = ALIGNMENT - sizeof(AO_t); ofs <= limit; ofs += sz) {
     ASAN_POISON_MEMORY_REGION((char *)chunk + ofs + sizeof(AO_t),
                               sz - sizeof(AO_t));
-    AO_stack_push(&AO_free_list[log_sz], (AO_t *)((char *)chunk + ofs));
+    AO_stack_push(&AO_free_list[log_sz], (AO_t *)chunk + ofs / sizeof(AO_t));
   }
 }
 
@@ -369,7 +377,7 @@ AO_free(void *p)
             log_sz > LOG_MAX_SIZE ? (unsigned)log_sz : 1UL << log_sz);
 # endif
   if (AO_EXPECT_FALSE(log_sz > LOG_MAX_SIZE)) {
-    AO_free_large((char *)p);
+    AO_free_large(p);
   } else {
     ASAN_POISON_MEMORY_REGION(base + 1, ((size_t)1 << log_sz) - sizeof(AO_t));
     AO_stack_push(AO_free_list + log_sz, base);

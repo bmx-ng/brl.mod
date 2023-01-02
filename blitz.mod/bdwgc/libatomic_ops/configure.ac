@@ -5,7 +5,7 @@
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
 #
 # Permission is hereby granted to use or copy this program
-# for any purpose,  provided the above notices are retained on all copies.
+# for any purpose, provided the above notices are retained on all copies.
 # Permission to modify the code and to distribute modified code is granted,
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
@@ -53,11 +53,12 @@ if test "$GCC" = yes; then
       # Workaround: at least GCC 3.4.6 (Solaris) does not define this macro.
       old_CFLAGS="$CFLAGS"
       CFLAGS="$PICFLAG $CFLAGS"
-      AC_TRY_COMPILE([],[
+      AC_COMPILE_IFELSE(
+        [AC_LANG_SOURCE([
  #ifndef __PIC__
  # error
  #endif
-      ], [ac_cv_pic_macro=yes], [ac_cv_pic_macro=no])
+        ])], [ac_cv_pic_macro=yes], [ac_cv_pic_macro=no])
       CFLAGS="$old_CFLAGS"
       AC_MSG_RESULT($ac_cv_pic_macro)
       AS_IF([test "$ac_cv_pic_macro" = yes], [],
@@ -69,15 +70,16 @@ if test "$GCC" = yes; then
   AC_MSG_CHECKING([whether compiler supports -Wextra])
   old_CFLAGS="$CFLAGS"
   CFLAGS="-Wextra $CFLAGS"
-  AC_TRY_COMPILE([],[], [ac_cv_cc_wextra=yes], [ac_cv_cc_wextra=no])
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],
+                    [ac_cv_cc_wextra=yes], [ac_cv_cc_wextra=no])
   CFLAGS="$old_CFLAGS"
   AC_MSG_RESULT($ac_cv_cc_wextra)
   AS_IF([test "$ac_cv_cc_wextra" = yes], [WEXTRA="-Wextra"], [WEXTRA="-W"])
   AC_MSG_CHECKING([whether compiler supports -Wpedantic])
   CFLAGS="-Wpedantic -Wno-long-long $CFLAGS"
-  AC_TRY_COMPILE([],[
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 extern int quiet;
-  ], [ac_cv_cc_pedantic=yes], [ac_cv_cc_pedantic=no])
+    ])], [ac_cv_cc_pedantic=yes], [ac_cv_cc_pedantic=no])
   CFLAGS="$old_CFLAGS"
   AC_MSG_RESULT($ac_cv_cc_pedantic)
   WPEDANTIC=
@@ -85,8 +87,8 @@ extern int quiet;
         [WPEDANTIC="-Wpedantic -Wno-long-long"])
   CFLAGS="-Wall $WEXTRA $WPEDANTIC $CFLAGS"
 
-  AC_ARG_ENABLE(werror, [AC_HELP_STRING([--enable-werror],
-                            [Pass -Werror to the C compiler])])
+  AC_ARG_ENABLE(werror, [AS_HELP_STRING([--enable-werror],
+                                        [Pass -Werror to the C compiler])])
   if test "$enable_werror" = yes; then
     CFLAGS="-Werror $CFLAGS"
   fi
@@ -117,20 +119,20 @@ else
 fi
 
 AC_ARG_ENABLE(assertions,
-        [AC_HELP_STRING([--enable-assertions], [Assertion checking])])
+        [AS_HELP_STRING([--enable-assertions], [Assertion checking])])
 if test "$enable_assertions" != yes; then
   AC_DEFINE([NDEBUG], 1, [Define to disable assertion checking.])
 fi
 
 AC_ARG_ENABLE(atomic-intrinsics,
-        [AC_HELP_STRING([--disable-atomic-intrinsics],
+        [AS_HELP_STRING([--disable-atomic-intrinsics],
                         [Do not use GCC atomic intrinsics])])
 if test "$enable_atomic_intrinsics" = no; then
   AC_DEFINE([AO_DISABLE_GCC_ATOMICS], 1,
             [Define to avoid GCC atomic intrinsics even if available.])
 fi
 
-AC_ARG_ENABLE(gcov, AC_HELP_STRING([--enable-gcov],
+AC_ARG_ENABLE(gcov, AS_HELP_STRING([--enable-gcov],
                                    [Turn on code coverage analysis]))
 if test "$enable_gcov" = "yes"; then
   CFLAGS="$CFLAGS --coverage"
@@ -139,12 +141,12 @@ if test "$enable_gcov" = "yes"; then
 fi
 
 AC_ARG_ENABLE(gpl,
-        [AC_HELP_STRING([--disable-gpl],
+        [AS_HELP_STRING([--disable-gpl],
                         [Do not build atomic_ops_gpl library])])
 AM_CONDITIONAL(ENABLE_GPL, test x$enable_gpl != xno)
 
 AC_ARG_ENABLE(docs,
-        [AC_HELP_STRING([--disable-docs],
+        [AS_HELP_STRING([--disable-docs],
                         [Do not build and install documentation])])
 AM_CONDITIONAL(ENABLE_DOCS, test x$enable_docs != xno)
 
