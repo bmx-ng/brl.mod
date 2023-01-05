@@ -549,6 +549,69 @@ End Rem
 Function GCUnregisterMyThread:Int()="bbGCUnregisterMyThread"
 
 Rem
+bbdoc: Structure for holding Garbage Collection statistics as provided by #GCGetStats().
+End Rem
+Struct SGCStats
+	Rem
+	bbdoc: Heap size in bytes (including the area unmapped to OS).
+	End Rem
+	Field heapsize:Long
+	Rem
+	bbdoc: Total bytes contained in free and unmapped blocks.
+	End Rem
+	Field freeBytes:Long
+	Rem
+	bbdoc: Amount of memory unmapped to OS.
+	End Rem
+	Field unmappedBytes:Long
+	Rem
+	bbdoc: Number of bytes allocated since the recent collection.
+	End Rem
+	Field bytesAllocedSinceGC:Long
+	Rem
+	bbdoc: Number of bytes allocated before the recent garbage collection.
+	about: The value may wrap.
+	End Rem
+	Field allocedBytesBeforeGC:Long
+	Rem
+	bbdoc: Number of bytes not considered candidates for garbage collection.
+	End Rem
+	Field nonGCBytes:Long
+	Rem
+	bbdoc: Garbage collection cycle number.
+	about: The value may wrap (and could be -1).
+	End Rem
+	Field GCCycleNo:Long
+	Rem
+	bbdoc: Number of marker threads (excluding the initiating one).
+	about: 0 if the collector is single-threaded.
+	End Rem
+	Field markersM1:Long
+	Rem
+	bbdoc: Approximate number of reclaimed bytes after recent GC.
+	End Rem
+	Field bytesReclaimedSinceGC:Long
+	Rem
+	bbdoc: Approximate number of bytes reclaimed before the recent garbage collection.
+	about: The value may wrap.
+	End Rem
+	Field reclaimedBytesBeforeGC:Long
+	Rem
+	bbdoc: Number of bytes freed explicitly since the recent GC.
+	End Rem
+	Field freedBytesSinceGC:Long
+	Rem
+	bbdoc: Total amount of memory obtained from OS, in bytes.
+	End Rem
+	Field obtainedFromOSBytes:Long
+End Struct
+
+Rem
+bbdoc: Retrieves GC statistics (various global counters), populating the provided #SGCStats struct.
+End Rem
+Function GCGetStats(stats:SGCStats Var)="void bbGCGetStats(void*)!"
+
+Rem
 bbdoc: Convert object to integer handle
 returns: An integer object handle
 about:

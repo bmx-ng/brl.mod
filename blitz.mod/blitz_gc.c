@@ -261,3 +261,7 @@ int bbGCUnregisterMyThread() {
 	return -1;
 #endif
 }
+
+void bbGCGetStats(struct GC_prof_stats_s * stats) {
+	GC_get_prof_stats(stats, sizeof(struct GC_prof_stats_s));
+}

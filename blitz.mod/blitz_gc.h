@@ -69,6 +69,8 @@ int			bbGCThreadIsRegistered();
 int			bbGCRegisterMyThread();
 int			bbGCUnregisterMyThread();
 
+void bbGCGetStats(struct GC_prof_stats_s * stats);
+
 // BBRETAIN/BBRELEASE should be used to prevent an object from garbage collection.
 //
 // This is mainly of use if an object is being stored outside of BlitzMax's 'sight' - say, in a C++ table.
