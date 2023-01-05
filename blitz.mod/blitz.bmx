@@ -555,55 +555,103 @@ Struct SGCStats
 	Rem
 	bbdoc: Heap size in bytes (including the area unmapped to OS).
 	End Rem
-	Field heapsize:Long
+?win32 and ptr64
+	Field heapsize:ULong
+?not win32 or not ptr64
+	Field heapsize:ULongInt
+?
 	Rem
 	bbdoc: Total bytes contained in free and unmapped blocks.
 	End Rem
-	Field freeBytes:Long
+?win32 and ptr64
+	Field freeBytes:ULong
+?not win32 or not ptr64
+	Field freeBytes:ULongInt
+?
 	Rem
 	bbdoc: Amount of memory unmapped to OS.
 	End Rem
-	Field unmappedBytes:Long
+?win32 and ptr64
+	Field unmappedBytes:ULong
+?not win32 or not ptr64
+	Field unmappedBytes:ULongInt
+?
 	Rem
 	bbdoc: Number of bytes allocated since the recent collection.
 	End Rem
-	Field bytesAllocedSinceGC:Long
+?win32 and ptr64
+	Field bytesAllocedSinceGC:ULong
+?not win32 or not ptr64
+	Field bytesAllocedSinceGC:ULongInt
+?
 	Rem
 	bbdoc: Number of bytes allocated before the recent garbage collection.
 	about: The value may wrap.
 	End Rem
-	Field allocedBytesBeforeGC:Long
+?win32 and ptr64
+	Field allocedBytesBeforeGC:ULong
+?not win32 or not ptr64
+	Field allocedBytesBeforeGC:ULongInt
+?
 	Rem
 	bbdoc: Number of bytes not considered candidates for garbage collection.
 	End Rem
-	Field nonGCBytes:Long
+?win32 and ptr64
+	Field nonGCBytes:ULong
+?not win32 or not ptr64
+	Field nonGCBytes:ULongInt
+?
 	Rem
 	bbdoc: Garbage collection cycle number.
 	about: The value may wrap (and could be -1).
 	End Rem
-	Field GCCycleNo:Long
+?win32 and ptr64
+	Field GCCycleNo:ULong
+?not win32 or not ptr64
+	Field GCCycleNo:ULongInt
+?
 	Rem
 	bbdoc: Number of marker threads (excluding the initiating one).
 	about: 0 if the collector is single-threaded.
 	End Rem
-	Field markersM1:Long
+?win32 and ptr64
+	Field markersM1:ULong
+?not win32 or not ptr64
+	Field markersM1:ULongInt
+?
 	Rem
 	bbdoc: Approximate number of reclaimed bytes after recent GC.
 	End Rem
-	Field bytesReclaimedSinceGC:Long
+?win32 and ptr64
+	Field bytesReclaimedSinceGC:ULong
+?not win32 or not ptr64
+	Field bytesReclaimedSinceGC:ULongInt
+?
 	Rem
 	bbdoc: Approximate number of bytes reclaimed before the recent garbage collection.
 	about: The value may wrap.
 	End Rem
-	Field reclaimedBytesBeforeGC:Long
+?win32 and ptr64
+	Field reclaimedBytesBeforeGC:ULong
+?not win32 or not ptr64
+	Field reclaimedBytesBeforeGC:ULongInt
+?
 	Rem
 	bbdoc: Number of bytes freed explicitly since the recent GC.
 	End Rem
-	Field freedBytesSinceGC:Long
+?win32 and ptr64
+	Field freedBytesSinceGC:ULong
+?not win32 or not ptr64
+	Field freedBytesSinceGC:ULongInt
+?
 	Rem
 	bbdoc: Total amount of memory obtained from OS, in bytes.
 	End Rem
-	Field obtainedFromOSBytes:Long
+?win32 and ptr64
+	Field obtainedFromOSBytes:ULong
+?not win32 or not ptr64
+	Field obtainedFromOSBytes:ULongInt
+?
 End Struct
 
 Rem
