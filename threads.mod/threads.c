@@ -218,7 +218,13 @@ int threads_TimedWaitCond(pthread_cond_t *cond,bb_mutex_t *mutex, int millisecs)
 	}
 	
 	ts.tv_sec += millisecs / 1000;
-	ts.tv_nsec += (millisecs % 1000) * 1000000L;
+	BBInt64 nsec = ts.tv_nsec + ((millisecs % 1000) * 1000000L);
+	if (nsec <= 999999999L) {
+		ts.tv_nsec = nsec;
+	} else {
+		ts.tv_sec += 1;
+		ts.tv_nsec = nsec - 999999999L;
+	}
 
 	int res = pthread_cond_timedwait(cond, mutex, &ts);
 
