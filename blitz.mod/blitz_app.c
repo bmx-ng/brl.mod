@@ -72,6 +72,7 @@ BBString *bbReadStdin(){
 #include <limits.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
 
 static pthread_t _mainThread;
 
@@ -81,7 +82,8 @@ static void startup(){
 
 void bbDelay( int millis ){
 	if (millis<0) return;
-	usleep( millis*1000 );
+	struct timespec rqt = { (int)(millis / 1000), (millis % 1000) * 1000000 };
+	while(nanosleep(&rqt, &rqt));
 }
 
 #if __STDC_VERSION__ >= 199901L
@@ -178,6 +180,7 @@ HICON bbAppIcon(HINSTANCE hInstance) {
 #include <signal.h>
 #include <sys/time.h>
 #include <sys/sysinfo.h>
+#include <time.h>
 
 static int base_time;
 static pthread_t _mainThread;
@@ -193,20 +196,9 @@ static void startup(){
 
 //***** ThreadSafe! *****
 void bbDelay( int millis ){
-	int i,e;
-	
 	if( millis<0 ) return;
-
-	e=bbMilliSecs()+millis;
-	
-	for( i=0;;++i ){
-		int t=e-bbMilliSecs();
-		if( t<=0 ){
-			if( !i ) usleep( 0 );	//always sleep at least once.
-			break;
-		}
-		usleep( t*1000 );
-	}
+	struct timespec rqt = { (int)(millis / 1000), (millis % 1000) * 1000000 };
+	while(nanosleep(&rqt, &rqt));
 }
 
 #if __STDC_VERSION__ >= 199901L
