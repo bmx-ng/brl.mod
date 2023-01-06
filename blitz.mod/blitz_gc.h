@@ -54,6 +54,7 @@ struct BBGCMem{
 
 void		bbGCStartup();
 void		bbGCSetMode( int mode );
+int			bbGCGetMode();
 void		bbGCSetDebug( int debug );
 void*	bbGCMalloc( int size,int flags );
 BBObject*	bbGCAllocObject( unsigned int size,BBClass *clas,int flags );

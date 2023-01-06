@@ -452,7 +452,7 @@ End Rem
 Function MemMove( dst:Byte Ptr,src:Byte Ptr,size:Size_T )="void bbMemMove( void *,const void *,size_t )"
 
 Rem
-bbdoc: Set garbage collector mode
+bbdoc: Sets the garbage collector mode
 about:
 @mode can be one of the following:<br/>
 1 : automatic GC - memory will be automatically garbage collected<br/>
@@ -461,6 +461,17 @@ about:
 The default GC mode is automatic GC.
 End Rem
 Function GCSetMode( Mode:Int )="bbGCSetMode"
+
+Rem
+bbdoc: Gets the garbage collector mode
+about:
+@mode can be one of the following:<br/>
+1 : automatic GC - memory will be automatically garbage collected<br/>
+2 : manual GC - no memory will be collected until a call to GCCollect is made<br/>
+<br/>
+The default GC mode is automatic GC.
+End Rem
+Function GCGetMode:Int()="bbGCGetMode"
 
 Rem
 bbdoc: Suspend garbage collector

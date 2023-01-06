@@ -151,6 +151,19 @@ int bbGCCollectALittle() {
 }
 
 void bbGCSetMode( int mode ){
+	if (mode == 1) {
+		GC_set_disable_automatic_collection(0);
+	} else if (mode == 2) {
+		GC_set_disable_automatic_collection(1);
+	}
+}
+
+int bbGCGetMode(){
+	if (GC_get_disable_automatic_collection()) {
+		return 2;
+	} else {
+		return 1;
+	}
 }
 
 void bbGCSetDebug( int debug ){
