@@ -1,20 +1,27 @@
 SuperStrict
 
+Import "common.bmx"
 
 Extern
-	Function bmx_map_intmap_clear(root:Byte Ptr Ptr)
-	Function bmx_map_intmap_isempty:Int(root:Byte Ptr Ptr)
-	Function bmx_map_intmap_insert(key:Int, value:Object, root:Byte Ptr Ptr)
-	Function bmx_map_intmap_contains:Int(key:Int, root:Byte Ptr Ptr)
-	Function bmx_map_intmap_valueforkey:Object(key:Int, root:Byte Ptr Ptr)
-	Function bmx_map_intmap_remove:Int(key:Int, root:Byte Ptr Ptr)
-	Function bmx_map_intmap_firstnode:Byte Ptr(root:Byte Ptr)
-	Function bmx_map_intmap_nextnode:Byte Ptr(node:Byte Ptr)
-	Function bmx_map_intmap_key:Int(node:Byte Ptr)
-	Function bmx_map_intmap_value:Object(node:Byte Ptr)
-	Function bmx_map_intmap_hasnext:Int(node:Byte Ptr, root:Byte Ptr)
-	Function bmx_map_intmap_copy(dst:Byte Ptr Ptr, _root:Byte Ptr)
+	Function bmx_map_intmap_clear(root:SavlRoot Ptr Ptr)
+	Function bmx_map_intmap_isempty:Int(root:SavlRoot Ptr)
+	Function bmx_map_intmap_insert(key:Int, value:Object, root:SavlRoot Ptr Ptr)
+	Function bmx_map_intmap_contains:Int(key:Int, root:SavlRoot Ptr)
+	Function bmx_map_intmap_valueforkey:Object(key:Int, root:SavlRoot Ptr)
+	Function bmx_map_intmap_remove:Int(key:Int, root:SavlRoot Ptr)
+	Function bmx_map_intmap_firstnode:SIntMapNode Ptr(root:SavlRoot Ptr)
+	Function bmx_map_intmap_nextnode:SIntMapNode Ptr(node:SIntMapNode Ptr)
+	Function bmx_map_intmap_key:Int(node:SIntMapNode Ptr)
+	Function bmx_map_intmap_value:Object(node:SIntMapNode Ptr)
+	Function bmx_map_intmap_hasnext:Int(node:SIntMapNode Ptr, root:SavlRoot Ptr)
+	Function bmx_map_intmap_copy(dst:SavlRoot Ptr Ptr, _root:SavlRoot Ptr)
 End Extern
+
+Struct SIntMapNode
+	Field link:SavlRoot
+	Field key:Int
+	Field value:Object
+End Struct
 
 Rem
 bbdoc: A key/value (Int/Object) map.
@@ -43,7 +50,7 @@ Type TIntMap
 	about: #True if @map is empty, otherwise #False.
 	End Rem
 	Method IsEmpty:Int()
-		Return bmx_map_intmap_isempty(Varptr _root)
+		Return bmx_map_intmap_isempty(_root)
 	End Method
 	
 	Rem
@@ -62,7 +69,7 @@ Type TIntMap
 	returns: #True if the map contains @key.
 	End Rem
 	Method Contains:Int( key:Int )
-		Return bmx_map_intmap_contains(key, Varptr _root)
+		Return bmx_map_intmap_contains(key, _root)
 	End Method
 	
 	Rem
@@ -71,7 +78,7 @@ Type TIntMap
 	about: If the map does not contain @key, a #Null object is returned.
 	End Rem
 	Method ValueForKey:Object( key:Int )
-		Return bmx_map_intmap_valueforkey(key, Varptr _root)
+		Return bmx_map_intmap_valueforkey(key, _root)
 	End Method
 	
 	Rem
@@ -170,7 +177,7 @@ Type TIntMap
 	about: If the map does not contain @key, a #Null object is returned.
 	End Rem
 	Method Operator[]:Object(key:Int)
-		Return bmx_map_intmap_valueforkey(key, Varptr _root)
+		Return bmx_map_intmap_valueforkey(key, _root)
 	End Method
 	
 	Rem
@@ -181,7 +188,7 @@ Type TIntMap
 		bmx_map_intmap_insert(key, value, Varptr _root)
 	End Method
 
-	Field _root:Byte Ptr
+	Field _root:SavlRoot Ptr
 
 ?ngcmod
 	Field _modCount:Int
@@ -190,10 +197,10 @@ Type TIntMap
 End Type
 
 Type TIntNode
-	Field _root:Byte Ptr
-	Field _nodePtr:Byte Ptr
+	Field _root:SavlRoot Ptr
+	Field _nodePtr:SIntMapNode Ptr
 	
-	Field _nextNode:Byte Ptr
+	Field _nextNode:SIntMapNode Ptr
 	
 	Method Key:Int()
 		Return bmx_map_intmap_key(_nodePtr)

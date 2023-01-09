@@ -1,20 +1,27 @@
 SuperStrict
 
+Import "common.bmx"
 
 Extern
-	Function bmx_map_stringmap_clear(root:Byte Ptr Ptr)
-	Function bmx_map_stringmap_isempty:Int(root:Byte Ptr Ptr)
-	Function bmx_map_stringmap_insert(key:String, value:Object, root:Byte Ptr Ptr)
-	Function bmx_map_stringmap_contains:Int(key:String, root:Byte Ptr Ptr)
-	Function bmx_map_stringmap_valueforkey:Object(key:String, root:Byte Ptr Ptr)
-	Function bmx_map_stringmap_remove:Int(key:String, root:Byte Ptr Ptr)
-	Function bmx_map_stringmap_firstnode:Byte Ptr(root:Byte Ptr)
-	Function bmx_map_stringmap_nextnode:Byte Ptr(node:Byte Ptr)
-	Function bmx_map_stringmap_key:String(node:Byte Ptr)
-	Function bmx_map_stringmap_value:Object(node:Byte Ptr)
-	Function bmx_map_stringmap_hasnext:Int(node:Byte Ptr, root:Byte Ptr)
-	Function bmx_map_stringmap_copy(dst:Byte Ptr Ptr, _root:Byte Ptr)
+	Function bmx_map_stringmap_clear(root:SavlRoot Ptr Ptr)
+	Function bmx_map_stringmap_isempty:Int(root:SavlRoot Ptr)
+	Function bmx_map_stringmap_insert(key:String, value:Object, root:SavlRoot Ptr Ptr)
+	Function bmx_map_stringmap_contains:Int(key:String, root:SavlRoot Ptr)
+	Function bmx_map_stringmap_valueforkey:Object(key:String, root:SavlRoot Ptr)
+	Function bmx_map_stringmap_remove:Int(key:String, root:SavlRoot Ptr Ptr)
+	Function bmx_map_stringmap_firstnode:SStringMapNode Ptr(root:SavlRoot Ptr)
+	Function bmx_map_stringmap_nextnode:SStringMapNode Ptr(node:Byte Ptr)
+	Function bmx_map_stringmap_key:String(node:SStringMapNode Ptr)
+	Function bmx_map_stringmap_value:Object(node:SStringMapNode Ptr)
+	Function bmx_map_stringmap_hasnext:Int(node:SStringMapNode Ptr, root:SavlRoot Ptr)
+	Function bmx_map_stringmap_copy(dst:SavlRoot Ptr Ptr, _root:SavlRoot Ptr)
 End Extern
+
+Struct SStringMapNode
+	Field link:SavlRoot
+	Field key:String
+	Field value:Object
+End Struct
 
 Rem
 bbdoc: A key/value (String/Object) map.
@@ -38,7 +45,7 @@ Type TStringMap
 	about: #True if @map is empty, otherwise #False.
 	End Rem
 	Method IsEmpty:Int()
-		Return bmx_map_stringmap_isempty(Varptr _root)
+		Return bmx_map_stringmap_isempty(_root)
 	End Method
 	
 	Rem
@@ -56,7 +63,7 @@ Type TStringMap
 	End Rem
 	Method Contains:Int( key:String )
 		key.Hash()
-		Return bmx_map_stringmap_contains(key, Varptr _root)
+		Return bmx_map_stringmap_contains(key, _root)
 	End Method
 	
 	Rem
@@ -66,7 +73,7 @@ Type TStringMap
 	End Rem
 	Method ValueForKey:Object( key:String )
 		key.Hash()
-		Return bmx_map_stringmap_valueforkey(key, Varptr _root)
+		Return bmx_map_stringmap_valueforkey(key, _root)
 	End Method
 	
 	Rem
@@ -158,7 +165,7 @@ Type TStringMap
 	End Rem
 	Method Operator[]:Object(key:String)
 		key.Hash()
-		Return bmx_map_stringmap_valueforkey(key, Varptr _root)
+		Return bmx_map_stringmap_valueforkey(key, _root)
 	End Method
 	
 	Rem
@@ -170,13 +177,13 @@ Type TStringMap
 		bmx_map_stringmap_insert(key, value, Varptr _root)
 	End Method
 
-	Field _root:Byte Ptr
+	Field _root:SavlRoot Ptr
 
 End Type
 
 Type TStringNode
-	Field _root:Byte Ptr
-	Field _nodePtr:Byte Ptr
+	Field _root:SavlRoot Ptr
+	Field _nodePtr:SStringMapNode Ptr
 	
 	Method Key:String()
 		Return bmx_map_stringmap_key(_nodePtr)

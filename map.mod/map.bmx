@@ -6,12 +6,15 @@ bbdoc: Data structures/Maps
 End Rem
 Module BRL.Map
 
-ModuleInfo "Version: 1.10"
+ModuleInfo "Version: 1.11"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.11"
+ModuleInfo "History: Refactored tree based maps."
+ModuleInfo "History: Added unit tests."
 ModuleInfo "History: 1.10"
 ModuleInfo "History: Changed to SuperStrict."
 ModuleInfo "History: 1.09"

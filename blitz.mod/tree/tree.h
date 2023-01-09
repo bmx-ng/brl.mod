@@ -222,7 +222,7 @@ void avl_del(struct avl_root *entry, struct avl_root **root);
  * @ptr is the pointer to the embedded struct of which the name is
  * provided by @member, and @type indicates the host struct type. */
 #define tree_entry(ptr, type, member)					\
-	((type *)((char *)(ptr)-(uintptr_t)(&((type *)0)->member)))
+	(ptr != NULL ? ((type *)((char *)(ptr)-(uintptr_t)(offsetof(type, member)))) : NULL)
 
 #define avl_entry(ptr, type, member) tree_entry(ptr, type, member)
 
@@ -274,10 +274,8 @@ void avl_del(struct avl_root *entry, struct avl_root **root);
 #define avl_for_each_entry_safe(pos, n, root, member)			\
 	for (pos = tree_entry(TREE_MIN(root), typeof(*pos), member),	\
 		     n = tree_entry(TREE_SUCCESSOR(&pos->member), typeof(*pos), member); \
-	     &pos->member != NULL;					\
-	     pos = n, n = tree_entry(&n->member != NULL?		\
-				     TREE_SUCCESSOR(&n->member): NULL,	\
-				     typeof(*n), member))
+	     pos != NULL && &pos->member != NULL;					\
+	     pos = n, n = (n != NULL && &n->member != NULL) ? tree_entry(TREE_SUCCESSOR(&n->member), typeof(*n), member) : NULL)
 
 #ifdef __cplusplus
 #undef new
