@@ -84,7 +84,7 @@ int bbObjectIsArray( BBObject *o );
 
 void		bbObjectRegisterType( BBClass *clas );
 BBClass**	bbObjectRegisteredTypes( int *count );
-void bbObjectDumpInstanceCounts();
+void bbObjectDumpInstanceCounts(char * buf, int size, int includeZeros);
 extern int bbCountInstances;
 
 

@@ -707,7 +707,7 @@ returns: #True if @obj is a #String, or #False otherwise.
 End Rem
 Function ObjectIsString:Int(obj:Object)="int bbObjectIsString(BBOBJECT)!"
 
-Function DumpObjectCounts(buffer:Byte Ptr, size:Int, includeZeros:Int)="bbObjectDumpInstanceCounts"
+Function DumpObjectCounts(buffer:Byte Ptr, size:Int, includeZeros:Int)="void bbObjectDumpInstanceCounts(char *, int, int)!"
 Global CountObjectInstances:Int="bbCountInstances"
 
 End Extern
