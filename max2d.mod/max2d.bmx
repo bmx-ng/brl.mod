@@ -441,10 +441,10 @@ about:
 BlitzMax commands that affect the drawing of polygons include #SetColor, #SetHandle, 
 #SetScale, #SetRotation, #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
 End Rem
-Function DrawPoly( xy#[] )
+Function DrawPoly( xy:Float[], indices:Int[] = Null )
 	_max2dDriver.DrawPoly xy,..
 	gc.handle_x,gc.handle_y,..
-	gc.origin_x,gc.origin_y
+	gc.origin_x,gc.origin_y, indices
 End Function
 
 Rem
