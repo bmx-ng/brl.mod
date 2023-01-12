@@ -5,10 +5,12 @@ bbdoc: Data structures/Array-backed Object Lists
 End Rem
 Module BRL.ObjectList
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Implemented Swap()."
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release."
 
@@ -55,6 +57,7 @@ Type TObjectList
 	bbdoc: Adds an object to the start of the list
 	End Rem
 	Method AddFirst(value:Object)
+		Assert value Else "Can't insert Null object into list"
 		Compact()
 		
 		If size Then
@@ -71,6 +74,7 @@ Type TObjectList
 	bbdoc: Adds an object to the end of the list
 	End Rem
 	Method AddLast(value:Object)
+		Assert value Else "Can't insert Null object into list"
 		Compact()
 		
 		_ensureCapacity(size + 1)
@@ -232,8 +236,27 @@ Type TObjectList
 		End If
 	End Method
 	
+	Rem
+	bbdoc: Swaps content of two lists while keeping list references intact.
+	End Rem
 	Method Swap(list:TObjectList)
+		If Not list Then
+			Return
+		End If
+		Local tmpVersion:Int = list.version
+		Local tmpData:Object[] = list.data
+		Local tmpSize:int = list.size
+		Local tmpDirty:int = list.dirty
 		
+		list.version = self.version
+		list.data = self.data
+		list.size = self.size
+		list.dirty = self.dirty
+		
+		self.version = tmpVersion
+		self.data = tmpData
+		self.size = tmpSize
+		self.dirty = tmpDirty
 	End Method
 
 	Rem
