@@ -138,17 +138,10 @@ End Type
 
 Type TNodeEnumerator
 	Method HasNext:Int()
-		Local has:Int = _node<>nil
-		If Not has Then
-			_map = Null
-		End If
-		Return has
+		Return _node<>nil
 	End Method
 	
 	Method NextObject:Object()
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
-?
 		Local node:TNode=_node
 		_node=_node.NextNode()
 		Return node
@@ -157,16 +150,10 @@ Type TNodeEnumerator
 	'***** PRIVATE *****
 		
 	Field _node:TNode
-	
-	Field _map:TMap
-	Field _expectedModCount:Int
 End Type
 
 Type TKeyEnumerator Extends TNodeEnumerator
 	Method NextObject:Object() Override
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
-?
 		Local node:TNode=_node
 		_node=_node.NextNode()
 		Return node._key
@@ -175,9 +162,6 @@ End Type
 
 Type TValueEnumerator Extends TNodeEnumerator
 	Method NextObject:Object() Override
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
-?
 		Local node:TNode=_node
 		_node=_node.NextNode()
 		Return node._value
@@ -211,9 +195,6 @@ Type TMap
 		If _root=nil Return
 		_root.Clear
 		_root=nil
-?ngcmod
-		_modCount :+ 1
-?
 	End Method
 	
 	Rem
@@ -253,10 +234,6 @@ Type TMap
 		node._color=RED
 		node._parent=parent
 
-?ngcmod
-		_modCount :+ 1
-?
-		
 		If parent=nil
 			_root=node
 			Return
@@ -295,10 +272,7 @@ Type TMap
 	Method Remove:Int( key:Object )
 		Local node:TNode=_FindNode( key )
 		If node=nil Return 0
-		 _RemoveNode node
-?ngcmod
-		_modCount :+ 1
-?
+		_RemoveNode node
 		Return 1
 	End Method
 	
@@ -312,10 +286,6 @@ Type TMap
 		nodeenum._node=_FirstNode()
 		Local mapenum:TMapEnumerator=New TMapEnumerator
 		mapenum._enumerator=nodeenum
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
 		Return mapenum
 	End Method
 	
@@ -329,10 +299,6 @@ Type TMap
 		nodeenum._node=_FirstNode()
 		Local mapenum:TMapEnumerator=New TMapEnumerator
 		mapenum._enumerator=nodeenum
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
 		Return mapenum
 	End Method
 	
@@ -355,10 +321,6 @@ Type TMap
 	Method ObjectEnumerator:TNodeEnumerator()
 		Local nodeenum:TNodeEnumerator=New TNodeEnumerator
 		nodeenum._node=_FirstNode()
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
 		Return nodeenum
 	End Method
 	
@@ -592,10 +554,6 @@ Type TMap
 	Const RED:Int=-1,BLACK:Int=1
 	
 	Field _root:TNode=nil
-	
-?ngcmod
-	Field _modCount:Int
-?
 End Type
 
 Rem
