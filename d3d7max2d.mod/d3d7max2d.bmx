@@ -391,7 +391,7 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 		device.DrawPrimitive(D3DPT_TRIANGLEFAN,D3DFVF_XYZ|D3DFVF_DIFFUSE,vrts,segs,0)
 	End Method
 
-	Method DrawPoly( xy#[],handlex#,handley#,tx#,ty# )
+	Method DrawPoly( xy#[],handlex#,handley#,tx#,ty#, indices:Int[] )
 		If Not IsValid() Return
 
 		If xy.length<6 Or (xy.length&1) Return

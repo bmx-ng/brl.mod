@@ -79,6 +79,7 @@ BBArray*	bbArrayNewStruct( const char *type,unsigned short data_size, BBArrayStr
 BBArray*	bbArrayFromDataStruct( const char *type,int length,void *data, unsigned short data_size );
 BBArray*	bbArraySliceStruct( const char *type,BBArray *inarr,int beg,int end, unsigned short data_size, BBArrayStructInit structInit );
 BBArray*	bbArrayFromDataSize( const char *type,int length,void *data, unsigned short data_size );
+BBArray*	bbArrayNew1DNoInit( const char *type,int length );
 
 void bbArrayCopy(BBArray * srcArr, int srcPos, BBArray * dstArr, int dstPos, int length);
 

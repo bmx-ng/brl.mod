@@ -1047,7 +1047,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_d3dDev.DrawPrimitiveUP D3DPT_TRIANGLEFAN,segs-2,fverts,24
 	End Method
 	
-	Method DrawPoly( verts#[],handlex#,handley#,tx#,ty# ) Override
+	Method DrawPoly( verts#[],handlex#,handley#,tx#,ty#, indices:Int[] ) Override
 		If verts.length<6 Or (verts.length&1) Return
 		Local segs:Int=verts.length/2
 		Local fverts#[segs*6]

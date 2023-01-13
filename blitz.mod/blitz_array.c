@@ -215,6 +215,10 @@ BBArray *bbArrayNew1D( const char *type,int length ){
 	return arr;
 }
 
+BBArray *bbArrayNew1DNoInit( const char *type,int length ){
+	return allocateArray( type,1,&length, 0 );
+}
+
 BBArray *bbArrayNew1DStruct( const char *type,int length, unsigned short data_size, BBArrayStructInit init ){
 
 	BBArray *arr=allocateArray( type,1,&length, data_size );

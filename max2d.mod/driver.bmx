@@ -57,7 +57,7 @@ Type TMax2DDriver Extends TGraphicsDriver
 	Method DrawLine( x0#,y0#,x1#,y1#,tx#,ty# ) Abstract
 	Method DrawRect( x0#,y0#,x1#,y1#,tx#,ty# ) Abstract
 	Method DrawOval( x0#,y0#,x1#,y1#,tx#,ty# ) Abstract
-	Method DrawPoly( xy#[],handlex#,handley#,originx#,originy# ) Abstract
+	Method DrawPoly( xy#[],handlex#,handley#,originx#,originy#, indices:Int[] ) Abstract
 		
 	Method DrawPixmap( pixmap:TPixmap,x:Int,y:Int ) Abstract
 	Method GrabPixmap:TPixmap( x:Int,y:Int,width:Int,height:Int ) Abstract
