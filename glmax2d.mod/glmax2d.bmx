@@ -102,7 +102,7 @@ Function DeleteTex( name:Int,seq:Int )
 End Function
 
 Function CreateTex:Int( width:Int,height:Int,flags:Int,pixmap:TPixmap )
-	If pixmap.dds_fmt<>0 Return pixmap.tex_name ' if dds texture already exists
+	If pixmap.dds_fmt<>0 Then Return pixmap.tex_name ' if dds texture already exists
 	
 	'alloc new tex
 	Local name:Int
@@ -188,8 +188,8 @@ Function AdjustTexSize( width:Int Var,height:Int Var )
 		glGetTexLevelParameteriv GL_PROXY_TEXTURE_2D,0,GL_TEXTURE_WIDTH,Varptr t
 		If t Then Return
 		If width=1 And height=1 Then RuntimeError "Unable to calculate tex size"
-		If width>1 Then width:/2
-		If height>1 Then height:/2
+		If width>1 Then width :/ 2
+		If height>1 Then height :/ 2
 	Forever
 End Function
 
@@ -277,7 +277,7 @@ Type TGLImageFrame Extends TImageFrame
 		Local v0:Float=sy * vscale
 		Local u1:Float=(sx+sw) * uscale
 		Local v1:Float=(sy+sh) * vscale
-		
+
 		EnableTex name
 		glBegin GL_QUADS
 		glTexCoord2f u0,v0
@@ -370,7 +370,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		glEnd
 	EndMethod
 	
-	Function Create:TGLRenderImageFrame(width:UInt, height:UInt, flags:Int)		
+	Function Create:TGLRenderImageFrame(width:UInt, height:UInt, flags:Int)
 		' Need this to enable frame buffer objects - glGenFramebuffers
 		Global GlewIsInitialised:Int = False
 		If Not GlewIsInitialised
@@ -425,7 +425,7 @@ Private
 	Method Delete()
 		glDeleteFramebuffers(1, Varptr FBO) ' gl ignores 0
 	EndMethod
-	
+
 	Method New()
 	EndMethod
 EndType
@@ -670,7 +670,11 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		'backbuffers require a complete transparent pixmap to start with.
 		p.ClearPixels(0)
 		
-		glReadPixels x,GraphicsHeight()-h-y,w,h,GL_RGBA,GL_UNSIGNED_BYTE,p.pixels
+		If _CurrentRenderImageFrame and _CurrentRenderImageFrame <> _BackbufferRenderImageFrame
+			glReadPixels(x, _CurrentRenderImageFrame.height - h - y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, p.pixels)
+		Else
+			glReadPixels(x, _BackbufferRenderImageFrame.height - h - y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, p.pixels)
+		EndIf
 		p=YFlipPixmap( p )
 		SetBlend blend
 		Return p
@@ -682,7 +686,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glOrtho 0,width,height,0,-1,1
 		glMatrixMode GL_MODELVIEW
 	End Method
-	
+
 	Method CreateRenderImageFrame:TImageFrame(width:UInt, height:UInt, flags:Int) Override
 		Return TGLRenderImageFrame.Create(width, height, flags)
 	EndMethod
@@ -718,7 +722,7 @@ Private
 
 	Method SetScissor(x:Int, y:Int, w:Int, h:Int)
 		Local ri:TImageFrame = _CurrentRenderImageFrame
-		If x = 0  And y = 0 And w = _CurrentRenderImageFrame.width And h = _CurrentRenderImageFrame.height
+		If x = 0 And y = 0 And w = _CurrentRenderImageFrame.width And h = _CurrentRenderImageFrame.height
 			glDisable(GL_SCISSOR_TEST)
 		Else
 			glEnable(GL_SCISSOR_TEST)
