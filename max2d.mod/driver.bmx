@@ -19,6 +19,7 @@ Const DYNAMICIMAGE:Int=		$8
 
 'current driver
 Global _max2dDriver:TMax2DDriver
+Global _currentBoundRenderImage:TImageFrame
 
 Type TImageFrame
 
@@ -36,23 +37,29 @@ Type TMax2DDriver Extends TGraphicsDriver
 	End Method
 
 	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags:Int ) Abstract
+	Method CreateRenderImageFrame:TImageFrame(width:UInt, height:UInt, flags:Int) Abstract
+	Method SetBackBuffer() Abstract
+	Method SetRenderImageFrame(RenderImageFrame:TImageFrame) Abstract
 	
 	Method SetBlend( blend:Int ) Abstract
 	Method SetAlpha( alpha:Float ) Abstract
 	Method SetColor( red:Int,green:Int,blue:Int ) Abstract
-	Method SetClsColor( red:Int,green:Int,blue:Int ) Abstract
+	Method SetClsColor( red:Int, green:Int, blue:Int, alpha:Float ) Abstract
 	Method SetViewport( x:Int,y:Int,width:Int,height:Int ) Abstract
 	Method SetTransform( xx:Float,xy:Float,yx:Float,yy:Float ) Abstract
 	Method SetLineWidth( width:Float ) Abstract
 
-	Method SetColor( color:SColor8 )
+	'these methods rely on the abstract ones - no need to enable overriding
+	'them, so marked as "final"
+	Method SetColor( color:SColor8 ) Final
 		SetColor(color.r, color.g, color.b)
 	End Method
-	Method SetClsColor( color:SColor8)
-		SetClsColor(color.r, color.g, color.b)
+	Method SetClsColor( color:SColor8, alpha:Float) Final
+		SetClsColor(color.r, color.g, color.b, alpha)
 	End Method
 	
 	Method Cls() Abstract
+	
 	Method Plot( x:Float,y:Float ) Abstract
 	Method DrawLine( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Abstract
 	Method DrawRect( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Abstract

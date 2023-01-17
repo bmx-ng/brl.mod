@@ -1,4 +1,3 @@
-
 SuperStrict
 
 Rem
@@ -64,81 +63,99 @@ Import BRL.LinkedList
 Import BRL.Hook
 
 Import "image.bmx"
-Import "renderimage.bmx"
+'Import "renderimage.bmx"
 Import "driver.bmx"
 Import "imagefont.bmx"
 
-Private
-
-Global gc:TMax2DGraphics
-
-Function UpdateTransform()
-	Local s:Float=Sin(gc.tform_rot)
-	Local c:Float=Cos(gc.tform_rot)
-	gc.tform_ix= c*gc.tform_scale_x
-	gc.tform_iy=-s*gc.tform_scale_y
-	gc.tform_jx= s*gc.tform_scale_x
-	gc.tform_jy= c*gc.tform_scale_y
-	_max2dDriver.SetTransform gc.tform_ix,gc.tform_iy,gc.tform_jx,gc.tform_jy
-	SetCollisions2DTransform gc.tform_ix,gc.tform_iy,gc.tform_jx,gc.tform_jy
-End Function
-
 Public
 
-Type TMax2DGraphics Extends TGraphics
+Struct Rect
+	Method New (X:Int, Y:Int, width:Int, height:Int)
+		Self.X = X
+		Self.Y = Y
+		Self.width = width
+		Self.height = height
+	EndMethod
+	
+	Field X:Int, Y:Int
+	Field width:Int, height:Int
+EndStruct
 
-	'Field color_red,color_green,color_blue
+Type TMax2DGraphics Extends TGraphics
 	Field color:SColor8
 	Field color_alpha:Float
-	'Field clscolor_red,clscolor_green,clscolor_blue
-	Field clscolor:SColor8
+	Field clsColor:SColor8
+	Field clsColor_alpha:Float
 	Field line_width:Float
-	Field tform_rot:Float,tform_scale_x:Float,tform_scale_y:Float
-	Field tform_ix:Float,tform_iy:Float,tform_jx:Float,tform_jy:Float
-	Field viewport_x:Int,viewport_y:Int,viewport_w:Int,viewport_h:Int
-	Field origin_x:Float,origin_y:Float
-	Field handle_x:Float,handle_y:Float
+	Field tform_rot:Float
+	Field tform_scale_x:Float
+	Field tform_scale_y:Float
+	Field tform_ix:Float
+	Field tform_iy:Float
+	Field tform_jx:Float
+	Field tform_jy:Float
+	Field viewport_x:Int
+	Field viewport_y:Int
+	Field viewport_w:Int
+	Field viewport_h:Int
+	Field origin_x:Float
+	Field origin_y:Float
+	Field handle_x:Float
+	Field handle_y:Float
 	Field image_font:TImageFont
 	Field blend_mode:Int
-	Field vres_width:Float,vres_height:Float
-	Field vres_mousexscale:Float,vres_mouseyscale:Float
+	Field vres_width:Float
+	Field vres_height:Float
+	Field vres_mousexscale:Float
+	Field vres_mouseyscale:Float
 
-	Field g_width:Int,g_height:Int
+	Field g_width:Int
+	Field g_height:Int
 
 	Global default_font:TImageFont
-	Global mask_red:Int,mask_green:Int,mask_blue:Int
+	Global mask_red:Int
+	Global mask_green:Int
+	Global mask_blue:Int
 	Global auto_midhandle:Int
-	Global auto_imageflags:Int=MASKEDIMAGE|FILTEREDIMAGE
+	Global auto_imageflags:Int = MASKEDIMAGE|FILTEREDIMAGE
 
-	Field _graphics:TGraphics,_driver:TMax2DDriver,_setup:Int
-	Field _ric:TRenderImageContext
+	Field _backendGraphics:TGraphics
+	Field _initialized:Int
+	Field _driver:TMax2DDriver
+
+	'currently active Graphics
+	Global _currentGraphics:TMax2DGraphics
+
 	
 	Method Driver:TMax2DDriver() Override
 		Return _driver
 	End Method
 	
+
 	Method GetSettings( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Long Var, x:Int Var, y:Int Var ) Override
-		Local w:Int,h:Int,d:Int,r:Int,f:Long,xp:Int,yp:Int
-		_graphics.GetSettings w,h,d,r,f,xp,yp
-		width=w
-		height=h
-		depth=d
-		hertz=r
-		flags=f
-		x=-1
-		y=-1
+		Local w:Int, h:Int, d:Int, r:Int, f:Long, xp:Int, yp:Int
+		_backendGraphics.GetSettings(w, h, d, r, f, xp, yp)
+		width = w
+		height = h
+		depth = d
+		hertz = r
+		flags = f
+		x = -1
+		y = -1
 	End Method
 	
+
 	Method Close() Override
-		If Not _graphics Return
-		_graphics.Close
-		_graphics=Null
-		_driver=Null
+		If Not _backendGraphics Then Return
+		_backendGraphics.Close()
+		_backendGraphics = Null
+		_driver = Null
 	End Method
 	
+
 	Method Validate()
-		Local w:Int,h:Int,d:Int,r:Int,f:Long,xp:Int,yp:Int
-		_graphics.GetSettings w,h,d,r,f,xp,yp
+		Local w:Int, h:Int, d:Int, r:Int, f:Long, xp:Int, yp:Int
+		_backendGraphics.GetSettings(w, h, d, r, f, xp, yp)
 		If w<>g_width Or h<>g_height
 			g_width=w
 			g_height=h
@@ -147,200 +164,611 @@ Type TMax2DGraphics Extends TGraphics
 			vres_mousexscale=1
 			vres_mouseyscale=1
 		EndIf
-		SetVirtualResolution vres_width,vres_height
-		SetBlend blend_mode
-		SetColor color
-		SetAlpha color_alpha
-		SetClsColor clscolor
-		SetLineWidth line_width
-		SetRotation tform_rot
-		SetScale tform_scale_x,tform_scale_y
-		SetViewport viewport_x,viewport_y,viewport_w,viewport_h
-		SetOrigin origin_x,origin_y
-		SetHandle -handle_x,-handle_y
-		SetImageFont image_font
+		SetVirtualResolution(vres_width, vres_height)
+		SetBlend(blend_mode)
+		SetColor(color, color_alpha)
+		SetClsColor(clsColor, 1.0)
+		SetLineWidth(line_width)
+		SetRotation(tform_rot)
+		SetScale(tform_scale_x, tform_scale_y)
+		SetViewport(viewport_x, viewport_y, viewport_w, viewport_h)
+		SetOrigin(origin_x, origin_y)
+		SetHandle(-handle_x, -handle_y)
+		SetImageFont(image_font)
 	End Method
 	
+
 	Method MakeCurrent()
-		gc=Self
-		_max2dDriver=TMax2DDriver( Driver() )
+		_currentGraphics = Self
+		_max2dDriver = TMax2DDriver( Driver() )
 		Assert _max2dDriver
-		Validate
-		If _setup Return
-		Cls
-		Flip 0
-		Cls
-		Flip 0
-		_setup=True	
+		Validate()
+		If _initialized Then Return
+		SetRenderImage(Null)
+		Cls()
+		Flip(0)
+		Cls()
+		Flip(0)
+		_initialized = True
 	End Method
 	
+
 	Function ClearCurrent()
-		gc=Null
-		_max2dDriver=Null
+		_currentGraphics = Null
+		_max2dDriver = Null
 	End Function
 	
+
 	Function Current:TMax2DGraphics()
-		Return gc
+		Return _currentGraphics
 	End Function
 	
-	Function Create:TMax2DGraphics( g:TGraphics,d:TMax2DDriver )
+
+	Function Create:TMax2DGraphics( backendGraphics:TGraphics, d:TMax2DDriver )
 		Local gw:Int,gh:Int,gd:Int,gr:Int,gf:Long,gx:Int,gy:Int
-		g.GetSettings gw,gh,gd,gr,gf,gx,gy
+		backendGraphics.GetSettings(gw,gh,gd,gr,gf,gx,gy)
 		
-		If Not default_font default_font=TImageFont.CreateDefault()
+		If Not default_font Then default_font = TImageFont.CreateDefault()
 
-		Local t:TMax2DGraphics=New TMax2DGraphics
+		Local t:TMax2DGraphics = New TMax2DGraphics
 		
-		t.g_width=gw
-		t.g_height=gh
-		t.blend_mode=MASKBLEND
+		t.g_width = gw
+		t.g_height = gh
+		t.blend_mode = MASKBLEND
 		t.color = New SColor8(255, 255, 255)
-		t.color_alpha=1
-		t.clscolor = New SColor8(0, 0, 0)
-		t.line_width=1
-		t.tform_rot=0
-		t.tform_scale_x=1
-		t.tform_scale_y=1
-		t.tform_ix=1
-		t.tform_iy=0
-		t.tform_jx=1
-		t.tform_jy=0
-		t.viewport_x=0
-		t.viewport_y=0
-		t.viewport_w=gw
-		t.viewport_h=gh
-		t.origin_x=0
-		t.origin_y=0
-		t.handle_x=0
-		t.handle_y=0
-		t.image_font=default_font
-		t.vres_width=gw
-		t.vres_height=gh						
-		t.vres_mousexscale=1
-		t.vres_mouseyscale=1
+		t.color_alpha = 1.0
+		t.clsColor = New SColor8(0, 0, 0)
+		t.clsColor_alpha = 1.0
+		t.line_width = 1
+		t.tform_rot = 0
+		t.tform_scale_x = 1
+		t.tform_scale_y = 1
+		t.tform_ix = 1
+		t.tform_iy = 0
+		t.tform_jx = 1
+		t.tform_jy = 0
+		t.viewport_x = 0
+		t.viewport_y = 0
+		t.viewport_w = gw
+		t.viewport_h = gh
+		t.origin_x = 0
+		t.origin_y = 0
+		t.handle_x = 0
+		t.handle_y = 0
+		t.image_font = default_font
+		t.vres_width = gw
+		t.vres_height = gh						
+		t.vres_mousexscale = 1
+		t.vres_mouseyscale = 1
 
-		t._graphics=g
-		t._driver=d
-		t._setup=False
+		t._backendGraphics = backendGraphics
+		t._driver = d
+		t._initialized = False
 
 		Return t
 	End Function
 	
+
 	Method Resize(width:Int, height:Int) Override
-		_graphics.Resize(width, height)
+		_backendGraphics.Resize(width, height)
 	End Method
 	
+
 	Method Position(x:Int, y:Int) Override
-		_graphics.Position(x, y)
+		_backendGraphics.Position(x, y)
 	End Method
-
-
-	Method CreateRenderImage:TRenderImage(width:Int, height:Int, UseLinearFlitering:Int = True, max2DGraphics:TGraphics = Null)
-		If Not max2DGraphics Then max2DGraphics = self
-		Local max2D:TMax2DGraphics = TMax2DGraphics(max2DGraphics)
-		If Not max2D Then Return Null 'only supporting Max2D graphics
-		
-		If _ric And _ric.GraphicsContext() <> max2D._graphics
-			_ric.Destroy()
-			_ric = Null
-		EndIf
-		
-		If Not _ric	
-			_ric = TRenderImageContext(max2D._driver.CreateRenderImageContext(max2D._graphics))
-		EndIf
-		
-		'sanity check
-		?debug
-		Assert _ric <> Null, "The code for the current TGraphics instance doesn't exist yet for rendering to a texture, feel free to write one."
-		?
-
-		Return _ric.CreateRenderImage(width, height, UseLinearFlitering)
-	End Method
-
 	
-	Method DestroyRenderImage(renderImage:TRenderImage)
-		' sanity check
-		?debug
-		Assert _ric <> Null, "No TRenderImage instances have been created"
-		?
 
-		_ric.DestroyRenderImage(renderImage)
+	Method SetClsColor(red:Int, green:Int, blue:Int, alpha:Float = 1.0) Final
+		SetClsColor(New SColor8(red, green, blue), alpha)
+	End Method
+
+	Method SetClsColor(color:SColor8, alpha:Float = 1.0)
+		clsColor = color
+		clsColor_alpha = alpha
+		_max2dDriver.SetClsColor(color, alpha)
 	End Method
 
 
-	Method SetRenderImage(renderimage:TRenderImage)
-		' sanity check
-		?debug
-		Assert _ric <> Null, "No TRenderImage instances have been created"
-		?
-
-		_ric.SetRenderImage(renderimage)
+	Method GetClsColor(red:Int Var, green:Int Var, blue:Int Var)
+		red = clsColor.r
+		green = clsColor.g
+		blue = clsColor.b
 	End Method
 
-
-	Method CreatePixmapFromRenderImage:TPixmap(renderimage:TRenderImage)
-		' sanity check
-		?debug
-		Assert _ric <> Null, "No TRenderImage instances have been created"
-		?
-
-		Return _ric.CreatePixmapFromRenderImage(renderimage)
+	Method GetClsColor(red:Int Var, green:Int Var, blue:Int Var, alpha:Float Var)
+		red = clsColor.r
+		green = clsColor.g
+		blue = clsColor.b
+		alpha = clsColor_alpha
 	End Method
 
-
-	Method SetRenderImageViewport(renderimage:TRenderimage, x:Int, y:Int, width:Int, height:Int)
-		' sanity check
-		?debug
-		Assert _ric <> Null, "No TRenderImage instances have been created"
-		?
-
-		renderimage.SetViewport(x, y, width, height)
+	Method GetClsColor(color:SColor8 Var)
+		color = clsColor
 	End Method
 
-
-	Method ClearRenderImage(renderimage:TRenderimage, r:Int=0, g:Int=0, b:Int=0, a:Float=0.0)
-		' sanity check
-		?debug
-		Assert _ric <> Null, "No TRenderImage instances have been created"
-		?
-
-		renderimage.Clear(r,g,b,a)
+	Method GetClsColor(color:SColor8 Var, alpha:Float Var)
+		color = clsColor
+		alpha = clsColor_alpha
 	End Method
-
-
-	Method CreateRenderImageFromPixmap:TRenderImage(Pixmap:TPixmap, UseLinearFlitering:Int = True, max2DGraphics:TGraphics = Null)
-		If Not max2DGraphics then max2DGraphics = self
-		Local max2d:TMax2DGraphics = TMax2DGraphics(max2DGraphics)
-		If Not max2d Then Return Null ' only supports Max2D
 	
-		If _ric And _ric.GraphicsContext() <> max2d._graphics
-			_ric.Destroy()
-			_ric = Null
-		EndIf
-		
-		If Not _ric 
-			_ric = TRenderImageContext(max2D._driver.CreateRenderImageContext(max2D._graphics))
-		EndIf
-		
-		'sanity check
-		?debug
-		Assert _ric <> Null, "The code for the current TGraphics instance doesn't exist yet for rendering to a texture, feel free to write one."
-		Assert Pixmap <> Null, "Invalid pixmap"
-		Assert Pixmap.Width <> 0 And Pixmap.Height <> 0, "Invalid pixmap"
-		?
 
-		Return _ric.CreateRenderImageFromPixmap(Pixmap, UseLinearFlitering)
+	Method UpdateTransform()
+		Local s:Float = Sin(tform_rot)
+		Local c:Float = Cos(tform_rot)
+		tform_ix = c * tform_scale_x
+		tform_iy =-s * tform_scale_y
+		tform_jx = s * tform_scale_x
+		tform_jy = c * tform_scale_y
+		
+		_max2dDriver.SetTransform(tform_ix, tform_iy, tform_jx, tform_jy)
+		SetCollisions2DTransform(tform_ix, tform_iy, tform_jx, tform_jy)
 	End Method
+
+
+	Method Plot(x:Float, y:Float)
+		_max2dDriver.Plot(x + origin_x, y + origin_y)
+	End Method
+	
+	
+	Method DrawRect(x:Float, y:Float, width:Float, height:Float)
+		_max2dDriver.DrawRect(handle_x, handle_y, ..
+		                      handle_x + width, handle_y + height, ..
+		                      x + origin_x, y + origin_y)
+	End Method
+
+
+	Method DrawLine(x:Float, y:Float, x2:Float, y2:Float, draw_last_pixel:Int = True)
+		_max2dDriver.DrawLine(handle_x, handle_y, ..
+		                      handle_x + x2 - x, handle_y + y2 - y, ..
+		                      x + origin_x, y + origin_y)
+		If Not draw_last_pixel Then Return
+
+		Local px:Float = handle_x + x2 - x
+		Local py:Float = handle_y + y2 - y
+		_max2dDriver.Plot(px * tform_ix + py * tform_iy + x + origin_x, ..
+		                  px * tform_jx + py * tform_jy + y + origin_y)
+	End Method
+
+
+	Method DrawOval(x:Float, y:Float, width:Float, height:Float)
+		_max2dDriver.DrawOval(handle_x, handle_y, ..
+		                      handle_x + width, handle_y + height, ..
+		                      x + origin_x, y + origin_y)
+	End Method
+
+
+	Method DrawPoly(xy:Float[], indices:Int[] = Null)
+		_max2dDriver.DrawPoly(xy, handle_x, handle_y, origin_x, origin_y, indices)
+	End Method
+
+
+	Method DrawText(t:String, x:Float, y:Float)
+		image_font.Draw(t, ..
+		                x + origin_x + handle_x * tform_ix + handle_y * tform_iy, ..
+		                y + origin_y + handle_x * tform_jx + handle_y * tform_jy, ..
+		                tform_ix, tform_iy, tform_jx, tform_jy)
+	End Method
+
+
+	Method DrawImage(image:TImage, x:Float, y:Float, frame:Int = 0)
+		If Not image Then Return
+		Local x0:Float = -image.handle_x
+		Local x1:Float = x0 + image.width
+		Local y0:Float = -image.handle_y
+		Local y1:Float = y0 + image.height
+		Local iframe:TImageFrame = image.Frame(frame)
+		If iframe
+			iframe.Draw(x0, y0, x1, y1, x + origin_x, y + origin_y, 0, 0, image.width,image.height)
+		EndIf
+	End Method
+
+
+	Method DrawImageRect(image:TImage, x:Float, y:Float, width:Float, height:Float, frame:Int = 0)
+		If Not image Then Return
+		Local x0:Float = -image.handle_x
+		Local x1:Float = x0 + width
+		Local y0:Float = -image.handle_y
+		Local y1:Float = y0 + height
+		Local iframe:TImageFrame = image.Frame(frame)
+		If iframe
+			iframe.Draw(x0, y0, x1, y1, x + origin_x, y + origin_y, 0, 0, image.width, image.height)
+		EndIf
+	End Method
+
+
+	Method DrawSubImageRect(image:TImage, x:Float, y:Float, width:Float, height:Float, sx:Float, sy:Float, swidth:Float,sheight:Float, hx:Float = 0, hy:Float = 0, frame:Int = 0)
+		If Not image Then Return
+		Local x0:Float = -hx * width / swidth
+		Local x1:Float = x0 + width
+		Local y0:Float = -hy * height / sheight
+		Local y1:Float = y0 + height
+		Local iframe:TImageFrame = image.Frame(frame)
+		If iframe
+			iframe.Draw(x0, y0, x1, y1, x + origin_x, y + origin_y, sx, sy, swidth, sheight)
+		EndIf
+	End Method
+
+
+	Method TileImage(image:TImage, x:Float = 0.0, y:Float = 0.0, frame:Int = 0)
+		If Not image Then Return
+
+		Local iframe:TImageFrame = image.Frame(frame)
+		If Not iframe Then Return
+	
+		_max2dDriver.SetTransform(1, 0, 0, 1)
+
+		Local w:Int = image.width
+		Local h:Int = image.height
+		Local ox:Int = viewport_x - w + 1
+		Local oy:Int = viewport_y - h + 1
+		Local px:Float = x + origin_x - image.handle_x
+		Local py:Float = y + origin_y - image.handle_y
+		Local fx:Float = px - Floor(px)
+		Local fy:Float = py - Floor(py)
+		Local tx:Int = Floor(px) - ox
+		Local ty:Int = Floor(py) - oy
+
+		If tx >= 0 
+			tx = tx Mod w + ox 
+		Else
+			tx = w - -tx Mod w + ox
+		EndIf
+		If ty >= 0
+			ty = ty Mod h + oy
+		Else
+			ty = h - -ty Mod h + oy
+		EndIf
+
+		Local vr:Int = viewport_x + viewport_w
+		Local vb:Int = viewport_y + viewport_h
+
+		Local iy:Int = ty
+		While iy < vb
+			Local ix:Int = tx
+			While ix < vr
+				iframe.Draw(0, 0, w, h, ix + fx, iy + fy, 0, 0, w, h)
+				ix = ix + w
+			Wend
+			iy = iy + h
+		Wend
+
+		UpdateTransform()
+	End Method
+
+
+	Method SetColor( red:Int, green:Int, blue:Int )
+		color = New SColor8(red, green, blue)
+		_max2dDriver.SetColor(red,green,blue)
+	End Method
+
+	Method SetColor( color:SColor8 )
+		Self.color = color
+		_max2dDriver.SetColor(color)
+	End Method
+
+	Method SetColor( red:Int, green:Int, blue:Int, alpha:Float )
+		color = New SColor8(red, green, blue)
+		_max2dDriver.SetColor(red,green,blue)
+
+		SetAlpha(alpha)
+	End Method
+
+	Method SetColor( color:SColor8, alpha:Float )
+		Self.color = color
+		_max2dDriver.SetColor(color)
+		
+		SetAlpha(alpha)
+	End Method
+
+
+	Method GetColor( red:Int Var,green:Int Var,blue:Int Var )
+		red = color.r
+		green = color.g
+		blue = color.b
+	End Method
+
+	Method GetColor( color:SColor8 Var )
+		color = Self.color
+	End Method
+
+
+	Method SetBlend( blend:Int )
+		blend_mode = blend
+		_max2dDriver.SetBlend(blend)
+	End Method
+
+
+	Method GetBlend:Int()
+		Return blend_mode
+	End Method
+
+
+	Method SetAlpha( alpha:Float )
+		color_alpha = alpha
+		_max2dDriver.SetAlpha(alpha)
+	End Method
+
+
+	Method GetAlpha:Float()
+		Return color_alpha
+	End Method
+
+
+	Method SetLineWidth( width:Float )
+		line_width = width
+
+		_max2dDriver.SetLineWidth(width)
+	End Method
+
+
+	Method GetLineWidth:Float()
+		Return line_width
+	End Method
+
+
+	Method SetMaskColor( red:Int, green:Int, blue:Int )
+		mask_red = red
+		mask_green = green
+		mask_blue = blue
+	End Method
+
+
+	Method GetMaskColor( red:Int Var, green:Int Var, blue:Int Var )
+		red = mask_red
+		green = mask_green
+		blue = mask_blue
+	End Method
+
+
+	Method SetVirtualResolution( width:Float, height:Float )
+		vres_width = width
+		vres_height = height
+		vres_mousexscale = width / GraphicsWidth()
+		vres_mouseyscale = height / GraphicsHeight()
+		_max2dDriver.SetResolution(width, height)
+	End Method
+
+
+	Method VirtualResolutionWidth:Float()
+		Return vres_width
+	End Method
+
+
+	Method VirtualResolutionHeight:Float()
+		Return vres_height
+	End Method
+
+
+	Method VirtualMouseX:Float()
+		Return MouseX() * vres_mousexscale
+	End Method
+
+
+	Method VirtualMouseY:Float()
+		Return MouseY() * vres_mouseyscale
+	End Method
+
+
+	Method VirtualMouseXSpeed:Float()
+		Return MouseXSpeed() * vres_mousexscale
+	End Method
+
+
+	Method VirtualMouseYSpeed:Float()
+		Return MouseYSpeed() * vres_mouseyscale
+	End Method
+
+
+	Method MoveVirtualMouse( x:Float, y:Float )
+		MoveMouse(Int(x / vres_mousexscale), Int(y / vres_mouseyscale))
+	End Method
+
+
+	Method SetViewport(x:Int, y:Int, width:Int, height:Int)
+		viewport_x = x
+		viewport_y = y
+		viewport_w = width
+		viewport_h = height
+
+		Local x0:Int=Floor( x / vres_mousexscale )
+		Local y0:Int=Floor( y / vres_mouseyscale )
+		Local x1:Int=Floor( (x + width) / vres_mousexscale )
+		Local y1:Int=Floor( (y + height) / vres_mouseyscale )
+		
+		_max2dDriver.SetViewport(x0, y0, (x1-x0), (y1-y0))
+	End Method
+
+
+	Method GetViewport( x:Int Var, y:Int Var, width:Int Var, height:Int Var )
+		x = viewport_x
+		y = viewport_y
+		width = viewport_w
+		height = viewport_h
+	End Method
+
+
+	Method SetOrigin( x:Float, y:Float )
+		origin_x = x
+		origin_y = y
+	End Method
+
+
+	Method GetOrigin( x:Float Var, y:Float Var )
+		x = origin_x
+		y = origin_y
+	End Method
+
+
+	Method SetHandle( x:Float, y:Float )
+		handle_x = -x
+		handle_y = -y
+	End Method
+
+
+	Method GetHandle( x:Float Var,y:Float Var )
+		x = -handle_x
+		y = -handle_y
+	End Method
+
+
+	Method SetRotation( Rotation:Float )
+		tform_rot = Rotation
+		
+		UpdateTransform()
+	End Method
+
+
+	Method GetRotation:Float()
+		Return tform_rot
+	End Method
+
+
+	Method SetScale( scale_x:Float, scale_y:Float )
+		tform_scale_x = scale_x
+		tform_scale_y = scale_y
+		
+		UpdateTransform()
+	End Method
+
+
+	Method GetScale( scale_x:Float Var,scale_y:Float Var )
+		scale_x = tform_scale_x
+		scale_y = tform_scale_y
+	End Method
+
+
+	Method SetTransform( Rotation:Float=0, scale_x:Float = 1, scale_y:Float = 1 )
+		tform_rot = Rotation
+		tform_scale_x = scale_x
+		tform_scale_y = scale_y
+
+		UpdateTransform()
+	End Method
+
+
+	Method SetImageFont( font:TImageFont )
+		'Null = use default
+		If Not font Then font = default_font
+		image_font = font
+	End Method
+
+
+	Method GetImageFont:TImageFont()
+		Return image_font
+	End Method
+
+
+	Method TextWidth:Int( text:String )
+		Local width:Int = 0
+		For Local n:Int = 0 Until text.length
+			Local i:Int = image_font.CharToGlyph( text[n] )
+			If i < 0 Continue
+			width :+ image_font.LoadGlyph(i).Advance()
+		Next
+		Return width
+	End Method
+
+
+	Method TextHeight:Int( text:String )
+		Return image_font.height()
+		Rem
+		Local height:Int = 0
+		For Local n:Int = 0 Until text.length
+			Local c:Int = text[n] - image_font.BaseChar()
+			If c < 0 Or c >= image_font.CountGlyphs() Then Continue
+			Local x:Int, y:Int, w:Int, h:Int
+			image_font.Glyph(c).GetRect(x, y, w, h)
+			height = Max(height, h)
+		Next
+		Return height
+		End Rem
+	End Method
+
+
+	Method AutoMidHandle( enable:Int )
+		auto_midhandle = enable
+	End Method
+
+
+	Method AutoImageFlags( flags:Int )
+		auto_imageflags = flags
+	End Method
+
+
+	Method GetAutoImageFlags:Int()
+		Return auto_imageflags
+	End Method
+
+
+	Method LoadImage:TImage( url:Object, flags:Int = -1 )
+		If flags = -1 Then flags = auto_imageflags
+		Local image:TImage = TImage.Load(url, flags, mask_red, mask_green, mask_blue)
+		If Not image Then Return Null
+		
+		If auto_midhandle Then MidHandleImage(image)
+		Return image
+	End Method
+
+
+	Method LoadAnimImage:TImage( url:Object, cell_width:Int, cell_height:Int, first_cell:Int, cell_count:Int, flags:Int = -1 )
+		If flags = -1 Then flags = auto_imageflags
+		Local image:TImage = TImage.LoadAnim(url, cell_width, cell_height, first_cell, cell_count, flags, mask_red, mask_green, mask_blue)
+		If Not image Then Return Null
+
+		If auto_midhandle Then MidHandleImage(image)
+		Return image
+	End Method 
+
+
+	Method CreateImage:TImage( width:Int, height:Int, frames:Int = 1, flags:Int = -1 )
+		If flags = -1 Then flags = auto_imageflags
+		Local image:TImage = TImage.Create(width, height, frames, flags | DYNAMICIMAGE, mask_red, mask_green, mask_blue)
+	
+		If auto_midhandle Then MidHandleImage(image)
+		Return image
+	End Method
+
+
+	Method GrabImage( image:TImage, x:Int, y:Int, frame:Int = 0 )
+		Local pixmap:TPixmap = _max2dDriver.GrabPixmap(x, y, image.width, image.height)
+
+		If image.flags & MASKEDIMAGE 
+			pixmap = MaskPixmap(pixmap, mask_red, mask_green, mask_blue)
+		EndIf
+		image.SetPixmap(frame,pixmap)
+	End Method
+
+	Method SetBackBuffer()
+		_max2ddriver.SetBackBuffer()
+	EndMethod
+	
+	Method CreateRenderImage:TRenderImage(width:UInt, height:UInt, flags:Int=-1)
+		If flags = -1 Then flags = auto_imageflags
+		Local image:TRenderImage = TRenderImage.Create(width, height, flags, mask_red, mask_green, mask_blue)
+		
+		If auto_midhandle Then MidHandleImage(image)
+		Return image
+	End Method
+
+	Method SetRenderImageFrame(RenderImageFrame:TImageFrame)
+		If Not RenderImageFrame
+			_max2ddriver.SetBackBuffer()
+		Else
+			_max2ddriver.SetRenderImageFrame(RenderImageFrame)
+		EndIf
+	EndMethod
 End Type
 
 Rem
-bbdoc: Clear graphics buffer
+bbdoc: Clear current graphics buffer
 about:
-Clears the graphics buffer to the current cls color as determined by #SetClsColor.
+Clears the current graphics buffer to the current cls color as determined by #SetClsColor.
 End Rem
 Function Cls()
-	_max2dDriver.Cls
+	_max2dDriver.Cls()
 End Function
+
 
 Rem
 bbdoc: Set current #Cls color
@@ -349,24 +777,65 @@ The @red, @green and @blue parameters should be in the range of 0 to 255.
 
 The default cls color is black.
 End Rem
-Function SetClsColor( red:Int,green:Int,blue:Int )
-	gc.clscolor = New SColor8(red, green, blue)
-	_max2dDriver.SetClsColor red,green,blue
+Function SetClsColor(red:Int, green:Int, blue:Int, alpha:Float)
+	TMax2DGraphics.Current().SetClsColor(red, green, blue, alpha)
 End Function
 
-Function SetClsColor( color:SColor8 )
-	gc.clscolor = color
-	_max2dDriver.SetClsColor color
+
+Rem
+bbdoc: Set current #Cls color
+about:
+The @red, @green and @blue parameters should be in the range of 0 to 255.
+
+The default cls color is black.
+End Rem
+Function SetClsColor(red:Int, green:Int, blue:Int)
+	TMax2DGraphics.Current().SetClsColor(red, green, blue)
+End Function
+
+Rem
+bbdoc: Set current #Cls color
+about:
+The default cls color is black.
+End Rem
+Function SetClsColor(color:SColor8)
+	TMax2DGraphics.Current().SetClsColor(color)
+End Function
+
+
+Rem
+bbdoc: Get red, green, blue and alpha component of current cls color.
+returns: Red, green and blue values in the range 0..255 in the variables supplied.
+         Alpha in range 0 - 1.0
+End Rem
+Function GetClsColor(red:Int Var, green:Int Var, blue:Int Var, alpha:Float)
+	TMax2DGraphics.Current().GetClsColor(red, green, blue, alpha)
 End Function
 
 Rem
 bbdoc: Get red, green and blue component of current cls color.
 returns: Red, green and blue values in the range 0..255 in the variables supplied.
 End Rem
-Function GetClsColor( red:Int Var,green:Int Var,blue:Int Var )
-	red=gc.clscolor.r
-	green=gc.clscolor.g
-	blue=gc.clscolor.b
+Function GetClsColor(red:Int Var, green:Int Var, blue:Int Var)
+	TMax2DGraphics.Current().GetClsColor(red, green, blue)
+End Function
+
+Rem
+bbdoc: Get red, green and blue component of current cls color.
+returns: Red, green and blue values in the range 0..255 in the variables supplied.
+End Rem
+Function GetClsColor(color:SColor8 Var)
+	TMax2DGraphics.Current().GetClsColor(color)
+End Function
+
+
+Rem
+bbdoc: Get red, green, blue and alpha component of current cls color.
+returns: Red, green and blue values in the range 0..255 in the variables supplied.
+         Alpha in range 0 - 1.0
+End Rem
+Function GetClsColor(color:SColor8 Var, alpha:Float Var)
+	TMax2DGraphics.Current().GetClsColor(color, alpha)
 End Function
 
 Rem
@@ -376,12 +845,19 @@ Sets the color of a single pixel on the back buffer to the current drawing color
 defined with the #SetColor command. Other commands that affect the operation of
 #Plot include #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
 End Rem
-Function Plot( x:Float,y:Float )
-	_max2dDriver.Plot x+gc.origin_x,y+gc.origin_y
+Function Plot(x:Float, y:Float)
+	TMax2DGraphics.Current().Plot(x, y)
 End Function
 
-Function Plot( x:Double,y:Double )
-	Plot( Float(x),Float(y) )
+Rem
+bbdoc: Plot a pixel
+about:
+Sets the color of a single pixel on the back buffer to the current drawing color
+defined with the #SetColor command. Other commands that affect the operation of
+#Plot include #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
+End Rem
+Function Plot(x:Double, y:Double)
+	TMax2DGraphics.Current().Plot(Float(x), Float(y))
 End Function
 
 Rem
@@ -393,13 +869,19 @@ defined with the #SetColor command.
 Other commands that affect the operation of #DrawRect include #SetHandle, #SetScale,
 #SetRotation, #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
 End Rem
-Function DrawRect( x:Float,y:Float,width:Float,height:Float )
-	_max2dDriver.DrawRect..
-	gc.handle_x,gc.handle_y,..
-	gc.handle_x+width,gc.handle_y+height,..
-	x+gc.origin_x,y+gc.origin_y
+Function DrawRect(x:Float, y:Float, width:Float, height:Float)
+	TMax2DGraphics.Current().DrawRect(x, y, width, height)
 End Function
 
+Rem
+bbdoc: Draw a rectangle
+about:
+Sets the color of a rectangular area of pixels using the current drawing color
+defined with the #SetColor command.
+
+Other commands that affect the operation of #DrawRect include #SetHandle, #SetScale,
+#SetRotation, #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
+End Rem
 Function DrawRect( x:Double,y:Double,width:Double,height:Double )
 	DrawRect( Float(x),Float(y),Float(width),Float(height) )
 End Function
@@ -414,19 +896,22 @@ BlitzMax commands that affect the drawing of lines include #SetLineWidth, #SetCo
 The optional @draw_last_pixel parameter can be used to control whether the last pixel of the line is drawn or not.
 Not drawing the last pixel can be useful if you are using certain blending modes.
 End Rem 
-Function DrawLine( x:Float,y:Float,x2:Float,y2:Float,draw_last_pixel:Int=True )
-	_max2dDriver.DrawLine..
-	gc.handle_x,gc.handle_y,..
-	gc.handle_x+x2-x,gc.handle_y+y2-y,..
-	x+gc.origin_x,y+gc.origin_y
-	If Not draw_last_pixel Return
-	Local px:Float=gc.handle_x+x2-x,py:Float=gc.handle_y+y2-y
-	_max2dDriver.Plot..
-	px*gc.tform_ix+py*gc.tform_iy+x+gc.origin_x,px*gc.tform_jx+py*gc.tform_jy+y+gc.origin_y
+Function DrawLine(x:Float, y:Float, x2:Float, y2:Float, draw_last_pixel:Int = True)
+	TMax2DGraphics.Current().DrawLine(x, y, x2, y2, draw_last_pixel)
 End Function
 
-Function DrawLine( x:Double,y:Double,x2:Double,y2:Double,draw_last_pixel:Int=True )
-	DrawLine(Float(x),Float(y),Float(x2),Float(y2),draw_last_pixel)
+Rem
+bbdoc: Draw a line
+about:
+#DrawLine draws a line from @x, @y to @x2, @y2 with the current drawing color.
+
+BlitzMax commands that affect the drawing of lines include #SetLineWidth, #SetColor, #SetHandle, 
+#SetScale, #SetRotation, #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
+The optional @draw_last_pixel parameter can be used to control whether the last pixel of the line is drawn or not.
+Not drawing the last pixel can be useful if you are using certain blending modes.
+End Rem 
+Function DrawLine(x:Double, y:Double, x2:Double, y2:Double, draw_last_pixel:Int = True)
+	TMax2DGraphics.Current().DrawLine(Float(x), Float(y), Float(x2), Float(y2), draw_last_pixel)
 End Function
 
 Rem
@@ -438,15 +923,21 @@ and @height parameters.
 BlitzMax commands that affect the drawing of ovals include #SetColor, #SetHandle, 
 #SetScale, #SetRotation, #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
 End Rem
-Function DrawOval( x:Float,y:Float,width:Float,height:Float )
-	_max2dDriver.DrawOval..
-	gc.handle_x,gc.handle_y,..
-	gc.handle_x+width,gc.handle_y+height,..
-	x+gc.origin_x,y+gc.origin_y
+Function DrawOval(x:Float, y:Float, width:Float, height:Float)
+	TMax2DGraphics.Current().DrawOval(x, y, width, height)
 End Function
 
-Function DrawOval( x:Double,y:Double,width:Double,height:Double )
-	DrawOval(Float(x),Float(y),Float(width),Float(height))
+Rem
+bbdoc: Draw an oval
+about:
+#DrawOval draws an oval that fits in the rectangular area defined by @x, @y, @width 
+and @height parameters.
+
+BlitzMax commands that affect the drawing of ovals include #SetColor, #SetHandle, 
+#SetScale, #SetRotation, #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
+End Rem
+Function DrawOval(x:Double, y:Double, width:Double, height:Double)
+	TMax2DGraphics.Current().DrawOval(Float(x), Float(y), Float(width), Float(height))
 End Function
 
 Rem
@@ -458,9 +949,7 @@ BlitzMax commands that affect the drawing of polygons include #SetColor, #SetHan
 #SetScale, #SetRotation, #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
 End Rem
 Function DrawPoly( xy:Float[], indices:Int[] = Null )
-	_max2dDriver.DrawPoly xy,..
-	gc.handle_x,gc.handle_y,..
-	gc.origin_x,gc.origin_y, indices
+	TMax2DGraphics.Current().DrawPoly(xy, indices)
 End Function
 
 Rem
@@ -477,15 +966,26 @@ command for non jagged antialiased text. Text that will be drawn at a smaller
 size using the #SetScale command should use fonts loaded with the SMOOTHFONT
 style to benefit from mip-mapped filtering, see #LoadImageFont for more information.
 End Rem
-Function DrawText( t:String,x:Float,y:Float )
-	gc.image_font.Draw t,..
-	x+gc.origin_x+gc.handle_x*gc.tform_ix+gc.handle_y*gc.tform_iy,..
-	y+gc.origin_y+gc.handle_x*gc.tform_jx+gc.handle_y*gc.tform_jy,..
-	gc.tform_ix,gc.tform_iy,gc.tform_jx,gc.tform_jy
+Function DrawText(t:String, x:Float, y:Float)
+	TMax2DGraphics.Current().DrawText(t, x, y)
 End Function
 
-Function DrawText( t:String,x:Double,y:Double )
-	DrawText( t,Float(x),Float(y) )
+Rem
+bbdoc: Draw text
+about:
+#DrawText prints strings at position @x,@y of the graphics display using
+the current image font specified by the #SetImageFont command.
+
+Other commands that affect #DrawText include #SetColor, #SetHandle, 
+#SetScale, #SetRotation, #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
+
+It is recomended that the blend mode be set to ALPHABLEND using the #SetBlend
+command for non jagged antialiased text. Text that will be drawn at a smaller
+size using the #SetScale command should use fonts loaded with the SMOOTHFONT
+style to benefit from mip-mapped filtering, see #LoadImageFont for more information.
+End Rem
+Function DrawText(t:String, x:Double, y:Double)
+	TMax2DGraphics.Current().DrawText(t, Float(x), Float(y))
 End Function
 
 Rem
@@ -496,21 +996,26 @@ Drawing is affected by the current blend mode, color, scale and rotation.
 If the blend mode is ALPHABLEND the image is affected by the current alpha value
 and images with alpha channels are blended correctly with the background.
 End Rem
-Function DrawImage( image:TImage,x:Float,y:Float,frame:Int=0 )
-	Local x0:Float=-image.handle_x,x1:Float=x0+image.width
-	Local y0:Float=-image.handle_y,y1:Float=y0+image.height
-	Local iframe:TImageFrame=image.Frame(frame)
-	If iframe iframe.Draw x0,y0,x1,y1,x+gc.origin_x,y+gc.origin_y,0,0,image.width,image.height
+Function DrawImage(image:TImage, x:Float, y:Float, frame:Int = 0)
+	TMax2DGraphics.Current().DrawImage(image, x, y, frame)
 End Function
 
-Function DrawImage( image:TImage,x:Double,y:Double,frame:Int=0 )
-	DrawImage( image,Float(x),Float(y),frame)
+Rem
+bbdoc: Draw an image to the back buffer
+about:
+Drawing is affected by the current blend mode, color, scale and rotation.
+
+If the blend mode is ALPHABLEND the image is affected by the current alpha value
+and images with alpha channels are blended correctly with the background.
+End Rem
+Function DrawImage(image:TImage, x:Double, y:Double, frame:Int = 0)
+	TMax2DGraphics.Current().DrawImage(image, Float(x), Float(y), frame)
 End Function
 
 Rem
 bbdoc: Draw an image to a rectangular area of the back buffer
 about:
-@x, @y, @w and @h specify the destination rectangle to draw to.
+@x, @y, @width and @height specify the destination rectangle to draw to.
 
 @frame is the image frame to draw.
 
@@ -518,23 +1023,31 @@ Drawing is affected by the current blend mode, color, scale and rotation.
 
 If the blend mode is ALPHABLEND, then the image is also affected by the current alpha value.
 End Rem
-Function DrawImageRect( image:TImage,x:Float,y:Float,w:Float,h:Float,frame:Int=0 )
-	Local x0:Float=-image.handle_x,x1:Float=x0+w
-	Local y0:Float=-image.handle_y,y1:Float=y0+h
-	Local iframe:TImageFrame=image.Frame(frame)
-	If iframe iframe.Draw x0,y0,x1,y1,x+gc.origin_x,y+gc.origin_y,0,0,image.width,image.height
+Function DrawImageRect(image:TImage, x:Float, y:Float, width:Float, height:Float, frame:Int = 0)
+	TMax2DGraphics.Current().DrawImageRect(image, x, y, width, height)
 End Function
 
-Function DrawImageRect( image:TImage,x:Double,y:Double,w:Double,h:Double,frame:Int=0 )
-	DrawImageRect( image,Float(x),Float(y),Float(w),Float(h),frame )
+Rem
+bbdoc: Draw an image to a rectangular area of the back buffer
+about:
+@x, @y, @width and @height specify the destination rectangle to draw to.
+
+@frame is the image frame to draw.
+
+Drawing is affected by the current blend mode, color, scale and rotation.
+
+If the blend mode is ALPHABLEND, then the image is also affected by the current alpha value.
+End Rem
+Function DrawImageRect(image:TImage, x:Double, y:Double, width:Double, height:Double, frame:Int = 0)
+	TMax2DGraphics.Current().DrawImageRect(image, Float(x), Float(y), Float(width), Float(height))
 End Function
 
 Rem
 bbdoc: Draw a sub rectangle of an image to a rectangular area of the back buffer
 about:
-@x, @y, @w and @h specify the destination rectangle to draw to.
+@x, @y, @width and @height specify the destination rectangle to draw to.
 
-@sx, @sy, @sw and @sh specify the source rectangle within the image to draw from.
+@sx, @sy, @swidth and @sheight specify the source rectangle within the image to draw from.
 
 @hx and @hy specify a handle offset within the source rectangle.
 
@@ -544,15 +1057,27 @@ Drawing is affected by the current blend mode, color, scale and rotation.
 
 If the blend mode is ALPHABLEND, then the image is also affected by the current alpha value.
 End Rem
-Function DrawSubImageRect( image:TImage,x:Float,y:Float,w:Float,h:Float,sx:Float,sy:Float,sw:Float,sh:Float,hx:Float=0,hy:Float=0,frame:Int=0 )
-	Local x0:Float=-hx*w/sw,x1:Float=x0+w
-	Local y0:Float=-hy*h/sh,y1:Float=y0+h
-	Local iframe:TImageFrame=image.Frame(frame)
-	If iframe iframe.Draw x0,y0,x1,y1,x+gc.origin_x,y+gc.origin_y,sx,sy,sw,sh
+Function DrawSubImageRect(image:TImage, x:Float, y:Float, width:Float, height:Float, sx:Float, sy:Float, swidth:Float,sheight:Float, hx:Float = 0, hy:Float = 0, frame:Int = 0)
+	TMax2DGraphics.Current().DrawSubImageRect(image, x, y, width, height, sx, sy, swidth, sheight, hx, hy, frame)
 End Function
 
-Function DrawSubImageRect( image:TImage,x:Double,y:Double,w:Double,h:Double,sx:Double,sy:Double,sw:Double,sh:Double,hx:Double=0,hy:Double=0,frame:Int=0 )
-	DrawSubImageRect( image,Float(x),Float(y),Float(w),Float(h),Float(sx),Float(sy),Float(sw),Float(sh),Float(hx),Float(hy),frame )
+Rem
+bbdoc: Draw a sub rectangle of an image to a rectangular area of the back buffer
+about:
+@x, @y, @width and @height specify the destination rectangle to draw to.
+
+@sx, @sy, @swidth and @sheight specify the source rectangle within the image to draw from.
+
+@hx and @hy specify a handle offset within the source rectangle.
+
+@frame is the image frame to draw.
+
+Drawing is affected by the current blend mode, color, scale and rotation.
+
+If the blend mode is ALPHABLEND, then the image is also affected by the current alpha value.
+End Rem
+Function DrawSubImageRect(image:TImage, x:Double, y:Double, width:Double, height:Double, sx:Double, sy:Double, swidth:Double,sheight:Double, hx:Double = 0, hy:Double = 0, frame:Int = 0)
+	TMax2DGraphics.Current().DrawSubImageRect(image, Float(x), Float(y), Float(width), Float(height), Float(sx), Float(sy), Float(swidth), Float(sheight), Float(hx), Float(hy), frame)
 End Function
 
 Rem
@@ -560,44 +1085,17 @@ bbdoc: Draw an image in a tiled pattern
 about:
 #TileImage draws an image in a repeating, tiled pattern, filling the current viewport.
 End Rem
-Function TileImage( image:TImage,x:Float=0:Float,y:Float=0:Float,frame:Int=0 )
-	Local iframe:TImageFrame=image.Frame(frame)
-	If Not iframe Return
-	
-	_max2dDriver.SetTransform 1,0,0,1
-
-	Local w:Int=image.width
-	Local h:Int=image.height
-	Local ox:Int=gc.viewport_x-w+1
-	Local oy:Int=gc.viewport_y-h+1
-	Local px:Float=x+gc.origin_x-image.handle_x
-	Local py:Float=y+gc.origin_y-image.handle_y
-	Local fx:Float=px-Floor(px)
-	Local fy:Float=py-Floor(py)
-	Local tx:Int=Floor(px)-ox
-	Local ty:Int=Floor(py)-oy
-
-	If tx>=0 tx=tx Mod w + ox Else tx=w - -tx Mod w + ox
-	If ty>=0 ty=ty Mod h + oy Else ty=h - -ty Mod h + oy
-
-	Local vr:Int=gc.viewport_x+gc.viewport_w,vb:Int=gc.viewport_y+gc.viewport_h
-
-	Local iy:Int=ty
-	While iy<vb
-		Local ix:Int=tx
-		While ix<vr
-			iframe.Draw 0,0,w,h,ix+fx,iy+fy,0,0,w,h
-			ix=ix+w
-		Wend
-		iy=iy+h
-	Wend
-
-	UpdateTransform
-
+Function TileImage(image:TImage, x:Float = 0.0, y:Float = 0.0, frame:Int = 0)
+	TMax2DGraphics.Current().TileImage(image, x, y, frame)
 End Function
 
-Function TileImage( image:TImage,x:Double,y:Double,frame:Int=0 )
-	TileImage( image,Float(x),Float(y),frame )
+Rem
+bbdoc: Draw an image in a tiled pattern
+about:
+#TileImage draws an image in a repeating, tiled pattern, filling the current viewport.
+End Rem
+Function TileImage(image:TImage, x:Double = 0:Double, y:Double = 0:Double, frame:Int = 0)
+	TMax2DGraphics.Current().TileImage(image, Float(x), Float(y), frame)
 End Function
 
 Rem
@@ -609,13 +1107,11 @@ The #SetColor command affects the color of #Plot, #DrawRect, #DrawLine, #DrawTex
 The @red, @green and @blue parameters should be in the range of 0 to 255.
 End Rem
 Function SetColor( red:Int,green:Int,blue:Int )
-	gc.color = New SColor8(red, green, blue)
-	_max2dDriver.SetColor red,green,blue
+	TMax2DGraphics.Current().SetColor(red, green, blue)
 End Function
 
 Function SetColor( color:SColor8 )
-	gc.color = color
-	_max2dDriver.SetColor color
+	TMax2DGraphics.Current().SetColor(color)
 End Function
 
 Rem
@@ -623,13 +1119,11 @@ bbdoc: Get red, green and blue component of current color.
 returns: Red, green and blue values in the range 0..255 in the variables supplied.
 End Rem
 Function GetColor( red:Int Var,green:Int Var,blue:Int Var )
-	red=gc.color.r
-	green=gc.color.g
-	blue=gc.color.b
+	TMax2DGraphics.Current().GetColor(red, green, blue)
 End Function
 
 Function GetColor( color:SColor8 Var )
-	color = gc.color
+	TMax2DGraphics.Current().GetColor(color)
 End Function
 
 Rem
@@ -649,8 +1143,7 @@ commands are used in BlitzMax.
 ]
 End Rem
 Function SetBlend( blend:Int )
-	gc.blend_mode=blend
-	_max2dDriver.SetBlend blend
+	TMax2DGraphics.Current().SetBlend(blend)
 End Function
 
 Rem
@@ -660,7 +1153,7 @@ About:
 See #SetBlend for possible return values.
 End Rem
 Function GetBlend:Int()
-	Return gc.blend_mode
+	Return TMax2DGraphics.Current().GetBlend()
 End Function
 
 Rem
@@ -673,12 +1166,20 @@ The range from 0.0 to 1.0 allows a range of transparancy from completely transpa
 to completely solid.
 End Rem
 Function SetAlpha( alpha:Float )
-	gc.color_alpha=alpha
-	_max2dDriver.SetAlpha alpha
+	TMax2DGraphics.Current().SetAlpha(alpha)
 End Function
 
+Rem
+bbdoc: Set current alpha level
+about:
+@alpha should be in the range 0 to 1.
+
+@alpha controls the transparancy level when the ALPHABLEND blend mode is in effect.
+The range from 0.0 to 1.0 allows a range of transparancy from completely transparent 
+to completely solid.
+End Rem
 Function SetAlpha( alpha:Double )
-	SetAlpha( Float(alpha) )
+	TMax2DGraphics.Current().SetAlpha(Float(alpha))
 End Function
 
 Rem
@@ -686,19 +1187,21 @@ bbdoc: Get current alpha setting.
 returns: the current alpha value in the range 0..1.0 
 End Rem
 Function GetAlpha:Float()
-	Return gc.color_alpha
+	Return TMax2DGraphics.Current().GetAlpha()
 End Function
 
 Rem
 bbdoc: Sets pixel width of lines drawn with the #DrawLine command
 End Rem
 Function SetLineWidth( width:Float )
-	gc.line_width=width
-	_max2dDriver.SetLineWidth width
+	TMax2DGraphics.Current().SetLineWidth(width)
 End Function
 
+Rem
+bbdoc: Sets pixel width of lines drawn with the #DrawLine command
+End Rem
 Function SetLineWidth( width:Double )
-	SetLineWidth( Float(width) )
+	TMax2DGraphics.Current().SetLineWidth(Float(width))
 End Function
 
 Rem
@@ -706,7 +1209,7 @@ bbdoc: Get line width
 returns: Current line width, in pixels
 End Rem
 Function GetLineWidth:Float()
-	Return gc.line_width
+	Return TMax2DGraphics.Current().GetLineWidth()
 End Function
 
 Rem
@@ -715,20 +1218,16 @@ about:
 The current mask color is used to build an alpha mask when images are loaded or modified.
 The @red, @green and @blue parameters should be in the range of 0 to 255.
 End Rem
-Function SetMaskColor( red:Int,green:Int,blue:Int )
-	gc.mask_red=red
-	gc.mask_green=green
-	gc.mask_blue=blue
+Function SetMaskColor( red:Int, green:Int, blue:Int )
+	TMax2DGraphics.Current().SetMaskColor(red, green, blue)
 End Function
 
 Rem
 bbdoc: Get red, green and blue component of current mask color
 returns: Red, green and blue values in the range 0..255 
 End Rem
-Function GetMaskColor( red:Int Var,green:Int Var,blue:Int Var )
-	red=gc.mask_red
-	green=gc.mask_green
-	blue=gc.mask_blue
+Function GetMaskColor( red:Int Var, green:Int Var, blue:Int Var )
+	TMax2DGraphics.Current().GetMaskColor(red, green, blue)
 End Function
 
 Rem
@@ -739,69 +1238,76 @@ SetResolution allows you to set a 'virtual' resolution independent of the graphi
 This allows you to design an application to work at a fixed resolution, say 640 by 480, and run it
 at any graphics resolution.
 End Rem
-Function SetVirtualResolution( width:Float,height:Float )
-	gc.vres_width=width
-	gc.vres_height=height
-	gc.vres_mousexscale=width/GraphicsWidth()
-	gc.vres_mouseyscale=height/GraphicsHeight()
-	_max2dDriver.SetResolution width,height
+Function SetVirtualResolution( width:Float, height:Float )
+	TMax2DGraphics.Current().SetVirtualResolution(width, height)
 End Function
 
-Function SetVirtualResolution( width:Double,height:Double )
-	SetVirtualResolution( Float(width),Float(height) )
+Rem
+bbdoc: Set virtual graphics resolution
+about:
+SetResolution allows you to set a 'virtual' resolution independent of the graphics resolution.
+
+This allows you to design an application to work at a fixed resolution, say 640 by 480, and run it
+at any graphics resolution.
+End Rem
+Function SetVirtualResolution( width:Double, height:Double )
+	TMax2DGraphics.Current().SetVirtualResolution(Float(width), Float(height))
 End Function
 
 Rem
 bbdoc: Get virtual graphics resolution width
 End Rem
 Function VirtualResolutionWidth:Float()
-	Return gc.vres_width
+	Return TMax2DGraphics.Current().VirtualResolutionWidth()
 End Function
 
 Rem
 bbdoc: Get virtual graphics resolution height
 End Rem
 Function VirtualResolutionHeight:Float()
-	Return gc.vres_height
+	Return TMax2DGraphics.Current().VirtualResolutionHeight()
 End Function
 
 Rem
 bbdoc: Get virtual mouse X coordinate
 End Rem
 Function VirtualMouseX:Float()
-	Return MouseX() * gc.vres_mousexscale
+	Return TMax2DGraphics.Current().VirtualMouseX()
 End Function
 
 Rem
 bbdoc: Get virtual mouse Y coordinate
 End Rem
 Function VirtualMouseY:Float()
-	Return MouseY() * gc.vres_mouseyscale
+	Return TMax2DGraphics.Current().VirtualMouseY()
 End Function
 
 Rem
 bbdoc: Get virtual mouse X speed
 End Rem
 Function VirtualMouseXSpeed:Float()
-	Return MouseXSpeed() * gc.vres_mousexscale
+	Return TMax2DGraphics.Current().VirtualMouseXSpeed()
 End Function
 
 Rem
 bbdoc: Get virtual mouse Y speed
 End Rem
 Function VirtualMouseYSpeed:Float()
-	Return MouseYSpeed() * gc.vres_mouseyscale
+	Return TMax2DGraphics.Current().VirtualMouseYSpeed()
 End Function
 
 Rem
 bbdoc: Move virtual mouse
 End Rem
-Function MoveVirtualMouse( x:Float,y:Float )
-	MoveMouse Int(x/gc.vres_mousexscale),Int(y/gc.vres_mouseyscale)
+Function MoveVirtualMouse( x:Float, y:Float )
+	TMax2DGraphics.Current().MoveVirtualMouse(x, y)
 End Function
 
-Function MoveVirtualMouse( x:Double,y:Double )
-	MoveVirtualMouse( Float(x),Float(y) )
+Rem
+bbdoc: Move virtual mouse
+End Rem
+Function MoveVirtualMouse( x:Double, y:Double )
+	TMax2DGraphics.Current().MoveVirtualMouse(Float(x), Float(y))
 End Function
 
 Rem
@@ -810,27 +1316,16 @@ about:
 The current ViewPort defines an area within the back buffer that all drawing is clipped to. Any
 regions of a DrawCommand that fall outside the current ViewPort are not drawn.
 End Rem
-Function SetViewport( x:Int,y:Int,width:Int,height:Int )
-	gc.viewport_x=x
-	gc.viewport_y=y
-	gc.viewport_w=width
-	gc.viewport_h=height
-	Local x0:Int=Floor( x / gc.vres_mousexscale )
-	Local y0:Int=Floor( y / gc.vres_mouseyscale )
-	Local x1:Int=Floor( (x+width) / gc.vres_mousexscale )
-	Local y1:Int=Floor( (y+height) / gc.vres_mouseyscale )
-	_max2dDriver.SetViewport x0,y0,(x1-x0),(y1-y0)
+Function SetViewport( x:Int, y:Int, width:Int, height:Int )
+	TMax2DGraphics.Current().SetViewport(x, y, width, height)
 End Function
 
 Rem
 bbdoc: Get dimensions of current Viewport.
 returns: The horizontal, vertical, width and height values of the current Viewport in the variables supplied.
 End Rem
-Function GetViewport( x:Int Var,y:Int Var,width:Int Var,height:Int Var )
-	x=gc.viewport_x
-	y=gc.viewport_y
-	width=gc.viewport_w
-	height=gc.viewport_h
+Function GetViewport( x:Int Var, y:Int Var, width:Int Var, height:Int Var )
+	TMax2DGraphics.Current().GetViewport(x, y, width, height)
 End Function
 
 Rem
@@ -838,22 +1333,25 @@ bbdoc: Set drawing origin
 about:
 The current Origin is an x,y coordinate added to all drawing x,y coordinates after any rotation or scaling.
 End Rem
-Function SetOrigin( x:Float,y:Float )
-	gc.origin_x=x
-	gc.origin_y=y
+Function SetOrigin( x:Float, y:Float )
+	TMax2DGraphics.Current().SetOrigin(x, y)
 End Function
 
-Function SetOrigin( x:Double,y:Double )
-	SetOrigin( Float(x),Float(y) )
+Rem
+bbdoc: Set drawing origin
+about:
+The current Origin is an x,y coordinate added to all drawing x,y coordinates after any rotation or scaling.
+End Rem
+Function SetOrigin( x:Double, y:Double )
+	TMax2DGraphics.Current().SetOrigin(Float(x), Float(y))
 End Function
 
 Rem
 bbdoc: Get current origin position.
 returns: The horizontal and vertical position of the current origin. 
 End Rem
-Function GetOrigin( x:Float Var,y:Float Var )
-	x=gc.origin_x
-	y=gc.origin_y
+Function GetOrigin( x:Float Var, y:Float Var )
+	TMax2DGraphics.Current().GetOrigin(x, y)
 End Function
 
 Rem
@@ -865,13 +1363,21 @@ drawing commands except #DrawImage as Images have their own unique handles.
 Unlike #SetOrigin the drawing handle is subtracted before rotation and scale 
 are applied providing a 'local' origin.
 End Rem
-Function SetHandle( x:Float,y:Float )
-	gc.handle_x=-x
-	gc.handle_y=-y
+Function SetHandle( x:Float, y:Float )
+	TMax2DGraphics.Current().SetHandle(x, y)
 End Function
 
-Function SetHandle( x:Double,y:Double )
-	SetHandle( Float(x),Float(y) )
+Rem
+bbdoc: Set drawing handle
+about:
+The drawing handle is a 2D offset subtracted from the x,y location of all 
+drawing commands except #DrawImage as Images have their own unique handles.
+
+Unlike #SetOrigin the drawing handle is subtracted before rotation and scale 
+are applied providing a 'local' origin.
+End Rem
+Function SetHandle( x:Double, y:Double )
+	TMax2DGraphics.Current().SetHandle(Float(x), Float(y))
 End Function
 
 Rem
@@ -879,8 +1385,7 @@ bbdoc: Get current drawing handle.
 returns: The horizontal and vertical position of the current drawing handle.
 End Rem
 Function GetHandle( x:Float Var,y:Float Var )
-	x=-gc.handle_x
-	y=-gc.handle_y
+	TMax2DGraphics.Current().GetHandle(x, y)
 End Function
 
 Rem
@@ -889,12 +1394,16 @@ about:
 @rotation is given in degrees and should be in the range 0 to 360.
 End Rem
 Function SetRotation( rotation:Float )
-	gc.tform_rot=rotation
-	UpdateTransform
+	TMax2DGraphics.Current().SetRotation(rotation)
 End Function
 
+Rem
+bbdoc: Set current rotation
+about:
+@rotation is given in degrees and should be in the range 0 to 360.
+End Rem
 Function SetRotation( rotation:Double )
-	SetRotation(Float(rotation))
+	TMax2DGraphics.Current().SetRotation(Float(rotation))
 End Function
 
 Rem
@@ -902,7 +1411,7 @@ bbdoc: Get current Max2D rotation setting.
 returns: The rotation in degrees.
 End Rem
 Function GetRotation:Float()
-	Return gc.tform_rot
+	Return TMax2DGraphics.Current().GetRotation()
 End Function
 
 Rem
@@ -912,14 +1421,19 @@ about:
 commands where 0.5 will half the size of the drawing and 2.0 is equivalent 
 to doubling the size.
 End Rem
-Function SetScale( scale_x:Float,scale_y:Float )
-	gc.tform_scale_x=scale_x
-	gc.tform_scale_y=scale_y
-	UpdateTransform
+Function SetScale( scale_x:Float, scale_y:Float )
+	TMax2DGraphics.Current().SetScale(scale_x, scale_y)
 End Function
 
-Function SetScale( scale_x:Double,scale_y:Double )
-	SetScale(Float(scale_x),Float(scale_y))
+Rem
+bbdoc: Set current scale
+about:
+@scale_x and @scale_y multiply the width and height of drawing
+commands where 0.5 will half the size of the drawing and 2.0 is equivalent 
+to doubling the size.
+End Rem
+Function SetScale( scale_x:Double, scale_y:Double )
+	TMax2DGraphics.Current().SetScale(Float(scale_x), Float(scale_y))
 End Function
 
 Rem
@@ -927,8 +1441,7 @@ bbdoc: Get current Max2D scale settings.
 returns: The current x and y scale values in the variables supplied. 
 End Rem
 Function GetScale( scale_x:Float Var,scale_y:Float Var )
-	scale_x=gc.tform_scale_x
-	scale_y=gc.tform_scale_y
+	TMax2DGraphics.Current().GetScale(scale_x, scale_y)
 End Function
 
 Rem
@@ -937,15 +1450,18 @@ about:
 SetTransform is a shortcut for setting both the rotation and
 scale parameters in Max2D with a single function call.
 End Rem
-Function SetTransform( rotation:Float=0,scale_x:Float=1,scale_y:Float=1 )
-	gc.tform_rot=rotation
-	gc.tform_scale_x=scale_x
-	gc.tform_scale_y=scale_y
-	UpdateTransform
+Function SetTransform( rotation:Float = 0.0, scale_x:Float = 1.0, scale_y:Float = 1.0 )
+	TMax2DGraphics.Current().SetTransform(Rotation, scale_x, scale_y)
 End Function
 
-Function SetTransform( rotation:Double,scale_x:Double=1,scale_y:Double=1 )
-	SetTransform(Float(rotation),Float(scale_x),Float(scale_y))
+Rem
+bbdoc: Set current rotation and scale
+about:
+SetTransform is a shortcut for setting both the rotation and
+scale parameters in Max2D with a single function call.
+End Rem
+Function SetTransform( rotation:Double = 0:Double, scale_x:Double = 1:Double, scale_y:Float = 1:Double )
+	TMax2DGraphics.Current().SetTransform(Float(rotation), Float(scale_x), Float(scale_y))
 End Function
 
 Rem
@@ -974,7 +1490,7 @@ about:
 flags. Use the SMOOTHFONT flag for improved filtering if the font is to be rotated or
 scaled.
 End Rem
-Function LoadImageFont:TImageFont( url:Object,size:Int,style:Int=SMOOTHFONT )
+Function LoadImageFont:TImageFont( url:Object, size:Int, style:Int = SMOOTHFONT )
 	Return TImageFont.Load( url,size,style )
 End Function
 
@@ -987,8 +1503,7 @@ command with a font handle returned by the #LoadImageFont command.
 Use &{SetImageFont Null} to select the default, built-in font.
 End Rem
 Function SetImageFont( font:TImageFont )
-	If Not font font=gc.default_font
-	gc.image_font=font
+	TMax2DGraphics.Current().SetImageFont(font)
 End Function
 
 Rem
@@ -996,7 +1511,7 @@ bbdoc: Get current image font.
 returns: The current image font.
 End Rem
 Function GetImageFont:TImageFont()
-	Return gc.image_font
+	Return TMax2DGraphics.Current().GetImageFont()
 End Function
 
 Rem
@@ -1006,14 +1521,8 @@ about:
 This command is useful for calculating horizontal alignment of text when using 
 the #DrawText command.
 End Rem
-Function TextWidth:Int( Text:String )
-	Local width:Int=0
-	For Local n:Int=0 Until Text.length
-		Local i:Int=gc.image_font.CharToGlyph( Text[n] )
-		If i<0 Continue
-		width:+gc.image_font.LoadGlyph(i).Advance()
-	Next
-	Return width
+Function TextWidth:Int( text:String )
+	Return TMax2DGraphics.Current().TextWidth(text)
 End Function
 
 Rem
@@ -1023,19 +1532,8 @@ about:
 This command is useful for calculating vertical alignment of text when using 
 the #DrawText command.
 End Rem
-Function TextHeight:Int( Text:String )
-	Return gc.image_font.Height()
-	Rem
-	Local height=0
-	For Local n=0 Until text.length
-		Local c=text[n]-image_font.BaseChar()
-		If c<0 Or c>=image_font.CountGlyphs() Continue
-		Local x,y,w,h
-		image_font.Glyph(c).GetRect( x,y,w,h )
-		height=Max(height,h)
-	Next
-	Return height
-	End Rem
+Function TextHeight:Int( text:String )
+	Return TMax2DGraphics.Current().TextHeight(text)
 End Function
 
 Rem
@@ -1066,12 +1564,8 @@ If flags is -1, the auto image flags are used: See #AutoImageFlags.
 
 To combine flags, use the | (boolean OR) operator.
 End Rem
-Function LoadImage:TImage( url:Object,flags:Int=-1 )
-	If flags=-1 flags=gc.auto_imageflags
-	Local image:TImage=TImage.Load( url,flags,gc.mask_red,gc.mask_green,gc.mask_blue )
-	If Not image Return null
-	If gc.auto_midhandle MidHandleImage image
-	Return image
+Function LoadImage:TImage( url:Object, flags:Int = -1 )
+	Return TMax2DGraphics.Current().LoadImage(url, flags)
 End Function
 
 Rem
@@ -1083,12 +1577,8 @@ existing pixmap.
 
 See #LoadImage for valid @flags values.
 End Rem
-Function LoadAnimImage:TImage( url:Object,cell_width:Int,cell_height:Int,first_cell:Int,cell_count:Int,flags:Int=-1 )
-	If flags=-1 flags=gc.auto_imageflags
-	Local image:TImage=TImage.LoadAnim( url,cell_width,cell_height,first_cell,cell_count,flags,gc.mask_red,gc.mask_green,gc.mask_blue )
-	If Not image Return null
-	If gc.auto_midhandle MidHandleImage image
-	Return image
+Function LoadAnimImage:TImage( url:Object, cell_width:Int, cell_height:Int, first_cell:Int, cell_count:Int, flags:Int = -1 )
+	Return TMax2DGraphics.Current().LoadAnimImage(url, cell_width, cell_height, first_cell, cell_count, flags)
 End Function 
 
 Rem
@@ -1097,11 +1587,17 @@ about:
 An image's handle is subtracted from the coordinates of #DrawImage before
 rotation and scale are applied.
 End Rem
-Function SetImageHandle( image:TImage,x:Float,y:Float )
+Function SetImageHandle( image:TImage, x:Float, y:Float )
 	image.handle_x=x
 	image.handle_y=y
 End Function
 
+Rem
+bbdoc: Set an image's handle to an arbitrary point
+about:
+An image's handle is subtracted from the coordinates of #DrawImage before
+rotation and scale are applied.
+End Rem
 Function SetImageHandle( image:TImage,x:Double,y:Double )
 	SetImageHandle(image,Float(x),Float(y))
 End Function
@@ -1115,7 +1611,7 @@ when they are created. If auto midhandle mode is disabled, images are handled by
 AutoMidHandle defaults to False after calling #Graphics.
 End Rem
 Function AutoMidHandle( enable:Int )
-	gc.auto_midhandle=enable
+	TMax2DGraphics.Current().AutoMidHandle(enable)
 End Function
 
 Rem
@@ -1126,20 +1622,19 @@ flags are specified. See #LoadImage for a full list of valid image flags.
 AutoImageFlags defaults to MASKEDIMAGE | FILTEREDIMAGE.
 End Rem
 Function AutoImageFlags( flags:Int )
-	If flags=-1 Return
-	gc.auto_imageflags=flags
+	TMax2DGraphics.Current().AutoImageFlags(flags)
 End Function
 
 Function GetAutoImageFlags:Int()
-	Return gc.auto_imageflags
+	Return TMax2DGraphics.Current().GetAutoImageFlags()
 End Function
 
 Rem
 bbdoc: Set an image's handle to its center
 End Rem
 Function MidHandleImage( image:TImage )
-	image.handle_x=image.width*.5
-	image.handle_y=image.height*.5
+	image.handle_x = image.width * 0.5
+	image.handle_y = image.height * 0.5
 End Function
 
 Rem
@@ -1167,11 +1662,8 @@ before being drawn.
 
 Please refer to #LoadImage for valid @flags values. The @flags value is always combined with DYNAMICIMAGE.
 End Rem
-Function CreateImage:TImage( width:Int,height:Int,frames:Int=1,flags:Int=-1 )
-	If flags=-1 flags=gc.auto_imageflags
-	Local image:TImage=TImage.Create( width,height,frames,flags|DYNAMICIMAGE,gc.mask_red,gc.mask_green,gc.mask_blue )
-	If gc.auto_midhandle MidHandleImage image
-	Return image
+Function CreateImage:TImage( width:Int, height:Int, frames:Int = 1, flags:Int = -1 )
+	Return TMax2DGraphics.Current().CreateImage(width, height, frames, flags)
 End Function
 
 Rem
@@ -1184,7 +1676,7 @@ Only images created with the DYNAMICIMAGE flag can be locked.
 
 Locked images must eventually be unlocked with #UnlockImage before they can be drawn.
 End Rem
-Function LockImage:TPixmap( image:TImage,frame:Int=0,read_lock:Int=True,write_lock:Int=True )
+Function LockImage:TPixmap( image:TImage, frame:Int = 0, read_lock:Int = True, write_lock:Int = True )
 	Return image.Lock( frame,read_lock,write_lock )
 End Function
 
@@ -1193,7 +1685,7 @@ bbdoc: Unlock an image
 about:
 Unlocks an image previously locked with #LockImage.
 end rem
-Function UnlockImage( image:TImage,frame:Int=0 )
+Function UnlockImage( image:TImage, frame:Int = 0 )
 End Function
 
 Rem
@@ -1203,12 +1695,8 @@ Copies pixels from the back buffer to an image frame.
 
 Only images created with the DYNAMICIMAGE flag can be grabbed.
 End Rem
-Function GrabImage( image:TImage,x:Int,y:Int,frame:Int=0 )
-	Local pixmap:TPixmap=_max2dDriver.GrabPixmap( x,y,image.width,image.height )
-	If image.flags&MASKEDIMAGE 
-		pixmap=MaskPixmap( pixmap,gc.mask_red,gc.mask_green,gc.mask_blue )
-	EndIf
-	image.SetPixmap frame,pixmap
+Function GrabImage( image:TImage, x:Int, y:Int, frame:Int = 0 )
+	TMax2DGraphics.Current().GrabImage(image, x, y, frame)
 End Function
 
 Rem
@@ -1237,8 +1725,8 @@ about:
 
 returns: #TRenderImage with the given dimension
 End Rem
-Function CreateRenderImage:TRenderImage(width:Int, height:Int, useLinearFlitering:Int = True, max2DGraphics:TMax2DGraphics = Null)
-	Return gc.CreateRenderImage(width, height, useLinearFlitering, max2DGraphics)
+Function CreateRenderImage:TRenderImage(width:UInt, height:UInt, flags:Int=-1)
+	Return TMax2DGraphics.Current().CreateRenderImage(width, height, flags)
 End Function
 
 Rem
@@ -1252,15 +1740,16 @@ about:
 
 returns: #TRenderImage with the content of the passed #TPixmap
 End Rem
-Function CreateRenderImageFromPixmap:TRenderImage(pixmap:TPixmap, useLinearFlitering:Int = True, max2DGraphics:TMax2DGraphics = Null)
-	Return gc.CreateRenderImageFromPixmap(pixmap, useLinearFlitering, max2DGraphics)
-EndFunction
+'Function CreateRenderImageFromPixmap:TRenderImage(pixmap:TPixmap, useLinearFlitering:Int = True, max2DGraphics:TMax2DGraphics = Null)
+'	Return TMax2DGraphics.Current().CreateRenderImageFromPixmap(pixmap, useLinearFlitering, max2DGraphics)
+'EndFunction
 
 Rem
 bbdoc: Destroy a no longer needed render image
 End Rem
 Function DestroyRenderImage(renderImage:TRenderImage)
-	gc.DestroyRenderImage(renderImage)
+	RuntimeError "Not implemented"
+	'TMax2DGraphics.Current().DestroyRenderImage(renderImage)
 End Function
 
 Rem
@@ -1269,20 +1758,15 @@ about:
 @renderImage defines the render image to use as target. Set to Null to render on the default graphics buffer again.
 End Rem
 Function SetRenderImage(renderImage:TRenderImage)
-	gc.SetRenderImage(renderImage)
-End Function
-
-Rem
-bbdoc: Clear content of the passed render image
-about:
-@renderImage defines the render image to clear.
-
-@r, @g, @b define the red, green and blue components of the clear color. Range is 0 - 255.
-
-@a defines the alpha value and is ranged 0.0 to 1.0.
-End Rem
-Function ClearRenderImage(renderImage:TRenderImage, r:Int=0, g:Int=0, b:Int=0, a:Float=0.0)
-	gc.ClearRenderImage(renderImage, r,g,b,a)
+	If Not renderImage
+		TMax2DGraphics.Current().SetRenderImageFrame(Null)
+	Else
+		Local frame:TImageFrame = renderImage.frames[0]
+		If Not frame
+			frame = renderImage.Frame(0)
+		EndIf
+		TMax2DGraphics.Current().SetRenderImageFrame(frame)
+	EndIf
 End Function
 
 Rem
@@ -1293,18 +1777,8 @@ about:
 returns: #TPixmap of the render image
 End Rem
 Function CreatePixmapFromRenderImage:TPixmap(renderImage:TRenderImage)
-	Return gc.CreatePixmapFromRenderImage(renderImage)
-End Function
-
-Rem
-bbdoc: Set the viewport of the given render image
-about:
-@renderImage defines the render image to set the viewport for
-
-@x, @y, @width, @height define the dimension of the viewport
-End Rem
-Function SetRenderImageViewport(renderImage:TRenderImage, x:Int, y:Int, width:Int, height:Int)
-	gc.SetRenderImageViewport(renderImage, x, y, width, height)
+	RuntimeError "Not implemented"
+	'Return TMax2DGraphics.Current().CreatePixmapFromRenderImage(renderImage)
 End Function
 
 Rem
@@ -1320,8 +1794,9 @@ Also use #RenderImageValid() to check if content needs to be recreated.
 @renderImage defines the render image to backup
 End Rem
 Function PersistRenderImage:Int(renderImage:TRenderImage)
-	If renderImage Then Return renderImage.Persist()
-	Return False
+	RuntimeError "Not implemented"
+	'If renderImage Then Return renderImage.Persist()
+	'Return False
 End Function
 
 Rem
@@ -1335,10 +1810,11 @@ If that happens, the render image is flagged to no longer be valid.
 
 returns: False if content the render image needs to be recreated
 End Rem
-Function RenderImageValid:Int(renderImage:TRenderImage)
-	If renderImage Then Return renderImage.Valid()
-	Return False
-End Function
+'Function RenderImageValid:Int(renderImage:TRenderImage)
+'	RuntimeError "Not implemented"
+	'If renderImage Then Return renderImage.Valid()
+	'Return False
+'End Function
 
 Rem
 bbdoc: Mark a render image (in-)valid
@@ -1353,7 +1829,8 @@ to be valid again.
 @bool defines the new state of the valid flag (True or False)
 End Rem
 Function SetRenderImageValid(renderImage:TRenderImage, bool:Int = True)
-	If renderImage Then renderImage.SetValid(bool)
+	RuntimeError "Not implemented"
+	'If renderImage Then renderImage.SetValid(bool)
 End Function
 
 Const COLLISION_LAYER_ALL:Int=0
@@ -1824,8 +2301,8 @@ Function CreateQuad:TQuad(image:TImage,frame:Int,x:Float,y:Float,w:Float,h:Float
 	EndIf
 	x1=x0+w
 	y1=y0+h
-	tx=x+gc.origin_x
-	ty=y+gc.origin_y
+	tx=x+TMax2DGraphics.Current().origin_x
+	ty=y+TMax2DGraphics.Current().origin_y
 	tx0=x0*cix+y0*ciy+tx
 	ty0=x0*cjx+y0*cjy+ty
 	tx1=x1*cix+y0*ciy+tx

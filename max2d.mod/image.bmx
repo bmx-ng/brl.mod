@@ -8,7 +8,7 @@ bbdoc: Max2D Image type
 End Rem
 Type TImage
 
-	Field width:Int,height:Int,flags:Int
+	Field width:UInt,height:UInt,flags:Int
 	Field mask_r:Int,mask_g:Int,mask_b:Int
 	Field handle_x#,handle_y#
 	Field pixmaps:TPixmap[]
@@ -72,7 +72,7 @@ Type TImage
 	Function Load:TImage( url:Object,flags:Int,mr:Int,mg:Int,mb:Int )
 		Local pixmap:TPixmap=TPixmap(url)
 		If Not pixmap pixmap=LoadPixmap(url)
-		If Not pixmap Return null
+		If Not pixmap Return Null
 		Local t:TImage=Create( pixmap.width,pixmap.height,1,flags,mr,mg,mb )
 		t.SetPixmap 0,pixmap
 		Return t
@@ -82,11 +82,11 @@ Type TImage
 		Assert cell_width > 0 And cell_height > 0 Else "Cell dimensions out of bounds"
 		Local pixmap:TPixmap=TPixmap(url)
 		If Not pixmap pixmap=LoadPixmap(url)
-		If Not pixmap Return null
+		If Not pixmap Return Null
 
 		Local x_cells:Int=pixmap.width/cell_width
 		Local y_cells:Int=pixmap.height/cell_height
-		If first+count>x_cells*y_cells Return null
+		If first+count>x_cells*y_cells Return Null
 		
 		Local t:TImage=Create( cell_width,cell_height,count,flags,mr,mg,mb )
 
@@ -100,3 +100,37 @@ Type TImage
 	End Function
 	
 End Type
+
+Type TRenderImage Extends TImage
+	Method Frame:TImageFrame(index:Int) Override
+		Assert index < seqs.length And index < frames.length Else "Index out of bounds"
+		If seqs[index] = GraphicsSeq
+			Return frames[index]
+		EndIf
+		
+		frames[index] = _max2dDriver.CreateRenderImageFrame(width, height, flags)
+		If frames[index]
+			seqs[index] = GraphicsSeq
+		Else
+			seqs[index] = 0
+		EndIf
+		
+		Return frames[index]
+	End Method
+	
+	Function Create:TRenderImage(width:UInt, height:UInt, flags:Int, MaskRed:Int, MaskGreen:Int, MaskBlue:Int)
+		Local t:TRenderImage = New TRenderImage
+		t.width = width
+		t.height = height
+		t.flags = flags
+		t.mask_r = MaskRed
+		t.mask_g = MaskGreen
+		t.mask_b = MaskBlue
+		t.pixmaps = New TPixmap[1]
+		t.frames = New TImageFrame[1]
+		t.seqs = New Int[1]
+		t.frameDuration = New Int[1]
+		
+		Return t
+	EndFunction
+EndType

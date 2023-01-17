@@ -48,6 +48,10 @@ Global _d3dDev:IDirect3DDevice9
 Global _d3d9Graphics:TD3D9Graphics
 Global _max2dGraphics:TMax2dGraphics
 
+Global _BackbufferRenderImageFrame:TD3D9RenderImageFrame
+Global _CurrentRenderImageFrame:TD3D9RenderImageFrame
+Global _D3D9Scissor_BMaxViewport:Rect = New Rect
+
 Function Pow2Size:Int( n:Int )
 	Local t:Int=1
 	While t<n
@@ -103,7 +107,7 @@ Type TD3D9ImageFrame Extends TImageFrame
 				EndIf
 			EndIf
 		Else
-			If pixmap.Format<>PF_BGRA8888 pixmap=pixmap.Convert( PF_BGRA8888 )
+			If pixmap.format<>PF_BGRA8888 pixmap=pixmap.Convert( PF_BGRA8888 )
 		EndIf
 
 		Local levels:Int=(flags & MIPMAPPEDIMAGE)=0
@@ -188,244 +192,65 @@ Type TD3D9ImageFrame Extends TImageFrame
 	End Method
 	
 	Method Draw( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float,sx:Float,sy:Float,sw:Float,sh:Float ) Override
-		Local u0:Float=sx * _uscale
-		Local v0:Float=sy * _vscale
-		Local u1:Float=(sx+sw) * _uscale
-		Local v1:Float=(sy+sh) * _vscale
+		Local u0:Float = sx * _uscale
+		Local v0:Float = sy * _vscale
+		Local u1:Float = (sx + sw) * _uscale
+		Local v1:Float = (sy + sh) * _vscale
 	
-		_fverts[0]=x0*_ix+y0*_iy+tx
-		_fverts[1]=x0*_jx+y0*_jy+ty
-		_iverts[3]=_color
-		_fverts[4]=u0
-		_fverts[5]=v0
+		_fverts[0] = x0 * _ix + y0 * _iy + tx
+		_fverts[1] = x0 * _jx + y0 * _jy + ty
+		_iverts[3] = _color
+		_fverts[4] = u0
+		_fverts[5] = v0
 		
-		_fverts[6]=x1*_ix+y0*_iy+tx
-		_fverts[7]=x1*_jx+y0*_jy+ty
-		_iverts[9]=_color
-		_fverts[10]=u1
-		_fverts[11]=v0
+		_fverts[6] = x1 * _ix + y0 * _iy + tx
+		_fverts[7] = x1 * _jx + y0 * _jy + ty
+		_iverts[9] = _color
+		_fverts[10] = u1
+		_fverts[11] = v0
 		
-		_fverts[12]=x1*_ix+y1*_iy+tx
-		_fverts[13]=x1*_jx+y1*_jy+ty
-		_iverts[15]=_color
-		_fverts[16]=u1
-		_fverts[17]=v1
+		_fverts[12] = x1 * _ix + y1 * _iy + tx
+		_fverts[13] = x1 * _jx + y1 * _jy + ty
+		_iverts[15] = _color
+		_fverts[16] = u1
+		_fverts[17] = v1
 		
-		_fverts[18]=x0*_ix+y1*_iy+tx
-		_fverts[19]=x0*_jx+y1*_jy+ty
-		_iverts[21]=_color
-		_fverts[22]=u0
-		_fverts[23]=v1
+		_fverts[18] = x0 * _ix + y1 * _iy + tx
+		_fverts[19] = x0 * _jx + y1 * _jy + ty
+		_iverts[21] = _color
+		_fverts[22] = u0
+		_fverts[23] = v1
 		
 		If _texture<>_bound_texture
 			_d3dDev.SetTexture 0,_texture
-			_d3dDev.SetTextureStageState 0,D3DTSS_MAGFILTER,_magfilter
-			_d3dDev.SetTextureStageState 0,D3DTSS_MINFILTER,_minfilter
-			_d3dDev.SetTextureStageState 0,D3DTSS_MIPFILTER,_mipfilter
-			_bound_texture=_texture
+			_d3dDev.SetTextureStageState(0, D3DTSS_MAGFILTER, _magfilter)
+			_d3dDev.SetTextureStageState(0, D3DTSS_MINFILTER, _minfilter)
+			_d3dDev.SetTextureStageState(0, D3DTSS_MIPFILTER, _mipfilter)
+			_bound_texture = _texture
 		EndIf
 		
 		If Not _texture_enabled
-			_d3dDev.SetTextureStageState 0,D3DTSS_COLOROP,D3DTOP_MODULATE
-			_d3dDev.SetTextureStageState 0,D3DTSS_ALPHAOP,D3DTOP_MODULATE
-			_texture_enabled=True
+			_d3dDev.SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE)
+			_d3dDev.SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE)
+			_texture_enabled = True
 		EndIf
 		
-		_d3dDev.DrawPrimitiveUP D3DPT_TRIANGLEFAN,2,_fverts,24
+		_d3dDev.DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, _fverts, 24)
 	End Method
 	
-	Field _texture:IDirect3DTexture9,_seq:Int
-	
-	Field _magfilter:Int,_minfilter:Int,_mipfilter:Int,_uscale:Float,_vscale:Float
-	
-	Field _fverts:Float[24],_iverts:Int Ptr=Int Ptr( Varptr _fverts[0] )
-
+	Field _texture:IDirect3DTexture9, _seq:Int
+	Field _magfilter:Int, _minfilter:Int, _mipfilter:Int, _uscale:Float, _vscale:Float
+	Field _fverts:Float[24], _iverts:Int Ptr=Int Ptr( Varptr _fverts[0] )
 End Type
-
-
-Type TD3D9RenderImageContext Extends TRenderImageContext
-	Field _gc:TD3D9Graphics
-	Field _d3ddev:IDirect3DDevice9
-	Field _backbuffer:IDirect3DSurface9
-	Field _matrix:Float[16]
-	Field _viewport:D3DVIEWPORT9
-	Field _renderImages:TList
-	Field _deviceok:Int = True
-
-	Method Delete()
-		ReleaseNow()
-	End Method
-	
-	Method ReleaseNow()
-		If _renderImages
-			For Local ri:TD3D9RenderImage = EachIn _renderImages
-				ri.DestroyRenderImage()
-			Next
-		EndIf
-
-		_renderImages = Null
-		_viewport = Null
-		_gc = Null
-
-		If _backbuffer
-			_backbuffer.release_
-			_backbuffer = Null
-		EndIf
-		If _d3ddev
-			_d3ddev.release_
-			_d3ddev = Null
-		EndIf
-	End Method
-
-	Method Create:TD3D9RenderimageContext(g:TGraphics, driver:TGraphicsDriver)
-		_gc = TD3D9Graphics(g)
-
-'		_gc.AddDeviceMightGetLostCallback(fnOnDeviceMightGetLost, Self)
-		_gc.AddDeviceLostCallback(fnOnDeviceLost, Self)
-		_gc.AddDeviceResetCallback(fnOnDeviceReset, Self)
-
-		_d3ddev = _gc.GetDirect3DDevice()
-		_d3ddev.AddRef()
-
-		_d3ddev.GetRenderTarget(0, _backbuffer)
-
-		_viewport = New D3DVIEWPORT9
-		_d3ddev.GetViewport(_viewport)
-		_d3ddev.GetTransform(D3DTS_PROJECTION, _matrix)
-			
-		_renderImages = New TList
-
-		Return Self
-	End Method
-	
-	Method GraphicsContext:TGraphics()
-		Return _gc
-	End Method
-	
-	Method Destroy()
-'		_gc.RemoveDeviceMightGetLostCallback(fnOnDeviceMightGetLost)
-		_gc.RemoveDeviceLostCallback(fnOnDeviceLost)
-		_gc.RemoveDeviceResetCallback(fnOnDeviceReset)
-		ReleaseNow()
-	End Method
-
-	Method CreateRenderImage:TRenderImage(width:Int, height:Int, UseImageFiltering:Int)
-		Local renderimage:TD3D9RenderImage = New TD3D9RenderImage.CreateRenderImage(width, height)
-		renderimage.Init(_d3ddev, UseImageFiltering)
-		_renderImages.AddLast(renderimage)
-
-		Return renderimage
-	End Method
-	
-	Method CreateRenderImageFromPixmap:TRenderImage(pixmap:TPixmap, UseImageFiltering:Int)
-		Local renderimage:TD3D9RenderImage = New TD3D9RenderImage.CreateRenderImage(pixmap.Width, pixmap.Height)
-		renderimage.InitFromPixmap(_d3ddev, pixmap, UseImageFiltering)
-		_renderImages.AddLast(renderimage)
-
-		Return renderimage
-	End Method
-	
-	Method DestroyRenderImage(renderImage:TRenderImage)
-		renderImage.DestroyRenderImage()
-		_renderImages.Remove(renderImage)
-	End Method
-
-	Method SetRenderImage(renderimage:TRenderimage)
-		If Not renderimage
-			_d3ddev.SetRenderTarget(0, _backbuffer)	
-			_d3ddev.SetTransform D3DTS_PROJECTION,_matrix
-			_d3ddev.SetViewport(_viewport)
-		Else
-			renderimage.SetRenderImage()
-		EndIf
-	End Method
-	
-	Method CreatePixmapFromRenderImage:TPixmap(renderImage:TRenderImage)
-		Return TD3D9RenderImage(renderImage).ToPixmap()
-	End Method
-
-rem
-	Method OnDeviceMightGetLost()
-		For Local ri:TD3D9RenderImage = EachIn _renderImages
-			ri.OnDeviceMightGetLost()
-		Next
-	End Method
-endrem
-
-	Method OnDeviceLost()
-		If _deviceok = False Then Return
-
-		For Local ri:TD3D9RenderImage = EachIn _renderImages
-			ri.OnDeviceLost()
-		Next
-		If _backbuffer
-			_backbuffer.release_
-			_backbuffer = Null
-		EndIf
-
-		_deviceok = False
-	End Method
-
-	Method OnDeviceReset()
-		If _deviceok = True Then Return
-
-		Local hr:Int = _d3ddev.GetRenderTarget(0, _backbuffer)
-		if hr = D3D_OK
-'			print "  _d3ddev.GetRenderTarget() result: D3D_OK" 
-		Elseif hr = D3DERR_INVALIDCALL
-			print "  _d3ddev.GetRenderTarget() result: D3DERR_INVALIDCALL" 
-		Elseif hr = D3DERR_NOTFOUND
-			print "  _d3ddev.GetRenderTarget() result: D3DERR_NOTFOUND"
-		Else 
-			print "  _d3ddev.GetRenderTarget() result: " + hr
-		EndIf
-		hr = _d3ddev.GetViewport(_viewport)
-
-		For Local ri:TD3D9RenderImage = EachIn _renderImages
-			ri.OnDeviceReset()
-		Next
-
-		_deviceok = True
-	End Method
-
-rem
-	Function fnOnDeviceMightGetLost(obj:Object)
-		Local ric:TD3D9RenderImageContext = TD3D9RenderImageContext(obj)
-		If Not ric Return
-		ric.OnDeviceMightGetLost()
-	EndFunction
-endrem
-
-	Function fnOnDeviceLost(obj:Object)
-		Local ric:TD3D9RenderImageContext = TD3D9RenderImageContext(obj)
-		If Not ric Return
-		ric.OnDeviceLost()
-	EndFunction
-
-	Function fnOnDeviceReset(obj:Object)
-		Local ric:TD3D9RenderImageContext = TD3D9RenderImageContext(obj)
-		If Not ric Return
-		ric.OnDeviceReset()
-	EndFunction
-EndType
-
-
 
 Type TD3D9RenderImageFrame Extends TD3D9ImageFrame
 	Field _surface:IDirect3DSurface9
-	Field _persistPixmap:TPixmap
+	Field _stagingPixmap:TPixmap
+	Field _width:UInt, _height:UInt
 
 	Method Delete()
 		ReleaseNow()
 	End Method
-
-	'ensure the GPU located render image would survive a "appsuspend"
-	'by eg. reading it into a TPixmap
-	Method Persist:Int(d3ddev:IDirect3DDevice9, width:Int, height:Int)
-		_persistPixmap = ToPixmap(d3ddev, width, height)
-		Return True
-	End Method
-
 	
 	Method ReleaseNow()
 		If _surface
@@ -437,111 +262,131 @@ Type TD3D9RenderImageFrame Extends TD3D9ImageFrame
 			_texture = Null
 		EndIf
 	End Method
-	
-	Method Clear(d3ddev:IDirect3DDevice9, r:Int=0, g:Int=0, b:Int=0, a:Float=0.0)
-		If Not d3ddev Return
 
-		Local c:Int = (int(a*255) Shl 24) | (r Shl 16) | (g Shl 8) | b
-		d3ddev.Clear(0, Null, D3DCLEAR_TARGET, c, 0.0, 0)
-	End Method
+	Function Create:TD3D9RenderImageFrame(width:UInt, height:UInt, flags:Int )
+		Local D3D9Texture:IDirect3DTexture9
+		If _d3ddev.CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT, D3D9Texture, Null) < 0
+			Throw "Could not create D3D9 Render Image : Width " + width + ", Height " + height + ", Flags " + flags
+			Return Null
+		EndIf
 
-	Method CreateRenderTarget:TD3D9RenderImageFrame( d3ddev:IDirect3DDevice9, width:Int,height:Int )
-		d3ddev.CreateTexture(width,height,1,D3DUSAGE_RENDERTARGET,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,_texture,Null)
-		If _texture _texture.GetSurfaceLevel 0, _surface
+		Local D3D9Surface:IDirect3DSurface9
+		If D3D9Texture
+			If D3D9Texture.GetSurfaceLevel(0, D3D9Surface) < 0
+				Throw "Could not get surface index 0 for D3D9 Render Image : Width " + width + ", Height " + height + ", Flags " + flags
+				Return Null
+			EndIf
+		EndIf
 		
-		_magfilter = D3DTFG_LINEAR
-		_minfilter = D3DTFG_LINEAR
-		_mipfilter = D3DTFG_LINEAR
+		Local RenderImage:TD3D9RenderImageFrame = New TD3D9RenderImageFrame
+		RenderImage._texture = D3D9Texture
+		RenderImage._surface = D3D9Surface
+		RenderImage._magfilter = D3DTFG_LINEAR
+		RenderImage._minfilter = D3DTFG_LINEAR
+		RenderImage._mipfilter = D3DTFG_LINEAR
 
-		_uscale = 1.0 / width
-		_vscale = 1.0 / height
+		RenderImage._uscale = 1.0 / width
+		RenderImage._vscale = 1.0 / height
+		RenderImage._width = width
+		RenderImage._height = height
 
-		Return Self
-	End Method
+		Return RenderImage
+	End Function
 	
 	Method DestroyRenderImage()
 		ReleaseNow()
 	End Method
-	
-rem
-	'once a device is lost we cannot simply backup a pixmap, so better
-	'do it any time we _could_ loose the device (eg. app suspend)
-	Method OnDeviceMightGetLost(d3ddev:IDirect3DDevice9, width:Int, height:Int)
-		print "TD3D9ImageFrame.OnDeviceMightGetLost(): persisting to pixmap"
-		Persist()
-	End Method
-endrem
 
-	Method OnDeviceLost(d3ddev:IDirect3DDevice9, width:Int, height:Int)
-		'only read in a new pixmap if none was created before
-		'in case of "suspend and resum" this ToPixmap() call will return
-		'an empty pixmap (because of "D3DERR_DEVICELOST")
-		If Not _persistPixmap
-			_persistPixmap = ToPixmap(d3ddev, width, height)
+	Method OnDeviceLost()
+		Local BackBuffer:TD3D9RenderImageFrame = _BackBufferRenderImageFrame
+		If Self <> BackBuffer And Not _stagingpixmap
+			If _surface
+				_stagingPixmap  = RenderTargetToPixmap()
+			EndIf
 		EndIf
 		ReleaseNow()
 	End Method
 
-	Method OnDeviceReset(d3ddev:IDirect3DDevice9)
-		If(_persistpixmap)
-			d3ddev.CreateTexture(_persistPixmap.width, _persistPixmap.height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, _texture, Null)
-			If _texture 
-				_texture.GetSurfaceLevel(0, _surface)
+	Method OnDeviceReset()		
+		' dont re-create until the device is ready
+		If _d3dDev.TestCooperativeLevel() = 0
+			If(_stagingPixmap)
+				RecreateFromPixmap()
 			EndIf
+		EndIf
+	End Method
 
-			FromPixmap(d3ddev, _persistPixmap)
+Private
+	Method RecreateFromPixmap()
+		If _d3ddev.CreateTexture(_width, _height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, _texture, Null) < 0
+			Throw "Failed to create render target"
+			Return
+		EndIf
+		
+		If _texture.GetSurfaceLevel(0, _surface) < 0
+			Throw "Failed to get surface of render target"
+			ReleaseNow()
+			Return
 		EndIf
 
-		_persistPixmap = Null
-	End Method
-	
-	Method FromPixmap(d3ddev:IDirect3DDevice9, pixmap:TPixmap)
-		' use a staging surface to copy the pixmap into
-		Local stage:IDirect3DSurface9
-		d3ddev.CreateOffscreenPlainSurface(pixmap.width, pixmap.height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, stage, Null)
+		Local StagingSurface:IDirect3DSurface9
+		If _d3ddev.CreateOffscreenPlainSurface(_width, _height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, StagingSurface, Null) < 0
+			Throw "Failed to create a staging surface"
+			ReleaseNow()
+			Return
+		EndIf
 
 		Local lockedrect:D3DLOCKED_RECT = New D3DLOCKED_RECT
-		stage.LockRect(lockedrect, Null, 0)
+		If StagingSurface.LockRect(lockedrect, Null, 0) < 0
+			Throw "Failed to lock the staging surface"
+			ReleaseNow()
+			StagingSurface.Release_()
+			Return
+		EndIf
 
-		' copy the pixel data across
-		For Local y:Int = 0 Until pixmap.height
-			Local srcptr:Byte Ptr = pixmap.pixels + y * pixmap.pitch
+		For Local y:Int = 0 Until _height
+			Local srcptr:Byte Ptr = _stagingPixmap.pixels + y * _stagingPixmap.pitch
 			Local dstptr:Byte Ptr = lockedrect.pBits + y * lockedrect.Pitch
-			MemCopy dstptr, srcptr, size_t(pixmap.width * 4)
+			MemCopy dstptr, srcptr, Size_T(_stagingPixmap.width * 4)
 		Next
-		stage.UnlockRect()
+		StagingSurface.UnlockRect()
 
-		' copy from the staging surface to the render surface
-		d3ddev.UpdateSurface(stage, Null, _surface, Null)
-
-		' cleanup
-		stage.release_
-	End Method
-	
-	Method ToPixmap:TPixmap(d3ddev:IDirect3DDevice9, width:Int, height:Int)
-		Local pixmap:TPixmap = CreatePixmap(width, height, PF_RGBA8888)
-
-		' use a staging surface to get the texture contents
-		Local stage:IDirect3DSurface9
-		d3ddev.CreateOffscreenPlainSurface(width, height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, stage, Null)
-
-		Local result:Int = d3ddev.GetRenderTargetData(_surface, stage)
-		If result < 0
-			If result = D3DERR_DRIVERINTERNALERROR
-				Throw "TD3D9RenderImageFrame:ToPixmap:GetRenderTargetData failed: D3DERR_DRIVERINTERNALERROR"
-			ElseIf result = D3DERR_DEVICELOST
-				'Throw "TD3D9RenderImageFrame:ToPixmap:GetRenderTargetData failed: D3DERR_DEVICELOST"
-			ElseIf result = D3DERR_INVALIDCALL
-				Throw "TD3D9RenderImageFrame:ToPixmap:GetRenderTargetData failed: D3DERR_INVALIDCALL"
-			Else
-				Throw "TD3D9RenderImageFrame:ToPixmap:GetRenderTargetData failed."
-			EndIf
+		If _d3ddev.UpdateSurface(StagingSurface, Null, _surface, Null) < 0
+			Throw "Failed to copy the staging surface texture data to the render target"
+			ReleaseNow()
+			StagingSurface.Release_()
+			Return
 		EndIf
 
+		StagingSurface.Release_()
+		_stagingPixmap = Null
+	End Method
+	
+	Method RenderTargetToPixmap:TPixmap()	
+		' use a staging surface to get the texture contents
+		Local StagingSurface:IDirect3DSurface9
+		If _d3ddev.CreateOffscreenPlainSurface(_width, _height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, StagingSurface, Null) < 0
+			Throw "Failed to create staging texture to receive render target data"
+			Return Null
+		EndIf
+		
+		If _d3ddev.GetRenderTargetData(_surface, StagingSurface) < 0
+			Throw "Failed to get render target data from render target into the staging buffer"
+			StagingSurface.Release_()
+			Return Null
+		EndIf
+		
 		' copy the pixel data across
 		Local lockedrect:D3DLOCKED_RECT = New D3DLOCKED_RECT
-		If stage.LockRect(lockedrect, Null, 0) < 0 Throw "TD3D9RenderImageFrame:ToPixmap:LockRect failed"
+		If StagingSurface.LockRect(lockedrect, Null, 0) < 0
+			StagingSurface.UnlockRect()
+			StagingSurface.Release_()
+			Throw "Failed to lock the staging buffer to get pixel data"
+			StagingSurface.Release_()
+			Return Null
+		EndIf
 
+		Local pixmap:TPixmap = CreatePixmap(_width, _height, PF_RGBA8888)
 		For Local y:Int = 0 Until pixmap.height
 			For Local x:Int = 0 Until pixmap.width
 				Local srcptr:Int Ptr = Int Ptr (lockedrect.pBits + x * 4 + y * lockedrect.Pitch)
@@ -550,196 +395,12 @@ endrem
 			Next
 		Next
 		
-		pixmap = ConvertPixmap(pixmap, PF_BGRA)
+		StagingSurface.UnlockRect()
+		StagingSurface.Release_()
 		
-		' cleanup
-		stage.UnlockRect()
-		stage.release_
-		
-		Return pixmap
+		Return ConvertPixmap(pixmap, PF_BGRA)
 	End Method
 EndType
-
-Type TD3D9RenderImage Extends TRenderImage
-	Field _d3ddev:IDirect3DDevice9
-	Field _viewport:D3DVIEWPORT9
-	Field _matrix:Float[]
-
-	Method Delete()
-		ReleaseNow()
-	End Method
-
-	'ensure the GPU located render image would survive a "appsuspend"
-	'by eg. reading it into a TPixmap
-	Method Persist:Int() Override
-		if TD3D9RenderImageFrame(frames[0])
-			Return TD3D9RenderImageFrame(frames[0]).Persist(_d3ddev, width, height)
-		EndIf
-		Return False
-	End Method
-
-	
-	Method ReleaseNow()
-		If _d3ddev
-			_d3ddev.release_
-			_d3ddev = Null
-		EndIf
-	End Method
-
-	Method CreateRenderImage:TD3D9RenderImage(width:Int ,height:Int)
-		Self.width=width	' TImage.width
-		Self.height=height	' TImage.height
-	
-		_matrix = [	2.0/width, 0.0, 0.0, 0.0,..
-					0.0, -2.0/height, 0.0, 0.0,..
-					0.0, 0.0, 1.0, 0.0,..
-					-1-(1.0/width), 1+(1.0/height), 1.0, 1.0 ]
-
-		_viewport = New D3DVIEWPORT9
-		_viewport.width = width
-		_viewport.height = height
-		_viewport.MaxZ = 1.0
-
-		Return Self
-	End Method
-	
-	Method DestroyRenderImage()
-		ReleaseNow()
-		TD3D9RenderImageFrame(frames[0]).ReleaseNow()
-	End Method
-
-	Method Init(d3ddev:IDirect3DDevice9, UseImageFiltering:Int)
-		_d3ddev = d3ddev
-		_d3ddev.AddRef()
-
-		frames = New TD3D9RenderImageFrame[1]
-		frames[0] = New TD3D9RenderImageFrame.CreateRenderTarget(_d3ddev, width, height)
-		If UseImageFiltering
-			TD3D9RenderImageFrame(frames[0])._magfilter=D3DTFG_LINEAR
-			TD3D9RenderImageFrame(frames[0])._minfilter=D3DTFG_LINEAR
-			TD3D9RenderImageFrame(frames[0])._mipfilter=D3DTFG_LINEAR
-		Else
-			TD3D9RenderImageFrame(frames[0])._magfilter=D3DTFG_POINT
-			TD3D9RenderImageFrame(frames[0])._minfilter=D3DTFG_POINT
-			TD3D9RenderImageFrame(frames[0])._mipfilter=D3DTFG_POINT
-		EndIf
-
-
-		'  clear the new render target surface
-		Local prevsurf:IDirect3DSurface9
-		Local prevmatrix:Float[16]
-		Local prevviewport:D3DVIEWPORT9 = New D3DVIEWPORT9
-		
-		' get previous
-		_d3ddev.GetRenderTarget(0, prevsurf)
-		_d3ddev.GetTransform(D3DTS_PROJECTION, prevmatrix)
-		_d3ddev.GetViewport(prevviewport)
-
-		' set and clear
-		_d3ddev.SetRenderTarget(0, TD3D9RenderImageFrame(frames[0])._surface)
-		_d3ddev.SetTransform(D3DTS_PROJECTION, _matrix)
-		_d3ddev.Clear(0, Null, D3DCLEAR_TARGET, 0, 0.0, 0)
-
-		' reset to previous
-		_d3ddev.SetRenderTarget(0, prevsurf)
-		_d3ddev.SetTransform(D3DTS_PROJECTION, prevmatrix)
-		_d3ddev.SetViewport(prevviewport)
-
-		' cleanup
-		If prevsurf Then prevsurf.release_
-	End Method
-	
-	Method InitFromPixmap(d3ddev:IDirect3DDevice9, Pixmap:TPixmap, UseImageFiltering:Int)
-		_d3ddev = d3ddev
-		_d3ddev.AddRef()
-
-		Pixmap = ConvertPixmap(pixmap, PF_BGRA)
-
-		frames = New TD3D9RenderImageFrame[1]
-		frames[0] = New TD3D9RenderImageFrame.CreateRenderTarget(d3ddev, width, height)
-		If UseImageFiltering
-			TD3D9RenderImageFrame(frames[0])._magfilter=D3DTFG_LINEAR
-			TD3D9RenderImageFrame(frames[0])._minfilter=D3DTFG_LINEAR
-			TD3D9RenderImageFrame(frames[0])._mipfilter=D3DTFG_LINEAR
-		Else
-			TD3D9RenderImageFrame(frames[0])._magfilter=D3DTFG_POINT
-			TD3D9RenderImageFrame(frames[0])._minfilter=D3DTFG_POINT
-			TD3D9RenderImageFrame(frames[0])._mipfilter=D3DTFG_POINT
-		EndIf
-
-		TD3D9RenderImageFrame(frames[0]).FromPixmap(d3ddev, Pixmap)
-	End Method	
-
-	Method Clear(r:Int=0, g:Int=0, b:Int=0, a:Float=0.0)
-		If frames[0] Then TD3D9RenderImageFrame(frames[0]).Clear(_d3ddev, r, g, b, a)
-	End Method
-
-	Method Frame:TImageFrame(index:Int=0)
-		If Not frames Return Null
-		If Not frames[0] Return Null
-		Return frames[0]
-	End Method
-	
-	Method SetRenderImage()
-		Local pTexture:IDirect3DTexture9
-		_d3ddev.GetTexture(0, pTexture)
-		
-		Local frame:TD3D9RenderImageFrame = TD3D9RenderImageFrame(frames[0])
-		If frame._texture <> pTexture
-			_d3ddev.SetTexture(0, pTexture)
-		EndIf
-		
-		If pTexture pTexture.Release_
-		
-		_d3ddev.SetRenderTarget(0, TD3D9RenderImageFrame(frames[0])._surface)
-		_d3ddev.SetTransform(D3DTS_PROJECTION,_matrix)
-		_d3ddev.SetViewport(_viewport)
-	End Method
-	
-	Method ToPixmap:TPixmap()
-		Return TD3D9RenderImageFrame(frames[0]).ToPixmap(_d3ddev, width, height)
-	End Method
-	
-	Method SetViewport(x:Int, y:Int, width:Int, height:Int)
-		If width = 0
-			width = Self.width
-			height = Self.height
-		EndIf
-
-		If x + width > Self.width
-			width:-(x + width - Self.width)
-		EndIf
-		If y + height > Self.height
-			height:-(y + height - Self.height)
-		EndIf
-
-		If x = 0 And y = 0 And width = Self.width And height = Self.height
-			_d3ddev.SetRenderState(D3DRS_SCISSORTESTENABLE, False)
-		Else
-			_d3ddev.SetRenderState(D3DRS_SCISSORTESTENABLE, True)
-			Local rect:Int[] = [x , y, x + width, y + height]
-			_d3ddev.SetScissorRect(rect)
-		EndIf
-
-	End Method
-
-'	Method OnDeviceMightGetLost()
-'		TD3D9RenderImageFrame(frames[0]).OnDeviceMightGetLost(_d3ddev, width, height)
-'	End Method
-
-	Method OnDeviceLost()
-		'invalidate (even with existing persistPixmap!)
-		_valid = False
-
-		TD3D9RenderImageFrame(frames[0]).OnDeviceLost(_d3ddev, width, height)
-	End Method
-
-	Method OnDeviceReset()
-		TD3D9RenderImageFrame(frames[0]).OnDeviceReset(_d3ddev)
-	End Method
-EndType
-
-
 
 Type TD3D9Max2DDriver Extends TMax2dDriver
 
@@ -753,7 +414,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 
 		Local d3d:IDirect3D9 = D3D9GraphicsDriver().GetDirect3D()
 		
-		If d3d.CheckDeviceFormat( D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,D3DFMT_X8R8G8B8,0,D3DRTYPE_TEXTURE,D3DFMT_A8R8G8B8 )<0
+		If d3d.CheckDeviceFormat( D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,D3DFMT_X8R8G8B8,0,D3DRTYPE_TEXTURE,D3DFMT_A8R8G8B8 ) < 0
 			Return Null
 		EndIf
 
@@ -792,7 +453,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 
 		_max2dGraphics=TMax2dGraphics( g )
 
-		_d3d9graphics=TD3D9Graphics( _max2dGraphics._graphics )
+		_d3d9graphics=TD3D9Graphics( _max2dGraphics._backendGraphics )
 
 		If Not _max2dGraphics Or Not _d3d9graphics Then
 			Throw "SetGraphics failed for D3D9"
@@ -828,8 +489,8 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		Local viewport:D3DVIEWPORT9
 		viewport.X = 0
 		viewport.Y = 0
-		viewport.Width = _gw
-		viewport.Height = _gh
+		viewport.width = _gw
+		viewport.height = _gh
 		viewport.MinZ = 0.0
 		viewport.MaxZ = 1.0
 		_d3dDev.SetViewport(viewport)
@@ -864,14 +525,15 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_d3dDev.SetTextureStageState 0,D3DTSS_MIPFILTER,D3DTFP_POINT
 		
 		_d3dDev.BeginScene
-
+		
+		_d3d9graphics.AddDeviceLostCallback(OnDeviceLost, Self)
+		_d3d9graphics.AddDeviceResetCallback(OnDeviceReset, Self)
+		
+		' Create default back buffer render image
+		AssignBackBufferRenderImage()
 	End Method
 
 	'***** TMax2DDriver *****
-	Method CreateRenderImageContext:Object(g:TGraphics) Override
-		Return New TD3D9RenderImageContext.Create(g, Self)
-	End Method
-
 	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags:Int ) Override
 		Return New TD3D9ImageFrame.Create( pixmap,flags )
 	End Method
@@ -923,34 +585,21 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_iverts[15]=_color
 		_iverts[21]=_color
 	End Method
-
-	Method SetColor( color:SColor8 ) Override
-		_color=(_color&$ff000000)|color.ToARGB()	
-		_iverts[3]=_color
-		_iverts[9]=_color
-		_iverts[15]=_color
-		_iverts[21]=_color
-	End Method
 	
-	Method SetClsColor( red:Int,green:Int,blue:Int ) Override
-		red=Max(Min(red,255),0)
-		green=Max(Min(green,255),0)
-		blue=Max(Min(blue,255),0)
-		_clscolor=$ff000000|(red Shl 16)|(green Shl 8)|blue
-	End Method
-	
-	Method SetClsColor( color:SColor8 ) Override
-		_clscolor=$ff000000|color.ToARGB()
+	Method SetClsColor( red:Int,green:Int,blue:Int, alpha:Float ) Override
+		red = Max(Min(red, 255), 0)
+		green = Max(Min(green, 255), 0)
+		blue = Max(Min(blue, 255), 0)
+		Local a:Int = Max(Min(alpha * 255.0, 255), 0)
+		_clscolor = (a Shl 24) | (red Shl 16) | (green Shl 8) | blue
 	End Method
 	
 	Method SetViewport( x:Int,y:Int,width:Int,height:Int ) Override
-		If x=0 And y=0 And width=_gw And height=_gh 'GraphicsWidth() And height=GraphicsHeight()
-			_d3dDev.SetRenderState D3DRS_SCISSORTESTENABLE,False
-		Else
-			_d3dDev.SetRenderState D3DRS_SCISSORTESTENABLE,True
-			Local rect:Int[]=[x,y,x+width,y+height]
-			_d3dDev.SetScissorRect rect
-		EndIf
+		_D3D9Scissor_BMaxViewport.x = x
+		_D3D9Scissor_BMaxViewport.y = y
+		_D3D9Scissor_BMaxViewport.width = width
+		_D3D9Scissor_BMaxViewport.height = height
+		SetScissor(x, y, width, height)
 	End Method
 	
 	Method SetTransform( xx:Float,xy:Float,yx:Float,yy:Float ) Override
@@ -1096,6 +745,11 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 
 	'GetDC/BitBlt MUCH faster than locking backbuffer!	
 	Method GrabPixmap:TPixmap( x:Int,y:Int,width:Int,height:Int ) Override
+		'for render targets we handle it differently to the backbuffer
+		If _CurrentRenderImageFrame <> _BackBufferRenderImageFrame
+			Return _CurrentRenderImageFrame.RenderTargetToPixmap()
+		EndIf
+
 	
 		Local srcsurf:IDirect3DSurface9
 		If _d3dDev.GetRenderTarget( 0,srcsurf )<0
@@ -1154,6 +808,107 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_d3dDev.SetTransform D3DTS_PROJECTION,matrix
 	End Method
 	
+	' Render Image --------------------
+	Method AssignBackBufferRenderImage()
+		Local BackBufferRenderImageFrame:TD3D9RenderImageFrame = New TD3D9RenderImageFrame
+		BackBufferRenderImageFrame._width = _gw
+		BackBufferRenderImageFrame._height = _gh
+		_d3dDev.GetBackBuffer(0, 0, 0, Varptr BackBufferRenderImageFrame._surface)
+	
+		' cache it
+		_BackBufferRenderImageFrame = BackBufferRenderImageFrame
+		_CurrentRenderImageFrame = _BackBufferRenderImageFrame
+		
+		AddToRenderImageList(BackBufferRenderImageFrame)
+	EndMethod
+	
+	Method AddToRenderImageList(RenderImage:TD3D9RenderImageFrame)
+		_RenderImageList.AddLast(RenderImage)
+	EndMethod
+	
+	Method RemoveFromRenderImageList(RenderImage:TD3D9RenderImageFrame)
+		If(_RenderImageList.Contains(RenderImage))
+			_RenderImageList.Remove(RenderImage)
+		EndIf
+	EndMethod
+
+	Method CreateRenderImageFrame:TImageFrame(width:UInt, height:UInt, flags:Int) Override
+		Local RenderImage:TD3D9RenderImageFrame = TD3D9RenderImageFrame.Create(width, height, flags)
+		AddToRenderImageList(RenderImage)
+		Return RenderImage
+	EndMethod
+	
+	Method SetRenderImageFrame(RenderImageFrame:TImageFrame) Override
+		If RenderImageFrame = _CurrentRenderImageFrame
+			Return
+		EndIf
+
+		Local D3D9RenderImageFrame:TD3D9RenderImageFrame = TD3D9RenderImageFrame(RenderImageFrame)
+		_d3dDev.SetRenderTarget(0, D3D9RenderImageFrame._surface)
+		_CurrentRenderImageFrame = D3D9RenderImageFrame
+		
+		Local vp:Rect = _D3D9Scissor_BMaxViewport
+		SetScissor(vp.x, vp.y, vp.width, vp.height)
+		SetMatrixAndViewportToCurrentRenderImage()
+	EndMethod
+	
+	Method SetBackbuffer()
+		SetRenderImageFrame(_BackBufferRenderImageFrame)
+	EndMethod
+	
+	Function OnDeviceLost(obj:Object)
+		Local Driver:TD3D9Max2DDriver = TD3D9Max2DDriver(obj)
+		Local RenderImageList:TList = Driver._RenderImageList
+		
+		For Local RenderImage:TD3D9RenderImageFrame = EachIn RenderImageList
+			RenderImage.OnDeviceLost()
+		Next
+		Driver.RemoveFromRenderImageList(_BackBufferRenderImageFrame)
+	EndFunction
+	
+	Function OnDeviceReset(obj:Object)
+		Local Driver:TD3D9Max2DDriver = TD3D9Max2DDriver(obj)
+		Local RenderImageList:TList = Driver._RenderImageList
+
+		For Local RenderImage:TD3D9RenderImageFrame = EachIn RenderImageList
+			RenderImage.OnDeviceReset()
+		Next
+	EndFunction
+		
+Private
+	Field _RenderImageList:TList = New TList
+	
+	Method SetMatrixAndViewportToCurrentRenderImage()
+		Local width:Float = _CurrentRenderImageFrame._width
+		Local height:Float = _CurrentRenderImageFrame._height
+		
+		Local matrix:Float[] = [..
+		2.0 / width, 0.0, 0.0, 0.0,..
+		0.0, -2.0/height, 0.0, 0.0,..
+		0.0, 0.0, 1.0, 0.0,..
+		-1 - (1.0 / width), 1 + (1.0 / height), 1.0, 1.0]
+
+		_d3dDev.SetTransform D3DTS_PROJECTION,matrix
+		
+		Local Viewport:D3DViewport9 = New D3DViewport9
+		Viewport.X = 0
+		Viewport.Y = 0
+		Viewport.width = width
+		Viewport.height = height
+		Viewport.MinZ = 0.0
+		Viewport.MaxZ = 1.0
+		_d3dDev.SetViewport(Viewport)
+	EndMethod
+
+	Method SetScissor(x:Int, y:Int, width:Int, height:Int)
+		If x = 0 And y = 0 And width = _CurrentRenderImageFrame._width And height = _CurrentRenderImageFrame._height
+			_d3dDev.SetRenderState(D3DRS_SCISSORTESTENABLE, False)
+		Else
+			_d3dDev.SetRenderState(D3DRS_SCISSORTESTENABLE, True)
+			Local Scissor:Rect = New Rect(x, y, x + width, y + height)
+			_d3dDev.SetScissorRect(Varptr Scissor)
+		EndIf
+	EndMethod
 End Type
 
 Rem
