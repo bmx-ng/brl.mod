@@ -567,7 +567,7 @@ Function LoadPixmap:TPixmap( url:Object )
 			pixmap=loader.LoadPixmap( stream )
 		Catch ex:TStreamException
 		End Try
-		If pixmap Exit
+		If pixmap And pixmap.width And pixmap.height Exit
 		loader=loader._succ
 	Wend
 	stream.Close
