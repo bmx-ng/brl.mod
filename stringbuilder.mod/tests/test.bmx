@@ -11,6 +11,8 @@ Type TStringBuilderTest Extends TTest
 	Field bigUnicode:UInt[] = [$10300, $10301, $10302, $10303, $10304, $10305, 0]
 	Field unicode:Int[] = [1055, 1088, 1080, 1074, 1077, 1090]
 	Field utf8:Byte[] = [208, 159, 209, 128, 208, 184, 208, 178, 208, 181, 209, 130, 0]
+	Field utf8_hello:Byte[] = [104, 101, 108, 108, 111, 32, 32, 32, 32]
+	Field utf8_world:Byte[] = [119, 111, 114, 108, 100, 32, 32, 32, 32]
 
 	Field sb:TStringBuilder
 	
@@ -145,8 +147,12 @@ Type TStringBuilderTest Extends TTest
 		Local b:Byte Ptr = utf8
 
 		sb.AppendUTF8Bytes(b, 12)
+		b = utf8_hello
+		sb.AppendUTF8Bytes(b, 6)
+		b = utf8_world
+		sb.AppendUTF8Bytes(b, 5)
 
-		assertEquals("Привет", sb.ToString())
+		assertEquals("Приветhello world", sb.ToString())
 	End Method
 
 	Method testfromUTF32() { test }
