@@ -15,7 +15,7 @@ extern void *_data_start__;
 #endif
 #endif
 
-#ifdef __linux
+#ifdef __linux__
 #ifdef __ANDROID__
 extern int __data_start[];
 extern int _end[];
@@ -69,7 +69,7 @@ void bbGCStartup( void *spTop ){
 //	GC_add_roots((void*)seg->vmaddr, (void*)(seg->vmaddr + seg->vmsize));
 #endif
 
-#ifdef __linux
+#ifdef __linux__
 	GC_add_roots(&__data_start, &_end);
 #endif
 */
