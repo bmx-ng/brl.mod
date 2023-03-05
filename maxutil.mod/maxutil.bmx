@@ -25,21 +25,37 @@ Function BlitzMaxPath$()
 		bmxpath=p
 		Return p
 	EndIf
-	p=AppDir
-	Repeat
-		Local t$=p+"/bin/bmk"
-		?Win32
-		t:+".exe"
-		?
-		If FileType(t)=FILETYPE_FILE
-			putenv_ "BMXPATH="+p
-			bmxpath=p
-			Return p
-		EndIf
-		Local q$=ExtractDir( p )
-		If q=p Throw "Unable to locate BlitzMax path"
-		p=q
-	Forever
+
+	'check various paths
+	'1st: AppDir (symlinks resolved)
+	'2nd: CurrentDir (directory of the "call")
+	for local i:int = 0 to 1
+		'1st try to get it from the real path
+		if i = 0 then p = AppDir
+		'2nd try to get it from the current dir (eg. when symlinked)
+		if i = 1 then p = CurrentDir()
+
+		Repeat
+			Local t$=p+"/bin/bmk"
+			?Win32
+			t:+".exe"
+			?
+			If FileType(t)=FILETYPE_FILE
+				putenv_ "BMXPATH="+p
+				bmxpath=p
+				Return p
+			EndIf
+			Local q$=ExtractDir( p )
+			'reached base directory?
+			If q=p
+				'in run 1 ...go to run 2
+				if i = 0 then exit
+				'already in run 2 - throw an error
+				if i = 1 then Throw "Unable to locate BlitzMax path"
+			endif
+			p=q
+		Forever
+	Next
 End Function
 
 Function ModulePath$( modid$ )
