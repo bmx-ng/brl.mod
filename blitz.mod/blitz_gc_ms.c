@@ -53,7 +53,7 @@ extern void *_stop_data__;
 extern void *_end__;
 #endif
 
-#ifdef __linux
+#ifdef __linux__
 extern void *__data_start;
 extern void *__bss_start;
 extern void *_end;
@@ -439,7 +439,7 @@ void bbGCStartup(){
 	DATA_END=(void**)(seg[6]+seg[7]);
 #endif
 
-#ifdef __linux
+#ifdef __linux__
 	DATA_START=&__data_start;
 	DATA_END=&_end;
 #endif	
