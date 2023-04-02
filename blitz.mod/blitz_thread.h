@@ -63,7 +63,7 @@ extern pthread_mutexattr_t _bb_mutexattr;
 
 #endif
 
-#ifdef __linux
+#ifdef __linux__
 
 #include <semaphore.h>
 typedef sem_t bb_sem_t;
