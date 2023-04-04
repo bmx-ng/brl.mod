@@ -44,11 +44,24 @@ End Rem
 Enum EStreamEncoding
     UTF16
     WINDOWS_1252
+	CP1252=WINDOWS_1252
 	ISO_8859_1
 	LATIN1=ISO_8859_1
 	
 	WINDOWS_1250
+	CP1250=WINDOWS_1250
 	WINDOWS_1251
+	CP1251=WINDOWS_1251
+	WINDOWS_1253
+	CP1253=WINDOWS_1253
+	WINDOWS_1254
+	CP1254=WINDOWS_1254
+	WINDOWS_1255
+	CP1255=WINDOWS_1255
+	WINDOWS_1256
+	CP1256=WINDOWS_1256
+	WINDOWS_1257
+	CP1257=WINDOWS_1257
     ISO_8859_2
     ISO_8859_5
     ISO_8859_6
@@ -313,15 +326,15 @@ Type TWindows1252EncodingStrategy Extends TBaseSingleByteEncodingStrategy
 	Method LoadTable(table:Short Ptr)
 		Global encodingTable:Short[]
 		If Not encodingTable Then
-			encodingTable = [..
-				$0402:Short, $0403:Short, $201A:Short, $0453:Short, $201E:Short, $2026:Short, $2020:Short, $2021:Short, $20AC:Short, $2030:Short, $0409:Short, $2039:Short, $040A:Short, $040C:Short, $040B:Short, $040F:Short,..
-				$0452:Short, $2018:Short, $2019:Short, $201C:Short, $201D:Short, $2022:Short, $2013:Short, $2014:Short, $0098:Short, $2122:Short, $0459:Short, $203A:Short, $045A:Short, $045C:Short, $045B:Short, $045F:Short,..
-				$00A0:Short, $040E:Short, $045E:Short, $0408:Short, $00A4:Short, $0490:Short, $00A6:Short, $00A7:Short, $0401:Short, $00A9:Short, $0404:Short, $00AB:Short, $00AC:Short, $00AD:Short, $00AE:Short, $0407:Short,..
-				$00B0:Short, $00B1:Short, $0406:Short, $0456:Short, $0491:Short, $00B5:Short, $00B6:Short, $00B7:Short, $0451:Short, $2116:Short, $0454:Short, $00BB:Short, $0458:Short, $0405:Short, $0455:Short, $0457:Short,..
-				$0410:Short, $0411:Short, $0412:Short, $0413:Short, $0414:Short, $0415:Short, $0416:Short, $0417:Short, $0418:Short, $0419:Short, $041A:Short, $041B:Short, $041C:Short, $041D:Short, $041E:Short, $041F:Short,..
-				$0420:Short, $0421:Short, $0422:Short, $0423:Short, $0424:Short, $0425:Short, $0426:Short, $0427:Short, $0428:Short, $0429:Short, $042A:Short, $042B:Short, $042C:Short, $042D:Short, $042E:Short, $042F:Short,..
-				$0430:Short, $0431:Short, $0432:Short, $0433:Short, $0434:Short, $0435:Short, $0436:Short, $0437:Short, $0438:Short, $0439:Short, $043A:Short, $043B:Short, $043C:Short, $043D:Short, $043E:Short, $043F:Short,..
-				$0440:Short, $0441:Short, $0442:Short, $0443:Short, $0444:Short, $0445:Short, $0446:Short, $0447:Short, $0448:Short, $0449:Short, $044A:Short, $044B:Short, $044C:Short, $044D:Short, $044E:Short, $044F:Short]
+            encodingTable = [..
+				$20AC:Short, $FFFD:Short, $201A:Short, $0192:Short, $201E:Short, $2026:Short, $2020:Short, $2021:Short, $02C6:Short, $2030:Short, $0160:Short, $2039:Short, $0152:Short, $FFFD:Short, $017D:Short, $FFFD:Short,..
+				$FFFD:Short, $2018:Short, $2019:Short, $201C:Short, $201D:Short, $2022:Short, $2013:Short, $2014:Short, $02DC:Short, $2122:Short, $0161:Short, $203A:Short, $0153:Short, $FFFD:Short, $017E:Short, $0178:Short,..
+				$00A0:Short, $00A1:Short, $00A2:Short, $00A3:Short, $00A4:Short, $00A5:Short, $00A6:Short, $00A7:Short, $00A8:Short, $00A9:Short, $00AA:Short, $00AB:Short, $00AC:Short, $00AD:Short, $00AE:Short, $00AF:Short,..
+				$00B0:Short, $00B1:Short, $00B2:Short, $00B3:Short, $00B4:Short, $00B5:Short, $00B6:Short, $00B7:Short, $00B8:Short, $00B9:Short, $00BA:Short, $00BB:Short, $00BC:Short, $00BD:Short, $00BE:Short, $00BF:Short,..
+				$00C0:Short, $00C1:Short, $00C2:Short, $00C3:Short, $00C4:Short, $00C5:Short, $00C6:Short, $00C7:Short, $00C8:Short, $00C9:Short, $00CA:Short, $00CB:Short, $00CC:Short, $00CD:Short, $00CE:Short, $00CF:Short,..
+				$00D0:Short, $00D1:Short, $00D2:Short, $00D3:Short, $00D4:Short, $00D5:Short, $00D6:Short, $00D7:Short, $00D8:Short, $00D9:Short, $00DA:Short, $00DB:Short, $00DC:Short, $00DD:Short, $00DE:Short, $00DF:Short,..
+				$00E0:Short, $00E1:Short, $00E2:Short, $00E3:Short, $00E4:Short, $00E5:Short, $00E6:Short, $00E7:Short, $00E8:Short, $00E9:Short, $00EA:Short, $00EB:Short, $00EC:Short, $00ED:Short, $00EE:Short, $00EF:Short,..
+				$00F0:Short, $00F1:Short, $00F2:Short, $00F3:Short, $00F4:Short, $00F5:Short, $00F6:Short, $00F7:Short, $00F8:Short, $00F9:Short, $00FA:Short, $00FB:Short, $00FC:Short, $00FD:Short, $00FE:Short, $00FF:Short]			
 		End If
 
 		For Local i:Int = 0 To 127
