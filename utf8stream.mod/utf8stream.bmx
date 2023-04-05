@@ -73,15 +73,6 @@ End Enum
 
 Rem
 bbdoc: This class wraps a stream and converts its contents to UTF8.
-```blitzmax
-	' Create a stream that reads from a file and converts its contents to UTF8.
-	Local stream:TStream = New TEncodingToUTF8Stream(ReadStream("test.txt"), EStreamEncoding.LATIN1)
-	' Read the first 10 bytes from the stream.
-	Local StaticArray buf:Byte[10]
-	stream.ReadBytes(buf, 10)
-	' Print the bytes to the console.
-	Print buf
-```
 End Rem
 Type TEncodingToUTF8Stream Extends TStreamWrapper
 	Field encodingStrategy:IEncodingStrategy
