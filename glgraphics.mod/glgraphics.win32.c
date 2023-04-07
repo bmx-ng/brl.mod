@@ -97,7 +97,7 @@ static BOOL _wglChoosePixelFormatARB( HDC hDC, const int *intAttribs, const FLOA
 	return 0;
 }
 
-static int MyChoosePixelFormat( HDC hDC, const int flags ){
+static int MyChoosePixelFormat( HDC hDC, const BBInt64 flags ){
 	//Extract multisample mode from flags 
 	int multisample = 0;
 	if (_MULTISAMPLE2X & flags) multisample = 2;
@@ -414,7 +414,7 @@ BBGLContext *bbGLGraphicsAttachGraphics( HWND hwnd,BBInt64 flags ){
 	return context;
 }
 
-BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hertz,int flags, int x, int y ){
+BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hertz, BBInt64 flags, int x, int y ){
 	BBGLContext *context;
 	
 	int mode;
