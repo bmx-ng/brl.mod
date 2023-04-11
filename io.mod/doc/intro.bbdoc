@@ -264,8 +264,7 @@ End If
 
 In this example, three archives (`base_archive.zip`, `mod_archive.zip`, and `update_archive.zip`)
 are mounted to the root of the search path. When accessing files, MaxIO will search through
-these archives in the order they were mounted, effectively combining their contents into a
-single file system.
+these archives, effectively combining their contents into a single file system.
 
 If a file exists in more than one archive, the file from the most recently mounted archive
 will take precedence. This allows you to easily overlay new files on top of older ones, making
