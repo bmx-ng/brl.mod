@@ -172,7 +172,7 @@ HICON bbAppIcon(HINSTANCE hInstance) {
 	return LoadIcon(hInstance, "APP_ICON");
 }
 
-#elif __linux
+#elif __linux__
 
 #include <unistd.h>
 #include <pthread.h>
@@ -465,7 +465,7 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 		bbMemFree(p);
 	}
 
-#elif __linux
+#elif __linux__
 
 	char *ebp;
 	char buf[PATH_MAX];

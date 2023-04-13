@@ -315,7 +315,7 @@ int bbThreadResume( BBThread *thread ) {
 #include <unistd.h>
 #include <signal.h>
 
-#if __linux
+#if __linux__
 #define MUTEX_RECURSIVE 1
 #elif __APPLE__
 #define MUTEX_RECURSIVE 2

@@ -283,6 +283,10 @@ Type TStream Extends TIO
 		Return n
 	End Method
 
+	Method ReadShort:Int(buf:Byte Ptr)
+		Return ReadBytes(buf,2)
+	End Method
+
 	Rem
 	bbdoc: Write a short (two bytes) to the stream
 	about:

@@ -494,22 +494,25 @@ void bmx_stringbuilder_append_utf8bytes(struct MaxStringBuilder * buf, const cha
 		
 		bmx_stringbuilder_resize(buf, buf->count + length);
 		
-		int c;
-		const char * p = chars;
+		char * p = chars;
 		BBChar * b = buf->buffer + buf->count;
 		
-		while( (c=*p++ & 0xff) ){
+		while( length-- ){
+			int c=*p++ & 0xff;
 			if( c<0x80 ){
 				*b++=c;
 			}else{
+				if (!length--) break;
 				int d=*p++ & 0x3f;
 				if( c<0xe0 ){
 					*b++=((c&31)<<6) | d;
 				}else{
+					if (!length--) break;
 					int e=*p++ & 0x3f;
 					if( c<0xf0 ){
 						*b++=((c&15)<<12) | (d<<6) | e;
 					}else{
+						if (!length--) break;
 						int f=*p++ & 0x3f;
 						int v=((c&7)<<18) | (d<<12) | (e<<6) | f;
 						if( v & 0xffff0000 ) bbExThrowCString( "Unicode character out of UCS-2 range" );
