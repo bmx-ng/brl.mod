@@ -86,7 +86,7 @@ Struct SMat2D
 	End Method
 	
 	Rem
-	bbdoc: Multiplies the matrix by @z, returning a new matrix.
+	bbdoc: Multiplies the matrix by @z, the dot product, returning a new matrix.
 	End Rem
 	Method Operator*:SMat2D(z:SMat2D)
 		Return New SMat2D(a * z.a + c * z.b, b * z.a + d * z.b, a * z.c + c * z.d, b * z.c + d * z.d)
@@ -100,7 +100,7 @@ Struct SMat2D
 	End Method
 	
 	Rem
-	bbdoc: Multiplies the matrix by @z by its components, return a new matrix.
+	bbdoc: Multiplies the matrix by @z by its components, or element-wise matrix multiplication, return a new matrix.
 	End Rem
 	Method CompMul:SMat2D(z:SMat2D)
 		Return New SMat2D(a * z.a, b * z.b, c * z.c, d * z.d)
@@ -250,7 +250,7 @@ Struct SMat3D
 	End Method
 	
 	Rem
-	bbdoc: Multiplies the matrix by @z, returning a new matrix.
+	bbdoc: Multiplies the matrix by @z, the dot product, returning a new matrix.
 	End Rem
 	Method Operator*:SMat3D(z:SMat3D Var)
 		Local a00:Double = a
@@ -298,7 +298,7 @@ Struct SMat3D
 	End Method
 	
 	Rem
-	bbdoc: Multiplies the matrix by @z by its components, return a new matrix.
+	bbdoc: Multiplies the matrix by @z by its components, or element-wise matrix multiplication, return a new matrix.
 	End Rem
 	Method CompMul:SMat3D(z:SMat3D Var)
 		Return New SMat3D(a * z.a, b * z.b, c * z.c, d * z.d, e * z.e, f * z.f, g * z.g, h * z.h, i * z.i)
@@ -353,7 +353,7 @@ Struct SMat3D
 	End Method
 	
 	Rem
-	bbdoc: Rotates the matrix by @angle degrees, returning a new matrix.
+	bbdoc: Rotates the matrix on a 2D rotation in the XY plane by @angle degrees, returning a new matrix.
 	End Rem
 	Method Rotate:SMat3D(angle:Double)
 		Local sa:Double = Sin(angle)
@@ -366,9 +366,26 @@ Struct SMat3D
 			ca * f - sa * c, ..
 			g, h, i)
 	End Method
-	
+
 	Rem
-	bbdoc: Retrns a rotation matrix of @angle degrees.
+	bbdoc: Rotates the matrix around the Z axis by @angle degrees, returning a new matrix.
+	End Rem
+	Method RotateZ:SMat3D(angle:Double)
+		Local ca:Double = Cos(angle)
+		Local sa:Double = Sin(angle)
+	
+		Return New SMat3D( ..
+			a * ca - c * sa, ..
+			b * ca - d * sa, ..
+			0, ..
+			a * sa + c * ca, ..
+			b * sa + d * ca, ..
+			0, ..
+			g, h, i)
+	End Method
+
+	Rem
+	bbdoc: Returns a rotation matrix of @angle degrees.
 	End Rem
 	Function Rotation:SMat3D(angle:Double)
 		Local sa:Double = Sin(angle)
@@ -391,6 +408,30 @@ Struct SMat3D
 	Function Scaling:SMat3D(s:SVec2D)
 		Return New SMat3D(s.x, 0, 0, 0, s.y, 0, 0, 0, 1)
 	End Function
+
+	Rem
+	bbdoc: Returns a translation with the specified @x, @y, and @z displacements.
+	End Rem
+	Method Translate:SMat3D(x:Double, y:Double, z:Double)
+		Return New SMat3D( ..
+			a, b, c, ..
+			d, e, f, ..
+			g + a * x + b * y + c * z, ..
+			h + d * x + e * y + f * z, ..
+			i + g * x + h * y + i * z)
+	End Method
+
+	Rem
+	bbdoc: Returns a translation with displacement vector @s.
+	End Rem
+	Method Translate:SMat3D(t:SVec3D)
+		Return New SMat3D( ..
+			a, b, c, ..
+			d, e, f, ..
+			g + a * t.x + b * t.y + c * t.z, ..
+			h + d * t.x + e * t.y + f * t.z, ..
+			i + g * t.x + h * t.y + i * t.z)
+	End Method
 	
 	Rem
 	bbdoc: Returns a transposition of the matrix.
@@ -520,7 +561,7 @@ Struct SMat4D
 	End Method
 
 	Rem
-	bbdoc: Multiplies the matrix by @z, returning a new matrix. 
+	bbdoc: Multiplies the matrix by @z, the dot product, returning a new matrix. 
 	End Rem
 	Method Operator*:SMat4D(z:SMat4D Var)
 		Local a00:Double = a
@@ -612,7 +653,7 @@ Struct SMat4D
 	End Method
 	
 	Rem
-	bbdoc: Multiplies the matrix by @z by its components, returning a new matrix.
+	bbdoc: Multiplies the matrix by @z by its components, or element-wise matrix multiplication, returning a new matrix.
 	End Rem
 	Method CompMul:SMat4D(z:SMat4D Var)
 		Return New SMat4D(a * z.a, b * z.b, c * z.c, d * z.d, ..
@@ -942,7 +983,7 @@ Struct SMat2F
 	End Method
 	
 	Rem
-	bbdoc: Multiplies the matrix by @z, returning a new matrix.
+	bbdoc: Multiplies the matrix by @z, the dot product, returning a new matrix.
 	End Rem
 	Method Operator*:SMat2F(z:SMat2F)
 		Return New SMat2F(a * z.a + c * z.b, b * z.a + d * z.b, a * z.c + c * z.d, b * z.c + d * z.d)
@@ -1026,7 +1067,7 @@ Struct SMat2F
 	Function Scaling:SMat2F(s:SVec2D)
 		Return New SMat2F(Float(s.x), 0, 0, Float(s.y))
 	End Function
-	
+
 	Rem
 	bbdoc: Returns the transpose of this matrix.
 	End Rem
@@ -1120,7 +1161,7 @@ Struct SMat3F
 	End Method
 	
 	Rem
-	bbdoc: Multiplies the matrix by @z, returning a new matrix.
+	bbdoc: Multiplies the matrix by @z, the dot product, returning a new matrix.
 	End Rem
 	Method Operator*:SMat3F(z:SMat3F Var)
 		Local a00:Float = a
@@ -1277,7 +1318,31 @@ Struct SMat3F
 	Function Scaling:SMat3F(s:SVec2D)
 		Return New SMat3F(Float(s.x), 0, 0, 0, Float(s.y), 0, 0, 0, 1)
 	End Function
-	
+
+	Rem
+	bbdoc: Returns a translation with the specified @x, @y, and @z displacements.
+	End Rem
+	Method Translate:SMat3F(x:Float, y:Float, z:Float)
+		Return New SMat3F( ..
+			a, b, c, ..
+			d, e, f, ..
+			g + a * x + b * y + c * z, ..
+			h + d * x + e * y + f * z, ..
+			i + g * x + h * y + i * z)
+	End Method
+
+	Rem
+	bbdoc: Returns a translation with displacement vector @s.
+	End Rem
+	Method Translate:SMat3F(t:SVec3F)
+		Return New SMat3F( ..
+			a, b, c, ..
+			d, e, f, ..
+			g + a * t.x + b * t.y + c * t.z, ..
+			h + d * t.x + e * t.y + f * t.z, ..
+			i + g * t.x + h * t.y + i * t.z)
+	End Method
+
 	Rem
 	bbdoc: Returns a transposition of the matrix.
 	End Rem
@@ -1406,7 +1471,7 @@ Struct SMat4F
 	End Method
 
 	Rem
-	bbdoc: Multiplies the matrix by @z, returning a new matrix. 
+	bbdoc: Multiplies the matrix by @z, the dot product, returning a new matrix. 
 	End Rem
 	Method Operator*:SMat4F(z:SMat4F Var)
 		Local a00:Float = a
@@ -1872,7 +1937,7 @@ Struct SMat2I
 	End Method
 	
 	Rem
-	bbdoc: Multiplies the matrix by @z, returning a new matrix.
+	bbdoc: Multiplies the matrix by @z, the dot product, returning a new matrix.
 	End Rem
 	Method Operator*:SMat2I(z:SMat2I)
 		Return New SMat2I(a * z.a + c * z.b, b * z.a + d * z.b, a * z.c + c * z.d, b * z.c + d * z.d)
@@ -2050,7 +2115,7 @@ Struct SMat3I
 	End Method
 	
 	Rem
-	bbdoc: Multiplies the matrix by @z, returning a new matrix.
+	bbdoc: Multiplies the matrix by @z, the dot product, returning a new matrix.
 	End Rem
 	Method Operator*:SMat3I(z:SMat3I Var)
 		Local a00:Int = a
@@ -2223,7 +2288,31 @@ Struct SMat3I
 	Function Scaling:SMat3I(s:SVec2F)
 		Return New SMat3I(Int(s.x), 0, 0, 0, Int(s.y), 0, 0, 0, 1)
 	End Function
-	
+
+	Rem
+	bbdoc: Returns a translation with the specified @x, @y, and @z displacements.
+	End Rem
+	Method Translate:SMat3I(x:Int, y:Int, z:Int)
+		Return New SMat3I( ..
+			a, b, c, ..
+			d, e, f, ..
+			g + a * x + b * y + c * z, ..
+			h + d * x + e * y + f * z, ..
+			i + g * x + h * y + i * z)
+	End Method
+
+	Rem
+	bbdoc: Returns a translation with displacement vector @s.
+	End Rem
+	Method Translate:SMat3I(t:SVec3I)
+		Return New SMat3I( ..
+			a, b, c, ..
+			d, e, f, ..
+			g + a * t.x + b * t.y + c * t.z, ..
+			h + d * t.x + e * t.y + f * t.z, ..
+			i + g * t.x + h * t.y + i * t.z)
+	End Method
+
 	Rem
 	bbdoc: Returns a transposition of the matrix.
 	End Rem
@@ -2352,7 +2441,7 @@ Struct SMat4I
 	End Method
 
 	Rem
-	bbdoc: Multiplies the matrix by @z, returning a new matrix. 
+	bbdoc: Multiplies the matrix by @z, the dot product, returning a new matrix. 
 	End Rem
 	Method Operator*:SMat4I(z:SMat4I Var)
 		Local a00:Int = a
