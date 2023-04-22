@@ -121,57 +121,6 @@ Function WaitSystem()
 End Function
 
 Rem
-bbdoc: Get current date
-returns: The current date as a string
-about:
-By default, it returns the current date in the format: DD MON YYYY (i.e. 10 DEC 2000).
-You can also specify some parameters to return the date in a format of your choice:
-[ @parameter | @description
-* %%a | Abbreviated day name (sun - mon).
-* %%A | Long day name (Sunday - Monday).
-* %%b | Abbreviated month name (jan - feb).
-* %%B | Long month name (January...).
-* %%c | Locale date & time.
-* %%d | day - in number (1..31).
-* %%H | hour - in number (0..23).
-* %%I | hour - in number (1..12).
-* %%j | day of the year (1..366).
-* %%m | month - in number (1..12).
-* %%M | minutes - in number (00..59).
-* %%P | AM / PM.
-* %%S | seconds - in number (00..59).
-* %%U | week number
-* %%w | day of the week (0..6).
-* %%W | week of the year (0..53).
-* %%x | locale data representation.
-* %%y | year without century (2014 --> 14).
-* %%Y | Year (2014).
-* %%Z | Time zone name.
-]
-You can use these parameters together:<br/>
-CurrentDate("Month: %%a Day: %%d")<br/>
-End Rem
-Function CurrentDate$(_format$="%d %b %Y")
-	Local	time[256],buff:Byte[256]
-	time_(time)
-	strftime_(buff,256,_format,localtime_( time ))
-	Return String.FromCString(buff)
-End Function
-
-Rem
-bbdoc: Get current time
-returns: The current time as a string
-about:
-Returns the current time in the format: HH:MM:SS (i.e. 14:31:57).
-End Rem
-Function CurrentTime$()
-	Local	time[256],buff:Byte[256]
-	time_(time)
-	strftime_( buff,256,"%H:%M:%S",localtime_( time ) );
-	Return String.FromCString(buff)
-End Function
-
-Rem
 bbdoc: Move mouse pointer
 about:
 #MoveMouse positions the mouse cursor at a specific location within
