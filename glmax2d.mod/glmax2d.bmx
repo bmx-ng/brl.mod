@@ -52,10 +52,10 @@ Global _CurrentRenderImageFrame:TGLRenderImageFrame
 Global _GLScissor_BMaxViewport:Rect = New Rect
 
 'Naughty!
-Const GL_BGR:Int=$80E0
-Const GL_BGRA:Int=$80E1
-Const GL_CLAMP_TO_EDGE:Int=$812F
-Const GL_CLAMP_TO_BORDER:Int=$812D
+Const GL_BGR:Int = $80E0
+Const GL_BGRA:Int = $80E1
+Const GL_CLAMP_TO_EDGE:Int = $812F
+Const GL_CLAMP_TO_BORDER:Int = $812D
 
 Global ix:Float,iy:Float,jx:Float,jy:Float
 Global color4ub:Byte[4]
@@ -65,28 +65,28 @@ Global state_boundtex:Int
 Global state_texenabled:Int
 
 Function BindTex( name:Int )
-	If name=state_boundtex Return
-	glBindTexture GL_TEXTURE_2D,name
-	state_boundtex=name
+	If name = state_boundtex Return
+	glBindTexture( GL_TEXTURE_2D, name )
+	state_boundtex = name
 End Function
 
 Function EnableTex( name:Int )
-	BindTex name
+	BindTex( name )
 	If state_texenabled Return
-	glEnable GL_TEXTURE_2D
-	state_texenabled=True
+	glEnable( GL_TEXTURE_2D )
+	state_texenabled = True
 End Function
 
 Function DisableTex()
 	If Not state_texenabled Return
-	glDisable GL_TEXTURE_2D
-	state_texenabled=False
+	glDisable( GL_TEXTURE_2D )
+	state_texenabled = False
 End Function
 
 Function Pow2Size:Int( n:Int )
-	Local t:Int=1
-	While t<n
-		t:*2
+	Local t:Int = 1
+	While t < n
+		t :* 2
 	Wend
 	Return t
 End Function
@@ -103,11 +103,11 @@ End Function
 
 Function CreateTex:Int( width:Int,height:Int,flags:Int,pixmap:TPixmap )
 	If pixmap.dds_fmt<>0 Then Return pixmap.tex_name ' if dds texture already exists
-	
+
 	'alloc new tex
 	Local name:Int
 	glGenTextures( 1, Varptr name )
-	
+
 	'flush dead texs
 	If dead_tex_seq=GraphicsSeq
 		Local n:Int = dead_texs.RemoveLast()
@@ -156,29 +156,29 @@ Function CreateTex:Int( width:Int,height:Int,flags:Int,pixmap:TPixmap )
 End Function
 
 'NOTE: Assumes a bound texture.
-Function UploadTex( pixmap:TPixmap,flags:Int )
+Function UploadTex( pixmap:TPixmap, flags:Int )
 	Local mip_level:Int
 	If pixmap.dds_fmt <> 0 Then Return ' if dds texture already exists
 	Repeat
 		glPixelStorei GL_UNPACK_ROW_LENGTH,pixmap.pitch/BytesPerPixel[pixmap.format]
 		glTexSubImage2D GL_TEXTURE_2D,mip_level,0,0,pixmap.width,pixmap.height,GL_RGBA,GL_UNSIGNED_BYTE,pixmap.pixels
 
-		If Not (flags & MIPMAPPEDIMAGE) Then Exit
-		If pixmap.width>1 And pixmap.height>1
-			pixmap=ResizePixmap( pixmap,pixmap.width/2,pixmap.height/2 )
-		Else If pixmap.width>1
-			pixmap=ResizePixmap( pixmap,pixmap.width/2,pixmap.height )
-		Else If pixmap.height>1
-			pixmap=ResizePixmap( pixmap,pixmap.width,pixmap.height/2 )
+		If Not ( flags & MIPMAPPEDIMAGE ) Then Exit
+		If pixmap.width > 1 And pixmap.height > 1
+			pixmap = ResizePixmap( pixmap, pixmap.width / 2, pixmap.height / 2 )
+		Else If pixmap.width > 1
+			pixmap = ResizePixmap( pixmap, pixmap.width / 2, pixmap.height )
+		Else If pixmap.height > 1
+			pixmap = ResizePixmap( pixmap, pixmap.width, pixmap.height / 2 )
 		Else
 			Exit
 		EndIf
-		mip_level:+1
+		mip_level :+ 1
 	Forever
 	glPixelStorei GL_UNPACK_ROW_LENGTH,0
 End Function
 
-Function AdjustTexSize( width:Int Var,height:Int Var )
+Function AdjustTexSize( width:Int Var, height:Int Var )
 	'calc texture size
 	width = Pow2Size( width )
 	height = Pow2Size( height )
@@ -187,24 +187,24 @@ Function AdjustTexSize( width:Int Var,height:Int Var )
 		glTexImage2D GL_PROXY_TEXTURE_2D,0,4,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,Null
 		glGetTexLevelParameteriv GL_PROXY_TEXTURE_2D,0,GL_TEXTURE_WIDTH,Varptr t
 		If t Then Return
-		If width=1 And height=1 Then RuntimeError "Unable to calculate tex size"
-		If width>1 Then width :/ 2
-		If height>1 Then height :/ 2
+		If width = 1 And height = 1 Then RuntimeError "Unable to calculate tex size"
+		If width > 1 width :/ 2
+		If height > 1 height :/ 2
 	Forever
 End Function
 
 Type TDynamicArray
 
 	Private
-	
+
 	Field data:Int Ptr
 	Field size:Size_T
 	Field capacity:Size_T
-	
+
 	Field guard:TMutex
-	
+
 	Public
-	
+
 	Method New(initialCapacity:Int = 8)
 		capacity = initialCapacity
 		data = malloc_(Size_T(initialCapacity * 4))
@@ -221,25 +221,25 @@ Type TDynamicArray
 			End If
 			data = d
 		End If
-		
+
 		data[size] = value
 		size :+ 1
 		guard.Unlock()
 	End Method
-	
+
 	Method RemoveLast:Int()
 		guard.Lock()
 		Local v:Int
-		
+
 		If size > 0 Then
 			size :- 1
 			v = data[size]
 		Else
 			v = $FFFFFFFF
 		End If
-		
+
 		guard.Unlock()
-		
+
 		Return v
 	End Method
 
@@ -247,36 +247,35 @@ Type TDynamicArray
 		free_(data)
 		CloseMutex(guard)
 	End Method
-	
+
 End Type
 
 Global glewIsInit:Int
 
 Public
 
+
 Type TGLImageFrame Extends TImageFrame
+	Field u0:Float, v0:Float, u1:Float, v1:Float, uscale:Float, vscale:Float
+	Field name:Int, seq:Int
 
-	Field u0:Float,v0:Float,u1:Float,v1:Float,uscale:Float,vscale:Float
-
-	Field name:Int,seq:Int
-	
 	Method New()
-		seq=GraphicsSeq
+		seq = GraphicsSeq
 	End Method
-	
+
 	Method Delete()
-		If Not seq Return
-		DeleteTex name,seq
-		seq=0
+		If Not seq Then Return
+		DeleteTex( name, seq )
+		seq = 0
 	End Method
 	
 	Method Draw( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float,sx:Float,sy:Float,sw:Float,sh:Float ) Override
 		Assert seq=GraphicsSeq Else "Image does not exist"
 
-		Local u0:Float=sx * uscale
-		Local v0:Float=sy * vscale
-		Local u1:Float=(sx+sw) * uscale
-		Local v1:Float=(sy+sh) * vscale
+		Local u0:Float = sx * uscale
+		Local v0:Float = sy * vscale
+		Local u1:Float = (sx + sw) * uscale
+		Local v1:Float = (sy + sh) * vscale
 
 		EnableTex name
 		glBegin GL_QUADS
@@ -291,52 +290,52 @@ Type TGLImageFrame Extends TImageFrame
 		glEnd
 	End Method
 	
-	Function CreateFromPixmap:TGLImageFrame( src:TPixmap,flags:Int )
+	Function CreateFromPixmap:TGLImageFrame( src:TPixmap, flags:Int )
 		'determine tex size
-		Local tex_w:Int=src.width
-		Local tex_h:Int=src.height
-		AdjustTexSize tex_w,tex_h
+		Local tex_w:Int = src.width
+		Local tex_h:Int = src.height
+		AdjustTexSize( tex_w, tex_h )
 		
 		'make sure pixmap fits texture
-		Local width:Int=Min( src.width,tex_w )
-		Local height:Int=Min( src.height,tex_h )
-		If src.width<>width Or src.height<>height src=ResizePixmap( src,width,height )
+		Local width:Int = Min( src.width, tex_w )
+		Local height:Int = Min( src.height, tex_h )
+		If src.width <> width Or src.height <> height Then src = ResizePixmap( src, width, height )
 
 		'create texture pixmap
-		Local tex:TPixmap=src
+		Local tex:TPixmap = src
 		
 		'"smear" right/bottom edges if necessary
-		If width<tex_w Or height<tex_h
-			tex=TPixmap.Create( tex_w,tex_h,PF_RGBA8888 )
-			tex.Paste src,0,0
-			If width<tex_w
-				tex.Paste src.Window( width-1,0,1,height ),width,0
+		If width < tex_w Or height < tex_h
+			tex = TPixmap.Create( tex_w, tex_h, PF_RGBA8888 )
+			tex.Paste( src, 0, 0 )
+			If width < tex_w
+				tex.Paste( src.Window( width - 1, 0, 1, height ), width, 0 )
 			EndIf
-			If height<tex_h
-				tex.Paste src.Window( 0,height-1,width,1 ),0,height
-				If width<tex_w 
-					tex.Paste src.Window( width-1,height-1,1,1 ),width,height
+			If height < tex_h
+				tex.Paste( src.Window( 0, height - 1, width, 1 ), 0, height )
+				If width < tex_w 
+					tex.Paste( src.Window( width - 1, height - 1, 1, 1 ), width, height )
 				EndIf
 			EndIf
 		Else
-			If tex.dds_fmt=0 ' not dds
-				If tex.format<>PF_RGBA8888 tex=tex.Convert( PF_RGBA8888 )
+			If tex.dds_fmt = 0 ' not dds
+				If tex.format <> PF_RGBA8888 Then tex = tex.Convert( PF_RGBA8888 )
 			EndIf
 		EndIf
 		
 		'create tex
-		Local name:Int=CreateTex( tex_w,tex_h,flags,tex )
+		Local name:Int = CreateTex( tex_w, tex_h, flags, tex )
 		
 		'upload it
-		UploadTex tex,flags
+		UploadTex( tex, flags )
 
 		'done!
-		Local frame:TGLImageFrame=New TGLImageFrame
-		frame.name=name
-		frame.uscale=1.0/tex_w
-		frame.vscale=1.0/tex_h
-		frame.u1=width * frame.uscale
-		frame.v1=height * frame.vscale
+		Local frame:TGLImageFrame = New TGLImageFrame
+		frame.name = name
+		frame.uscale = 1.0 / tex_w
+		frame.vscale = 1.0 / tex_h
+		frame.u1 = width * frame.uscale
+		frame.v1 = height * frame.vscale
 		Return frame
 
 	End Function
@@ -355,7 +354,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		Local u0:Float = sx * uscale
 		Local v0:Float = (sy + sh) * vscale
 		Local u1:Float = (sx + sw) * uscale
-		Local v1:Float = sy * vscale	
+		Local v1:Float = sy * vscale
 		
 		EnableTex name
 		glBegin GL_QUADS
@@ -433,7 +432,7 @@ EndType
 Type TGLMax2DDriver Extends TMax2DDriver
 	Method Create:TGLMax2DDriver()
 		If Not GLGraphicsDriver() Return Null
-		
+	
 		Return Self
 	End Method
 
@@ -443,12 +442,12 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	End Method
 	
 	Method AttachGraphics:TMax2DGraphics( widget:Byte Ptr,flags:Long ) Override
-		Local g:TGLGraphics=GLGraphicsDriver().AttachGraphics( widget,flags )
+		Local g:TGLGraphics = GLGraphicsDriver().AttachGraphics( widget,flags )
 		If g Return TMax2DGraphics.Create( g,Self )
 	End Method
 	
 	Method CreateGraphics:TMax2DGraphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Long,x:Int,y:Int ) Override
-		Local g:TGLGraphics=GLGraphicsDriver().CreateGraphics( width,height,depth,hertz,flags,x,y )
+		Local g:TGLGraphics = GLGraphicsDriver().CreateGraphics( width,height,depth,hertz,flags,x,y )
 		If g Return TMax2DGraphics.Create( g,Self )
 	End Method
 	
@@ -459,8 +458,8 @@ Type TGLMax2DDriver Extends TMax2DDriver
 			Return
 		EndIf
 	
-		Local t:TMax2DGraphics=TMax2DGraphics(g)
-		Assert t And TGLGraphics(t._backendGraphics)
+		Local t:TMax2DGraphics = TMax2DGraphics( g )
+		Assert t And TGLGraphics( t._backendGraphics )
 
 		GLGraphicsDriver().SetGraphics(t._backendGraphics)
 
@@ -470,13 +469,14 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	End Method
 	
 	Method ResetGLContext( g:TGraphics )
-		Local gw:Int,gh:Int,gd:Int,gr:Int,gf:Long,gx:Int,gy:Int
-		g.GetSettings gw,gh,gd,gr,gf,gx,gy
+		Local gw:Int, gh:Int, gd:Int, gr:Int, gf:Long, gx:Int, gy:Int
+		g.GetSettings( gw, gh, gd, gr, gf, gx, gy )
 		
-		state_blend=0
-		state_boundtex=0
-		state_texenabled=0
-		glDisable GL_TEXTURE_2D
+		state_blend = 0
+		state_boundtex = 0
+		state_texenabled = 0
+		glDisable( GL_TEXTURE_2D )
+
 		glMatrixMode GL_PROJECTION
 		glLoadIdentity
 		glOrtho 0,gw,gh,0,-1,1
@@ -491,7 +491,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	
 		' cache it
 		_BackBufferRenderImageFrame = BackBufferRenderImageFrame
-		_CurrentRenderImageFrame = _BackBufferRenderImageFrame 
+		_CurrentRenderImageFrame = _BackBufferRenderImageFrame
 	End Method
 	
 	Method Flip:Int( sync:Int ) Override
@@ -501,56 +501,58 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	Method ToString:String() Override
 		Return "OpenGL"
 	End Method
-	
-	Method CreateFrameFromPixmap:TGLImageFrame( pixmap:TPixmap,flags:Int ) Override
-		Return TGLImageFrame.CreateFromPixmap( pixmap,flags )
+
+	Method CreateFrameFromPixmap:TGLImageFrame( pixmap:TPixmap, flags:Int ) Override
+		Return TGLImageFrame.CreateFromPixmap( pixmap, flags )
 	End Method
 
 	Method SetBlend( blend:Int ) Override
-		If blend=state_blend Return
-		state_blend=blend
+		If state_blend = blend Return
+
+		state_blend = blend
+
 		Select blend
 		Case MASKBLEND
-			glDisable GL_BLEND
-			glEnable GL_ALPHA_TEST
-			glAlphaFunc GL_GEQUAL,.5
+			glDisable( GL_BLEND )
+			glEnable( GL_ALPHA_TEST )
+			glAlphaFunc( GL_GEQUAL, 0.5 )
 		Case SOLIDBLEND
-			glDisable GL_BLEND
-			glDisable GL_ALPHA_TEST
+			glDisable( GL_BLEND )
+			glDisable( GL_ALPHA_TEST )
 		Case ALPHABLEND
-			glEnable GL_BLEND
-			glBlendFunc GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA
-			glDisable GL_ALPHA_TEST
+			glEnable( GL_BLEND )
+			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
+			glDisable( GL_ALPHA_TEST )
 		Case LIGHTBLEND
-			glEnable GL_BLEND
-			glBlendFunc GL_SRC_ALPHA,GL_ONE
-			glDisable GL_ALPHA_TEST
+			glEnable( GL_BLEND )
+			glBlendFunc( GL_SRC_ALPHA, GL_ONE )
+			glDisable( GL_ALPHA_TEST )
 		Case SHADEBLEND
-			glEnable GL_BLEND
-			glBlendFunc GL_DST_COLOR,GL_ZERO
-			glDisable GL_ALPHA_TEST
+			glEnable( GL_BLEND )
+			glBlendFunc( GL_DST_COLOR, GL_ZERO )
+			glDisable( GL_ALPHA_TEST )
 		Default
-			glDisable GL_BLEND
-			glDisable GL_ALPHA_TEST
+			glDisable( GL_BLEND )
+			glDisable( GL_ALPHA_TEST )
 		End Select
 	End Method
 
 	Method SetAlpha( alpha:Float ) Override
-		If alpha>1.0 alpha=1.0
-		If alpha<0.0 alpha=0.0
-		color4ub[3]=alpha*255
-		glColor4ubv color4ub
+		If alpha > 1.0 Then alpha = 1.0
+		If alpha < 0.0 Then alpha = 0.0
+		color4ub[3] = alpha * 255
+		glColor4ubv( color4ub )
 	End Method
 
 	Method SetLineWidth( width:Float ) Override
-		glLineWidth width
+		glLineWidth( width )
 	End Method
 	
 	Method SetColor( red:Int,green:Int,blue:Int ) Override
-		color4ub[0]=Min(Max(red,0),255)
-		color4ub[1]=Min(Max(green,0),255)
-		color4ub[2]=Min(Max(blue,0),255)
-		glColor4ubv color4ub
+		color4ub[0] = Min( Max( red, 0 ), 255 )
+		color4ub[1] = Min( Max( green, 0 ), 255 )
+		color4ub[2] = Min( Max( blue, 0 ), 255 )
+		glColor4ubv( color4ub )
 	End Method
 
 	Method SetClsColor( red:Int, green:Int, blue:Int, alpha:Float ) Override
@@ -561,7 +563,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glClearColor(red/255.0, green/255.0, blue/255.0, alpha)
 	End Method
 	
-	Method SetViewport( x:Int,y:Int,w:Int,h:Int ) Override
+	Method SetViewport( x:Int, y:Int, w:Int, h:Int ) Override
 		_GLScissor_BMaxViewport.x = x
 		_GLScissor_BMaxViewport.y = y
 		_GLScissor_BMaxViewport.width = w
@@ -569,40 +571,40 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		SetScissor(x, y, w, h)
 	End Method
 
-	Method SetTransform( xx:Float,xy:Float,yx:Float,yy:Float ) Override
-		ix=xx
-		iy=xy
-		jx=yx
-		jy=yy
+	Method SetTransform( xx:Float, xy:Float, yx:Float, yy:Float ) Override
+		ix = xx
+		iy = xy
+		jx = yx
+		jy = yy
 	End Method
 
 	Method Cls() Override
-		glClear GL_COLOR_BUFFER_BIT
+		glClear( GL_COLOR_BUFFER_BIT )
 	End Method
 
-	Method Plot( x:Float,y:Float ) Override
-		DisableTex
-		glBegin GL_POINTS
-		glVertex2f x+.5,y+.5
-		glEnd
+	Method Plot( x:Float, y:Float ) Override
+		DisableTex()
+		glBegin( GL_POINTS )
+		glVertex2f( x+.5,y+.5 )
+		glEnd()
 	End Method
 
-	Method DrawLine( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Override
-		DisableTex
-		glBegin GL_LINES
-		glVertex2f x0*ix+y0*iy+tx+.5,x0*jx+y0*jy+ty+.5
-		glVertex2f x1*ix+y1*iy+tx+.5,x1*jx+y1*jy+ty+.5
-		glEnd
+	Method DrawLine( x0:Float, y0:Float, x1:Float, y1:Float, tx:Float, ty:Float ) Override
+		DisableTex()
+		glBegin( GL_LINES )
+		glVertex2f( x0 * ix + y0 * iy + tx + .5, x0 * jx + y0 * jy + ty + .5 )
+		glVertex2f( x1 * ix + y1 * iy + tx + .5, x1 * jx + y1 * jy + ty + .5 )
+		glEnd()
 	End Method
 
-	Method DrawRect( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Override
-		DisableTex
-		glBegin GL_QUADS
-		glVertex2f x0*ix+y0*iy+tx,x0*jx+y0*jy+ty
-		glVertex2f x1*ix+y0*iy+tx,x1*jx+y0*jy+ty
-		glVertex2f x1*ix+y1*iy+tx,x1*jx+y1*jy+ty
-		glVertex2f x0*ix+y1*iy+tx,x0*jx+y1*jy+ty
-		glEnd
+	Method DrawRect( x0:Float, y0:Float, x1:Float, y1:Float, tx:Float, ty:Float ) Override
+		DisableTex()
+		glBegin( GL_QUADS )
+		glVertex2f( x0 * ix + y0 * iy + tx, x0 * jx + y0 * jy + ty )
+		glVertex2f( x1 * ix + y0 * iy + tx, x1 * jx + y0 * jy + ty )
+		glVertex2f( x1 * ix + y1 * iy + tx, x1 * jx + y1 * jy + ty )
+		glVertex2f( x0 * ix + y1 * iy + tx, x0 * jx + y1 * jy + ty )
+		glEnd()
 	End Method
 	
 	Method DrawOval( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Override
@@ -623,47 +625,89 @@ Type TGLMax2DDriver Extends TMax2DDriver
 			Local x:Float=x0+Cos(th)*xr
 			Local y:Float=y0-Sin(th)*yr
 			glVertex2f x*ix+y*iy+tx,x*jx+y*jy+ty
-		Next
-		glEnd
-		
-	End Method
-	
-	Method DrawPoly( xy:Float[],handle_x:Float,handle_y:Float,origin_x:Float,origin_y:Float, indices:Int[] ) Override
-		If xy.length<6 Or (xy.length&1) Return
-		
-		DisableTex
-		glBegin GL_POLYGON
-		For Local i:Int=0 Until Len xy Step 2
-			Local x:Float=xy[i+0]+handle_x
-			Local y:Float=xy[i+1]+handle_y
-			glVertex2f x*ix+y*iy+origin_x,x*jx+y*jy+origin_y
-		Next
-		glEnd
-	End Method
-		
-	Method DrawPixmap( p:TPixmap,x:Int,y:Int ) Override
-		Local blend:Int=state_blend
-		DisableTex
-		SetBlend SOLIDBLEND
-	
-		Local t:TPixmap=p
-		If t.format<>PF_RGBA8888 t=ConvertPixmap( t,PF_RGBA8888 )
-
-		glPixelZoom 1,-1
-		glRasterPos2i 0,0
-		glBitmap 0,0,0,0,x,-y,Null
-		glPixelStorei GL_UNPACK_ROW_LENGTH, t.pitch Shr 2
-		glDrawPixels t.width,t.height,GL_RGBA,GL_UNSIGNED_BYTE,t.pixels
-		glPixelStorei GL_UNPACK_ROW_LENGTH,0
-		glPixelZoom 1,1
-		
-		SetBlend blend
+=======
+	Method Plot( x:Float, y:Float ) Override
+		DisableTex()
+		glBegin( GL_POINTS )
+		glVertex2f( x+.5,y+.5 )
+		glEnd()
 	End Method
 
-	Method GrabPixmap:TPixmap( x:Int,y:Int,w:Int,h:Int ) Override
-		Local blend:Int=state_blend
-		SetBlend SOLIDBLEND
-		Local p:TPixmap=CreatePixmap( w,h,PF_RGBA8888 )
+	Method DrawLine( x0:Float, y0:Float, x1:Float, y1:Float, tx:Float, ty:Float ) Override
+		DisableTex()
+		glBegin( GL_LINES )
+		glVertex2f( x0 * ix + y0 * iy + tx + .5, x0 * jx + y0 * jy + ty + .5 )
+		glVertex2f( x1 * ix + y1 * iy + tx + .5, x1 * jx + y1 * jy + ty + .5 )
+		glEnd()
+	End Method
+
+	Method DrawRect( x0:Float, y0:Float, x1:Float, y1:Float, tx:Float, ty:Float ) Override
+		DisableTex()
+		glBegin( GL_QUADS )
+		glVertex2f( x0 * ix + y0 * iy + tx, x0 * jx + y0 * jy + ty )
+		glVertex2f( x1 * ix + y0 * iy + tx, x1 * jx + y0 * jy + ty )
+		glVertex2f( x1 * ix + y1 * iy + tx, x1 * jx + y1 * jy + ty )
+		glVertex2f( x0 * ix + y1 * iy + tx, x0 * jx + y1 * jy + ty )
+		glEnd()
+	End Method
+	
+	Method DrawOval( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Override
+		Local xr:Float = ( x1 - x0 ) * 0.5
+		Local yr:Float = ( y1 - y0 ) * 0.5
+		Local segs:Int = Abs( xr ) + Abs( yr )
+
+		segs = Max( segs, 12 ) &~ 3
+
+		x0 :+ xr
+		y0 :+ yr
+
+		DisableTex()
+		glBegin( GL_POLYGON )
+		For Local i:Int = 0 Until segs
+			Local th:Float = i * 360.0 / segs
+			Local x:Float = x0 +Cos(th) * xr
+			Local y:Float = y0 -Sin(th) * yr
+			glVertex2f( x * ix + y * iy + tx, x * jx + y * jy + ty )
+		Next
+		glEnd()
+	End Method
+	
+	Method DrawPoly( xy:Float[], handle_x:Float, handle_y:Float, origin_x:Float, origin_y:Float, indices:Int[] ) Override
+		If xy.length < 6 Or ( xy.length & 1 ) Then Return
+
+		DisableTex()
+		glBegin( GL_POLYGON )
+		For Local i:Int = 0 Until xy.length Step 2
+			Local x:Float = xy[i + 0] + handle_x
+			Local y:Float = xy[i + 1] + handle_y
+			glVertex2f( x * ix + y * iy + origin_x, x * jx + y * jy + origin_y )
+		Next
+		glEnd()
+	End Method
+
+	Method DrawPixmap( p:TPixmap, x:Int, y:Int ) Override
+		Local blend:Int = state_blend
+		DisableTex()
+		SetBlend( SOLIDBLEND )
+	
+		Local t:TPixmap = p
+		If t.format <> PF_RGBA8888 Then t = ConvertPixmap( t, PF_RGBA8888 )
+
+		glPixelZoom( 1, -1 )
+		glRasterPos2i( 0, 0 )
+		glBitmap( 0, 0, 0, 0, x, -y, Null)
+		glPixelStorei( GL_UNPACK_ROW_LENGTH, t.pitch Shr 2 )
+		glDrawPixels( t.width, t.height, GL_RGBA, GL_UNSIGNED_BYTE, t.pixels )
+		glPixelStorei( GL_UNPACK_ROW_LENGTH, 0 )
+		glPixelZoom( 1, 1 )
+		
+		SetBlend( blend )
+	End Method
+
+	Method GrabPixmap:TPixmap( x:Int, y:Int, w:Int, h:Int ) Override
+		Local blend:Int = state_blend
+		SetBlend( SOLIDBLEND )
+		Local p:TPixmap=CreatePixmap( w, h, PF_RGBA8888 )
 
 		'The default backbuffer in Max2D was opaque so overwrote any
 		'trash data of a freshly created pixmap. Potentially transparent
@@ -675,16 +719,16 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		Else
 			glReadPixels(x, _BackbufferRenderImageFrame.height - h - y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, p.pixels)
 		EndIf
-		p=YFlipPixmap( p )
-		SetBlend blend
+		p = YFlipPixmap( p )
+		SetBlend( blend )
 		Return p
 	End Method
 	
-	Method SetResolution( width:Float,height:Float ) Override
-		glMatrixMode GL_PROJECTION
-		glLoadIdentity
-		glOrtho 0,width,height,0,-1,1
-		glMatrixMode GL_MODELVIEW
+	Method SetResolution( width:Float, height:Float ) Override
+		glMatrixMode( GL_PROJECTION )
+		glLoadIdentity()
+		glOrtho( 0, width, height, 0, -1, 1 )
+		glMatrixMode( GL_MODELVIEW )
 	End Method
 
 	Method CreateRenderImageFrame:TImageFrame(width:UInt, height:UInt, flags:Int) Override
