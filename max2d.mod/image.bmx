@@ -31,7 +31,8 @@ Type TImage
 	Method Clear(r:UInt, g:UInt, b:UInt, a:Float = 1.0, frameIndex:Int = -1)
 		Local clearColor:Int = Int(int(255*a) * $1000000) + Int(r * $10000) + Int(g * $100) + b
 		If frameIndex < 0
-			For Local p:TPixmap = EachIn pixmaps
+			For Local i:Int = 0 until pixmaps.length
+				Local p:TPixmap = Lock(i, True, True)
 				p.ClearPixels(clearColor)
 			Next
 		Else
@@ -130,7 +131,7 @@ Type TRenderImage Extends TImage
 		Return frames[index]
 	End Method
 	
-	Function Create:TRenderImage(width:UInt, height:UInt, flags:Int, MaskRed:Int, MaskGreen:Int, MaskBlue:Int)
+	Function Create:TRenderImage(width:Int, height:Int, flags:Int, MaskRed:Int, MaskGreen:Int, MaskBlue:Int)
 		Local t:TRenderImage = New TRenderImage
 		t.width = width
 		t.height = height

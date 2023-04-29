@@ -292,10 +292,6 @@ Type TD3D9RenderImageFrame Extends TD3D9ImageFrame
 
 		Return RenderImage
 	End Function
-	
-	Method DestroyRenderImage()
-		ReleaseNow()
-	End Method
 
 	Method OnDeviceLost()
 		Local BackBuffer:TD3D9RenderImageFrame = _BackBufferRenderImageFrame
@@ -311,13 +307,13 @@ Type TD3D9RenderImageFrame Extends TD3D9ImageFrame
 		' dont re-create until the device is ready
 		If _d3dDev.TestCooperativeLevel() = 0
 			If(_stagingPixmap)
-				RecreateFromPixmap()
+				LoadFromPixmap(_stagingPixmap)
+				_stagingPixmap = Null
 			EndIf
 		EndIf
 	End Method
 
-Private
-	Method RecreateFromPixmap()
+	Method LoadFromPixmap(pixmap:TPixmap) override
 		If _d3ddev.CreateTexture(_width, _height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, _texture, Null) < 0
 			Throw "Failed to create render target"
 			Return
@@ -329,37 +325,36 @@ Private
 			Return
 		EndIf
 
-		Local StagingSurface:IDirect3DSurface9
-		If _d3ddev.CreateOffscreenPlainSurface(_width, _height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, StagingSurface, Null) < 0
-			Throw "Failed to create a staging surface"
+		Local replacementSurface:IDirect3DSurface9
+		If _d3ddev.CreateOffscreenPlainSurface(_width, _height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, replacementSurface, Null) < 0
+			Throw "Failed to create a replacement surface"
 			ReleaseNow()
 			Return
 		EndIf
 
 		Local lockedrect:D3DLOCKED_RECT = New D3DLOCKED_RECT
-		If StagingSurface.LockRect(lockedrect, Null, 0) < 0
-			Throw "Failed to lock the staging surface"
+		If replacementSurface.LockRect(lockedrect, Null, 0) < 0
+			Throw "Failed to lock the replacement surface"
 			ReleaseNow()
-			StagingSurface.Release_()
+			replacementSurface.Release_()
 			Return
 		EndIf
 
 		For Local y:Int = 0 Until _height
-			Local srcptr:Byte Ptr = _stagingPixmap.pixels + y * _stagingPixmap.pitch
+			Local srcptr:Byte Ptr = pixmap.pixels + y * pixmap.pitch
 			Local dstptr:Byte Ptr = lockedrect.pBits + y * lockedrect.Pitch
-			MemCopy dstptr, srcptr, Size_T(_stagingPixmap.width * 4)
+			MemCopy dstptr, srcptr, Size_T(pixmap.width * 4)
 		Next
-		StagingSurface.UnlockRect()
+		replacementSurface.UnlockRect()
 
-		If _d3ddev.UpdateSurface(StagingSurface, Null, _surface, Null) < 0
-			Throw "Failed to copy the staging surface texture data to the render target"
+		If _d3ddev.UpdateSurface(replacementSurface, Null, _surface, Null) < 0
+			Throw "Failed to copy the replacement surface texture data to the render target"
 			ReleaseNow()
-			StagingSurface.Release_()
+			replacementSurface.Release_()
 			Return
 		EndIf
 
-		StagingSurface.Release_()
-		_stagingPixmap = Null
+		replacementSurface.Release_()
 	End Method
 	
 	Method RenderTargetToPixmap:TPixmap()	

@@ -32,7 +32,7 @@ Type TMax2DDriver Extends TGraphicsDriver
 	'Backend specific!
 	'implement this function in each TMax2D-extending type (OpenGL, DX, ..)
 	Method CreateRenderImageContext:Object(g:TGraphics)
-		Throw "Feature ~qRender2Texture~q not yet implemented in this graphics driver (" + ToString() + ")." 
+		Throw "Feature ~qRender2Texture~q not yet implemented in this graphics driver (" + _max2dDriver.ToString() + ")." 
 		Return Null
 	End Method
 
