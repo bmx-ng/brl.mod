@@ -313,7 +313,8 @@ Type TD3D9RenderImageFrame Extends TD3D9ImageFrame
 		EndIf
 	End Method
 
-	Method LoadFromPixmap(pixmap:TPixmap) override
+Private
+	Method LoadFromPixmap(pixmap:TPixmap)
 		If _d3ddev.CreateTexture(_width, _height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, _texture, Null) < 0
 			Throw "Failed to create render target"
 			Return
@@ -408,7 +409,6 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 
 	Method Create:TD3D9Max2DDriver()
-
 		If Not D3D9GraphicsDriver() Return Null
 
 		Local d3d:IDirect3D9 = D3D9GraphicsDriver().GetDirect3D()
