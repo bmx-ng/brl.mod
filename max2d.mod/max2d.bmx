@@ -1579,7 +1579,22 @@ See #LoadImage for valid @flags values.
 End Rem
 Function LoadAnimImage:TImage( url:Object, cell_width:Int, cell_height:Int, first_cell:Int, cell_count:Int, flags:Int = -1 )
 	Return TMax2DGraphics.Current().LoadAnimImage(url, cell_width, cell_height, first_cell, cell_count, flags)
-End Function 
+End Function
+
+Rem
+bbdoc: Clear content of the passed image
+about:
+@image defines the image to clear.
+
+@r, @g, @b define the red, green and blue components of the clear color. Range is 0 - 255.
+
+@a defines the alpha value and is ranged 0.0 to 1.0.
+
+@frameIndex defines an optional frame if the image is an animated image, -1 clears all existing frames
+End Rem
+Function ClearImage( image:Timage, r:UInt=0, g:UInt=0, b:UInt=0, a:Float=0.0, frameIndex:Int = -1 )
+	image.Clear( r,g,b,a, frameIndex )
+End Function
 
 Rem
 bbdoc: Set an image's handle to an arbitrary point
@@ -1736,21 +1751,12 @@ about:
 
 @useLinearFlitering defines the image flag to filter images when scaling.
 
-@max2DGraphics is an optional parameter to pass a custom Max2DGraphics context.
-
 returns: #TRenderImage with the content of the passed #TPixmap
 End Rem
-'Function CreateRenderImageFromPixmap:TRenderImage(pixmap:TPixmap, useLinearFlitering:Int = True, max2DGraphics:TMax2DGraphics = Null)
-'	Return TMax2DGraphics.Current().CreateRenderImageFromPixmap(pixmap, useLinearFlitering, max2DGraphics)
+'TODO
+'Function CreateRenderImage:TRenderImage(pixmap:TPixmap, useLinearFlitering:Int = True)
+'	Return TMax2DGraphics.Current().CreateRenderImageFromPixmap(pixmap, useLinearFlitering)
 'EndFunction
-
-Rem
-bbdoc: Destroy a no longer needed render image
-End Rem
-Function DestroyRenderImage(renderImage:TRenderImage)
-	RuntimeError "Not implemented"
-	'TMax2DGraphics.Current().DestroyRenderImage(renderImage)
-End Function
 
 Rem
 bbdoc: Set a render image as currently active render target
