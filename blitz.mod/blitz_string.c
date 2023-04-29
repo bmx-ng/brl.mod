@@ -326,17 +326,17 @@ BBString *bbStringFromUTF8Bytes( const unsigned char *p,int n ){
 		if( c<0x80 ){
 			*q++=c;
 		}else{
-			if (!n--) continue;
+			if (!n--) break;
 			int d=*p++ & 0x3f;
 			if( c<0xe0 ){
 				*q++=((c&31)<<6) | d;
 			}else{
-				if (!n--) continue;
+				if (!n--) break;
 				int e=*p++ & 0x3f;
 				if( c<0xf0 ){
 					*q++=((c&15)<<12) | (d<<6) | e;
 				}else{
-					if (!n--) continue;
+					if (!n--) break;
 					int f=*p++ & 0x3f;
 					int v=((c&7)<<18) | (d<<12) | (e<<6) | f;
 					if( v & 0xffff0000 ) {
@@ -1163,6 +1163,7 @@ BBUINT* bbStringToUTF32String( BBString *str ) {
 			if (((c & 0xfffffc00) == 0xd800) && n < len && ((*p & 0xfffffc00) == 0xdc00)) {
 				*bp++ = (c << 10) + (*p++) - 0x35fdc00;
 			} else {
+				bbMemFree( buf );
 				bbExThrowCString( "Failed to create UTF32. Invalid surrogate pair." );
 			}
 		}
