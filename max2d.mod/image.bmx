@@ -28,6 +28,18 @@ Type TImage
 		Return frames[index]
 	End Method
 	
+	Method Clear(r:UInt, g:UInt, b:UInt, a:Float = 1.0, frameIndex:Int = -1)
+		Local clearColor:Int = Int(int(255*a) * $1000000) + Int(r * $10000) + Int(g * $100) + b
+		If frameIndex < 0
+			For Local p:TPixmap = EachIn pixmaps
+				p.ClearPixels(clearColor)
+			Next
+		Else
+			Local p:TPixmap = Lock(frameIndex, True, True)
+			p.ClearPixels(clearColor)
+		EndIf
+	End Method
+	
 	Method Lock:TPixmap( index:Int,read:Int,write:Int )
 		Assert index < seqs.length And index < frames.length Else "Index out of bounds"
 		If write
