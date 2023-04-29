@@ -408,6 +408,10 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		Return "DirectX9"
 	End Method
 
+	Method ApiIdentifier:String() Override
+		Return "BRL.Direct3D9"
+	End Method
+
 	Method Create:TD3D9Max2DDriver()
 
 		If Not D3D9GraphicsDriver() Return Null

@@ -101,6 +101,10 @@ Type TGraphicsDriver
 	End Method
 
 	Method ToString:String() Abstract
+	
+	Method ApiIdentifier:String()
+		Return ToString()
+	End Method
 
 	Method GetHandle:Byte Ptr(handleType:EGraphicsHandleType = EGraphicsHandleType.Window)
 		Return Null
