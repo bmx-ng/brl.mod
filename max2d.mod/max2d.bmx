@@ -1593,7 +1593,20 @@ about:
 @frameIndex defines an optional frame if the image is an animated image, -1 clears all existing frames
 End Rem
 Function ClearImage( image:Timage, r:UInt=0, g:UInt=0, b:UInt=0, a:Float=0.0, frameIndex:Int = -1 )
-	image.Clear( r,g,b,a, frameIndex )
+	image.Clear( r, g, b, a, frameIndex )
+End Function
+
+Rem
+bbdoc: Clear content of the passed image
+about:
+@image defines the image to clear.
+
+@color defines the rgba components of the clear color.
+
+@frameIndex defines an optional frame if the image is an animated image, -1 clears all existing frames
+End Rem
+Function ClearImage( image:Timage, color:SColor8, frameIndex:Int = -1 )
+	image.Clear( color.r, color.g, color.b, color.a/255.0, frameIndex )
 End Function
 
 Rem
