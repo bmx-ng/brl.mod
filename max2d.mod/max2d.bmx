@@ -1757,19 +1757,6 @@ Function CreateRenderImage:TRenderImage(width:UInt, height:UInt, flags:Int=-1)
 	Return TMax2DGraphics.Current().CreateRenderImage(width, height, flags)
 End Function
 
-Rem
-bbdoc: Create a render image from a given #TPixmap
-about:
-@pixmap defines the #TPixmap to create a new #TRenderImage from.
-
-@useLinearFlitering defines the image flag to filter images when scaling.
-
-returns: #TRenderImage with the content of the passed #TPixmap
-End Rem
-'TODO
-'Function CreateRenderImage:TRenderImage(pixmap:TPixmap, useLinearFlitering:Int = True)
-'	Return TMax2DGraphics.Current().CreateRenderImageFromPixmap(pixmap, useLinearFlitering)
-'EndFunction
 
 Rem
 bbdoc: Set a render image as currently active render target
@@ -1787,6 +1774,7 @@ Function SetRenderImage(renderImage:TRenderImage)
 		TMax2DGraphics.Current().SetRenderImageFrame(frame)
 	EndIf
 End Function
+
 
 Rem
 bbdoc: Create a #TPixmap from a render image
@@ -1831,26 +1819,8 @@ returns: False if content the render image needs to be recreated
 End Rem
 'Function RenderImageValid:Int(renderImage:TRenderImage)
 '	RuntimeError "Not implemented"
-	'If renderImage Then Return renderImage.Valid()
-	'Return False
 'End Function
 
-Rem
-bbdoc: Mark a render image (in-)valid
-about:
-When a running application is suspended (eg user logs out from the OS or hibernation) 
-then Direct3D-graphics loose their context ("D3DERR_DEVICELOST") and so the textures.
-Once you restored/recreated the content of your render image you can set it
-to be valid again.
-
-@renderImage defines the render image to backup
-
-@bool defines the new state of the valid flag (True or False)
-End Rem
-Function SetRenderImageValid(renderImage:TRenderImage, bool:Int = True)
-	RuntimeError "Not implemented"
-	'If renderImage Then renderImage.SetValid(bool)
-End Function
 
 Const COLLISION_LAYER_ALL:Int=0
 Const COLLISION_LAYER_1:Int=$0001
