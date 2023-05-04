@@ -14,11 +14,16 @@ enum{
 	_BORDERLESS=	0x40,
 	_FULLSCREEN_DESKTOP= 0x80,
 
+	//win32 exclusive
 	_MULTISAMPLE2X=	0x100,
 	_MULTISAMPLE4X=	0x200,
 	_MULTISAMPLE8X=	0x400,
 	_MULTISAMPLE16X=0x800,
 	_HIDDEN=0x1000,
+	
+	//add them here so they are not accidentally used
+	_SWAPINTERVAL0 = 0x10000,
+	_SWAPINTERVAL1 = 0x20000,
 };
 
 enum{
