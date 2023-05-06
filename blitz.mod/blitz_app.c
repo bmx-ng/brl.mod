@@ -583,6 +583,11 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 
 #endif
 
+	#ifdef BMX_COVERAGE
+		bbCoverageStartup();
+		atexit( bbCoverageGenerateOutput );
+	#endif
+
 	BBINCREFS( bbLaunchDir );
 	BBINCREFS( bbAppDir );
 	BBINCREFS( bbAppFile );

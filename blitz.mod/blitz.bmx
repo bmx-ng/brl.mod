@@ -117,6 +117,11 @@ Import "blitz_ex.c"
 Import "blitz_gc.c"
 Import "blitz_unicode.c"
 Import "blitz_enum.c"
+Import "blitz_coverage.c"
+
+?coverage
+Import "hashmap/hashmap.c"
+?
 
 '?Threaded
 'Import "blitz_gc_ms.c"
