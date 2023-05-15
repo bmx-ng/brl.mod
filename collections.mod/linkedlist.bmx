@@ -331,23 +331,27 @@ Public
 	Rem
 	bbdoc: Removes the node at the start of the #TLinkedList.
 	End Rem
-	Method RemoveFirst()
+	Method RemoveFirst:Int()
 		If Not head Then
-			Throw New TInvalidOperationException("list is empty")
+			Return False
 		End If
 		
 		RemoveNode(head)
+		
+		Return True
 	End Method
 	
 	Rem
 	bbdoc: Removes the node at the end of the #TLinkedList.
 	End Rem
-	Method RemoveLast()
+	Method RemoveLast:Int()
 		If Not head Then
-			Throw New TInvalidOperationException("list is empty")
+			Return False
 		End If
 		
-		RemoveNode(head.previousNode)		
+		RemoveNode(head.previousNode)
+		
+		Return True
 	End Method
 
 	Rem
