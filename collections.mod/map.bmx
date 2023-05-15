@@ -108,7 +108,7 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 	Rem
 	bbdoc: Returns the #TTreeMap values as a collection.
 	End Rem
-	Method ValuesToArray:K[]()
+	Method ValuesToArray:V[]()
 		Return TArrayList<V>(Values()).ToArray()
 	End Method
 
