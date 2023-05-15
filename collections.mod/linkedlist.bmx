@@ -448,8 +448,8 @@ Private
 				head = node.nextNode
 			End If
 			node.Clear()
-			size :- 1
 		End If
+		size :- 1
 	End Method
 	
 	Method CreateHead(node:TLinkedListNode<T>)
