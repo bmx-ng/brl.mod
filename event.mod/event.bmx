@@ -6,12 +6,14 @@ bbdoc: Events/Events
 End Rem
 Module BRL.Event
 
-ModuleInfo "Version: 1.07"
+ModuleInfo "Version: 1.08"
 ModuleInfo "Author: Mark Sibly, Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.08"
+ModuleInfo "History: Added EVENT_DISPLAYMOVED."
 ModuleInfo "History: 1.07"
 ModuleInfo "History: Removed event pool."
 ModuleInfo "History: 1.06"
@@ -198,6 +200,7 @@ Const EVENT_WINDOWICCPROFCHANGE:Int=$400A
 Const EVENT_DISPLAYORIENTATION:Int=$4020
 Const EVENT_DISPLAYCONNECT:Int=$4021
 Const EVENT_DISPLAYDISCONNECT:Int=$4022
+Const EVENT_DISPLAYMOVED:Int=$4023
 Const EVENT_MENUMASK:Int=$8000
 Const EVENT_MENUACTION:Int=$8001
 Const EVENT_STREAMMASK:Int=$10000
@@ -251,6 +254,7 @@ TEvent.RegisterId EVENT_WINDOWICCPROFCHANGE,"WindowICCProfChange"
 TEvent.RegisterId EVENT_DISPLAYORIENTATION,"DisplayOrientation"
 TEvent.RegisterId EVENT_DISPLAYCONNECT,"DisplayConnect"
 TEvent.RegisterId EVENT_DISPLAYDISCONNECT,"DisplayDisconnect"
+TEvent.RegisterId EVENT_DISPLAYMOVED,"DisplayMoved"
 TEvent.RegisterId EVENT_MENUACTION,"MenuAction"
 TEvent.RegisterId EVENT_STREAMEOF,"StreamEof"
 TEvent.RegisterId EVENT_STREAMAVAIL,"StreamAvail"
