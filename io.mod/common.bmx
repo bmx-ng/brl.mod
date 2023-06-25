@@ -1,4 +1,4 @@
-' Copyright (c) 2020-2022 Bruce A Henderson
+' Copyright (c) 2020-2023 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -19,6 +19,7 @@
 SuperStrict
 
 Import Pub.Physfs
+Import Pub.Stdc
 
 Import "../../pub.mod/physfs.mod/physfs/src/*.h"
 Import "glue.c"
@@ -43,6 +44,8 @@ Extern
 	Function bmx_PHYSFS_setRoot:Int(archive:String, subdir:String)
 	Function bmx_PHYSFS_unmount:Int(oldDir:String)
 	Function bmx_PHYSFS_getSearchPath:String[]()
+	Function PHYSFS_permitSymbolicLinks:Int(allow:Int)
+	Function PHYSFS_symbolicLinksPermitted:Int()
 	
 	Function PHYSFS_tell:Long(filePtr:Byte Ptr)
 	Function PHYSFS_seek:Int(filePtr:Byte Ptr, newPos:Long)
@@ -67,15 +70,61 @@ Extern
 	
 End Extern
 
+Rem
+bbdoc: File statistics, including file size, modification time, etc.
+End rem
 Struct SMaxIO_Stat
+	Rem
+	bbdoc: The size of the file, in bytes.
+	End Rem
 	Field _filesize:Long
+	Rem
+	bbdoc: The modification time of the file, in seconds since the epoch.
+	End Rem
 	Field _modtime:Long
+	Rem
+	bbdoc: The creation time of the file, in seconds since the epoch.
+	End Rem
 	Field _createtime:Long
+	Rem
+	bbdoc: The last access time of the file, in seconds since the epoch.
+	End Rem
 	Field _accesstime:Long
+	Rem
+	bbdoc: The type of the file.
+	End Rem
 	Field _filetype:EMaxIOFileType
+	Rem
+	bbdoc: Whether the file is read only or not.
+	End Rem
 	Field _readonly:Int
+
+	Rem
+	bbdoc: Returns the file modified time as an #SDateTime.
+	End Rem
+	Method ModeTimeAsDateTime:SDateTime()
+		Return SDateTime.FromEpoch(_modTime)
+	End Method
+
+	Rem
+	bbdoc: Returns the file creation time as an #SDateTime.
+	End Rem
+	Method CreatTimeAsDateTime:SDateTime()
+		Return SDateTime.FromEpoch(_createTime)
+	End Method
+
+	Rem
+	bbdoc: Returns the last access time as an #SDateTime.
+	End Rem
+	Method AccessTimeAsDateTime:SDateTime()
+		Return SDateTime.FromEpoch(_accessTime)
+	End Method
+
 End Struct
 
+Rem
+bbdoc: The type of file.
+End Rem
 Enum EMaxIOFileType:Int
 	REGULAR
 	DIRECTORY

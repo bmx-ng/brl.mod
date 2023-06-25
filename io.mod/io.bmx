@@ -1,4 +1,4 @@
-' Copyright (c) 2020-2022 Bruce A Henderson
+' Copyright (c) 2020-2023 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,10 +23,13 @@ bbdoc: IO Abstraction
 End Rem
 Module BRL.IO
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Bruce A Henderson"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Added PermitSymbolicLinks()"
+ModuleInfo "History: Documented SMaxIO_Stat and added SDateTime getters."
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Added GetWriteDir(), GetRealDir(), IsInit(), GetMountPoint() & SetRoot()"
 ModuleInfo "History: Added Unmount() and GetSearchPath()"
@@ -262,7 +265,10 @@ Type MaxIO
 	End Function
 
 	Rem
-	bbdoc: Gets various information about a directory or a file.
+	bbdoc: Gets various information about a directory or a file, populating the passed in #SMaxIO_Stat instance.
+	about: This function will never follow symbolic links. If you haven't enabled
+	symlinks with #PermitSymbolicLinks(), stat'ing a symlink will be treated like stat'ing a non-existant file. If symlinks are enabled,
+	stat'ing a symlink will give you information on the link itself and not what it points to.
 	End Rem
 	Function Stat:Int(filename:String, _stat:SMaxIO_Stat Var)
 		Return bmx_PHYSFS_stat(filename, _stat)
@@ -340,6 +346,50 @@ Type MaxIO
 	End Rem
 	Function GetLastError:String()
 		Return bmx_PHYSFS_getLastError()
+	End Function
+
+	Rem
+	bbdoc: Enables or disables following of symbolic links.
+	about: Some physical filesystems and archives contain files that are just pointers
+	to other files. On the physical filesystem, opening such a link will
+	(transparently) open the file that is pointed to.
+
+	By default, MaxIO will check if a file is really a symlink during open
+	calls and fail if it is. Otherwise, the link could take you outside the
+	write and search paths, and compromise security.
+
+	If you want to take that risk, call this function with a non-zero parameter.
+	Note that this is more for sandboxing a program's scripting language, in
+	case untrusted scripts try to compromise the system. Generally speaking,
+	a user could very well have a legitimate reason to set up a symlink, so
+	unless you feel there's a specific danger in allowing them, you should
+	permit them.
+
+	Symlinks are only explicitly checked when dealing with filenames
+	in platform-independent notation. That is, when setting up your
+	search and write paths, etc, symlinks are never checked for.
+
+	Please note that #Stat() will always check the path specified; if
+	that path is a symlink, it will not be followed in any case. If symlinks
+	aren't permitted through this function, #Stat() ignores them, and
+	would treat the query as if the path didn't exist at all.
+
+	Symbolic link permission can be enabled or disabled at any time after
+	you've called #Init(), and is disabled by default.
+	End Rem
+	Function PermitSymbolicLinks:Int(allow:Int)
+		Return PHYSFS_permitSymbolicLinks(allow)
+	End Function
+
+	Rem
+	bbdoc: Determine if symbolic links are permitted.
+	returns: #True if symlinks are permitted, #False if not.
+	about: This reports the setting from the last call to #PermitSymbolicLinks().
+
+	If #PermitSymbolicLinks() hasn't been called since the library was last initialized, symbolic links are implicitly disabled.
+	End Rem
+	Function SymbolicLinksPermitted:Int()
+		Return PHYSFS_symbolicLinksPermitted()
 	End Function
 
 End Type
