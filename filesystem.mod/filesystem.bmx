@@ -289,17 +289,7 @@ bbdoc: Sets the file modified or last accessed time.
 about: @dateTime is the basic DateTime struct defined in pub.stdc .
 End Rem
 Function SetFileTime( path:String, dateTime:SDateTime, timeType:Int=FILETIME_MODIFIED)
-	FixPath path
-	If MaxIO.ioInitialized Then
-		' Not available
-	Else
-		Select timetype
-			Case FILETIME_MODIFIED
-				utime_(path, timeType, dateTime.ToEpochSecs())
-			Case FILETIME_ACCESSED
-				utime_(path, timeType, dateTime.ToEpochSecs())
-		End Select
-	End If
+	SetFileTime(path, dateTime.ToEpochSecs(), timeType) 
 End Function
 
 Rem
@@ -338,17 +328,7 @@ bbdoc: Sets the file modified or last accessed time.
 about: @dateTime is the basic DateTime struct defined in pub.stdc .
 End Rem
 Function SetFileDateTime( path:String, dateTime:SDateTime, timeType:Int=FILETIME_MODIFIED)
-	FixPath path
-	If MaxIO.ioInitialized Then
-		' Not available
-	Else
-		Select timetype
-			Case FILETIME_MODIFIED
-				utime_(path, timeType, dateTime.ToEpochSecs())
-			Case FILETIME_ACCESSED
-				utime_(path, timeType, dateTime.ToEpochSecs())
-		End Select
-	End If
+	SetFileTime(path, dateTime.ToEpochSecs(), timeType) 
 End Function
 
 Rem
