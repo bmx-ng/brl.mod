@@ -285,6 +285,30 @@ Function SetFileTime( path:String, time:Long, timeType:Int=FILETIME_MODIFIED)
 End Function
 
 Rem
+bbdoc: Sets the file modified or last accessed time.
+about: @dateTime is the basic DateTime struct defined in pub.stdc .
+End Rem
+Function SetFileTime( path:String, dateTime:SDateTime, timeType:Int=FILETIME_MODIFIED)
+	SetFileTime(path, dateTime.ToEpochSecs(), timeType) 
+End Function
+
+Rem
+bbdoc: Gets file time
+returns: The time the file at @path was last modified as SDatetime struct.
+End Rem
+Function FileDateTime:SDateTime( path$, timetype:Int=FILETIME_MODIFIED )
+	Return SDateTime.FromEpoch( FileTime(path, timetype) )
+End Function
+
+Rem
+bbdoc: Sets the file modified or last accessed time.
+about: @dateTime is the basic DateTime struct defined in pub.stdc .
+End Rem
+Function SetFileDateTime( path:String, dateTime:SDateTime, timeType:Int=FILETIME_MODIFIED)
+	SetFileTime(path, dateTime.ToEpochSecs(), timeType) 
+End Function
+
+Rem
 bbdoc: Gets the file size
 returns: The size, in bytes, of the file at @path, or -1 if the file does not exist
 End Rem
