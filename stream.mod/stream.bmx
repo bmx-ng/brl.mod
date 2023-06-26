@@ -52,7 +52,7 @@ bytes. For example, if the stream ReadInt method fails to read 4 bytes, it will 
 a #TStreamReadException.
 End Rem
 Type TStreamReadException Extends TStreamException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Error reading from stream"
 	End Method
 End Type
@@ -65,7 +65,7 @@ bytes. For example, if the stream WriteInt method fails to write 4 bytes, it wil
 a #TStreamWriteException.
 End Rem
 Type TStreamWriteException Extends TStreamException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Error writing to stream"
 	End Method
 End Type
@@ -347,8 +347,8 @@ Type TStream Extends TIO
 	about:
 	If a value could not be read (possibly due to end of file), a #TStreamReadException is thrown.
 	End Rem
-	Method ReadFloat#()
-		Local n#
+	Method ReadFloat:Float()
+		Local n:Float
 		ReadBytes Varptr n,4
 		Return n
 	End Method
@@ -358,8 +358,8 @@ Type TStream Extends TIO
 	about:
 	If the value could not be written (possibly due to end of file), a #TStreamWriteException is thrown.
 	End Rem
-	Method WriteFloat( n# )
-		Local q#=n
+	Method WriteFloat( n:Float )
+		Local q:Float=n
 		WriteBytes Varptr q,4
 	End Method
 
@@ -369,8 +369,8 @@ Type TStream Extends TIO
 	about:
 	If a value could not be read (possibly due to end of file), a #TStreamReadException is thrown.
 	End Rem
-	Method ReadDouble!()
-		Local n!
+	Method ReadDouble:Double()
+		Local n:Double
 		ReadBytes Varptr n,8
 		Return n
 	End Method
@@ -380,8 +380,8 @@ Type TStream Extends TIO
 	about:
 	If the value could not be written (possibly due to end of file), a #TStreamWriteException is thrown.
 	End Rem
-	Method WriteDouble( n! )
-		Local q!=n
+	Method WriteDouble( n:Double )
+		Local q:Double=n
 		WriteBytes Varptr q,8
 	End Method
 	
@@ -396,11 +396,11 @@ Type TStream Extends TIO
 	The bytes read are returned in the form of a string, excluding any terminating newline
 	or null character.
 	End Rem
-	Method ReadLine$()
+	Method ReadLine:String()
 		return ReadLine(False)
 	End Method
 
-	Method ReadLine$(asUTF8:Int)
+	Method ReadLine:String(asUTF8:Int)
 		Local buf:Byte[1024],sz:Int
 		Repeat
 			Local ch:Byte
@@ -423,11 +423,11 @@ Type TStream Extends TIO
 	about: A sequence of bytes is written to the stream (one for each character in @str)
 	followed by the line terminating sequence "~r~n".
 	End Rem
-	Method WriteLine:Int( str$ )
+	Method WriteLine:Int( str:String )
 		Return WriteLine(str, False)
 	End Method
 
-	Method WriteLine:Int( str$, asUTF8:Int )
+	Method WriteLine:Int( str:String, asUTF8:Int )
 		Local buf:Byte Ptr
 		Local length:Int
 		If asUTF8 Then
@@ -468,11 +468,11 @@ Type TStream Extends TIO
 	about:
 	A #TStreamWriteException is thrown if not all bytes could be written.
 	End Rem
-	Method WriteString( str$ )
+	Method WriteString( str:String )
 		WriteString(str, False)
 	End Method
 
-	Method WriteString( str$, asUTF8:Int )
+	Method WriteString( str:String, asUTF8:Int )
 		Local buf:Byte Ptr
 		Local length:Int
 		If asUTF8 Then
@@ -997,7 +997,7 @@ returns: A Float value
 about: #ReadFloat reads 4 bytes from @stream.
 A TStreamReadException is thrown If there is not enough data available.
 End Rem
-Function ReadFloat#( stream:TStream )
+Function ReadFloat:Float( stream:TStream )
 	Return stream.ReadFloat()
 End Function
 
@@ -1007,7 +1007,7 @@ returns: A Double value
 about: #ReadDouble reads 8 bytes from @stream.
 A TStreamWriteException is thrown If there is not enough data available.
 End Rem
-Function ReadDouble!( stream:TStream )
+Function ReadDouble:Double( stream:TStream )
 	Return stream.ReadDouble()
 End Function
 
@@ -1052,7 +1052,7 @@ bbdoc: Write a Float to a stream
 about: #WriteFloat writes 4 bytes to @stream.
 A TStreamWriteException is thrown if not all bytes could be written
 End Rem
-Function WriteFloat( stream:TStream,n# )
+Function WriteFloat( stream:TStream,n:Float )
 	stream.WriteFloat n
 End Function
 
@@ -1061,7 +1061,7 @@ bbdoc: Write a Double to a stream
 about: #WriteDouble writes 8 bytes to @stream.
 A TStreamWriteException is thrown if not all bytes could be written
 End Rem
-Function WriteDouble( stream:TStream,n! )
+Function WriteDouble( stream:TStream,n:Double )
 	stream.WriteDouble n
 End Function
 
@@ -1160,7 +1160,7 @@ resultant stream.
 
 A #TStreamWriteException is thrown if not all bytes could be written.
 End Rem
-Function SaveString( str$,url:Object )
+Function SaveString( str:String,url:Object )
 	Local stream:TStream=WriteStream( url )
 	If Not stream Throw New TStreamWriteException
 	Local t:Byte Ptr=str.ToCString()
@@ -1169,7 +1169,7 @@ Function SaveString( str$,url:Object )
 	stream.Close
 End Function
 
-Function SaveString( str$,url:Object, asUTF8:Int )
+Function SaveString( str:String,url:Object, asUTF8:Int )
 	Local stream:TStream=WriteStream( url )
 	If Not stream Throw New TStreamWriteException
 	Local t:Byte Ptr
@@ -1270,16 +1270,16 @@ End Function
 Rem
 bbdoc: Returns a case sensitive filename if it exists from a case insensitive file path.
 End Rem
-Function CasedFileName$(path$)
+Function CasedFileName:String(path:String)
 	Local	dir:Byte Ptr
-	Local   sub$,s$,f$,folder$,p:Int
+	Local   sub:String,s:String,f:String,folder:String,p:Int
 	Local	Mode:Int,size:Long,mtime:Int,ctime:Int,atime:Int
         
 	If stat_( path,Mode,size,mtime,ctime,atime )=0
 		Mode:&S_IFMT_
 		If Mode=S_IFREG_ Or Mode=S_IFDIR_ Return path
 	EndIf
-	folder$="."
+	folder="."
 	For p=Len(path)-2 To 0 Step -1
 		If path[p]=47 Exit
 	Next
@@ -1289,8 +1289,8 @@ Function CasedFileName$(path$)
 		If Not sub Then
 			Return Null
 		End If
-		path=path$[Len(sub)+1..]
-		folder$=sub
+		path=path[Len(sub)+1..]
+		folder=sub
 	EndIf
 	s=path.ToLower()
 	dir=opendir_(folder)
@@ -1378,8 +1378,8 @@ Type TIOStream Extends TFileStream
 		Return 0
 	End Method
 
-	Function OpenFile:TIOStream( path$,readable:Int,writeMode:Int )
-		Local Mode$,_mode:Int
+	Function OpenFile:TIOStream( path:String,readable:Int,writeMode:Int )
+		Local Mode:String,_mode:Int
 		Mode = GetMode(readable, writeMode, _mode)
 		path=path.Replace( "\","/" )
 		

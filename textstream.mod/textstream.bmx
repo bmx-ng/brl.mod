@@ -141,7 +141,7 @@ Type TTextStream Extends TStreamWrapper
 		WriteLine n
 	End Method
 	
-	Method ReadLine$() Override
+	Method ReadLine:String() Override
 		_FlushRead
 		Local buf:Short[1024],i:Int
 		While Not Eof()
@@ -156,7 +156,7 @@ Type TTextStream Extends TStreamWrapper
 		Return String.FromShorts(buf,i)
 	End Method
 	
-	Method ReadFile$()
+	Method ReadFile:String()
 		_FlushRead
 		Local buf:Short[1024],i:Int
 		While Not Eof()
@@ -168,13 +168,13 @@ Type TTextStream Extends TStreamWrapper
 		Return String.FromShorts( buf,i )
 	End Method
 	
-	Method WriteLine:Int( str$ ) Override
+	Method WriteLine:Int( str:String ) Override
 		_FlushWrite
 		WriteString str
 		WriteString "~r~n"
 	End Method
 	
-	Method ReadString$( length:Int ) Override
+	Method ReadString:String( length:Int ) Override
 		_FlushRead
 		Local buf:Short[length]
 		For Local i:Int=0 Until length
@@ -183,7 +183,7 @@ Type TTextStream Extends TStreamWrapper
 		Return String.FromShorts(buf,length)
 	End Method
 	
-	Method WriteString( str$ ) Override
+	Method WriteString( str:String ) Override
 		_FlushWrite
 		For Local i:Int=0 Until str.length
 			WriteChar str[i]
@@ -321,9 +321,9 @@ End Type
 	
 Type TTextStreamFactory Extends TStreamFactory
 
-	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeMode:Int ) Override
+	Method CreateStream:TStream( url:Object,proto:String,path:String,readable:Int,writeMode:Int ) Override
 		Local encoding:ETextStreamFormat
-		Select proto$
+		Select proto
 		Case "latin1"
 			encoding=ETextStreamFormat.LATIN1
 		Case "utf8"
@@ -359,7 +359,7 @@ stream will be tested for UTF8 compatibility, and loaded as such as appropriate.
 
 A #TStreamReadException is thrown if not all bytes could be read.
 End Rem
-Function LoadText$( url:Object, checkForUTF8:Int = True )
+Function LoadText:String( url:Object, checkForUTF8:Int = True )
 
 	Local stream:TStream=ReadStream( url )
 	If Not stream Throw New TStreamReadException
@@ -403,7 +403,7 @@ Function LoadText$( url:Object, checkForUTF8:Int = True )
 	EndIf
 	
 	Local TStream:TTextStream=TTextStream.Create( stream,format )
-	Local str$=TStream.ReadFile()
+	Local str:String=TStream.ReadFile()
 	TStream.Close
 	stream.Close
 	Return str
@@ -420,7 +420,7 @@ then @str is saved in UTF16 format. Otherwise, @str is saved in LATIN1 format.
 
 A #TStreamWriteException is thrown if not all bytes could be written.
 End Rem
-Function SaveText:Int( str$,url:Object, format:ETextStreamFormat = ETextStreamFormat.LATIN1, withBOM:Int = True )
+Function SaveText:Int( str:String,url:Object, format:ETextStreamFormat = ETextStreamFormat.LATIN1, withBOM:Int = True )
 
 	If format <> ETextStreamFormat.LATIN1 And format <> ETextStreamFormat.UTF8
 		For Local i:Int=0 Until str.length

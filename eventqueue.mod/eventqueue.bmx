@@ -209,7 +209,7 @@ Rem
 bbdoc: Get current event extra value converted to a string
 returns: The @extra field of the #CurrentEvent global variable converted to a string
 EndRem
-Function EventText$()
+Function EventText:String()
 	Return String( CurrentEvent.extra )
 End Function
 

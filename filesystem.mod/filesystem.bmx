@@ -44,7 +44,7 @@ Const FILETIME_MODIFIED:Int=0,FILETIME_CREATED:Int=1,FILETIME_ACCESSED:Int=2
 
 Private
 
-Function _RootPath$( path$ )
+Function _RootPath:String( path:String )
 	If MaxIO.ioInitialized Then
 		Return "/"
 	End If
@@ -58,17 +58,17 @@ Function _RootPath$( path$ )
 	If path.StartsWith( "/" ) Return "/"
 End Function
 
-Function _IsRootPath:Int( path$ )
+Function _IsRootPath:Int( path:String )
 	Return path And _RootPath( path )=path
 End Function
 
-Function _IsRealPath:Int( path$ )
+Function _IsRealPath:Int( path:String )
 	Return _RootPath( path )<>""
 End Function
 
 ?Win32
-Function _CurrentDrive$()
-	Local cd$=getcwd_()
+Function _CurrentDrive:String()
+	Local cd:String=getcwd_()
 	Local i:Int=cd.Find( ":" )
 	If i<>-1 Return cd[..i]
 End Function
@@ -76,7 +76,7 @@ End Function
 
 Public
 
-Function FixPath( path$ Var,dirPath:Int=False )
+Function FixPath( path:String Var,dirPath:Int=False )
 	path=path.Replace("\","/")
 	If Not MaxIO.ioInitialized Then
 ?Win32
@@ -100,7 +100,7 @@ End Function
 Rem
 bbdoc: Strips the directory from a file path
 End Rem
-Function StripDir$( path$ )
+Function StripDir:String( path:String )
 	FixPath path
 	Local i:Int=path.FindLast( "/" )
 	If i<>-1 Return path[i+1..]
@@ -110,7 +110,7 @@ End Function
 Rem
 bbdoc: Strips the extension from a file path
 End Rem
-Function StripExt$( path$ )
+Function StripExt:String( path:String )
 	FixPath path
 	Local i:Int=path.FindLast( "." )
 	If i<>-1 And path.Find( "/",i+1 )=-1 Return path[..i]
@@ -120,7 +120,7 @@ End Function
 Rem
 bbdoc: Strips the directory and extension from a file path
 End Rem
-Function StripAll$( path$ )
+Function StripAll:String( path:String )
 	Return StripDir( StripExt( path ) )
 End Function
 
@@ -130,7 +130,7 @@ about:
 #StripSlash will not remove the trailing slash from a 'root' path. For example, "/"
 or (on Win32 only) "C:/".
 End Rem
-Function StripSlash$( path$ )
+Function StripSlash:String( path:String )
 	FixPath path
 	If path.EndsWith( "/" ) And Not _IsRootPath( path ) path=path[..path.length-1]
 	Return path
@@ -139,7 +139,7 @@ End Function
 Rem
 bbdoc: Extracts the directory from a file path
 End Rem
-Function ExtractDir$( path$ )
+Function ExtractDir:String( path:String )
 	FixPath path
 	If path="." Or path=".." Or _IsRootPath( path ) Return path
 
@@ -153,7 +153,7 @@ End Function
 Rem
 bbdoc: Extracts the extension from a file path
 End Rem
-Function ExtractExt$( path$ )
+Function ExtractExt:String( path:String )
 	FixPath path
 	Local i:Int=path.FindLast( "." )
 	If i<>-1 And path.Find( "/",i+1 )=-1 Return path[i+1..]
@@ -163,11 +163,11 @@ Rem
 bbdoc: Gets the Current Directory
 returns: The current directory
 End Rem
-Function CurrentDir$()
+Function CurrentDir:String()
 	If MaxIO.ioInitialized Then
 		Return "/"
 	End If
-	Local path$=getcwd_()
+	Local path:String=getcwd_()
 	FixPath path
 	Return path
 End Function
@@ -175,14 +175,14 @@ End Function
 Rem
 bbdoc: Gets the real, absolute path of a file path
 End Rem
-Function RealPath$( path$ )
+Function RealPath:String( path:String )
 ?Win32
 	If Not MaxIO.ioInitialized And path.StartsWith( "/" ) And Not path.StartsWith( "//" )
 		path=_CurrentDrive()+":"+path
 	EndIf
 ?
 	FixPath path
-	Local cd$=_RootPath( path )
+	Local cd:String=_RootPath( path )
 
 	If cd
 		If Not MaxIO.ioInitialized Then
@@ -195,7 +195,7 @@ Function RealPath$( path$ )
 	path:+"/"
 	While path
 		Local i:Int=path.Find( "/" )
-		Local t$=path[..i]
+		Local t:String=path[..i]
 		path=path[i+1..]
 		Select t
 		Case ""
@@ -215,7 +215,7 @@ Rem
 bbdoc: Gets the file type
 returns: 0 if file at @path doesn't exist, FILETYPE_FILE (1) if the file is a plain file or FILETYPE_DIR (2) if the file is a directory
 End Rem
-Function FileType:Int( path$ )
+Function FileType:Int( path:String )
 	FixPath path
 	If MaxIO.ioInitialized Then
 		Local stat:SMaxIO_Stat
@@ -239,7 +239,7 @@ Rem
 bbdoc: Gets file time
 returns: The time the file at @path was last modified.
 End Rem
-Function FileTime:Long( path$, timetype:Int=FILETIME_MODIFIED )
+Function FileTime:Long( path:String, timetype:Int=FILETIME_MODIFIED )
 	FixPath path
 	If MaxIO.ioInitialized Then
 		Local stat:SMaxIO_Stat
@@ -296,7 +296,7 @@ Rem
 bbdoc: Gets file time
 returns: The time the file at @path was last modified as SDatetime struct.
 End Rem
-Function FileDateTime:SDateTime( path$, timetype:Int=FILETIME_MODIFIED )
+Function FileDateTime:SDateTime( path:String, timetype:Int=FILETIME_MODIFIED )
 	Return SDateTime.FromEpoch( FileTime(path, timetype) )
 End Function
 
@@ -312,7 +312,7 @@ Rem
 bbdoc: Gets the file size
 returns: The size, in bytes, of the file at @path, or -1 if the file does not exist
 End Rem
-Function FileSize:Long( path$ )
+Function FileSize:Long( path:String )
 	FixPath path
 	If MaxIO.ioInitialized Then
 		Local stat:SMaxIO_Stat
@@ -329,7 +329,7 @@ Rem
 bbdoc: Gets the file mode
 returns: The file mode flags
 End Rem
-Function FileMode:Int( path$ )
+Function FileMode:Int( path:String )
 	FixPath path
 	If Not MaxIO.ioInitialized Then
 		Local Mode:Int,size:Long,mtime:Int,ctime:Int,atime:Int
@@ -341,7 +341,7 @@ End Function
 Rem
 bbdoc: Sets file mode
 End Rem
-Function SetFileMode( path$,Mode:Int )
+Function SetFileMode( path:String,Mode:Int )
 	FixPath path
 	If Not MaxIO.ioInitialized Then
 		chmod_ path,Mode
@@ -352,7 +352,7 @@ Rem
 bbdoc: Creates a file
 returns: #True if successful
 End Rem
-Function CreateFile:Int( path$ )
+Function CreateFile:Int( path:String )
 	FixPath path
 	If MaxIO.ioInitialized Then
 		MaxIO.DeletePath(path)
@@ -372,7 +372,7 @@ returns: #True if successful
 about:
 If @recurse is #True, any required subdirectories are also created.
 End Rem
-Function CreateDir:Int( path$,recurse:Int=False )
+Function CreateDir:Int( path:String,recurse:Int=False )
 	FixPath path,True
 	If MaxIO.ioInitialized Then
 		Return MaxIO.MkDir(path)
@@ -381,7 +381,7 @@ Function CreateDir:Int( path$,recurse:Int=False )
 			mkdir_ path,1023
 			Return FileType(path)=FILETYPE_DIR
 		EndIf
-		Local t$
+		Local t:String
 		path=RealPath(path)+"/"
 		While path
 			Local i:Int=path.find("/")+1
@@ -390,7 +390,7 @@ Function CreateDir:Int( path$,recurse:Int=False )
 			Select FileType(t)
 			Case FILETYPE_DIR
 			Case FILETYPE_NONE
-				Local s$=StripSlash(t)
+				Local s:String=StripSlash(t)
 				mkdir_ StripSlash(s),1023
 				If FileType(s)<>FILETYPE_DIR Return False
 			Default
@@ -405,7 +405,7 @@ Rem
 bbdoc: Deletes a file
 returns: #True if successful
 End Rem
-Function DeleteFile:Int( path$ )
+Function DeleteFile:Int( path:String )
 	FixPath path
 	If MaxIO.ioInitialized Then
 		MaxIO.DeletePath(path)
@@ -419,7 +419,7 @@ Rem
 bbdoc: Renames a file
 returns: #True if successful
 End Rem
-Function RenameFile:Int( oldpath$,newpath$ )
+Function RenameFile:Int( oldpath:String,newpath:String )
 	If MaxIO.ioInitialized Then
 		Return False
 	End If
@@ -432,7 +432,7 @@ Rem
 bbdoc: Copies a file
 returns: #True if successful
 End Rem
-Function CopyFile:Int( src$,dst$ )
+Function CopyFile:Int( src:String,dst:String )
 	Local in:TStream=ReadStream( src ),ok:Int
 	If in
 		Local out:TStream=WriteStream( dst )
@@ -453,12 +453,12 @@ Rem
 bbdoc: Copies a directory
 returns: #True if successful
 End Rem
-Function CopyDir:Int( src$,dst$ )
+Function CopyDir:Int( src:String,dst:String )
 
-	Function CopyDir_:Int( src$,dst$ )
+	Function CopyDir_:Int( src:String,dst:String )
 		If FileType( dst )=FILETYPE_NONE CreateDir dst
 		If FileType( dst )<>FILETYPE_DIR Return False
-		For Local file$=EachIn LoadDir( src )
+		For Local file:String=EachIn LoadDir( src )
 			Select FileType( src+"/"+file )
 			Case FILETYPE_DIR
 				If Not CopyDir_( src+"/"+file,dst+"/"+file ) Return False
@@ -484,16 +484,16 @@ returns: #True if successful
 about: Set @recurse to #True to delete all subdirectories and files recursively - 
 but be careful!
 End Rem
-Function DeleteDir:Int( path$,recurse:Int=False )
+Function DeleteDir:Int( path:String,recurse:Int=False )
 	FixPath path,True
 	If recurse
 		Local dir:Byte Ptr=ReadDir( path )
 		If Not dir Return False
 		Repeat
-			Local t$=NextFile( dir )
+			Local t:String=NextFile( dir )
 			If t="" Exit
 			If t="." Or t=".." Continue
-			Local f$=path+"/"+t
+			Local f:String=path+"/"+t
 			Select FileType( f )
 				Case 1 DeleteFile f
 				Case 2 DeleteDir f,True
@@ -509,7 +509,7 @@ Rem
 bbdoc: Changes the current directory
 returns: True if successful
 End Rem
-Function ChangeDir:Int( path$ )
+Function ChangeDir:Int( path:String )
 	If MaxIO.ioInitialized Then
 		Return False
 	Else
@@ -524,7 +524,7 @@ returns: A directory handle, or #Null if the directory does not exist
 about: Use #NextFile to get the next file in the directory.
 The directory must be closed with #CloseDir.
 End Rem
-Function ReadDir:Byte Ptr( path$ )
+Function ReadDir:Byte Ptr( path:String )
 	FixPath path,True
 	If MaxIO.ioInitialized Then
 		Return bmx_blitzio_readdir(path)
@@ -537,7 +537,7 @@ Rem
 bbdoc: Returns the next file in a directory
 returns: File name of next file in the directory opened using #ReadDir, or an empty #String if there are no more files to read.
 End Rem
-Function NextFile$( dir:Byte Ptr )
+Function NextFile:String( dir:Byte Ptr )
 	If MaxIO.ioInitialized Then
 		Return bmx_blitzio_nextFile(dir)
 	Else
@@ -563,13 +563,13 @@ returns: A string array containing contents of @dir
 about: The @skip_dots parameter, if true, removes the '.' (current) and '..'
 (parent) directories from the returned array.
 End Rem
-Function LoadDir$[]( dir$,skip_dots:Int=True )
+Function LoadDir:String[]( dir:String,skip_dots:Int=True )
 	FixPath dir,True
 	Local d:Byte Ptr=ReadDir( dir )
 	If Not d Return Null
-	Local i$[100],n:Int
+	Local i:String[100],n:Int
 	Repeat
-		Local f$=NextFile( d )
+		Local f:String=NextFile( d )
 		If Not f Exit
 		If skip_dots And (f="." Or f="..") Continue
 		If n=i.length i=i[..n+100]

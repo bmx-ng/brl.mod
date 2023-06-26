@@ -22,7 +22,7 @@ Global _max2dDriver:TMax2DDriver
 
 Type TImageFrame
 
-	Method Draw( x0#,y0#,x1#,y1#,tx#,ty#,sx#,sy#,sw#,sh# ) Abstract
+	Method Draw( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float,sx:Float,sy:Float,sw:Float,sh:Float ) Abstract
 	
 End Type
 
@@ -38,12 +38,12 @@ Type TMax2DDriver Extends TGraphicsDriver
 	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags:Int ) Abstract
 	
 	Method SetBlend( blend:Int ) Abstract
-	Method SetAlpha( alpha# ) Abstract
+	Method SetAlpha( alpha:Float ) Abstract
 	Method SetColor( red:Int,green:Int,blue:Int ) Abstract
 	Method SetClsColor( red:Int,green:Int,blue:Int ) Abstract
 	Method SetViewport( x:Int,y:Int,width:Int,height:Int ) Abstract
-	Method SetTransform( xx#,xy#,yx#,yy# ) Abstract
-	Method SetLineWidth( width# ) Abstract
+	Method SetTransform( xx:Float,xy:Float,yx:Float,yy:Float ) Abstract
+	Method SetLineWidth( width:Float ) Abstract
 
 	Method SetColor( color:SColor8 )
 		SetColor(color.r, color.g, color.b)
@@ -53,15 +53,15 @@ Type TMax2DDriver Extends TGraphicsDriver
 	End Method
 	
 	Method Cls() Abstract
-	Method Plot( x#,y# ) Abstract
-	Method DrawLine( x0#,y0#,x1#,y1#,tx#,ty# ) Abstract
-	Method DrawRect( x0#,y0#,x1#,y1#,tx#,ty# ) Abstract
-	Method DrawOval( x0#,y0#,x1#,y1#,tx#,ty# ) Abstract
-	Method DrawPoly( xy#[],handlex#,handley#,originx#,originy#, indices:Int[] ) Abstract
+	Method Plot( x:Float,y:Float ) Abstract
+	Method DrawLine( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Abstract
+	Method DrawRect( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Abstract
+	Method DrawOval( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Abstract
+	Method DrawPoly( xy:Float[],handlex:Float,handley:Float,originx:Float,originy:Float, indices:Int[] ) Abstract
 		
 	Method DrawPixmap( pixmap:TPixmap,x:Int,y:Int ) Abstract
 	Method GrabPixmap:TPixmap( x:Int,y:Int,width:Int,height:Int ) Abstract
 	
-	Method SetResolution( width#,height# ) Abstract
+	Method SetResolution( width:Float,height:Float ) Abstract
 
 End Type

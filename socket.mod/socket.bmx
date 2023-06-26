@@ -60,7 +60,7 @@ End Extern
 Public
 
 Type TSocketException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Internal socket error"
 	End Method
 End Type
@@ -429,7 +429,7 @@ Rem
 bbdoc: Convert an ip address to a dotted string
 returns: Dotted string version of ip address
 End Rem
-Function DottedIP$( ip:Int )
+Function DottedIP:String( ip:Int )
 	Return (ip Shr 24)+"."+(ip Shr 16 & 255)+"."+(ip Shr 8 & 255 )+"."+(ip & 255)
 End Function
 
@@ -460,7 +460,7 @@ Rem
 bbdoc: Convert a host name to an ip address
 returns: Host ip address, or 0 if host not found
 End Rem
-Function HostIp:String( HostName$, index:Int=0, family:Int = AF_UNSPEC_ )
+Function HostIp:String( HostName:String, index:Int=0, family:Int = AF_UNSPEC_ )
 	If index<0 Return
 	Local ips:String[]=HostIps( HostName, family )
 	If index < ips.length Then
@@ -472,7 +472,7 @@ Rem
 bbdoc: Get all ip addresses for a host name
 returns: Array of host ips, or Null if host not found
 End Rem
-Function HostIps:String[]( HostName$, family:Int = AF_UNSPEC_ )
+Function HostIps:String[]( HostName:String, family:Int = AF_UNSPEC_ )
 	Local addr:TAddrInfo[] = AddrInfo(HostName, , family)
 	Local ips:String[] = New String[addr.length]
 	For Local i:Int = 0 Until addr.length
@@ -485,7 +485,7 @@ Rem
 bbdoc: Convert a host ip address to a name
 returns: Name of host, or Null if host not found
 End Rem
-Function HostName$( HostIp:String, family:Int = AF_UNSPEC_ )
+Function HostName:String( HostIp:String, family:Int = AF_UNSPEC_ )
 	Local addr:TAddrInfo[] = AddrInfo(HostIp, , family)
 	If addr Then
 		Return addr[0].HostName()

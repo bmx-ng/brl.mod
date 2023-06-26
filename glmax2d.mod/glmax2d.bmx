@@ -52,7 +52,7 @@ Const GL_BGRA:Int=$80E1
 Const GL_CLAMP_TO_EDGE:Int=$812F
 Const GL_CLAMP_TO_BORDER:Int=$812D
 
-Global ix#,iy#,jx#,jy#
+Global ix:Float,iy:Float,jx:Float,jy:Float
 Global color4ub:Byte[4]
 
 Global state_blend:Int
@@ -494,7 +494,7 @@ Public
 
 Type TGLImageFrame Extends TImageFrame
 
-	Field u0#,v0#,u1#,v1#,uscale#,vscale#
+	Field u0:Float,v0:Float,u1:Float,v1:Float,uscale:Float,vscale:Float
 
 	Field name:Int,seq:Int
 	
@@ -508,13 +508,13 @@ Type TGLImageFrame Extends TImageFrame
 		seq=0
 	End Method
 	
-	Method Draw( x0#,y0#,x1#,y1#,tx#,ty#,sx#,sy#,sw#,sh# ) Override
+	Method Draw( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float,sx:Float,sy:Float,sw:Float,sh:Float ) Override
 		Assert seq=GraphicsSeq Else "Image does not exist"
 
-		Local u0#=sx * uscale
-		Local v0#=sy * vscale
-		Local u1#=(sx+sw) * uscale
-		Local v1#=(sy+sh) * vscale
+		Local u0:Float=sx * uscale
+		Local v0:Float=sy * vscale
+		Local u1:Float=(sx+sw) * uscale
+		Local v1:Float=(sy+sh) * vscale
 		
 		EnableTex name
 		glBegin GL_QUADS
@@ -641,7 +641,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		GLGraphicsDriver().Flip sync
 	End Method
 	
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "OpenGL"
 	End Method
 
@@ -682,14 +682,14 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		End Select
 	End Method
 
-	Method SetAlpha( alpha# ) Override
+	Method SetAlpha( alpha:Float ) Override
 		If alpha>1.0 alpha=1.0
 		If alpha<0.0 alpha=0.0
 		color4ub[3]=alpha*255
 		glColor4ubv color4ub
 	End Method
 
-	Method SetLineWidth( width# ) Override
+	Method SetLineWidth( width:Float ) Override
 		glLineWidth width
 	End Method
 	
@@ -727,7 +727,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		EndIf
 	End Method
 
-	Method SetTransform( xx#,xy#,yx#,yy# ) Override
+	Method SetTransform( xx:Float,xy:Float,yx:Float,yy:Float ) Override
 		ix=xx
 		iy=xy
 		jx=yx
@@ -738,14 +738,14 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glClear GL_COLOR_BUFFER_BIT
 	End Method
 
-	Method Plot( x#,y# ) Override
+	Method Plot( x:Float,y:Float ) Override
 		DisableTex
 		glBegin GL_POINTS
 		glVertex2f x+.5,y+.5
 		glEnd
 	End Method
 
-	Method DrawLine( x0#,y0#,x1#,y1#,tx#,ty# ) Override
+	Method DrawLine( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Override
 		DisableTex
 		glBegin GL_LINES
 		glVertex2f x0*ix+y0*iy+tx+.5,x0*jx+y0*jy+ty+.5
@@ -753,7 +753,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glEnd
 	End Method
 
-	Method DrawRect( x0#,y0#,x1#,y1#,tx#,ty# ) Override
+	Method DrawRect( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Override
 		DisableTex
 		glBegin GL_QUADS
 		glVertex2f x0*ix+y0*iy+tx,x0*jx+y0*jy+ty
@@ -763,10 +763,10 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glEnd
 	End Method
 	
-	Method DrawOval( x0#,y0#,x1#,y1#,tx#,ty# ) Override
+	Method DrawOval( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Override
 	
-		Local xr#=(x1-x0)*.5
-		Local yr#=(y1-y0)*.5
+		Local xr:Float=(x1-x0)*.5
+		Local yr:Float=(y1-y0)*.5
 		Local segs:Int=Abs(xr)+Abs(yr)
 		
 		segs=Max(segs,12)&~3
@@ -777,23 +777,23 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		DisableTex
 		glBegin GL_POLYGON
 		For Local i:Int=0 Until segs
-			Local th#=i*360#/segs
-			Local x#=x0+Cos(th)*xr
-			Local y#=y0-Sin(th)*yr
+			Local th:Float=i*360:Float/segs
+			Local x:Float=x0+Cos(th)*xr
+			Local y:Float=y0-Sin(th)*yr
 			glVertex2f x*ix+y*iy+tx,x*jx+y*jy+ty
 		Next
 		glEnd
 		
 	End Method
 	
-	Method DrawPoly( xy#[],handle_x#,handle_y#,origin_x#,origin_y#, indices:Int[] ) Override
+	Method DrawPoly( xy:Float[],handle_x:Float,handle_y:Float,origin_x:Float,origin_y:Float, indices:Int[] ) Override
 		If xy.length<6 Or (xy.length&1) Return
 		
 		DisableTex
 		glBegin GL_POLYGON
 		For Local i:Int=0 Until Len xy Step 2
-			Local x#=xy[i+0]+handle_x
-			Local y#=xy[i+1]+handle_y
+			Local x:Float=xy[i+0]+handle_x
+			Local y:Float=xy[i+1]+handle_y
 			glVertex2f x*ix+y*iy+origin_x,x*jx+y*jy+origin_y
 		Next
 		glEnd
@@ -828,7 +828,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		Return p
 	End Method
 	
-	Method SetResolution( width#,height# ) Override
+	Method SetResolution( width:Float,height:Float ) Override
 		glMatrixMode GL_PROJECTION
 		glLoadIdentity
 		glOrtho 0,width,height,0,-1,1

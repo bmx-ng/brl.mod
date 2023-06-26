@@ -33,10 +33,10 @@ Private
 Global _gw:Int,_gh:Int,_gd:Int,_gr:Int,_gf:Long,_gx:Int,_gy:Int
 Global _color:Int
 Global _clscolor:Int
-Global _ix#,_iy#,_jx#,_jy#
-Global _fverts#[24]
+Global _ix:Float,_iy:Float,_jx:Float,_jy:Float
+Global _fverts:Float[24]
 Global _iverts:Int Ptr=Int Ptr( Varptr _fverts[0] )
-Global _lineWidth#
+Global _lineWidth:Float
 
 Global _bound_texture:IDirect3DTexture9
 Global _texture_enabled:Int
@@ -63,7 +63,7 @@ Function DisableTex()
 	_texture_enabled=False
 End Function
 
-Function d3derr( str$ )
+Function d3derr( str:String )
 	If LOG_ERRS WriteStdout "D3DERR: "+str+"~n"
 End Function
 
@@ -160,8 +160,8 @@ Type TD3D9ImageFrame Extends TImageFrame
 		_uscale=1.0/pow2width
 		_vscale=1.0/pow2height
 
-		Local u0#,u1#=width * _uscale
-		Local v0#,v1#=height * _vscale
+		Local u0:Float,u1:Float=width * _uscale
+		Local v0:Float,v1:Float=height * _vscale
 
 		_fverts[4]=u0
 		_fverts[5]=v0
@@ -187,11 +187,11 @@ Type TD3D9ImageFrame Extends TImageFrame
 		Return Self
 	End Method
 	
-	Method Draw( x0#,y0#,x1#,y1#,tx#,ty#,sx#,sy#,sw#,sh# ) Override
-		Local u0#=sx * _uscale
-		Local v0#=sy * _vscale
-		Local u1#=(sx+sw) * _uscale
-		Local v1#=(sy+sh) * _vscale
+	Method Draw( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float,sx:Float,sy:Float,sw:Float,sh:Float ) Override
+		Local u0:Float=sx * _uscale
+		Local v0:Float=sy * _vscale
+		Local u1:Float=(sx+sw) * _uscale
+		Local v1:Float=(sy+sh) * _vscale
 	
 		_fverts[0]=x0*_ix+y0*_iy+tx
 		_fverts[1]=x0*_jx+y0*_jy+ty
@@ -236,9 +236,9 @@ Type TD3D9ImageFrame Extends TImageFrame
 	
 	Field _texture:IDirect3DTexture9,_seq:Int
 	
-	Field _magfilter:Int,_minfilter:Int,_mipfilter:Int,_uscale#,_vscale#
+	Field _magfilter:Int,_minfilter:Int,_mipfilter:Int,_uscale:Float,_vscale:Float
 	
-	Field _fverts#[24],_iverts:Int Ptr=Int Ptr( Varptr _fverts[0] )
+	Field _fverts:Float[24],_iverts:Int Ptr=Int Ptr( Varptr _fverts[0] )
 
 End Type
 
@@ -743,7 +743,7 @@ EndType
 
 Type TD3D9Max2DDriver Extends TMax2dDriver
 
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "DirectX9"
 	End Method
 
@@ -904,7 +904,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_active_blend=blend
 	End Method
 	
-	Method SetAlpha( alpha# ) Override
+	Method SetAlpha( alpha:Float ) Override
 		alpha=Max(Min(alpha,1),0)
 		_color=(Int(255*alpha) Shl 24)|(_color&$ffffff)
 		_iverts[3]=_color
@@ -953,14 +953,14 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		EndIf
 	End Method
 	
-	Method SetTransform( xx#,xy#,yx#,yy# ) Override
+	Method SetTransform( xx:Float,xy:Float,yx:Float,yy:Float ) Override
 		_ix=xx
 		_iy=xy
 		_jx=yx
 		_jy=yy		
 	End Method
 	
-	Method SetLineWidth( width# ) Override
+	Method SetLineWidth( width:Float ) Override
 		_lineWidth=width
 	End Method
 	
@@ -968,18 +968,18 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_d3dDev.Clear 0,Null,D3DCLEAR_TARGET,_clscolor,0,0
 	End Method
 	
-	Method Plot( x#,y# ) Override
+	Method Plot( x:Float,y:Float ) Override
 		_fverts[0]=x+.5
 		_fverts[1]=y+.5
 		DisableTex
 		_d3dDev.DrawPrimitiveUP D3DPT_POINTLIST,1,_fverts,24
 	End Method
 	
-	Method DrawLine( x0#,y0#,x1#,y1#,tx#,ty# ) Override
-		Local lx0# = x0*_ix + y0*_iy + tx
-		Local ly0# = x0*_jx + y0*_jy + ty
-		Local lx1# = x1*_ix + y1*_iy + tx
-		Local ly1# = x1*_jx + y1*_jy + ty
+	Method DrawLine( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Override
+		Local lx0:Float = x0*_ix + y0*_iy + tx
+		Local ly0:Float = x0*_jx + y0*_jy + ty
+		Local lx1:Float = x1*_ix + y1*_iy + tx
+		Local ly1:Float = x1*_jx + y1*_jy + ty
 		If _lineWidth<=1
 			_fverts[0]=lx0+.5
 			_fverts[1]=ly0+.5
@@ -989,7 +989,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 			_d3dDev.DrawPrimitiveUP D3DPT_LINELIST,1,_fverts,24
 			Return
 		EndIf
-		Local lw#=_lineWidth*.5
+		Local lw:Float=_lineWidth*.5
 		If Abs(ly1-ly0)>Abs(lx1-lx0)
 			_fverts[0]=lx0-lw
 			_fverts[1]=ly0
@@ -1013,7 +1013,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_d3dDev.DrawPrimitiveUP D3DPT_TRIANGLESTRIP,2,_fverts,24
 	End Method
 	
-	Method DrawRect( x0#,y0#,x1#,y1#,tx#,ty# ) Override
+	Method DrawRect( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Override
 		_fverts[0]  = x0*_ix + y0*_iy + tx
 		_fverts[1]  = x0*_jx + y0*_jy + ty
 		_fverts[6]  = x1*_ix + y0*_iy + tx
@@ -1026,19 +1026,19 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_d3dDev.DrawPrimitiveUP D3DPT_TRIANGLESTRIP,2,_fverts,24
 	End Method
 	
-	Method DrawOval( x0#,y0#,x1#,y1#,tx#,ty# ) Override
-		Local xr#=(x1-x0)*.5
-		Local yr#=(y1-y0)*.5
+	Method DrawOval( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Override
+		Local xr:Float=(x1-x0)*.5
+		Local yr:Float=(y1-y0)*.5
 		Local segs:Int=Abs(xr)+Abs(yr)
 		segs=Max(segs,12)&~3
 		x0:+xr
 		y0:+yr
-		Local fverts#[segs*6]
+		Local fverts:Float[segs*6]
 		Local iverts:Int Ptr=Int Ptr( Varptr fverts[0] )
 		For Local i:Int=0 Until segs
-			Local th#=-i*360#/segs
-			Local x#=x0+Cos(th)*xr
-			Local y#=y0-Sin(th)*yr
+			Local th:Float=-i*360:Float/segs
+			Local x:Float=x0+Cos(th)*xr
+			Local y:Float=y0-Sin(th)*yr
 			fverts[i*6+0]=x*_ix+y*_iy+tx
 			fverts[i*6+1]=x*_jx+y*_jy+ty			
 			iverts[i*6+3]=_color
@@ -1047,14 +1047,14 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		_d3dDev.DrawPrimitiveUP D3DPT_TRIANGLEFAN,segs-2,fverts,24
 	End Method
 	
-	Method DrawPoly( verts#[],handlex#,handley#,tx#,ty#, indices:Int[] ) Override
+	Method DrawPoly( verts:Float[],handlex:Float,handley:Float,tx:Float,ty:Float, indices:Int[] ) Override
 		If verts.length<6 Or (verts.length&1) Return
 		Local segs:Int=verts.length/2
-		Local fverts#[segs*6]
+		Local fverts:Float[segs*6]
 		Local iverts:Int Ptr=Int Ptr( Varptr fverts[0] )
 		For Local i:Int=0 Until segs
-			Local x#=verts[i*2+0]+handlex
-			Local y#=verts[i*2+1]+handley
+			Local x:Float=verts[i*2+0]+handlex
+			Local y:Float=verts[i*2+1]+handley
 			fverts[i*6+0]= x*_ix + y*_iy + tx
 			fverts[i*6+1]= x*_jx + y*_jy + ty
 			iverts[i*6+3]=_color
@@ -1144,8 +1144,8 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		Return pixmap
 	End Method
 	
-	Method SetResolution( width#,height# ) Override
-		Local matrix#[]=[..
+	Method SetResolution( width:Float,height:Float ) Override
+		Local matrix:Float[]=[..
 		2.0/width,0.0,0.0,0.0,..
 		 0.0,-2.0/height,0.0,0.0,..
 		 0.0,0.0,1.0,0.0,..

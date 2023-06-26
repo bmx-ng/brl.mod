@@ -10,13 +10,13 @@ Incbin "blitzfont.bin"
 Type TImageGlyph
 
 	Field _image:TImage
-	Field _advance#,_x:Int,_y:Int,_w:Int,_h:Int
+	Field _advance:Float,_x:Int,_y:Int,_w:Int,_h:Int
 	
 	Method Pixels:TImage()
 		Return _image
 	End Method
 
-	Method Advance#()
+	Method Advance:Float()
 		Return _advance
 	End Method
 	
@@ -79,7 +79,7 @@ Type TImageFont
 		
 	End Method
 	
-	Method Draw( text$,x#,y#,ix#,iy#,jx#,jy# )
+	Method Draw( text:String,x:Float,y:Float,ix:Float,iy:Float,jx:Float,jy:Float )
 
 		For Local i:Int=0 Until text.length
 		
@@ -92,8 +92,8 @@ Type TImageFont
 			If image
 				Local frame:TImageFrame=image.Frame(0)
 				If frame
-					Local tx#=glyph._x*ix+glyph._y*iy
-					Local ty#=glyph._x*jx+glyph._y*jy			
+					Local tx:Float=glyph._x*ix+glyph._y*iy
+					Local ty:Float=glyph._x*jx+glyph._y*jy			
 					frame.Draw 0,0,image.width,image.height,x+tx,y+ty,0,0,image.width,image.height
 				EndIf
 			EndIf

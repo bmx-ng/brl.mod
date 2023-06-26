@@ -152,7 +152,7 @@ The optional @serious flag can be used to indicate a 'critical' event.
 
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
-Function Notify( text$,serious=False )
+Function Notify( text:String,serious=False )
 	SystemDriver().Notify text,serious
 End Function
 
@@ -166,7 +166,7 @@ False is returned.
 
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
-Function Confirm( text$,serious=False )
+Function Confirm( text:String,serious=False )
 	Return SystemDriver().Confirm( text,serious )
 End Function
 
@@ -180,7 +180,7 @@ selects NO, then #Proceed returns 0. Otherwise, #Proceed returns -1.
 
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
-Function Proceed( text$,serious=False )
+Function Proceed( text:String,serious=False )
 	Return SystemDriver().Proceed( text,serious )
 End Function
 
@@ -199,7 +199,7 @@ that begin with a "group:" and separated by a semicolon.
 
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
-Function RequestFile$( text$,extensions$="",save_flag=False,initial_path$="" )
+Function RequestFile:String( text:String,extensions:String="",save_flag=False,initial_path:String="" )
 	Return SystemDriver().RequestFile( text,extensions,save_flag,initial_path )
 End Function
 
@@ -213,7 +213,7 @@ about:
 
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
-Function RequestDir$( text$,initial_path$="" )
+Function RequestDir:String( text:String,initial_path:String="" )
 	Return SystemDriver().RequestDir( text,initial_path )
 End Function
 
@@ -221,8 +221,8 @@ Rem
 bbdoc: Opens a URL with the system's default web browser.
 about: Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
-Function OpenURL( url$ )
-	Local dev$,anchor$
+Function OpenURL( url:String )
+	Local dev:String,anchor:String
 
 	dev=url[..5].toLower()
 	If dev<>"http:" And dev<>"file:" And url[..6].ToLower()<>"https:"
@@ -231,7 +231,7 @@ Function OpenURL( url$ )
 			anchor=url[h..]
 			url=url[..h]
 		EndIf
-		Local f$=RealPath(url)
+		Local f:String=RealPath(url)
 		If FileType(f) 
 			url="file:"+f +anchor
 		Else

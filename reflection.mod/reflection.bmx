@@ -63,7 +63,7 @@ Function bbRefStringClass:Byte Ptr()
 Function bbRefObjectClass:Byte Ptr()
 
 Function bbRefArrayLength( _array:Object, dim:Int = 0 )
-Function bbRefArrayTypeTag$( _array:Object )
+Function bbRefArrayTypeTag:String( _array:Object )
 Function bbRefArrayDimensions:Int( _array:Object )
 Function bbRefArrayCreate:Object( typeTag:Byte Ptr,dims:Int[] )
 
@@ -1111,7 +1111,7 @@ Function _CallMethod:Object( p:Byte Ptr,typeId:TTypeId,obj:Object,args:Object[],
 	End Select
 End Function
 
-Function TypeTagForId$( id:TTypeId )
+Function TypeTagForId:String( id:TTypeId )
 	If id.ExtendsType( ArrayTypeId )
 		Return "[]"+TypeTagForId( id.ElementType() )
 	EndIf
@@ -1151,7 +1151,7 @@ Function TypeTagForId$( id:TTypeId )
 End Function
 
 Public
-Function TypeIdForTag:TTypeId( ty$ )
+Function TypeIdForTag:TTypeId( ty:String )
 	If ty.StartsWith( "[" )
 		Local dims:Int = ty.split(",").length
 		ty=ty[ty.Find("]")+1..]
@@ -1185,7 +1185,7 @@ Function TypeIdForTag:TTypeId( ty$ )
 		EndIf
 		Local retType:TTypeId=TypeIdForTag( t[1] ), argTypes:TTypeId[]
 		If t[0].length>0 Then
-			Local i:Int,b:Int,q$=t[0], args:TList=New TList
+			Local i:Int,b:Int,q:String=t[0], args:TList=New TList
 			While i < q.length
 				Select q[i]
 				Case Asc( "," )
@@ -1419,11 +1419,11 @@ Type TMember
 	Rem
 	bbdoc: Get member name
 	End Rem
-	Method Name$()
+	Method Name:String()
 		Return _name
 	End Method
 
-	Method NameLower$()
+	Method NameLower:String()
 		If Not _nameLower Then
 			_nameLower = _name.ToLower()
 		End If
@@ -1440,7 +1440,7 @@ Type TMember
 	Rem
 	bbdoc: Get member meta data
 	End Rem
-	Method MetaData$( key$="" )
+	Method MetaData:String( key:String="" )
 		If Not _metaMap Or Not key Return _meta
 		Return String(_metaMap.ValueForKey(key))
 	End Method
@@ -1458,8 +1458,8 @@ Type TMember
 		_metaMap = ExtractMetaMap(meta)
 	End Method
 
-	Field _name$,_typeId:TTypeId,_meta$
-	Field _nameLower$
+	Field _name:String,_typeId:TTypeId,_meta:String
+	Field _nameLower:String
 	Field _metaMap:TStringMap
 
 End Type
@@ -1552,7 +1552,7 @@ bbdoc: Type field
 End Rem
 Type TField Extends TMember
 
-	Method Init:TField( name$,typeId:TTypeId,meta$,index )
+	Method Init:TField( name:String,typeId:TTypeId,meta:String,index )
 		_name=name
 		_typeId=typeId
 		InitMeta(meta)
@@ -1911,7 +1911,7 @@ Type TField Extends TMember
 	Rem
 	bbdoc: Get #String field value
 	End Rem
-	Method GetString$( obj:Object )
+	Method GetString:String( obj:Object )
 		Return String( Get( obj ) )
 	End Method
 
@@ -2372,7 +2372,7 @@ Type TField Extends TMember
 	Rem
 	bbdoc: Set #String field value
 	End Rem
-	Method SetString( obj:Object,value$ )
+	Method SetString( obj:Object,value:String )
 		Set obj,value
 	End Method
 
@@ -2385,7 +2385,7 @@ bbdoc: Type global
 End Rem
 Type TGlobal Extends TMember
 
-	Method Init:TGlobal( name$,typeId:TTypeId,meta$,ref:Byte Ptr )
+	Method Init:TGlobal( name:String,typeId:TTypeId,meta:String,ref:Byte Ptr )
 		_name=name
 		_typeId=typeId
 		InitMeta(meta)
@@ -2459,7 +2459,7 @@ Type TGlobal Extends TMember
 	Rem
 	bbdoc: Get string global value
 	End Rem
-	Method GetString$()
+	Method GetString:String()
 		Return String( Get() )
 	End Method
 
@@ -2536,7 +2536,7 @@ Type TGlobal Extends TMember
 	Rem
 	bbdoc: Set string global value
 	End Rem
-	Method SetString(value$ )
+	Method SetString(value:String )
 		Set value
 	End Method
 
@@ -2596,7 +2596,7 @@ bbdoc: Type method
 End Rem
 Type TMethod Extends TMember
 
-	Method Init:TMethod( name$,typeId:TTypeId,meta$,selfTypeId:TTypeId,ref:Byte Ptr,argTypes:TTypeId[] )
+	Method Init:TMethod( name:String,typeId:TTypeId,meta:String,selfTypeId:TTypeId,ref:Byte Ptr,argTypes:TTypeId[] )
 		_name=name
 		_typeId=typeId
 		InitMeta(meta)
@@ -2638,14 +2638,14 @@ Type TTypeId
 	Rem
 	bbdoc: Get name of type
 	End Rem
-	Method Name$()
+	Method Name:String()
 		Return _name
 	End Method
 
 	Rem
 	bbdoc: Get type meta data
 	End Rem
-	Method MetaData$( key$="" )
+	Method MetaData:String( key:String="" )
 		If Not _metaMap Or Not key Return _meta
 		Return String(_metaMap.ValueForKey(key))
 	End Method
@@ -2885,7 +2885,7 @@ Type TTypeId
 	bbdoc: Find a constant by name
 	about: Searchs type hierarchy for constant called @name.
 	End Rem
-	Method FindConstant:TConstant( name$ )
+	Method FindConstant:TConstant( name:String )
 		name=name.ToLower()
 		Local t:TConstant = TConstant(_consts.ValueForKey(name))
 		If t Return t
@@ -2899,7 +2899,7 @@ Type TTypeId
 	bbdoc: Find a field by name
 	about: Searchs type hierarchy for field called @name.
 	End Rem
-	Method FindField:TField( name$ )
+	Method FindField:TField( name:String )
 		name=name.ToLower()
 		Local t:TField = TField(_fields.ValueForKey(name))
 		If t Then Return t
@@ -2910,7 +2910,7 @@ Type TTypeId
 	bbdoc: Find a global by name
 	about: Searchs type hierarchy for global called @name.
 	End Rem
-	Method FindGlobal:TGlobal( name$ )
+	Method FindGlobal:TGlobal( name:String )
 		name=name.ToLower()
 		Local t:TGlobal = TGlobal(_globals.ValueForKey(name))
 		If t Then Return t
@@ -2932,7 +2932,7 @@ Type TTypeId
 	bbdoc: Find a method by name
 	about: Searchs type hierarchy for method called @name.
 	End Rem
-	Method FindMethod:TMethod( name$ )
+	Method FindMethod:TMethod( name:String )
 		name=name.ToLower()
 		Local t:TMethod = TMethod(_methods.ValueForKey(name))
 		If t Then Return t
@@ -3912,7 +3912,7 @@ Type TTypeId
 	Rem
 	bbdoc: Get Type by name
 	End Rem
-	Function ForName:TTypeId( name$ )
+	Function ForName:TTypeId( name:String )
 		Try
 			_guard.Lock()
 			
@@ -4024,7 +4024,7 @@ Type TTypeId
 
 	'***** PRIVATE *****
 
-	Method Init:TTypeId( name$,size,class:Byte Ptr=Null,supor:TTypeId=Null )
+	Method Init:TTypeId( name:String,size,class:Byte Ptr=Null,supor:TTypeId=Null )
 		_name=name
 		_size=size
 		_class=class
@@ -4051,8 +4051,8 @@ Type TTypeId
 	End Method
 
 	Method SetClass:TTypeId( class:Byte Ptr )
-		Local name$=String.FromCString( bbRefClassDebugScopeName(class) )
-		Local meta$
+		Local name:String=String.FromCString( bbRefClassDebugScopeName(class) )
+		Local meta:String
 		Local i=name.Find( "{" )
 		If i<>-1
 			meta=name[i+1..name.length-1]
@@ -4068,7 +4068,7 @@ Type TTypeId
 
 	Method SetInterface:TTypeId( ifc:Byte Ptr )
 		Local name:String = String.FromCString(bbInterfaceName(ifc))
-		Local meta$
+		Local meta:String
 		Local i=name.Find( "{" )
 		If i<>-1
 			meta=name[i+1..name.length-1]
@@ -4146,9 +4146,9 @@ Type TTypeId
 		Local p:Byte Ptr = bbRefClassDebugDecl(_class)
 
 		While bbDebugDeclKind(p)
-			Local id$=String.FromCString( bbDebugDeclName(p) )
-			Local ty$=String.FromCString( bbDebugDeclType(p) )
-			Local meta$
+			Local id:String=String.FromCString( bbDebugDeclName(p) )
+			Local ty:String=String.FromCString( bbDebugDeclType(p) )
+			Local meta:String
 			Local i=ty.Find( "{" )
 			If i<>-1
 				meta=ty[i+1..ty.length-1]
@@ -4178,12 +4178,12 @@ Type TTypeId
 					_globals.Insert(t.NameLower(), t)
 				End If
 			Case 6, 7	'method/function
-				Local t$[]=ty.Split( ")" )
+				Local t:String[]=ty.Split( ")" )
 				Local retType:TTypeId=TypeIdForTag( t[1] )
 				If retType
 					Local argTypes:TTypeId[]
 					If t[0].length>1
-						Local i,b,q$=t[0][1..],args:TList=New TList
+						Local i,b,q:String=t[0][1..],args:TList=New TList
 						While i<q.length
 							Select q[i]
 							Case Asc( "," )
@@ -4204,7 +4204,7 @@ Type TTypeId
 						argTypes=New TTypeId[args.Count()]
 
 						i=0
-						For Local arg$=EachIn args
+						For Local arg:String=EachIn args
 							argTypes[i]=TypeIdForTag( arg )
 							If Not argTypes[i] retType=Null
 							i:+1
@@ -4237,8 +4237,8 @@ Type TTypeId
 		End If
 	End Method
 
-	Field _name$
-	Field _meta$
+	Field _name:String
+	Field _meta:String
 	Field _metaMap:TStringMap
 	Field _class:Byte Ptr
 	Field _interface:Byte Ptr
