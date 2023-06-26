@@ -297,30 +297,7 @@ bbdoc: Gets file time
 returns: The time the file at @path was last modified as SDatetime struct.
 End Rem
 Function FileDateTime:SDateTime( path$, timetype:Int=FILETIME_MODIFIED )
-	FixPath path
-	If MaxIO.ioInitialized Then
-		Local stat:SMaxIO_Stat
-		If Not MaxIO.Stat(path, stat) Return Null
-		Select timetype
-			Case FILETIME_CREATED
-				Return SDateTime.FromEpoch(stat._createtime)
-			Case FILETIME_MODIFIED
-				Return SDateTime.FromEpoch(stat._modtime)
-			Case FILETIME_ACCESSED
-				Return SDateTime.FromEpoch(stat._accesstime)
-		EndSelect
-	Else
-		Local Mode:Int,size:Long,mtime:Int,ctime:Int,atime:Int
-		If stat_( path,Mode,size,mtime,ctime,atime ) Return Null
-		Select timetype
-			Case FILETIME_CREATED
-				Return SDateTime.FromEpoch(ctime)
-			Case FILETIME_MODIFIED
-				Return SDateTime.FromEpoch(mtime)
-			Case FILETIME_ACCESSED
-				Return SDateTime.FromEpoch(atime)
-		EndSelect
-	End If
+	Return SDateTime.FromEpoch( FileTime(path, timetype) )
 End Function
 
 Rem
