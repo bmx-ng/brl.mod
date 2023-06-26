@@ -285,6 +285,73 @@ Function SetFileTime( path:String, time:Long, timeType:Int=FILETIME_MODIFIED)
 End Function
 
 Rem
+bbdoc: Sets the file modified or last accessed time.
+about: @dateTime is the basic DateTime struct defined in pub.stdc .
+End Rem
+Function SetFileTime( path:String, dateTime:SDateTime, timeType:Int=FILETIME_MODIFIED)
+	FixPath path
+	If MaxIO.ioInitialized Then
+		' Not available
+	Else
+		Select timetype
+			Case FILETIME_MODIFIED
+				utime_(path, timeType, dateTime.ToEpochSecs())
+			Case FILETIME_ACCESSED
+				utime_(path, timeType, dateTime.ToEpochSecs())
+		End Select
+	End If
+End Function
+
+Rem
+bbdoc: Gets file time
+returns: The time the file at @path was last modified as SDatetime struct.
+End Rem
+Function FileDateTime:SDateTime( path$, timetype:Int=FILETIME_MODIFIED )
+	FixPath path
+	If MaxIO.ioInitialized Then
+		Local stat:SMaxIO_Stat
+		If Not MaxIO.Stat(path, stat) Return Null
+		Select timetype
+			Case FILETIME_CREATED
+				Return SDateTime.FromEpoch(stat._createtime)
+			Case FILETIME_MODIFIED
+				Return SDateTime.FromEpoch(stat._modtime)
+			Case FILETIME_ACCESSED
+				Return SDateTime.FromEpoch(stat._accesstime)
+		EndSelect
+	Else
+		Local Mode:Int,size:Long,mtime:Int,ctime:Int,atime:Int
+		If stat_( path,Mode,size,mtime,ctime,atime ) Return Null
+		Select timetype
+			Case FILETIME_CREATED
+				Return SDateTime.FromEpoch(ctime)
+			Case FILETIME_MODIFIED
+				Return SDateTime.FromEpoch(mtime)
+			Case FILETIME_ACCESSED
+				Return SDateTime.FromEpoch(atime)
+		EndSelect
+	End If
+End Function
+
+Rem
+bbdoc: Sets the file modified or last accessed time.
+about: @dateTime is the basic DateTime struct defined in pub.stdc .
+End Rem
+Function SetFileDateTime( path:String, dateTime:SDateTime, timeType:Int=FILETIME_MODIFIED)
+	FixPath path
+	If MaxIO.ioInitialized Then
+		' Not available
+	Else
+		Select timetype
+			Case FILETIME_MODIFIED
+				utime_(path, timeType, dateTime.ToEpochSecs())
+			Case FILETIME_ACCESSED
+				utime_(path, timeType, dateTime.ToEpochSecs())
+		End Select
+	End If
+End Function
+
+Rem
 bbdoc: Gets the file size
 returns: The size, in bytes, of the file at @path, or -1 if the file does not exist
 End Rem
