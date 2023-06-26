@@ -42,7 +42,7 @@ Type TTimer Abstract
 
 	Method Wait:Int() Abstract
 	
-	Function Create:TTimer( hertz#,event:TEvent=Null ) Abstract
+	Function Create:TTimer( hertz:Float,event:TEvent=Null ) Abstract
 
 End Type
 
@@ -57,7 +57,7 @@ Each time the timer ticks, @event will be emitted using #EmitEvent.
 If @event is Null, an event with an @id equal to EVENT_TIMERTICK and 
 @source equal to the timer object will be emitted instead.
 End Rem
-Function CreateTimer:TTimer( hertz#,event:TEvent=Null )
+Function CreateTimer:TTimer( hertz:Float,event:TEvent=Null )
 	If timer_factories Then
 		Return timer_factories.Create(hertz, event)
 	Else
@@ -108,7 +108,7 @@ Type TTimerFactory
 	
 	Method GetName:String() Abstract
 	
-	Method Create:TTimer(hertz#,event:TEvent=Null) Abstract
+	Method Create:TTimer(hertz:Float,event:TEvent=Null) Abstract
 		
 End Type
 

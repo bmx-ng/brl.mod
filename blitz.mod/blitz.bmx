@@ -189,7 +189,7 @@ Include "comparator.bmx"
 
 Extern
 Global OnDebugStop()="bbOnDebugStop"
-Global OnDebugLog( message$ )="bbOnDebugLog"
+Global OnDebugLog( message:String )="bbOnDebugLog"
 End Extern
 
 Rem
@@ -204,7 +204,7 @@ bbdoc: Null object exception
 about: Thrown when a field or method of a Null object is accessed. (only in debug mode)
 End Rem
 Type TNullObjectException Extends TBlitzException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Attempt to access field or method of Null object"
 	End Method
 End Type
@@ -214,7 +214,7 @@ bbdoc: Null method exception
 about: Thrown when an abstract method is called.
 End Rem
 Type TNullMethodException Extends TBlitzException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Attempt to call abstract method"
 	End Method
 End Type
@@ -224,7 +224,7 @@ bbdoc: Null function exception
 about: Thrown when an uninitialized function pointer is called.
 End Rem
 Type TNullFunctionException Extends TBlitzException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Attempt to call uninitialized function pointer"
 	End Method
 End Type
@@ -234,7 +234,7 @@ bbdoc: Array bounds exception
 about: Thrown when an array element with an index outside the valid range of the array (0 to array.length-1) is accessed. (only in debug mode)
 End Rem
 Type TArrayBoundsException Extends TBlitzException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Attempt to index array element beyond array length"
 	End Method
 End Type
@@ -244,7 +244,7 @@ bbdoc: Out of data exception
 about: Thrown when #ReadData is used but not enough data is left to read. (only in debug mode)
 End Rem
 Type TOutOfDataException Extends TBlitzException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Attempt to read beyond end of data"
 	End Method
 End Type
@@ -270,7 +270,7 @@ bbdoc: Invalid enum exception
 about: Thrown when attempting to cast an invalid value to an #Enum. (only in debug mode)
 End Rem
 Type TInvalidEnumException Extends TBlitzException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Attempt to cast invalid value to Enum"
 	End Method
 End Type
@@ -303,7 +303,7 @@ Rem
 bbdoc: Generate a runtime error
 about: Throws a #TRuntimeException.
 End Rem
-Function RuntimeError( message$ )
+Function RuntimeError( message:String )
 	Throw New TRuntimeException( message )
 End Function
 
@@ -319,7 +319,7 @@ Rem
 bbdoc: Write a string to debug log
 about: If there is no debugger present, this command is ignored.
 end rem
-Function DebugLog( message$ )
+Function DebugLog( message:String )
 	OnDebugLog message
 End Function
 
@@ -334,7 +334,7 @@ when an application starts.
 In a compiled DLL, the #AppDir global variable will instead contain the fully qualified
 directory of the DLL.
 End Rem
-Global AppDir$="bbAppDir"
+Global AppDir:String="bbAppDir"
 
 Rem
 bbdoc: Application file name
@@ -344,7 +344,7 @@ executing application.
 In a compiled DLL, the #AppFile global variable will instead contain the fully qualified
 file name of the DLL.
 End Rem
-Global AppFile$="bbAppFile"
+Global AppFile:String="bbAppFile"
 
 Rem
 bbdoc: Application title
@@ -355,7 +355,7 @@ windows or requesters.<br/>
 Initially, #AppTitle is set to the value "BlitzMax Application". However, you may change
 #AppTitle at any time with a simple assignment.
 End Rem
-Global AppTitle$="bbAppTitle"
+Global AppTitle:String="bbAppTitle"
 
 Rem
 bbdoc: Arguments passed to the application at startup
@@ -365,7 +365,7 @@ application. However, the format of the name may change depending on how the app
 was launched. Use #AppDir or #AppFile for consistent information about the applications name
 or directory.
 End Rem
-Global AppArgs$[]="bbAppArgs"
+Global AppArgs:String[]="bbAppArgs"
 
 Rem
 bbdoc: Directory from which application was launched
@@ -373,7 +373,7 @@ about: The #LaunchDir global variable contains the current directory at the time
 application was launched. This is mostly of use to command line tools which may need to
 access the 'shell' current directory as opposed to the application directory.
 End Rem
-Global LaunchDir$="bbLaunchDir"
+Global LaunchDir:String="bbLaunchDir"
 
 Rem
 bbdoc: Add a function to be called when the program ends
@@ -386,19 +386,19 @@ Rem
 bbdoc: Read a string from stdin
 returns: A string read from stdin. The newline terminator, if any, is included in the returned string.
 end rem
-Function ReadStdin$()="bbReadStdin"
+Function ReadStdin:String()="bbReadStdin"
 
 Rem
 bbdoc: Write a string to stdout
 about: Writes @str to stdout and flushes stdout.
 end rem
-Function WriteStdout( str$ )="bbWriteStdout"
+Function WriteStdout( str:String )="bbWriteStdout"
 
 Rem
 bbdoc: Write a string to stderr
 about: Writes @str to stderr and flushes stderr.
 end rem
-Function WriteStderr( str$ )="bbWriteStderr"
+Function WriteStderr( str:String )="bbWriteStderr"
 
 Rem
 bbdoc: Wait for a given number of milliseconds

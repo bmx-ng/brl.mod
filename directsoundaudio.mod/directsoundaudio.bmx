@@ -54,7 +54,7 @@ Type TBuf
 
 End Type
 
-Function DSASS( n:Int,t$="DirectSound" )
+Function DSASS( n:Int,t:String="DirectSound" )
 	If n>=0 Return
 	Throw t+" failed ("+(n & 65535)+")"
 End Function
@@ -239,7 +239,7 @@ End Type
 
 Type TDirectSoundAudioDriver Extends TAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return _name
 	End Method
 	
@@ -288,7 +288,7 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 		Return TDirectSoundChannel.Create( True )
 	End Method
 	
-	Function Create:TDirectSoundAudioDriver( name$,Mode:Int )
+	Function Create:TDirectSoundAudioDriver( name:String,Mode:Int )
 		Local t:TDirectSoundAudioDriver=New TDirectSoundAudioDriver
 		t._name=name
 		t._mode=Mode
@@ -318,7 +318,7 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 		Wend
 	End Method
 
-	Field _name$,_mode:Int,_dsound:Byte Ptr,_lonely:TBuf
+	Field _name:String,_mode:Int,_dsound:Byte Ptr,_lonely:TBuf
 
 	Global _seq:Int
 		

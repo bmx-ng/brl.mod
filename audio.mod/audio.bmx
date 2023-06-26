@@ -41,7 +41,7 @@ End Function
 
 Function Shutdown()
 	If Not _driver Return
-	_driver.Shutdown
+	_driver.Shutdown()
 	_driver=Null
 End Function
 
@@ -123,21 +123,21 @@ Type TChannel
 	about:
 	@volume should be in the range 0 (silence) to 1 (full volume).
 	End Rem
-	Method SetVolume( volume# )
+	Method SetVolume( volume:Float )
 	End Method
 	Rem
 	bbdoc: Set audio channel stereo pan
 	about:
 	@pan should be in the range -1 (full left) to 1 (full right).
 	End Rem
-	Method SetPan( pan# ) 
+	Method SetPan( pan:Float ) 
 	End Method
 	Rem
 	bbdoc: Set audio channel depth
 	about: 
 	@depth should be in the range -1 (back) to 1 (front).
 	End Rem
-	Method SetDepth( depth# )
+	Method SetDepth( depth:Float )
 	End Method
 	Rem
 	bbdoc: Set audio channel playback rate
@@ -147,7 +147,7 @@ Type TChannel
 	to play at half speed (ie: an octave down) while a rate of 2 will
 	cause the audio channel to play at double speed (ie: an octave up).
 	End Rem
-	Method SetRate( rate# )
+	Method SetRate( rate:Float )
 	End Method
 	Rem
 	bbdoc: Determine whether audio channel is playing
@@ -174,7 +174,7 @@ Type TAudioDriver
 		_drivers=Self
 	End Method
 	
-	Method Name$()
+	Method Name:String()
 		Return "Null"
 	End Method
 	
@@ -193,7 +193,7 @@ Type TAudioDriver
 		Return New TChannel
 	End Method
 
-	Method LoadSound:TSound( url:Object, flags:Int = 0)
+	Method LoadSound:TSound( url:Object,flags:Int=0 )
 		Return TSound.Load(url, flags)
 	End Method
 	
@@ -283,7 +283,7 @@ bbdoc: Set playback volume of an audio channel
 about:
 @volume should be in the range 0 (silent) to 1 (full volume)
 end rem
-Function SetChannelVolume( channel:TChannel,volume# )
+Function SetChannelVolume( channel:TChannel,volume:Float )
 	channel.SetVolume volume
 End Function
 
@@ -292,7 +292,7 @@ bbdoc: Set stereo balance of an audio channel
 about: 
 @pan should be in the range -1 (left) to 1 (right)
 end rem
-Function SetChannelPan( channel:TChannel,pan# )
+Function SetChannelPan( channel:TChannel,pan:Float )
 	channel.SetPan pan
 End Function
 
@@ -301,7 +301,7 @@ bbdoc: Set surround sound depth of an audio channel
 about: 
 @depth should be in the range -1 (back) to 1 (front)
 end rem
-Function SetChannelDepth( channel:TChannel,depth# )
+Function SetChannelDepth( channel:TChannel,depth:Float )
 	channel.SetDepth depth
 End Function
 
@@ -313,7 +313,7 @@ For example, a rate of .5 will cause the audio channel
 to play at half speed (ie: an octave down) while a rate of 2 will
 cause the audio channel to play at double speed (ie: an octave up).
 end rem
-Function SetChannelRate( channel:TChannel,rate# )
+Function SetChannelRate( channel:TChannel,rate:Float )
 	channel.SetRate rate
 End Function
 
@@ -340,8 +340,8 @@ bbdoc: Get audio drivers
 about:
 Returns an array of strings, where each string describes an audio driver.
 End Rem
-Function AudioDrivers$[]()
-	Local devs$[100],n:Int
+Function AudioDrivers:String[]()
+	Local devs:String[100],n:Int
 	Local t:TAudioDriver=_drivers
 	While t And n<100
 		devs[n]=t.Name()
@@ -356,7 +356,7 @@ bbdoc: Determine if an audio driver exists
 about:
 Returns True if the audio drvier specified by @driver exists.
 End Rem
-Function AudioDriverExists:Int( name$ )
+Function AudioDriverExists:Int( name:String )
 	name=name.ToLower()
 	Local t:TAudioDriver=_drivers
 	While t
@@ -370,9 +370,9 @@ bbdoc: Set current audio driver
 about:
 Returns true if the audio driver was successfully set.
 End Rem
-Function SetAudioDriver:Int( name$ )
+Function SetAudioDriver:Int( name:String )
 	name=name.ToLower()
-	Shutdown
+	Shutdown()
 	_driver=_nullDriver
 	Local t:TAudioDriver=_drivers
 	While t

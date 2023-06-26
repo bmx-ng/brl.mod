@@ -74,14 +74,14 @@ Type TLinuxSystemDriver Extends TSystemDriver
 	
 	Method Confirm:Int( Text$,serious:Int ) Override
 		WriteStdout Text+" (Yes/No)?"
-		Local t$=ReadStdin().ToLower()
+		Local t:String=ReadStdin().ToLower()
 		If t[..1]="y" Return 1
 		Return 0
 	End Method
 	
 	Method Proceed:Int( Text$,serious:Int ) Override
 		WriteStdout Text+" (Yes/No/Cancel)?"
-		Local t$=ReadStdin().ToLower()
+		Local t:String=ReadStdin().ToLower()
 		If t[..1]="y" Return 1
 		If t[..1]="n" Return 0
 		Return -1

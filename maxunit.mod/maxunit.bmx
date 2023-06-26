@@ -320,12 +320,12 @@ Type TTestSuite Extends TAssert
 		testCount:+1
 	End Method
 	
-	Function _Print( str$="" )
+	Function _Print( str:String="" )
 		StandardIOStream.WriteString str
 		StandardIOStream.Flush
 	End Function
 
-	Function _PrintLine( str$="" )
+	Function _PrintLine( str:String="" )
 		StandardIOStream.WriteLine str
 		StandardIOStream.Flush
 	End Function

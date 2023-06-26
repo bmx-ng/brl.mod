@@ -63,7 +63,7 @@ Function DisableTex()
 	_texture_enabled=False
 End Function
 
-Function d3derr( str$ )
+Function d3derr( str:String )
 	If LOG_ERRS WriteStdout "D3DERR: "+str+"~n"
 End Function
 
@@ -743,7 +743,7 @@ EndType
 
 Type TD3D9Max2DDriver Extends TMax2dDriver
 
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "DirectX9"
 	End Method
 

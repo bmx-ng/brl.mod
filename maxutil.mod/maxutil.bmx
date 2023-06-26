@@ -17,17 +17,17 @@ Import BRL.FileSystem
 
 Import Pub.StdC
 
-Function BlitzMaxPath$()
-	Global bmxpath$
+Function BlitzMaxPath:String()
+	Global bmxpath:String
 	If bmxpath And FileType(bmxpath)=FILETYPE_DIR Return bmxpath
-	Local p$=getenv_("BMXPATH")
+	Local p:String=getenv_("BMXPATH")
 	If p And FileType(p)=FILETYPE_DIR
 		bmxpath=p
 		Return p
 	EndIf
 	p=AppDir
 	Repeat
-		Local t$=p+"/bin/bmk"
+		Local t:String=p+"/bin/bmk"
 		?Win32
 		t:+".exe"
 		?
@@ -36,47 +36,47 @@ Function BlitzMaxPath$()
 			bmxpath=p
 			Return p
 		EndIf
-		Local q$=ExtractDir( p )
+		Local q:String=ExtractDir( p )
 		If q=p Throw "Unable to locate BlitzMax path"
 		p=q
 	Forever
 End Function
 
-Function ModulePath$( modid$ )
-	Local p$=BlitzMaxPath()+"/mod"
+Function ModulePath:String( modid:String )
+	Local p:String=BlitzMaxPath()+"/mod"
 	If modid p:+"/"+modid.Replace(".",".mod/")+".mod"
 	Return p
 End Function
 
-Function ModuleIdent$( modid$ )
+Function ModuleIdent:String( modid:String )
 	Return modid[modid.FindLast(".")+1..]
 End Function
 
-Function ModuleSource$( modid$ )
+Function ModuleSource:String( modid:String )
 	Return ModulePath(modid)+"/"+ModuleIdent(modid)+".bmx"
 End Function
 
-Function ModuleArchive$( modid$,mung$="" )
+Function ModuleArchive:String( modid:String,mung:String="" )
 	If mung And mung[0]<>Asc(".") mung="."+mung
 	Return ModulePath(modid)+"/"+ModuleIdent(modid)+mung+".a"
 End Function
 
-Function ModuleInterface$( modid$,mung$="" )
+Function ModuleInterface:String( modid:String,mung:String="" )
 	If mung And mung[0]<>Asc(".") mung="."+mung
 	Return ModulePath(modid)+"/"+ModuleIdent(modid)+mung+".i"
 End Function
 
-Function EnumModules:TList( modid$="",mods:TList=Null )
+Function EnumModules:TList( modid:String="",mods:TList=Null )
 	If Not mods mods=New TList
 	
-	Local dir$=ModulePath( modid )
-	Local files$[]=LoadDir( dir )
+	Local dir:String=ModulePath( modid )
+	Local files:String[]=LoadDir( dir )
 	
-	For Local file$=EachIn files
-		Local path$=dir+"/"+file
+	For Local file:String=EachIn files
+		Local path:String=dir+"/"+file
 		If file[file.length-4..]<>".mod" Or FileType(path)<>FILETYPE_DIR Continue
 
-		Local t$=file[..file.length-4]
+		Local t:String=file[..file.length-4]
 		If modid t=modid+"."+t
 
 		Local i=t.Find( "." )

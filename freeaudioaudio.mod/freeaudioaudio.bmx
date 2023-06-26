@@ -143,7 +143,7 @@ End Type
 
 Type TFreeAudioAudioDriver Extends TAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return _name
 	End Method
 	
@@ -190,14 +190,14 @@ Type TFreeAudioAudioDriver Extends TAudioDriver
 		If fa_channel Return TFreeAudioChannel.CreateWithChannel( fa_channel )
 	End Method
 		
-	Function Create:TFreeAudioAudioDriver( name$,Mode:Int )
+	Function Create:TFreeAudioAudioDriver( name:String,Mode:Int )
 		Local t:TFreeAudioAudioDriver=New TFreeAudioAudioDriver
 		t._name=name
 		t._mode=Mode
 		Return t
 	End Function
 	
-	Field _name$,_mode:Int
+	Field _name:String,_mode:Int
 	
 End Type
 

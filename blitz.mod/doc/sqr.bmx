@@ -4,7 +4,7 @@ End Rem
 
 SuperStrict
 
-Function Length!(x!,y!)
+Function Length:Double(x:Double,y:Double)
 	Return Sqr(x*x+y*y)
 End Function
 
