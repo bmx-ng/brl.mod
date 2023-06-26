@@ -4,8 +4,8 @@ End Rem
 
 SuperStrict
 
-Function RandomName$()
-	Local a$[]=["Bob","Joe","Bill"]
+Function RandomName:String()
+	Local a:String[]=["Bob","Joe","Bill"]
 	Return a[Rnd(Len a)]
 End Function
 

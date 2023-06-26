@@ -49,12 +49,12 @@ Global GNET_DIAGNOSTICS:Int = False
 Const GNET_MAXIDS:Int = 4096
 
 ?Debug
-Function dprint( t$ )
+Function dprint( t:String )
 	If GNET_DIAGNOSTICS WriteStdout t+"~n"
 End Function
 ?
 
-Function PackFloat16:Int( f# )
+Function PackFloat16:Int( f:Float )
 	Local i:Int = (Int Ptr Varptr f)[0]
 	If i=$00000000 Return $0000	'+0
 	If i=$80000000 Return $8000	'-0
@@ -75,7 +75,7 @@ Function PackFloat16:Int( f# )
 	Return S Shl 15 | (E+15) Shl 10 | M Shr 22
 End Function
 
-Function UnpackFloat16#( i:Int )
+Function UnpackFloat16:Float( i:Int )
 	i:&$ffff
 	If i=$0000 Return +0.0
 	If i=$8000 Return -0.0
@@ -99,11 +99,11 @@ Function UnpackFloat16#( i:Int )
 	Return (Float Ptr Varptr n)[0]
 End Function
 
-Function PackFloat32:Int( f# )
+Function PackFloat32:Int( f:Float )
 	Return (Int Ptr Varptr f)[0]
 End Function
 
-Function UnpackFloat32#( i:Int )
+Function UnpackFloat32:Float( i:Int )
 	Return (Float Ptr Varptr i)[0]
 End Function
 
@@ -130,8 +130,8 @@ End Type
 Type TGNetSlot
 	Field _type:Int
 	Field _int:Int
-	Field _float#
-	Field _string$
+	Field _float:Float
+	Field _string:String
 	
 	Method SetInt( data:Int )
 		Assert _type=0 Or _type=GNET_INT Or _type=GNET_UINT8 Or _type=GNET_UINT16
@@ -147,13 +147,13 @@ Type TGNetSlot
 		EndIf
 	End Method
 	
-	Method SetFloat( data# )
+	Method SetFloat( data:Float )
 		Assert _type=0 Or _type=GNET_FLOAT32
 		_float=data
 		_type=GNET_FLOAT32
 	End Method
 	
-	Method SetString( data$ )
+	Method SetString( data:String )
 		Assert _type=0 Or _type=GNET_STRING
 		_string=data
 		_type=GNET_STRING
@@ -164,12 +164,12 @@ Type TGNetSlot
 		Return _int
 	End Method
 	
-	Method GetFloat#()
+	Method GetFloat:Float()
 		Assert _type=GNET_FLOAT32
 		Return _float
 	End Method
 	
-	Method GetString$()
+	Method GetString:String()
 		Assert _type=GNET_STRING
 		Return _string
 	End Method
@@ -205,11 +205,11 @@ Type TGNetObject
 		WriteSlot( index ).SetInt data
 	End Method
 
-	Method SetFloat( index:Int, data# )
+	Method SetFloat( index:Int, data:Float )
 		WriteSlot( index ).SetFloat data
 	End Method
 
-	Method SetString( index:Int, data$ )
+	Method SetString( index:Int, data:String )
 		WriteSlot( index ).SetString data
 	End Method
 	
@@ -217,11 +217,11 @@ Type TGNetObject
 		Return _slots[index].GetInt()
 	End Method
 	
-	Method GetFloat#( index:Int )
+	Method GetFloat:Float( index:Int )
 		Return _slots[index].GetFloat()
 	End Method
 	
-	Method GetString$( index:Int )
+	Method GetString:String( index:Int )
 		Return _slots[index].GetString()
 	End Method
 	
@@ -353,7 +353,7 @@ Type TGNetObject
 				p[4]=n Shr 0
 				p:+5
 			Case GNET_STRING
-				Local data$=GetString( index )
+				Local data:String=GetString( index )
 				Local n:Size_T=data.length
 				p[0]=GNET_STRING Shl 5 | index
 				p[1]=n Shr 8
@@ -396,7 +396,7 @@ Type TGNetObject
 				p:+4
 			Case GNET_STRING
 				Local n:Int=p[0] Shl 8 | p[1]
-				Local data$=String.FromBytes( p+2,n )
+				Local data:String=String.FromBytes( p+2,n )
 				SetString index,data
 				p:+2+n
 			Default
@@ -858,7 +858,7 @@ Attempts to connect @host to the specified remote address and port.
 A GNet host must be listening (see #GNetListen) at the specified address and port for the
 connection to succeed.
 End Rem
-Function GNetConnect:Int( host:TGNetHost,address$,port:Int,timeout_ms:Int=10000 )
+Function GNetConnect:Int( host:TGNetHost,address:String,port:Int,timeout_ms:Int=10000 )
 	Return host.Connect( HostIp(address),port,timeout_ms )
 End Function
 
@@ -973,14 +973,14 @@ End Function
 Rem
 bbdoc: Set GNet object float data
 End Rem
-Function SetGNetFloat( obj:TGNetObject,index:Int,value# )
+Function SetGNetFloat( obj:TGNetObject,index:Int,value:Float )
 	obj.SetFloat index,value
 End Function
 
 Rem
 bbdoc: Set GNet object string data
 End Rem
-Function SetGNetString( obj:TGNetObject,index:Int,value$ )
+Function SetGNetString( obj:TGNetObject,index:Int,value:String )
 	obj.SetString index,value
 End Function
 
@@ -994,14 +994,14 @@ End Function
 Rem
 bbdoc: Get GNet object float data
 End Rem
-Function GetGNetFloat#( obj:TGNetObject,index:Int )
+Function GetGNetFloat:Float( obj:TGNetObject,index:Int )
 	Return obj.GetFloat( index )
 End Function
 
 Rem
 bbdoc: Get GNet object string data
 End Rem
-Function GetGNetString$( obj:TGNetObject,index:Int )
+Function GetGNetString:String( obj:TGNetObject,index:Int )
 	Return obj.GetString( index )
 End Function
 

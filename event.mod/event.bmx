@@ -98,8 +98,8 @@ Type TEvent
 	about:
 	This method is mainly useful for debugging purposes.
 	End Rem	
-	Method ToString$() Override
-		Local t$=DescriptionForId( id )
+	Method ToString:String() Override
+		Local t:String=DescriptionForId( id )
 		If Not t
 			If id & EVENT_USEREVENTMASK
 				t="UserEvent"+(id-EVENT_USEREVENTMASK)
@@ -136,12 +136,12 @@ Type TEvent
 		Return _id
 	End Function
 	
-	Function RegisterId( id:Int,description$ )
+	Function RegisterId( id:Int,description:String )
 		_regids:+String(id)+"{"+description+"}"
 	End Function
 	
-	Function DescriptionForId$( id:Int )
-		Local t$="}"+String(id)+"{"
+	Function DescriptionForId:String( id:Int )
+		Local t:String="}"+String(id)+"{"
 		Local i:Int=_regids.Find( t )
 		If i=-1 Return Null
 		i:+t.length
@@ -150,7 +150,7 @@ Type TEvent
 		Return _regids[i..i2]
 	End Function
 
-	Global _regids$="}"
+	Global _regids:String="}"
 	
 End Type
 
@@ -285,7 +285,7 @@ Rem
 bbdoc: Allocate a user event id
 returns: A new user event id
 End Rem
-Function AllocUserEventId:Int( description$="" )
+Function AllocUserEventId:Int( description:String="" )
 	Local id:Int=TEvent.AllocUserId()
 	If description TEvent.RegisterId id,description
 	Return id

@@ -82,7 +82,7 @@ Extern
 End Extern
 
 ?Not ptr64
-Function ToHex$( val:Int )
+Function ToHex:String( val:Int )
 	Local buf:Short[8]
 	For Local k:Int=7 To 0 Step -1
 		Local n:Int=(val&15)+Asc("0")
@@ -93,7 +93,7 @@ Function ToHex$( val:Int )
 	Return String.FromShorts( buf,8 ).ToLower()
 End Function
 ?ptr64
-Function ToHex$( val:Long )
+Function ToHex:String( val:Long )
 	Local buf:Short[16]
 	For Local k:Int=15 To 0 Step -1
 		Local n:Int=(val&15)+Asc("0")
@@ -121,21 +121,21 @@ Function IsUnderscore:Int( ch:Int )
 	Return ch=Asc("_")
 End Function
 
-Function Ident$( tag$ Var )
+Function Ident:String( tag:String Var )
 	If Not tag Return ""
 	If Not IsAlpha( tag[0] ) And Not IsUnderscore( tag[0] ) Return ""
 	Local i:Int=1
 	While i<tag.length And (IsAlphaNumeric(tag[i]) Or IsUnderscore(tag[i]))
 		i:+1
 	Wend
-	Local id$=tag[..i]
+	Local id:String=tag[..i]
 	tag=tag[i..]
 	Return id
 End Function
 
-Function TypeName$( tag$ Var )
+Function TypeName:String( tag:String Var )
 	
-	Local t$=tag[..1]
+	Local t:String=tag[..1]
 	tag=tag[1..]
 
 	Select t
@@ -176,7 +176,7 @@ Function TypeName$( tag$ Var )
 	Case "X"
 		Return "LParam"
 	Case ":","?","#","@","/"
-		Local id$=Ident( tag )
+		Local id:String=Ident( tag )
 		While tag And tag[0]=Asc(".")
 			tag=tag[1..]
 			id=Ident( tag )
@@ -253,12 +253,12 @@ Const DEBUGSCOPEKIND_LOCAL:Int=3
 Const DEBUGSCOPEKIND_INTERFACE:Int=4
 Const DEBUGSCOPEKIND_STRUCT:Int=5
 
-Function DebugError( t$ )
+Function DebugError( t:String )
 	WriteStderr "Debugger Error:"+t+"~n"
 	End
 End Function
 
-Function DebugDeclKind$( decl:Int Ptr )
+Function DebugDeclKind:String( decl:Int Ptr )
 	Select bmx_debugger_DebugDeclKind(decl)
 	Case DEBUGDECLKIND_CONST Return "Const"
 	Case DEBUGDECLKIND_LOCAL Return "Local"
@@ -269,9 +269,9 @@ Function DebugDeclKind$( decl:Int Ptr )
 	DebugError "Invalid decl kind"
 End Function
 
-Function DebugDeclType$( decl:Int Ptr )
-	Local t$=bmx_debugger_DebugDeclType(decl)
-	Local ty$=TypeName( t )
+Function DebugDeclType:String( decl:Int Ptr )
+	Local t:String=bmx_debugger_DebugDeclType(decl)
+	Local ty:String=TypeName( t )
 	Return ty
 End Function
 
@@ -303,7 +303,7 @@ Function DebugDeclSize:Int( decl:Int Ptr )
 
 End Function
 
-Function DebugEscapeString$( s$ )
+Function DebugEscapeString:String( s:String )
 	If s.length>4096 s=s[..4096]
 	s=s.Replace( "~~","~~~~")
 	s=s.Replace( "~0","~~0" )
@@ -314,7 +314,7 @@ Function DebugEscapeString$( s$ )
 	Return "~q"+s+"~q"
 End Function
 
-Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
+Function DebugDeclValue:String( decl:Int Ptr,inst:Byte Ptr )
 
 	If bmx_debugger_DebugDeclKind(decl)=DEBUGDECLKIND_CONST
 		Return DebugEscapeString(bmx_debugger_DebugDecl_ConstValue(decl))
@@ -372,12 +372,12 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 	Case Asc("z")
 		p=(Byte Ptr Ptr p)[0]
 		If Not p Return "Null"
-		Local s$=String.FromCString( p )
+		Local s:String=String.FromCString( p )
 		Return DebugEscapeString( s )
 	Case Asc("w")
 		p=(Byte Ptr Ptr p)[0]
 		If Not p Return "Null"
-		Local s$=String.FromWString( Short Ptr p )
+		Local s:String=String.FromWString( Short Ptr p )
 		Return DebugEscapeString( s )
 	Case Asc("*"),Asc("?"),Asc("#")
 		Local deref:String
@@ -440,7 +440,7 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 ?
 End Function
 
-Function DebugScopeKind$( scope:Int Ptr )
+Function DebugScopeKind:String( scope:Int Ptr )
 	Select bmx_debugger_DebugScopeKind(scope)
 	Case DEBUGSCOPEKIND_FUNCTION Return "Function"
 	Case DEBUGSCOPEKIND_TYPE Return "Type"
@@ -565,7 +565,7 @@ EndFunction
 
 Extern
 Global bbOnDebugStop()="void bbOnDebugStop()!"
-Global bbOnDebugLog( message$ )="void bbOnDebugLog( BBString * )!"
+Global bbOnDebugLog( message:String )="void bbOnDebugLog( BBString * )!"
 Global bbOnDebugEnterStm( stm:Int Ptr )="void bbOnDebugEnterStm( BBDebugStm * )!"
 Global bbOnDebugEnterScope( scope:Int Ptr)="void bbOnDebugEnterScope( BBDebugScope * )!"
 Global bbOnDebugLeaveScope()="void bbOnDebugLeaveScope()!"
@@ -634,18 +634,18 @@ Function GetDbgState:TDbgState()
 ?
 End Function
 
-Function ReadDebug$()
+Function ReadDebug:String()
 	Return ReadStdin()
 End Function
 
-Function WriteDebug( t$ )
+Function WriteDebug( t:String )
 	WriteStderr "~~>"+t
 End Function
 
 Function DumpScope( scope:Byte Ptr, inst:Byte Ptr )
 	Local decl:Byte Ptr=bmx_debugger_DebugScopeDecl(scope)
-	Local kind$=DebugScopeKind( scope )
-	Local name$=DebugScopeName( scope )
+	Local kind:String=DebugScopeKind( scope )
+	Local name:String=DebugScopeName( scope )
 	
 	If Not name name="<local>"
 	
@@ -656,10 +656,10 @@ Function DumpScope( scope:Byte Ptr, inst:Byte Ptr )
 			decl = bmx_debugger_DebugDeclNext(decl)
 			Continue
 		End Select
-		Local kind$=DebugDeclKind( decl )
-		Local name$=DebugDeclname( decl )
-		Local tipe$=DebugDeclType( decl )
-		Local value$=DebugDeclValue( decl, inst )
+		Local kind:String=DebugDeclKind( decl )
+		Local name:String=DebugDeclname( decl )
+		Local tipe:String=DebugDeclType( decl )
+		Local value:String=DebugDeclValue( decl, inst )
 		WriteDebug kind+" "+name+":"+tipe+"="+value+"~n"
 
 		decl = bmx_debugger_DebugDeclNext(decl)
@@ -702,7 +702,7 @@ Function DumpObject( inst:Byte Ptr,index:Int )
 			
 			bmx_debugger_DebugDecl_ArrayDeclIndexedPart(decl, inst, index)
 		
-			Local value$=DebugDeclValue( decl,inst )
+			Local value:String=DebugDeclValue( decl,inst )
 			
 			WriteDebug "["+index+"]="+value+"~n"
 			
@@ -754,7 +754,7 @@ Function DumpScopeStack()
 	Next
 End Function
 
-Function UpdateDebug( msg$ )
+Function UpdateDebug( msg:String )
 	Global indebug:Int
 	If indebug Return
 	indebug=True
@@ -775,7 +775,7 @@ Function UpdateDebug( msg$ )
 	WriteDebug msg
 	Repeat
 		WriteDebug "~n"
-		Local line$=ReadDebug()
+		Local line:String=ReadDebug()
 
 		Select line[..1].ToLower()
 		Case "r"
@@ -797,7 +797,7 @@ Function UpdateDebug( msg$ )
 			DumpScopeStack
 			WriteDebug "}~n"
 		Case "d"
-			Local t$=line[1..].Trim()
+			Local t:String=line[1..].Trim()
 			Local index:Int
 			Local i:Int=t.Find(":")
 			If i<>-1
@@ -840,16 +840,16 @@ Function UpdateDebug( msg$ )
 			If saLength Continue
 ?Not ptr64
 			Local inst:Int Ptr=Int Ptr pointer
-			Local cmd$="ObjectDump@"+ToHex( Int inst )
+			Local cmd:String="ObjectDump@"+ToHex( Int inst )
 ?ptr64
 			Local inst:Long Ptr=Long Ptr pointer
-			Local cmd$="ObjectDump@"+ToHex( Long inst )
+			Local cmd:String="ObjectDump@"+ToHex( Long inst )
 ?			
 			If structType Then
 				cmd :+ "@" + structType
 			End If
 			If i<>-1 cmd:+":"+index
-			WriteDebug cmd$+"{~n"
+			WriteDebug cmd+"{~n"
 
 			If structType Then
 				DumpStruct inst,index,structType
@@ -888,7 +888,7 @@ Function OnDebugStop()
 	UpdateDebug "DebugStop:~n"
 End Function
 
-Function OnDebugLog( message$ )
+Function OnDebugLog( message:String )
 	WriteStdout "DebugLog:"+message+"~n"
 End Function
 

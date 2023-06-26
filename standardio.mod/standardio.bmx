@@ -69,7 +69,7 @@ Rem
 bbdoc: Write a string to the standard errIO stream
 about: A newline character is also written after @str.
 End Rem
-Function Print( str$="" )
+Function Print( str:String="" )
 	StandardIOStream.WriteLine str
 	StandardIOStream.Flush
 End Function
@@ -78,7 +78,7 @@ Rem
 bbdoc: Write a string to the standard error IO stream
 about: A newline character is also written after @str.
 End Rem
-Function ErrPrint( str$="" )
+Function ErrPrint( str:String="" )
 	StandardErrIOStream.WriteLine str
 	StandardErrIOStream.Flush
 End Function
@@ -87,7 +87,7 @@ Rem
 bbdoc: Receive a line of text from the standard IO stream
 about: The optional @prompt is displayed before input is returned.
 End Rem
-Function Input$( prompt$=">" )
+Function Input:String( prompt:String=">" )
 	StandardIOStream.WriteString prompt
 	StandardIOStream.Flush
     Return StandardIOStream.ReadLine()

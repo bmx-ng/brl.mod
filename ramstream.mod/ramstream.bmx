@@ -86,7 +86,7 @@ Function CreateRamStream:TRamStream( ram:Byte Ptr,size:Long,readable,writeMode )
 End Function
 
 Type TRamStreamFactory Extends TStreamFactory
-	Method CreateStream:TRamStream( url:Object,proto$,path$,readable,writeMode ) Override
+	Method CreateStream:TRamStream( url:Object,proto:String,path:String,readable,writeMode ) Override
 		If proto="incbin" And Not writeMode
 			Local buf:Byte Ptr=IncbinPtr( path )
 			If Not buf Return

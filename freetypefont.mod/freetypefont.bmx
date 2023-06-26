@@ -48,7 +48,7 @@ Public
 Type TFreeTypeGlyph Extends TGlyph
 
 	Field _pixmap:TPixmap
-	Field _advance#,_x:Int,_y:Int,_w:Int,_h:Int
+	Field _advance:Float,_x:Int,_y:Int,_w:Int,_h:Int
 	
 	Method Pixels:TPixmap() Override
 		If _pixmap Return _pixmap
@@ -56,7 +56,7 @@ Type TFreeTypeGlyph Extends TGlyph
 		Return _pixmap
 	End Method
 	
-	Method Advance#() Override
+	Method Advance:Float() Override
 		Return _advance
 	End Method
 	

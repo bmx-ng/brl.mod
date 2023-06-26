@@ -14,7 +14,7 @@ Extern
 	Function GetSystemMetrics:Int(index:Int) "win32"
 End Extern
 
-Global _wndClass$="BBDX9Device Window Class"
+Global _wndClass:String="BBDX9Device Window Class"
 
 Global _driver:TD3D9graphicsDriver
 

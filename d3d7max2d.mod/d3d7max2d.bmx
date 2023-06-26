@@ -72,9 +72,9 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 	Field		drawalpha		'0..255
 	Field		drawcolor
 	Field		clscolor
-	Field		ix#,iy#,jx#,jy#
-	Field		linewidth#
-	Field		cverts#[16]
+	Field		ix:Float,iy:Float,jx:Float,jy:Float
+	Field		linewidth:Float
+	Field		cverts:Float[16]
 	Field		vrts:Int Ptr'=Int Ptr(Varptr cverts[0])
 	Field		vp_rect[]
 	Field		activeBlend
@@ -85,7 +85,7 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 		vrts=Int Ptr(Varptr cverts[0])
 	End Method
 	
-	Method ToString$()
+	Method ToString:String()
 		Return "DirectX7"
 	End Method
 
@@ -238,7 +238,7 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 		End Select	
 	End Method
 
-	Method SetAlpha( alpha# )
+	Method SetAlpha( alpha:Float )
 		alpha=Max(Min(alpha,1),0)
 		drawcolor=(Int(255*alpha) Shl 24)|(drawcolor&$ffffff)
 		vrts[3]=drawcolor
@@ -283,14 +283,14 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 		EndIf
 	End Method
 
-	Method SetTransform( xx#,xy#,yx#,yy# )
+	Method SetTransform( xx:Float,xy:Float,yx:Float,yy:Float )
 		ix=xx
 		iy=xy
 		jx=yx
 		jy=yy		
 	End Method
 
-	Method SetLineWidth( width# )
+	Method SetLineWidth( width:Float )
 		linewidth=width
 	End Method
 	
@@ -300,7 +300,7 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 		device.Clear 1,vp_rect,D3DCLEAR_TARGET,clscolor,0,0
 	End Method
 
-	Method Plot( x#,y# )
+	Method Plot( x:Float,y:Float )
 		If Not IsValid() Return
 
 		cverts[0]=x+.5001
@@ -310,10 +310,10 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 		device.DrawPrimitive(D3DPT_POINTLIST,D3DFVF_XYZ|D3DFVF_DIFFUSE,cverts,1,0)
 	End Method
 
-	Method DrawLine( x0#,y0#,x1#,y1#,tx#,ty# )
+	Method DrawLine( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float )
 		If Not IsValid() Return
 
-		Local lx0#,ly0#,lx1#,ly1#
+		Local lx0:Float,ly0:Float,lx1:Float,ly1:Float
 		
 		lx0=x0*ix+y0*iy+tx
 		ly0=x0*jx+y0*jy+ty
@@ -328,7 +328,7 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 			SetActiveFrame Null
 			device.DrawPrimitive(D3DPT_LINELIST,D3DFVF_XYZ|D3DFVF_DIFFUSE,cverts,2,0)
 		Else
-			Local lw#=linewidth*0.5
+			Local lw:Float=linewidth*0.5
 			If Abs(ly1-ly0)>Abs(lx1-lx0)
 				cverts[0]=lx0-lw
 				cverts[1]=ly0
@@ -353,7 +353,7 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 		EndIf
 	End Method
 
-	Method DrawRect( x0#,y0#,x1#,y1#,tx#,ty# )
+	Method DrawRect( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float )
 		If Not IsValid() Return
 
 		cverts[0]=x0*ix+y0*iy+tx
@@ -368,21 +368,21 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 		device.DrawPrimitive(D3DPT_TRIANGLESTRIP,D3DFVF_XYZ|D3DFVF_DIFFUSE,cverts,4,0)
 	End Method
 
-	Method DrawOval( x0#,y0#,x1#,y1#,tx#,ty# )
+	Method DrawOval( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float )
 		If Not IsValid() Return
 
-		Local xr#=(x1-x0)*.5
-		Local yr#=(y1-y0)*.5
+		Local xr:Float=(x1-x0)*.5
+		Local yr:Float=(y1-y0)*.5
 		Local segs=Abs(xr)+Abs(yr)
 		segs=Max(segs,12)&~3
 		x0:+xr
 		y0:+yr		
-		Local vrts#[]=New Float[segs*4]	
+		Local vrts:Float[]=New Float[segs*4]	
 		Local c:Int Ptr=Int Ptr(Float Ptr(vrts))
 		For Local i=0 Until segs
-			Local th#=-i*360#/segs
-			Local x#=x0+Cos(th)*xr
-			Local y#=y0-Sin(th)*yr
+			Local th:Float=-i*360:Float/segs
+			Local x:Float=x0+Cos(th)*xr
+			Local y:Float=y0-Sin(th)*yr
 			vrts[i*4+0]=x*ix+y*iy+tx
 			vrts[i*4+1]=x*jx+y*jy+ty			
 			c[i*4+3]=drawcolor
@@ -391,16 +391,16 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 		device.DrawPrimitive(D3DPT_TRIANGLEFAN,D3DFVF_XYZ|D3DFVF_DIFFUSE,vrts,segs,0)
 	End Method
 
-	Method DrawPoly( xy#[],handlex#,handley#,tx#,ty#, indices:Int[] )
+	Method DrawPoly( xy:Float[],handlex:Float,handley:Float,tx:Float,ty:Float, indices:Int[] )
 		If Not IsValid() Return
 
 		If xy.length<6 Or (xy.length&1) Return
 		Local segs=xy.length/2
-		Local vrts#[]=New Float[segs*4]		
+		Local vrts:Float[]=New Float[segs*4]		
 		Local c:Int Ptr=Int Ptr(Float Ptr(vrts))
 		For Local i=0 Until Len xy Step 2
-			Local x#=xy[i+0]+handlex
-			Local y#=xy[i+1]+handley
+			Local x:Float=xy[i+0]+handlex
+			Local y:Float=xy[i+1]+handley
 			vrts[i*2+0]=x*ix+y*iy+tx
 			vrts[i*2+1]=x*jx+y*jy+ty
 			c[i*2+3]=drawcolor			
@@ -409,13 +409,13 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 		device.DrawPrimitive(D3DPT_TRIANGLEFAN,D3DFVF_XYZ|D3DFVF_DIFFUSE,vrts,segs,0)		
 	End Method
 	
-	Method DrawFrame( frame:TD3D7ImageFrame,x0#,y0#,x1#,y1#,tx#,ty#,sx#,sy#,sw#,sh# )
+	Method DrawFrame( frame:TD3D7ImageFrame,x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float,sx:Float,sy:Float,sw:Float,sh:Float )
 		If Not IsValid() Return
 		
-		Local u0#=sx * frame.uscale
-		Local v0#=sy * frame.vscale
-		Local u1#=(sx+sw) * frame.uscale
-		Local v1#=(sy+sh) * frame.vscale
+		Local u0:Float=sx * frame.uscale
+		Local v0:Float=sy * frame.vscale
+		Local u1:Float=(sx+sw) * frame.uscale
+		Local v1:Float=(sy+sh) * frame.vscale
 		frame.SetUV u0,v0,u1,v1
 
 		Local	uv:Float Ptr
@@ -490,16 +490,16 @@ Type TD3D7Max2DDriver Extends TMax2DDriver
 		Return pixmap	
 	End Method
 	
-	Method SetResolution( width#,height# )
+	Method SetResolution( width:Float,height:Float )
 		Local gw=GraphicsWidth()
 		Local gh=GraphicsHeight()
-		Local world#[]=[..
+		Local world:Float[]=[..
 			gw/width,0.0,0.0,0.0,..
 			0.0,gh/height,0.0,0.0,..
 			 0.0,0.0,1.0,0.0,..
 			 0.0,0.0,0.0,1.0 ]
 		device.SetTransform D3DTS_WORLD,world
-		Local proj#[]=[..
+		Local proj:Float[]=[..
 			2.0/gw,0.0,0.0,0.0,..
 			 0.0,-2.0/gh,0.0,0.0,..
 			 0.0,0.0,1.0,0.0,..
@@ -598,9 +598,9 @@ Type TD3D7ImageFrame Extends TImageFrame
 	Field		driver:TD3D7Max2DDriver
 	Field		surface:IDirectDrawSurface7
 	Field		sinfo:DDSurfaceDesc2
-	Field		xyzuv#[24]
+	Field		xyzuv:Float[24]
 	Field		width,height,flags
-	Field		uscale#,vscale#
+	Field		uscale:Float,vscale:Float
 	
 	Method Delete()
 		If Not surface Return
@@ -608,7 +608,7 @@ Type TD3D7ImageFrame Extends TImageFrame
 		surface=Null
 	End Method
 
-	Method SetUV(u0#,v0#,u1#,v1#)
+	Method SetUV(u0:Float,v0:Float,u1:Float,v1:Float)
 		xyzuv[4]=u0
 		xyzuv[5]=v0
 		xyzuv[10]=u1
@@ -686,8 +686,8 @@ Type TD3D7ImageFrame Extends TImageFrame
 		If flags & MIPMAPPEDIMAGE BuildMipMaps
 	End Method
 	
-	Method Draw( x0#,y0#,x1#,y1#,tx#,ty#,sx#,sy#,sw#,sh# )
-		driver.DrawFrame Self,x0#,y0#,x1#,y1#,tx#,ty#,sx,sy,sw,sh
+	Method Draw( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float,sx:Float,sy:Float,sw:Float,sh:Float )
+		driver.DrawFrame Self,x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float,sx,sy,sw,sh
 	End Method
 	
 	Function Mix(c0,c1)

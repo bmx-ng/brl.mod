@@ -68,36 +68,36 @@ Type TLinuxSystemDriver Extends TSystemDriver
 		bbMoveMouse x,y
 	End Method
 
-	Method Notify( Text$,serious:Int ) Override
+	Method Notify( Text:String,serious:Int ) Override
 		WriteStdout Text+"~r~n"
 	End Method
 	
-	Method Confirm:Int( Text$,serious:Int ) Override
+	Method Confirm:Int( Text:String,serious:Int ) Override
 		WriteStdout Text+" (Yes/No)?"
-		Local t$=ReadStdin().ToLower()
+		Local t:String=ReadStdin().ToLower()
 		If t[..1]="y" Return 1
 		Return 0
 	End Method
 	
-	Method Proceed:Int( Text$,serious:Int ) Override
+	Method Proceed:Int( Text:String,serious:Int ) Override
 		WriteStdout Text+" (Yes/No/Cancel)?"
-		Local t$=ReadStdin().ToLower()
+		Local t:String=ReadStdin().ToLower()
 		If t[..1]="y" Return 1
 		If t[..1]="n" Return 0
 		Return -1
 	End Method
 
-	Method RequestFile$( Text$,exts$,save:Int,file$ ) Override
+	Method RequestFile:String( Text:String,exts:String,save:Int,file:String ) Override
 		WriteStdout "Enter a filename:"
 		Return ReadStdin()
 	End Method
 	
-	Method RequestDir$( Text$,path$ ) Override
+	Method RequestDir:String( Text:String,path:String ) Override
 		WriteStdout "Enter a directory name:"
 		Return ReadStdin()
 	End Method
 
-	Method OpenURL:Int( url$ ) Override
+	Method OpenURL:Int( url:String ) Override
 		'environment variable is most likely set for desktop environments
 		'working with the freedesktop.org project / x.org
 		'So this works at least for KDE, Gnome and XFCE

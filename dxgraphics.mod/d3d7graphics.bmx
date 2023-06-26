@@ -34,7 +34,7 @@ Global _driver:TD3D7GraphicsDriver
 Global _wndClass:Byte Ptr="BBDX7Device Window Class".ToCString()
 Global _wndClassW:Short Ptr="BBDX7Device Window Class".ToWString()
 
-Function dderrstr$( code )
+Function dderrstr:String( code:Int )
 	Select code
 	Case DDERR_OK Return "OK"
 	Case DDERR_PRIMARYSURFACEALREADYEXISTS Return "PRIMARYSURFACEALREADYEXISTS"
@@ -48,7 +48,7 @@ Function dderrstr$( code )
 	Return "UNKNOWN:"+( code )+" "+(code & 65535)
 End Function
 
-Function dlog( t$ )
+Function dlog( t:String )
 	If Not DLOG_ENABLED Return
 	WriteStdout t+"~n"
 End Function
@@ -85,7 +85,7 @@ Function EnumModesCallback( desc:Byte Ptr,context:Object ) "win32"
 	Return D3DENUMRET_OK
 End Function
 
-Function DXASS( n,msg$="DXERROR" )
+Function DXASS( n,msg:String="DXERROR" )
 	If n>=0 Return
 	WriteStdout msg+" err="+dderrstr( n )+"~n"
 ?Debug
@@ -275,8 +275,8 @@ Type TD3D7Graphics Extends TGraphics
 		Local hinst=GetModuleHandleA( Null )
 		Local title:Byte Ptr=AppTitle.ToCString()
 		
-		Local titleW$=AppTitle
-		Local _wndClassW$=String.FromCString( _wndClass )
+		Local titleW:String=AppTitle
+		Local _wndClassW:String=String.FromCString( _wndClass )
 		
 		Local hwnd
 

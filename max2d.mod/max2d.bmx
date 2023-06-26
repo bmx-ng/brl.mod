@@ -52,7 +52,7 @@ ModuleInfo "History: Collision system optimized"
 ModuleInfo "History: Graphics now does an EndGraphics first"
 ModuleInfo "History: 1.07 Release"
 ModuleInfo "History: 1.06 Release"
-ModuleInfo "History: Added GetLineWidth#()"
+ModuleInfo "History: Added GetLineWidth:Float()"
 ModuleInfo "History: Added GetClsColor( red Var,green Var,blue Var )"
 ModuleInfo "History: Fixed Object reference bug in Collision system"
 ModuleInfo "History: 1.05 Release"
@@ -73,8 +73,8 @@ Private
 Global gc:TMax2DGraphics
 
 Function UpdateTransform()
-	Local s#=Sin(gc.tform_rot)
-	Local c#=Cos(gc.tform_rot)
+	Local s:Float=Sin(gc.tform_rot)
+	Local c:Float=Cos(gc.tform_rot)
 	gc.tform_ix= c*gc.tform_scale_x
 	gc.tform_iy=-s*gc.tform_scale_y
 	gc.tform_jx= s*gc.tform_scale_x
@@ -89,19 +89,19 @@ Type TMax2DGraphics Extends TGraphics
 
 	'Field color_red,color_green,color_blue
 	Field color:SColor8
-	Field color_alpha#
+	Field color_alpha:Float
 	'Field clscolor_red,clscolor_green,clscolor_blue
 	Field clscolor:SColor8
-	Field line_width#
-	Field tform_rot#,tform_scale_x#,tform_scale_y#
-	Field tform_ix#,tform_iy#,tform_jx#,tform_jy#
+	Field line_width:Float
+	Field tform_rot:Float,tform_scale_x:Float,tform_scale_y:Float
+	Field tform_ix:Float,tform_iy:Float,tform_jx:Float,tform_jy:Float
 	Field viewport_x:Int,viewport_y:Int,viewport_w:Int,viewport_h:Int
-	Field origin_x#,origin_y#
-	Field handle_x#,handle_y#
+	Field origin_x:Float,origin_y:Float
+	Field handle_x:Float,handle_y:Float
 	Field image_font:TImageFont
 	Field blend_mode:Int
-	Field vres_width#,vres_height#
-	Field vres_mousexscale#,vres_mouseyscale#
+	Field vres_width:Float,vres_height:Float
+	Field vres_mousexscale:Float,vres_mouseyscale:Float
 
 	Field g_width:Int,g_height:Int
 
@@ -376,7 +376,7 @@ Sets the color of a single pixel on the back buffer to the current drawing color
 defined with the #SetColor command. Other commands that affect the operation of
 #Plot include #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
 End Rem
-Function Plot( x#,y# )
+Function Plot( x:Float,y:Float )
 	_max2dDriver.Plot x+gc.origin_x,y+gc.origin_y
 End Function
 
@@ -389,7 +389,7 @@ defined with the #SetColor command.
 Other commands that affect the operation of #DrawRect include #SetHandle, #SetScale,
 #SetRotation, #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
 End Rem
-Function DrawRect( x#,y#,width#,height# )
+Function DrawRect( x:Float,y:Float,width:Float,height:Float )
 	_max2dDriver.DrawRect..
 	gc.handle_x,gc.handle_y,..
 	gc.handle_x+width,gc.handle_y+height,..
@@ -406,13 +406,13 @@ BlitzMax commands that affect the drawing of lines include #SetLineWidth, #SetCo
 The optional @draw_last_pixel parameter can be used to control whether the last pixel of the line is drawn or not.
 Not drawing the last pixel can be useful if you are using certain blending modes.
 End Rem 
-Function DrawLine( x#,y#,x2#,y2#,draw_last_pixel:Int=True )
+Function DrawLine( x:Float,y:Float,x2:Float,y2:Float,draw_last_pixel:Int=True )
 	_max2dDriver.DrawLine..
 	gc.handle_x,gc.handle_y,..
 	gc.handle_x+x2-x,gc.handle_y+y2-y,..
 	x+gc.origin_x,y+gc.origin_y
 	If Not draw_last_pixel Return
-	Local px#=gc.handle_x+x2-x,py#=gc.handle_y+y2-y
+	Local px:Float=gc.handle_x+x2-x,py:Float=gc.handle_y+y2-y
 	_max2dDriver.Plot..
 	px*gc.tform_ix+py*gc.tform_iy+x+gc.origin_x,px*gc.tform_jx+py*gc.tform_jy+y+gc.origin_y
 End Function
@@ -426,7 +426,7 @@ and @height parameters.
 BlitzMax commands that affect the drawing of ovals include #SetColor, #SetHandle, 
 #SetScale, #SetRotation, #SetOrigin, #SetViewPort, #SetBlend and #SetAlpha.
 End Rem
-Function DrawOval( x#,y#,width#,height# )
+Function DrawOval( x:Float,y:Float,width:Float,height:Float )
 	_max2dDriver.DrawOval..
 	gc.handle_x,gc.handle_y,..
 	gc.handle_x+width,gc.handle_y+height,..
@@ -461,7 +461,7 @@ command for non jagged antialiased text. Text that will be drawn at a smaller
 size using the #SetScale command should use fonts loaded with the SMOOTHFONT
 style to benefit from mip-mapped filtering, see #LoadImageFont for more information.
 End Rem
-Function DrawText( t$,x#,y# )
+Function DrawText( t:String,x:Float,y:Float )
 	gc.image_font.Draw t,..
 	x+gc.origin_x+gc.handle_x*gc.tform_ix+gc.handle_y*gc.tform_iy,..
 	y+gc.origin_y+gc.handle_x*gc.tform_jx+gc.handle_y*gc.tform_jy,..
@@ -476,9 +476,9 @@ Drawing is affected by the current blend mode, color, scale and rotation.
 If the blend mode is ALPHABLEND the image is affected by the current alpha value
 and images with alpha channels are blended correctly with the background.
 End Rem
-Function DrawImage( image:TImage,x#,y#,frame:Int=0 )
-	Local x0#=-image.handle_x,x1#=x0+image.width
-	Local y0#=-image.handle_y,y1#=y0+image.height
+Function DrawImage( image:TImage,x:Float,y:Float,frame:Int=0 )
+	Local x0:Float=-image.handle_x,x1:Float=x0+image.width
+	Local y0:Float=-image.handle_y,y1:Float=y0+image.height
 	Local iframe:TImageFrame=image.Frame(frame)
 	If iframe iframe.Draw x0,y0,x1,y1,x+gc.origin_x,y+gc.origin_y,0,0,image.width,image.height
 End Function
@@ -494,9 +494,9 @@ Drawing is affected by the current blend mode, color, scale and rotation.
 
 If the blend mode is ALPHABLEND, then the image is also affected by the current alpha value.
 End Rem
-Function DrawImageRect( image:TImage,x#,y#,w#,h#,frame:Int=0 )
-	Local x0#=-image.handle_x,x1#=x0+w
-	Local y0#=-image.handle_y,y1#=y0+h
+Function DrawImageRect( image:TImage,x:Float,y:Float,w:Float,h:Float,frame:Int=0 )
+	Local x0:Float=-image.handle_x,x1:Float=x0+w
+	Local y0:Float=-image.handle_y,y1:Float=y0+h
 	Local iframe:TImageFrame=image.Frame(frame)
 	If iframe iframe.Draw x0,y0,x1,y1,x+gc.origin_x,y+gc.origin_y,0,0,image.width,image.height
 End Function
@@ -516,9 +516,9 @@ Drawing is affected by the current blend mode, color, scale and rotation.
 
 If the blend mode is ALPHABLEND, then the image is also affected by the current alpha value.
 End Rem
-Function DrawSubImageRect( image:TImage,x#,y#,w#,h#,sx#,sy#,sw#,sh#,hx#=0,hy#=0,frame:Int=0 )
-	Local x0#=-hx*w/sw,x1#=x0+w
-	Local y0#=-hy*h/sh,y1#=y0+h
+Function DrawSubImageRect( image:TImage,x:Float,y:Float,w:Float,h:Float,sx:Float,sy:Float,sw:Float,sh:Float,hx:Float=0,hy:Float=0,frame:Int=0 )
+	Local x0:Float=-hx*w/sw,x1:Float=x0+w
+	Local y0:Float=-hy*h/sh,y1:Float=y0+h
 	Local iframe:TImageFrame=image.Frame(frame)
 	If iframe iframe.Draw x0,y0,x1,y1,x+gc.origin_x,y+gc.origin_y,sx,sy,sw,sh
 End Function
@@ -528,7 +528,7 @@ bbdoc: Draw an image in a tiled pattern
 about:
 #TileImage draws an image in a repeating, tiled pattern, filling the current viewport.
 End Rem
-Function TileImage( image:TImage,x#=0#,y#=0#,frame:Int=0 )
+Function TileImage( image:TImage,x:Float=0:Float,y:Float=0:Float,frame:Int=0 )
 	Local iframe:TImageFrame=image.Frame(frame)
 	If Not iframe Return
 	
@@ -538,10 +538,10 @@ Function TileImage( image:TImage,x#=0#,y#=0#,frame:Int=0 )
 	Local h:Int=image.height
 	Local ox:Int=gc.viewport_x-w+1
 	Local oy:Int=gc.viewport_y-h+1
-	Local px#=x+gc.origin_x-image.handle_x
-	Local py#=y+gc.origin_y-image.handle_y
-	Local fx#=px-Floor(px)
-	Local fy#=py-Floor(py)
+	Local px:Float=x+gc.origin_x-image.handle_x
+	Local py:Float=y+gc.origin_y-image.handle_y
+	Local fx:Float=px-Floor(px)
+	Local fy:Float=py-Floor(py)
 	Local tx:Int=Floor(px)-ox
 	Local ty:Int=Floor(py)-oy
 
@@ -636,7 +636,7 @@ about:
 The range from 0.0 to 1.0 allows a range of transparancy from completely transparent 
 to completely solid.
 End Rem
-Function SetAlpha( alpha# )
+Function SetAlpha( alpha:Float )
 	gc.color_alpha=alpha
 	_max2dDriver.SetAlpha alpha
 End Function
@@ -645,14 +645,14 @@ Rem
 bbdoc: Get current alpha setting.
 returns: the current alpha value in the range 0..1.0 
 End Rem
-Function GetAlpha#()
+Function GetAlpha:Float()
 	Return gc.color_alpha
 End Function
 
 Rem
 bbdoc: Sets pixel width of lines drawn with the #DrawLine command
 End Rem
-Function SetLineWidth( width# )
+Function SetLineWidth( width:Float )
 	gc.line_width=width
 	_max2dDriver.SetLineWidth width
 End Function
@@ -661,7 +661,7 @@ Rem
 bbdoc: Get line width
 returns: Current line width, in pixels
 End Rem
-Function GetLineWidth#()
+Function GetLineWidth:Float()
 	Return gc.line_width
 End Function
 
@@ -695,7 +695,7 @@ SetResolution allows you to set a 'virtual' resolution independent of the graphi
 This allows you to design an application to work at a fixed resolution, say 640 by 480, and run it
 at any graphics resolution.
 End Rem
-Function SetVirtualResolution( width#,height# )
+Function SetVirtualResolution( width:Float,height:Float )
 	gc.vres_width=width
 	gc.vres_height=height
 	gc.vres_mousexscale=width/GraphicsWidth()
@@ -706,49 +706,49 @@ End Function
 Rem
 bbdoc: Get virtual graphics resolution width
 End Rem
-Function VirtualResolutionWidth#()
+Function VirtualResolutionWidth:Float()
 	Return gc.vres_width
 End Function
 
 Rem
 bbdoc: Get virtual graphics resolution height
 End Rem
-Function VirtualResolutionHeight#()
+Function VirtualResolutionHeight:Float()
 	Return gc.vres_height
 End Function
 
 Rem
 bbdoc: Get virtual mouse X coordinate
 End Rem
-Function VirtualMouseX#()
+Function VirtualMouseX:Float()
 	Return MouseX() * gc.vres_mousexscale
 End Function
 
 Rem
 bbdoc: Get virtual mouse Y coordinate
 End Rem
-Function VirtualMouseY#()
+Function VirtualMouseY:Float()
 	Return MouseY() * gc.vres_mouseyscale
 End Function
 
 Rem
 bbdoc: Get virtual mouse X speed
 End Rem
-Function VirtualMouseXSpeed#()
+Function VirtualMouseXSpeed:Float()
 	Return MouseXSpeed() * gc.vres_mousexscale
 End Function
 
 Rem
 bbdoc: Get virtual mouse Y speed
 End Rem
-Function VirtualMouseYSpeed#()
+Function VirtualMouseYSpeed:Float()
 	Return MouseYSpeed() * gc.vres_mouseyscale
 End Function
 
 Rem
 bbdoc: Move virtual mouse
 End Rem
-Function MoveVirtualMouse( x#,y# )
+Function MoveVirtualMouse( x:Float,y:Float )
 	MoveMouse Int(x/gc.vres_mousexscale),Int(y/gc.vres_mouseyscale)
 End Function
 
@@ -786,7 +786,7 @@ bbdoc: Set drawing origin
 about:
 The current Origin is an x,y coordinate added to all drawing x,y coordinates after any rotation or scaling.
 End Rem
-Function SetOrigin( x#,y# )
+Function SetOrigin( x:Float,y:Float )
 	gc.origin_x=x
 	gc.origin_y=y
 End Function
@@ -795,7 +795,7 @@ Rem
 bbdoc: Get current origin position.
 returns: The horizontal and vertical position of the current origin. 
 End Rem
-Function GetOrigin( x# Var,y# Var )
+Function GetOrigin( x:Float Var,y:Float Var )
 	x=gc.origin_x
 	y=gc.origin_y
 End Function
@@ -809,7 +809,7 @@ drawing commands except #DrawImage as Images have their own unique handles.
 Unlike #SetOrigin the drawing handle is subtracted before rotation and scale 
 are applied providing a 'local' origin.
 End Rem
-Function SetHandle( x#,y# )
+Function SetHandle( x:Float,y:Float )
 	gc.handle_x=-x
 	gc.handle_y=-y
 End Function
@@ -818,7 +818,7 @@ Rem
 bbdoc: Get current drawing handle.
 returns: The horizontal and vertical position of the current drawing handle.
 End Rem
-Function GetHandle( x# Var,y# Var )
+Function GetHandle( x:Float Var,y:Float Var )
 	x=-gc.handle_x
 	y=-gc.handle_y
 End Function
@@ -828,7 +828,7 @@ bbdoc: Set current rotation
 about:
 @rotation is given in degrees and should be in the range 0 to 360.
 End Rem
-Function SetRotation( Rotation# )
+Function SetRotation( Rotation:Float )
 	gc.tform_rot=Rotation
 	UpdateTransform
 End Function
@@ -837,7 +837,7 @@ Rem
 bbdoc: Get current Max2D rotation setting.
 returns: The rotation in degrees.
 End Rem
-Function GetRotation#()
+Function GetRotation:Float()
 	Return gc.tform_rot
 End Function
 
@@ -848,7 +848,7 @@ about:
 commands where 0.5 will half the size of the drawing and 2.0 is equivalent 
 to doubling the size.
 End Rem
-Function SetScale( scale_x#,scale_y# )
+Function SetScale( scale_x:Float,scale_y:Float )
 	gc.tform_scale_x=scale_x
 	gc.tform_scale_y=scale_y
 	UpdateTransform
@@ -858,7 +858,7 @@ Rem
 bbdoc: Get current Max2D scale settings.
 returns: The current x and y scale values in the variables supplied. 
 End Rem
-Function GetScale( scale_x# Var,scale_y# Var )
+Function GetScale( scale_x:Float Var,scale_y:Float Var )
 	scale_x=gc.tform_scale_x
 	scale_y=gc.tform_scale_y
 End Function
@@ -869,7 +869,7 @@ about:
 SetTransform is a shortcut for setting both the rotation and
 scale parameters in Max2D with a single function call.
 End Rem
-Function SetTransform( Rotation#=0,scale_x#=1,scale_y#=1 )
+Function SetTransform( Rotation:Float=0,scale_x:Float=1,scale_y:Float=1 )
 	gc.tform_rot=Rotation
 	gc.tform_scale_x=scale_x
 	gc.tform_scale_y=scale_y
@@ -934,7 +934,7 @@ about:
 This command is useful for calculating horizontal alignment of text when using 
 the #DrawText command.
 End Rem
-Function TextWidth:Int( Text$ )
+Function TextWidth:Int( Text:String )
 	Local width:Int=0
 	For Local n:Int=0 Until Text.length
 		Local i:Int=gc.image_font.CharToGlyph( Text[n] )
@@ -951,7 +951,7 @@ about:
 This command is useful for calculating vertical alignment of text when using 
 the #DrawText command.
 End Rem
-Function TextHeight:Int( Text$ )
+Function TextHeight:Int( Text:String )
 	Return gc.image_font.Height()
 	Rem
 	Local height=0
@@ -1025,7 +1025,7 @@ about:
 An image's handle is subtracted from the coordinates of #DrawImage before
 rotation and scale are applied.
 End Rem
-Function SetImageHandle( image:TImage,x#,y# )
+Function SetImageHandle( image:TImage,x:Float,y:Float )
 	image.handle_x=x
 	image.handle_y=y
 End Function
@@ -1334,8 +1334,8 @@ about:
 #ImagesCollide2 uses the specified Rotation and Scale paramteters
 to calculate at a pixel level if the two images collide (overlap).
 End Rem
-Function ImagesCollide2:Int(image1:TImage,x1:Int,y1:Int,frame1:Int,rot1#,scalex1#,scaley1#,image2:TImage,x2:Int,y2:Int,frame2:Int,rot2#,scalex2#,scaley2#)
-	Local	_scalex#,_scaley#,_rot#,res:Int
+Function ImagesCollide2:Int(image1:TImage,x1:Int,y1:Int,frame1:Int,rot1:Float,scalex1:Float,scaley1:Float,image2:TImage,x2:Int,y2:Int,frame2:Int,rot2:Float,scalex2:Float,scaley2:Float)
+	Local	_scalex:Float,_scaley:Float,_rot:Float,res:Int
 	_rot=GetRotation()
 	GetScale _scalex,_scaley
 	ResetCollisions COLLISION_LAYER_32
@@ -1379,7 +1379,7 @@ Note: COLLISION_LAYER_32 is used by the #ImagesCollide and #ImagesCollide2 comma
 * COLLISION_LAYER_16 | $8000
 ]
 EndRem
-Function ResetCollisions(mask%=0)
+Function ResetCollisions(mask:Int=0)
 	Local	i:Int,q:TQuad
 	For i=0 To 31
 		If mask=0 Or mask&(1 Shl i)
@@ -1410,7 +1410,7 @@ The @writemask specifies which if any collision layers the @image is added to in
 
 The id specifies an object to be returned to future #CollideImage calls when collisions occur. 
 EndRem
-Function CollideImage:Object[](image:TImage,x:Int,y:Int,frame:Int,collidemask%,writemask%,id:Object=Null) 
+Function CollideImage:Object[](image:TImage,x:Int,y:Int,frame:Int,collidemask:Int,writemask:Int,id:Object=Null) 
 	Local	q:TQuad
 	q=CreateQuad(image,frame,x,y,image.width,image.height,id)
 	Return CollideQuad(q,collidemask,writemask)
@@ -1425,7 +1425,7 @@ The @writemask specifies which if any collision layers the @image is added to in
 
 The @id specifies an object to be returned to future #CollideImage calls when collisions occur.
 EndRem
-Function CollideRect:Object[](x:Int,y:Int,w:Int,h:Int,collidemask%,writemask%,id:Object=Null) 
+Function CollideRect:Object[](x:Int,y:Int,w:Int,h:Int,collidemask:Int,writemask:Int,id:Object=Null) 
 	Local	q:TQuad
 	q=CreateQuad(Null,0,x,y,w,h,id)
 	Return CollideQuad(q,collidemask,writemask)
@@ -1433,9 +1433,9 @@ End Function
 
 Private
 
-Global	cix#,ciy#,cjx#,cjy#
+Global	cix:Float,ciy:Float,cjx:Float,cjy:Float
 
-Function SetCollisions2DTransform(ix#,iy#,jx#,jy#)	'callback from module Blitz2D
+Function SetCollisions2DTransform(ix:Float,iy:Float,jx:Float,jy:Float)	'callback from module Blitz2D
 	cix=ix
 	ciy=iy
 	cjx=jx
@@ -1452,14 +1452,14 @@ Const POLYY:Int=1
 Const POLYU:Int=2
 Const POLYV:Int=3
 
-Function DotProduct:Int(x0#,y0#,x1#,y1#,x2#,y2#)
+Function DotProduct:Int(x0:Float,y0:Float,x1:Float,y1:Float,x2:Float,y2:Float)
 	Return (((x2-x1)*(y1-y0))-((x1-x0)*(y2-y1)))
 End Function
 
-Function ClockwisePoly(data#[],channels:Int)	'flips order if anticlockwise
+Function ClockwisePoly(data:Float[],channels:Int)	'flips order if anticlockwise
 	Local	count:Int,clk:Int,i:Int,j:Int
 	Local	r0:Int,r1:Int,r2:Int
-	Local	t#
+	Local	t:Float
 	
 	count=Len(data)/channels
 ' clock wise test
@@ -1488,20 +1488,20 @@ End Function
 
 Type rpoly
 	Field	texture:TPixmap
-	Field	data#[]
+	Field	data:Float[]
 	Field	channels:Int,count:Int,size:Int
-	Field	ldat#[],ladd#[]
-	Field	rdat#[],radd#[]
+	Field	ldat:Float[],ladd:Float[]
+	Field	rdat:Float[],radd:Float[]
 	Field	Left:Int,Right:Int,top:Int
 	Field	state:Int
 End Type
 
-Function RenderPolys:Int(vdata#[][],channels:Int[],textures:TPixmap[],renderspans:Int(polys:TList,count:Int,ypos:Int))
+Function RenderPolys:Int(vdata:Float[][],channels:Int[],textures:TPixmap[],renderspans:Int(polys:TList,count:Int,ypos:Int))
 	Local	polys:rpoly[],p:rpoly,pcount:Int
 	Local	active:TList
 	Local	top:Int,bot:Int
 	Local	n:Int,y:Int,h:Int,i:Int,j:Int,res:Int
-	Local	data#[]
+	Local	data:Float[]
 
 	bot=$80000000
 	top=$7fffffff
@@ -1620,11 +1620,11 @@ Function CollideSpans:Int(polys:TList,count:Int,y:Int)
 	Local	p:rpoly
 	Local	startx:Int,endx:Int
 	Local	x0:Int,x1:Int,w:Int,x:Int
-	Local	u#,v#,ui#,vi#
+	Local	u:Float,v:Float,ui:Float,vi:Float
 	Local	pix:Int Ptr
 	Local	src:TPixmap
 	Local	tw:Int,th:Int,tp:Int,argb:Int
-	Local	width:Int,skip#
+	Local	width:Int,skip:Float
 	
 
 	startx=$7fffffff
@@ -1694,10 +1694,10 @@ Type TQuad
 	Field	id:Object
 	Field	mask:TPixmap
 	Field	frame:Int
-	Field	minx#,miny#,maxx#,maxy#
-	Field	xyuv#[16]
+	Field	minx:Float,miny:Float,maxx:Float,maxy:Float
+	Field	xyuv:Float[16]
 		
-	Method SetCoords(tx0#,ty0#,tx1#,ty1#,tx2#,ty2#,tx3#,ty3#)
+	Method SetCoords(tx0:Float,ty0:Float,tx1:Float,ty1:Float,tx2:Float,ty2:Float,tx3:Float,ty3:Float)
 		xyuv[0]=tx0
 		xyuv[1]=ty0
 		xyuv[2]=0.0
@@ -1723,7 +1723,7 @@ End Type
 
 Function QuadsCollide:Int(p:TQuad,q:TQuad)
 	If p.maxx<q.minx Or p.maxy<q.miny Or p.minx>q.maxx Or p.miny>q.maxy Return False
-	Local	vertlist#[][2]
+	Local	vertlist:Float[][2]
 	Local	textures:TPixmap[2]
 	Local	channels:Int[2]	
 	vertlist[0]=p.xyuv	
@@ -1735,10 +1735,10 @@ Function QuadsCollide:Int(p:TQuad,q:TQuad)
 	Return RenderPolys(vertlist,channels,textures,CollideSpans)
 End Function
 
-Function CreateQuad:TQuad(image:TImage,frame:Int,x#,y#,w#,h#,id:Object)
-	Local	x0#,y0#,x1#,y1#,tx#,ty#
-	Local	tx0#,ty0#,tx1#,ty1#,tx2#,ty2#,tx3#,ty3#
-	Local	minx#,miny#,maxx#,maxy#
+Function CreateQuad:TQuad(image:TImage,frame:Int,x:Float,y:Float,w:Float,h:Float,id:Object)
+	Local	x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float
+	Local	tx0:Float,ty0:Float,tx1:Float,ty1:Float,tx2:Float,ty2:Float,tx3:Float,ty3:Float
+	Local	minx:Float,miny:Float,maxx:Float,maxy:Float
 	Local	q:TQuad
 	Local	pix:TPixmap
 	
@@ -1774,7 +1774,7 @@ Function CreateQuad:TQuad(image:TImage,frame:Int,x#,y#,w#,h#,id:Object)
 	Return q
 End Function
 
-Function CollideQuad:Object[](pquad:TQuad,collidemask%,writemask%) 
+Function CollideQuad:Object[](pquad:TQuad,collidemask:Int,writemask:Int) 
 	Local	result:Object[]
 	Local	p:TQuad,q:TQuad
 	Local	i:Int,j:Int,count:Int
