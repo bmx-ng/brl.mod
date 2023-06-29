@@ -380,6 +380,10 @@ Function Plot( x:Float,y:Float )
 	_max2dDriver.Plot x+gc.origin_x,y+gc.origin_y
 End Function
 
+Function Plot( x:Double,y:Double )
+	Plot( Float(x),Float(y) )
+End Function
+
 Rem
 bbdoc: Draw a rectangle
 about:
@@ -394,6 +398,10 @@ Function DrawRect( x:Float,y:Float,width:Float,height:Float )
 	gc.handle_x,gc.handle_y,..
 	gc.handle_x+width,gc.handle_y+height,..
 	x+gc.origin_x,y+gc.origin_y
+End Function
+
+Function DrawRect( x:Double,y:Double,width:Double,height:Double )
+	DrawRect( Float(x),Float(y),Float(width),Float(height) )
 End Function
 
 Rem
@@ -417,6 +425,10 @@ Function DrawLine( x:Float,y:Float,x2:Float,y2:Float,draw_last_pixel:Int=True )
 	px*gc.tform_ix+py*gc.tform_iy+x+gc.origin_x,px*gc.tform_jx+py*gc.tform_jy+y+gc.origin_y
 End Function
 
+Function DrawLine( x:Double,y:Double,x2:Double,y2:Double,draw_last_pixel:Int=True )
+	DrawLine(Float(x),Float(y),Float(x2),Float(y2),draw_last_pixel)
+End Function
+
 Rem
 bbdoc: Draw an oval
 about:
@@ -431,6 +443,10 @@ Function DrawOval( x:Float,y:Float,width:Float,height:Float )
 	gc.handle_x,gc.handle_y,..
 	gc.handle_x+width,gc.handle_y+height,..
 	x+gc.origin_x,y+gc.origin_y
+End Function
+
+Function DrawOval( x:Double,y:Double,width:Double,height:Double )
+	DrawOval(Float(x),Float(y),Float(width),Float(height))
 End Function
 
 Rem
@@ -468,6 +484,10 @@ Function DrawText( t:String,x:Float,y:Float )
 	gc.tform_ix,gc.tform_iy,gc.tform_jx,gc.tform_jy
 End Function
 
+Function DrawText( t:String,x:Double,y:Double )
+	DrawText( t,Float(x),Float(y) )
+End Function
+
 Rem
 bbdoc: Draw an image to the back buffer
 about:
@@ -481,6 +501,10 @@ Function DrawImage( image:TImage,x:Float,y:Float,frame:Int=0 )
 	Local y0:Float=-image.handle_y,y1:Float=y0+image.height
 	Local iframe:TImageFrame=image.Frame(frame)
 	If iframe iframe.Draw x0,y0,x1,y1,x+gc.origin_x,y+gc.origin_y,0,0,image.width,image.height
+End Function
+
+Function DrawImage( image:TImage,x:Double,y:Double,frame:Int=0 )
+	DrawImage( image,Float(x),Float(y),frame)
 End Function
 
 Rem
@@ -499,6 +523,10 @@ Function DrawImageRect( image:TImage,x:Float,y:Float,w:Float,h:Float,frame:Int=0
 	Local y0:Float=-image.handle_y,y1:Float=y0+h
 	Local iframe:TImageFrame=image.Frame(frame)
 	If iframe iframe.Draw x0,y0,x1,y1,x+gc.origin_x,y+gc.origin_y,0,0,image.width,image.height
+End Function
+
+Function DrawImageRect( image:TImage,x:Double,y:Double,w:Double,h:Double,frame:Int=0 )
+	DrawImageRect( image,Float(x),Float(y),Float(w),Float(h),frame )
 End Function
 
 Rem
@@ -521,6 +549,10 @@ Function DrawSubImageRect( image:TImage,x:Float,y:Float,w:Float,h:Float,sx:Float
 	Local y0:Float=-hy*h/sh,y1:Float=y0+h
 	Local iframe:TImageFrame=image.Frame(frame)
 	If iframe iframe.Draw x0,y0,x1,y1,x+gc.origin_x,y+gc.origin_y,sx,sy,sw,sh
+End Function
+
+Function DrawSubImageRect( image:TImage,x:Double,y:Double,w:Double,h:Double,sx:Double,sy:Double,sw:Double,sh:Double,hx:Double=0,hy:Double=0,frame:Int=0 )
+	DrawSubImageRect( image,Float(x),Float(y),Float(w),Float(h),Float(sx),Float(sy),Float(sw),Float(sh),Float(hx),Float(hy),frame )
 End Function
 
 Rem
@@ -562,6 +594,10 @@ Function TileImage( image:TImage,x:Float=0:Float,y:Float=0:Float,frame:Int=0 )
 
 	UpdateTransform
 
+End Function
+
+Function TileImage( image:TImage,x:Double,y:Double,frame:Int=0 )
+	TileImage( image,Float(x),Float(y),frame )
 End Function
 
 Rem
@@ -641,6 +677,10 @@ Function SetAlpha( alpha:Float )
 	_max2dDriver.SetAlpha alpha
 End Function
 
+Function SetAlpha( alpha:Double )
+	SetAlpha( Float(alpha) )
+End Function
+
 Rem
 bbdoc: Get current alpha setting.
 returns: the current alpha value in the range 0..1.0 
@@ -655,6 +695,10 @@ End Rem
 Function SetLineWidth( width:Float )
 	gc.line_width=width
 	_max2dDriver.SetLineWidth width
+End Function
+
+Function SetLineWidth( width:Double )
+	SetLineWidth( Float(width) )
 End Function
 
 Rem
@@ -701,6 +745,10 @@ Function SetVirtualResolution( width:Float,height:Float )
 	gc.vres_mousexscale=width/GraphicsWidth()
 	gc.vres_mouseyscale=height/GraphicsHeight()
 	_max2dDriver.SetResolution width,height
+End Function
+
+Function SetVirtualResolution( width:Double,height:Double )
+	SetVirtualResolution( Float(width),Float(height) )
 End Function
 
 Rem
@@ -752,6 +800,10 @@ Function MoveVirtualMouse( x:Float,y:Float )
 	MoveMouse Int(x/gc.vres_mousexscale),Int(y/gc.vres_mouseyscale)
 End Function
 
+Function MoveVirtualMouse( x:Double,y:Double )
+	MoveVirtualMouse( Float(x),Float(y) )
+End Function
+
 Rem
 bbdoc: Set drawing viewport
 about:
@@ -791,6 +843,10 @@ Function SetOrigin( x:Float,y:Float )
 	gc.origin_y=y
 End Function
 
+Function SetOrigin( x:Double,y:Double )
+	SetOrigin( Float(x),Float(y) )
+End Function
+
 Rem
 bbdoc: Get current origin position.
 returns: The horizontal and vertical position of the current origin. 
@@ -814,6 +870,10 @@ Function SetHandle( x:Float,y:Float )
 	gc.handle_y=-y
 End Function
 
+Function SetHandle( x:Double,y:Double )
+	SetHandle( Float(x),Float(y) )
+End Function
+
 Rem
 bbdoc: Get current drawing handle.
 returns: The horizontal and vertical position of the current drawing handle.
@@ -828,9 +888,13 @@ bbdoc: Set current rotation
 about:
 @rotation is given in degrees and should be in the range 0 to 360.
 End Rem
-Function SetRotation( Rotation:Float )
-	gc.tform_rot=Rotation
+Function SetRotation( rotation:Float )
+	gc.tform_rot=rotation
 	UpdateTransform
+End Function
+
+Function SetRotation( rotation:Double )
+	SetRotation(Float(rotation))
 End Function
 
 Rem
@@ -854,6 +918,10 @@ Function SetScale( scale_x:Float,scale_y:Float )
 	UpdateTransform
 End Function
 
+Function SetScale( scale_x:Double,scale_y:Double )
+	SetScale(Float(scale_x),Float(scale_y))
+End Function
+
 Rem
 bbdoc: Get current Max2D scale settings.
 returns: The current x and y scale values in the variables supplied. 
@@ -869,11 +937,15 @@ about:
 SetTransform is a shortcut for setting both the rotation and
 scale parameters in Max2D with a single function call.
 End Rem
-Function SetTransform( Rotation:Float=0,scale_x:Float=1,scale_y:Float=1 )
-	gc.tform_rot=Rotation
+Function SetTransform( rotation:Float=0,scale_x:Float=1,scale_y:Float=1 )
+	gc.tform_rot=rotation
 	gc.tform_scale_x=scale_x
 	gc.tform_scale_y=scale_y
 	UpdateTransform
+End Function
+
+Function SetTransform( rotation:Double,scale_x:Double=1,scale_y:Double=1 )
+	SetTransform(Float(rotation),Float(scale_x),Float(scale_y))
 End Function
 
 Rem
@@ -1028,6 +1100,10 @@ End Rem
 Function SetImageHandle( image:TImage,x:Float,y:Float )
 	image.handle_x=x
 	image.handle_y=y
+End Function
+
+Function SetImageHandle( image:TImage,x:Double,y:Double )
+	SetImageHandle(image,Float(x),Float(y))
 End Function
 
 Rem
