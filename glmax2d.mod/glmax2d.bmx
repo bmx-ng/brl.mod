@@ -612,50 +612,6 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	End Method
 	
 	Method DrawOval( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Override
-	
-		Local xr:Float=(x1-x0)*.5
-		Local yr:Float=(y1-y0)*.5
-		Local segs:Int=Abs(xr)+Abs(yr)
-		
-		segs=Max(segs,12)&~3
-
-		x0:+xr
-		y0:+yr
-		
-		DisableTex
-		glBegin GL_POLYGON
-		For Local i:Int=0 Until segs
-			Local th:Float=i*360:Float/segs
-			Local x:Float=x0+Cos(th)*xr
-			Local y:Float=y0-Sin(th)*yr
-			glVertex2f x*ix+y*iy+tx,x*jx+y*jy+ty
-=======
-	Method Plot( x:Float, y:Float ) Override
-		DisableTex()
-		glBegin( GL_POINTS )
-		glVertex2f( x+.5,y+.5 )
-		glEnd()
-	End Method
-
-	Method DrawLine( x0:Float, y0:Float, x1:Float, y1:Float, tx:Float, ty:Float ) Override
-		DisableTex()
-		glBegin( GL_LINES )
-		glVertex2f( x0 * ix + y0 * iy + tx + .5, x0 * jx + y0 * jy + ty + .5 )
-		glVertex2f( x1 * ix + y1 * iy + tx + .5, x1 * jx + y1 * jy + ty + .5 )
-		glEnd()
-	End Method
-
-	Method DrawRect( x0:Float, y0:Float, x1:Float, y1:Float, tx:Float, ty:Float ) Override
-		DisableTex()
-		glBegin( GL_QUADS )
-		glVertex2f( x0 * ix + y0 * iy + tx, x0 * jx + y0 * jy + ty )
-		glVertex2f( x1 * ix + y0 * iy + tx, x1 * jx + y0 * jy + ty )
-		glVertex2f( x1 * ix + y1 * iy + tx, x1 * jx + y1 * jy + ty )
-		glVertex2f( x0 * ix + y1 * iy + tx, x0 * jx + y1 * jy + ty )
-		glEnd()
-	End Method
-	
-	Method DrawOval( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float ) Override
 		Local xr:Float = ( x1 - x0 ) * 0.5
 		Local yr:Float = ( y1 - y0 ) * 0.5
 		Local segs:Int = Abs( xr ) + Abs( yr )
