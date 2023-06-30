@@ -1776,52 +1776,6 @@ Function SetRenderImage(renderImage:TRenderImage)
 End Function
 
 
-Rem
-bbdoc: Create a #TPixmap from a render image
-about:
-@renderImage defines the render image from where the #TPixmap is to generate
-
-returns: #TPixmap of the render image
-End Rem
-Function CreatePixmapFromRenderImage:TPixmap(renderImage:TRenderImage)
-	RuntimeError "Not implemented"
-	'Return TMax2DGraphics.Current().CreatePixmapFromRenderImage(renderImage)
-End Function
-
-Rem
-bbdoc: Backup the render image (from GPU to RAM)
-about:
-When a running application is suspended (eg user logs out from the OS or hibernation) 
-then Direct3D-graphics loose their context ("D3DERR_DEVICELOST").
-To enable restoration an render image needs to "persist" as else after resume the texture
-will be blank.
-Use this for dynamically created render image content which you do not re-draw each frame.
-Also use #RenderImageValid() to check if content needs to be recreated.
-
-@renderImage defines the render image to backup
-End Rem
-Function PersistRenderImage:Int(renderImage:TRenderImage)
-	RuntimeError "Not implemented"
-	'If renderImage Then Return renderImage.Persist()
-	'Return False
-End Function
-
-Rem
-bbdoc: Check if render image content is still valid
-about:
-When a running application is suspended (eg user logs out from the OS or hibernation) 
-then Direct3D-graphics loose their context ("D3DERR_DEVICELOST") and so the textures.
-If that happens, the render image is flagged to no longer be valid.
-
-@renderImage defines the render image to backup
-
-returns: False if content the render image needs to be recreated
-End Rem
-'Function RenderImageValid:Int(renderImage:TRenderImage)
-'	RuntimeError "Not implemented"
-'End Function
-
-
 Const COLLISION_LAYER_ALL:Int=0
 Const COLLISION_LAYER_1:Int=$0001
 Const COLLISION_LAYER_2:Int=$0002
