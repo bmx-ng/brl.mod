@@ -176,12 +176,12 @@ Function CloseD3DDevice()
 
 		_d3dDev.Release_
 		_d3dDev=Null
-'		_presentParams=null
+		_presentParams=Null
 	EndIf
 End Function
 
 Function ResetD3DDevice()
-	If _graphics 
+	If _graphics
 		_graphics.OnDeviceLost()
 	EndIf
 	If _d3dOccQuery
@@ -195,7 +195,7 @@ Function ResetD3DDevice()
 		Throw "_d3dDev.Reset failed"
 	EndIf
 
-	If _graphics 
+	If _graphics
 		_graphics.OnDeviceReset()
 	EndIf
 	If _d3ddev.CreateQuery(9,_d3dOccQuery)<0
@@ -313,10 +313,14 @@ Type TD3D9Graphics Extends TGraphics
 		Local state:Short = (wp Shr 16) & $FFFF
 		
 		' only release when fullscreen
-		If activate = 0 And _depth <> 0
-			OnDeviceLost()
+		If _depth <> 0
+			If activate = 0			' deactive
+				OnDeviceLost()
+			EndIf
+			If activate = 1
+				OnDeviceReset()		' active
+			EndIf
 		EndIf
-		' the Flip(sync) method will call into ResetD3DDevice where OnDeviceReset will be called
 	EndMethod
 
 	Method AddDeviceLostCallback(fnOnDeviceLostCallback(obj:Object), obj:Object)
@@ -405,7 +409,6 @@ Type TD3D9Graphics Extends TGraphics
 
 			EndIf
 		Case D3DERR_DEVICENOTRESET
-
 			ResetD3DDevice
 
 		End Select
@@ -498,9 +501,9 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 			EndIf
 
 			Local Mode:TGraphicsMode=New TGraphicsMode
-			Mode.width=d3dmode.Width
-			Mode.height=d3dmode.Height
-			Mode.hertz=d3dmode.RefreshRate
+			Mode.width=d3dmode.width
+			Mode.height=d3dmode.height
+			Mode.hertz=d3dmode.refreshRate
 			Mode.depth=32
 			_modes[j]=Mode
 			j:+1
