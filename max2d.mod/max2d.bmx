@@ -1460,7 +1460,7 @@ about:
 SetTransform is a shortcut for setting both the rotation and
 scale parameters in Max2D with a single function call.
 End Rem
-Function SetTransform( rotation:Double = 0:Double, scale_x:Double = 1:Double, scale_y:Float = 1:Double )
+Function SetTransform( rotation:Double, scale_x:Double = 1:Double, scale_y:Float = 1:Double )
 	TMax2DGraphics.Current().SetTransform(Float(rotation), Float(scale_x), Float(scale_y))
 End Function
 
