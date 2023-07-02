@@ -53,24 +53,24 @@ Struct SColor8
 	End Method
 	
 	Rem
-	bbdoc: Creates an #SColor8 instance using the specified 32-bit RGBA value.
+	bbdoc: Creates an #SColor8 instance using the specified 32-bit ARGB value.
 	End Rem
-	Method New(rgba:Int)
-		Int Ptr(Varptr b)[0] = rgba
+	Method New(argb:Int)
+		Int Ptr(Varptr b)[0] = argb
 	End Method
 	
 	Rem
 	bbdoc: Returns the color as a 32-bit RGBA value.
 	End Rem
 	Method ToRGBA:Int()
-		Return Int Ptr(Varptr b)[0]
+		Return r Shl 24 | g Shl 16 | b Shl 8 | a 
 	End Method
 	
 	Rem
 	bbdoc: Returns the color as a 32-bit ARGB value.
 	End Rem
 	Method ToARGB:Int()
-		Return r Shl 16 | g Shl 8 | b | a Shl 24 
+		Return Int Ptr(Varptr b)[0]
 	End Method
 	
 	Rem
