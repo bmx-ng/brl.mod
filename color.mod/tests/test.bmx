@@ -42,7 +42,9 @@ Type TColorTest Extends TTest
 	'\tMethod TestGlobalColors\1\(\) {test}\n\t\tAssertEquals\($FF\2\3\4, SColor8.\1.ToRGBA\(\)\)\n\t\tAssertEquals\($\2, SColor8.\1.r\)\n\t\tAssertEquals\($\3, SColor8.\1.g\)\n\t\tAssertEquals\($\4, SColor8.\1.b\)\n\t\tAssertEquals\($FF, SColor8.\1.a\)\n\tEnd Method\n
 
 	Method TestGlobalColorsAliceBlue() {test}
-		AssertEquals($FFF0F8FF, SColor8.AliceBlue.ToRGBA())
+		AssertEquals($FFF0F8FF, SColor8.AliceBlue.ToARGB())
+		'just need one color to also check RGBA
+		AssertEquals($F0F8FFFF, SColor8.AliceBlue.ToRGBA())
 		AssertEquals($F0, SColor8.AliceBlue.r)
 		AssertEquals($F8, SColor8.AliceBlue.g)
 		AssertEquals($FF, SColor8.AliceBlue.b)
@@ -50,7 +52,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsAntiqueWhite() {test}
-		AssertEquals($FFFAEBD7, SColor8.AntiqueWhite.ToRGBA())
+		AssertEquals($FFFAEBD7, SColor8.AntiqueWhite.ToARGB())
 		AssertEquals($FA, SColor8.AntiqueWhite.r)
 		AssertEquals($EB, SColor8.AntiqueWhite.g)
 		AssertEquals($D7, SColor8.AntiqueWhite.b)
@@ -58,7 +60,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsAqua() {test}
-		AssertEquals($FF00FFFF, SColor8.Aqua.ToRGBA())
+		AssertEquals($FF00FFFF, SColor8.Aqua.ToARGB())
 		AssertEquals($00, SColor8.Aqua.r)
 		AssertEquals($FF, SColor8.Aqua.g)
 		AssertEquals($FF, SColor8.Aqua.b)
@@ -66,7 +68,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsAquamarine() {test}
-		AssertEquals($FF7FFFD4, SColor8.Aquamarine.ToRGBA())
+		AssertEquals($FF7FFFD4, SColor8.Aquamarine.ToARGB())
 		AssertEquals($7F, SColor8.Aquamarine.r)
 		AssertEquals($FF, SColor8.Aquamarine.g)
 		AssertEquals($D4, SColor8.Aquamarine.b)
@@ -74,7 +76,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsAzure() {test}
-		AssertEquals($FFF0FFFF, SColor8.Azure.ToRGBA())
+		AssertEquals($FFF0FFFF, SColor8.Azure.ToARGB())
 		AssertEquals($F0, SColor8.Azure.r)
 		AssertEquals($FF, SColor8.Azure.g)
 		AssertEquals($FF, SColor8.Azure.b)
@@ -82,7 +84,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsBeige() {test}
-		AssertEquals($FFF5F5DC, SColor8.Beige.ToRGBA())
+		AssertEquals($FFF5F5DC, SColor8.Beige.ToARGB())
 		AssertEquals($F5, SColor8.Beige.r)
 		AssertEquals($F5, SColor8.Beige.g)
 		AssertEquals($DC, SColor8.Beige.b)
@@ -90,7 +92,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsBisque() {test}
-		AssertEquals($FFFFE4C4, SColor8.Bisque.ToRGBA())
+		AssertEquals($FFFFE4C4, SColor8.Bisque.ToARGB())
 		AssertEquals($FF, SColor8.Bisque.r)
 		AssertEquals($E4, SColor8.Bisque.g)
 		AssertEquals($C4, SColor8.Bisque.b)
@@ -98,7 +100,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsBlack() {test}
-		AssertEquals($FF000000, SColor8.Black.ToRGBA())
+		AssertEquals($FF000000, SColor8.Black.ToARGB())
 		AssertEquals($00, SColor8.Black.r)
 		AssertEquals($00, SColor8.Black.g)
 		AssertEquals($00, SColor8.Black.b)
@@ -106,7 +108,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsBlanchedAlmond() {test}
-		AssertEquals($FFFFEBCD, SColor8.BlanchedAlmond.ToRGBA())
+		AssertEquals($FFFFEBCD, SColor8.BlanchedAlmond.ToARGB())
 		AssertEquals($FF, SColor8.BlanchedAlmond.r)
 		AssertEquals($EB, SColor8.BlanchedAlmond.g)
 		AssertEquals($CD, SColor8.BlanchedAlmond.b)
@@ -114,7 +116,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsBlue() {test}
-		AssertEquals($FF0000FF, SColor8.Blue.ToRGBA())
+		AssertEquals($FF0000FF, SColor8.Blue.ToARGB())
 		AssertEquals($00, SColor8.Blue.r)
 		AssertEquals($00, SColor8.Blue.g)
 		AssertEquals($FF, SColor8.Blue.b)
@@ -122,7 +124,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsBlueViolet() {test}
-		AssertEquals($FF8A2BE2, SColor8.BlueViolet.ToRGBA())
+		AssertEquals($FF8A2BE2, SColor8.BlueViolet.ToARGB())
 		AssertEquals($8A, SColor8.BlueViolet.r)
 		AssertEquals($2B, SColor8.BlueViolet.g)
 		AssertEquals($E2, SColor8.BlueViolet.b)
@@ -130,7 +132,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsBrown() {test}
-		AssertEquals($FFA52A2A, SColor8.Brown.ToRGBA())
+		AssertEquals($FFA52A2A, SColor8.Brown.ToARGB())
 		AssertEquals($A5, SColor8.Brown.r)
 		AssertEquals($2A, SColor8.Brown.g)
 		AssertEquals($2A, SColor8.Brown.b)
@@ -138,7 +140,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsBurlyWood() {test}
-		AssertEquals($FFDEB887, SColor8.BurlyWood.ToRGBA())
+		AssertEquals($FFDEB887, SColor8.BurlyWood.ToARGB())
 		AssertEquals($DE, SColor8.BurlyWood.r)
 		AssertEquals($B8, SColor8.BurlyWood.g)
 		AssertEquals($87, SColor8.BurlyWood.b)
@@ -146,7 +148,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsCadetBlue() {test}
-		AssertEquals($FF5F9EA0, SColor8.CadetBlue.ToRGBA())
+		AssertEquals($FF5F9EA0, SColor8.CadetBlue.ToARGB())
 		AssertEquals($5F, SColor8.CadetBlue.r)
 		AssertEquals($9E, SColor8.CadetBlue.g)
 		AssertEquals($A0, SColor8.CadetBlue.b)
@@ -154,7 +156,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsChartreuse() {test}
-		AssertEquals($FF7FFF00, SColor8.Chartreuse.ToRGBA())
+		AssertEquals($FF7FFF00, SColor8.Chartreuse.ToARGB())
 		AssertEquals($7F, SColor8.Chartreuse.r)
 		AssertEquals($FF, SColor8.Chartreuse.g)
 		AssertEquals($00, SColor8.Chartreuse.b)
@@ -162,7 +164,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsChocolate() {test}
-		AssertEquals($FFD2691E, SColor8.Chocolate.ToRGBA())
+		AssertEquals($FFD2691E, SColor8.Chocolate.ToARGB())
 		AssertEquals($D2, SColor8.Chocolate.r)
 		AssertEquals($69, SColor8.Chocolate.g)
 		AssertEquals($1E, SColor8.Chocolate.b)
@@ -170,7 +172,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsCoral() {test}
-		AssertEquals($FFFF7F50, SColor8.Coral.ToRGBA())
+		AssertEquals($FFFF7F50, SColor8.Coral.ToARGB())
 		AssertEquals($FF, SColor8.Coral.r)
 		AssertEquals($7F, SColor8.Coral.g)
 		AssertEquals($50, SColor8.Coral.b)
@@ -178,7 +180,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsCornflowerBlue() {test}
-		AssertEquals($FF6495ED, SColor8.CornflowerBlue.ToRGBA())
+		AssertEquals($FF6495ED, SColor8.CornflowerBlue.ToARGB())
 		AssertEquals($64, SColor8.CornflowerBlue.r)
 		AssertEquals($95, SColor8.CornflowerBlue.g)
 		AssertEquals($ED, SColor8.CornflowerBlue.b)
@@ -186,7 +188,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsCornsilk() {test}
-		AssertEquals($FFFFF8DC, SColor8.Cornsilk.ToRGBA())
+		AssertEquals($FFFFF8DC, SColor8.Cornsilk.ToARGB())
 		AssertEquals($FF, SColor8.Cornsilk.r)
 		AssertEquals($F8, SColor8.Cornsilk.g)
 		AssertEquals($DC, SColor8.Cornsilk.b)
@@ -194,7 +196,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsCrimson() {test}
-		AssertEquals($FFDC143C, SColor8.Crimson.ToRGBA())
+		AssertEquals($FFDC143C, SColor8.Crimson.ToARGB())
 		AssertEquals($DC, SColor8.Crimson.r)
 		AssertEquals($14, SColor8.Crimson.g)
 		AssertEquals($3C, SColor8.Crimson.b)
@@ -202,7 +204,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsCyan() {test}
-		AssertEquals($FF00FFFF, SColor8.Cyan.ToRGBA())
+		AssertEquals($FF00FFFF, SColor8.Cyan.ToARGB())
 		AssertEquals($00, SColor8.Cyan.r)
 		AssertEquals($FF, SColor8.Cyan.g)
 		AssertEquals($FF, SColor8.Cyan.b)
@@ -210,7 +212,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkBlue() {test}
-		AssertEquals($FF00008B, SColor8.DarkBlue.ToRGBA())
+		AssertEquals($FF00008B, SColor8.DarkBlue.ToARGB())
 		AssertEquals($00, SColor8.DarkBlue.r)
 		AssertEquals($00, SColor8.DarkBlue.g)
 		AssertEquals($8B, SColor8.DarkBlue.b)
@@ -218,7 +220,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkCyan() {test}
-		AssertEquals($FF008B8B, SColor8.DarkCyan.ToRGBA())
+		AssertEquals($FF008B8B, SColor8.DarkCyan.ToARGB())
 		AssertEquals($00, SColor8.DarkCyan.r)
 		AssertEquals($8B, SColor8.DarkCyan.g)
 		AssertEquals($8B, SColor8.DarkCyan.b)
@@ -226,7 +228,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkGoldenRod() {test}
-		AssertEquals($FFB8860B, SColor8.DarkGoldenRod.ToRGBA())
+		AssertEquals($FFB8860B, SColor8.DarkGoldenRod.ToARGB())
 		AssertEquals($B8, SColor8.DarkGoldenRod.r)
 		AssertEquals($86, SColor8.DarkGoldenRod.g)
 		AssertEquals($0B, SColor8.DarkGoldenRod.b)
@@ -234,7 +236,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkGray() {test}
-		AssertEquals($FFA9A9A9, SColor8.DarkGray.ToRGBA())
+		AssertEquals($FFA9A9A9, SColor8.DarkGray.ToARGB())
 		AssertEquals($A9, SColor8.DarkGray.r)
 		AssertEquals($A9, SColor8.DarkGray.g)
 		AssertEquals($A9, SColor8.DarkGray.b)
@@ -242,7 +244,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkGrey() {test}
-		AssertEquals($FFA9A9A9, SColor8.DarkGrey.ToRGBA())
+		AssertEquals($FFA9A9A9, SColor8.DarkGrey.ToARGB())
 		AssertEquals($A9, SColor8.DarkGrey.r)
 		AssertEquals($A9, SColor8.DarkGrey.g)
 		AssertEquals($A9, SColor8.DarkGrey.b)
@@ -250,7 +252,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkGreen() {test}
-		AssertEquals($FF006400, SColor8.DarkGreen.ToRGBA())
+		AssertEquals($FF006400, SColor8.DarkGreen.ToARGB())
 		AssertEquals($00, SColor8.DarkGreen.r)
 		AssertEquals($64, SColor8.DarkGreen.g)
 		AssertEquals($00, SColor8.DarkGreen.b)
@@ -258,7 +260,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkKhaki() {test}
-		AssertEquals($FFBDB76B, SColor8.DarkKhaki.ToRGBA())
+		AssertEquals($FFBDB76B, SColor8.DarkKhaki.ToARGB())
 		AssertEquals($BD, SColor8.DarkKhaki.r)
 		AssertEquals($B7, SColor8.DarkKhaki.g)
 		AssertEquals($6B, SColor8.DarkKhaki.b)
@@ -266,7 +268,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkMagenta() {test}
-		AssertEquals($FF8B008B, SColor8.DarkMagenta.ToRGBA())
+		AssertEquals($FF8B008B, SColor8.DarkMagenta.ToARGB())
 		AssertEquals($8B, SColor8.DarkMagenta.r)
 		AssertEquals($00, SColor8.DarkMagenta.g)
 		AssertEquals($8B, SColor8.DarkMagenta.b)
@@ -274,7 +276,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkOliveGreen() {test}
-		AssertEquals($FF556B2F, SColor8.DarkOliveGreen.ToRGBA())
+		AssertEquals($FF556B2F, SColor8.DarkOliveGreen.ToARGB())
 		AssertEquals($55, SColor8.DarkOliveGreen.r)
 		AssertEquals($6B, SColor8.DarkOliveGreen.g)
 		AssertEquals($2F, SColor8.DarkOliveGreen.b)
@@ -282,7 +284,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkOrange() {test}
-		AssertEquals($FFFF8C00, SColor8.DarkOrange.ToRGBA())
+		AssertEquals($FFFF8C00, SColor8.DarkOrange.ToARGB())
 		AssertEquals($FF, SColor8.DarkOrange.r)
 		AssertEquals($8C, SColor8.DarkOrange.g)
 		AssertEquals($00, SColor8.DarkOrange.b)
@@ -290,7 +292,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkOrchid() {test}
-		AssertEquals($FF9932CC, SColor8.DarkOrchid.ToRGBA())
+		AssertEquals($FF9932CC, SColor8.DarkOrchid.ToARGB())
 		AssertEquals($99, SColor8.DarkOrchid.r)
 		AssertEquals($32, SColor8.DarkOrchid.g)
 		AssertEquals($CC, SColor8.DarkOrchid.b)
@@ -298,7 +300,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkRed() {test}
-		AssertEquals($FF8B0000, SColor8.DarkRed.ToRGBA())
+		AssertEquals($FF8B0000, SColor8.DarkRed.ToARGB())
 		AssertEquals($8B, SColor8.DarkRed.r)
 		AssertEquals($00, SColor8.DarkRed.g)
 		AssertEquals($00, SColor8.DarkRed.b)
@@ -306,7 +308,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkSalmon() {test}
-		AssertEquals($FFE9967A, SColor8.DarkSalmon.ToRGBA())
+		AssertEquals($FFE9967A, SColor8.DarkSalmon.ToARGB())
 		AssertEquals($E9, SColor8.DarkSalmon.r)
 		AssertEquals($96, SColor8.DarkSalmon.g)
 		AssertEquals($7A, SColor8.DarkSalmon.b)
@@ -314,7 +316,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkSeaGreen() {test}
-		AssertEquals($FF8FBC8F, SColor8.DarkSeaGreen.ToRGBA())
+		AssertEquals($FF8FBC8F, SColor8.DarkSeaGreen.ToARGB())
 		AssertEquals($8F, SColor8.DarkSeaGreen.r)
 		AssertEquals($BC, SColor8.DarkSeaGreen.g)
 		AssertEquals($8F, SColor8.DarkSeaGreen.b)
@@ -322,7 +324,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkSlateBlue() {test}
-		AssertEquals($FF483D8B, SColor8.DarkSlateBlue.ToRGBA())
+		AssertEquals($FF483D8B, SColor8.DarkSlateBlue.ToARGB())
 		AssertEquals($48, SColor8.DarkSlateBlue.r)
 		AssertEquals($3D, SColor8.DarkSlateBlue.g)
 		AssertEquals($8B, SColor8.DarkSlateBlue.b)
@@ -330,7 +332,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkSlateGray() {test}
-		AssertEquals($FF2F4F4F, SColor8.DarkSlateGray.ToRGBA())
+		AssertEquals($FF2F4F4F, SColor8.DarkSlateGray.ToARGB())
 		AssertEquals($2F, SColor8.DarkSlateGray.r)
 		AssertEquals($4F, SColor8.DarkSlateGray.g)
 		AssertEquals($4F, SColor8.DarkSlateGray.b)
@@ -338,7 +340,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkSlateGrey() {test}
-		AssertEquals($FF2F4F4F, SColor8.DarkSlateGrey.ToRGBA())
+		AssertEquals($FF2F4F4F, SColor8.DarkSlateGrey.ToARGB())
 		AssertEquals($2F, SColor8.DarkSlateGrey.r)
 		AssertEquals($4F, SColor8.DarkSlateGrey.g)
 		AssertEquals($4F, SColor8.DarkSlateGrey.b)
@@ -346,7 +348,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkTurquoise() {test}
-		AssertEquals($FF00CED1, SColor8.DarkTurquoise.ToRGBA())
+		AssertEquals($FF00CED1, SColor8.DarkTurquoise.ToARGB())
 		AssertEquals($00, SColor8.DarkTurquoise.r)
 		AssertEquals($CE, SColor8.DarkTurquoise.g)
 		AssertEquals($D1, SColor8.DarkTurquoise.b)
@@ -354,7 +356,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDarkViolet() {test}
-		AssertEquals($FF9400D3, SColor8.DarkViolet.ToRGBA())
+		AssertEquals($FF9400D3, SColor8.DarkViolet.ToARGB())
 		AssertEquals($94, SColor8.DarkViolet.r)
 		AssertEquals($00, SColor8.DarkViolet.g)
 		AssertEquals($D3, SColor8.DarkViolet.b)
@@ -362,7 +364,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDeepPink() {test}
-		AssertEquals($FFFF1493, SColor8.DeepPink.ToRGBA())
+		AssertEquals($FFFF1493, SColor8.DeepPink.ToARGB())
 		AssertEquals($FF, SColor8.DeepPink.r)
 		AssertEquals($14, SColor8.DeepPink.g)
 		AssertEquals($93, SColor8.DeepPink.b)
@@ -370,7 +372,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDeepSkyBlue() {test}
-		AssertEquals($FF00BFFF, SColor8.DeepSkyBlue.ToRGBA())
+		AssertEquals($FF00BFFF, SColor8.DeepSkyBlue.ToARGB())
 		AssertEquals($00, SColor8.DeepSkyBlue.r)
 		AssertEquals($BF, SColor8.DeepSkyBlue.g)
 		AssertEquals($FF, SColor8.DeepSkyBlue.b)
@@ -378,7 +380,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDimGray() {test}
-		AssertEquals($FF696969, SColor8.DimGray.ToRGBA())
+		AssertEquals($FF696969, SColor8.DimGray.ToARGB())
 		AssertEquals($69, SColor8.DimGray.r)
 		AssertEquals($69, SColor8.DimGray.g)
 		AssertEquals($69, SColor8.DimGray.b)
@@ -386,7 +388,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDimGrey() {test}
-		AssertEquals($FF696969, SColor8.DimGrey.ToRGBA())
+		AssertEquals($FF696969, SColor8.DimGrey.ToARGB())
 		AssertEquals($69, SColor8.DimGrey.r)
 		AssertEquals($69, SColor8.DimGrey.g)
 		AssertEquals($69, SColor8.DimGrey.b)
@@ -394,7 +396,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsDodgerBlue() {test}
-		AssertEquals($FF1E90FF, SColor8.DodgerBlue.ToRGBA())
+		AssertEquals($FF1E90FF, SColor8.DodgerBlue.ToARGB())
 		AssertEquals($1E, SColor8.DodgerBlue.r)
 		AssertEquals($90, SColor8.DodgerBlue.g)
 		AssertEquals($FF, SColor8.DodgerBlue.b)
@@ -402,7 +404,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsFireBrick() {test}
-		AssertEquals($FFB22222, SColor8.FireBrick.ToRGBA())
+		AssertEquals($FFB22222, SColor8.FireBrick.ToARGB())
 		AssertEquals($B2, SColor8.FireBrick.r)
 		AssertEquals($22, SColor8.FireBrick.g)
 		AssertEquals($22, SColor8.FireBrick.b)
@@ -410,7 +412,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsFloralWhite() {test}
-		AssertEquals($FFFFFAF0, SColor8.FloralWhite.ToRGBA())
+		AssertEquals($FFFFFAF0, SColor8.FloralWhite.ToARGB())
 		AssertEquals($FF, SColor8.FloralWhite.r)
 		AssertEquals($FA, SColor8.FloralWhite.g)
 		AssertEquals($F0, SColor8.FloralWhite.b)
@@ -418,7 +420,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsForestGreen() {test}
-		AssertEquals($FF228B22, SColor8.ForestGreen.ToRGBA())
+		AssertEquals($FF228B22, SColor8.ForestGreen.ToARGB())
 		AssertEquals($22, SColor8.ForestGreen.r)
 		AssertEquals($8B, SColor8.ForestGreen.g)
 		AssertEquals($22, SColor8.ForestGreen.b)
@@ -426,7 +428,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsFuchsia() {test}
-		AssertEquals($FFFF00FF, SColor8.Fuchsia.ToRGBA())
+		AssertEquals($FFFF00FF, SColor8.Fuchsia.ToARGB())
 		AssertEquals($FF, SColor8.Fuchsia.r)
 		AssertEquals($00, SColor8.Fuchsia.g)
 		AssertEquals($FF, SColor8.Fuchsia.b)
@@ -434,7 +436,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsGainsboro() {test}
-		AssertEquals($FFDCDCDC, SColor8.Gainsboro.ToRGBA())
+		AssertEquals($FFDCDCDC, SColor8.Gainsboro.ToARGB())
 		AssertEquals($DC, SColor8.Gainsboro.r)
 		AssertEquals($DC, SColor8.Gainsboro.g)
 		AssertEquals($DC, SColor8.Gainsboro.b)
@@ -442,7 +444,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsGhostWhite() {test}
-		AssertEquals($FFF8F8FF, SColor8.GhostWhite.ToRGBA())
+		AssertEquals($FFF8F8FF, SColor8.GhostWhite.ToARGB())
 		AssertEquals($F8, SColor8.GhostWhite.r)
 		AssertEquals($F8, SColor8.GhostWhite.g)
 		AssertEquals($FF, SColor8.GhostWhite.b)
@@ -450,7 +452,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsGold() {test}
-		AssertEquals($FFFFD700, SColor8.Gold.ToRGBA())
+		AssertEquals($FFFFD700, SColor8.Gold.ToARGB())
 		AssertEquals($FF, SColor8.Gold.r)
 		AssertEquals($D7, SColor8.Gold.g)
 		AssertEquals($00, SColor8.Gold.b)
@@ -458,7 +460,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsGoldenRod() {test}
-		AssertEquals($FFDAA520, SColor8.GoldenRod.ToRGBA())
+		AssertEquals($FFDAA520, SColor8.GoldenRod.ToARGB())
 		AssertEquals($DA, SColor8.GoldenRod.r)
 		AssertEquals($A5, SColor8.GoldenRod.g)
 		AssertEquals($20, SColor8.GoldenRod.b)
@@ -466,7 +468,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsGray() {test}
-		AssertEquals($FF808080, SColor8.Gray.ToRGBA())
+		AssertEquals($FF808080, SColor8.Gray.ToARGB())
 		AssertEquals($80, SColor8.Gray.r)
 		AssertEquals($80, SColor8.Gray.g)
 		AssertEquals($80, SColor8.Gray.b)
@@ -474,7 +476,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsGrey() {test}
-		AssertEquals($FF808080, SColor8.Grey.ToRGBA())
+		AssertEquals($FF808080, SColor8.Grey.ToARGB())
 		AssertEquals($80, SColor8.Grey.r)
 		AssertEquals($80, SColor8.Grey.g)
 		AssertEquals($80, SColor8.Grey.b)
@@ -482,7 +484,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsGreen() {test}
-		AssertEquals($FF00FF00, SColor8.Green.ToRGBA())
+		AssertEquals($FF00FF00, SColor8.Green.ToARGB())
 		AssertEquals($00, SColor8.Green.r)
 		AssertEquals($FF, SColor8.Green.g)
 		AssertEquals($00, SColor8.Green.b)
@@ -490,7 +492,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsGreenYellow() {test}
-		AssertEquals($FFADFF2F, SColor8.GreenYellow.ToRGBA())
+		AssertEquals($FFADFF2F, SColor8.GreenYellow.ToARGB())
 		AssertEquals($AD, SColor8.GreenYellow.r)
 		AssertEquals($FF, SColor8.GreenYellow.g)
 		AssertEquals($2F, SColor8.GreenYellow.b)
@@ -498,7 +500,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsHoneyDew() {test}
-		AssertEquals($FFF0FFF0, SColor8.HoneyDew.ToRGBA())
+		AssertEquals($FFF0FFF0, SColor8.HoneyDew.ToARGB())
 		AssertEquals($F0, SColor8.HoneyDew.r)
 		AssertEquals($FF, SColor8.HoneyDew.g)
 		AssertEquals($F0, SColor8.HoneyDew.b)
@@ -506,7 +508,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsHotPink() {test}
-		AssertEquals($FFFF69B4, SColor8.HotPink.ToRGBA())
+		AssertEquals($FFFF69B4, SColor8.HotPink.ToARGB())
 		AssertEquals($FF, SColor8.HotPink.r)
 		AssertEquals($69, SColor8.HotPink.g)
 		AssertEquals($B4, SColor8.HotPink.b)
@@ -514,7 +516,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsIndianRed() {test}
-		AssertEquals($FFCD5C5C, SColor8.IndianRed.ToRGBA())
+		AssertEquals($FFCD5C5C, SColor8.IndianRed.ToARGB())
 		AssertEquals($CD, SColor8.IndianRed.r)
 		AssertEquals($5C, SColor8.IndianRed.g)
 		AssertEquals($5C, SColor8.IndianRed.b)
@@ -522,7 +524,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsIndigo() {test}
-		AssertEquals($FF4B0082, SColor8.Indigo.ToRGBA())
+		AssertEquals($FF4B0082, SColor8.Indigo.ToARGB())
 		AssertEquals($4B, SColor8.Indigo.r)
 		AssertEquals($00, SColor8.Indigo.g)
 		AssertEquals($82, SColor8.Indigo.b)
@@ -530,7 +532,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsIvory() {test}
-		AssertEquals($FFFFFFF0, SColor8.Ivory.ToRGBA())
+		AssertEquals($FFFFFFF0, SColor8.Ivory.ToARGB())
 		AssertEquals($FF, SColor8.Ivory.r)
 		AssertEquals($FF, SColor8.Ivory.g)
 		AssertEquals($F0, SColor8.Ivory.b)
@@ -538,7 +540,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsKhaki() {test}
-		AssertEquals($FFF0E68C, SColor8.Khaki.ToRGBA())
+		AssertEquals($FFF0E68C, SColor8.Khaki.ToARGB())
 		AssertEquals($F0, SColor8.Khaki.r)
 		AssertEquals($E6, SColor8.Khaki.g)
 		AssertEquals($8C, SColor8.Khaki.b)
@@ -546,7 +548,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLavender() {test}
-		AssertEquals($FFE6E6FA, SColor8.Lavender.ToRGBA())
+		AssertEquals($FFE6E6FA, SColor8.Lavender.ToARGB())
 		AssertEquals($E6, SColor8.Lavender.r)
 		AssertEquals($E6, SColor8.Lavender.g)
 		AssertEquals($FA, SColor8.Lavender.b)
@@ -554,7 +556,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLavenderBlush() {test}
-		AssertEquals($FFFFF0F5, SColor8.LavenderBlush.ToRGBA())
+		AssertEquals($FFFFF0F5, SColor8.LavenderBlush.ToARGB())
 		AssertEquals($FF, SColor8.LavenderBlush.r)
 		AssertEquals($F0, SColor8.LavenderBlush.g)
 		AssertEquals($F5, SColor8.LavenderBlush.b)
@@ -562,7 +564,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLawnGreen() {test}
-		AssertEquals($FF7CFC00, SColor8.LawnGreen.ToRGBA())
+		AssertEquals($FF7CFC00, SColor8.LawnGreen.ToARGB())
 		AssertEquals($7C, SColor8.LawnGreen.r)
 		AssertEquals($FC, SColor8.LawnGreen.g)
 		AssertEquals($00, SColor8.LawnGreen.b)
@@ -570,7 +572,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLemonChiffon() {test}
-		AssertEquals($FFFFFACD, SColor8.LemonChiffon.ToRGBA())
+		AssertEquals($FFFFFACD, SColor8.LemonChiffon.ToARGB())
 		AssertEquals($FF, SColor8.LemonChiffon.r)
 		AssertEquals($FA, SColor8.LemonChiffon.g)
 		AssertEquals($CD, SColor8.LemonChiffon.b)
@@ -578,7 +580,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightBlue() {test}
-		AssertEquals($FFADD8E6, SColor8.LightBlue.ToRGBA())
+		AssertEquals($FFADD8E6, SColor8.LightBlue.ToARGB())
 		AssertEquals($AD, SColor8.LightBlue.r)
 		AssertEquals($D8, SColor8.LightBlue.g)
 		AssertEquals($E6, SColor8.LightBlue.b)
@@ -586,7 +588,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightCoral() {test}
-		AssertEquals($FFF08080, SColor8.LightCoral.ToRGBA())
+		AssertEquals($FFF08080, SColor8.LightCoral.ToARGB())
 		AssertEquals($F0, SColor8.LightCoral.r)
 		AssertEquals($80, SColor8.LightCoral.g)
 		AssertEquals($80, SColor8.LightCoral.b)
@@ -594,7 +596,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightCyan() {test}
-		AssertEquals($FFE0FFFF, SColor8.LightCyan.ToRGBA())
+		AssertEquals($FFE0FFFF, SColor8.LightCyan.ToARGB())
 		AssertEquals($E0, SColor8.LightCyan.r)
 		AssertEquals($FF, SColor8.LightCyan.g)
 		AssertEquals($FF, SColor8.LightCyan.b)
@@ -602,7 +604,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightGoldenRodYellow() {test}
-		AssertEquals($FFFAFAD2, SColor8.LightGoldenRodYellow.ToRGBA())
+		AssertEquals($FFFAFAD2, SColor8.LightGoldenRodYellow.ToARGB())
 		AssertEquals($FA, SColor8.LightGoldenRodYellow.r)
 		AssertEquals($FA, SColor8.LightGoldenRodYellow.g)
 		AssertEquals($D2, SColor8.LightGoldenRodYellow.b)
@@ -610,7 +612,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightGray() {test}
-		AssertEquals($FFD3D3D3, SColor8.LightGray.ToRGBA())
+		AssertEquals($FFD3D3D3, SColor8.LightGray.ToARGB())
 		AssertEquals($D3, SColor8.LightGray.r)
 		AssertEquals($D3, SColor8.LightGray.g)
 		AssertEquals($D3, SColor8.LightGray.b)
@@ -618,7 +620,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightGrey() {test}
-		AssertEquals($FFD3D3D3, SColor8.LightGrey.ToRGBA())
+		AssertEquals($FFD3D3D3, SColor8.LightGrey.ToARGB())
 		AssertEquals($D3, SColor8.LightGrey.r)
 		AssertEquals($D3, SColor8.LightGrey.g)
 		AssertEquals($D3, SColor8.LightGrey.b)
@@ -626,7 +628,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightGreen() {test}
-		AssertEquals($FF90EE90, SColor8.LightGreen.ToRGBA())
+		AssertEquals($FF90EE90, SColor8.LightGreen.ToARGB())
 		AssertEquals($90, SColor8.LightGreen.r)
 		AssertEquals($EE, SColor8.LightGreen.g)
 		AssertEquals($90, SColor8.LightGreen.b)
@@ -634,7 +636,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightPink() {test}
-		AssertEquals($FFFFB6C1, SColor8.LightPink.ToRGBA())
+		AssertEquals($FFFFB6C1, SColor8.LightPink.ToARGB())
 		AssertEquals($FF, SColor8.LightPink.r)
 		AssertEquals($B6, SColor8.LightPink.g)
 		AssertEquals($C1, SColor8.LightPink.b)
@@ -642,7 +644,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightSalmon() {test}
-		AssertEquals($FFFFA07A, SColor8.LightSalmon.ToRGBA())
+		AssertEquals($FFFFA07A, SColor8.LightSalmon.ToARGB())
 		AssertEquals($FF, SColor8.LightSalmon.r)
 		AssertEquals($A0, SColor8.LightSalmon.g)
 		AssertEquals($7A, SColor8.LightSalmon.b)
@@ -650,7 +652,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightSeaGreen() {test}
-		AssertEquals($FF20B2AA, SColor8.LightSeaGreen.ToRGBA())
+		AssertEquals($FF20B2AA, SColor8.LightSeaGreen.ToARGB())
 		AssertEquals($20, SColor8.LightSeaGreen.r)
 		AssertEquals($B2, SColor8.LightSeaGreen.g)
 		AssertEquals($AA, SColor8.LightSeaGreen.b)
@@ -658,7 +660,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightSkyBlue() {test}
-		AssertEquals($FF87CEFA, SColor8.LightSkyBlue.ToRGBA())
+		AssertEquals($FF87CEFA, SColor8.LightSkyBlue.ToARGB())
 		AssertEquals($87, SColor8.LightSkyBlue.r)
 		AssertEquals($CE, SColor8.LightSkyBlue.g)
 		AssertEquals($FA, SColor8.LightSkyBlue.b)
@@ -666,7 +668,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightSlateGray() {test}
-		AssertEquals($FF778899, SColor8.LightSlateGray.ToRGBA())
+		AssertEquals($FF778899, SColor8.LightSlateGray.ToARGB())
 		AssertEquals($77, SColor8.LightSlateGray.r)
 		AssertEquals($88, SColor8.LightSlateGray.g)
 		AssertEquals($99, SColor8.LightSlateGray.b)
@@ -674,7 +676,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightSlateGrey() {test}
-		AssertEquals($FF778899, SColor8.LightSlateGrey.ToRGBA())
+		AssertEquals($FF778899, SColor8.LightSlateGrey.ToARGB())
 		AssertEquals($77, SColor8.LightSlateGrey.r)
 		AssertEquals($88, SColor8.LightSlateGrey.g)
 		AssertEquals($99, SColor8.LightSlateGrey.b)
@@ -682,7 +684,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightSteelBlue() {test}
-		AssertEquals($FFB0C4DE, SColor8.LightSteelBlue.ToRGBA())
+		AssertEquals($FFB0C4DE, SColor8.LightSteelBlue.ToARGB())
 		AssertEquals($B0, SColor8.LightSteelBlue.r)
 		AssertEquals($C4, SColor8.LightSteelBlue.g)
 		AssertEquals($DE, SColor8.LightSteelBlue.b)
@@ -690,7 +692,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLightYellow() {test}
-		AssertEquals($FFFFFFE0, SColor8.LightYellow.ToRGBA())
+		AssertEquals($FFFFFFE0, SColor8.LightYellow.ToARGB())
 		AssertEquals($FF, SColor8.LightYellow.r)
 		AssertEquals($FF, SColor8.LightYellow.g)
 		AssertEquals($E0, SColor8.LightYellow.b)
@@ -698,7 +700,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLimeGreen() {test}
-		AssertEquals($FF32CD32, SColor8.LimeGreen.ToRGBA())
+		AssertEquals($FF32CD32, SColor8.LimeGreen.ToARGB())
 		AssertEquals($32, SColor8.LimeGreen.r)
 		AssertEquals($CD, SColor8.LimeGreen.g)
 		AssertEquals($32, SColor8.LimeGreen.b)
@@ -706,7 +708,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsLinen() {test}
-		AssertEquals($FFFAF0E6, SColor8.Linen.ToRGBA())
+		AssertEquals($FFFAF0E6, SColor8.Linen.ToARGB())
 		AssertEquals($FA, SColor8.Linen.r)
 		AssertEquals($F0, SColor8.Linen.g)
 		AssertEquals($E6, SColor8.Linen.b)
@@ -714,7 +716,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMagenta() {test}
-		AssertEquals($FFFF00FF, SColor8.Magenta.ToRGBA())
+		AssertEquals($FFFF00FF, SColor8.Magenta.ToARGB())
 		AssertEquals($FF, SColor8.Magenta.r)
 		AssertEquals($00, SColor8.Magenta.g)
 		AssertEquals($FF, SColor8.Magenta.b)
@@ -722,7 +724,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMaroon() {test}
-		AssertEquals($FF800000, SColor8.Maroon.ToRGBA())
+		AssertEquals($FF800000, SColor8.Maroon.ToARGB())
 		AssertEquals($80, SColor8.Maroon.r)
 		AssertEquals($00, SColor8.Maroon.g)
 		AssertEquals($00, SColor8.Maroon.b)
@@ -730,7 +732,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMediumAquaMarine() {test}
-		AssertEquals($FF66CDAA, SColor8.MediumAquaMarine.ToRGBA())
+		AssertEquals($FF66CDAA, SColor8.MediumAquaMarine.ToARGB())
 		AssertEquals($66, SColor8.MediumAquaMarine.r)
 		AssertEquals($CD, SColor8.MediumAquaMarine.g)
 		AssertEquals($AA, SColor8.MediumAquaMarine.b)
@@ -738,7 +740,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMediumBlue() {test}
-		AssertEquals($FF0000CD, SColor8.MediumBlue.ToRGBA())
+		AssertEquals($FF0000CD, SColor8.MediumBlue.ToARGB())
 		AssertEquals($00, SColor8.MediumBlue.r)
 		AssertEquals($00, SColor8.MediumBlue.g)
 		AssertEquals($CD, SColor8.MediumBlue.b)
@@ -746,7 +748,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMediumOrchid() {test}
-		AssertEquals($FFBA55D3, SColor8.MediumOrchid.ToRGBA())
+		AssertEquals($FFBA55D3, SColor8.MediumOrchid.ToARGB())
 		AssertEquals($BA, SColor8.MediumOrchid.r)
 		AssertEquals($55, SColor8.MediumOrchid.g)
 		AssertEquals($D3, SColor8.MediumOrchid.b)
@@ -754,7 +756,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMediumPurple() {test}
-		AssertEquals($FF9370DB, SColor8.MediumPurple.ToRGBA())
+		AssertEquals($FF9370DB, SColor8.MediumPurple.ToARGB())
 		AssertEquals($93, SColor8.MediumPurple.r)
 		AssertEquals($70, SColor8.MediumPurple.g)
 		AssertEquals($DB, SColor8.MediumPurple.b)
@@ -762,7 +764,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMediumSeaGreen() {test}
-		AssertEquals($FF3CB371, SColor8.MediumSeaGreen.ToRGBA())
+		AssertEquals($FF3CB371, SColor8.MediumSeaGreen.ToARGB())
 		AssertEquals($3C, SColor8.MediumSeaGreen.r)
 		AssertEquals($B3, SColor8.MediumSeaGreen.g)
 		AssertEquals($71, SColor8.MediumSeaGreen.b)
@@ -770,7 +772,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMediumSlateBlue() {test}
-		AssertEquals($FF7B68EE, SColor8.MediumSlateBlue.ToRGBA())
+		AssertEquals($FF7B68EE, SColor8.MediumSlateBlue.ToARGB())
 		AssertEquals($7B, SColor8.MediumSlateBlue.r)
 		AssertEquals($68, SColor8.MediumSlateBlue.g)
 		AssertEquals($EE, SColor8.MediumSlateBlue.b)
@@ -778,7 +780,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMediumSpringGreen() {test}
-		AssertEquals($FF00FA9A, SColor8.MediumSpringGreen.ToRGBA())
+		AssertEquals($FF00FA9A, SColor8.MediumSpringGreen.ToARGB())
 		AssertEquals($00, SColor8.MediumSpringGreen.r)
 		AssertEquals($FA, SColor8.MediumSpringGreen.g)
 		AssertEquals($9A, SColor8.MediumSpringGreen.b)
@@ -786,7 +788,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMediumTurquoise() {test}
-		AssertEquals($FF48D1CC, SColor8.MediumTurquoise.ToRGBA())
+		AssertEquals($FF48D1CC, SColor8.MediumTurquoise.ToARGB())
 		AssertEquals($48, SColor8.MediumTurquoise.r)
 		AssertEquals($D1, SColor8.MediumTurquoise.g)
 		AssertEquals($CC, SColor8.MediumTurquoise.b)
@@ -794,7 +796,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMediumVioletRed() {test}
-		AssertEquals($FFC71585, SColor8.MediumVioletRed.ToRGBA())
+		AssertEquals($FFC71585, SColor8.MediumVioletRed.ToARGB())
 		AssertEquals($C7, SColor8.MediumVioletRed.r)
 		AssertEquals($15, SColor8.MediumVioletRed.g)
 		AssertEquals($85, SColor8.MediumVioletRed.b)
@@ -802,7 +804,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMidnightBlue() {test}
-		AssertEquals($FF191970, SColor8.MidnightBlue.ToRGBA())
+		AssertEquals($FF191970, SColor8.MidnightBlue.ToARGB())
 		AssertEquals($19, SColor8.MidnightBlue.r)
 		AssertEquals($19, SColor8.MidnightBlue.g)
 		AssertEquals($70, SColor8.MidnightBlue.b)
@@ -810,7 +812,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMintCream() {test}
-		AssertEquals($FFF5FFFA, SColor8.MintCream.ToRGBA())
+		AssertEquals($FFF5FFFA, SColor8.MintCream.ToARGB())
 		AssertEquals($F5, SColor8.MintCream.r)
 		AssertEquals($FF, SColor8.MintCream.g)
 		AssertEquals($FA, SColor8.MintCream.b)
@@ -818,7 +820,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMistyRose() {test}
-		AssertEquals($FFFFE4E1, SColor8.MistyRose.ToRGBA())
+		AssertEquals($FFFFE4E1, SColor8.MistyRose.ToARGB())
 		AssertEquals($FF, SColor8.MistyRose.r)
 		AssertEquals($E4, SColor8.MistyRose.g)
 		AssertEquals($E1, SColor8.MistyRose.b)
@@ -826,7 +828,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsMoccasin() {test}
-		AssertEquals($FFFFE4B5, SColor8.Moccasin.ToRGBA())
+		AssertEquals($FFFFE4B5, SColor8.Moccasin.ToARGB())
 		AssertEquals($FF, SColor8.Moccasin.r)
 		AssertEquals($E4, SColor8.Moccasin.g)
 		AssertEquals($B5, SColor8.Moccasin.b)
@@ -834,7 +836,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsNavajoWhite() {test}
-		AssertEquals($FFFFDEAD, SColor8.NavajoWhite.ToRGBA())
+		AssertEquals($FFFFDEAD, SColor8.NavajoWhite.ToARGB())
 		AssertEquals($FF, SColor8.NavajoWhite.r)
 		AssertEquals($DE, SColor8.NavajoWhite.g)
 		AssertEquals($AD, SColor8.NavajoWhite.b)
@@ -842,7 +844,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsNavy() {test}
-		AssertEquals($FF000080, SColor8.Navy.ToRGBA())
+		AssertEquals($FF000080, SColor8.Navy.ToARGB())
 		AssertEquals($00, SColor8.Navy.r)
 		AssertEquals($00, SColor8.Navy.g)
 		AssertEquals($80, SColor8.Navy.b)
@@ -850,7 +852,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsOldLace() {test}
-		AssertEquals($FFFDF5E6, SColor8.OldLace.ToRGBA())
+		AssertEquals($FFFDF5E6, SColor8.OldLace.ToARGB())
 		AssertEquals($FD, SColor8.OldLace.r)
 		AssertEquals($F5, SColor8.OldLace.g)
 		AssertEquals($E6, SColor8.OldLace.b)
@@ -858,7 +860,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsOlive() {test}
-		AssertEquals($FF808000, SColor8.Olive.ToRGBA())
+		AssertEquals($FF808000, SColor8.Olive.ToARGB())
 		AssertEquals($80, SColor8.Olive.r)
 		AssertEquals($80, SColor8.Olive.g)
 		AssertEquals($00, SColor8.Olive.b)
@@ -866,7 +868,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsOliveDrab() {test}
-		AssertEquals($FF6B8E23, SColor8.OliveDrab.ToRGBA())
+		AssertEquals($FF6B8E23, SColor8.OliveDrab.ToARGB())
 		AssertEquals($6B, SColor8.OliveDrab.r)
 		AssertEquals($8E, SColor8.OliveDrab.g)
 		AssertEquals($23, SColor8.OliveDrab.b)
@@ -874,7 +876,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsOrange() {test}
-		AssertEquals($FFFFA500, SColor8.Orange.ToRGBA())
+		AssertEquals($FFFFA500, SColor8.Orange.ToARGB())
 		AssertEquals($FF, SColor8.Orange.r)
 		AssertEquals($A5, SColor8.Orange.g)
 		AssertEquals($00, SColor8.Orange.b)
@@ -882,7 +884,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsOrangeRed() {test}
-		AssertEquals($FFFF4500, SColor8.OrangeRed.ToRGBA())
+		AssertEquals($FFFF4500, SColor8.OrangeRed.ToARGB())
 		AssertEquals($FF, SColor8.OrangeRed.r)
 		AssertEquals($45, SColor8.OrangeRed.g)
 		AssertEquals($00, SColor8.OrangeRed.b)
@@ -890,7 +892,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsOrchid() {test}
-		AssertEquals($FFDA70D6, SColor8.Orchid.ToRGBA())
+		AssertEquals($FFDA70D6, SColor8.Orchid.ToARGB())
 		AssertEquals($DA, SColor8.Orchid.r)
 		AssertEquals($70, SColor8.Orchid.g)
 		AssertEquals($D6, SColor8.Orchid.b)
@@ -898,7 +900,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsPaleGoldenRod() {test}
-		AssertEquals($FFEEE8AA, SColor8.PaleGoldenRod.ToRGBA())
+		AssertEquals($FFEEE8AA, SColor8.PaleGoldenRod.ToARGB())
 		AssertEquals($EE, SColor8.PaleGoldenRod.r)
 		AssertEquals($E8, SColor8.PaleGoldenRod.g)
 		AssertEquals($AA, SColor8.PaleGoldenRod.b)
@@ -906,7 +908,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsPaleGreen() {test}
-		AssertEquals($FF98FB98, SColor8.PaleGreen.ToRGBA())
+		AssertEquals($FF98FB98, SColor8.PaleGreen.ToARGB())
 		AssertEquals($98, SColor8.PaleGreen.r)
 		AssertEquals($FB, SColor8.PaleGreen.g)
 		AssertEquals($98, SColor8.PaleGreen.b)
@@ -914,7 +916,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsPaleTurquoise() {test}
-		AssertEquals($FFAFEEEE, SColor8.PaleTurquoise.ToRGBA())
+		AssertEquals($FFAFEEEE, SColor8.PaleTurquoise.ToARGB())
 		AssertEquals($AF, SColor8.PaleTurquoise.r)
 		AssertEquals($EE, SColor8.PaleTurquoise.g)
 		AssertEquals($EE, SColor8.PaleTurquoise.b)
@@ -922,7 +924,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsPaleVioletRed() {test}
-		AssertEquals($FFDB7093, SColor8.PaleVioletRed.ToRGBA())
+		AssertEquals($FFDB7093, SColor8.PaleVioletRed.ToARGB())
 		AssertEquals($DB, SColor8.PaleVioletRed.r)
 		AssertEquals($70, SColor8.PaleVioletRed.g)
 		AssertEquals($93, SColor8.PaleVioletRed.b)
@@ -930,7 +932,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsPapayaWhip() {test}
-		AssertEquals($FFFFEFD5, SColor8.PapayaWhip.ToRGBA())
+		AssertEquals($FFFFEFD5, SColor8.PapayaWhip.ToARGB())
 		AssertEquals($FF, SColor8.PapayaWhip.r)
 		AssertEquals($EF, SColor8.PapayaWhip.g)
 		AssertEquals($D5, SColor8.PapayaWhip.b)
@@ -938,7 +940,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsPeachPuff() {test}
-		AssertEquals($FFFFDAB9, SColor8.PeachPuff.ToRGBA())
+		AssertEquals($FFFFDAB9, SColor8.PeachPuff.ToARGB())
 		AssertEquals($FF, SColor8.PeachPuff.r)
 		AssertEquals($DA, SColor8.PeachPuff.g)
 		AssertEquals($B9, SColor8.PeachPuff.b)
@@ -946,7 +948,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsPeru() {test}
-		AssertEquals($FFCD853F, SColor8.Peru.ToRGBA())
+		AssertEquals($FFCD853F, SColor8.Peru.ToARGB())
 		AssertEquals($CD, SColor8.Peru.r)
 		AssertEquals($85, SColor8.Peru.g)
 		AssertEquals($3F, SColor8.Peru.b)
@@ -954,7 +956,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsPink() {test}
-		AssertEquals($FFFFC0CB, SColor8.Pink.ToRGBA())
+		AssertEquals($FFFFC0CB, SColor8.Pink.ToARGB())
 		AssertEquals($FF, SColor8.Pink.r)
 		AssertEquals($C0, SColor8.Pink.g)
 		AssertEquals($CB, SColor8.Pink.b)
@@ -962,7 +964,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsPlum() {test}
-		AssertEquals($FFDDA0DD, SColor8.Plum.ToRGBA())
+		AssertEquals($FFDDA0DD, SColor8.Plum.ToARGB())
 		AssertEquals($DD, SColor8.Plum.r)
 		AssertEquals($A0, SColor8.Plum.g)
 		AssertEquals($DD, SColor8.Plum.b)
@@ -970,7 +972,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsPowderBlue() {test}
-		AssertEquals($FFB0E0E6, SColor8.PowderBlue.ToRGBA())
+		AssertEquals($FFB0E0E6, SColor8.PowderBlue.ToARGB())
 		AssertEquals($B0, SColor8.PowderBlue.r)
 		AssertEquals($E0, SColor8.PowderBlue.g)
 		AssertEquals($E6, SColor8.PowderBlue.b)
@@ -978,7 +980,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsPurple() {test}
-		AssertEquals($FF800080, SColor8.Purple.ToRGBA())
+		AssertEquals($FF800080, SColor8.Purple.ToARGB())
 		AssertEquals($80, SColor8.Purple.r)
 		AssertEquals($00, SColor8.Purple.g)
 		AssertEquals($80, SColor8.Purple.b)
@@ -986,7 +988,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsRebeccaPurple() {test}
-		AssertEquals($FF663399, SColor8.RebeccaPurple.ToRGBA())
+		AssertEquals($FF663399, SColor8.RebeccaPurple.ToARGB())
 		AssertEquals($66, SColor8.RebeccaPurple.r)
 		AssertEquals($33, SColor8.RebeccaPurple.g)
 		AssertEquals($99, SColor8.RebeccaPurple.b)
@@ -994,7 +996,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsRed() {test}
-		AssertEquals($FFFF0000, SColor8.Red.ToRGBA())
+		AssertEquals($FFFF0000, SColor8.Red.ToARGB())
 		AssertEquals($FF, SColor8.Red.r)
 		AssertEquals($00, SColor8.Red.g)
 		AssertEquals($00, SColor8.Red.b)
@@ -1002,7 +1004,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsRosyBrown() {test}
-		AssertEquals($FFBC8F8F, SColor8.RosyBrown.ToRGBA())
+		AssertEquals($FFBC8F8F, SColor8.RosyBrown.ToARGB())
 		AssertEquals($BC, SColor8.RosyBrown.r)
 		AssertEquals($8F, SColor8.RosyBrown.g)
 		AssertEquals($8F, SColor8.RosyBrown.b)
@@ -1010,7 +1012,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsRoyalBlue() {test}
-		AssertEquals($FF4169E1, SColor8.RoyalBlue.ToRGBA())
+		AssertEquals($FF4169E1, SColor8.RoyalBlue.ToARGB())
 		AssertEquals($41, SColor8.RoyalBlue.r)
 		AssertEquals($69, SColor8.RoyalBlue.g)
 		AssertEquals($E1, SColor8.RoyalBlue.b)
@@ -1018,7 +1020,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSaddleBrown() {test}
-		AssertEquals($FF8B4513, SColor8.SaddleBrown.ToRGBA())
+		AssertEquals($FF8B4513, SColor8.SaddleBrown.ToARGB())
 		AssertEquals($8B, SColor8.SaddleBrown.r)
 		AssertEquals($45, SColor8.SaddleBrown.g)
 		AssertEquals($13, SColor8.SaddleBrown.b)
@@ -1026,7 +1028,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSalmon() {test}
-		AssertEquals($FFFA8072, SColor8.Salmon.ToRGBA())
+		AssertEquals($FFFA8072, SColor8.Salmon.ToARGB())
 		AssertEquals($FA, SColor8.Salmon.r)
 		AssertEquals($80, SColor8.Salmon.g)
 		AssertEquals($72, SColor8.Salmon.b)
@@ -1034,7 +1036,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSandyBrown() {test}
-		AssertEquals($FFF4A460, SColor8.SandyBrown.ToRGBA())
+		AssertEquals($FFF4A460, SColor8.SandyBrown.ToARGB())
 		AssertEquals($F4, SColor8.SandyBrown.r)
 		AssertEquals($A4, SColor8.SandyBrown.g)
 		AssertEquals($60, SColor8.SandyBrown.b)
@@ -1042,7 +1044,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSeaGreen() {test}
-		AssertEquals($FF2E8B57, SColor8.SeaGreen.ToRGBA())
+		AssertEquals($FF2E8B57, SColor8.SeaGreen.ToARGB())
 		AssertEquals($2E, SColor8.SeaGreen.r)
 		AssertEquals($8B, SColor8.SeaGreen.g)
 		AssertEquals($57, SColor8.SeaGreen.b)
@@ -1050,7 +1052,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSeaShell() {test}
-		AssertEquals($FFFFF5EE, SColor8.SeaShell.ToRGBA())
+		AssertEquals($FFFFF5EE, SColor8.SeaShell.ToARGB())
 		AssertEquals($FF, SColor8.SeaShell.r)
 		AssertEquals($F5, SColor8.SeaShell.g)
 		AssertEquals($EE, SColor8.SeaShell.b)
@@ -1058,7 +1060,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSienna() {test}
-		AssertEquals($FFA0522D, SColor8.Sienna.ToRGBA())
+		AssertEquals($FFA0522D, SColor8.Sienna.ToARGB())
 		AssertEquals($A0, SColor8.Sienna.r)
 		AssertEquals($52, SColor8.Sienna.g)
 		AssertEquals($2D, SColor8.Sienna.b)
@@ -1066,7 +1068,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSilver() {test}
-		AssertEquals($FFC0C0C0, SColor8.Silver.ToRGBA())
+		AssertEquals($FFC0C0C0, SColor8.Silver.ToARGB())
 		AssertEquals($C0, SColor8.Silver.r)
 		AssertEquals($C0, SColor8.Silver.g)
 		AssertEquals($C0, SColor8.Silver.b)
@@ -1074,7 +1076,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSkyBlue() {test}
-		AssertEquals($FF87CEEB, SColor8.SkyBlue.ToRGBA())
+		AssertEquals($FF87CEEB, SColor8.SkyBlue.ToARGB())
 		AssertEquals($87, SColor8.SkyBlue.r)
 		AssertEquals($CE, SColor8.SkyBlue.g)
 		AssertEquals($EB, SColor8.SkyBlue.b)
@@ -1082,7 +1084,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSlateBlue() {test}
-		AssertEquals($FF6A5ACD, SColor8.SlateBlue.ToRGBA())
+		AssertEquals($FF6A5ACD, SColor8.SlateBlue.ToARGB())
 		AssertEquals($6A, SColor8.SlateBlue.r)
 		AssertEquals($5A, SColor8.SlateBlue.g)
 		AssertEquals($CD, SColor8.SlateBlue.b)
@@ -1090,7 +1092,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSlateGray() {test}
-		AssertEquals($FF708090, SColor8.SlateGray.ToRGBA())
+		AssertEquals($FF708090, SColor8.SlateGray.ToARGB())
 		AssertEquals($70, SColor8.SlateGray.r)
 		AssertEquals($80, SColor8.SlateGray.g)
 		AssertEquals($90, SColor8.SlateGray.b)
@@ -1098,7 +1100,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSlateGrey() {test}
-		AssertEquals($FF708090, SColor8.SlateGrey.ToRGBA())
+		AssertEquals($FF708090, SColor8.SlateGrey.ToARGB())
 		AssertEquals($70, SColor8.SlateGrey.r)
 		AssertEquals($80, SColor8.SlateGrey.g)
 		AssertEquals($90, SColor8.SlateGrey.b)
@@ -1106,7 +1108,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSnow() {test}
-		AssertEquals($FFFFFAFA, SColor8.Snow.ToRGBA())
+		AssertEquals($FFFFFAFA, SColor8.Snow.ToARGB())
 		AssertEquals($FF, SColor8.Snow.r)
 		AssertEquals($FA, SColor8.Snow.g)
 		AssertEquals($FA, SColor8.Snow.b)
@@ -1114,7 +1116,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSpringGreen() {test}
-		AssertEquals($FF00FF7F, SColor8.SpringGreen.ToRGBA())
+		AssertEquals($FF00FF7F, SColor8.SpringGreen.ToARGB())
 		AssertEquals($00, SColor8.SpringGreen.r)
 		AssertEquals($FF, SColor8.SpringGreen.g)
 		AssertEquals($7F, SColor8.SpringGreen.b)
@@ -1122,7 +1124,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsSteelBlue() {test}
-		AssertEquals($FF4682B4, SColor8.SteelBlue.ToRGBA())
+		AssertEquals($FF4682B4, SColor8.SteelBlue.ToARGB())
 		AssertEquals($46, SColor8.SteelBlue.r)
 		AssertEquals($82, SColor8.SteelBlue.g)
 		AssertEquals($B4, SColor8.SteelBlue.b)
@@ -1130,7 +1132,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsTan() {test}
-		AssertEquals($FFD2B48C, SColor8.Tan.ToRGBA())
+		AssertEquals($FFD2B48C, SColor8.Tan.ToARGB())
 		AssertEquals($D2, SColor8.Tan.r)
 		AssertEquals($B4, SColor8.Tan.g)
 		AssertEquals($8C, SColor8.Tan.b)
@@ -1138,7 +1140,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsTeal() {test}
-		AssertEquals($FF008080, SColor8.Teal.ToRGBA())
+		AssertEquals($FF008080, SColor8.Teal.ToARGB())
 		AssertEquals($00, SColor8.Teal.r)
 		AssertEquals($80, SColor8.Teal.g)
 		AssertEquals($80, SColor8.Teal.b)
@@ -1146,7 +1148,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsThistle() {test}
-		AssertEquals($FFD8BFD8, SColor8.Thistle.ToRGBA())
+		AssertEquals($FFD8BFD8, SColor8.Thistle.ToARGB())
 		AssertEquals($D8, SColor8.Thistle.r)
 		AssertEquals($BF, SColor8.Thistle.g)
 		AssertEquals($D8, SColor8.Thistle.b)
@@ -1154,7 +1156,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsTomato() {test}
-		AssertEquals($FFFF6347, SColor8.Tomato.ToRGBA())
+		AssertEquals($FFFF6347, SColor8.Tomato.ToARGB())
 		AssertEquals($FF, SColor8.Tomato.r)
 		AssertEquals($63, SColor8.Tomato.g)
 		AssertEquals($47, SColor8.Tomato.b)
@@ -1162,7 +1164,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsTurquoise() {test}
-		AssertEquals($FF40E0D0, SColor8.Turquoise.ToRGBA())
+		AssertEquals($FF40E0D0, SColor8.Turquoise.ToARGB())
 		AssertEquals($40, SColor8.Turquoise.r)
 		AssertEquals($E0, SColor8.Turquoise.g)
 		AssertEquals($D0, SColor8.Turquoise.b)
@@ -1170,7 +1172,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsViolet() {test}
-		AssertEquals($FFEE82EE, SColor8.Violet.ToRGBA())
+		AssertEquals($FFEE82EE, SColor8.Violet.ToARGB())
 		AssertEquals($EE, SColor8.Violet.r)
 		AssertEquals($82, SColor8.Violet.g)
 		AssertEquals($EE, SColor8.Violet.b)
@@ -1178,7 +1180,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsWheat() {test}
-		AssertEquals($FFF5DEB3, SColor8.Wheat.ToRGBA())
+		AssertEquals($FFF5DEB3, SColor8.Wheat.ToARGB())
 		AssertEquals($F5, SColor8.Wheat.r)
 		AssertEquals($DE, SColor8.Wheat.g)
 		AssertEquals($B3, SColor8.Wheat.b)
@@ -1186,7 +1188,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsWhite() {test}
-		AssertEquals($FFFFFFFF, SColor8.White.ToRGBA())
+		AssertEquals($FFFFFFFF, SColor8.White.ToARGB())
 		AssertEquals($FF, SColor8.White.r)
 		AssertEquals($FF, SColor8.White.g)
 		AssertEquals($FF, SColor8.White.b)
@@ -1194,7 +1196,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsWhiteSmoke() {test}
-		AssertEquals($FFF5F5F5, SColor8.WhiteSmoke.ToRGBA())
+		AssertEquals($FFF5F5F5, SColor8.WhiteSmoke.ToARGB())
 		AssertEquals($F5, SColor8.WhiteSmoke.r)
 		AssertEquals($F5, SColor8.WhiteSmoke.g)
 		AssertEquals($F5, SColor8.WhiteSmoke.b)
@@ -1202,7 +1204,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsYellow() {test}
-		AssertEquals($FFFFFF00, SColor8.Yellow.ToRGBA())
+		AssertEquals($FFFFFF00, SColor8.Yellow.ToARGB())
 		AssertEquals($FF, SColor8.Yellow.r)
 		AssertEquals($FF, SColor8.Yellow.g)
 		AssertEquals($00, SColor8.Yellow.b)
@@ -1210,7 +1212,7 @@ Type TColorTest Extends TTest
 	End Method
 
 	Method TestGlobalColorsYellowGreen() {test}
-		AssertEquals($FF9ACD32, SColor8.YellowGreen.ToRGBA())
+		AssertEquals($FF9ACD32, SColor8.YellowGreen.ToARGB())
 		AssertEquals($9A, SColor8.YellowGreen.r)
 		AssertEquals($CD, SColor8.YellowGreen.g)
 		AssertEquals($32, SColor8.YellowGreen.b)
