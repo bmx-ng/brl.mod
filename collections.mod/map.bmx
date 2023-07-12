@@ -84,6 +84,13 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 		End If
 		Return list
 	End Method
+	
+	Rem
+	bbdoc: Returns the #TTreeMap keys as an array.
+	End Rem
+	Method KeysToArray:K[]()
+		Return TArrayList<K>(Keys()).ToArray()
+	End Method
 
 	Rem
 	bbdoc: Returns the #TTreeMap values as a collection.
@@ -96,6 +103,13 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 			Next
 		End If
 		Return list
+	End Method
+	
+	Rem
+	bbdoc: Returns the #TTreeMap values as a collection.
+	End Rem
+	Method ValuesToArray:V[]()
+		Return TArrayList<V>(Values()).ToArray()
 	End Method
 
 	Rem
