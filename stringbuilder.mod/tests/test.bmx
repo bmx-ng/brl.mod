@@ -179,4 +179,12 @@ Type TStringBuilderTest Extends TTest
 		MemFree(buf)
 	End Method
 
+	Method testStartsWith() { test }
+		sb.Append("Hello World")
+		assertTrue( sb.StartsWith("Hello") )
+		assertFalse( sb.StartsWith("hello") )
+		assertFalse( sb.StartsWith("World") )
+		assertTrue( sb.StartsWith("World", 6) )
+	End Method
+
 End Type

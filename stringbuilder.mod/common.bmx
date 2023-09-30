@@ -1,4 +1,4 @@
-' Copyright (c) 2018-2022 Bruce A Henderson
+' Copyright (c) 2018-2023 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -34,7 +34,7 @@ Extern
 	Function bmx_stringbuilder_reverse(buffer:Byte Ptr)
 	Function bmx_stringbuilder_substring:String(buffer:Byte Ptr, beginIndex:Int, endIndex:Int)
 	Function bmx_stringbuilder_append_stringbuffer(buffer:Byte Ptr, buffer2:Byte Ptr)
-	Function bmx_stringbuilder_startswith:Int(buffer:Byte Ptr, subString:String)
+	Function bmx_stringbuilder_startswith:Int(buffer:Byte Ptr, subString:String, startIndex:Int)
 	Function bmx_stringbuilder_endswith:Int(buffer:Byte Ptr, subString:String)
 	Function bmx_stringbuilder_find:Int(buffer:Byte Ptr, subString:String, startIndex:Int)
 	Function bmx_stringbuilder_findlast:Int(buffer:Byte Ptr, subString:String, startIndex:Int)
