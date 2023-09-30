@@ -1,4 +1,4 @@
-' Copyright (c) 2018-2022 Bruce A Henderson
+' Copyright (c) 2018-2023 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.17"
+ModuleInfo "Version: 1.18"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2018-2022 Bruce A Henderson"
+ModuleInfo "Copyright: 2018-2023 Bruce A Henderson"
 
+ModuleInfo "History: 1.18"
+ModuleInfo "History: Added optional startIndex to StartsWith()."
 ModuleInfo "History: 1.17"
 ModuleInfo "History: Added AppendCStringBytes() method."
 ModuleInfo "History: 1.16"
@@ -680,10 +682,10 @@ Public
 	End Method
 	
 	Rem
-	bbdoc: Returns true if string starts with @subString.
+	bbdoc: Returns #True if string starts with @prefix.
 	End Rem
-	Method StartsWith:Int(subString:String)
-		Return bmx_stringbuilder_startswith(buffer, subString)
+	Method StartsWith:Int(prefix:String, startIndex:Int = 0)
+		Return bmx_stringbuilder_startswith(buffer, prefix, startIndex)
 	End Method
 	
 	Rem

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2022 Bruce A Henderson
+  Copyright (c) 2018-2023 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -51,7 +51,7 @@ void bmx_stringbuilder_reverse(struct MaxStringBuilder * buf);
 BBString * bmx_stringbuilder_substring(struct MaxStringBuilder * buf, int beginIndex, int endIndex);
 void bmx_stringbuilder_append_stringbuffer(struct MaxStringBuilder * buf, struct MaxStringBuilder * other);
 int bmx_stringbuilder_matches(struct MaxStringBuilder * buf, int offset, BBString * subString);
-int bmx_stringbuilder_startswith(struct MaxStringBuilder * buf, BBString * subString);
+int bmx_stringbuilder_startswith(struct MaxStringBuilder * buf, BBString * subString, int startIndex);
 int bmx_stringbuilder_endswith(struct MaxStringBuilder * buf, BBString * subString);
 int bmx_stringbuilder_find(struct MaxStringBuilder * buf, BBString * subString, int startIndex);
 int bmx_stringbuilder_findlast(struct MaxStringBuilder * buf, BBString * subString, int startIndex);

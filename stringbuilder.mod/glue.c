@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2022 Bruce A Henderson
+  Copyright (c) 2018-2023 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -185,9 +185,13 @@ int bmx_stringbuilder_matches(struct MaxStringBuilder * buf, int offset, BBStrin
 	return 1;
 }
 
-int bmx_stringbuilder_startswith(struct MaxStringBuilder * buf, BBString * subString) {
-	if (subString->length <= buf->count) {
-		return bmx_stringbuilder_matches(buf, 0, subString);
+int bmx_stringbuilder_startswith(struct MaxStringBuilder * buf, BBString * subString, int startIndex) {
+	if (startIndex < 0) {
+		startIndex = 0;
+	}
+
+	if ((startIndex + subString->length) <= buf->count) {
+		return bmx_stringbuilder_matches(buf, startIndex, subString);
 	}
 	return 0;
 }
