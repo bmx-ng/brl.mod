@@ -249,12 +249,15 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 			CFRelease( (CFTypeRef)oldDisplayMode );
 			bbExThrowCString( "Unable to set display mode" );
 		}
+		#if MAC_OS_X_VERSION_MAX_ALLOWED < 101500
 		HideMenuBar();
+		#endif
 
 		window=[[NSWindow alloc]
 			initWithContentRect:NSMakeRect( 0,0,width,height )
 			styleMask:NSBorderlessWindowMask
 			backing:NSBackingStoreBuffered
+			willUseFullScreenPresentationOptions:NSApplicationPresentationAutoHideToolbar | NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationFullScreen
 			defer:YES];
 		
 		[window setOpaque:YES];
@@ -339,7 +342,9 @@ void bbGLGraphicsClose( BBGLContext *context ){
 		CFRelease( (CFTypeRef)oldDisplayMode );
 		CGReleaseAllDisplays();
 		CGDisplayShowCursor( kCGDirectMainDisplay );
+		#if MAC_OS_X_VERSION_MAX_ALLOWED < 101500
 		ShowMenuBar();
+		#endif
 		_displayContext=0;
 	}
 
