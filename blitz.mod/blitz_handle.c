@@ -89,16 +89,14 @@ static int node_compare(const void *x, const void *y) {
 }
 
 size_t bbHandleFromObject( BBObject *o ) {
-	struct handle_node * node = (struct handle_node *)malloc(sizeof(struct handle_node));
+	struct handle_node * node = (struct handle_node *)GC_malloc_uncollectable(sizeof(struct handle_node));
 	node->obj = o;
 	
 	struct handle_node * old_node = (struct handle_node *)avl_map(&node->link, node_compare, &handle_root );
 
 	if (&node->link != &old_node->link) {
 		// delete the new node, since we don't need it
-		free(node);
-	} else {
-		BBRETAIN(o);
+		GC_FREE(node);
 	}
 	
 	return (size_t)o;
@@ -108,7 +106,7 @@ BBObject *bbHandleToObject( size_t handle ) {
 	struct handle_node node;
 	node.obj = (BBOBJECT)handle;
 	
-	struct handle_node * found = (struct handle_node *)tree_search(&node, node_compare, handle_root );
+	struct handle_node * found = (struct handle_node *)tree_search((struct tree_root_np *)&node, node_compare, (struct tree_root_np *)handle_root );
 
 	if (found) {
 		return (BBOBJECT)handle;
@@ -121,11 +119,10 @@ void bbHandleRelease( size_t handle ) {
 	struct handle_node node;
 	node.obj = (BBOBJECT)handle;
 	
-	struct handle_node * found = (struct handle_node *)tree_search(&node, node_compare, handle_root);
+	struct handle_node * found = (struct handle_node *)tree_search((struct tree_root_np *)&node, node_compare, (struct tree_root_np *)handle_root);
 	
 	if (found) {
-		BBRELEASE(found->obj);
 		avl_del(&found->link, &handle_root);
-		free(found);
+		GC_FREE(found);
 	}
 }

@@ -5,6 +5,11 @@
 
 #include "blitz_unicode.h"
 
+#define XXH_IMPLEMENTATION
+#define XXH_STATIC_LINKING_ONLY
+
+#include "hash/xxh3.h"
+
 static void bbStringFree( BBObject *o );
 
 static BBDebugScope debugScope={
@@ -21,7 +26,7 @@ static BBDebugScope debugScope={
 	}
 };
 
-BBClass bbStringClass={
+struct BBClass_String bbStringClass={
 	&bbObjectClass, //super
 	bbStringFree,   //free
 	&debugScope,	//DebugScope
@@ -35,6 +40,8 @@ BBClass bbStringClass={
 	0,              //interface
 	0,              //extra
 	0,
+	0,          //instance_count
+	offsetof(BBString, hash), //fields_offset
 	
 	bbStringFind,
 	bbStringFindLast,
@@ -70,6 +77,7 @@ BBClass bbStringClass={
 	
 	bbStringFromUTF8String,
 	bbStringToUTF8String,
+	bbStringFromUTF8Bytes,
 	
 	bbStringToSizet,
 	bbStringFromSizet,
@@ -77,24 +85,43 @@ BBClass bbStringClass={
 	bbStringToUInt,
 	bbStringFromUInt,
 	bbStringToULong,
-	bbStringFromULong
+	bbStringFromULong,
 	
-#ifdef _WIN32	
-	,
+#ifdef _WIN32
 	bbStringToWParam,
 	bbStringFromWParam,
 	bbStringToLParam,
-	bbStringFromLParam
+	bbStringFromLParam,
 #endif
+
+	bbStringToUTF8StringBuffer,
+	bbStringHash,
+
+	bbStringToUTF32String,
+	bbStringFromUTF32String,
+	bbStringFromUTF32Bytes,
+	bbStringToWStringBuffer,
+
+	bbStringToLongInt,
+	bbStringFromLongInt,
+	bbStringToULongInt,
+	bbStringFromULongInt
 };
 
 BBString bbEmptyString={
-	&bbStringClass, //clas
+	(BBClass*)&bbStringClass, //clas
+	0x776eddfb6bfd9195, // hash
 	0				//length
 };
 
 static int wstrlen( const BBChar *p ){
 	const BBChar *t=p;
+	while( *t ) ++t;
+	return t-p;
+}
+
+static int utf32strlen( const BBUINT *p ){
+	const BBUINT *t=p;
 	while( *t ) ++t;
 	return t-p;
 }
@@ -107,23 +134,45 @@ static int charsEqual( unsigned short *a,unsigned short *b,int n ){
 	return 1;
 }
 
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+extern int bbStringEquals( BBString *x,BBString *y);
+extern int bbObjectIsEmptyString(BBObject * o);
+extern BBULONG bbStringHash( BBString * x );
+#else
+BBULONG bbStringHash( BBString * x ) {
+	if (x->hash > 0) return x->hash;
+	x->hash = XXH3_64bits(x->buf, x->length * sizeof(BBChar));
+	return x->hash;
+}
+
+int bbStringEquals( BBString *x,BBString *y ){
+	if (x->clas != &bbStringClass || y->clas != &bbStringClass) return 0; // only strings with strings
+
+	if (x->length-y->length != 0) return 0;
+	if (x->hash != 0 ) {
+		if (!y->hash) bbStringHash(y);
+		return (x->hash == y->hash);
+	}
+	return memcmp(x->buf, y->buf, x->length * sizeof(BBChar)) == 0;
+}
+
+int bbObjectIsEmptyString(BBObject * o) {
+	return (BBString*)o == &bbEmptyString;
+}
+#endif
+
 //***** Note: Not called in THREADED mode.
 static void bbStringFree( BBObject *o ){
-#ifdef BB_GC_RC
-	BBString *str=(BBString*)o;
-	if( str==&bbEmptyString ){
-		//str->refs=BBGC_MANYREFS;
-		return;
+	if (bbCountInstances) {
+		bbAtomicAdd((int*)&bbStringClass.instance_count, -1);
 	}
-	bbGCDeallocObject( str,sizeof(BBString)+str->length*sizeof(BBChar) );
-#endif
 }
 
 BBString *bbStringNew( int len ){
-	int flags;
 	BBString *str;
 	if( !len ) return &bbEmptyString;
-	str=(BBString*)bbGCAllocObject( sizeof(BBString)+len*sizeof(BBChar),&bbStringClass,BBGC_ATOMIC );
+	str=(BBString*)bbGCAllocObject( sizeof(BBString)+len*sizeof(BBChar),(BBClass*)&bbStringClass,BBGC_ATOMIC );
+	str->hash=0;
 	str->length=len;
 	return str;
 }
@@ -139,7 +188,7 @@ BBString *bbStringFromInt( int n ){
 
 	sprintf(buf, "%d", n);
 
-	return bbStringFromBytes( buf, strlen(buf) );
+	return bbStringFromBytes( (unsigned char*)buf, strlen(buf) );
 }
 
 BBString *bbStringFromUInt( unsigned int n ){
@@ -147,7 +196,7 @@ BBString *bbStringFromUInt( unsigned int n ){
 
 	sprintf(buf, "%u", n);
 
-	return bbStringFromBytes( buf, strlen(buf) );
+	return bbStringFromBytes( (unsigned char*)buf, strlen(buf) );
 }
 
 BBString *bbStringFromLong( BBInt64 n ){
@@ -155,7 +204,7 @@ BBString *bbStringFromLong( BBInt64 n ){
 
 	sprintf(buf, "%lld", n);
 
-	return bbStringFromBytes( buf,strlen(buf) );
+	return bbStringFromBytes( (unsigned char*)buf,strlen(buf) );
 }
 
 BBString *bbStringFromULong( BBUInt64 n ){
@@ -163,7 +212,7 @@ BBString *bbStringFromULong( BBUInt64 n ){
 
 	sprintf(buf, "%llu", n);
 
-	return bbStringFromBytes( buf, strlen(buf) );
+	return bbStringFromBytes( (unsigned char*)buf, strlen(buf) );
 }
 
 BBString *bbStringFromSizet( BBSIZET n ){
@@ -175,7 +224,23 @@ BBString *bbStringFromSizet( BBSIZET n ){
 	sprintf(buf, "%llu", n);
 #endif
 
-	return bbStringFromBytes( buf, strlen(buf) );
+	return bbStringFromBytes( (unsigned char*)buf, strlen(buf) );
+}
+
+BBString *bbStringFromLongInt( BBLONGINT n ){
+	char buf[64];
+
+	sprintf(buf, "%ld", n);
+
+	return bbStringFromBytes( (unsigned char*)buf,strlen(buf) );
+}
+
+BBString *bbStringFromULongInt( BBULONGINT n ){
+	char buf[64];
+
+	sprintf(buf, "%lu", n);
+
+	return bbStringFromBytes( (unsigned char*)buf,strlen(buf) );
 }
 
 BBString *bbStringFromFloat( float n ){
@@ -190,12 +255,12 @@ BBString *bbStringFromDouble( double n ){
 	return bbStringFromCString(buf);
 }
 
-BBString *bbStringFromBytes( const char *p,int n ){
+BBString *bbStringFromBytes( const unsigned char *p,int n ){
 	int k;
 	BBString *str;
 	if( !n ) return &bbEmptyString;
 	str=bbStringNew( n );
-	for( k=0;k<n;++k ) str->buf[k]=(unsigned char)p[k];
+	for( k=0;k<n;++k ) str->buf[k]=p[k];
 	return str;
 }
 
@@ -232,7 +297,7 @@ BBString *bbStringFromArray( BBArray *arr ){
 	n=arr->scales[0];
 	p=BBARRAYDATA(arr,arr->dims);
 	switch( arr->type[0] ){
-	case 'b':return bbStringFromBytes( p,n );
+	case 'b':return bbStringFromBytes( (unsigned char*)p,n );
 	case 's':return bbStringFromShorts( p,n );
 	case 'i':return bbStringFromInts( p,n );
 	}
@@ -240,40 +305,53 @@ BBString *bbStringFromArray( BBArray *arr ){
 }
 
 BBString *bbStringFromCString( const char *p ){
-	return p ? bbStringFromBytes( p,strlen(p) ) : &bbEmptyString;
+	return p ? bbStringFromBytes( (unsigned char*)p,strlen(p) ) : &bbEmptyString;
 }
 
 BBString *bbStringFromWString( const BBChar *p ){
 	return p ? bbStringFromShorts( p,wstrlen(p) ) : &bbEmptyString;
 }
 
-BBString *bbStringFromUTF8String( const char *p ){
-	int c,n;
-	short *d,*q;
+BBString *bbStringFromUTF8String( const unsigned char *p ){
+	return p ? bbStringFromUTF8Bytes( p,strlen((char*)p) ) : &bbEmptyString;
+}
+
+BBString *bbStringFromUTF8Bytes( const unsigned char *p,int n ){
+	int c;
+	unsigned short *d,*q;
 	BBString *str;
 
-	if( !p ) return &bbEmptyString;
+	if( !p || n <= 0 ) return &bbEmptyString;
 	
-	n=strlen(p);
-	d=(short*)malloc( n*2 );
+	d=(unsigned short*)malloc( n*2 );
 	q=d;
 	
-	while( c=*p++ & 0xff ){
+	while( n-- && (c=*p++ & 0xff)){
 		if( c<0x80 ){
 			*q++=c;
 		}else{
+			if (!n--) break;
 			int d=*p++ & 0x3f;
 			if( c<0xe0 ){
 				*q++=((c&31)<<6) | d;
 			}else{
+				if (!n--) break;
 				int e=*p++ & 0x3f;
 				if( c<0xf0 ){
 					*q++=((c&15)<<12) | (d<<6) | e;
 				}else{
+					if (!n--) break;
 					int f=*p++ & 0x3f;
 					int v=((c&7)<<18) | (d<<12) | (e<<6) | f;
-					if( v & 0xffff0000 ) bbExThrowCString( "Unicode character out of UCS-2 range" );
-					*q++=v;
+					if( v & 0xffff0000 ) {
+						v -= 0x10000;
+						d = ((v >> 10) & 0x7ff) + 0xd800;
+						e = (v & 0x3ff) + 0xdc00;
+						*q++=d;
+						*q++=e;
+					}else{
+						*q++=v;
+					}
 				}
 			}
 		}
@@ -289,8 +367,14 @@ BBString *bbStringToString( BBString *t ){
 
 int bbStringCompare( BBString *x,BBString *y ){
 	int k,n,sz;
+	if (x->clas != &bbStringClass || y->clas != &bbStringClass) return -1; // only compare strings with strings
+
 	sz=x->length<y->length ? x->length : y->length;
-	for( k=0;k<sz;++k ) if( n=x->buf[k]-y->buf[k] ) return n;
+	if (x->length == y->length && x->hash) {
+		if (!y->hash) bbStringHash(y);
+		if (x->hash == y->hash) return 0;
+	}
+	for( k=0;k<sz;++k ) if( (n=x->buf[k]-y->buf[k]) ) return n;
 	return x->length-y->length;
 }
 
@@ -417,7 +501,7 @@ int bbStringToInt( BBString *t ){
 	if( i==t->length ) return 0;
 	
 	if( t->buf[i]=='+' ) ++i;
-	else if( neg=(t->buf[i]=='-') ) ++i;
+	else if( (neg=(t->buf[i]=='-')) ) ++i;
 	if( i==t->length ) return 0;
 
 	if( t->buf[i]=='%' ){
@@ -444,14 +528,14 @@ int bbStringToInt( BBString *t ){
 }
 
 unsigned int bbStringToUInt( BBString *t ){
-	int i=0;
+	int i=0,neg=0;
 	unsigned n=0;
 	
 	while( i<t->length && isspace(t->buf[i]) ) ++i;
 	if( i==t->length ) return 0;
 	
 	if( t->buf[i]=='+' ) ++i;
-	else if( t->buf[i]=='-' ) ++i;
+	else if( (neg = t->buf[i]=='-') ) ++i;
 	if( i==t->length ) return 0;
 
 	if( t->buf[i]=='%' ){
@@ -474,7 +558,7 @@ unsigned int bbStringToUInt( BBString *t ){
 			n=n*10+(c-'0');
 		}
 	}
-	return n;
+	return neg ? -n : n;
 }
 
 BBInt64 bbStringToLong( BBString *t ){
@@ -485,7 +569,7 @@ BBInt64 bbStringToLong( BBString *t ){
 	if( i==t->length ){ return 0; }
 	
 	if( t->buf[i]=='+' ) ++i;
-	else if( neg=(t->buf[i]=='-') ) ++i;
+	else if( (neg=(t->buf[i]=='-')) ) ++i;
 	if( i==t->length ){ return 0; }
 	
 	if( t->buf[i]=='%' ){
@@ -513,14 +597,14 @@ BBInt64 bbStringToLong( BBString *t ){
 }
 
 BBUInt64 bbStringToULong( BBString *t ){
-	int i=0;
+	int i=0,neg=0;
 	BBUInt64 n=0;
 	
 	while( i<t->length && isspace(t->buf[i]) ) ++i;
 	if( i==t->length ){ return 0; }
 	
 	if( t->buf[i]=='+' ) ++i;
-	else if( t->buf[i]=='-' ) ++i;
+	else if( (neg = t->buf[i]=='-') ) ++i;
 	if( i==t->length ){ return 0; }
 	
 	if( t->buf[i]=='%' ){
@@ -543,7 +627,7 @@ BBUInt64 bbStringToULong( BBString *t ){
 			n=n*10+(c-'0');
 		}
 	}
-	return n;
+	return neg ? -n : n;
 }
 
 BBSIZET bbStringToSizet( BBString *t ){
@@ -554,7 +638,7 @@ BBSIZET bbStringToSizet( BBString *t ){
 	if( i==t->length ){ return 0; }
 	
 	if( t->buf[i]=='+' ) ++i;
-	else if( neg=(t->buf[i]=='-') ) ++i;
+	else if( (neg=(t->buf[i]=='-')) ) ++i;
 	if( i==t->length ){ return 0; }
 	
 	if( t->buf[i]=='%' ){
@@ -578,18 +662,87 @@ BBSIZET bbStringToSizet( BBString *t ){
 		}
 	}
 	//*r=neg ? -n : n;
-	return n;
+	return neg ? -n : n;
+}
+
+BBLONGINT bbStringToLongInt( BBString *t ){
+	int i=0,neg=0;
+	BBLONGINT n=0;
+	
+	while( i<t->length && isspace(t->buf[i]) ) ++i;
+	if( i==t->length ){ return 0; }
+	
+	if( t->buf[i]=='+' ) ++i;
+	else if( (neg=(t->buf[i]=='-')) ) ++i;
+	if( i==t->length ){ return 0; }
+	
+	if( t->buf[i]=='%' ){
+		for( ++i;i<t->length;++i ){
+			int c=t->buf[i];
+			if( c!='0' && c!='1' ) break;
+			n=n*2+(c-'0');
+		}
+	}else if( t->buf[i]=='$' ){
+		for( ++i;i<t->length;++i ){
+			int c=toupper(t->buf[i]);
+			if( !isxdigit(c) ) break;
+			if( c>='A' ) c-=('A'-'0'-10);
+			n=n*16+(c-'0');
+		}
+	}else{
+		for( ;i<t->length;++i ){
+			int c=t->buf[i];
+			if( !isdigit(c) ) break;
+			n=n*10+(c-'0');
+		}
+	}
+	//*r=neg ? -n : n;
+	return neg ? -n : n;
+}
+
+BBULONGINT bbStringToULongInt( BBString *t ){
+	int i=0,neg=0;
+	BBULONGINT n=0;
+	
+	while( i<t->length && isspace(t->buf[i]) ) ++i;
+	if( i==t->length ){ return 0; }
+	
+	if( t->buf[i]=='+' ) ++i;
+	else if( (neg = t->buf[i]=='-') ) ++i;
+	if( i==t->length ){ return 0; }
+	
+	if( t->buf[i]=='%' ){
+		for( ++i;i<t->length;++i ){
+			int c=t->buf[i];
+			if( c!='0' && c!='1' ) break;
+			n=n*2+(c-'0');
+		}
+	}else if( t->buf[i]=='$' ){
+		for( ++i;i<t->length;++i ){
+			int c=toupper(t->buf[i]);
+			if( !isxdigit(c) ) break;
+			if( c>='A' ) c-=('A'-'0'-10);
+			n=n*16+(c-'0');
+		}
+	}else{
+		for( ;i<t->length;++i ){
+			int c=t->buf[i];
+			if( !isdigit(c) ) break;
+			n=n*10+(c-'0');
+		}
+	}
+	return neg ? -n : n;
 }
 
 float bbStringToFloat( BBString *t ){
-	char *p=bbStringToCString( t );
+	char *p=(char*)bbStringToCString( t );
 	float n=atof( p );
 	bbMemFree( p );
 	return n;
 }
 
 double bbStringToDouble( BBString *t ){
-	char *p=bbStringToCString( t );
+	char *p=(char*)bbStringToCString( t );
 	double n=atof( p );
 	bbMemFree( p );
 	return n;
@@ -597,14 +750,14 @@ double bbStringToDouble( BBString *t ){
 
 #ifdef _WIN32
 WPARAM bbStringToWParam( BBString *t ){
-	int i=0;
+	int i=0,neg=0;
 	WPARAM n=0;
 	
 	while( i<t->length && isspace(t->buf[i]) ) ++i;
 	if( i==t->length ) return 0;
 	
 	if( t->buf[i]=='+' ) ++i;
-	else if( t->buf[i]=='-' ) ++i;
+	else if( (neg = t->buf[i]=='-') ) ++i;
 	if( i==t->length ) return 0;
 
 	if( t->buf[i]=='%' ){
@@ -627,7 +780,7 @@ WPARAM bbStringToWParam( BBString *t ){
 			n=n*10+(c-'0');
 		}
 	}
-	return n;
+	return neg ? -n : n;
 }
 
 BBString *bbStringFromWParam( WPARAM n ){
@@ -639,7 +792,7 @@ BBString *bbStringFromWParam( WPARAM n ){
 	sprintf(buf, "%u", n);
 #endif
 
-	return bbStringFromBytes( buf, strlen(buf) );
+	return bbStringFromBytes( (unsigned char*)buf, strlen(buf) );
 }
 
 LPARAM bbStringToLParam( BBString *t ){
@@ -650,7 +803,7 @@ LPARAM bbStringToLParam( BBString *t ){
 	if( i==t->length ) return 0;
 	
 	if( t->buf[i]=='+' ) ++i;
-	else if( neg=(t->buf[i]=='-') ) ++i;
+	else if( (neg=(t->buf[i]=='-')) ) ++i;
 	if( i==t->length ) return 0;
 
 	if( t->buf[i]=='%' ){
@@ -685,7 +838,7 @@ BBString *bbStringFromLParam( LPARAM n ){
 	sprintf(buf, "%d", n);
 #endif
 
-	return bbStringFromBytes( buf, strlen(buf) );
+	return bbStringFromBytes( (unsigned char*)buf, strlen(buf) );
 }
 
 
@@ -697,8 +850,28 @@ BBString *bbStringFromLParam( LPARAM n ){
 BBString *bbStringToLower( BBString *str ){
 	int k;
 	BBString *t;
+	int n = 0;
+	
+	while (n < str->length) {
+		int c=str->buf[n];
+		// ascii upper or other unicode char
+		if (c >= 192 || (c>='A' && c<='Z')) {
+			break;
+		}
+		++n;
+	}
+	
+	if (n == str->length) {
+		return str;
+	}
+	
 	t=bbStringNew( str->length );
-	for( k=0;k<str->length;++k ){
+
+	if (n > 0) {
+		memcpy(t->buf, str->buf, n * sizeof(BBChar));
+	}
+	
+	for( k=n;k<str->length;++k ){
 		int c=str->buf[k];
 		if( c<192 ){
 			c=(c>='A' && c<='Z') ? (c|32) : c;
@@ -724,8 +897,28 @@ BBString *bbStringToLower( BBString *str ){
 BBString *bbStringToUpper( BBString *str ){
 	int k;
 	BBString *t;
+	int n = 0;
+	
+	while (n < str->length) {
+		int c=str->buf[n];
+		// ascii lower or other unicode char
+		if (c >= 181 || (c>='a' && c<='z')) {
+			break;
+		}
+		++n;
+	}
+	
+	if (n == str->length) {
+		return str;
+	}
+	
 	t=bbStringNew( str->length );
-	for( k=0;k<str->length;++k ){
+
+	if (n > 0) {
+		memcpy(t->buf, str->buf, n * sizeof(BBChar));
+	}
+
+	for( k=n;k<str->length;++k ){
 		int c=str->buf[k];
 		if( c<181 ){
 			c=(c>='a' && c<='z') ? (c&~32) : c;
@@ -748,10 +941,10 @@ BBString *bbStringToUpper( BBString *str ){
 	return t;
 }
 
-char *bbStringToCString( BBString *str ){
-	char *p;
+unsigned char *bbStringToCString( BBString *str ){
+	unsigned char *p;
 	int k,sz=str->length;
-	p=(char*)bbMemAlloc( sz+1 );
+	p=(unsigned char*)bbMemAlloc( sz+1 );
 	for( k=0;k<sz;++k ) p[k]=str->buf[k];
 	p[sz]=0;
 	return p;
@@ -759,32 +952,69 @@ char *bbStringToCString( BBString *str ){
 
 BBChar *bbStringToWString( BBString *str ){
 	BBChar *p;
-	int k,sz=str->length;
-	p=(BBChar*)bbMemAlloc( (sz+1)*sizeof(BBChar) );
+	size_t sz=str->length + 1;
+	p=(BBChar*)bbMemAlloc( sz * sizeof(BBChar) );
+	return bbStringToWStringBuffer(str, p, &sz);
+}
+
+BBChar *bbStringToWStringBuffer( BBString *str, BBChar * buf, size_t * length ){
+	size_t sz = str->length + 1 < *length ? str->length + 1 : *length;
+	BBChar * p = buf;
 	memcpy(p,str->buf,sz*sizeof(BBChar));
-	p[sz]=0;
+	p[sz-1]=0;
 	return p;
 }
 
-char *bbStringToUTF8String( BBString *str ){
-	int i,len=str->length;
-	char *buf=(char*)bbMemAlloc( len*3+1 );
-	char *q=buf;
+unsigned char *bbStringToUTF8String( BBString *str ){
+	int len=str->length;
+	size_t buflen = len * 4 + 1;
+	unsigned char *buf=(unsigned char*)bbMemAlloc( buflen );
+	return bbStringToUTF8StringBuffer(str, buf, &buflen);
+}
+
+unsigned char *bbStringToUTF8StringBuffer( BBString *str, unsigned char * buf, size_t * length ){
+	int i=0,len=str->length;
+	size_t buflen = *length;
+	unsigned char *q=buf;
 	unsigned short *p=str->buf;
-	for( i=0;i<len;++i ){
+	while (i < len) {
 		unsigned int c=*p++;
+		if(0xd800 <= c && c <= 0xdbff && i < len - 1) {
+			/* surrogate pair */
+			unsigned int c2 = *p;
+			if(0xdc00 <= c2 && c2 <= 0xdfff) {
+				/* valid second surrogate */
+				c = ((c - 0xd800) << 10) + (c2 - 0xdc00) + 0x10000;
+				++p;
+				++i;
+			}
+		}
+		int n = q - buf;
 		if( c<0x80 ){
+			if (buflen <= n+1) break;
 			*q++=c;
 		}else if( c<0x800 ){
+			if (buflen <= n+2) break;
 			*q++=0xc0|(c>>6);
 			*q++=0x80|(c&0x3f);
-		}else{
+		}else if(c < 0x10000) { 
+			if (buflen <= n+3) break;
 			*q++=0xe0|(c>>12);
 			*q++=0x80|((c>>6)&0x3f);
 			*q++=0x80|(c&0x3f);
+		}else if(c <= 0x10ffff) {
+			if (buflen <= n+4) break;
+			*q++ = 0xf0|(c>>18);
+			*q++ = 0x80|((c>>12)&0x3f);
+			*q++ = 0x80|((c>>6)&0x3f);
+			*q++ = 0x80|((c&0x3f));
+		}else{
+			bbExThrowCString( "Unicode character out of UTF-8 range" );
 		}
+		++i;
 	}
 	*q=0;
+	*length = q - buf;
 	return buf;
 }
 
@@ -900,19 +1130,83 @@ static void mktmp( void *p ){
 }
 #endif
 char *bbTmpCString( BBString *str ){
-	char *p=bbStringToCString( str );
+	printf("Use of bbTmpCString is deprecated\n");fflush(stdout);
+	char *p=(char*)bbStringToCString( str );
 	mktmp( p );
 	return p;
 }
 
 BBChar *bbTmpWString( BBString *str ){
+	printf("Use of bbTmpWString is deprecated\n");fflush(stdout);
 	BBChar *p=bbStringToWString( str );
 	mktmp( p );
 	return p;
 }
 
 char *bbTmpUTF8String( BBString *str ){
-	char *p=bbStringToUTF8String( str );
+	printf("Use of bbTmpUTF8String is deprecated\n");fflush(stdout);
+	char *p=(char*)bbStringToUTF8String( str );
 	mktmp( p );
 	return p;
+}
+
+BBUINT* bbStringToUTF32String( BBString *str ) {
+	int len=str->length;
+	int n = 0;
+	size_t buflen = len * 4 + 4;
+	BBUINT *buf=(BBUINT*)bbMemAlloc( buflen );
+
+	BBChar *p=str->buf;
+	BBUINT *bp = buf;
+	while( *p ) {
+		n++;
+		BBChar c = *p++;
+		if (!((c - 0xd800u) < 2048u)) {
+			*bp++ = c;
+		} else {
+			if (((c & 0xfffffc00) == 0xd800) && n < len && ((*p & 0xfffffc00) == 0xdc00)) {
+				*bp++ = (c << 10) + (*p++) - 0x35fdc00;
+			} else {
+				bbMemFree( buf );
+				bbExThrowCString( "Failed to create UTF32. Invalid surrogate pair." );
+			}
+		}
+	}
+	*bp = 0;
+	return buf;
+}
+
+BBString* bbStringFromUTF32String( const BBUINT *p ) {
+	return p ? bbStringFromUTF32Bytes(p, utf32strlen(p)) : &bbEmptyString;
+}
+
+BBString* bbStringFromUTF32Bytes( const BBUINT *p, int n ) {
+	if( !p || n <= 0 ) return &bbEmptyString;
+	
+	int len = n * 2;
+	unsigned short * d=(unsigned short*)malloc( n * sizeof(BBChar) * 2 );
+	unsigned short * q=d;
+
+	BBUINT* bp = p;
+
+	int i = 0;
+	while (i++ < n) {
+		BBUINT c = *bp++;
+		if (c <= 0xffffu) {
+			if (c >= 0xd800u && c <= 0xdfffu) {
+				*q++ = 0xfffd;
+			} else {
+          		*q++ = c;
+			}
+		} else if (c > 0x0010ffffu) {
+			*q++ = 0xfffd;
+		} else {
+			c -= 0x0010000u;
+        	*q++ = (BBChar)((c >> 10) + 0xd800);
+        	*q++ = (BBChar)((c & 0x3ffu) + 0xdc00);
+		}
+	}
+	BBString * str=bbStringFromShorts( d,q-d );
+	free( d );
+	return str;
 }

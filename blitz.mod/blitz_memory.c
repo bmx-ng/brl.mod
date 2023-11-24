@@ -11,6 +11,9 @@ void *bbMemAlloc( size_t size ){
 	p=malloc( size );
 #else
 	p=GC_MALLOC_ATOMIC_UNCOLLECTABLE( size );
+	#ifdef BBCC_ALLOCCOUNT
+	++bbGCAllocCount;
+	#endif
 #endif
 	return p;
 	
@@ -44,4 +47,20 @@ void bbMemCopy( void *dst,const void *src,size_t size ){
 
 void bbMemMove( void *dst,const void *src,size_t size ){
 	memmove( dst,src,size );
+}
+
+void bbMemDump(void * mem, int size) {
+    unsigned int i;
+    const unsigned char * const px = (unsigned char*)mem;
+    for (i = 0; i < size; ++i) {
+        if( i % (sizeof(int) * 8) == 0){
+            printf("\n%08x ", i);
+        }
+        else if( i % 4 == 0){
+            printf(" ");
+        }
+        printf("%02x", px[i]);
+    }
+
+    printf("\n");
 }

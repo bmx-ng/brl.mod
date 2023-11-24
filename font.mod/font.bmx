@@ -22,7 +22,7 @@ Type TGlyph
 	
 	Method Pixels:Object() Abstract
 
-	Method Advance#() Abstract
+	Method Advance:Float() Abstract
 	Method GetRect( x:Int Var,y:Int Var,width:Int Var,height:Int Var ) Abstract
 
 End Type

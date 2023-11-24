@@ -9,6 +9,9 @@
 extern "C"{
 #endif
 
+// uncomment to enable allocation counting
+//#define BBCC_ALLOCCOUNT
+
 #define BBGC_MANYREFS 0x40000000
 
 //for bbGCSetMode
@@ -32,6 +35,10 @@ extern "C"{
 #endif
 void*	bbGCRootRegs( void *p );
 
+#ifdef BBCC_ALLOCCOUNT
+extern BBUInt64 bbGCAllocCount;
+#endif
+
 typedef struct BBGCMem BBGCMem;
 typedef struct BBGCPool BBGCPool;
 
@@ -47,9 +54,10 @@ struct BBGCMem{
 
 void		bbGCStartup();
 void		bbGCSetMode( int mode );
+int			bbGCGetMode();
 void		bbGCSetDebug( int debug );
 void*	bbGCMalloc( int size,int flags );
-BBObject*	bbGCAllocObject( int size,BBClass *clas,int flags );
+BBObject*	bbGCAllocObject( unsigned int size,BBClass *clas,int flags );
 int 		bbGCValidate( void *p );
 size_t		bbGCMemAlloced();
 size_t		bbGCCollect();
@@ -61,6 +69,8 @@ void		bbGCRelease( BBObject *p );
 int			bbGCThreadIsRegistered();
 int			bbGCRegisterMyThread();
 int			bbGCUnregisterMyThread();
+
+void bbGCGetStats(struct GC_prof_stats_s * stats);
 
 // BBRETAIN/BBRELEASE should be used to prevent an object from garbage collection.
 //

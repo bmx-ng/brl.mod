@@ -46,11 +46,12 @@ struct BBDebugDecl{
 		BBString*    const_value;
 		size_t       field_offset;
 		void*        var_address;
+		BBFuncPtr    func_ptr;
 		size_t       struct_size;
 	};
 	union{
-		void           (*reflection_wrapper)(void**);
-		BBCif * cif;
+		void   (*reflection_wrapper)(void**);
+		BBCif* cif;
 	};
 };
 
@@ -70,9 +71,16 @@ struct BBDebugScope{
 };
 
 struct BBDebugStm{
-	const char		*source_file;
-	int				line_num,char_num;
+	BBULONG      id;
+	int          line_num,char_num;
 };
+
+typedef struct BBSource {
+	BBULONG id;
+	char * file;
+	unsigned int count;
+	unsigned int lines[32];
+} BBSource;
 
 extern void bbCAssertEx();
 
@@ -84,6 +92,10 @@ extern void (*bbOnDebugLeaveScope)();
 extern void (*bbOnDebugPushExState)();
 extern void (*bbOnDebugPopExState)();
 extern void (*bbOnDebugUnhandledEx)( BBObject *ex );
+
+void bbRegisterSource(BBULONG sourceId, const char * source);
+BBSource * bbSourceForId(BBULONG id);
+BBSource * bbSourceForName(BBString * filename);
 
 #ifdef __cplusplus
 }

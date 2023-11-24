@@ -24,7 +24,7 @@ ModuleInfo "History: Added experimental dll support"
 ModuleInfo "History: 1.15 Release"
 ModuleInfo "History: Fixed Const string reporting not being escaped"
 ModuleInfo "History: 1.14 Release"
-ModuleInfo "History: Debug output lines now prepended with ~>"
+ModuleInfo "History: Debug output lines now prepended with ~~>"
 ModuleInfo "History: 1.13 Release"
 ModuleInfo "History: Removed unused debugger sources"
 ModuleInfo "History: 1.12 Release"
@@ -59,6 +59,7 @@ Import "appstub.macos.m"
 Import "-framework Cocoa"
 Import "-framework Carbon"
 ?ios
+Import "../../sdl.mod/sdl.mod/SDL/include/*.h"
 Import "appstub.ios.c"
 ?Win32
 Import "appstub.win32.c"
@@ -68,6 +69,8 @@ Import "appstub.linux.c"
 Import "appstub.linux.c"
 ?nx
 Import "appstub.nx.c"
+?haiku
+Import "appstub.haiku.c"
 ?
 
 Extern

@@ -27,7 +27,33 @@ struct BBArray{
 	int    scales[1];  // [dims]
 };
 
-extern		BBClass bbArrayClass;
+struct BBClass_Array{
+	//extends BBGCPool
+	BBClass*	super;
+	void		(*free)( BBObject *o );
+	
+	BBDebugScope*debug_scope;
+
+	unsigned int instance_size;
+
+	void		(*ctor)( BBObject *o );
+	void		(*dtor)( BBObject *o );
+	
+	BBString*	(*ToString)( BBObject *x );
+	int		(*Compare)( BBObject *x,BBObject *y );
+	BBObject*	(*SendMessage)( BBObject * o, BBObject *m,BBObject *s );
+
+	BBINTERFACETABLE itable;
+	void*   extra;
+	unsigned int obj_size;
+	unsigned int instance_count;
+	unsigned int fields_offset;
+
+	void (*bbArraySort)( BBArray *arr,int ascending );
+	BBArray* (*bbArrayDimensions)( BBArray *arr );
+};
+
+extern	struct BBClass_Array bbArrayClass;
 extern		BBArray bbEmptyArray;
 
 BBArray*	bbArrayNew( const char *type,int dims,... );
@@ -46,11 +72,18 @@ BBArray*	bbArrayConcat( const char *type,BBArray *x,BBArray *y );
 
 void*	bbArrayIndex( BBArray *, int, int );
 
-BBArray*	bbArrayNew1DStruct( const char *type,int length, unsigned short data_size );
-BBArray*	bbArrayNewStruct( const char *type,unsigned short data_size, int dims, ... );
+typedef void (*BBArrayStructInit)(void * ref);
+
+BBArray*	bbArrayNew1DStruct( const char *type,int length, unsigned short data_size, BBArrayStructInit init );
+BBArray*	bbArrayNewStruct( const char *type,unsigned short data_size, BBArrayStructInit init, int dims, ... );
 BBArray*	bbArrayFromDataStruct( const char *type,int length,void *data, unsigned short data_size );
+BBArray*	bbArraySliceStruct( const char *type,BBArray *inarr,int beg,int end, unsigned short data_size, BBArrayStructInit structInit );
+BBArray*	bbArrayFromDataSize( const char *type,int length,void *data, unsigned short data_size );
+BBArray*	bbArrayNew1DNoInit( const char *type,int length );
 
 void bbArrayCopy(BBArray * srcArr, int srcPos, BBArray * dstArr, int dstPos, int length);
+
+int bbObjectIsEmptyArray(BBObject * o);
 
 #ifdef __cplusplus
 }

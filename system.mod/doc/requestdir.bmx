@@ -1,5 +1,5 @@
 ' requestdir.bmx
 
-path$=RequestDir("Select a Folder",CurrentDir())
+path:String=RequestDir("Select a Folder",CurrentDir())
 
 Print "directory selected was "+path

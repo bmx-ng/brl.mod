@@ -1,20 +1,27 @@
-Strict
+SuperStrict
 
+Import "common.bmx"
 
 Extern
-	Function bmx_map_intmap_clear(root:Byte Ptr Ptr)
-	Function bmx_map_intmap_isempty:Int(root:Byte Ptr Ptr)
-	Function bmx_map_intmap_insert(key:Int, value:Object, root:Byte Ptr Ptr)
-	Function bmx_map_intmap_contains:Int(key:Int, root:Byte Ptr Ptr)
-	Function bmx_map_intmap_valueforkey:Object(key:Int, root:Byte Ptr Ptr)
-	Function bmx_map_intmap_remove:Int(key:Int, root:Byte Ptr Ptr)
-	Function bmx_map_intmap_firstnode:Byte Ptr(root:Byte Ptr)
-	Function bmx_map_intmap_nextnode:Byte Ptr(node:Byte Ptr)
-	Function bmx_map_intmap_key:Int(node:Byte Ptr)
-	Function bmx_map_intmap_value:Object(node:Byte Ptr)
-	Function bmx_map_intmap_hasnext:Int(node:Byte Ptr, root:Byte Ptr)
-	Function bmx_map_intmap_copy(dst:Byte Ptr Ptr, _root:Byte Ptr)
+	Function bmx_map_intmap_clear(root:SavlRoot Ptr Ptr)
+	Function bmx_map_intmap_isempty:Int(root:SavlRoot Ptr)
+	Function bmx_map_intmap_insert(key:Int, value:Object, root:SavlRoot Ptr Ptr)
+	Function bmx_map_intmap_contains:Int(key:Int, root:SavlRoot Ptr)
+	Function bmx_map_intmap_valueforkey:Object(key:Int, root:SavlRoot Ptr)
+	Function bmx_map_intmap_remove:Int(key:Int, root:SavlRoot Ptr)
+	Function bmx_map_intmap_firstnode:SIntMapNode Ptr(root:SavlRoot Ptr)
+	Function bmx_map_intmap_nextnode:SIntMapNode Ptr(node:SIntMapNode Ptr)
+	Function bmx_map_intmap_key:Int(node:SIntMapNode Ptr)
+	Function bmx_map_intmap_value:Object(node:SIntMapNode Ptr)
+	Function bmx_map_intmap_hasnext:Int(node:SIntMapNode Ptr, root:SavlRoot Ptr)
+	Function bmx_map_intmap_copy(dst:SavlRoot Ptr Ptr, _root:SavlRoot Ptr)
 End Extern
+
+Struct SIntMapNode
+	Field link:SavlRoot
+	Field key:Int
+	Field value:Object
+End Struct
 
 Rem
 bbdoc: A key/value (Int/Object) map.
@@ -42,8 +49,8 @@ Type TIntMap
 	bbdoc: Checks if the map is empty.
 	about: #True if @map is empty, otherwise #False.
 	End Rem
-	Method IsEmpty()
-		Return bmx_map_intmap_isempty(Varptr _root)
+	Method IsEmpty:Int()
+		Return bmx_map_intmap_isempty(_root)
 	End Method
 	
 	Rem
@@ -62,7 +69,7 @@ Type TIntMap
 	returns: #True if the map contains @key.
 	End Rem
 	Method Contains:Int( key:Int )
-		Return bmx_map_intmap_contains(key, Varptr _root)
+		Return bmx_map_intmap_contains(key, _root)
 	End Method
 	
 	Rem
@@ -71,14 +78,14 @@ Type TIntMap
 	about: If the map does not contain @key, a #Null object is returned.
 	End Rem
 	Method ValueForKey:Object( key:Int )
-		Return bmx_map_intmap_valueforkey(key, Varptr _root)
+		Return bmx_map_intmap_valueforkey(key, _root)
 	End Method
 	
 	Rem
 	bbdoc: Remove a key/value pair from the map.
 	returns: #True if @key was removed, or #False otherwise.
 	End Rem
-	Method Remove( key:Int )
+	Method Remove:Int( key:Int )
 ?ngcmod
 		_modCount :+ 1
 ?
@@ -170,7 +177,7 @@ Type TIntMap
 	about: If the map does not contain @key, a #Null object is returned.
 	End Rem
 	Method Operator[]:Object(key:Int)
-		Return bmx_map_intmap_valueforkey(key, Varptr _root)
+		Return bmx_map_intmap_valueforkey(key, _root)
 	End Method
 	
 	Rem
@@ -181,7 +188,7 @@ Type TIntMap
 		bmx_map_intmap_insert(key, value, Varptr _root)
 	End Method
 
-	Field _root:Byte Ptr
+	Field _root:SavlRoot Ptr
 
 ?ngcmod
 	Field _modCount:Int
@@ -190,8 +197,10 @@ Type TIntMap
 End Type
 
 Type TIntNode
-	Field _root:Byte Ptr
-	Field _nodePtr:Byte Ptr
+	Field _root:SavlRoot Ptr
+	Field _nodePtr:SIntMapNode Ptr
+	
+	Field _nextNode:SIntMapNode Ptr
 	
 	Method Key:Int()
 		Return bmx_map_intmap_key(_nodePtr)
@@ -201,7 +210,7 @@ Type TIntNode
 		Return bmx_map_intmap_value(_nodePtr)
 	End Method
 
-	Method HasNext()
+	Method HasNext:Int()
 		Return bmx_map_intmap_hasnext(_nodePtr, _root)
 	End Method
 	
@@ -209,10 +218,19 @@ Type TIntNode
 		If Not _nodePtr Then
 			_nodePtr = bmx_map_intmap_firstnode(_root)
 		Else
-			_nodePtr = bmx_map_intmap_nextnode(_nodePtr)
+			'_nodePtr = bmx_map_intmap_nextnode(_nodePtr)
+			_nodePtr = _nextNode
+		End If
+
+		If HasNext() Then
+			_nextNode = bmx_map_intmap_nextnode(_nodePtr)
 		End If
 
 		Return Self
+	End Method
+	
+	Method Remove()
+		
 	End Method
 	
 End Type
@@ -229,7 +247,7 @@ Type TIntKey
 End Type
 
 Type TIntNodeEnumerator
-	Method HasNext()
+	Method HasNext:Int()
 		Local has:Int = _node.HasNext()
 		If Not has Then
 			_map = Null
@@ -245,7 +263,7 @@ Type TIntNodeEnumerator
 		_node=_node.NextNode()
 		Return node
 	End Method
-
+	
 	'***** PRIVATE *****
 		
 	Field _node:TIntNode	
@@ -288,7 +306,7 @@ Type TIntMapEnumerator
 End Type
 
 Type TIntEmptyEnumerator Extends TIntNodeEnumerator
-	Method HasNext() Override
+	Method HasNext:Int() Override
 		_map = Null
 		Return False
 	End Method

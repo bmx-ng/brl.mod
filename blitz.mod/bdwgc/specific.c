@@ -5,7 +5,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -51,7 +51,7 @@ GC_INNER int GC_key_create_inner(tsd ** key_ptr)
 GC_INNER int GC_setspecific(tsd * key, void * value)
 {
     pthread_t self = pthread_self();
-    int hash_val = HASH(self);
+    unsigned hash_val = HASH(self);
     volatile tse * entry;
 
     GC_ASSERT(I_HOLD_LOCK());
@@ -59,7 +59,7 @@ GC_INNER int GC_setspecific(tsd * key, void * value)
     GC_dont_gc++; /* disable GC */
     entry = (volatile tse *)MALLOC_CLEAR(sizeof(tse));
     GC_dont_gc--;
-    if (0 == entry) return ENOMEM;
+    if (EXPECT(NULL == entry, FALSE)) return ENOMEM;
 
     pthread_mutex_lock(&(key -> lock));
     /* Could easily check for an existing entry here.   */
@@ -138,8 +138,7 @@ GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
                                     tse * volatile * cache_ptr)
 {
     pthread_t self = pthread_self();
-    unsigned hash_val = HASH(self);
-    tse *entry = key->hash[hash_val].p;
+    tse *entry = key->hash[HASH(self)].p;
 
     GC_ASSERT(qtid != INVALID_QTID);
     while (entry != NULL && !THREAD_EQUAL(entry->thread, self)) {

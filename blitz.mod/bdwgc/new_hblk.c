@@ -7,7 +7,7 @@
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -18,10 +18,8 @@
 /*
  * This file contains the functions:
  *      ptr_t GC_build_flXXX(h, old_fl)
- *      void GC_new_hblk(size)
+ *      void GC_new_hblk(size, kind)
  */
-
-#include <stdio.h>
 
 #ifndef SMALL_CONFIG
   /* Build a free list for size 2 (words) cleared objects inside        */
@@ -42,8 +40,8 @@
         p[1] = 0;
         p[2] = (word)p;
         p[3] = 0;
-    };
-    return((ptr_t)(p-2));
+    }
+    return (ptr_t)(p-2);
   }
 
   /* The same for size 4 cleared objects.       */
@@ -62,8 +60,8 @@
         p[0] = (word)(p-4);
         p[1] = 0;
         CLEAR_DOUBLE(p+2);
-    };
-    return((ptr_t)(p-4));
+    }
+    return (ptr_t)(p-4);
   }
 
   /* The same for size 2 uncleared objects.     */
@@ -78,8 +76,8 @@
     for (; (word)p < (word)lim; p += 4) {
         p[0] = (word)(p-2);
         p[2] = (word)p;
-    };
-    return((ptr_t)(p-2));
+    }
+    return (ptr_t)(p-2);
   }
 
   /* The same for size 4 uncleared objects.     */
@@ -95,15 +93,15 @@
         GC_PREFETCH_FOR_WRITE((ptr_t)(p + 64));
         p[0] = (word)(p-4);
         p[4] = (word)p;
-    };
-    return((ptr_t)(p-4));
+    }
+    return (ptr_t)(p-4);
   }
 #endif /* !SMALL_CONFIG */
 
 /* Build a free list for objects of size sz inside heap block h.        */
 /* Clear objects inside h if clear is set.  Add list to the end of      */
 /* the free list we build.  Return the new free list.                   */
-/* This could be called without the main GC lock, if we ensure that     */
+/* This could be called without the allocation lock, if we ensure that  */
 /* there is no concurrent collection which might reclaim objects that   */
 /* we have not yet allocated.                                           */
 GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
@@ -161,7 +159,7 @@ GC_INNER ptr_t GC_build_fl(struct hblk *h, size_t sz, GC_bool clear,
   /* Put p (which is now head of list of objects in *h) as first    */
   /* pointer in the appropriate free list for this size.            */
     *(ptr_t *)h = list;
-    return ((ptr_t)p);
+    return (ptr_t)p;
 }
 
 /* Allocate a new heapblock for small objects of size gran granules.    */
@@ -174,6 +172,7 @@ GC_INNER void GC_new_hblk(size_t gran, int kind)
   GC_bool clear = GC_obj_kinds[kind].ok_init;
 
   GC_STATIC_ASSERT((sizeof (struct hblk)) == HBLKSIZE);
+  GC_ASSERT(I_HOLD_LOCK());
 
   if (GC_debugging_started) clear = TRUE;
 

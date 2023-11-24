@@ -1,4 +1,4 @@
-' Copyright (c) 2018-2019 Bruce A Henderson
+' Copyright (c) 2018-2020 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -25,20 +25,36 @@ bbdoc: Cross-platform clipboards.
 End Rem
 Module BRL.Clipboard
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.02"
 ModuleInfo "License: MIT"
-ModuleInfo "Copyright: libclipboard - Copyright (C) 2016 Jeremy Tan."
-ModuleInfo "Copyright: Wrapper - 2018-2019 Bruce A Henderson"
+ModuleInfo "Copyright: libclipboard - Copyright (C) 2016-2019 Jeremy Tan."
+ModuleInfo "Copyright: Wrapper - 2018-2020 Bruce A Henderson"
+
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Fixed for Android."
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Updated to latest libclipboard 1.0.efaa094"
+ModuleInfo "History: 1.00 Initial Release"
 
 ?win32
 ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_WIN32"
-?linux
+?linux And Not android
 ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_X11"
 ?macos
 ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_COCOA"
+?haiku
+ModuleInfo "CC_OPTS: -DLIBCLIPBOARD_BUILD_HAIKU"
 ?
 
+'
+' build notes :
+' clipboard_cocoa.c renamed to clipboard_cocoa.m
+'
+?Not android
 Import "common.bmx"
+?android
+Import SDL.SDL
+?
 
 Rem
 bbdoc: Options to be passed on instantiation.
@@ -86,6 +102,7 @@ Type TX11ClipboardOpts Extends TClipboardOpts
 
 End Type
 
+?Not android
 Rem
 bbdoc: A clipboard context.
 End Rem
@@ -176,3 +193,105 @@ Type TClipboard
 	End Method
 	
 End Type
+?android
+Const LCB_CLIPBOARD:Int = 0
+Const LCB_PRIMARY:Int = 1
+Const LCB_SECONDARY:Int = 2
+Type TClipboard
+	
+	Method Create:TClipboard(opts:TClipboardOpts = Null)
+		Return Self
+	End Method
+
+	Method Clear(clipboardMode:Int = LCB_CLIPBOARD)
+		SDLSetClipboardText("")
+	End Method
+	
+	Method HasOwnership:Int(clipboardMode:Int = LCB_CLIPBOARD)
+		Return True
+	End Method
+	
+	Method Text:String()
+		Return SDLGetClipboardText()
+	End Method
+	
+	Method TextEx:String(length:Int Var, clipboardMode:Int = LCB_CLIPBOARD)
+		Local txt:String = SDLGetClipboardText()
+		length = txt.length
+		Return txt
+	End Method
+
+	Method SetText:Int(src:String)
+		Return SDLSetClipboardText(src)
+	End Method
+	
+	Method SetTextEx:Int(src:String, clipboardMode:Int = LCB_CLIPBOARD)
+		Return SDLSetClipboardText(src)
+	End Method
+	
+End Type
+?
+
+
+
+Rem
+bbdoc: Creates a new clipboard instance.
+returns: The clipboard instance, or Null on failure.
+End Rem
+Function CreateClipboard:TClipboard(opts:TClipboardOpts = Null)
+	Return New TClipboard.Create( opts )
+End Function
+
+
+Rem
+bbdoc: Clears the contents of the given clipboard.
+End Rem
+Function ClearClipboard(clipboard:TClipboard, clipboardMode:Int = LCB_CLIPBOARD)
+	clipboard.Clear( clipboardMode )
+End Function
+	
+
+Rem
+bbdoc: Determines if the clipboard content is currently owned.
+returns: #True if the clipboard data is owned by the provided instance.
+End Rem
+Function ClipboardHasOwnership:Int(clipboard:TClipboard, clipboardMode:Int = LCB_CLIPBOARD)
+	Return clipboard.HasOwnership(clipboardMode)
+End Function
+	
+
+Rem
+bbdoc: Retrieves the text currently held on the clipboard.
+returns: A copy to the retrieved text.
+End Rem
+Function ClipboardText:String(clipboard:TClipboard)
+	Return clipboard.Text()
+End Function
+	
+
+Rem
+bbdoc: Retrieves the text currently held on the clipboard.
+about: @length returns the length of the retrieved data.
+returns: A copy to the retrieved text.
+End Rem
+Function ClipboardTextEx:String(clipboard:TClipboard, length:Int Var, clipboardMode:Int = LCB_CLIPBOARD)
+	Return clipboard.TextEx(length, clipboardMode)
+End Function
+
+
+Rem
+bbdoc: Sets the text for the clipboard.
+returns: #True if the clipboard was set (#false on error).
+End Rem
+Function ClipboardSetText:Int(clipboard:TClipboard, src:String)
+	Return clipboard.SetText(src)
+End Function
+	
+
+Rem
+bbdoc: Sets the text for the clipboard.
+returns: #True if the clipboard was set (#false on error).
+End Rem
+Function ClipboardSetTextEx:Int(clipboard:TClipboard, src:String, clipboardMode:Int = LCB_CLIPBOARD)
+	Return clipboard.SetTextEx(src, clipboardMode)
+End Function

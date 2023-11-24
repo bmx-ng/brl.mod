@@ -2,7 +2,7 @@ SuperStrict
 
 Framework BRL.Standardio
 Import BRL.ThreadPool
-Import BRL.Random
+Import BRL.RandomDefault
 
 
 Print "Thread pool with 4 threads"

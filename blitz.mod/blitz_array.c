@@ -19,7 +19,7 @@ static BBDebugScope debugScope={
 	}
 };
 
-BBClass bbArrayClass={
+BBClass_Array bbArrayClass={
 	&bbObjectClass, //extends
 	bbArrayFree,	//free
 	&debugScope,	//DebugScope
@@ -33,13 +33,15 @@ BBClass bbArrayClass={
 	0,          //interface
 	0,          //extra
 	0,          //obj_size
+	0,          //instance_count
+	offsetof(BBArray, type), //fields_offset
 	
 	bbArraySort,
 	bbArrayDimensions
 };
 
 BBArray bbEmptyArray={
-	&bbArrayClass,	//clas
+	(BBClass*)&bbArrayClass,	//clas
 	//BBGC_MANYREFS,	//refs
 	"",			//type
 	0,			//dims
@@ -51,27 +53,9 @@ BBArray bbEmptyArray={
 
 //***** Note: Only used by ref counting GC.
 static void bbArrayFree( BBObject *o ){
-#ifdef BB_GC_RC
-	int k;
-	BBObject **p;
-	BBArray *arr=(BBArray*)o;
-	
-	if( arr==&bbEmptyArray ){
-		//arr->refs=BBGC_MANYREFS;
-		return;
+	if (bbCountInstances) {
+		bbAtomicAdd((int*)&bbArrayClass.instance_count, -1);
 	}
-
-	switch( arr->type[0] ){
-	case ':':case '$':case '[':
-		p=(BBObject**)BBARRAYDATA(arr,arr->dims);
-		for( k=arr->scales[0];k>0;--k ){
-			BBObject *o=*p++;
-			//BBDECREFS( o );
-		}
-		break;
-	}
-	bbGCDeallocObject( arr,BBARRAYSIZE( arr->size,arr->dims ) );
-#endif
 }
 
 static int arrayCellSize(const char * type, unsigned short data_size, int * flags) {
@@ -89,6 +73,8 @@ static int arrayCellSize(const char * type, unsigned short data_size, int * flag
 		case '[':size=sizeof(void*);*flags=0;break;
 		case '(':size=sizeof(void*);break;
 		case 'z':size=sizeof(BBSIZET);break;
+		case 'v':size=sizeof(BBLONGINT);break;
+		case 'e':size=sizeof(BBULONGINT);break;
 		#ifdef _WIN32
 		case 'w':size=sizeof(WPARAM);break;
 		case 'x':size=sizeof(LPARAM);break;
@@ -100,7 +86,7 @@ static int arrayCellSize(const char * type, unsigned short data_size, int * flag
 		case 'm':size=sizeof(BBDOUBLE128);break;
 		#endif
 		case '@':size=data_size;*flags=0;break; // structs
-		case '/':size=data_size;*flags=0;break; // enums
+		case '/':size=data_size;break; // enums
 	}
 
 	return size;
@@ -108,7 +94,7 @@ static int arrayCellSize(const char * type, unsigned short data_size, int * flag
 
 static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned short data_size ){
 	int k,*len;
-	int size=4;
+	unsigned int size=4;
 	int length=1;
 	int flags=BBGC_ATOMIC;
 	BBArray *arr;
@@ -124,7 +110,7 @@ static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned sho
 	int base_size = size;
 	size*=length;
 
-	arr=(BBArray*)bbGCAllocObject( BBARRAYSIZE(size,dims),&bbArrayClass,flags );
+	arr=(BBArray*)bbGCAllocObject( BBARRAYSIZE(size,dims),(BBClass*)&bbArrayClass,flags );
 
 	arr->type=type;
 	arr->dims=dims;
@@ -149,7 +135,7 @@ static void *arrayInitializer( BBArray *arr ){
 	return 0;
 }
 
-static void initializeArray( BBArray *arr ){
+static void initializeArray( BBArray *arr, BBArrayStructInit structInit ){
 	void *init,**p;
 	
 	if( !arr->size ) return;
@@ -162,14 +148,16 @@ static void initializeArray( BBArray *arr ){
 		for( k=arr->scales[0];k>0;--k ) *p++=init;
 	}else{
 		memset( p,0,arr->size );
+		if (structInit) {
+			int k;
+			char * s = (char*)p;
+			for( k=arr->scales[0];k>0;--k ) {
+				structInit(s);
+				s += arr->data_size;
+			}
+		}
 	}
 }
-
-static volatile void *t;
-void *addressOfParam( void *p ){
-	t=p;
-	return t;
-} 
 
 BBArray *bbArrayNew( const char *type,int dims,... ){
 
@@ -185,14 +173,14 @@ BBArray *bbArrayNew( const char *type,int dims,... ){
 	}
 	va_end(lengths);
 
-	BBArray *arr=allocateArray( type,dims, &lens, 0 );
+	BBArray *arr=allocateArray( type,dims, lens, 0 );
 	
-	initializeArray( arr );
+	initializeArray( arr, 0 );
 	
 	return arr;
 }
 
-BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, int dims, ... ){
+BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, BBArrayStructInit init, int dims, ... ){
 
 	int lens[256];
 
@@ -206,9 +194,9 @@ BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, int dims,
 	}
 	va_end(lengths);
 
-	BBArray *arr=allocateArray( type,dims, &lens, data_size );
+	BBArray *arr=allocateArray( type,dims, lens, data_size );
 	
-	initializeArray( arr );
+	initializeArray( arr, init );
 	
 	return arr;
 }
@@ -217,7 +205,7 @@ BBArray *bbArrayNewEx( const char *type,int dims,int *lens ){
 
 	BBArray *arr=allocateArray( type,dims,lens,0 );
 	
-	initializeArray( arr );
+	initializeArray( arr, 0 );
 	
 	return arr;
 }
@@ -226,22 +214,29 @@ BBArray *bbArrayNew1D( const char *type,int length ){
 
 	BBArray *arr=allocateArray( type,1,&length, 0 );
 	
-	initializeArray( arr );
+	initializeArray( arr, 0 );
 	
 	return arr;
 }
 
-BBArray *bbArrayNew1DStruct( const char *type,int length, unsigned short data_size ){
+BBArray *bbArrayNew1DNoInit( const char *type,int length ){
+	return allocateArray( type,1,&length, 0 );
+}
+
+BBArray *bbArrayNew1DStruct( const char *type,int length, unsigned short data_size, BBArrayStructInit init ){
 
 	BBArray *arr=allocateArray( type,1,&length, data_size );
 	
-	initializeArray( arr );
+	initializeArray( arr, init );
 	
 	return arr;
 }
 
 BBArray *bbArraySlice( const char *type,BBArray *inarr,int beg,int end ){
+	return bbArraySliceStruct(type, inarr, beg, end, 0, 0);
+}
 
+BBArray *bbArraySliceStruct( const char *type,BBArray *inarr,int beg,int end, unsigned short data_size, BBArrayStructInit structInit ){
 	char *p;
 	void *init;
 	BBArray *arr;
@@ -250,13 +245,13 @@ BBArray *bbArraySlice( const char *type,BBArray *inarr,int beg,int end ){
 
 	if( length<=0 ) return &bbEmptyArray;
 	
-	arr=allocateArray( type,1,&length,0 );
+	arr=allocateArray( type,1,&length,data_size );
 
 	el_size=arr->size/length;
 	
 	init=arrayInitializer( arr );
 	p=(char*)BBARRAYDATA( arr,1 );
-
+	
 	n=-beg;
 	if( n>0 ){
 		if( beg+n>end ) n=end-beg;
@@ -266,6 +261,13 @@ BBArray *bbArraySlice( const char *type,BBArray *inarr,int beg,int end ){
 			p=(char*)dst;
 		}else{
 			memset( p,0,n*el_size );
+			if (structInit) {
+				char * s = (char*)p;
+				for( k=0;k<n;++k ) {
+					structInit(s);
+					s += arr->data_size;
+				}
+			}
 			p+=n*el_size;
 		}
 		beg+=n;
@@ -288,6 +290,13 @@ BBArray *bbArraySlice( const char *type,BBArray *inarr,int beg,int end ){
 			for( k=0;k<n;++k ) *dst++=init;
 		}else{
 			memset( p,0,n*el_size );
+			if (structInit) {
+				char * s = (char*)p;
+				for( k=0;k<n;++k ) {
+					structInit(s);
+					s += arr->data_size;
+				}
+			}
 		}
 	}
 	return arr;
@@ -348,13 +357,16 @@ BBArray *bbArrayConcat( const char *type,BBArray *x,BBArray *y ){
 }
 
 BBArray *bbArrayFromData( const char *type,int length,void *data ){
+	return bbArrayFromDataSize(type, length, data, 0);
+}
 
-	int k;
+BBArray *bbArrayFromDataSize( const char *type,int length,void *data, unsigned short data_size ){
+
 	BBArray *arr;
 
 	if( length<=0 ) return &bbEmptyArray;
 	
-	arr=allocateArray( type,1,&length,0 );
+	arr=allocateArray( type,1,&length,data_size );
 
 	memcpy( BBARRAYDATA( arr,1 ),data,arr->size );
 
@@ -363,7 +375,6 @@ BBArray *bbArrayFromData( const char *type,int length,void *data ){
 
 BBArray *bbArrayFromDataStruct( const char *type,int length,void *data, unsigned short data_size ){
 
-	int k;
 	BBArray *arr;
 
 	if( length<=0 ) return &bbEmptyArray;
@@ -401,7 +412,7 @@ void * bbArrayIndex( BBArray * arr, int offset, int index) {
 BBArray *bbArrayCastFromObject( BBObject *o,const char *type ){
 	BBArray *arr=(BBArray*)o;
 	if( arr==&bbEmptyArray ) return arr;
-	if( arr->clas!=&bbArrayClass ) return &bbEmptyArray;
+	if( arr->clas!=(BBClass*)&bbArrayClass ) return &bbEmptyArray;
 	if( arr->type[0]==':' && type[0]==':' ) return arr;
 	if( strcmp( arr->type,type ) ) return &bbEmptyArray;
 	return arr;
@@ -449,36 +460,40 @@ QSORTARRAY( unsigned char,_qsort_b )
 QSORTARRAY( unsigned short,_qsort_s )
 QSORTARRAY( int,qsort_i )
 QSORTARRAY( unsigned int,qsort_u )
-QSORTARRAY( BBInt64,qsort_l );
-QSORTARRAY( BBUInt64,qsort_y );
-QSORTARRAY( float,qsort_f );
-QSORTARRAY( double,qsort_d );
-QSORTARRAY( BBSIZET,qsort_z );
+QSORTARRAY( BBInt64,qsort_l )
+QSORTARRAY( BBUInt64,qsort_y )
+QSORTARRAY( float,qsort_f )
+QSORTARRAY( double,qsort_d )
+QSORTARRAY( BBSIZET,qsort_z )
+QSORTARRAY( BBLONGINT,qsort_v )
+QSORTARRAY( BBULONGINT,qsort_e )
 #ifdef _WIN32
-QSORTARRAY( WPARAM,qsort_w );
-QSORTARRAY( LPARAM,qsort_x );
+QSORTARRAY( WPARAM,qsort_w )
+QSORTARRAY( LPARAM,qsort_x )
 #endif
 #undef LESSTHAN
 #define LESSTHAN(X,Y) ((*X)->clas->Compare(*(X),*(Y))<0)
-QSORTARRAY( BBObject*,qsort_obj );
+QSORTARRAY( BBObject*,qsort_obj )
 #undef LESSTHAN
 #define LESSTHAN(X,Y) (*(X)>*(Y))
 QSORTARRAY( unsigned char,qsort_b_d )
 QSORTARRAY( unsigned short,qsort_s_d )
 QSORTARRAY( int,qsort_i_d )
 QSORTARRAY( unsigned int,qsort_u_d )
-QSORTARRAY( BBInt64,qsort_l_d );
-QSORTARRAY( BBUInt64,qsort_y_d );
-QSORTARRAY( float,qsort_f_d );
-QSORTARRAY( double,qsort_d_d );
-QSORTARRAY( BBSIZET,qsort_z_d );
+QSORTARRAY( BBInt64,qsort_l_d )
+QSORTARRAY( BBUInt64,qsort_y_d )
+QSORTARRAY( float,qsort_f_d )
+QSORTARRAY( double,qsort_d_d )
+QSORTARRAY( BBSIZET,qsort_z_d )
+QSORTARRAY( BBLONGINT,qsort_v_d )
+QSORTARRAY( BBULONGINT,qsort_e_d )
 #ifdef _WIN32
-QSORTARRAY( WPARAM,qsort_w_d );
-QSORTARRAY( LPARAM,qsort_x_d );
+QSORTARRAY( WPARAM,qsort_w_d )
+QSORTARRAY( LPARAM,qsort_x_d )
 #endif
 #undef LESSTHAN
 #define LESSTHAN(X,Y) ((*X)->clas->Compare(*(X),*(Y))>0)
-QSORTARRAY( BBObject*,qsort_obj_d );
+QSORTARRAY( BBObject*,qsort_obj_d )
 
 void bbArraySort( BBArray *arr,int ascending ){
 	int n;
@@ -498,6 +513,8 @@ void bbArraySort( BBArray *arr,int ascending ){
 		case 'd':qsort_d( (double*)p,(double*)p+n );break;
 		case '$':case ':':qsort_obj( (BBObject**)p,(BBObject**)p+n );break;
 		case 'z':qsort_z( (BBSIZET*)p,(BBSIZET*)p+n );break;
+		case 'v':qsort_v( (BBLONGINT*)p,(BBLONGINT*)p+n );break;
+		case 'e':qsort_e( (BBULONGINT*)p,(BBULONGINT*)p+n );break;
 #ifdef _WIN32
 		case 'w':qsort_w( (WPARAM*)p,(WPARAM*)p+n );break;
 		case 'x':qsort_x( (LPARAM*)p,(LPARAM*)p+n );break;
@@ -515,10 +532,16 @@ void bbArraySort( BBArray *arr,int ascending ){
 		case 'd':qsort_d_d( (double*)p,(double*)p+n );break;
 		case '$':case ':':qsort_obj_d( (BBObject**)p,(BBObject**)p+n );break;
 		case 'z':qsort_z_d( (BBSIZET*)p,(BBSIZET*)p+n );break;
+		case 'v':qsort_v_d( (BBLONGINT*)p,(BBLONGINT*)p+n );break;
+		case 'e':qsort_e_d( (BBULONGINT*)p,(BBULONGINT*)p+n );break;
 #ifdef _WIN32
 		case 'w':qsort_w_d( (WPARAM*)p,(WPARAM*)p+n );break;
 		case 'x':qsort_x_d( (LPARAM*)p,(LPARAM*)p+n );break;
 #endif
 		}
 	}
+}
+
+int bbObjectIsEmptyArray(BBObject * o) {
+	return (BBArray*)o == &bbEmptyArray;
 }

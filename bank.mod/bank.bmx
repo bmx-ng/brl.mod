@@ -6,12 +6,14 @@ bbdoc: Miscellaneous/Banks
 End Rem
 Module BRL.Bank
 
-ModuleInfo "Version: 1.06"
+ModuleInfo "Version: 1.07"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.07"
+ModuleInfo "History: Added Window method"
 ModuleInfo "History: 1.06 Release"
 ModuleInfo "History: Added Lock/Unlock to replace Buf"
 ModuleInfo "History: 1.05 Release"
@@ -28,12 +30,14 @@ Type TBank
 	Field _size:Size_T,_capacity:Size_T,_static:Int
 	Field _locked:Int
 	
+	Field _source:TBank
+	
 	Method _pad()
 	End Method
 	
 	Method Delete()
 		Assert Not _locked
-		If _capacity>=0 MemFree _buf
+		If _capacity>=0 And Not _static MemFree _buf
 	End Method
 
 	Rem
@@ -325,12 +329,31 @@ Type TBank
 		Assert offset>=0 And offset<_size-7 Else "Illegal bank offset"
 		(Double Ptr(_buf+offset))[0]=value
 	End Method
+
+	Rem
+	bbdoc: Creates a virtual window into the bank.
+	returns: A static bank that references the specified offset and size.
+	End Rem
+	Method Window:TBank(offset:Size_T, size:Size_T)
+		Assert offset>=0 And offset + size<_size Else "Illegal bank offset"
+		Local bank:TBank = CreateStatic(_buf + offset, size)
+		bank._source = Self
+		Return bank
+	End Method
+
+	Rem
+	bbdoc: Creates a virtual window into the bank.
+	returns: A static bank that references the specified offset and size.
+	End Rem
+	Method Window:TBank(offset:Int, size:Int)
+		Return Window(Size_T(offset), Size_T(size))
+	End Method
 	
 	Rem
 	bbdoc: Save a bank to a stream
 	about:
 	Return True if successful, otherwise False.
-	end rem
+	End Rem
 	Method Save:Int( url:Object )
 		Local stream:TStream=WriteStream( url )
 		If Not stream Return False

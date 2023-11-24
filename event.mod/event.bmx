@@ -6,12 +6,14 @@ bbdoc: Events/Events
 End Rem
 Module BRL.Event
 
-ModuleInfo "Version: 1.07"
+ModuleInfo "Version: 1.08"
 ModuleInfo "Author: Mark Sibly, Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.08"
+ModuleInfo "History: Added EVENT_DISPLAYMOVED."
 ModuleInfo "History: 1.07"
 ModuleInfo "History: Removed event pool."
 ModuleInfo "History: 1.06"
@@ -96,8 +98,8 @@ Type TEvent
 	about:
 	This method is mainly useful for debugging purposes.
 	End Rem	
-	Method ToString$() Override
-		Local t$=DescriptionForId( id )
+	Method ToString:String() Override
+		Local t:String=DescriptionForId( id )
 		If Not t
 			If id & EVENT_USEREVENTMASK
 				t="UserEvent"+(id-EVENT_USEREVENTMASK)
@@ -134,12 +136,12 @@ Type TEvent
 		Return _id
 	End Function
 	
-	Function RegisterId( id:Int,description$ )
+	Function RegisterId( id:Int,description:String )
 		_regids:+String(id)+"{"+description+"}"
 	End Function
 	
-	Function DescriptionForId$( id:Int )
-		Local t$="}"+String(id)+"{"
+	Function DescriptionForId:String( id:Int )
+		Local t:String="}"+String(id)+"{"
 		Local i:Int=_regids.Find( t )
 		If i=-1 Return Null
 		i:+t.length
@@ -148,7 +150,7 @@ Type TEvent
 		Return _regids[i..i2]
 	End Function
 
-	Global _regids$="}"
+	Global _regids:String="}"
 	
 End Type
 
@@ -190,6 +192,15 @@ Const EVENT_WINDOWSIZE:Int=$4002
 Const EVENT_WINDOWCLOSE:Int=$4003
 Const EVENT_WINDOWACTIVATE:Int=$4004
 Const EVENT_WINDOWACCEPT:Int=$4005
+Const EVENT_WINDOWMINIMIZE:Int=$4006
+Const EVENT_WINDOWMAXIMIZE:Int=$4007
+Const EVENT_WINDOWRESTORE:Int=$4008
+Const EVENT_WINDOWDISPLAYCHANGE:Int=$4009
+Const EVENT_WINDOWICCPROFCHANGE:Int=$400A
+Const EVENT_DISPLAYORIENTATION:Int=$4020
+Const EVENT_DISPLAYCONNECT:Int=$4021
+Const EVENT_DISPLAYDISCONNECT:Int=$4022
+Const EVENT_DISPLAYMOVED:Int=$4023
 Const EVENT_MENUMASK:Int=$8000
 Const EVENT_MENUACTION:Int=$8001
 Const EVENT_STREAMMASK:Int=$10000
@@ -235,6 +246,15 @@ TEvent.RegisterId EVENT_WINDOWSIZE,"WindowSize"
 TEvent.RegisterId EVENT_WINDOWCLOSE,"WindowClose"
 TEvent.RegisterId EVENT_WINDOWACTIVATE,"WindowActivate"
 TEvent.RegisterId EVENT_WINDOWACCEPT,"WindowAccept"
+TEvent.RegisterId EVENT_WINDOWMINIMIZE,"WindowMinimize"
+TEvent.RegisterId EVENT_WINDOWMAXIMIZE,"WindowMaximize"
+TEvent.RegisterId EVENT_WINDOWRESTORE,"WindowRestore"
+TEvent.RegisterId EVENT_WINDOWDISPLAYCHANGE,"WindowDisplayChange"
+TEvent.RegisterId EVENT_WINDOWICCPROFCHANGE,"WindowICCProfChange"
+TEvent.RegisterId EVENT_DISPLAYORIENTATION,"DisplayOrientation"
+TEvent.RegisterId EVENT_DISPLAYCONNECT,"DisplayConnect"
+TEvent.RegisterId EVENT_DISPLAYDISCONNECT,"DisplayDisconnect"
+TEvent.RegisterId EVENT_DISPLAYMOVED,"DisplayMoved"
 TEvent.RegisterId EVENT_MENUACTION,"MenuAction"
 TEvent.RegisterId EVENT_STREAMEOF,"StreamEof"
 TEvent.RegisterId EVENT_STREAMAVAIL,"StreamAvail"
@@ -265,7 +285,7 @@ Rem
 bbdoc: Allocate a user event id
 returns: A new user event id
 End Rem
-Function AllocUserEventId:Int( description$="" )
+Function AllocUserEventId:Int( description:String="" )
 	Local id:Int=TEvent.AllocUserId()
 	If description TEvent.RegisterId id,description
 	Return id

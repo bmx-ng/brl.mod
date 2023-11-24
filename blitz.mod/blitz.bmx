@@ -8,12 +8,20 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.21"
+ModuleInfo "Version: 1.25"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 '
+ModuleInfo "History: 1.25"
+ModuleInfo "History: Added suport for risc-v"
+ModuleInfo "History: 1.24"
+ModuleInfo "History: Update to bdwgc 8.3.0.04d7f70"
+ModuleInfo "History: 1.23"
+ModuleInfo "History: Update to bdwgc 8.2.0.ea9845c"
+ModuleInfo "History: 1.22"
+ModuleInfo "History: Update to bdwgc 8.1.0.fbcdf44"
 ModuleInfo "History: 1.21"
 ModuleInfo "History: Update to bdwgc 7.7.0.d76816e"
 ModuleInfo "History: 1.20"
@@ -54,30 +62,44 @@ ModuleInfo "History: 1.04 Release"
 ModuleInfo "History: Fixed C Compiler warnings"
 
 ?win32
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DMUNMAP_THRESHOLD=3"
 ?osx
-ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DMUNMAP_THRESHOLD=3"
 ?linuxx86
-ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DMUNMAP_THRESHOLD=3"
 ?linuxx64
-ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DMUNMAP_THRESHOLD=3"
+?linuxarm64 and not raspberrypi
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DMUNMAP_THRESHOLD=3"
+?linuxarm and not raspberrypi
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DMUNMAP_THRESHOLD=3"
+?linuxriscv32
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DMUNMAP_THRESHOLD=3"
+?linuxriscv64
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DMUNMAP_THRESHOLD=3"
 ?raspberrypi
-ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DUSE_MMAP -DUSE_MUNMAP -DGC_UNMAP_THRESHOLD=3"
+ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DUSE_MMAP -DUSE_MUNMAP -DMUNMAP_THRESHOLD=3"
 ?android
 ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DATOMIC_UNCOLLECTABLE"
 ?emscripten
 ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE"
 ?ios
-ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE"
+ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE -DNO_DYLD_BIND_FULLY_IMAGE"
 ?musl
 ModuleInfo "CC_OPTS: -DNO_GETCONTEXT"
 ?nx
 ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE -DNN_BUILD_TARGET_PLATFORM_NX"
+?haiku
+ModuleInfo "CC_OPTS: -DGC_THREADS -DPARALLEL_MARK -DATOMIC_UNCOLLECTABLE -DLARGE_CONFIG -DUSE_MMAP -DUSE_MUNMAP -DMUNMAP_THRESHOLD=3"
 ?
+ModuleInfo "CC_OPTS: -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION"
 
 ?debug
 ModuleInfo "CC_OPTS: -DBMX_DEBUG"
 ?
+
+' uncomment to enable allocation counting
+'ModuleInfo "CC_OPTS: -DBBCC_ALLOCCOUNT"
 
 Import "blitz_app.c"
 Import "blitz_types.c"
@@ -95,6 +117,11 @@ Import "blitz_ex.c"
 Import "blitz_gc.c"
 Import "blitz_unicode.c"
 Import "blitz_enum.c"
+Import "blitz_coverage.c"
+
+?coverage
+Import "hashmap/hashmap.c"
+?
 
 '?Threaded
 'Import "blitz_gc_ms.c"
@@ -157,10 +184,12 @@ Import "blitz_nx.c"
 Import "tree/tree.c"
 
 Include "builtin.bmx"
+Include "iterator.bmx"
+Include "comparator.bmx"
 
 Extern
 Global OnDebugStop()="bbOnDebugStop"
-Global OnDebugLog( message$ )="bbOnDebugLog"
+Global OnDebugLog( message:String )="bbOnDebugLog"
 End Extern
 
 Rem
@@ -175,7 +204,7 @@ bbdoc: Null object exception
 about: Thrown when a field or method of a Null object is accessed. (only in debug mode)
 End Rem
 Type TNullObjectException Extends TBlitzException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Attempt to access field or method of Null object"
 	End Method
 End Type
@@ -185,7 +214,7 @@ bbdoc: Null method exception
 about: Thrown when an abstract method is called.
 End Rem
 Type TNullMethodException Extends TBlitzException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Attempt to call abstract method"
 	End Method
 End Type
@@ -195,17 +224,17 @@ bbdoc: Null function exception
 about: Thrown when an uninitialized function pointer is called.
 End Rem
 Type TNullFunctionException Extends TBlitzException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Attempt to call uninitialized function pointer"
 	End Method
 End Type
 
 Rem
-bbdoc: Null method exception
+bbdoc: Array bounds exception
 about: Thrown when an array element with an index outside the valid range of the array (0 to array.length-1) is accessed. (only in debug mode)
 End Rem
 Type TArrayBoundsException Extends TBlitzException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Attempt to index array element beyond array length"
 	End Method
 End Type
@@ -215,7 +244,7 @@ bbdoc: Out of data exception
 about: Thrown when #ReadData is used but not enough data is left to read. (only in debug mode)
 End Rem
 Type TOutOfDataException Extends TBlitzException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Attempt to read beyond end of data"
 	End Method
 End Type
@@ -225,15 +254,25 @@ bbdoc: Runtime exception
 about: Thrown by #RuntimeError.
 End Rem
 Type TRuntimeException Extends TBlitzException
-	Field error$
-	Method ToString$() Override
+	Field error:String
+
+	Method New(error:String)
+		Self.error = error
+	End Method
+
+	Method ToString:String() Override
 		Return error
 	End Method
-	Function Create:TRuntimeException( error$ )
-		Local t:TRuntimeException=New TRuntimeException
-		t.error=error
-		Return t
-	End Function
+End Type
+
+Rem
+bbdoc: Invalid enum exception
+about: Thrown when attempting to cast an invalid value to an #Enum. (only in debug mode)
+End Rem
+Type TInvalidEnumException Extends TBlitzException
+	Method ToString:String() Override
+		Return "Attempt to cast invalid value to Enum"
+	End Method
 End Type
 
 Function NullObjectError()
@@ -256,12 +295,16 @@ Function OutOfDataError()
 	Throw New TOutOfDataException
 End Function
 
+Function InvalidEnumError()
+	Throw New TInvalidEnumException
+End Function
+
 Rem
 bbdoc: Generate a runtime error
 about: Throws a #TRuntimeException.
 End Rem
-Function RuntimeError( message$ )
-	Throw TRuntimeException.Create( message )
+Function RuntimeError( message:String )
+	Throw New TRuntimeException( message )
 End Function
 
 Rem
@@ -276,7 +319,7 @@ Rem
 bbdoc: Write a string to debug log
 about: If there is no debugger present, this command is ignored.
 end rem
-Function DebugLog( message$ )
+Function DebugLog( message:String )
 	OnDebugLog message
 End Function
 
@@ -287,26 +330,32 @@ bbdoc: Application directory
 about: The #AppDir global variable contains the fully qualified directory of the currently
 executing application. An application's initial current directory is also set to #AppDir
 when an application starts.
+
+In a compiled DLL, the #AppDir global variable will instead contain the fully qualified
+directory of the DLL.
 End Rem
-Global AppDir$="bbAppDir"
+Global AppDir:String="bbAppDir"
 
 Rem
 bbdoc: Application file name
 about: The #AppFile global variable contains the fully qualified file name of the currently
 executing application.
+
+In a compiled DLL, the #AppFile global variable will instead contain the fully qualified
+file name of the DLL.
 End Rem
-Global AppFile$="bbAppFile"
+Global AppFile:String="bbAppFile"
 
 Rem
 bbdoc: Application title
 about: The #AppTitle global variable is used by various commands when a
 default application title is required - for example, when opening simple 
-windows or requesters.<br>
-<br>
+windows or requesters.<br/>
+<br/>
 Initially, #AppTitle is set to the value "BlitzMax Application". However, you may change
 #AppTitle at any time with a simple assignment.
 End Rem
-Global AppTitle$="bbAppTitle"
+Global AppTitle:String="bbAppTitle"
 
 Rem
 bbdoc: Arguments passed to the application at startup
@@ -316,7 +365,7 @@ application. However, the format of the name may change depending on how the app
 was launched. Use #AppDir or #AppFile for consistent information about the applications name
 or directory.
 End Rem
-Global AppArgs$[]="bbAppArgs"
+Global AppArgs:String[]="bbAppArgs"
 
 Rem
 bbdoc: Directory from which application was launched
@@ -324,7 +373,7 @@ about: The #LaunchDir global variable contains the current directory at the time
 application was launched. This is mostly of use to command line tools which may need to
 access the 'shell' current directory as opposed to the application directory.
 End Rem
-Global LaunchDir$="bbLaunchDir"
+Global LaunchDir:String="bbLaunchDir"
 
 Rem
 bbdoc: Add a function to be called when the program ends
@@ -337,36 +386,45 @@ Rem
 bbdoc: Read a string from stdin
 returns: A string read from stdin. The newline terminator, if any, is included in the returned string.
 end rem
-Function ReadStdin$()="bbReadStdin"
+Function ReadStdin:String()="bbReadStdin"
 
 Rem
 bbdoc: Write a string to stdout
 about: Writes @str to stdout and flushes stdout.
 end rem
-Function WriteStdout( str$ )="bbWriteStdout"
+Function WriteStdout( str:String )="bbWriteStdout"
 
 Rem
 bbdoc: Write a string to stderr
 about: Writes @str to stderr and flushes stderr.
 end rem
-Function WriteStderr( str$ )="bbWriteStderr"
+Function WriteStderr( str:String )="bbWriteStderr"
 
 Rem
 bbdoc: Wait for a given number of milliseconds
 about:
-#Delay suspends program execution for at least @millis milliseconds.<br>
-<br>
+#Delay suspends program execution for at least @millis milliseconds.<br/>
+<br/>
 A millisecond is one thousandth of a second.
 End Rem
 Function Delay( millis:Int )="bbDelay"
+
+Rem
+bbdoc: Wait for a given number of microseconds
+about:
+#UDelay suspends program execution for at least @microcseconds.<br/>
+<br/>
+A microsecond is one millionth of a second.
+End Rem
+Function UDelay( microseconds:Int )="void bbUDelay(int)!"
 
 Rem
 bbdoc: Get millisecond counter
 returns: Milliseconds since computer turned on.
 about:
 #MilliSecs returns the number of milliseconds elapsed since the computer
-was turned on.<br>
-<br>
+was turned on.<br/>
+<br/>
 A millisecond is one thousandth of a second.
 End Rem
 Function MilliSecs:Int()="bbMilliSecs"
@@ -407,22 +465,33 @@ End Rem
 Function MemMove( dst:Byte Ptr,src:Byte Ptr,size:Size_T )="void bbMemMove( void *,const void *,size_t )"
 
 Rem
-bbdoc: Set garbage collector mode
+bbdoc: Sets the garbage collector mode
 about:
-@mode can be one of the following:<br>
-1 : automatic GC - memory will be automatically garbage collected<br>
-2 : manual GC - no memory will be collected until a call to GCCollect is made<br>
-<br>
+@mode can be one of the following:<br/>
+1 : automatic GC - memory will be automatically garbage collected<br/>
+2 : manual GC - no memory will be collected until a call to GCCollect is made<br/>
+<br/>
 The default GC mode is automatic GC.
 End Rem
 Function GCSetMode( Mode:Int )="bbGCSetMode"
 
 Rem
+bbdoc: Gets the garbage collector mode
+about:
+@mode can be one of the following:<br/>
+1 : automatic GC - memory will be automatically garbage collected<br/>
+2 : manual GC - no memory will be collected until a call to GCCollect is made<br/>
+<br/>
+The default GC mode is automatic GC.
+End Rem
+Function GCGetMode:Int()="bbGCGetMode"
+
+Rem
 bbdoc: Suspend garbage collector
 about:
 #GCSuspend temporarily suspends the garbage collector. No garbage
-collection will be performed following a call to #GCSuspend.<br>
-<br>
+collection will be performed following a call to #GCSuspend.<br/>
+<br/>
 Use #GCResume to resume the garbage collector. Note that #GCSuspend
 and #GCResume 'nest', meaning that each call to #GCSuspend must be 
 matched by a call to #GCResume.
@@ -432,8 +501,8 @@ Function GCSuspend()="bbGCSuspend"
 Rem
 bbdoc: Resume garbage collector
 about:
-#GCResume resumes garbage collection following a call to #GCSuspend.<br>
-<br>
+#GCResume resumes garbage collection following a call to #GCSuspend.<br/>
+<br/>
 See #GCSuspend for more details.
 End Rem
 Function GCResume()="bbGCResume"
@@ -483,7 +552,7 @@ Function GCRetain(obj:Object)="bbGCRetain"
 Rem
 bbdoc: Releases a reference from the specified #Object.
 End Rem
-Function GCRelease(obj:Byte Ptr)="void bbGCRelease(BBObject*)!"
+Function GCRelease(obj:Object)="void bbGCRelease(BBObject*)!"
 
 Rem
 bbdoc: Returns #True if the current thread is registered with the garbage collector.
@@ -502,6 +571,117 @@ about: Note, that any memory allocated by the garbage collector from the current
 accessible after the thread is unregistered.
 End Rem
 Function GCUnregisterMyThread:Int()="bbGCUnregisterMyThread"
+
+Rem
+bbdoc: Structure for holding Garbage Collection statistics as provided by #GCGetStats().
+End Rem
+Struct SGCStats
+	Rem
+	bbdoc: Heap size in bytes (including the area unmapped to OS).
+	End Rem
+?win32 and ptr64
+	Field heapsize:ULong
+?not win32 or not ptr64
+	Field heapsize:ULongInt
+?
+	Rem
+	bbdoc: Total bytes contained in free and unmapped blocks.
+	End Rem
+?win32 and ptr64
+	Field freeBytes:ULong
+?not win32 or not ptr64
+	Field freeBytes:ULongInt
+?
+	Rem
+	bbdoc: Amount of memory unmapped to OS.
+	End Rem
+?win32 and ptr64
+	Field unmappedBytes:ULong
+?not win32 or not ptr64
+	Field unmappedBytes:ULongInt
+?
+	Rem
+	bbdoc: Number of bytes allocated since the recent collection.
+	End Rem
+?win32 and ptr64
+	Field bytesAllocedSinceGC:ULong
+?not win32 or not ptr64
+	Field bytesAllocedSinceGC:ULongInt
+?
+	Rem
+	bbdoc: Number of bytes allocated before the recent garbage collection.
+	about: The value may wrap.
+	End Rem
+?win32 and ptr64
+	Field allocedBytesBeforeGC:ULong
+?not win32 or not ptr64
+	Field allocedBytesBeforeGC:ULongInt
+?
+	Rem
+	bbdoc: Number of bytes not considered candidates for garbage collection.
+	End Rem
+?win32 and ptr64
+	Field nonGCBytes:ULong
+?not win32 or not ptr64
+	Field nonGCBytes:ULongInt
+?
+	Rem
+	bbdoc: Garbage collection cycle number.
+	about: The value may wrap (and could be -1).
+	End Rem
+?win32 and ptr64
+	Field GCCycleNo:ULong
+?not win32 or not ptr64
+	Field GCCycleNo:ULongInt
+?
+	Rem
+	bbdoc: Number of marker threads (excluding the initiating one).
+	about: 0 if the collector is single-threaded.
+	End Rem
+?win32 and ptr64
+	Field markersM1:ULong
+?not win32 or not ptr64
+	Field markersM1:ULongInt
+?
+	Rem
+	bbdoc: Approximate number of reclaimed bytes after recent GC.
+	End Rem
+?win32 and ptr64
+	Field bytesReclaimedSinceGC:ULong
+?not win32 or not ptr64
+	Field bytesReclaimedSinceGC:ULongInt
+?
+	Rem
+	bbdoc: Approximate number of bytes reclaimed before the recent garbage collection.
+	about: The value may wrap.
+	End Rem
+?win32 and ptr64
+	Field reclaimedBytesBeforeGC:ULong
+?not win32 or not ptr64
+	Field reclaimedBytesBeforeGC:ULongInt
+?
+	Rem
+	bbdoc: Number of bytes freed explicitly since the recent GC.
+	End Rem
+?win32 and ptr64
+	Field freedBytesSinceGC:ULong
+?not win32 or not ptr64
+	Field freedBytesSinceGC:ULongInt
+?
+	Rem
+	bbdoc: Total amount of memory obtained from OS, in bytes.
+	End Rem
+?win32 and ptr64
+	Field obtainedFromOSBytes:ULong
+?not win32 or not ptr64
+	Field obtainedFromOSBytes:ULongInt
+?
+End Struct
+
+Rem
+bbdoc: Retrieves GC statistics (various global counters), populating the provided #SGCStats struct.
+End Rem
+Function GCGetStats(stats:SGCStats Var)="void bbGCGetStats(void*)!"
 
 Rem
 bbdoc: Convert object to integer handle
@@ -523,6 +703,26 @@ bbdoc: Copies an array from the specified @src array, starting at the position @
 End Rem
 Function ArrayCopy(src:Object, srcPos:Int, dst:Object, dstPos:Int, length:Int)="void bbArrayCopy(BBARRAY, int, BBARRAY, int, int)!"
 
+Rem
+bbdoc: Determines whether the #Object @obj is an empty array.
+returns: #True if @obj is an empty array, or #False otherwise.
+End Rem
+Function IsEmptyArray:Int(obj:Object)="int bbObjectIsEmptyArray(BBOBJECT)!"
+Rem
+bbdoc: Determines whether the #Object @obj is an empty #String.
+returns: #True if @obj is an empty #String, or #False otherwise.
+End Rem
+Function IsEmptyString:Int(obj:Object)="int bbObjectIsEmptyString(BBOBJECT)!"
+
+Rem
+bbdoc: Determines whether the #Object @obj is a #String.
+returns: #True if @obj is a #String, or #False otherwise.
+End Rem
+Function ObjectIsString:Int(obj:Object)="int bbObjectIsString(BBOBJECT)!"
+
+Function DumpObjectCounts(buffer:Byte Ptr, size:Int, includeZeros:Int)="void bbObjectDumpInstanceCounts(char *, int, int)!"
+Global CountObjectInstances:Int="bbCountInstances"
+
 End Extern
 
 Rem
@@ -542,7 +742,7 @@ End Interface
 Rem
 bbdoc: Set Strict mode (default in BlitzMax-NG)
 about:
-See the <a href=../../../../doc/bmxlang/compatibility.html>BlitzMax Language Reference</a> for more information on Strict mode programming.
+See the <a href="../../../../doc/bmxlang/compatibility.html">BlitzMax Language Reference</a> for more information on Strict mode programming.
 keyword: "Strict"
 End Rem
 
@@ -813,6 +1013,12 @@ keyword: "Global"
 End Rem
 
 Rem
+bbdoc: Declare a threaded global variable
+about: Each thread will have its own copy of the variable - any changes to the variable will be visible only within the thread the change was made.
+keyword: "ThreadedGlobal"
+End Rem
+
+Rem
 bbdoc: Declare a field variable
 keyword: "Field"
 End Rem
@@ -976,7 +1182,7 @@ End Rem
 Rem
 bbdoc: Declare module scope and identifier
 about:
-See the <a href=../../../../doc/bmxlang/modules.html>BlitzMax Language Reference</a> for more information on BlitzMax Modules.
+See the <a href="../../../../doc/bmxlang/modules.html">BlitzMax Language Reference</a> for more information on BlitzMax Modules.
 keyword: "Module"
 End Rem
 
@@ -1125,5 +1331,19 @@ bbdoc: Create a string of length 1 with a character code
 keyword: "Chr"
 End Rem
 
+Rem
+bbdoc: Allocates memory from the stack.
+keyword: "StackAlloc"
+about: This memory is automatically freed on leaving the function where it was created.
+It should not be freed, or returned from the function.
+End Rem
 
+Rem
+bbdoc: Returns the offset in bytes for a field of the specified #Type or #Struct.
+keyword: "FieldOffset"
+End Rem
 
+Rem
+bbdoc: Denotes an array as a static array, with its content allocated on the stack.
+keyword: "StaticArray"
+End Rem

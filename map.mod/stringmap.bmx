@@ -1,20 +1,27 @@
-Strict
+SuperStrict
 
+Import "common.bmx"
 
 Extern
-	Function bmx_map_stringmap_clear(root:Byte Ptr Ptr)
-	Function bmx_map_stringmap_isempty:Int(root:Byte Ptr Ptr)
-	Function bmx_map_stringmap_insert(key:String, value:Object, root:Byte Ptr Ptr)
-	Function bmx_map_stringmap_contains:Int(key:String, root:Byte Ptr Ptr)
-	Function bmx_map_stringmap_valueforkey:Object(key:String, root:Byte Ptr Ptr)
-	Function bmx_map_stringmap_remove:Int(key:String, root:Byte Ptr Ptr)
-	Function bmx_map_stringmap_firstnode:Byte Ptr(root:Byte Ptr)
-	Function bmx_map_stringmap_nextnode:Byte Ptr(node:Byte Ptr)
-	Function bmx_map_stringmap_key:String(node:Byte Ptr)
-	Function bmx_map_stringmap_value:Object(node:Byte Ptr)
-	Function bmx_map_stringmap_hasnext:Int(node:Byte Ptr, root:Byte Ptr)
-	Function bmx_map_stringmap_copy(dst:Byte Ptr Ptr, _root:Byte Ptr)
+	Function bmx_map_stringmap_clear(root:SavlRoot Ptr Ptr)
+	Function bmx_map_stringmap_isempty:Int(root:SavlRoot Ptr)
+	Function bmx_map_stringmap_insert(key:String, value:Object, root:SavlRoot Ptr Ptr)
+	Function bmx_map_stringmap_contains:Int(key:String, root:SavlRoot Ptr)
+	Function bmx_map_stringmap_valueforkey:Object(key:String, root:SavlRoot Ptr)
+	Function bmx_map_stringmap_remove:Int(key:String, root:SavlRoot Ptr Ptr)
+	Function bmx_map_stringmap_firstnode:SStringMapNode Ptr(root:SavlRoot Ptr)
+	Function bmx_map_stringmap_nextnode:SStringMapNode Ptr(node:Byte Ptr)
+	Function bmx_map_stringmap_key:String(node:SStringMapNode Ptr)
+	Function bmx_map_stringmap_value:Object(node:SStringMapNode Ptr)
+	Function bmx_map_stringmap_hasnext:Int(node:SStringMapNode Ptr, root:SavlRoot Ptr)
+	Function bmx_map_stringmap_copy(dst:SavlRoot Ptr Ptr, _root:SavlRoot Ptr)
 End Extern
+
+Struct SStringMapNode
+	Field link:SavlRoot
+	Field key:String
+	Field value:Object
+End Struct
 
 Rem
 bbdoc: A key/value (String/Object) map.
@@ -30,11 +37,6 @@ Type TStringMap
 	about: Removes all keys and values.
 	End Rem
 	Method Clear()
-?ngcmod
-		If Not IsEmpty() Then
-			_modCount :+ 1
-		End If
-?
 		bmx_map_stringmap_clear(Varptr _root)
 	End Method
 	
@@ -42,8 +44,8 @@ Type TStringMap
 	bbdoc: Checks if the map is empty.
 	about: #True if @map is empty, otherwise #False.
 	End Rem
-	Method IsEmpty()
-		Return bmx_map_stringmap_isempty(Varptr _root)
+	Method IsEmpty:Int()
+		Return bmx_map_stringmap_isempty(_root)
 	End Method
 	
 	Rem
@@ -51,10 +53,8 @@ Type TStringMap
 	about: If the map already contains @key, its value is overwritten with @value. 
 	End Rem
 	Method Insert( key:String,value:Object )
+		key.Hash()
 		bmx_map_stringmap_insert(key, value, Varptr _root)
-?ngcmod
-		_modCount :+ 1
-?
 	End Method
 
 	Rem
@@ -62,7 +62,8 @@ Type TStringMap
 	returns: #True if the map contains @key.
 	End Rem
 	Method Contains:Int( key:String )
-		Return bmx_map_stringmap_contains(key, Varptr _root)
+		key.Hash()
+		Return bmx_map_stringmap_contains(key, _root)
 	End Method
 	
 	Rem
@@ -71,17 +72,16 @@ Type TStringMap
 	about: If the map does not contain @key, a #Null object is returned.
 	End Rem
 	Method ValueForKey:Object( key:String )
-		Return bmx_map_stringmap_valueforkey(key, Varptr _root)
+		key.Hash()
+		Return bmx_map_stringmap_valueforkey(key, _root)
 	End Method
 	
 	Rem
 	bbdoc: Remove a key/value pair from the map.
 	returns: #True if @key was removed, or #False otherwise.
 	End Rem
-	Method Remove( key:String )
-?ngcmod
-		_modCount :+ 1
-?
+	Method Remove:Int( key:String )
+		key.Hash()
 		Return bmx_map_stringmap_remove(key, Varptr _root)
 	End Method
 
@@ -111,9 +111,6 @@ Type TStringMap
 		Local mapenum:TStringMapEnumerator=New TStringMapEnumerator
 		mapenum._enumerator=nodeenum
 		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
 		Return mapenum
 	End Method
 	
@@ -133,9 +130,6 @@ Type TStringMap
 		Local mapenum:TStringMapEnumerator=New TStringMapEnumerator
 		mapenum._enumerator=nodeenum
 		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
 		Return mapenum
 	End Method
 	
@@ -170,7 +164,8 @@ Type TStringMap
 	about: If the map does not contain @key, a #Null object is returned.
 	End Rem
 	Method Operator[]:Object(key:String)
-		Return bmx_map_stringmap_valueforkey(key, Varptr _root)
+		key.Hash()
+		Return bmx_map_stringmap_valueforkey(key, _root)
 	End Method
 	
 	Rem
@@ -178,20 +173,17 @@ Type TStringMap
 	about: If the map already contains @key, its value is overwritten with @value. 
 	End Rem
 	Method Operator[]=(key:String, value:Object)
+		key.Hash()
 		bmx_map_stringmap_insert(key, value, Varptr _root)
 	End Method
 
-	Field _root:Byte Ptr
-
-?ngcmod
-	Field _modCount:Int
-?
+	Field _root:SavlRoot Ptr
 
 End Type
 
 Type TStringNode
-	Field _root:Byte Ptr
-	Field _nodePtr:Byte Ptr
+	Field _root:SavlRoot Ptr
+	Field _nodePtr:SStringMapNode Ptr
 	
 	Method Key:String()
 		Return bmx_map_stringmap_key(_nodePtr)
@@ -201,7 +193,7 @@ Type TStringNode
 		Return bmx_map_stringmap_value(_nodePtr)
 	End Method
 
-	Method HasNext()
+	Method HasNext:Int()
 		Return bmx_map_stringmap_hasnext(_nodePtr, _root)
 	End Method
 	
@@ -218,7 +210,7 @@ Type TStringNode
 End Type
 
 Type TStringNodeEnumerator
-	Method HasNext()
+	Method HasNext:Int()
 		Local has:Int = _node.HasNext()
 		If Not has Then
 			_map = Null
@@ -227,9 +219,6 @@ Type TStringNodeEnumerator
 	End Method
 	
 	Method NextObject:Object()
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TStringMap Concurrent Modification"
-?
 		Local node:TStringNode=_node
 		_node=_node.NextNode()
 		Return node
@@ -240,16 +229,10 @@ Type TStringNodeEnumerator
 	Field _node:TStringNode	
 
 	Field _map:TStringMap
-?ngcmod
-	Field _expectedModCount:Int
-?
 End Type
 
 Type TStringKeyEnumerator Extends TStringNodeEnumerator
 	Method NextObject:Object() Override
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TStringMap Concurrent Modification"
-?
 		Local node:TStringNode=_node
 		_node=_node.NextNode()
 		Return node.Key()
@@ -258,9 +241,6 @@ End Type
 
 Type TStringValueEnumerator Extends TStringNodeEnumerator
 	Method NextObject:Object() Override
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TStringMap Concurrent Modification"
-?
 		Local node:TStringNode=_node
 		_node=_node.NextNode()
 		Return node.Value()
@@ -275,7 +255,7 @@ Type TStringMapEnumerator
 End Type
 
 Type TStringEmptyEnumerator Extends TStringNodeEnumerator
-	Method HasNext() Override
+	Method HasNext:Int() Override
 		_map = Null
 		Return False
 	End Method

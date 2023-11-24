@@ -6,12 +6,14 @@ bbdoc: User input/Polled input
 End Rem
 Module BRL.PolledInput
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.04"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Support for 5 mouse buttons."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Improved Win32 KeyDown handling."
 ModuleInfo "History: 1.02"
@@ -31,7 +33,7 @@ Global suspended,terminate
 Global keyStates[256],keyHits[256]
 Global charGet,charPut,charQueue[256]
 
-Global mouseStates[4],mouseHits[4]
+Global mouseStates[6],mouseHits[6]
 Global mouseLocation[4],lastMouseLocation[4]
 
 Function Hook:Object( id,data:Object,context:Object )
@@ -288,7 +290,7 @@ The returned value represents the number of the times @button has been clicked s
 last call to #MouseHit with the same @button.
 
 @button should be 1 for the left mouse button, 2 for the right mouse button or 3 for the
-middle mouse button.
+middle mouse button. Two further buttons, 4 and 5, are also available for mice that support them.
 End Rem
 Function MouseHit( button )
 	If autoPoll PollSystem
@@ -302,8 +304,8 @@ bbdoc: Check for mouse button down state
 returns: #True if @button is currently down
 about:
 @button should be 1 for the left mouse button, 2 for the right mouse button or 3 for the
-middle mouse button.
-end rem
+middle mouse button. Two further buttons, 4 and 5, are also available for mice that support them.
+End Rem
 Function MouseDown( button )
 	If autoPoll PollSystem
 	Return mouseStates[button]

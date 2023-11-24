@@ -1,4 +1,4 @@
-' Copyright (c)2016 Bruce A Henderson
+' Copyright (c)2019 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -26,11 +26,13 @@ bbdoc: System/ThreadPool
 End Rem
 Module BRL.ThreadPool
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Bruce A Henderson"
 
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Added cached pool executor"
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release"
 
@@ -71,6 +73,7 @@ Type TThreadPoolExecutor Extends TExecutor
 	Field maxThreads:Int
 
 	Field threads:TList
+	Field threadsLock:TMutex
 	Field jobQueue:TJobQueue
 	
 	Field threadsAlive:Int
@@ -79,12 +82,16 @@ Type TThreadPoolExecutor Extends TExecutor
 	Field countLock:TMutex
 	Field threadsIdle:TCondVar
 	
+	Field maxIdleWait:Int
+	
 	Rem
 	bbdoc: 
 	End Rem
-	Method New(initial:Int)
+	Method New(initial:Int, idleWait:Int = 0)
 		maxThreads = initial
+		maxIdleWait = idleWait
 		
+		threadsLock = TMutex.Create()
 		jobQueue = New TJobQueue
 		
 		countLock = TMutex.Create()
@@ -109,10 +116,10 @@ Type TThreadPoolExecutor Extends TExecutor
 		Local thread:TPooledThread = TPooledThread(data)
 		Local pool:TThreadPoolExecutor = thread.pool
 		
-		Return pool.processThread()
+		Return pool.processThread(thread)
 	End Function
 	
-	Method processThread:Object()
+	Method processThread:Object(thread:TPooledThread)
 
 		countLock.Lock()
 		threadsAlive :+ 1
@@ -120,7 +127,13 @@ Type TThreadPoolExecutor Extends TExecutor
 		
 		While keepThreadsAlive
 		
-			jobQueue.Wait()
+			If maxIdleWait Then
+				If jobQueue.TimedWait(maxIdleWait) = 1 Then
+					Exit
+				End If
+			Else
+				jobQueue.Wait()
+			End If
 		
 			If keepThreadsAlive Then
 			
@@ -154,6 +167,10 @@ Type TThreadPoolExecutor Extends TExecutor
 		countLock.Lock()
 		threadsAlive :- 1
 		countLock.Unlock()
+		
+		threadsLock.Lock()
+		threads.Remove(thread)
+		threadsLock.Unlock()
 
 		Return Null
 	End Method
@@ -164,6 +181,19 @@ Type TThreadPoolExecutor Extends TExecutor
 	End Rem
 	Method execute(command:TRunnable) Override
 		If Not isShutdown Then
+			If maxThreads < 0 Then
+				Local newThread:Int
+				countLock.Lock()
+				If threadsWorking = threadsAlive Then
+					newThread = True
+				End If
+				countLock.Unlock()
+				If newThread Then
+					threadsLock.Lock()
+					threads.AddLast(New TPooledThread(Self, _processThread))
+					threadsLock.Unlock()
+				End If
+			End If
 			jobQueue.Lock()
 			jobQueue.Add(command)
 			jobQueue.Unlock()
@@ -185,6 +215,13 @@ Type TThreadPoolExecutor Extends TExecutor
 	Function newFixedThreadPool:TThreadPoolExecutor(threads:Int)
 		Assert threads > 0
 		Return New TThreadPoolExecutor(threads)
+	End Function
+	
+	Rem
+	bbdoc: 
+	End Rem
+	Function newCachedThreadPool:TThreadPoolExecutor(idleWait:Int = 60000)
+		Return New TThreadPoolExecutor(-1, idleWait)
 	End Function
 
 	Rem
@@ -227,6 +264,19 @@ Type TThreadPoolExecutor Extends TExecutor
 
 	End Method
 	
+	Rem
+	bbdoc: Returns the approximate number of threads that are actively executing tasks.
+	end rem
+	Method getActiveCount:Int()
+		countLock.Lock()
+		Local count:Int = threadsWorking
+		countLock.unlock()
+		return count
+	End Method
+	
+	Method IsQueueEmpty:Int()
+		return jobQueue.IsEmpty()
+	end method
 End Type
 
 Private
@@ -253,6 +303,20 @@ Type TBinarySemaphore
 		mutex.lock()
 		While value <> 1
 			cond.Wait(mutex)
+		Wend
+		value = 0
+		mutex.Unlock()
+	End Method
+
+	Method TimedWait:Int(millis:Int)
+		mutex.lock()
+		While value <> 1
+			Local res:Int = cond.TimedWait(mutex, millis)
+			If res = 1 Then
+				value = 0
+				mutex.Unlock()
+				Return res
+			End If
 		Wend
 		value = 0
 		mutex.Unlock()
@@ -309,6 +373,13 @@ Type TJobQueue
 		Return job
 	End Method
 
+	Method IsEmpty:Int()
+		Lock()
+		Local empty:Int = jobs.IsEmpty()
+		UnLock()
+		return empty
+	End Method
+
 	Method Lock()
 		mutex.Lock()
 	End Method
@@ -319,6 +390,10 @@ Type TJobQueue
 	
 	Method Wait()
 		hasJobs.Wait()
+	End Method
+
+	Method TimedWait:Int(millis:Int)
+		Return hasJobs.TimedWait(millis)
 	End Method
 	
 	Method PostAll()

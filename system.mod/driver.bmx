@@ -11,18 +11,18 @@ Type TSystemDriver
 	Method MoveMouse( x:Int,y:Int ) Abstract
 	Method SetMouseVisible( visible:Int ) Abstract
 	
-	Method Notify( text$,serious:Int ) Abstract
-	Method Confirm:Int( text$,serious:Int ) Abstract
-	Method Proceed:Int( text$,serious:Int ) Abstract
-	Method RequestFile$( text$,exts$,save:Int,file$ ) Abstract
-	Method RequestDir$( text$,path$ ) Abstract
+	Method Notify( text:String,serious:Int ) Abstract
+	Method Confirm:Int( text:String,serious:Int ) Abstract
+	Method Proceed:Int( text:String,serious:Int ) Abstract
+	Method RequestFile:String( text:String,exts:String,save:Int,file:String ) Abstract
+	Method RequestDir:String( text:String,path:String ) Abstract
 
-	Method OpenURL:Int( url$ ) Abstract	
+	Method OpenURL:Int( url:String ) Abstract	
 
-	Method DesktopWidth:Int() Abstract
-	Method DesktopHeight:Int() Abstract
-	Method DesktopDepth:Int() Abstract
-	Method DesktopHertz:Int() Abstract
+	Method DesktopWidth:Int(display:Int) Abstract
+	Method DesktopHeight:Int(display:Int) Abstract
+	Method DesktopDepth:Int(display:Int) Abstract
+	Method DesktopHertz:Int(display:Int) Abstract
 
 	Method ToString:String() Override
 		Return Name()

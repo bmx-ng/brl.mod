@@ -6,12 +6,14 @@ bbdoc: Data structures/Linked lists
 End Rem
 Module BRL.LinkedList
 
-ModuleInfo "Version: 1.10"
+ModuleInfo "Version: 1.11"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.11"
+ModuleInfo "History: Fixed Delete issues with revised GC finalizer."
 ModuleInfo "History: 1.10"
 ModuleInfo "History: Fixed TLink removal during iteration issue."
 ModuleInfo "History: 1.09"
@@ -27,10 +29,6 @@ ModuleInfo "History: Added optional CompareFunc parameter to Sort"
 ModuleInfo "History: 1.05 Release"
 ModuleInfo "History: Sort now swaps links instead of values"
 
-?Threaded
-Import BRL.Threads
-?
-
 Function CompareObjects( o1:Object,o2:Object )
 	Return o1.Compare( o2 )
 End Function
@@ -42,7 +40,6 @@ Type TLink
 
 	Field _value:Object
 	Field _succ:TLink,_pred:TLink
-	Field _removed:Int
 	
 	Rem
 	bbdoc: Returns the Object associated with this Link.
@@ -72,9 +69,6 @@ Type TLink
 		_value=Null
 		_succ._pred=_pred
 		_pred._succ=_succ
-		_removed = True
-		_pred=Null
-		_succ=Null
 	End Method
 
 End Type
@@ -84,29 +78,10 @@ bbdoc: Enumerator Object use by TList in order to implement Eachin support.
 End Rem
 Type TListEnum
 
-	Global _pool:TList = New TList
-?Threaded
-	Global _mutex:TMutex = CreateMutex()
-?
-
 	Field _link:TLink
-	Field _list:TList
 
 	Method HasNext()
-		Local has:Int = _link._value<>_link And Not _link._removed
-		If Not has Then
-?Threaded
-			LockMutex(_mutex)
-?
-			_pool.AddLast(Self)
-
-			_link = Null
-			_list = Null
-?Threaded
-			UnlockMutex(_mutex)
-?
-		End If
-		Return has
+		Return _link._value<>_link
 	End Method
 
 	Method NextObject:Object()
@@ -139,10 +114,10 @@ Type TList
 	
 '?Not Threaded
 	Method Delete()
-		Clear
-		_head._value=Null
-		_head._succ=Null
-		_head._pred=Null
+'		Clear
+'		_head._value=Null
+'		_head._succ=Null
+'		_head._pred=Null
 	End Method
 '?
 	Rem
@@ -408,7 +383,6 @@ Type TList
 	Method Sort( ascending=True,compareFunc( o1:Object,o2:Object )=CompareObjects )
 		Local ccsgn=-1
 		If ascending ccsgn=1
-		Local modded:Int
 		
 		Local insize=1
 		Repeat
@@ -452,7 +426,6 @@ Type TList
 					t._pred=tail
 					tail._succ=t
 					tail=t
-					modded = True
 				Forever
 				p=q
 			Wend
@@ -469,18 +442,8 @@ Type TList
 	End Method
 		
 	Method ObjectEnumerator:TListEnum()
-?Threaded
-			LockMutex(TListEnum._mutex)
-?
-		Local enumeration:TListEnum=TListEnum(TListEnum._pool.RemoveFirst())
-?Threaded
-			UnlockMutex(TListEnum._mutex)
-?
-		If Not enumeration Then
-			enumeration = New TListEnum
-		End If
+		Local enumeration:TListEnum=New TListEnum
 		enumeration._link=_head._succ
-		enumeration._list = Self
 		Return enumeration
 	End Method
 
@@ -511,12 +474,22 @@ Type TList
 		Return list
 	End Function
 
+	Rem
+	bbdoc: Remove an object from a linked list.
+	End Rem
+	Method RemoveLink( link:TLink )
+		If _count > -1 Then
+			_count :- 1
+		End If
+		link.Remove
+	End Method
+	
 End Type
 
 Rem
 bbdoc: Create a linked list
 returns: A new linked list object
-end rem
+End Rem
 Function CreateList:TList()
 	Return New TList
 End Function
@@ -599,12 +572,36 @@ Function ListFindLink:TLink( list:TList,value:Object )
 End Function
 
 Rem
+bbdoc: Remove an object from a linked list referenced by a link
+about: #ListRemoveLink removes an object from the linked list referenced by the given link
+End Rem
+Function ListRemoveLink( list:TList,link:TLink )
+	list.RemoveLink( link )
+End Function
+
+Rem
 bbdoc: Add an object to a linked list
 returns: A link object
 end rem
 Function ListAddLast:TLink( list:TList,value:Object )
 	Return list.AddLast( value )
 End Function
+
+Rem
+bbdoc: Returns the first object in the list
+about: Returns Null if the list is empty.
+End Rem
+Function ListGetFirst:Object( list:TList )
+	Return list.First()
+EndFunction
+
+Rem
+bbdoc: Returns the last object in the list
+about: Returns Null if the list is empty.
+End Rem
+Function ListGetLast:Object( list:TList )
+	Return list.Last()
+EndFunction
 
 Rem
 bbdoc: Add an object to a linked list
@@ -615,17 +612,25 @@ Function ListAddFirst:TLink( list:TList,value:Object )
 End Function
 
 Rem
-bbdoc: Remove an object from a linked list
-about: #ListRemove scans a list for the specified value and removes its link.
-end rem
-Function ListRemove( list:TList,value:Object )
-	list.Remove value
+bbdoc: Removes and returns the first object in the list.
+about: Returns Null if the list is empty.
+End Rem
+Function ListRemoveFirst:Object( list:TList )
+	Return list.RemoveFirst()
+End Function
+
+Rem
+bbdoc: Removes and returns the last object in the list.
+about: Returns Null if the list is empty.
+End Rem
+Function ListRemoveLast:Object( list:TList )
+	Return list.RemoveLast()
 End Function
 
 Rem
 bbdoc: Remove an object from a linked list
-about: #RemoveLink is more efficient than #ListRemove.
-end rem
-Function RemoveLink( link:TLink )
-	link.Remove
+about: #ListRemove scans a list for the specified value and removes its link.
+End Rem
+Function ListRemove( list:TList,value:Object )
+	list.Remove( value )
 End Function

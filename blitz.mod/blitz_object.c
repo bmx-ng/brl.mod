@@ -3,6 +3,8 @@
 
 #define REG_GROW 256
 
+int bbCountInstances = 0;
+
 static BBClass **reg_base=NULL,**reg_put=NULL,**reg_end=NULL;
 static BBInterface **ireg_base=NULL,**ireg_put=NULL,**ireg_end=NULL;
 static BBDebugScope **sreg_base=NULL,**sreg_put=NULL,**sreg_end=NULL;
@@ -34,7 +36,9 @@ BBClass bbObjectClass={
 	bbObjectSendMessage,
 	0,             //interface
 	0,             //extra
-	0              //obj_size
+	0,             //obj_size
+	0,             //instance_count
+	sizeof(void*)  //fields_offset
 };
 
 BBObject bbNullObject={
@@ -71,21 +75,11 @@ BBObject *bbObjectAtomicNewNC( BBClass *clas ){
 void bbObjectFree( BBObject *o ){
 	BBClass *clas=o->clas;
 
-#ifdef BB_GC_RC
-
-	if( o==&bbNullObject ){
-		//o->refs=BBGC_MANYREFS;
-		return;
+	if (bbCountInstances) {
+		bbAtomicAdd(&clas->instance_count, -1);
 	}
 
 	clas->dtor( o );
-	bbGCDeallocObject( o,clas->instance_size );
-
-#else
-
-	clas->dtor( o );
-
-#endif
 }
 
 void bbObjectCtor( BBObject *o ){
@@ -93,7 +87,6 @@ void bbObjectCtor( BBObject *o ){
 }
 
 void bbObjectDtor( BBObject *o ){
-	o->clas=0;
 }
 
 BBString *bbObjectToString( BBObject *o ){
@@ -114,10 +107,34 @@ void bbObjectReserved(){
 	bbExThrowCString( "Illegal call to reserved method" );
 }
 
+BBObject *bbObjectStringcast( BBObject *o ){
+	if (o->clas == &bbStringClass) {
+		return o;
+	} else {
+		return (BBObject *)&bbEmptyString;
+	}
+}
+
+int bbObjectIsString( BBObject *o ){
+	return o->clas == &bbStringClass;
+}
+
+BBObject *bbObjectArraycast( BBObject *o ){
+	if (o->clas == &bbArrayClass) {
+		return o;
+	} else {
+		return (BBObject *)&bbEmptyArray;
+	}
+}
+
+int bbObjectIsArray( BBObject *o ){
+	return o->clas == &bbArrayClass;
+}
+
 BBObject *bbObjectDowncast( BBObject *o,BBClass *t ){
 	BBClass *p=o->clas;
 	while( p && p!=t ) p=p->super;
-	return p ? o : (t==&bbStringClass) ? &bbEmptyString : (t==&bbArrayClass) ? &bbEmptyArray : &bbNullObject;
+	return p ? o : (t==&bbStringClass) ? (BBObject *)&bbEmptyString : (t==&bbArrayClass) ? (BBObject *)&bbEmptyArray : &bbNullObject;
 }
 
 void bbObjectRegisterType( BBClass *clas ){
@@ -133,6 +150,29 @@ void bbObjectRegisterType( BBClass *clas ){
 BBClass **bbObjectRegisteredTypes( int *count ){
 	*count=reg_put-reg_base;
 	return reg_base;
+}
+
+void bbObjectDumpInstanceCounts(char * buf, int size, int includeZeros) {
+	int i;
+	int count = 0;
+	int offset = 0;
+	BBClass ** classes = bbObjectRegisteredTypes(&count);
+	offset += snprintf(buf, size, "=== Instance count dump (%4d) ===\n", count);
+	if (bbStringClass.instance_count > 0 || includeZeros) {
+		offset += snprintf(buf + offset, size - offset, "%s\t%d\n", bbStringClass.debug_scope->name, bbStringClass.instance_count);
+	}
+	if (bbArrayClass.instance_count > 0 || includeZeros) {
+		offset += snprintf(buf + offset, size - offset, "%s\t%d\n", bbArrayClass.debug_scope->name, bbArrayClass.instance_count);
+	}
+	for (i = 0; i < count; i++) {
+		BBClass * clas = classes[i];
+		if (offset < size && (clas->instance_count > 0 || includeZeros)) {
+			offset += snprintf(buf + offset, size - offset, "%s\t%d\n", clas->debug_scope->name, clas->instance_count);
+		}
+	}
+	if (offset < size) {
+		snprintf(buf + offset, size - offset, "===  End  ===\n");
+	}
 }
 
 void bbObjectRegisterInterface( BBInterface * ifc ){
@@ -241,7 +281,7 @@ BBDebugScope * bbObjectStructInfo( char * name ) {
 	scope.name = name;
 	node.scope = &scope;
 	
-	struct struct_node * found = (struct struct_node *)tree_search(&node, struct_node_compare, struct_root);
+	struct struct_node * found = (struct struct_node *)tree_search((struct tree_root_np *)&node, struct_node_compare, (struct tree_root_np *)struct_root);
 
 	if (found) {
 		return found->scope;
@@ -285,7 +325,7 @@ BBDebugScope * bbObjectEnumInfo( char * name ) {
 	scope.name = name;
 	node.scope = &scope;
 	
-	struct enum_node * found = (struct enum_node *)tree_search(&node, enum_node_compare, enum_root);
+	struct enum_node * found = (struct enum_node *)tree_search((struct tree_root_np *)&node, enum_node_compare, (struct tree_root_np *)enum_root);
 
 	if (found) {
 		return found->scope;
@@ -293,3 +333,14 @@ BBDebugScope * bbObjectEnumInfo( char * name ) {
 	
 	return 0;
 }
+
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+extern void * bbObjectToFieldOffset(BBOBJECT o);
+#else
+void * bbObjectToFieldOffset(BBOBJECT o) {
+	if ( !o->clas ) {
+		return &bbNullObject;
+	}
+	return (void*)(((unsigned char*)o) + o->clas->fields_offset);
+}
+#endif

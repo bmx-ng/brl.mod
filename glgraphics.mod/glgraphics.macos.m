@@ -12,6 +12,8 @@ enum{
 	FLAGS_DEPTHBUFFER=	0x8,
 	FLAGS_STENCILBUFFER=0x10,
 	FLAGS_ACCUMBUFFER=	0x20,
+	FLAGS_BORDERLESS=	0x40,
+	FLAGS_FULLSCREEN_DESKTOP=	0x80,
 	FLAGS_FULLSCREEN=	0x80000000
 };
 
@@ -46,7 +48,9 @@ enum{
 typedef struct BBGLContext BBGLContext;
 
 struct BBGLContext{
-	int mode,width,height,depth,hertz,flags,sync;
+	int mode,width,height,depth,hertz;
+	BBInt64 flags;
+	int sync;
 
 	NSView *view;
 	BBGLWindow *window;
@@ -61,10 +65,10 @@ static CFDictionaryRef oldDisplayMode;
 extern void bbFlushAutoreleasePool();
 
 void bbGLGraphicsClose( BBGLContext *context );
-void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,int *flags );
+void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,BBInt64 *flags );
 void bbGLGraphicsSetGraphics( BBGLContext *context );
 
-static int _initAttrs( CGLPixelFormatAttribute attrs[16],int flags ){
+static int _initAttrs( CGLPixelFormatAttribute attrs[16],BBInt64 flags ){
 	int n=0;
 	if( flags & FLAGS_BACKBUFFER ) attrs[n++]=kCGLPFADoubleBuffer;
 	if( flags & FLAGS_ALPHABUFFER ){ attrs[n++]=kCGLPFAAlphaSize;attrs[n++]=1; }
@@ -99,7 +103,7 @@ static void _validateSize( BBGLContext *context ){
 }
 
 static void _validateContext( BBGLContext *context ){
-	int flags;
+	BBInt64 flags;
 	NSOpenGLContext *shared;
 	NSOpenGLContext *glContext;
 	NSOpenGLPixelFormat *glFormat;
@@ -200,7 +204,7 @@ int bbGLGraphicsGraphicsModes( int *modes,int count ){
 	return n;
 }
 
-BBGLContext *bbGLGraphicsAttachGraphics( NSView *view,int flags ){
+BBGLContext *bbGLGraphicsAttachGraphics( NSView *view,BBInt64 flags ){
 	NSRect rect;
 	BBGLContext *context;
 
@@ -220,7 +224,7 @@ BBGLContext *bbGLGraphicsAttachGraphics( NSView *view,int flags ){
 	return context;
 }
 
-BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hertz,int flags ){
+BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hertz,BBInt64 flags, int x, int y ){
 	int mode;
 	BBGLWindow *window=0;
 	BBGLContext *context;
@@ -245,12 +249,15 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 			CFRelease( (CFTypeRef)oldDisplayMode );
 			bbExThrowCString( "Unable to set display mode" );
 		}
+		#if MAC_OS_X_VERSION_MAX_ALLOWED < 101500
 		HideMenuBar();
+		#endif
 
 		window=[[NSWindow alloc]
 			initWithContentRect:NSMakeRect( 0,0,width,height )
 			styleMask:NSBorderlessWindowMask
 			backing:NSBackingStoreBuffered
+			willUseFullScreenPresentationOptions:NSApplicationPresentationAutoHideToolbar | NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationFullScreen
 			defer:YES];
 		
 		[window setOpaque:YES];
@@ -262,10 +269,15 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 		mode=MODE_DISPLAY;
 		
 	}else{
+		if (x < 0) x = 0;
+		if (y < 0) y = 0;
+
+		NSWindowStyleMask mask = (flags & FLAGS_BORDERLESS) ? 0 : NSTitledWindowMask|NSClosableWindowMask;
+		if (flags & FLAGS_FULLSCREEN_DESKTOP) mask |= NSWindowStyleMaskFullScreen;
 		
 		window=[[BBGLWindow alloc]
-			initWithContentRect:NSMakeRect( 0,0,width,height )
-			styleMask:NSTitledWindowMask|NSClosableWindowMask
+			initWithContentRect:NSMakeRect( x, y,width,height )
+			styleMask:mask
 			backing:NSBackingStoreBuffered
 			defer:YES];
 
@@ -274,8 +286,12 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 		[window setDelegate:window];
 		[window setAcceptsMouseMovedEvents:YES];
 
-		[window setTitle:[NSString stringWithUTF8String:bbTmpUTF8String(bbAppTitle)]];
+		char *p=bbStringToUTF8String(bbAppTitle);
+
+		[window setTitle:[NSString stringWithUTF8String:p]];
 		[window center];
+
+		bbMemFree(p);
 
 		[window makeKeyAndOrderFront:NSApp];
 		
@@ -299,7 +315,7 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 	return context;
 }
 
-void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz, int *flags ){
+void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz, BBInt64 *flags ){
 	_validateSize( context );
 	*width=context->width;
 	*height=context->height;
@@ -326,7 +342,9 @@ void bbGLGraphicsClose( BBGLContext *context ){
 		CFRelease( (CFTypeRef)oldDisplayMode );
 		CGReleaseAllDisplays();
 		CGDisplayShowCursor( kCGDirectMainDisplay );
+		#if MAC_OS_X_VERSION_MAX_ALLOWED < 101500
 		ShowMenuBar();
+		#endif
 		_displayContext=0;
 	}
 

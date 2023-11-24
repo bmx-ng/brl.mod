@@ -42,26 +42,52 @@ Type TCStandardIO Extends TStream
 
 End Type
 
+Type TCStandardErrIO Extends TStream
+
+	Method Flush() Override
+		fflush_ stderr_
+	End Method
+
+	Method Write:Long( buf:Byte Ptr,count:Long ) Override
+		Return fwrite_( buf,1,count,stderr_ )
+	End Method
+
+End Type
+
 Rem
 bbdoc: BlitzMax Stream object used for Print and Input
 about: The #Print and #Input commands can be redirected by setting the @StandardIOStream Global to an alternative Stream Object.
 End Rem
-Global StandardIOStream:TStream=TTextStream.Create( New TCStandardIO,TTextStream.UTF8 )
+Global StandardIOStream:TStream=TTextStream.Create( New TCStandardIO,ETextStreamFormat.UTF8 )
 
 Rem
-bbdoc: Write a string to the standard IO stream
+bbdoc: BlitzMax Stream object used for #ErrPrint
+End Rem
+Global StandardErrIOStream:TStream=TTextStream.Create( New TCStandardErrIO,ETextStreamFormat.UTF8 )
+
+Rem
+bbdoc: Write a string to the standard errIO stream
 about: A newline character is also written after @str.
 End Rem
-Function Print( str$="" )
+Function Print( str:String="" )
 	StandardIOStream.WriteLine str
 	StandardIOStream.Flush
+End Function
+
+Rem
+bbdoc: Write a string to the standard error IO stream
+about: A newline character is also written after @str.
+End Rem
+Function ErrPrint( str:String="" )
+	StandardErrIOStream.WriteLine str
+	StandardErrIOStream.Flush
 End Function
 
 Rem
 bbdoc: Receive a line of text from the standard IO stream
 about: The optional @prompt is displayed before input is returned.
 End Rem
-Function Input$( prompt$=">" )
+Function Input:String( prompt:String=">" )
 	StandardIOStream.WriteString prompt
 	StandardIOStream.Flush
     Return StandardIOStream.ReadLine()

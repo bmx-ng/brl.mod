@@ -1,12 +1,13 @@
 /*
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 2001 by Hewlett-Packard Company. All rights reserved.
+ * Copyright (c) 2008-2022 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -42,7 +43,7 @@
 # include "dbg_mlc.h"
 #endif
 
-#include "../gc_mark.h"
+#include "gc/gc_mark.h"
 #include "gc_priv.h"
 
 EXTERN_C_BEGIN
@@ -73,8 +74,6 @@ GC_EXTERN unsigned GC_n_mark_procs;
 
 /* Number of mark stack entries to discard on overflow. */
 #define GC_MARK_STACK_DISCARDS (INITIAL_MARK_STACK_SIZE/8)
-
-GC_EXTERN size_t GC_mark_stack_size;
 
 #ifdef PARALLEL_MARK
     /*
@@ -119,7 +118,7 @@ GC_INNER mse * GC_signal_mark_stack_overflow(mse *msp);
 
 /* Push the object obj with corresponding heap block header hhdr onto   */
 /* the mark stack.  Returns the updated mark_stack_top value.           */
-GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr,  mse * mark_stack_top,
+GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr, mse * mark_stack_top,
                             mse * mark_stack_limit)
 {
   word descr = hhdr -> hb_descr;
@@ -344,13 +343,13 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
       /* beginning of object.  If so, it is valid, and we are fine.     */
       GC_ASSERT(gran_displ <= HBLK_OBJS(hhdr -> hb_sz));
 #   endif /* MARK_BIT_PER_OBJ */
-    TRACE(source, GC_log_printf("GC #%u: passed validity tests\n",
-                                (unsigned)GC_gc_no));
+    TRACE(source, GC_log_printf("GC #%lu: passed validity tests\n",
+                                (unsigned long)GC_gc_no));
     SET_MARK_BIT_EXIT_IF_SET(hhdr, gran_displ); /* contains "break" */
-    TRACE(source, GC_log_printf("GC #%u: previously unmarked\n",
-                                (unsigned)GC_gc_no));
-    TRACE_TARGET(base, GC_log_printf("GC #%u: marking %p from %p instead\n",
-                                     (unsigned)GC_gc_no, (void *)base,
+    TRACE(source, GC_log_printf("GC #%lu: previously unmarked\n",
+                                (unsigned long)GC_gc_no));
+    TRACE_TARGET(base, GC_log_printf("GC #%lu: marking %p from %p instead\n",
+                                     (unsigned long)GC_gc_no, (void *)base,
                                      (void *)source));
     INCR_MARKS(hhdr);
     GC_STORE_BACK_PTR(source, base);
@@ -423,32 +422,7 @@ GC_INNER mse * GC_mark_from(mse * top, mse * bottom, mse *limit);
 
 #define GC_mark_stack_empty() ((word)GC_mark_stack_top < (word)GC_mark_stack)
 
-/*
- * Mark from one finalizable object using the specified
- * mark proc. May not mark the object pointed to by
- * real_ptr. That is the job of the caller, if appropriate.
- * Note that this is called with the mutator running, but
- * with us holding the allocation lock.  This is safe only if the
- * mutator needs the allocation lock to reveal hidden pointers.
- * FIXME: Why do we need the GC_mark_state test below?
- */
-#define GC_MARK_FO(real_ptr, mark_proc) \
-  do { \
-    (*(mark_proc))(real_ptr); \
-    while (!GC_mark_stack_empty()) MARK_FROM_MARK_STACK(); \
-    if (GC_mark_state != MS_NONE) { \
-        GC_set_mark_bit(real_ptr); \
-        while (!GC_mark_some((ptr_t)0)) { /* empty */ } \
-    } \
-  } while (0)
-
-GC_EXTERN GC_bool GC_mark_stack_too_small;
-                                /* We need a larger mark stack.  May be */
-                                /* set by client supplied mark routines.*/
-
-typedef int mark_state_t;       /* Current state of marking, as follows:*/
-                                /* Used to remember where we are during */
-                                /* concurrent marking.                  */
+                                /* Current state of marking, as follows.*/
 
                                 /* We say something is dirty if it was  */
                                 /* written since the last time we       */
@@ -469,23 +443,23 @@ typedef int mark_state_t;       /* Current state of marking, as follows:*/
                                 /* being pushed.  "I" holds, except     */
                                 /* that grungy roots may point to       */
                                 /* unmarked objects, as may marked      */
-                                /* grungy objects above scan_ptr.       */
+                                /* grungy objects above GC_scan_ptr.    */
 
 #define MS_PUSH_UNCOLLECTABLE 2 /* "I" holds, except that marked        */
-                                /* uncollectible objects above scan_ptr */
-                                /* may point to unmarked objects.       */
-                                /* Roots may point to unmarked objects  */
+                                /* uncollectible objects above          */
+                                /* GC_scan_ptr may point to unmarked    */
+                                /* objects.  Roots may point to         */
+                                /* unmarked objects.                    */
 
 #define MS_ROOTS_PUSHED 3       /* "I" holds, mark stack may be nonempty. */
 
 #define MS_PARTIALLY_INVALID 4  /* "I" may not hold, e.g. because of    */
-                                /* the mark stack overflow.  However    */
-                                /* marked heap objects below scan_ptr   */
-                                /* point to marked or stacked objects.  */
+                                /* the mark stack overflow.  However,   */
+                                /* marked heap objects below            */
+                                /* GC_scan_ptr point to marked or       */
+                                /* stacked objects.                     */
 
 #define MS_INVALID 5            /* "I" may not hold.                    */
-
-GC_EXTERN mark_state_t GC_mark_state;
 
 EXTERN_C_END
 

@@ -5,7 +5,7 @@ End Rem
 
 SuperStrict
 
-Function CrossProduct#(x0#,y0#,z0#,x1#,y1#,z1#)
+Function CrossProduct:Float(x0:Float,y0:Float,z0:Float,x1:Float,y1:Float,z1:Float)
 	Return x0*x1+y0*y1+z0*z1
 End Function
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003-2011 Hewlett-Packard Development Company, L.P.
- * Copyright (c) 2008-2018 Ivan Maidanski
+ * Copyright (c) 2008-2022 Ivan Maidanski
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -231,6 +231,42 @@
 # endif
 #endif /* !AO_ATTR_NO_SANITIZE_THREAD */
 
+#if (AO_GNUC_PREREQ(7, 5) || __STDC_VERSION__ >= 201112L) && !defined(LINT2)
+# define AO_ALIGNOF_SUPPORTED 1
+#endif
+
+#if defined(AO_DLL) && !defined(AO_API)
+# ifdef AO_BUILD
+#   if defined(__CEGCC__) || (defined(__MINGW32__) && !defined(__cplusplus))
+#     define AO_API __declspec(dllexport)
+#   elif defined(_MSC_VER) || defined(__BORLANDC__) || defined(__CYGWIN__) \
+         || defined(__DMC__) || defined(__MINGW32__) || defined(__WATCOMC__)
+#     define AO_API extern __declspec(dllexport)
+#   endif
+# else
+#   if defined(_MSC_VER) || defined(__BORLANDC__) || defined(__CEGCC__) \
+       || defined(__CYGWIN__) || defined(__DMC__)
+#     define AO_API __declspec(dllimport)
+#   elif defined(__MINGW32_DELAY_LOAD__)
+#     define AO_API __declspec(dllexport)
+#   elif defined(__MINGW32__) || defined(__WATCOMC__)
+#     define AO_API extern __declspec(dllimport)
+#   endif
+# endif
+#endif /* AO_DLL */
+
+#ifndef AO_API
+# define AO_API extern
+#endif
+
+#ifdef AO_ALIGNOF_SUPPORTED
+# define AO_ASSERT_ADDR_ALIGNED(addr) \
+    assert(((size_t)(addr) & (__alignof__(*(addr)) - 1)) == 0)
+#else
+# define AO_ASSERT_ADDR_ALIGNED(addr) \
+    assert(((size_t)(addr) & (sizeof(*(addr)) - 1)) == 0)
+#endif /* !AO_ALIGNOF_SUPPORTED */
+
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 # define AO_compiler_barrier() __asm__ __volatile__("" : : : "memory")
 #elif defined(_MSC_VER) || defined(__DMC__) || defined(__BORLANDC__) \
@@ -328,6 +364,8 @@
 #   define AO_CAN_EMUL_CAS
 # elif defined(__avr32__)
 #   include "atomic_ops/sysdeps/gcc/avr32.h"
+# elif defined(__e2k__)
+#   include "atomic_ops/sysdeps/gcc/e2k.h"
 # elif defined(__hexagon__)
 #   include "atomic_ops/sysdeps/gcc/hexagon.h"
 # elif defined(__nios2__)
@@ -383,8 +421,10 @@
 
 #if defined(_MSC_VER) || defined(__DMC__) || defined(__BORLANDC__) \
         || (defined(__WATCOMC__) && defined(__NT__))
-# if defined(_AMD64_) || defined(_M_X64) || defined(_M_ARM64)
+# if defined(_AMD64_) || defined(_M_X64)
 #   include "atomic_ops/sysdeps/msftc/x86_64.h"
+# elif defined(_M_ARM64)
+#   include "atomic_ops/sysdeps/msftc/arm64.h"
 # elif defined(_M_IX86) || defined(x86)
 #   include "atomic_ops/sysdeps/msftc/x86.h"
 # elif defined(_M_ARM) || defined(ARM) || defined(_ARM_)

@@ -54,7 +54,7 @@ Type TBuf
 
 End Type
 
-Function DSASS( n:Int,t$="DirectSound" )
+Function DSASS( n:Int,t:String="DirectSound" )
 	If n>=0 Return
 	Throw t+" failed ("+(n & 65535)+")"
 End Function
@@ -163,14 +163,14 @@ Type TDirectSoundChannel Extends TChannel
 		_buf._paused=paused
 	End Method
 	
-	Method SetVolume( volume# ) Override
+	Method SetVolume( volume:Float ) Override
 		volume=Min(Max(volume,0),1)^.1
 		_volume=volume
 		If Not _buf Or _seq<>_buf._seq Return
 		bmx_directsound_IDirectSoundBuffer_setvolume(_buf._buffer, Int((1-volume)*-10000))
 	End Method
 	
-	Method SetPan( pan# ) Override
+	Method SetPan( pan:Float ) Override
 		pan=Min(Max(pan,-1),1)
 		pan=Sgn(pan) * (1-(1-Abs(pan))^.1)		
 		_pan=pan
@@ -178,11 +178,11 @@ Type TDirectSoundChannel Extends TChannel
 		bmx_directsound_IDirectSoundBuffer_setpan(_buf._buffer, Int(pan*10000))
 	End Method
 	
-	Method SetDepth( depth# ) Override
+	Method SetDepth( depth:Float ) Override
 		If Not _buf Or _seq<>_buf._seq Return
 	End Method
 	
-	Method SetRate( rate# ) Override
+	Method SetRate( rate:Float ) Override
 		_rate=rate
 		If Not _buf Or _seq<>_buf._seq Return
 		bmx_directsound_IDirectSoundBuffer_setfrequency(_buf._buffer, Int(_hertz * rate))
@@ -232,14 +232,14 @@ Type TDirectSoundChannel Extends TChannel
 		Return t
 	End Function
 
-	Field _volume#=1,_pan#=0,_rate#=1,_static:Int
+	Field _volume:Float=1,_pan:Float=0,_rate:Float=1,_static:Int
 	Field _sound:TSound,_buf:TBuf,_seq:Int,_hertz:Int,_playFlags:Int
 	
 End Type
 
 Type TDirectSoundAudioDriver Extends TAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return _name
 	End Method
 	
@@ -288,7 +288,7 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 		Return TDirectSoundChannel.Create( True )
 	End Method
 	
-	Function Create:TDirectSoundAudioDriver( name$,Mode:Int )
+	Function Create:TDirectSoundAudioDriver( name:String,Mode:Int )
 		Local t:TDirectSoundAudioDriver=New TDirectSoundAudioDriver
 		t._name=name
 		t._mode=Mode
@@ -318,7 +318,7 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 		Wend
 	End Method
 
-	Field _name$,_mode:Int,_dsound:Byte Ptr,_lonely:TBuf
+	Field _name:String,_mode:Int,_dsound:Byte Ptr,_lonely:TBuf
 
 	Global _seq:Int
 		

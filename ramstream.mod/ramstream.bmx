@@ -59,13 +59,13 @@ Type TRamStream Extends TStream
 		Return count
 	End Method
 
-	Function Create:TRamStream( buf:Byte Ptr,size:Long,readable,writeable )
+	Function Create:TRamStream( buf:Byte Ptr,size:Long,readable,writeMode )
 		Local stream:TRamStream=New TRamStream
 		stream._pos=0
 		stream._size=size
 		stream._buf=buf
 		stream._read=readable
-		stream._write=writeable
+		stream._write=writeMode
 		Return stream
 	End Function
 
@@ -80,17 +80,18 @@ A ram stream extends a stream object so can be used anywhere a stream is expecte
 Be careful when working with ram streams, as any attempt to access memory
 which has not been allocated to your application can result in a runtime crash.
 End Rem
-Function CreateRamStream:TRamStream( ram:Byte Ptr,size:Long,readable,writeable )
-	Return TRamStream.Create( ram,size,readable,writeable )
+Function CreateRamStream:TRamStream( ram:Byte Ptr,size:Long,readable,writeMode )
+	Assert writeMode <> WRITE_MODE_APPEND, "Ram Streams cannot be appended"
+	Return TRamStream.Create( ram,size,readable,writeMode )
 End Function
 
 Type TRamStreamFactory Extends TStreamFactory
-	Method CreateStream:TRamStream( url:Object,proto$,path$,readable,writeable ) Override
-		If proto="incbin" And writeable=False
+	Method CreateStream:TRamStream( url:Object,proto:String,path:String,readable,writeMode ) Override
+		If proto="incbin" And Not writeMode
 			Local buf:Byte Ptr=IncbinPtr( path )
 			If Not buf Return
 			Local size:Long=IncbinLen( path )
-			Return TRamStream.Create( buf,size,readable,writeable )
+			Return TRamStream.Create( buf,size,readable,writeMode )
 		EndIf
 	End Method
 End Type

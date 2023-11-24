@@ -18,7 +18,7 @@ Import BRL.EndianStream
 
 Private
 
-Function ReadTag$( stream:TStream )
+Function ReadTag:String( stream:TStream )
 	Local tag:Byte[4]
 	If stream.ReadBytes( tag,4 )<>4 Return
 	Return Chr(tag[0])+Chr(tag[1])+Chr(tag[2])+Chr(tag[3])
@@ -68,7 +68,7 @@ Type TAudioSampleLoaderWAV Extends TAudioSampleLoader
 		
 		While Not stream.Eof()
 
-			Local tag$=Readtag( stream )
+			Local tag:String=Readtag( stream )
 			If tag<>"data"
 				Local sz=stream.ReadInt()
 				stream.SkipBytes( sz )

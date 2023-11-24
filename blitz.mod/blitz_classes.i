@@ -52,6 +52,7 @@ String^Object{
 	
 	+FromUTF8String:String( utf8String:Byte Ptr )="bbStringFromUTF8String"
 	-ToUTF8String:Byte Ptr()="bbStringToUTF8String"
+	+FromUTF8Bytes:String( utf8String:Byte Ptr, count )="bbStringFromUTF8Bytes"
 
 	-ToSizet:size_t()="bbStringToSizet"
 	+FromSizet:String( sizetValue:size_t )="bbStringFromSizet"
@@ -60,7 +61,20 @@ String^Object{
 	+FromUInt:String( uintValue:UInt )="bbStringFromUInt"
 	-ToULong:ULong()="bbStringToULong"
 	+FromULong:String( ulongValue:ULong )="bbStringFromULong"
+	
+	-ToUTF8StringBuffer:Byte Ptr(buf:Byte Ptr, length:Size_T Var)="bbStringToUTF8StringBuffer"
+	-Hash:ULong()="bbStringHash"
 
+	-ToUTF32String:UInt Ptr()="bbStringToUTF32String"
+	+FromUTF32String:String( utf32String:UInt Ptr )="bbStringFromUTF32String"
+	+FromUTF32Bytes:String( utf32String:UInt Ptr, count )="bbStringFromUTF32Bytes"
+
+	-ToWStringBuffer:Short Ptr(buf:Short Ptr, length:Size_T Var)="bbStringToWStringBuffer"
+
+	-ToLongInt:LongInt()="bbStringToLongInt"
+	+FromLongInt:String( longIntValue:LongInt )="bbStringFromLongInt"
+	-ToULongInt:ULongInt()="bbStringToULongInt"
+	+FromULongInt:String( ulongIntValue:ULongInt )="bbStringFromULongInt"
 }AF="bbStringClass"
 
 ___Array^Object{

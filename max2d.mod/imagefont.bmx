@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Import BRL.Font
 
@@ -10,17 +10,17 @@ Incbin "blitzfont.bin"
 Type TImageGlyph
 
 	Field _image:TImage
-	Field _advance#,_x,_y,_w,_h
+	Field _advance:Float,_x:Int,_y:Int,_w:Int,_h:Int
 	
 	Method Pixels:TImage()
 		Return _image
 	End Method
 
-	Method Advance#()
+	Method Advance:Float()
 		Return _advance
 	End Method
 	
-	Method GetRect( x Var,y Var,w Var,h Var )
+	Method GetRect( x:Int Var,y:Int Var,w:Int Var,h:Int Var )
 		x=_x
 		y=_y
 		w=_w
@@ -33,29 +33,29 @@ Type TImageFont
 
 	Field _src_font:TFont
 	Field _glyphs:TImageGlyph[]
-	Field _imageFlags
+	Field _imageFlags:Int
 
-	Method Style()
+	Method Style:Int()
 		If _src_font Return _src_font.Style()
 		Return 0
 	End Method
 
-	Method Height()
+	Method Height:Int()
 		If _src_font Return _src_font.Height()
 		Return 16
 	End Method
 	
-	Method CountGlyphs()
+	Method CountGlyphs:Int()
 		Return _glyphs.length
 	End Method
 	
-	Method CharToGlyph( char )
+	Method CharToGlyph:Int( char:Int )
 		If _src_font Return _src_font.CharToGlyph( char )
 		If char>=32 And char<128 Return char-32
 		Return -1
 	End Method
 	
-	Method LoadGlyph:TImageGlyph( index )
+	Method LoadGlyph:TImageGlyph( index:Int )
 
 		Assert index>=0 And index<_glyphs.length
 
@@ -79,11 +79,11 @@ Type TImageFont
 		
 	End Method
 	
-	Method Draw( text$,x#,y#,ix#,iy#,jx#,jy# )
+	Method Draw( text:String,x:Float,y:Float,ix:Float,iy:Float,jx:Float,jy:Float )
 
-		For Local i=0 Until text.length
+		For Local i:Int=0 Until text.length
 		
-			Local n=CharToGlyph( text[i] )
+			Local n:Int=CharToGlyph( text[i] )
 			If n<0 Continue
 			
 			Local glyph:TImageGlyph=LoadGlyph(n)
@@ -92,8 +92,8 @@ Type TImageFont
 			If image
 				Local frame:TImageFrame=image.Frame(0)
 				If frame
-					Local tx#=glyph._x*ix+glyph._y*iy
-					Local ty#=glyph._x*jx+glyph._y*jy			
+					Local tx:Float=glyph._x*ix+glyph._y*iy
+					Local ty:Float=glyph._x*jx+glyph._y*jy			
 					frame.Draw 0,0,image.width,image.height,x+tx,y+ty,0,0,image.width,image.height
 				EndIf
 			EndIf
@@ -104,10 +104,10 @@ Type TImageFont
 		
 	End Method
 	
-	Function Load:TImageFont( url:Object,size,style )
+	Function Load:TImageFont( url:Object,size:Int,style:Int )
 	
 		Local src:TFont=LoadFont( url,size,style )
-		If Not src Return
+		If Not src Return null
 		
 		Local font:TImageFont=New TImageFont
 		font._src_font=src
@@ -127,10 +127,10 @@ Type TImageFont
 		
 		Local p:Byte Ptr=IncbinPtr( "blitzfont.bin" )
 	
-		For Local y=0 Until 16
-			For Local x=0 Until 96
-				Local b=p[x]
-				For Local n=0 Until 8
+		For Local y:Int=0 Until 16
+			For Local x:Int=0 Until 96
+				Local b:Int=p[x]
+				For Local n:Int=0 Until 8
 					If b & (1 Shl n) 
 						pixmap.WritePixel x*8+n,y,~0
 					Else
@@ -141,7 +141,7 @@ Type TImageFont
 			p:+96
 		Next
 
-		For Local n=0 Until 96
+		For Local n:Int=0 Until 96
 			Local glyph:TImageGlyph=New TImageGlyph
 			font._glyphs[n]=glyph
 			glyph._advance=8

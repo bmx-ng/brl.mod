@@ -1,4 +1,4 @@
-' Copyright (c) 2006-2019 Bruce A Henderson
+' Copyright (c) 2006-2020 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,15 @@ bbdoc: Volumes
 End Rem
 Module BRL.Volumes
 
-ModuleInfo "Version: 1.10"
+ModuleInfo "Version: 1.12"
 ModuleInfo "License: MIT"
 ModuleInfo "Author: Bruce A Henderson"
-ModuleInfo "Copyright: (c) 2006-2019 Bruce A Henderson"
+ModuleInfo "Copyright: (c) 2006-2020 Bruce A Henderson"
 
+ModuleInfo "History: 1.12"
+ModuleInfo "History: Added Haiku support."
+ModuleInfo "History: 1.11"
+ModuleInfo "History: Fixed Linux home dir extraction."
 ModuleInfo "History: 1.10"
 ModuleInfo "History: Updated for NG."
 ModuleInfo "History: Reworked Mac statfs handling."
@@ -65,4 +69,6 @@ Import "vol_win.bmx"
 ?macos
 ModuleInfo "CC_OPTS: -D_DARWIN_FEATURE_64_BIT_INODE"
 Import "vol_mac.bmx"
+?haiku
+Import "vol_haiku.bmx"
 ?

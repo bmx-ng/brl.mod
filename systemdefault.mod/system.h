@@ -34,6 +34,11 @@ void bbSystemEmitOSEvent( HWND hwnd,UINT msg,WPARAM wParam,LPARAM lParam,BBObjec
 
 #ifdef __OBJC__
 #include <AppKit/AppKit.h>
+
+@interface BBSystemAppDelegate : NSObject{
+}
+@end
+
 #else
 typedef void *NSView;
 typedef void *NSEvent;
@@ -47,7 +52,7 @@ void bbSystemEmitOSEvent( NSEvent *event,NSView *view,BBObject *source );
 
 BBString * brl_blitz_bbStringFromUTF8String(const char * text);
 
-#elif __linux
+#elif __linux__
 
 #include <X11/Xlib.h>
 void bbSystemEmitOSEvent( XEvent *event,BBObject *source );
