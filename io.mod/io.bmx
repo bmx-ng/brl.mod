@@ -308,6 +308,18 @@ Type MaxIO
 	End Function
 	
 	Rem
+	bbdoc: Opens a file for reading.
+	about: Opens a file for reading, in platform-independent notation.
+	The search path is checked one at a time until a matching file is found, in which case an abstract filehandle is associated with it, and reading may be done.
+	The reading offset is set to the first byte of the file.
+
+	Note that entries that are symlinks are ignored if PHYSFS_permitSymbolicLinks(1) hasn't been called, and opening a symlink with this function will fail in such a case.
+	End Rem
+	Function OpenRead:Byte Ptr(path:String)
+		Return bmx_PHYSFS_openRead(path)
+	End Function
+	
+	Rem
 	bbdoc: Closes a file handle.
 	about: This call is capable of failing if the operating system was buffering writes to the physical media, and, now forced to write those
 	changes to physical media, can not store the data for some reason. In such a case, the filehandle stays open. A well-written program

@@ -114,6 +114,9 @@ Type TImage
 	
 End Type
 
+Rem
+bbdoc: Max2D Render Image type
+EndRem
 Type TRenderImage Extends TImage
 	Method Frame:TImageFrame(index:Int) Override
 		Assert index < seqs.length And index < frames.length Else "Index out of bounds"
