@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019-2020 Bruce A Henderson
+ Copyright (c) 2019-2023 Bruce A Henderson
 
  This software is provided 'as-is', without any express or implied
  warranty. In no event will the authors be held liable for any damages
@@ -28,6 +28,10 @@ int bmx_os_getproccount() {
 	system_info info;
 	get_system_info(&info);
 	return info.cpu_count;
+}
+
+int bmx_os_getphysproccount() {
+    return bmx_os_getproccount();
 }
 
 BBString * bmx_os_gethaikuversion() {
