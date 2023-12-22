@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2019-2020 Bruce A Henderson
+ Copyright (c) 2019-2023 Bruce A Henderson
 
  This software is provided 'as-is', without any express or implied
  warranty. In no event will the authors be held liable for any damages
@@ -22,7 +22,7 @@
 */
 #include "windows.h"
 
-void bmx_os_getwindowsversion(int * major, int * minor) {
+void bmx_os_getwindowsversion(int * major, int * minor, int * build) {
 
 	OSVERSIONINFOEX versionInfo = {0};
 	versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
@@ -41,12 +41,14 @@ void bmx_os_getwindowsversion(int * major, int * minor) {
 
 		int _major = versionInfo.dwMajorVersion;
 		int _minor = versionInfo.dwMinorVersion;
+		int _build = versionInfo.dwBuildNumber;
 
 		switch (_major) {
 			case 5:
 				if (_minor == 1 || _minor == 2) {
 					*major = _major;
 					*minor = _minor;
+					*build = _build;
 					return;	
 				}
 				break;
@@ -56,25 +58,49 @@ void bmx_os_getwindowsversion(int * major, int * minor) {
 					case 0:
 						*major = _major;
 						*minor = _minor;
+						*build = 0;
 						return;
 					case 1:
 						*major = 7;
 						*minor = 0;
+						*build = 0;
 						return;
 					case 2:
 						*major = 8;
 						*minor = 0;
+						*build = 0;
 						return;
 					case 3:
 						*major = 8;
 						*minor = 1;
+						*build = 0;
+						return;
+					case 4:
+						*major = 10;
+						*minor = 0;
+						*build = 0;
 						return;
 				}
 				break;
 				
 			case 10:
+				if (_major == 10 && _minor == 0 && _build == 22000) {
+					*major = 11;
+					*minor = 0;
+					*build = 0;
+					return;
+				}
+
+				if (_major == 10 && _minor >= 1) {
+					*major = 12;
+					*minor = 0;
+					*build = 0;
+					return;
+				}
+
 				*major = _major;
-				*minor = 0;
+				*minor = _minor;
+				*build = _build;
 				return;
 		}
 	}
@@ -82,11 +108,44 @@ void bmx_os_getwindowsversion(int * major, int * minor) {
 	// don't know what version this is...
 	*major = 0;
 	*minor = 0;
+	*build = 0;
 }
 
+typedef DWORD (* ActiveProcessorCount)(DWORD);
+
+static int kernelLoaded = 0;
+static ActiveProcessorCount gapcFunc = 0;
+
 int bmx_os_getproccount() {
+
 	SYSTEM_INFO info;
 	GetSystemInfo(&info);
 	return info.dwNumberOfProcessors;
+
 }
 
+int bmx_os_getphysproccount() {
+	int count = 0;
+
+	if (!kernelLoaded) {
+
+		HINSTANCE inst = LoadLibraryA("Kernel32.dll");
+		if (inst) {
+			gapcFunc = (ActiveProcessorCount)GetProcAddress(inst, "GetActiveProcessorCount");
+		}
+
+		kernelLoaded = 1;
+	}
+
+	if (gapcFunc) {
+
+		count = gapcFunc(ALL_PROCESSOR_GROUPS);
+
+	} else {
+
+		count = bmx_os_getproccount();
+
+	}
+
+	return count;
+}
