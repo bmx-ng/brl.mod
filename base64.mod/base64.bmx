@@ -1,4 +1,4 @@
-' Copyright (c) 2008-2019 Bruce A Henderson
+' Copyright (c) 2008-2023 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,14 @@ bbdoc: Base64 Encoding
 End Rem
 Module BRL.Base64
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "License: MIT"
 ModuleInfo "Copyright: Original - Robert Harder (http://iharder.sourceforge.net/current/java/base64/)"
-ModuleInfo "Copyright: BlitzMax port - 2008-2019 Bruce A Henderson"
+ModuleInfo "Copyright: BlitzMax port - 2008-2023 Bruce A Henderson"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Added Encode for Strings."
+ModuleInfo "History: Changed to not use Shl 24."
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Fixed Encode() sometimes returning an extra null character."
 ModuleInfo "History: 1.00 Initial Release"
@@ -79,6 +82,17 @@ Type TBase64
 						        -9,-9,-9,-9]
 	
 	Public
+
+	Rem
+	bbdoc: Encode byte data to a Base64 encoded String, starting at @offset of @length bytes.
+	End Rem
+	Function Encode:String( source:String, options:EBase64Options = EBase64Options.None)
+		Local s:Byte Ptr = source.ToUTF8String()
+		Local length:Int = strlen_(s)
+		Local result:String = Encode(s, length, 0, options)
+		MemFree(s)
+		Return result
+	End Function
 
 	Rem
 	bbdoc: Encodes byte array data @source to a Base64 encoded String, starting at @offset.
@@ -139,7 +153,7 @@ Type TBase64
 	Rem
 	bbdoc: Decodes Base64 encoded String @source to an array of Bytes, starting at @offset.
 	End Rem
-	Function Decode:Byte[]( source:String, offset:Int = 0, options:EBase64Options = EBase64Options.None )
+	Function Decode:Byte[]( source:String, offset:Int = 0 )
 		
 		Local length:Int = source.length
 		Local len34:Int   = Length * 3 / 4
@@ -188,17 +202,17 @@ Type TBase64
     
 		Local inBuff:Int
 		If numSigBytes > 0 Then
-			inBuff = (source[ srcOffset     ] Shl 24) Shr 8
-			
+			inBuff = (source[ srcOffset     ] & $FF) Shl 16
+
 			If numSigBytes > 1 Then
-				inBuff :| (source[ srcOffset + 1 ] Shl 24) Shr 16
+				inBuff :| ((source[ srcOffset + 1 ] & $FF) Shl 8)
 
 				If numSigBytes > 2 Then
-					inBuff :| (source[ srcOffset + 2 ] Shl 24) Shr 24
+					inBuff :| (source[ srcOffset + 2 ] & $FF)
 				End If
 			End If
 		End If
-		
+
 		Select numSigBytes
 			Case 3
 				destination[ destOffset     ] = _STANDARD_ALPHABET[ (inBuff Shr 18)       ]
@@ -277,3 +291,8 @@ Enum EBase64Options Flags
 	End Rem
 	DontBreakLines = 8
 End Enum
+
+Private
+Extern
+	Function strlen_:Size_T( str:Byte Ptr )="size_t strlen( const char *) !"
+End Extern
