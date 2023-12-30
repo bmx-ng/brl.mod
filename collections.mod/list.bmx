@@ -11,8 +11,8 @@ Interface IList<T> Extends ICollection<T>
 	Method Contains:Int(element:T)
 	Method IndexOf:Int(element:T)
 	Method Insert(index:Int, element:T)
-	Method Remove(element:T)
-	Method RemoveAt(index:Int)
+	Method Remove:Int(element:T)
+	Method RemoveAt:T(index:Int)
 
 End Interface
 
@@ -255,21 +255,27 @@ Public
 	
 	Rem
 	bbdoc: Removes the first occurrence of a specific element from the #TArrayList.
+	returns: #True if the element was successfully removed from the #TArrayList, otherwise #False.
 	End Rem
-	Method Remove(element:T) Override
+	Method Remove:Int(element:T) Override
 		Local index:Int = IndexOf(element)
 		If index >= 0 Then
 			RemoveAt(index)
+			Return True
 		End If
+		Return False
 	End Method
 
 	Rem
 	bbdoc: Removes the element at the specified index of the #TArrayList.
+	returns: The element that was removed from the #TArrayList.
 	End Rem
-	Method RemoveAt(index:Int) Override
+	Method RemoveAt:T(index:Int) Override
 		If index < 0 Or index >= size Then
 			Throw New TIndexOutOfBoundsException
 		End If
+
+		Local element:T = data[index]
 
 		Local moveCount:Int = size - index - 1
 		
@@ -279,6 +285,8 @@ Public
 		
 		size :- 1
 		data[size] = Null
+
+		Return element
 	End Method
 	
 	Rem
@@ -331,7 +339,7 @@ Public
 	End Method
 	
 	Rem
-	bbdoc: Gets the element at the specified index.
+	bbdoc: Returns the element at the specified index.
 	End Rem
 	Method Operator [] :T(index:Int)
 		If index < 0 Or index >= size Then
