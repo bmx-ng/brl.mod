@@ -20,6 +20,7 @@
     3. This notice may not be removed or altered from any source
     distribution.
 */
+#define _WIN32_WINNT 0x0601
 #include "windows.h"
 
 void bmx_os_getwindowsversion(int * major, int * minor, int * build) {
@@ -111,10 +112,12 @@ void bmx_os_getwindowsversion(int * major, int * minor, int * build) {
 	*build = 0;
 }
 
-typedef DWORD (* ActiveProcessorCount)(DWORD);
+typedef DWORD (WINAPI *ActiveProcessorCount)(WORD);
+typedef BOOL (WINAPI *LogicalProcessorInformationEx)(LOGICAL_PROCESSOR_RELATIONSHIP, PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, PDWORD);
 
 static int kernelLoaded = 0;
 static ActiveProcessorCount gapcFunc = 0;
+static LogicalProcessorInformationEx glpieFunc = 0;
 
 int bmx_os_getproccount() {
 
@@ -124,24 +127,73 @@ int bmx_os_getproccount() {
 
 }
 
+static int bmx_os_calc_processor_count() {
+	
+	if (glpieFunc) {
+	
+		DWORD bufferLength = 0;
+		
+		BOOL result = glpieFunc(RelationAll, NULL, &bufferLength);
+		
+		if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+			return -1;
+		}
+		
+		BYTE buffer[bufferLength];
+		
+		result = glpieFunc(RelationAll, buffer, &bufferLength);
+		
+		if (!result) {
+			return -1;
+		}
+		
+		DWORD offset = 0;
+		int count = 0;
+		
+		while (offset < bufferLength) {
+		
+			PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX info = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)(buffer + offset);
+			
+			if (info->Relationship == RelationProcessorCore) {
+				count++;
+			}
+			
+			offset += info->Size;
+		}
+
+		return count;
+	}
+
+	return -1;
+}
+
 int bmx_os_getphysproccount() {
 	int count = 0;
 
 	if (!kernelLoaded) {
-
-		HINSTANCE inst = LoadLibraryA("Kernel32.dll");
-		if (inst) {
-			gapcFunc = (ActiveProcessorCount)GetProcAddress(inst, "GetActiveProcessorCount");
+		HINSTANCE kernel32 = LoadLibraryA("Kernel32.dll");
+		if (kernel32) {
+			glpieFunc = (LogicalProcessorInformationEx)GetProcAddress(kernel32, "GetLogicalProcessorInformationEx");
+			
+			if (!glpieFunc) {
+				gapcFunc = (ActiveProcessorCount)GetProcAddress(kernel32, "GetActiveProcessorCount");
+			}
 		}
 
 		kernelLoaded = 1;
 	}
 
-	if (gapcFunc) {
-
+	count = bmx_os_calc_processor_count();
+	
+	if (count >= 0) {
+	
+		return count;
+	
+	} else if (gapcFunc) { // fallback
+	
 		count = gapcFunc(ALL_PROCESSOR_GROUPS);
-
-	} else {
+		
+	} else { // fallback
 
 		count = bmx_os_getproccount();
 
