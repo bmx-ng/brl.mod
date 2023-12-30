@@ -26,10 +26,12 @@ bbdoc: Platform utils
 End Rem
 Module BRL.Platform
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.04"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Improved calculation for Win32."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Added PhysicalProcessorCount()."
 ModuleInfo "History: Added build number for Win32 OS version."
