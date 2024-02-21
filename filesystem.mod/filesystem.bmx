@@ -236,6 +236,15 @@ Function FileType:Int( path:String )
 End Function
 
 Rem
+bbdoc: Checks if a file or directory exists
+returns: #True if the file or directory at @path exists
+about: Use #FileType to check if the file is a directory or a plain file.
+End Rem
+Function FileExists:Int( path:String )
+	Return FileType( path ) <> FILETYPE_NONE
+End Function
+
+Rem
 bbdoc: Gets file time
 returns: The time the file at @path was last modified.
 End Rem
