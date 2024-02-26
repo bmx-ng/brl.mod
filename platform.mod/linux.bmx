@@ -29,7 +29,7 @@ Function _linux_physical_processor_count:Int()
 		Return 0
 	End If
 
-	Local cpustat:Stream = ReadFile("/proc/stat")
+	Local cpustat:TStream = ReadFile("/proc/stat")
 
 	If Not cpustat Then
 		Return 0
