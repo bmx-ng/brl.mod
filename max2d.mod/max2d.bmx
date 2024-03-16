@@ -451,14 +451,16 @@ Type TMax2DGraphics Extends TGraphics
 		color = New SColor8(red, green, blue)
 		_max2dDriver.SetColor(red,green,blue)
 
-		SetAlpha(alpha)
+		color_alpha = alpha
+		_max2dDriver.SetAlpha(alpha)
 	End Method
 
 	Method SetColor( color:SColor8, alpha:Float )
 		Self.color = color
 		_max2dDriver.SetColor(color)
 		
-		SetAlpha(alpha)
+		self.color_alpha = alpha
+		_max2dDriver.SetAlpha(alpha)
 	End Method
 
 
@@ -468,8 +470,20 @@ Type TMax2DGraphics Extends TGraphics
 		blue = color.b
 	End Method
 
+	Method GetColor( red:Int Var,green:Int Var,blue:Int Var,alpha:Float Var )
+		red = color.r
+		green = color.g
+		blue = color.b
+		alpha = color_alpha
+	End Method
+
 	Method GetColor( color:SColor8 Var )
 		color = Self.color
+	End Method
+
+	Method GetColor( color:SColor8 Var,alpha:Float Var )
+		color = Self.color
+		alpha = Self.color_alpha
 	End Method
 
 
@@ -1110,9 +1124,50 @@ Function SetColor( red:Int,green:Int,blue:Int )
 	TMax2DGraphics.Current().SetColor(red, green, blue)
 End Function
 
-Function SetColor( color:SColor8 )
+Rem
+bbdoc: Set current color and alpha (transparency) level
+about:
+The #SetColor command affects the color of #Plot, #DrawRect, #DrawLine, #DrawText,
+#DrawImage and #DrawPoly.
+
+The @red, @green and @blue parameters should be in the range of 0 to 255.
+
+@alpha controls the transparancy level when the ALPHABLEND blend mode is in effect.
+The range from 0.0 to 1.0 allows a range of transparancy from completely transparent 
+to completely solid.
+End Rem
+Function SetColor( red:Int, green:Int, blue:Int, alpha:Float )
+	TMax2DGraphics.Current().SetColor(red, green, blue, alpha)
+End Function
+
+Rem
+bbdoc: Set current color
+about:
+The #SetColor command affects the color of #Plot, #DrawRect, #DrawLine, #DrawText,
+#DrawImage and #DrawPoly.
+
+@color defines the red, green and blue values.
+End Rem
+Function SetColor( color:SColor8)
 	TMax2DGraphics.Current().SetColor(color)
 End Function
+
+Rem
+bbdoc: Set current color and alpha (transparency)
+about:
+The #SetColor command affects the color of #Plot, #DrawRect, #DrawLine, #DrawText,
+#DrawImage and #DrawPoly.
+
+@color defines the red, green and blue values.
+
+@alpha controls the transparancy level when the ALPHABLEND blend mode is in effect.
+The range from 0.0 to 1.0 allows a range of transparancy from completely transparent 
+to completely solid.
+End Rem
+Function SetColor( color:SColor8, alpha:Float )
+	TMax2DGraphics.Current().SetColor(color, alpha)
+End Function
+
 
 Rem
 bbdoc: Get red, green and blue component of current color.
@@ -1122,8 +1177,28 @@ Function GetColor( red:Int Var,green:Int Var,blue:Int Var )
 	TMax2DGraphics.Current().GetColor(red, green, blue)
 End Function
 
+Rem
+bbdoc: Get red, green, blue component of current color and the current alpha (transparency) value.
+returns: Red, green and blue values in the range 0..255 and alpha (transparency) in the range 0..1.0 in the variables supplied.
+End Rem
+Function GetColor( red:Int Var, green:Int Var, blue:Int Var, alpha:Float Var )
+	TMax2DGraphics.Current().GetColor(red, green, blue, alpha)
+End Function
+
+Rem
+bbdoc: Get current color encoded as SColor8.
+returns: Red, green, blue values in the range 0..255 stored in the supplied SColor8 element.
+End Rem
 Function GetColor( color:SColor8 Var )
 	TMax2DGraphics.Current().GetColor(color)
+End Function
+
+Rem
+bbdoc: Get current rgb color encoded as SColor8 and current alpha (transparency) value separately.
+returns: Red, green, blue values in the range 0..255 in the supplied SColor8 element and separately the alpha (transparency) value in the range 0..1.0.
+End Rem
+Function GetColor( color:SColor8 Var, alpha:Float Var)
+	TMax2DGraphics.Current().GetColor(color, alpha)
 End Function
 
 Rem
