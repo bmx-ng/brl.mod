@@ -428,6 +428,7 @@ Type TStream Extends TIO
 	End Method
 
 	Method WriteLine:Int( str:String, asUTF8:Int )
+		str:+"~r~n"
 		Local buf:Byte Ptr
 		Local length:Int
 		If asUTF8 Then
@@ -437,7 +438,7 @@ Type TStream Extends TIO
 			buf=str.ToCString()
 			length = str.length
 		End If
-		Local ok:Int=Write( buf,length )=length And Write( [13:Byte,10:Byte],2 )=2
+		Local ok:Int=Write( buf,length )=length
 		MemFree buf
 		Return ok
 	End Method
