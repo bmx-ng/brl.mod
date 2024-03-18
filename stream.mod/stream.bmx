@@ -437,7 +437,7 @@ Type TStream Extends TIO
 			buf=str.ToCString()
 			length = str.length
 		End If
-		Local ok:Int=Write( buf,str.length )=str.length And Write( [13:Byte,10:Byte],2 )=2
+		Local ok:Int=Write( buf,length )=length And Write( [13:Byte,10:Byte],2 )=2
 		MemFree buf
 		Return ok
 	End Method
