@@ -80,6 +80,10 @@ void* bbDebugDeclVarAddress(BBDebugDecl* decl) {
 	return decl->var_address;
 }
 
+void* bbDebugDeclFuncPtr(BBDebugDecl* decl) {
+	return decl->func_ptr;
+}
+
 size_t bbDebugDeclStructSize(BBDebugDecl* decl) {
 	return decl->struct_size;
 }
