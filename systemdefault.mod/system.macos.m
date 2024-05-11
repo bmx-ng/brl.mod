@@ -80,11 +80,11 @@ static NSString *appTitle(){
 	return tmpNSString( bbAppTitle );
 }
 
-int bbSystemTranslateKey( key ){
+int bbSystemTranslateKey( int key ){
 	return (key>=0 && key<128) ? key_table[key] : 0;
 }
 
-int bbSystemTranslateChar( chr ){
+int bbSystemTranslateChar( int chr ){
 	switch(chr){
 	case 127:return 8;
 	case 63272:return 127;
@@ -92,7 +92,7 @@ int bbSystemTranslateChar( chr ){
 	return chr;
 }
 
-int bbSystemTranslateMods( mods ){
+int bbSystemTranslateMods( int mods ){
 	int n=0;
 	if( mods & NSShiftKeyMask ) n|=MODIFIER_SHIFT;
 	if( mods & NSControlKeyMask ) n|=MODIFIER_CONTROL;
