@@ -2622,7 +2622,7 @@ Type TTypeId Extends TMember
 		If Not list Then list = New TList
 		
 		For Local tid:TTypeId = EachIn Self.TypeHierarchy()
-			For Local cons:TConstant = EachIn _consts
+			For Local cons:TConstant = EachIn tid._consts
 				list.AddLast cons
 			Next
 		Next
@@ -2639,7 +2639,7 @@ Type TTypeId Extends TMember
 		If Not list Then list = New TList
 		
 		For Local tid:TTypeId = EachIn Self.TypeHierarchy()
-			For Local fld:TField = EachIn _fields
+			For Local fld:TField = EachIn tid._fields
 				list.AddLast fld
 			Next
 		Next
@@ -2656,7 +2656,7 @@ Type TTypeId Extends TMember
 		If Not list Then list = New TList
 		
 		For Local tid:TTypeId = EachIn Self.TypeHierarchy()
-			For Local glob:TGlobal = EachIn _globals
+			For Local glob:TGlobal = EachIn tid._globals
 				list.AddLast glob
 			Next
 		Next
