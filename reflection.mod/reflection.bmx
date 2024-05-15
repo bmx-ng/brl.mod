@@ -53,6 +53,7 @@ Extern
 	Function bbObjectRegisteredTypes:Byte Ptr Ptr(count:Int Var) = "BBClass** bbObjectRegisteredTypes(int*)!"
 	Function bbObjectRegisteredInterfaces:Byte Ptr Ptr(count:Int Var) = "BBInterface** bbObjectRegisteredInterfaces(int*)!"
 	Function bbObjectRegisteredStructs:Byte Ptr Ptr(count:Int Var) = "BBDebugScope** bbObjectRegisteredStructs(int*)!"
+	Function bbObjectRegisteredEnums:Byte Ptr Ptr(count:Int Var) = "BBDebugScope** bbObjectRegisteredEnums(int*)!"
 	Function bbRefArrayClass:Byte Ptr()
 	Function bbRefStringClass:Byte Ptr()
 	Function bbRefObjectClass:Byte Ptr()
@@ -101,6 +102,7 @@ Extern
 	Function bbDebugDeclVarAddress:Byte Ptr(decl:Byte Ptr)
 	Function bbDebugDeclFuncPtr:Byte Ptr(decl:Byte Ptr)
 	Function bbDebugDeclStructSize:Size_T(decl:Byte Ptr)
+	Function bbDebugDeclIsFlagsEnum:Byte(decl:Byte Ptr)
 	Function bbDebugDeclReflectionWrapper:Byte Ptr(decl:Byte Ptr)
 	Function bbDebugDeclNext:Byte Ptr(decl:Byte Ptr)
 	
@@ -320,6 +322,8 @@ Function TypeTagForId$(id:TTypeId)
 			Return ":" + id.Name()
 		Case id.IsStruct()
 			Return "@" + id.Name()
+		Case id.IsEnum()
+			Return "/" + id.Name()
 	End Select
 	Throw "TypeTagForId error"
 End Function
@@ -352,7 +356,7 @@ Function TypeIdForTag:TTypeId(ty$)
 		Case "e" Return ULongIntTypeId
 	End Select
 	Select True
-		Case ty.StartsWith("[")
+		Case ty.StartsWith("[") ' array
 			Local dims:Int = ty.split(", ").length
 			ty = ty[ty.Find("]") + 1..]
 			Local id:TTypeId = TypeIdForTag(ty)
@@ -360,19 +364,19 @@ Function TypeIdForTag:TTypeId(ty$)
 				id = id.ArrayType(dims)
 			End If
 			Return id
-		Case ty.StartsWith(":") Or ty.StartsWith("@")
+		Case ty.StartsWith(":") Or ty.StartsWith("@") Or ty.StartsWith("/") ' class/interface or struct or enum
 			ty = ty[1..]
 			Local i:Int = ty.FindLast(".")
 			If i <> -1 ty = ty[i + 1..]
 			Return TTypeId.ForName(ty)
-		Case ty.StartsWith("*")
+		Case ty.StartsWith("*") ' pointer
 			ty = ty[1..]
 			Local id:TTypeId = TypeIdForTag(ty)
 			If id Then
 				id = id.PointerType()
 			EndIf
 			Return id
-		Case ty.StartsWith("(")
+		Case ty.StartsWith("(") ' function
 			Local idx:Int
 			Local p:Int = 1
 			For idx = 1 Until ty.Length
@@ -2151,6 +2155,15 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Rem
+	bbdoc: Get underlying type
+	about: Returns the underlying integral type of an enum type.
+	End Rem	
+	Method UnderlyingType:TTypeId()
+		If Not IsEnum() Then Throw "Type ID is not an enum type"
+		Return _underlyingType
+	End Method
+	
+	Rem
 	bbdoc: Get array type with this element type
 	End Rem
 	Method ArrayType:TTypeId(dims:Int = 1)
@@ -2368,6 +2381,20 @@ Type TTypeId Extends TMember
 	End Rem
 	Method IsStruct:Int()
 		Return _struct <> Null
+	End Method
+	
+	Rem
+	bbdoc: Determine if this TypeId represents an enum.
+	End Rem
+	Method IsEnum:Int()
+		Return _enum <> Null
+	End Method
+	
+	Rem
+	bbdoc: Determine if this TypeId represents a flags enum.
+	End Rem
+	Method IsFlagsEnum:Int()
+		Return _isFlagsEnum
 	End Method
 	
 	Rem
@@ -3757,6 +3784,18 @@ Type TTypeId Extends TMember
 		Return list
 	End Function
 	
+	Rem
+	bbdoc: Get a list of all enum types
+	End Rem
+	Function EnumEnums:TList()
+		_Update
+		Local list:TList = New TList
+		For Local t:TTypeId = EachIn _enumMap.Values()
+			list.AddFirst t
+		Next
+		Return list
+	End Function
+	
 	Private
 	
 	Method Init:TTypeId(name$, size:Size_T, class:Byte Ptr = Null, supor:TTypeId = Null)
@@ -3833,16 +3872,43 @@ Type TTypeId Extends TMember
 		Return Self
 	End Method
 	
+	Method InitEnum:TTypeId(scope:Byte Ptr) ' BBDebugScope*
+		Local name:String = String.FromCString(bbDebugScopeName(scope))
+		Local meta$
+		Local i% = name.Find("{")
+		If i<>-1
+			meta = name[i+1..name.length-1]
+			name = name[..i]
+		EndIf
+		_name = name
+		_meta = meta
+		_enum = scope
+		
+		Local p:Byte Ptr = bbDebugScopeDecl(scope)
+		While bbDebugDeclKind(p)
+			p = bbDebugDeclNext(p)
+		Wend
+		_underlyingType = TypeIdForTag(String.FromCString(bbDebugDeclType(p)))
+		_size = _underlyingType._size
+		_isFlagsEnum = bbDebugDeclIsFlagsEnum(p)
+		
+		_nameMap.Insert _name.ToLower(), Self
+		_enumMap.Insert scope, Self
+		Return Self
+	End Method
+	
 	Function _Update()
 		Try
 			ReflectionMutex.Lock
 			Local ccount:Int
 			Local icount:Int
 			Local scount:Int
+			Local ecount:Int
 			Local classArray    :Byte Ptr Ptr = bbObjectRegisteredTypes(ccount)      ' BBClass**
 			Local interfaceArray:Byte Ptr Ptr = bbObjectRegisteredInterfaces(icount) ' BBInterface**
 			Local structArray   :Byte Ptr Ptr = bbObjectRegisteredStructs(scount)    ' BBDebugScope**
-		If ccount = _ccount And icount = _icount And scount = _scount Then Return
+			Local enumArray     :Byte Ptr Ptr = bbObjectRegisteredEnums(ecount)      ' BBDebugScope**
+			If ccount = _ccount And icount = _icount And scount = _scount And ecount = _ecount Then Return
 			
 			Local list:TList = New TList
 			For Local i:Int = _ccount Until ccount
@@ -3854,10 +3920,14 @@ Type TTypeId Extends TMember
 			For Local i:Int = _scount Until scount
 				list.AddLast New TTypeId.InitStruct(structArray[i])
 			Next
+			For Local i:Int = _ecount Until ecount
+				list.AddLast New TTypeId.InitEnum(enumArray[i])
+			Next
 			
 			_ccount = ccount
 			_icount = icount
 			_scount = scount
+			_ecount = ecount
 			For Local t:TTypeId = EachIn list
 				t._Resolve
 			Next
@@ -3867,7 +3937,8 @@ Type TTypeId Extends TMember
 	End Function
 	
 	Method _Resolve()
-		If _fields Or ((Not _class) And (Not _struct)) Then Return
+		If _fields Then Return
+		If Not (_class Or _struct Or _enum) Then Return
 		_consts = New TList
 		_fields = New TList
 		_globals = New TList
@@ -3880,6 +3951,8 @@ Type TTypeId Extends TMember
 		
 		If _struct Then
 			p = bbDebugScopeDecl(_struct)
+		Else If _enum Then
+			p = bbDebugScopeDecl(_enum)
 		Else
 			_super = TTypeId(_classMap.ValueForKey(bbRefClassSuper(_class)))
 			If Not _super Then _super = ObjectTypeId
@@ -3939,7 +4012,7 @@ Type TTypeId Extends TMember
 			p = bbDebugDeclNext(p)
 		Wend
 		
-		If Not _struct Then
+		If Not (_struct Or _enum) Then
 			' implemented interfaces ?
 			Local impInt:Int = bbObjectImplementsInterfaces(_class)
 			If impInt Then
@@ -3956,6 +4029,7 @@ Type TTypeId Extends TMember
 	Field _class:Byte Ptr ' BBClass*
 	Field _interface:Byte Ptr ' BBInterface*
 	Field _struct:Byte Ptr ' BBDebugScope*
+	Field _enum:Byte Ptr ' BBDebugScope*
 	
 	Field _size:Size_T = SizeOf Byte Ptr Null ' size of the object reference, not the actual object
 	
@@ -3979,11 +4053,14 @@ Type TTypeId Extends TMember
 	Field _dimensions:Int
 	Field _argTypes:TTypeId[]
 	Field _retType:TTypeId
+	Field _underlyingType:TTypeId
+	Field _isFlagsEnum:Byte
 	
 	Global _nameMap:TMap = New TMap
 	Global _ccount:Int, _classMap:TPtrMap = New TPtrMap
 	Global _icount:Int, _interfaceMap:TPtrMap = New TPtrMap, _interfaceClassMap:TPtrMap = New TPtrMap
 	Global _scount:Int, _structMap:TPtrMap = New TPtrMap
+	Global _ecount:Int, _enumMap:TPtrMap = New TPtrMap
 	
 End Type
 

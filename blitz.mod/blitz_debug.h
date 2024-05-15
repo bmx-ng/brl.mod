@@ -48,6 +48,7 @@ struct BBDebugDecl{
 		void*        var_address;
 		BBFuncPtr    func_ptr;
 		size_t       struct_size;
+		char         is_flags_enum;
 	};
 //	union{
 		void   (*reflection_wrapper)(void**);

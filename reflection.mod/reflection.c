@@ -88,6 +88,10 @@ size_t bbDebugDeclStructSize(BBDebugDecl* decl) {
 	return decl->struct_size;
 }
 
+char bbDebugDeclIsFlagsEnum(BBDebugDecl* decl) {
+	return decl->is_flags_enum;
+}
+
 void* bbDebugDeclReflectionWrapper(BBDebugDecl* decl) {
 	return decl->reflection_wrapper;
 }
