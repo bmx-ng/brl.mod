@@ -438,23 +438,26 @@ Function TypeIdForTag:TTypeId(ty$)
 	Throw "TypeIdForTag error: ~q" + ty + "~q"
 End Function
 
-Const MODIFIER_PROTECTED:Int = $001
-Const MODIFIER_PRIVATE:Int   = $002
-Const MODIFIER_ABSTRACT:Int  = $010
-Const MODIFIER_FINAL:Int     = $020
-Const MODIFIER_READ_ONLY:Int = $100
 
-Function ModifiersForTag:Int(modifierString:String)
-	Local modifiers:Int
-	If modifierString.Contains("P") Then modifiers :| MODIFIER_PRIVATE
-	If modifierString.Contains("Q") Then modifiers :| MODIFIER_PROTECTED
-	If modifierString.Contains("A") Then modifiers :| MODIFIER_ABSTRACT
-	If modifierString.Contains("F") Then modifiers :| MODIFIER_FINAL
-	If modifierString.Contains("R") Then modifiers :| MODIFIER_READ_ONLY
+Enum EModifiers Flags
+	IsPrivate
+	IsProtected
+	IsAbstract
+	IsFinal
+	IsReadOnly
+End Enum
+
+Function ModifiersForTag:EModifiers(modifierString:String)
+	Local modifiers:EModifiers
+	If modifierString.Contains("P") Then modifiers :| EModifiers.IsPrivate
+	If modifierString.Contains("Q") Then modifiers :| EModifiers.IsProtected
+	If modifierString.Contains("A") Then modifiers :| EModifiers.IsAbstract
+	If modifierString.Contains("F") Then modifiers :| EModifiers.IsFinal
+	If modifierString.Contains("R") Then modifiers :| EModifiers.IsReadOnly
 	Return modifiers
 End Function
 
-Private
+
 Function ExtractMetaMap:TStringMap( meta:String )
 	If Not meta Then
 		Return Null
@@ -736,21 +739,21 @@ Type TMember Abstract
 	bbdoc: Determine if this member has the "Public" access modifier
 	End Rem	
 	Method IsPublic:Int()
-		Return Not (_modifiers & (MODIFIER_PROTECTED | MODIFIER_PRIVATE))
+		Return Not (_modifiers & (EModifiers.IsProtected | EModifiers.IsPrivate))
 	End Method
 	
 	Rem
 	bbdoc: Determine if this member has the "Protected" access modifier
 	End Rem	
 	Method IsProtected:Int()
-		Return _modifiers & MODIFIER_PROTECTED
+		Return _modifiers & EModifiers.IsProtected <> Null
 	End Method
 	
 	Rem
 	bbdoc: Determine if this member has the "Private" access modifier
 	End Rem	
 	Method IsPrivate:Int()
-		Return _modifiers & MODIFIER_PRIVATE
+		Return _modifiers & EModifiers.IsPrivate <> Null
 	End Method
 	
 	Rem
@@ -776,7 +779,7 @@ Type TMember Abstract
 		_metaMap = ExtractMetaMap(meta)
 	End Method
 	
-	Field _name:String, _typeId:TTypeId, _modifiers:Int
+	Field _name:String, _typeId:TTypeId, _modifiers:EModifiers
 	Field _meta:String, _metaMap:TStringMap
 	
 End Type
@@ -790,7 +793,7 @@ Type TConstant Extends TMember
 	
 	Private
 	
-	Method Init:TConstant(name$, typeId:TTypeId, modifiers%, meta$, str$)
+	Method Init:TConstant(name$, typeId:TTypeId, modifiers:EModifiers, meta$, str$)
 		_name = name
 		_typeId = typeId
 		_modifiers = modifiers
@@ -884,7 +887,7 @@ Type TField Extends TMember
 	
 	Private
 	
-	Method Init:TField(name:String, typeId:TTypeId, modifiers:Int, meta:String, offset:Size_T)
+	Method Init:TField(name:String, typeId:TTypeId, modifiers:EModifiers, meta:String, offset:Size_T)
 		_name = name
 		_typeId = typeId
 		_modifiers = modifiers
@@ -899,7 +902,7 @@ Type TField Extends TMember
 	bbdoc: Determine if field is read-only
 	End Rem	
 	Method IsReadOnly:Int()
-		Return _modifiers & MODIFIER_READ_ONLY
+		Return _modifiers & EModifiers.IsReadOnly <> Null
 	End Method
 	
 	Rem
@@ -1797,7 +1800,7 @@ Type TGlobal Extends TMember
 	
 	Private
 	
-	Method Init:TGlobal(name$, typeId:TTypeId, modifiers%, meta$, ref:Byte Ptr)
+	Method Init:TGlobal(name$, typeId:TTypeId, modifiers:EModifiers, meta$, ref:Byte Ptr)
 		_name = name
 		_typeId = typeId
 		_modifiers = modifiers
@@ -1963,7 +1966,7 @@ Type TFunction Extends TMember
 	
 	Private
 	
-	Method Init:TFunction(name$, typeId:TTypeId, modifiers%, meta$, ref:Byte Ptr, invokeRef:Byte Ptr)
+	Method Init:TFunction(name$, typeId:TTypeId, modifiers:EModifiers, meta$, ref:Byte Ptr, invokeRef:Byte Ptr)
 		_name = name
 		_typeId = typeId
 		_modifiers = modifiers
@@ -1980,14 +1983,14 @@ Type TFunction Extends TMember
 	bbdoc: Determine if function is abstract
 	End Rem	
 	Method IsAbstract:Int()
-		Return _modifiers & MODIFIER_ABSTRACT
+		Return _modifiers & EModifiers.IsAbstract <> Null
 	End Method
 	
 	Rem
 	bbdoc: Determine if function is final
 	End Rem	
 	Method IsFinal:Int()
-		Return _modifiers & MODIFIER_FINAL
+		Return _modifiers & EModifiers.IsFinal <> Null
 	End Method
 	
 	Rem
@@ -2032,7 +2035,7 @@ Type TMethod Extends TMember
 	
 	Private
 	
-	Method Init:TMethod(name$, typeId:TTypeId, modifiers%, meta$, ref:Byte Ptr, invokeRef:Byte Ptr, selfTypeId:TTypeId)
+	Method Init:TMethod(name$, typeId:TTypeId, modifiers:EModifiers, meta$, ref:Byte Ptr, invokeRef:Byte Ptr, selfTypeId:TTypeId)
 		_name = name
 		_typeId = typeId
 		_modifiers = modifiers
@@ -2051,14 +2054,14 @@ Type TMethod Extends TMember
 	bbdoc: Determine if method is abstract
 	End Rem	
 	Method IsAbstract:Int()
-		Return _modifiers & MODIFIER_ABSTRACT
+		Return _modifiers & EModifiers.IsAbstract <> Null
 	End Method
 	
 	Rem
 	bbdoc: Determine if method is final
 	End Rem	
 	Method IsFinal:Int()
-		Return _modifiers & MODIFIER_FINAL
+		Return _modifiers & EModifiers.IsFinal <> Null
 	End Method
 	
 	Rem
@@ -2363,38 +2366,52 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Rem
-	bbdoc: Determine if this TypeId represents a class.
+	bbdoc: Determine if type is a class
 	End Rem
 	Method IsClass:Int()
 		Return _class <> Null And _interface = Null
 	End Method
 	
 	Rem
-	bbdoc: Determine if this TypeId represents an interface.
+	bbdoc: Determine if type is an interface
 	End Rem
 	Method IsInterface:Int()
 		Return _interface <> Null
 	End Method
 	
 	Rem
-	bbdoc: Determine if this TypeId represents a struct.
+	bbdoc: Determine if type is a struct
 	End Rem
 	Method IsStruct:Int()
 		Return _struct <> Null
 	End Method
 	
 	Rem
-	bbdoc: Determine if this TypeId represents an enum.
+	bbdoc: Determine if type is an enum
 	End Rem
 	Method IsEnum:Int()
 		Return _enum <> Null
 	End Method
 	
 	Rem
-	bbdoc: Determine if this TypeId represents a flags enum.
+	bbdoc: Determine if type is a flags enum
 	End Rem
 	Method IsFlagsEnum:Int()
 		Return _isFlagsEnum
+	End Method
+	
+	Rem
+	bbdoc: Determine if type is abstract
+	End Rem
+	Method IsAbstract:Int()
+		Return _modifiers & EModifiers.IsAbstract <> Null
+	End Method
+	
+	Rem
+	bbdoc: Determine if type is final
+	End Rem
+	Method IsFinal:Int()
+		Return Not _class Or _modifiers & EModifiers.IsFinal <> Null
 	End Method
 	
 	Rem
@@ -3814,14 +3831,21 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Method InitClass:TTypeId(class:Byte Ptr) ' BBClass*
-		Local name$ = String.FromCString(bbRefClassDebugScopeName(class))
-		Local meta$
+		Local name:String = String.FromCString(bbRefClassDebugScopeName(class))
+		Local modifierString:String
+		Local meta:String
 		Local i% = name.Find("{")
 		If i<>-1
 			meta = name[i+1..name.length-1]
 			name = name[..i]
 		EndIf
+		i = name.Find("'")
+		If i<>-1
+			modifierString = name[i+1..]
+			name = name[..i]
+		EndIf
 		_name = name
+		_modifiers = ModifiersForTag(modifierString)
 		InitMeta(meta)
 		_class = class
 		
@@ -3832,13 +3856,20 @@ Type TTypeId Extends TMember
 	
 	Method InitInterface:TTypeId(ifc:Byte Ptr) ' BBInterface*
 		Local name:String = String.FromCString(bbInterfaceName(ifc))
+		Local modifierString:String
 		Local meta:String
 		Local i% = name.Find("{")
 		If i<>-1
 			meta = name[i+1..name.length-1]
 			name = name[..i]
 		EndIf
+		i = name.Find("'")
+		If i<>-1
+			modifierString = name[i+1..]
+			name = name[..i]
+		EndIf
 		_name = name
+		_modifiers = ModifiersForTag(modifierString)
 		InitMeta(meta)
 		_interface = ifc
 		_class = bbInterfaceClass(ifc)
@@ -3851,14 +3882,21 @@ Type TTypeId Extends TMember
 	
 	Method InitStruct:TTypeId(scope:Byte Ptr) ' BBDebugScope*
 		Local name:String = String.FromCString(bbDebugScopeName(scope))
-		Local meta$
+		Local modifierString:String
+		Local meta:String
 		Local i% = name.Find("{")
 		If i<>-1
 			meta = name[i+1..name.length-1]
 			name = name[..i]
 		EndIf
+		i = name.Find("'")
+		If i<>-1
+			modifierString = name[i+1..]
+			name = name[..i]
+		EndIf
 		_name = name
-		_meta = meta
+		_modifiers = ModifiersForTag(modifierString)
+		InitMeta(meta)
 		_struct = scope
 		
 		Local p:Byte Ptr = bbDebugScopeDecl(scope)
@@ -3874,14 +3912,21 @@ Type TTypeId Extends TMember
 	
 	Method InitEnum:TTypeId(scope:Byte Ptr) ' BBDebugScope*
 		Local name:String = String.FromCString(bbDebugScopeName(scope))
-		Local meta$
+		Local modifierString:String
+		Local meta:String
 		Local i% = name.Find("{")
 		If i<>-1
 			meta = name[i+1..name.length-1]
 			name = name[..i]
 		EndIf
+		i = name.Find("'")
+		If i<>-1
+			modifierString = name[i+1..]
+			name = name[..i]
+		EndIf
 		_name = name
-		_meta = meta
+		_modifiers = ModifiersForTag(modifierString)
+		InitMeta(meta)
 		_enum = scope
 		
 		Local p:Byte Ptr = bbDebugScopeDecl(scope)
@@ -3972,7 +4017,7 @@ Type TTypeId Extends TMember
 				meta = ty[i+1..ty.length-1]
 				ty = ty[..i]
 			EndIf
-			i = ty.Find("|")
+			i = ty.Find("'")
 			If i<>-1
 				modifierString = ty[i+1..ty.length]
 				ty = ty[..i]

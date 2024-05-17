@@ -42,7 +42,7 @@ Extern
 	Function bbIsMainThread:Int()="bbIsMainThread"
 	Function bbGCValidate:Int( mem:Byte Ptr ) = "int bbGCValidate( void * )!"
 
-	Function DebugScopeName:String( scope:Int Ptr )="bmx_debugger_DebugScopeName"
+	Function bmx_debugger_DebugScopeName:String( scope:Int Ptr )
 	Function bmx_debugger_DebugScopeKind:UInt( scope:Int Ptr )
 	Function bmx_debugger_DebugScopeDecl:Byte Ptr( scope:Int Ptr )
 
@@ -218,6 +218,21 @@ Function TypeName:String( tag:String Var )
 	If Not tag.length Return ""
 	DebugError "Invalid debug typetag:"+t
 
+End Function
+
+Function DebugScopeName:String(scope:Int Ptr)
+	Local n:String = bmx_debugger_DebugScopeName(scope)
+	Local modsPos:Int = n.Find("'")
+	Local metaPos:Int = n.Find("{")
+	If modsPos <> -1 And metaPos <> -1 Then
+		Return n[..modsPos] + " " + n[metaPos..]
+	Else If modsPos <> -1 Then
+		Return n[..modsPos]
+	Else If metaPos <> -1 Then
+		Return n[..metaPos] + " " + n[metaPos..]
+	Else
+		Return n
+	End If
 End Function
 
 'int offsets into 12 byte DebugStm struct
