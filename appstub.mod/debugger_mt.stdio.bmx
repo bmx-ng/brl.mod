@@ -54,7 +54,7 @@ Extern
 	Function bmx_debugger_DebugDecl_ConstValue:String( decl:Int Ptr )
 	Function bmx_debugger_DebugDecl_FieldOffset:Byte Ptr(decl:Int Ptr, inst:Byte Ptr)
 	Function bmx_debugger_DebugDecl_StringFromAddress:String( addr:Byte Ptr )
-	Function bmx_debugger_DebugDeclTypeChar:Int( decl:Int Ptr, index:Int )
+	Function bmx_debugger_DebugDeclTypeChar:Short( decl:Int Ptr, index:Int )
 	Function bmx_debugger_DebugDecl_ArraySize:Int( decl:Byte Ptr )
 	Function bmx_debugger_DebugDecl_ArrayDecl:Byte Ptr(inst:Byte Ptr)
 	Function bmx_debugger_DebugDecl_ArrayDeclIndexedPart(decl:Byte Ptr, inst:Byte Ptr, index:Int)
@@ -78,7 +78,7 @@ Extern
 	Function bmx_debugger_ref_brl_blitz_NullFunctionError:Byte Ptr()
 	
 	Function bbObjectStructInfo:Byte Ptr(name:Byte Ptr)="BBDebugScope * bbObjectStructInfo( char * )!"
-	Function bmx_debugger_DebugEnumDeclValue:String(decl:Byte Ptr, val:Byte Ptr)
+	Function bmx_debugger_DebugEnumDeclValue:String(declTypeTag:String, val:Byte Ptr)
 End Extern
 
 ?Not ptr64
@@ -354,9 +354,9 @@ Function DebugDeclValue:String( decl:Int Ptr,inst:Byte Ptr )
 		DebugError "Invalid decl kind"
 	End Select
 	
-	Local tag:Int=bmx_debugger_DebugDeclTypeChar(decl, 0)
+	Local firstTagChar:Short=bmx_debugger_DebugDeclTypeChar(decl, 0)
 	
-	Select tag
+	Select firstTagChar
 	Case Asc("b")
 		Return String.FromInt( (Byte Ptr p)[0] )
 	Case Asc("s")
@@ -396,7 +396,7 @@ Function DebugDeclValue:String( decl:Int Ptr,inst:Byte Ptr )
 		Return DebugEscapeString( s )
 	Case Asc("*"),Asc("?"),Asc("#")
 		Local deref:String
-		If tag = Asc("*") Then deref = DebugDerefPointer(decl, p)
+		If firstTagChar = Asc("*") Then deref = DebugDerefPointer(decl, p)
 ?Not ptr64
 		Return "$" + ToHex( (Int Ptr p)[0] ) + deref
 ?ptr64
@@ -443,9 +443,24 @@ Function DebugDeclValue:String( decl:Int Ptr,inst:Byte Ptr )
 	Case Asc("m")
 		Return Double Ptr(Varptr p)[0] + "," + Double Ptr (Varptr p)[1]
 	Case Asc("/")
-		Return bmx_debugger_DebugEnumDeclValue(decl, p)
+		Local tag:String = bmx_debugger_DebugDeclType(decl)
+		Function TagWithoutModifiersAndMeta:String(tag:String)
+			Local modsPos:Int = tag.Find("'")
+			Local metaPos:Int = tag.Find("{")
+			If modsPos <> -1 And metaPos <> -1 Then
+				Return tag[..Min(modsPos, metaPos)]
+			Else If modsPos <> -1 Then
+				Return tag[..modsPos]
+			Else If metaPos <> -1 Then
+				Return tag[..metaPos] + " " + tag[metaPos..]
+			Else
+				Return tag
+			End If
+		End Function
+		Return bmx_debugger_DebugEnumDeclValue(TagWithoutModifiersAndMeta(tag), p)
 	Default
-		DebugError "Invalid decl typetag:"+Chr(tag)
+		Local tag:String = bmx_debugger_DebugDeclType(decl)
+		DebugError "Invalid decl typetag:"+tag
 	End Select
 	
 ?Not ptr64
