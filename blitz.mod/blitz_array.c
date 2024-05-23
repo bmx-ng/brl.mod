@@ -135,7 +135,7 @@ static void *arrayInitializer( BBArray *arr ){
 	return 0;
 }
 
-static void initializeArray( BBArray *arr, BBArrayStructInit structInit ){
+static void initializeArray( BBArray *arr, BBArrayStructInit structInit, BBEnum * bbEnum ){
 	void *init,**p;
 	
 	if( !arr->size ) return;
@@ -147,13 +147,22 @@ static void initializeArray( BBArray *arr, BBArrayStructInit structInit ){
 		int k;
 		for( k=arr->scales[0];k>0;--k ) *p++=init;
 	}else{
-		memset( p,0,arr->size );
-		if (structInit) {
+		if (bbEnum && !bbEnum->flags) {
 			int k;
 			char * s = (char*)p;
 			for( k=arr->scales[0];k>0;--k ) {
-				structInit(s);
+				memcpy(s, bbEnum->values, arr->data_size);
 				s += arr->data_size;
+			}
+		} else {
+			memset( p,0,arr->size );
+			if (structInit) {
+				int k;
+				char * s = (char*)p;
+				for( k=arr->scales[0];k>0;--k ) {
+					structInit(s);
+					s += arr->data_size;
+				}
 			}
 		}
 	}
@@ -175,7 +184,7 @@ BBArray *bbArrayNew( const char *type,int dims,... ){
 
 	BBArray *arr=allocateArray( type,dims, lens, 0 );
 	
-	initializeArray( arr, 0 );
+	initializeArray( arr, 0, 0 );
 	
 	return arr;
 }
@@ -196,7 +205,28 @@ BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, BBArraySt
 
 	BBArray *arr=allocateArray( type,dims, lens, data_size );
 	
-	initializeArray( arr, init );
+	initializeArray( arr, init, 0 );
+	
+	return arr;
+}
+
+BBArray *bbArrayNewEnum( const char *type, BBEnum * bbEnum, int dims, ... ){
+	int lens[256];
+
+	va_list lengths;
+	
+	va_start(lengths, dims);
+	
+	int i;
+	for (i = 0; i < dims; i++) {
+		lens[i] = va_arg(lengths, int);
+	}
+	va_end(lengths);
+	
+	BBArray *arr=allocateArray( bbEnum->type,dims, lens, 0 );
+	arr->type=bbEnum->atype;
+	
+	initializeArray( arr, 0, bbEnum );
 	
 	return arr;
 }
@@ -205,7 +235,7 @@ BBArray *bbArrayNewEx( const char *type,int dims,int *lens ){
 
 	BBArray *arr=allocateArray( type,dims,lens,0 );
 	
-	initializeArray( arr, 0 );
+	initializeArray( arr, 0, 0 );
 	
 	return arr;
 }
@@ -214,7 +244,7 @@ BBArray *bbArrayNew1D( const char *type,int length ){
 
 	BBArray *arr=allocateArray( type,1,&length, 0 );
 	
-	initializeArray( arr, 0 );
+	initializeArray( arr, 0, 0 );
 	
 	return arr;
 }
@@ -227,7 +257,17 @@ BBArray *bbArrayNew1DStruct( const char *type,int length, unsigned short data_si
 
 	BBArray *arr=allocateArray( type,1,&length, data_size );
 	
-	initializeArray( arr, init );
+	initializeArray( arr, init, 0 );
+	
+	return arr;
+}
+
+BBArray *bbArrayNew1DEnum( const char *type,int length, BBEnum * bbEnum ){
+
+	BBArray *arr=allocateArray( bbEnum->type,1,&length, 0 );
+	arr->type=bbEnum->atype;
+	
+	initializeArray( arr, 0, bbEnum );
 	
 	return arr;
 }
