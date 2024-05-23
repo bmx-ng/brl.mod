@@ -12,17 +12,11 @@ void* bbRefArrayElementPtr(size_t sz, BBArray* array, int index) {
 	return (char*)BBARRAYDATA(array, array->dims) + sz * index;
 }
 
-void* bbRefArrayClass() {
-	return &bbArrayClass;
-}
+void* bbRefArrayClass = &bbArrayClass;
 
-void* bbRefStringClass() {
-	return &bbStringClass;
-}
+void* bbRefStringClass = &bbStringClass;
 
-void* bbRefObjectClass() {
-	return &bbObjectClass;
-}
+void* bbRefObjectClass = &bbObjectClass;
 
 int bbRefArrayLength(BBArray* array, int dim) {
 	return array->scales[((dim <= array->dims) ? dim : 0)];
@@ -143,9 +137,11 @@ BBString* bbStringFromRef(void* ref) {
 	return (BBString*)ref;
 }
 
-BBArray* bbRefArrayNull() {
-	return &bbEmptyArray;
-}
+BBObject* bbRefNullObject = &bbNullObject;
+
+BBString* bbRefEmptyString = &bbEmptyString;
+
+BBArray* bbRefEmptyArray = &bbEmptyArray;
 
 const char* bbInterfaceName(BBInterface* ifc) {
 	return ifc->clas->debug_scope->name;

@@ -54,9 +54,9 @@ Extern
 	Function bbObjectRegisteredInterfaces:Byte Ptr Ptr(count:Int Var) = "BBInterface** bbObjectRegisteredInterfaces(int*)!"
 	Function bbObjectRegisteredStructs:Byte Ptr Ptr(count:Int Var) = "BBDebugScope** bbObjectRegisteredStructs(int*)!"
 	Function bbObjectRegisteredEnums:Byte Ptr Ptr(count:Int Var) = "BBDebugScope** bbObjectRegisteredEnums(int*)!"
-	Function bbRefArrayClass:Byte Ptr()
-	Function bbRefStringClass:Byte Ptr()
-	Function bbRefObjectClass:Byte Ptr()
+	Global bbRefArrayClass:Byte Ptr
+	Global bbRefStringClass:Byte Ptr
+	Global bbRefObjectClass:Byte Ptr
 	
 	Function bbObjectNew:Object(class:Byte Ptr) = "BBObject* bbObjectNew(BBClass*)!"
 	Function bbObjectNewNC:Object(class:Byte Ptr) = "BBObject* bbObjectNewNC(BBClass*)!"
@@ -80,7 +80,9 @@ Extern
 	
 	Function bbRefGetSuperClass:Byte Ptr(class:Byte Ptr)
 	Function bbStringFromRef:String(ref:Byte Ptr)
-	Function bbRefArrayNull:Object()
+	Global bbRefNullObject:Object
+	Global bbRefEmptyString:Object
+	Global bbRefEmptyArray:Object
 	
 	Function bbInterfaceName:Byte Ptr(ifc:Byte Ptr)
 	Function bbInterfaceClass:Byte Ptr(ifc:Byte Ptr)
@@ -179,6 +181,8 @@ Function _Get:Object(p:Byte Ptr, typeId:TTypeId)
 					Return New TBoxedStruct(typeId, p)
 				Case typeId._class <> Null
 					Return bbRefGetObject(p)
+				Case typeId.IsEnum()
+					Return _Get(p, typeId.UnderlyingType())
 				Default
 					Throw "Unable to get value of this type"
 			End Select
@@ -210,6 +214,9 @@ Function _Assign(p:Byte Ptr, typeId:TTypeId, value:Object)
 						Return
 					Case typeId.IsInterface()
 						If bbInterfaceDowncast(value, typeId._interface) <> value Then Throw "Unable to assign object of incompatible type"
+					Case typeId.IsEnum()
+						_Assign p, typeId.UnderlyingType(), value
+						Return
 					Default
 						If bbObjectDowncast(value, typeId._class) <> value Then Throw "Unable to assign object of incompatible type"
 				End Select
@@ -218,7 +225,7 @@ Function _Assign(p:Byte Ptr, typeId:TTypeId, value:Object)
 					Case typeId.IsStruct()
 						Throw "Unable to convert Null object to this type"
 					Case typeId.Name().Endswith("]")
-						value = bbRefArrayNull()
+						value = bbRefEmptyArray
 					Case typeId = StringTypeId
 						value = ""
 				End Select
@@ -624,12 +631,12 @@ Global DoubleTypeId:TTypeId = New TTypeId.Init("Double", SizeOf Double Null)
 Rem
 bbdoc: Object type ID
 End Rem
-Global ObjectTypeId:TTypeId = New TTypeId.Init("Object", SizeOf Byte Ptr Null, bbRefObjectClass())
+Global ObjectTypeId:TTypeId = New TTypeId.Init("Object", SizeOf Byte Ptr Null, bbRefObjectClass)
 
 Rem
 bbdoc: String type ID
 End Rem
-Global StringTypeId:TTypeId = New TTypeId.Init("String", SizeOf Byte Ptr Null, bbRefStringClass(), ObjectTypeId)
+Global StringTypeId:TTypeId = New TTypeId.Init("String", SizeOf Byte Ptr Null, bbRefStringClass, ObjectTypeId)
 
 Rem
 bbdoc: Primitive longint type
@@ -701,7 +708,7 @@ Global VoidTypeId:TTypeId = New TTypeId.Init("", 0)
 Rem
 bbdoc: Mock array base type ID
 End Rem
-Global ArrayTypeId:TTypeId = New TTypeId.Init("Null[]", SizeOf Byte Ptr Null, bbRefArrayClass(), ObjectTypeId)
+Global ArrayTypeId:TTypeId = New TTypeId.Init("Null[]", SizeOf Byte Ptr Null, bbRefArrayClass, ObjectTypeId)
 
 Rem
 bbdoc: Mock pointer base type ID
@@ -941,6 +948,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -972,6 +980,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -1003,6 +1012,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -1034,6 +1044,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -1065,6 +1076,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -1096,6 +1108,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -1127,6 +1140,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -1158,6 +1172,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -1189,6 +1204,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -1220,6 +1236,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -1251,6 +1268,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -1398,7 +1416,11 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt( value )
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _typeId.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 
@@ -1433,7 +1455,11 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt( value )
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _typeId.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 
@@ -1468,7 +1494,11 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt( value )
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _typeId.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -1503,7 +1533,11 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromUInt( value )
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _typeId.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 
@@ -1538,7 +1572,11 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromLong( value )
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _typeId.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -1573,7 +1611,11 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromULong( value )
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _typeId.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 
@@ -1608,7 +1650,11 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromSizet( value )
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _typeId.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 
@@ -1643,7 +1689,11 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromFloat( value )
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _typeId.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -1678,7 +1728,11 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromDouble( value )
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _typeId.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -1713,7 +1767,11 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromLongInt( value )
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _typeId.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 
@@ -1748,7 +1806,11 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromULongInt( value )
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _typeId.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 
@@ -2184,7 +2246,7 @@ Type TTypeId Extends TMember
 			For Local i:Int = 1 Until dims
 				commas :+ ","
 			Next
-			Local t:TTypeId = New TTypeId.Init(_name + "[" + commas + "]", ArrayTypeId._size, bbRefArrayClass())
+			Local t:TTypeId = New TTypeId.Init(_name + "[" + commas + "]", ArrayTypeId._size, bbRefArrayClass)
 			t._elementType = Self
 			t._dimensions = dims
 			If _super Then
@@ -2722,10 +2784,39 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Rem
+	bbdoc: Get Null value
+	End Rem
+	Method NullValue:Object()
+		Select Self
+			Case ByteTypeId Return "0"
+			Case ShortTypeId Return "0"
+			Case IntTypeId Return "0"
+			Case UIntTypeId Return "0"
+			Case LongTypeId Return "0"
+			Case ULongTypeId Return "0"
+			Case SizetTypeId Return "0"
+			Case FloatTypeId Return "0"
+			Case DoubleTypeId Return "0"
+			Case LongIntTypeId Return "0"
+			Case ULongIntTypeId Return "0"
+			Case StringTypeId Return bbRefEmptyString
+		End Select
+		Select True
+			Case ExtendsType(ArrayTypeId) Return bbRefEmptyArray
+			Case ExtendsType(FunctionTypeId) Return String.FromSizeT(Size_T Byte Ptr NullFunctionError) 
+			Case IsClass() Or IsInterface() Return bbRefNullObject
+			Case IsStruct() Return NewObject()
+			Case IsEnum() If IsFlagsEnum() Then Return "0" Else Return TConstant(_consts.First()).Get()
+		End Select
+		Return Null
+	End Method
+	
+	Rem
 	bbdoc: Create a new array
 	about: This method should only be called on an array type ID.<br>
 	If @dims is not specified, this method will create a one-dimensional array with @length elements.
 	Otherwise, @length is ignored and a new array with dimensions as specified by @dims is created.
+	The elements of the array are not initialized to valid values.
 	End Rem
 	Method NewArray:Object(length:Int = 0, dims:Int[] = Null)
 		If Self = ArrayTypeId Then Throw "Unable to create array of " + Name() + " type"
@@ -2751,10 +2842,6 @@ Type TTypeId Extends TMember
 		Return bbRefArrayLength(_array, dim)
 	End Function
 	
-	Method NullArray:Object()
-		Return bbRefArrayNull()
-	End Method
-	
 	Rem
 	bbdoc: Get the number of dimensions of an array
 	End Rem
@@ -2762,6 +2849,9 @@ Type TTypeId Extends TMember
 		Return bbRefArrayDimensions(_array)
 	End Function
 	
+	Rem
+	bbdoc: Slice an array
+	End Rem
 	Method ArraySlice:Object( _array:Object, _start:Int, _end:Int )
 		If Not _elementType Throw "TypeID is not an array type"
 		Local tag:Byte Ptr=_elementType._typeTag
@@ -2823,6 +2913,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -2855,6 +2946,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -2887,6 +2979,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -2919,6 +3012,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -2951,6 +3045,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -2983,6 +3078,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3015,6 +3111,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3047,6 +3144,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3079,6 +3177,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3111,6 +3210,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3143,6 +3243,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
+		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3264,7 +3365,11 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt(value)
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _elementType.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -3300,7 +3405,11 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt(value)
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _elementType.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -3336,7 +3445,11 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt(value)
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _elementType.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -3372,7 +3485,11 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromUInt(value)
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _elementType.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -3408,7 +3525,11 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromLong(value)
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _elementType.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -3444,7 +3565,11 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromULong(value)
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _elementType.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -3480,7 +3605,11 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromSizeT(value)
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _elementType.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -3516,7 +3645,11 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromFloat(value)
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _elementType.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -3552,7 +3685,11 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromDouble(value)
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _elementType.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -3588,7 +3725,11 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromDouble(value)
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _elementType.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -3624,7 +3765,11 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromDouble(value)
 			Default
-				Throw "Unable to assign value of incompatible type"
+				If _elementType.ExtendsType(PointerTypeId) Then
+					(Size_T Ptr p)[0]=Size_T(value)
+				Else
+					Throw "Unable to assign value of incompatible type"
+				End If
 		End Select
 	End Method
 	
@@ -3638,9 +3783,8 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Rem
-	bbdoc: Get Type by name
 	bbdoc: Size of the type in bytes
-	about: For reference types, such as classes and interfaces, this function will return the size of the reference (equal to the size of PointerTypeId), not that of the underlying type.
+	about: For reference types such as classes and interfaces, this function will return the size of the reference (equal to the size of PointerTypeId), not the size of the pointed to instance.
 	End Rem
 	Method Size:Int()
 		Return _size
