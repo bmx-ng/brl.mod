@@ -175,7 +175,7 @@ Function _Get:Object(p:Byte Ptr, typeId:TTypeId)
 		Case DoubleTypeId Return String.FromDouble((Double Ptr p)[0])
 		Default
 			Select True
-				Case typeId.ExtendsType(PointerTypeId) Or typeId.ExtendsType(FunctionTypeId)
+				Case typeId.IsUnmanagedPointerType()
 					Return String.FromSizeT((Size_T Ptr p)[0])
 				Case typeId.IsStruct()
 					Return New TBoxedStruct(typeId, p)
@@ -204,7 +204,7 @@ Function _Assign(p:Byte Ptr, typeId:TTypeId, value:Object)
 		Default
 			If value
 				Select True
-					Case typeId.ExtendsType(PointerTypeId) Or typeId.ExtendsType(FunctionTypeId)
+					Case typeId.IsUnmanagedPointerType()
 						(Size_T Ptr p)[0] = value.ToString().ToSizeT()
 						Return
 					Case typeId.IsStruct()
@@ -297,6 +297,7 @@ Function TypeTagForId$(id:TTypeId)
 		Case DoubleTypeId    Return "d"
 		Case StringTypeId    Return "$"
 		Case PointerTypeId   Return "*"
+		Case VarTypeId       Return "&"
 		Case FunctionTypeId  Return "("
 		Case VoidTypeId      Return ""
 		? Win32
@@ -308,14 +309,16 @@ Function TypeTagForId$(id:TTypeId)
 		Case Float128TypeId  Return "k"
 		Case Double128TypeId Return "m"
 		?
-		Case LongIntTypeId Return "v"
-		Case ULongIntTypeId Return "e"
+		Case LongIntTypeId   Return "v"
+		Case ULongIntTypeId  Return "e"
 	End Select
 	Select True
 		Case id.ExtendsType(ArrayTypeId)
 			Return "[]" + TypeTagForId(id._elementType)
 		Case id.ExtendsType(PointerTypeId)
 			Return "*" + TypeTagForId(id._elementType)
+		Case id.ExtendsType(VarTypeId)
+			Return "$" + TypeTagForId(id._elementType)
 		Case id.ExtendsType(FunctionTypeId)
 			Local s:String
 			For Local t:TTypeId = EachIn id._argTypes
@@ -348,6 +351,7 @@ Function TypeIdForTag:TTypeId(ty$)
 		Case "d" Return DoubleTypeId
 		Case "$" Return StringTypeId
 		Case "*" Return PointerTypeId
+		Case "&" Return VarTypeId
 		Case "(" Return FunctionTypeId
 		Case ""  Return VoidTypeId
 		? Win32
@@ -381,6 +385,13 @@ Function TypeIdForTag:TTypeId(ty$)
 			Local id:TTypeId = TypeIdForTag(ty)
 			If id Then
 				id = id.PointerType()
+			EndIf
+			Return id
+		Case ty.StartsWith("&") ' var
+			ty = ty[1..]
+			Local id:TTypeId = TypeIdForTag(ty)
+			If id Then
+				id = id.VarType()
 			EndIf
 			Return id
 		Case ty.StartsWith("(") ' function
@@ -716,6 +727,11 @@ End Rem
 Global PointerTypeId:TTypeId = New TTypeId.Init("Ptr", SizeOf Byte Ptr Null)
 
 Rem
+bbdoc: Mock var base type ID
+End Rem
+Global VarTypeId:TTypeId = New TTypeId.Init("Var", SizeOf Byte Ptr Null)
+
+Rem
 bbdoc: Mock function/method base type ID
 End Rem
 Global FunctionTypeId:TTypeId = New TTypeId.Init("Null()", SizeOf Byte Ptr Null)
@@ -948,7 +964,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -980,7 +996,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -1012,7 +1028,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -1044,7 +1060,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -1076,7 +1092,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -1108,7 +1124,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -1140,7 +1156,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -1172,7 +1188,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -1204,7 +1220,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -1236,7 +1252,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -1268,7 +1284,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -1416,7 +1432,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt( value )
 			Default
-				If _typeId.ExtendsType(PointerTypeId) Then
+				If _typeId.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1455,7 +1471,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt( value )
 			Default
-				If _typeId.ExtendsType(PointerTypeId) Then
+				If _typeId.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1494,7 +1510,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt( value )
 			Default
-				If _typeId.ExtendsType(PointerTypeId) Then
+				If _typeId.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1533,7 +1549,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromUInt( value )
 			Default
-				If _typeId.ExtendsType(PointerTypeId) Then
+				If _typeId.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1572,7 +1588,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromLong( value )
 			Default
-				If _typeId.ExtendsType(PointerTypeId) Then
+				If _typeId.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1611,7 +1627,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromULong( value )
 			Default
-				If _typeId.ExtendsType(PointerTypeId) Then
+				If _typeId.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1650,7 +1666,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromSizet( value )
 			Default
-				If _typeId.ExtendsType(PointerTypeId) Then
+				If _typeId.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1689,7 +1705,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromFloat( value )
 			Default
-				If _typeId.ExtendsType(PointerTypeId) Then
+				If _typeId.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1728,7 +1744,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromDouble( value )
 			Default
-				If _typeId.ExtendsType(PointerTypeId) Then
+				If _typeId.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1767,7 +1783,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromLongInt( value )
 			Default
-				If _typeId.ExtendsType(PointerTypeId) Then
+				If _typeId.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1806,7 +1822,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromULongInt( value )
 			Default
-				If _typeId.ExtendsType(PointerTypeId) Then
+				If _typeId.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -2140,9 +2156,9 @@ Type TMethod Extends TMember
 		Return _typeId._retType
 	End Method
 	
-	'Rem
-	'bbdoc: Get function pointer
-	'EndRem
+	Rem
+	bbdoc: Get function pointer
+	EndRem
 	Method FunctionPtr:Byte Ptr()
 		Return _ref
 	End Method
@@ -2300,6 +2316,28 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Rem
+	bbdoc: Get var type with this element type
+	End Rem
+	Method VarType:TTypeId()
+		Try
+			ReflectionMutex.Lock
+			If Not _varType Then
+				Local t:TTypeId = New TTypeId.Init(_name + " Var", VarTypeId._size)
+				t._elementType = Self
+				If _super Then
+					t._super = _super.VarType()
+				Else
+					t._super = VarTypeId
+				EndIf
+				_varType = t
+			EndIf
+			Return _varType
+		Finally
+			ReflectionMutex.Unlock
+		End Try
+	End Method
+	
+	Rem
 	bbdoc: Get function type with this return type
 	End Rem
 	Method FunctionType:TTypeId(argTypes:TTypeId[] = Null)
@@ -2384,7 +2422,7 @@ Type TTypeId Extends TMember
 		End If
 		Return list
 	End Method
-
+	
 	Rem
 	bbdoc: Create a new object
 	about: Creates a new instance of this type with the default constructor.
@@ -2803,6 +2841,8 @@ Type TTypeId Extends TMember
 		End Select
 		Select True
 			Case ExtendsType(ArrayTypeId) Return bbRefEmptyArray
+			Case ExtendsType(PointerTypeId) Return "0"
+			Case ExtendsType(VarTypeId) Return "0"
 			Case ExtendsType(FunctionTypeId) Return String.FromSizeT(Size_T Byte Ptr NullFunctionError) 
 			Case IsClass() Or IsInterface() Return bbRefNullObject
 			Case IsStruct() Return NewObject()
@@ -2913,7 +2953,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -2946,7 +2986,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -2979,7 +3019,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3012,7 +3052,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3045,7 +3085,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3078,7 +3118,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3111,7 +3151,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3144,7 +3184,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3177,7 +3217,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3210,7 +3250,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3243,7 +3283,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.ExtendsType(PointerTypeId) Then Return (Size_T Ptr p)[0]
+		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3365,7 +3405,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt(value)
 			Default
-				If _elementType.ExtendsType(PointerTypeId) Then
+				If _elementType.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3405,7 +3445,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt(value)
 			Default
-				If _elementType.ExtendsType(PointerTypeId) Then
+				If _elementType.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3445,7 +3485,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt(value)
 			Default
-				If _elementType.ExtendsType(PointerTypeId) Then
+				If _elementType.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3485,7 +3525,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromUInt(value)
 			Default
-				If _elementType.ExtendsType(PointerTypeId) Then
+				If _elementType.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3525,7 +3565,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromLong(value)
 			Default
-				If _elementType.ExtendsType(PointerTypeId) Then
+				If _elementType.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3565,7 +3605,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromULong(value)
 			Default
-				If _elementType.ExtendsType(PointerTypeId) Then
+				If _elementType.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3605,7 +3645,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromSizeT(value)
 			Default
-				If _elementType.ExtendsType(PointerTypeId) Then
+				If _elementType.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3645,7 +3685,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromFloat(value)
 			Default
-				If _elementType.ExtendsType(PointerTypeId) Then
+				If _elementType.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3685,7 +3725,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromDouble(value)
 			Default
-				If _elementType.ExtendsType(PointerTypeId) Then
+				If _elementType.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3725,7 +3765,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromDouble(value)
 			Default
-				If _elementType.ExtendsType(PointerTypeId) Then
+				If _elementType.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3765,7 +3805,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromDouble(value)
 			Default
-				If _elementType.ExtendsType(PointerTypeId) Then
+				If _elementType.IsUnmanagedPointerType() Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3815,7 +3855,7 @@ Type TTypeId Extends TMember
 					Return Null
 				End If
 			' pointers
-			Else If name.EndsWith("ptr")
+			Else If name.EndsWith(" ptr")
 				Local baseType:TTypeId = ForName_(name[..name.length-4])
 				' check for valid pointer base types
 				If baseType And Not (baseType._class Or baseType = VoidTypeId Or baseType = FunctionTypeId Or baseType = PointerTypeId) Then
@@ -3823,6 +3863,10 @@ Type TTypeId Extends TMember
 				Else
 					Return Null
 				End If
+			' vars
+			Else If name.EndsWith(" var")
+				Local baseType:TTypeId = ForName_(name[..name.length-4])
+				Return baseType.VarType()
 			' function pointers
 			Else If name.EndsWith(")")
 				Local i:Int
@@ -3958,6 +4002,10 @@ Type TTypeId Extends TMember
 	End Function
 	
 	Private
+	
+	Method IsUnmanagedPointerType:Int()
+		Return ExtendsType(PointerTypeId) Or ExtendsType(VarTypeId) Or ExtendsType(FunctionTypeId)
+	End Method
 	
 	Method Init:TTypeId(name$, size:Size_T, class:Byte Ptr = Null, supor:TTypeId = Null)
 		_name = name
@@ -4237,6 +4285,7 @@ Type TTypeId Extends TMember
 	
 	Field _arrayTypes:TTypeId[]
 	Field _pointerType:TTypeId
+	Field _varType:TTypeId
 	Field _functionTypes:TList[]
 	Field _elementType:TTypeId
 	Field _dimensions:Int

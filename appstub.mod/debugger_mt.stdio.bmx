@@ -137,7 +137,7 @@ Function TypeName:String( tag:String Var )
 	
 	Local t:String=tag[..1]
 	tag=tag[1..]
-
+	
 	Select t
 	Case "b"
 		Return "Byte"
@@ -185,6 +185,8 @@ Function TypeName:String( tag:String Var )
 		Return id
 	Case "*"
 		Return TypeName( tag )+" Ptr"
+	Case "&"
+		Return TypeName( tag )+" Var"
 	Case "["
 		Local length:Int
 		While tag[..1]=","
@@ -330,7 +332,7 @@ Function DebugEscapeString:String( s:String )
 End Function
 
 Function DebugDeclValue:String( decl:Int Ptr,inst:Byte Ptr )
-
+	
 	If bmx_debugger_DebugDeclKind(decl)=DEBUGDECLKIND_CONST
 		Return DebugEscapeString(bmx_debugger_DebugDecl_ConstValue(decl))
 	End If
@@ -354,7 +356,12 @@ Function DebugDeclValue:String( decl:Int Ptr,inst:Byte Ptr )
 		DebugError "Invalid decl kind"
 	End Select
 	
-	Local firstTagChar:Short=bmx_debugger_DebugDeclTypeChar(decl, 0)
+	Local skip:Int = 0
+	Local firstTagChar:Short = bmx_debugger_DebugDeclTypeChar(decl, 0)
+	If firstTagChar = Asc("&") Then
+		skip = 1
+		firstTagChar = bmx_debugger_DebugDeclTypeChar(decl, 1)
+	End If
 	
 	Select firstTagChar
 	Case Asc("b")
@@ -411,8 +418,8 @@ Function DebugDeclValue:String( decl:Int Ptr,inst:Byte Ptr )
 		If p=bmx_debugger_ref_bbEmptyArray() Return "Null[]"
 		If p=bmx_debugger_ref_bbEmptyString() Return "Null$"
 	Case Asc("[")
-		If IsNumeric(bmx_debugger_DebugDeclTypeChar(decl, 1)) Then
-			Local index:Int = 1
+		If IsNumeric(bmx_debugger_DebugDeclTypeChar(decl, 1 + skip)) Then
+			Local index:Int = 1 + skip
 			Local length:Int
 			While IsNumeric(bmx_debugger_DebugDeclTypeChar(decl, index))
 				length = length * 10 + Int(Chr(bmx_debugger_DebugDeclTypeChar(decl, index)))
@@ -430,9 +437,9 @@ Function DebugDeclValue:String( decl:Int Ptr,inst:Byte Ptr )
 		If Not bmx_debugger_DebugDecl_ArraySize(p) Return "Null"
 	Case Asc("@")
 ?Not ptr64
-		Return "$"+ToHex( Int p ) + "@" + bmx_debugger_DebugDeclType(decl)[1..]
+		Return "$"+ToHex( Int p ) + "@" + bmx_debugger_DebugDeclType(decl)[1 + skip..]
 ?ptr64
-		Return "$"+ToHex( Long p ) + "@" + bmx_debugger_DebugDeclType(decl)[1..]
+		Return "$"+ToHex( Long p ) + "@" + bmx_debugger_DebugDeclType(decl)[1 + skip..]
 ?
 	Case Asc("h")
 		Return Float Ptr (Varptr p)[0] + "," + Float Ptr (Varptr p)[1]
@@ -444,6 +451,7 @@ Function DebugDeclValue:String( decl:Int Ptr,inst:Byte Ptr )
 		Return Double Ptr(Varptr p)[0] + "," + Double Ptr (Varptr p)[1]
 	Case Asc("/")
 		Local tag:String = bmx_debugger_DebugDeclType(decl)
+		If skip Then tag = tag[skip..]
 		Function TagWithoutModifiersAndMeta:String(tag:String)
 			Local modsPos:Int = tag.Find("'")
 			Local metaPos:Int = tag.Find("{")
