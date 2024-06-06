@@ -72,7 +72,7 @@ static int arrayCellSize(const char * type, unsigned short data_size, int * flag
 		case '$':size=sizeof(void*);*flags=0;break;
 		case '[':size=sizeof(void*);*flags=0;break;
 		case '(':size=sizeof(void*);break;
-		case 'z':size=sizeof(BBSIZET);break;
+		case 't':size=sizeof(BBSIZET);break;
 		case 'v':size=sizeof(BBLONGINT);break;
 		case 'e':size=sizeof(BBULONGINT);break;
 		#ifdef _WIN32
@@ -552,7 +552,7 @@ void bbArraySort( BBArray *arr,int ascending ){
 		case 'f':qsort_f( (float*)p,(float*)p+n );break;
 		case 'd':qsort_d( (double*)p,(double*)p+n );break;
 		case '$':case ':':qsort_obj( (BBObject**)p,(BBObject**)p+n );break;
-		case 'z':qsort_z( (BBSIZET*)p,(BBSIZET*)p+n );break;
+		case 't':qsort_z( (BBSIZET*)p,(BBSIZET*)p+n );break;
 		case 'v':qsort_v( (BBLONGINT*)p,(BBLONGINT*)p+n );break;
 		case 'e':qsort_e( (BBULONGINT*)p,(BBULONGINT*)p+n );break;
 #ifdef _WIN32
@@ -571,7 +571,7 @@ void bbArraySort( BBArray *arr,int ascending ){
 		case 'f':qsort_f_d( (float*)p,(float*)p+n );break;
 		case 'd':qsort_d_d( (double*)p,(double*)p+n );break;
 		case '$':case ':':qsort_obj_d( (BBObject**)p,(BBObject**)p+n );break;
-		case 'z':qsort_z_d( (BBSIZET*)p,(BBSIZET*)p+n );break;
+		case 't':qsort_z_d( (BBSIZET*)p,(BBSIZET*)p+n );break;
 		case 'v':qsort_v_d( (BBLONGINT*)p,(BBLONGINT*)p+n );break;
 		case 'e':qsort_e_d( (BBULONGINT*)p,(BBULONGINT*)p+n );break;
 #ifdef _WIN32
