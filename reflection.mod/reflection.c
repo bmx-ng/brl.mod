@@ -125,6 +125,14 @@ void bbRefAssignObject(BBObject** p, BBObject* t) {
 	*p = t;
 }
 
+void* bbStructBoxAlloc(size_t size) {
+	return GC_malloc_uncollectable(size);
+}
+
+void bbStructBoxFree(void* p) {
+	GC_free(p);
+}
+
 BBClass* bbRefGetObjectClass(BBObject* p) {
 	return p->clas;
 }

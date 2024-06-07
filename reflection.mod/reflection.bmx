@@ -76,6 +76,9 @@ Extern
 	Function bbRefInitObject(p:Byte Ptr, obj:Object)
 	Function bbRefAssignObject(p:Byte Ptr, obj:Object)
 	
+	Function bbStructBoxAlloc:Byte Ptr(size:Size_T)
+	Function bbStructBoxFree(p:Byte Ptr)
+	
 	Function bbRefGetObjectClass:Byte Ptr(obj:Object)
 	
 	Function bbRefGetSuperClass:Byte Ptr(class:Byte Ptr)
@@ -133,7 +136,7 @@ Type TBoxedStruct Final
 	
 	Method New(structType:TTypeId)
 		typeId = structType
-		dataPtr = MemAlloc(typeId._size)
+		dataPtr = bbStructBoxAlloc(typeId._size)
 	End Method
 	
 	Method New(structType:TTypeId, structPtr:Byte Ptr)
@@ -142,7 +145,7 @@ Type TBoxedStruct Final
 	End Method
 	
 	Method Delete()
-		MemFree dataPtr
+		bbStructBoxFree dataPtr
 	End Method
 	
 	Method UnboxTo(targetPtr:Byte Ptr)
