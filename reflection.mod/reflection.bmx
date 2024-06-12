@@ -123,40 +123,89 @@ End Extern
 
 Public
 
-Type TBoxedStruct Final
+Type TBoxedValue Final
 	
-	Field ReadOnly dataPtr:Byte Ptr
+	Field ReadOnly valuePtr:Byte Ptr
 	Field ReadOnly typeId:TTypeId
 	
 	Private
+	
+	Field ReadOnly mightContainReferences:Int
+	Function MightContainReferences_:Int(typeId:TTypeId)
+		Return typeId.IsClass() Or ..
+		       typeId.IsInterface() Or ..
+		       typeId.IsStruct() Or ..
+		       typeId <> VarTypeId And typeId.ExtendsType(VarTypeId) And MightContainReferences_(typeId.ElementType())
+	End Function
 	
 	Method New() End Method
 	
 	Public
 	
-	Method New(structType:TTypeId)
-		typeId = structType
-		dataPtr = bbStructBoxAlloc(typeId._size)
+	Method New(typeId:TTypeId)
+		If Not typeId.IsValueType() Then Throw "Type is not a value type"
+		Self.typeId = typeId
+		Self.mightContainReferences = MightContainReferences_(typeId)
+		If Self.mightContainReferences Then
+			Self.valuePtr = bbStructBoxAlloc(typeId.Size())
+		Else
+			Self.valuePtr = MemAlloc(typeId.Size())
+		End If
 	End Method
 	
-	Method New(structType:TTypeId, structPtr:Byte Ptr)
-		New(structType)
-		MemCopy dataPtr, structPtr, typeId._size
+	Method New(typeId:TTypeId, valuePtr:Byte Ptr)
+		New(typeId)
+		MemCopy Self.valuePtr, valuePtr, typeId.Size()
 	End Method
 	
 	Method Delete()
-		bbStructBoxFree dataPtr
+		If mightContainReferences Then
+			bbStructBoxFree valuePtr
+		Else
+			MemFree valuePtr
+		End If
 	End Method
 	
-	Method UnboxTo(targetPtr:Byte Ptr)
-		MemCopy targetPtr, dataPtr, typeId._size
+	Method Unbox(targetValuePtr:Byte Ptr)
+		MemCopy targetValuePtr, valuePtr, typeId.Size()
 	End Method
 	
 	Method ToString:String() Override
-		' forward call to the struct's ToString method if it exists
-		If typeId._toString Then Return typeId._toString(dataPtr) Else Return Super.ToString()
+		Return ToString(typeId)
 	End Method
 	
+	Private
+	
+	Method ToString:String(typeId:TTypeId)
+		Select typeId
+			Case ByteTypeId   Return String.FromInt   ((Byte   Ptr valuePtr)[0])
+			Case ShortTypeId  Return String.FromInt   ((Short  Ptr valuePtr)[0])
+			Case IntTypeId    Return String.FromInt   ((Int    Ptr valuePtr)[0])
+			Case UIntTypeId   Return String.FromUInt  ((UInt   Ptr valuePtr)[0])
+			Case LongTypeId   Return String.FromLong  ((Long   Ptr valuePtr)[0])
+			Case ULongTypeId  Return String.FromULong ((ULong  Ptr valuePtr)[0])
+			Case SizeTTypeId  Return String.FromSizeT ((Size_T Ptr valuePtr)[0])
+			Case FloatTypeId  Return String.FromFloat ((Float  Ptr valuePtr)[0])
+			Case DoubleTypeId Return String.FromDouble((Double Ptr valuePtr)[0])
+			? Win32
+			Case LParamTypeId    Return String.FromLParam ((LParam Ptr valuePtr)[0])
+			Case WParamTypeId    Return String.FromWParam ((WParam Ptr valuePtr)[0])
+			?
+			Case LongIntTypeId   Return String.FromLongInt ((LongInt  Ptr valuePtr)[0])
+			Case ULongIntTypeId  Return String.FromULongInt((ULongInt Ptr valuePtr)[0])
+		Default
+			If typeId.ExtendsType(PointerTypeId) Or typeId.ExtendsType(VarTypeId) Or typeId.ExtendsType(FunctionTypeId) Then
+				Return String (Byte Ptr Ptr valuePtr)[0]
+			Else If typeId.IsEnum() Then
+				Return ToString(typeId.UnderlyingType())
+			Else If typeId._toString Then 
+				' forward call to the type's ToString method if it exists
+				 Return typeId._toString(valuePtr)
+			Else
+				Return Super.ToString()
+			End If
+		End Select
+	End Method
 End Type
 
 Global ReflectionMutex:TMutex = TMutex.Create()
@@ -178,10 +227,10 @@ Function _Get:Object(p:Byte Ptr, typeId:TTypeId)
 		Case DoubleTypeId Return String.FromDouble((Double Ptr p)[0])
 		Default
 			Select True
-				Case typeId.IsUnmanagedPointerType()
+				Case typeId.ExtendsType(PointerTypeId) Or typeId.ExtendsType(VarTypeId) Or typeId.ExtendsType(FunctionTypeId)
 					Return String.FromSizeT((Size_T Ptr p)[0])
 				Case typeId.IsStruct()
-					Return New TBoxedStruct(typeId, p)
+					Return New TBoxedValue(typeId, p)
 				Case typeId._class <> Null
 					Return bbRefGetObject(p)
 				Case typeId.IsEnum()
@@ -194,47 +243,60 @@ End Function
 
 
 Function _Assign(p:Byte Ptr, typeId:TTypeId, value:Object)
-	Select typeId
-		Case ByteTypeId   If value Then (Byte Ptr   p)[0] = value.ToString().ToInt()    Else (Byte Ptr   p)[0] = Byte   Null
-		Case ShortTypeId  If value Then (Short Ptr  p)[0] = value.ToString().ToInt()    Else (Short Ptr  p)[0] = Short  Null
-		Case IntTypeId    If value Then (Int Ptr    p)[0] = value.ToString().ToInt()    Else (Int Ptr    p)[0] = Int    Null
-		Case UIntTypeId   If value Then (UInt Ptr   p)[0] = value.ToString().ToUInt()   Else (UInt Ptr   p)[0] = UInt   Null
-		Case LongTypeId   If value Then (Long Ptr   p)[0] = value.ToString().ToLong()   Else (Long Ptr   p)[0] = Long   Null
-		Case ULongTypeId  If value Then (ULong Ptr  p)[0] = value.ToString().ToULong()  Else (ULong Ptr  p)[0] = ULong  Null
-		Case SizeTTypeId  If value Then (Size_T Ptr p)[0] = value.ToString().ToSizeT()  Else (Size_T Ptr p)[0] = Size_T Null
-		Case FloatTypeId  If value Then (Float Ptr  p)[0] = value.ToString().ToFloat()  Else (Float Ptr  p)[0] = Float  Null
-		Case DoubleTypeId If value Then (Double Ptr p)[0] = value.ToString().ToDouble() Else (Double Ptr p)[0] = Double Null
-		Default
-			If value
-				Select True
-					Case typeId.IsUnmanagedPointerType()
-						(Size_T Ptr p)[0] = value.ToString().ToSizeT()
-						Return
-					Case typeId.IsStruct()
-						Local box:TBoxedStruct = TBoxedStruct(value)
-						If Not box Or box.typeId <> typeId Then Throw "Unable to assign object of incompatible type"
-						box.UnboxTo p
-						Return
-					Case typeId.IsInterface()
-						If bbInterfaceDowncast(value, typeId._interface) <> value Then Throw "Unable to assign object of incompatible type"
-					Case typeId.IsEnum()
-						_Assign p, typeId.UnderlyingType(), value
-						Return
-					Default
-						If bbObjectDowncast(value, typeId._class) <> value Then Throw "Unable to assign object of incompatible type"
-				End Select
-			Else
-				Select True
-					Case typeId.IsStruct()
-						Throw "Unable to convert Null object to this type"
-					Case typeId.Name().Endswith("]")
-						value = bbRefEmptyArray
-					Case typeId = StringTypeId
-						value = ""
-				End Select
-			EndIf
-			bbRefAssignObject p, value
-	End Select
+	Local boxedValue:TBoxedValue = TBoxedValue(value)
+	If boxedValue Then
+		If boxedValue.typeId.ExtendsType(typeId) Or ..
+			(typeId.ExtendsType(PointerTypeId) Or typeId.ExtendsType(VarTypeId) Or typeId.ExtendsType(FunctionTypeId)) ..
+			And ..
+			(boxedValue.typeId.ExtendsType(PointerTypeId) Or boxedValue.typeId.ExtendsType(VarTypeId) Or boxedValue.typeId.ExtendsType(FunctionTypeId)) ..
+		Then
+			boxedValue.Unbox p
+		Else
+			Throw "Unable to assign object of incompatible type"
+		End If
+	Else
+		Select typeId
+			Case ByteTypeId   If value Then (Byte Ptr   p)[0] = value.ToString().ToInt()    Else (Byte Ptr   p)[0] = Byte   Null
+			Case ShortTypeId  If value Then (Short Ptr  p)[0] = value.ToString().ToInt()    Else (Short Ptr  p)[0] = Short  Null
+			Case IntTypeId    If value Then (Int Ptr    p)[0] = value.ToString().ToInt()    Else (Int Ptr    p)[0] = Int    Null
+			Case UIntTypeId   If value Then (UInt Ptr   p)[0] = value.ToString().ToUInt()   Else (UInt Ptr   p)[0] = UInt   Null
+			Case LongTypeId   If value Then (Long Ptr   p)[0] = value.ToString().ToLong()   Else (Long Ptr   p)[0] = Long   Null
+			Case ULongTypeId  If value Then (ULong Ptr  p)[0] = value.ToString().ToULong()  Else (ULong Ptr  p)[0] = ULong  Null
+			Case SizeTTypeId  If value Then (Size_T Ptr p)[0] = value.ToString().ToSizeT()  Else (Size_T Ptr p)[0] = Size_T Null
+			Case FloatTypeId  If value Then (Float Ptr  p)[0] = value.ToString().ToFloat()  Else (Float Ptr  p)[0] = Float  Null
+			Case DoubleTypeId If value Then (Double Ptr p)[0] = value.ToString().ToDouble() Else (Double Ptr p)[0] = Double Null
+			Default
+				If value
+					Select True
+						Case typeId.ExtendsType(PointerTypeId) Or typeId.ExtendsType(VarTypeId) Or typeId.ExtendsType(FunctionTypeId)
+							(Size_T Ptr p)[0] = value.ToString().ToSizeT()
+							Return
+						Case typeId.IsStruct()
+							Local box:TBoxedValue = TBoxedValue(value)
+							If Not box Or box.typeId <> typeId Then Throw "Unable to assign object of incompatible type"
+							box.Unbox p
+							Return
+						Case typeId.IsInterface()
+							If bbInterfaceDowncast(value, typeId._interface) <> value Then Throw "Unable to assign object of incompatible type"
+						Case typeId.IsEnum()
+							_Assign p, typeId.UnderlyingType(), value
+							Return
+						Default
+							If bbObjectDowncast(value, typeId._class) <> value Then Throw "Unable to assign object of incompatible type"
+					End Select
+				Else
+					Select True
+						Case typeId.IsStruct()
+							Throw "Unable to convert Null object to this type"
+						Case typeId.Name().Endswith("]")
+							value = bbRefEmptyArray
+						Case typeId = StringTypeId
+							value = ""
+					End Select
+				EndIf
+				bbRefAssignObject p, value
+		End Select
+	End If
 End Function
 
 
@@ -259,7 +321,7 @@ Function _AdvanceBufferPointer:Byte Ptr Ptr(p:Byte Ptr Ptr, typeId:TTypeId)
 End Function
 
 
-Function _Invoke:Object(reflectionWrapper(buf:Byte Ptr Ptr), retType:TTypeId, argTypes:TTypeId[], args:Object[], bufferSize:Int)
+Function _Invoke:Object(reflectionWrapper(buf:Byte Ptr Ptr), retType:TTypeId, argTypes:TTypeId[], args:Object[], bufferSize:Int, returnBoxedValue:Int = False)
 	Local buf:Byte Ptr[bufferSize / (SizeOf Byte Ptr Null)]
 	Local bufPtr:Byte Ptr Ptr = Byte Ptr Ptr buf
 	
@@ -272,18 +334,19 @@ Function _Invoke:Object(reflectionWrapper(buf:Byte Ptr Ptr), retType:TTypeId, ar
 	
 	reflectionWrapper bufPtr
 	
-	If retType <> VoidTypeId Then Return _Get(bufPtr, retType)
-End Function
-
-
-Function GetFieldPtr:Byte Ptr(obj:Object, offset:Size_T)
-	Local box:TBoxedStruct = TBoxedStruct(obj)
-	If box Then
-		Return box.dataPtr + offset
-	Else
-		Return bbRefObjectFieldPtr(obj, offset)
+	If retType <> VoidTypeId Then
+		If returnBoxedValue Then
+			If retType.IsReferenceType() Then
+				Return bbRefGetObject(bufPtr)
+			Else
+				Return New TBoxedValue(retType, bufPtr)
+			End If
+		Else
+			Return _Get(bufPtr, retType)
+		End If
 	End If
 End Function
+
 
 
 Function TypeTagForId$(id:TTypeId)
@@ -933,16 +996,32 @@ Type TField Extends TMember
 	
 	Rem
 	bbdoc: Get field value
+	about:
+	For reference types, this returns the object. For structs, it returns a @TBoxedValue.
+	For other value types, it returns a string representation of the value.
 	End Rem
 	Method Get:Object(obj:Object)
-		Return _Get(GetFieldPtr(obj, _offset), _typeId)
+		Return _Get(FieldPtr(obj), _typeId)
+	End Method
+	
+	Rem
+	bbdoc: Get field value
+	about: Like @Get, but always returns a @TBoxedValue for value types instead of converting the value to a string.
+	End Rem
+	Method GetBoxed:Object(obj:Object)
+		Local fieldPtr:Byte Ptr = FieldPtr(obj)
+		If _typeId.IsReferenceType() Then
+			Return bbRefGetObject(fieldPtr)
+		Else
+			Return New TBoxedValue(_typeId, fieldPtr)
+		End If
 	End Method
 	
 	Rem
 	bbdoc: Get field value as @Byte
 	End Rem
 	Method GetByte:Byte( obj:Object )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
@@ -967,14 +1046,14 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
 	bbdoc: Get field value as @Short
 	End Rem
 	Method GetShort:Short( obj:Object )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
@@ -999,14 +1078,14 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
 	bbdoc: Get field value as @Int
 	End Rem
 	Method GetInt:Int( obj:Object )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
@@ -1031,14 +1110,14 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
 	bbdoc: Get field value as @UInt
 	End Rem
 	Method GetUInt:UInt( obj:Object )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
@@ -1063,14 +1142,14 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
 	bbdoc: Get field value as @Long
 	End Rem
 	Method GetLong:Long( obj:Object )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
@@ -1095,14 +1174,14 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
 	bbdoc: Get field value as @ULong
 	End Rem
 	Method GetULong:ULong( obj:Object )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
@@ -1127,14 +1206,14 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
 	bbdoc: Get field value as @Size_T
 	End Rem
-	Method GetSizet:Size_T( obj:Object )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+	Method GetSizeT:Size_T( obj:Object )
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
@@ -1159,14 +1238,14 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
 	bbdoc: Get field value as @Float
 	End Rem
 	Method GetFloat:Float( obj:Object )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
@@ -1191,14 +1270,14 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
 	bbdoc: Get field value as @Double
 	End Rem
 	Method GetDouble:Double( obj:Object )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
@@ -1223,14 +1302,14 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
 	bbdoc: Get field value as @LongInt
 	End Rem
 	Method GetLongInt:LongInt( obj:Object )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
@@ -1255,14 +1334,14 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
 	bbdoc: Get field value as @ULongInt
 	End Rem
 	Method GetULongInt:ULongInt( obj:Object )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
@@ -1287,7 +1366,7 @@ Type TField Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _typeId.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 
 	Rem
@@ -1310,14 +1389,14 @@ Type TField Extends TMember
 	EndRem
 	Method GetStruct(obj:Object, targetPtr:Byte Ptr)
 		If Not _typeId.IsStruct() Then Throw "Field type is not a struct"
-		MemCopy targetPtr, GetFieldPtr(obj, _offset), Size_T _typeId._size
+		MemCopy targetPtr, FieldPtr(obj), Size_T _typeId._size
 	EndMethod
 	
 	Rem
 	bbdoc: Set Field value
 	End Rem
 	Method Set(obj:Object, value:Object)
-		_Assign GetFieldPtr(obj, _offset), _typeId, value
+		_Assign FieldPtr(obj), _typeId, value
 	End Method
 	
 	Rem
@@ -1401,14 +1480,14 @@ Type TField Extends TMember
 	bbdoc: Set field value from @Object
 	End Rem
 	Method SetObject( obj:Object,value:Object )
-		_Assign GetFieldPtr(obj, _offset), _typeId, value
+		_Assign FieldPtr(obj), _typeId, value
 	End Method
 
 	Rem
 	bbdoc: Set field value from @Byte
 	End Rem
 	Method SetByte( obj:Object,value:Byte )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				(Byte Ptr p)[0]=value
@@ -1435,7 +1514,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt( value )
 			Default
-				If _typeId.IsUnmanagedPointerType() Then
+				If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1447,7 +1526,7 @@ Type TField Extends TMember
 	bbdoc: Set field value from @Short
 	End Rem
 	Method SetShort( obj:Object,value:Short )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
@@ -1474,7 +1553,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt( value )
 			Default
-				If _typeId.IsUnmanagedPointerType() Then
+				If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1486,7 +1565,7 @@ Type TField Extends TMember
 	bbdoc: Set field value from @Int
 	End Rem
 	Method SetInt( obj:Object,value:Int )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
@@ -1513,7 +1592,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt( value )
 			Default
-				If _typeId.IsUnmanagedPointerType() Then
+				If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1525,7 +1604,7 @@ Type TField Extends TMember
 	bbdoc: Set field value from @UInt
 	End Rem
 	Method SetUInt( obj:Object,value:UInt )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
@@ -1552,7 +1631,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromUInt( value )
 			Default
-				If _typeId.IsUnmanagedPointerType() Then
+				If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1564,7 +1643,7 @@ Type TField Extends TMember
 	bbdoc: Set field value from @Long
 	End Rem
 	Method SetLong( obj:Object,value:Long )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
@@ -1591,7 +1670,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromLong( value )
 			Default
-				If _typeId.IsUnmanagedPointerType() Then
+				If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1603,7 +1682,7 @@ Type TField Extends TMember
 	bbdoc: Set field value from @ULong
 	End Rem
 	Method SetULong( obj:Object,value:ULong )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
@@ -1630,7 +1709,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromULong( value )
 			Default
-				If _typeId.IsUnmanagedPointerType() Then
+				If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1642,7 +1721,7 @@ Type TField Extends TMember
 	bbdoc: Set field value from @Size_T
 	End Rem
 	Method SetSizet( obj:Object,value:Size_T )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
@@ -1669,7 +1748,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromSizet( value )
 			Default
-				If _typeId.IsUnmanagedPointerType() Then
+				If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1681,7 +1760,7 @@ Type TField Extends TMember
 	bbdoc: Set field value from @Float
 	End Rem
 	Method SetFloat( obj:Object,value:Float )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
@@ -1708,7 +1787,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromFloat( value )
 			Default
-				If _typeId.IsUnmanagedPointerType() Then
+				If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1720,7 +1799,7 @@ Type TField Extends TMember
 	bbdoc: Set field value from @Double
 	End Rem
 	Method SetDouble( obj:Object,value:Double )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
@@ -1747,7 +1826,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromDouble( value )
 			Default
-				If _typeId.IsUnmanagedPointerType() Then
+				If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1759,7 +1838,7 @@ Type TField Extends TMember
 	bbdoc: Set field value from @LongInt
 	End Rem
 	Method SetLongInt( obj:Object,value:LongInt )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
@@ -1786,7 +1865,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromLongInt( value )
 			Default
-				If _typeId.IsUnmanagedPointerType() Then
+				If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1798,7 +1877,7 @@ Type TField Extends TMember
 	bbdoc: Set field value from @ULongInt
 	End Rem
 	Method SetULongInt( obj:Object,value:ULongInt )
-		Local p:Byte Ptr = GetFieldPtr(obj, _offset)
+		Local p:Byte Ptr = FieldPtr(obj)
 		Select _typeId
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
@@ -1825,7 +1904,7 @@ Type TField Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromULongInt( value )
 			Default
-				If _typeId.IsUnmanagedPointerType() Then
+				If _typeId.ExtendsType(PointerTypeId) Or _typeId.ExtendsType(VarTypeId) Or _typeId.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -1853,8 +1932,19 @@ Type TField Extends TMember
 	EndRem
 	Method SetStruct(obj:Object, structPtr:Byte Ptr)
 		If Not _typeId.IsStruct() Then Throw "Field type is not a struct"
-		MemCopy GetFieldPtr(obj, _offset), structPtr, Size_T _typeId._size
+		MemCopy FieldPtr(obj), structPtr, Size_T _typeId.Size()
 	EndMethod
+	
+	Rem
+	bbdoc: Get pointer to the field
+	EndRem
+	Method FieldPtr:Byte Ptr(obj:Object)
+		If TBoxedValue(obj) Then
+			Return TBoxedValue(obj).valuePtr + _offset
+		Else
+			Return bbRefObjectFieldPtr(obj, _offset)
+		End If
+	End Method
 	
 	Rem
 	bbdoc: Invoke field value
@@ -1894,9 +1984,24 @@ Type TGlobal Extends TMember
 	
 	Rem
 	bbdoc: Get global value
+	about:
+	For reference types, this returns the object. For structs, it returns a @TBoxedValue.
+	For other value types, it returns a string representation of the value.
 	End Rem
 	Method Get:Object()
 		Return _Get(_ref, _typeId)
+	End Method
+	
+	Rem
+	bbdoc: Get global value
+	about: Like @Get, but always returns a @TBoxedValue for value types instead of converting the value to a string.
+	End Rem
+	Method GetBoxed:Object(obj:Object)
+		If _typeId.IsReferenceType() Then
+			Return bbRefGetObject(_ref)
+		Else
+			Return New TBoxedValue(_typeId, _ref)
+		End If
 	End Method
 	
 	Rem
@@ -2023,6 +2128,13 @@ Type TGlobal Extends TMember
 	EndMethod
 	
 	Rem
+	bbdoc: Get pointer to the global
+	EndRem
+	Method GlobalPtr:Byte Ptr()
+		Return _ref
+	End Method
+	
+	Rem
 	bbdoc: Invoke global value
 	about: Global type must be a function pointer.
 	EndRem	
@@ -2097,10 +2209,23 @@ Type TFunction Extends TMember
 	
 	Rem
 	bbdoc: Invoke function
+	about:
+	If the function return type is a reference type, this returns the object returned by the function.
+	If it is a struct, it returns a @TBoxedValue.
+	If it is another value type, it returns a string representation of the returned value.
 	EndRem	
 	Method Invoke:Object(args:Object[] = Null)
 		If args.Length <> _typeId.ArgTypes().Length Then Throw "Function invoked with wrong number of arguments"
 		Return _Invoke(_invokeRef, _typeId._retType, _typeId._argTypes, args, _invokeBufferSize)
+	End Method
+	
+	Rem
+	bbdoc: Invoke function
+	about: Like @Invoke, but always returns a @TBoxedValue for value types instead of converting the value to a string.
+	EndRem	
+	Method InvokeBoxed:Object(args:Object[] = Null)
+		If args.Length <> _typeId.ArgTypes().Length Then Throw "Function invoked with wrong number of arguments"
+		Return _Invoke(_invokeRef, _typeId._retType, _typeId._argTypes, args, _invokeBufferSize, True)
 	End Method
 	
 	Field _ref:Byte Ptr
@@ -2168,17 +2293,38 @@ Type TMethod Extends TMember
 	
 	Rem
 	bbdoc: Invoke method
+	about:
+	If the method return type is a reference type, this returns the object returned by the method.
+	If it is a struct, it returns a @TBoxedValue.
+	If it is another value type, it returns a string representation of the returned value.
 	End Rem
 	Method Invoke:Object(obj:Object, args:Object[] = Null)
 		If Not obj Then Throw "Unable to invoke method on Null object"
 		If _selfTypeId._elementType And _selfTypeId._elementType.IsStruct() Then ' method on struct type
-			Local box:TBoxedStruct = TBoxedStruct(obj)
+			Local box:TBoxedValue = TBoxedValue(obj)
 			If (Not box) Or box.typeId <> _selfTypeId._elementType Then Throw "Unable to invoke method on this object"
 			If args.Length <> _typeId.ArgTypes().Length Then Throw "Method invoked with wrong number of arguments"
-			Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T box.dataPtr)] + args, _invokeBufferSize)
+			Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T box.valuePtr)] + args, _invokeBufferSize)
 		Else
 			If args.Length <> _typeId.ArgTypes().Length Then Throw "Method invoked with wrong number of arguments"
 			Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [obj] + args, _invokeBufferSize)
+		End If
+	End Method
+	
+	Rem
+	bbdoc: Invoke method
+	about: Like @Invoke, but always returns a @TBoxedValue for value types instead of converting the value to a string.
+	End Rem
+	Method InvokeBoxed:Object(obj:Object, args:Object[] = Null)
+		If Not obj Then Throw "Unable to invoke method on Null object"
+		If _selfTypeId._elementType And _selfTypeId._elementType.IsStruct() Then ' method on struct type
+			Local box:TBoxedValue = TBoxedValue(obj)
+			If (Not box) Or box.typeId <> _selfTypeId._elementType Then Throw "Unable to invoke method on this object"
+			If args.Length <> _typeId.ArgTypes().Length Then Throw "Method invoked with wrong number of arguments"
+			Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T box.valuePtr)] + args, _invokeBufferSize, True)
+		Else
+			If args.Length <> _typeId.ArgTypes().Length Then Throw "Method invoked with wrong number of arguments"
+			Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [obj] + args, _invokeBufferSize, True)
 		End If
 	End Method
 	
@@ -2284,7 +2430,7 @@ Type TTypeId Extends TMember
 	bbdoc: Get element type
 	End Rem
 	Method ElementType:TTypeId()
-		If Not _elementType Then Throw "Type ID is not an array or pointer type"
+		If Not _elementType Then Throw "Type ID is not a valid array, pointer or var type"
 		Return _elementType
 	End Method
 	
@@ -2452,7 +2598,7 @@ Type TTypeId Extends TMember
 	End Rem	
 	Method NewObject:Object(constructor:TMethod, args:Object[])
 		If _struct Then
-			Local box:TBoxedStruct = New TBoxedStruct(Self)
+			Local box:TBoxedValue = New TBoxedValue(Self)
 			constructor.Invoke box, args
 			Return box
 		Else
@@ -2466,6 +2612,21 @@ Type TTypeId Extends TMember
 			constructor.Invoke o, args
 			Return o
 		End If
+	End Method
+	
+	Rem
+	bbdoc: Determine if type is a reference type
+	End Rem
+	Method IsReferenceType:Int()
+		Return _class <> Null
+	End Method
+	
+	Rem
+	bbdoc: Determine if type is a value type
+	about: Returns True for Var types
+	End Rem
+	Method IsValueType:Int()
+		Return _class = Null
 	End Method
 	
 	Rem
@@ -2826,6 +2987,9 @@ Type TTypeId Extends TMember
 	
 	Rem
 	bbdoc: Get Null value
+	about:
+	For reference types, this returns the object. For structs, it returns a @TBoxedValue.
+	For other value types, it returns a string representation of the value.
 	End Rem
 	Method NullValue:Object()
 		Select Self
@@ -2847,9 +3011,46 @@ Type TTypeId Extends TMember
 			Case ExtendsType(PointerTypeId) Return "0"
 			Case ExtendsType(VarTypeId) Return "0"
 			Case ExtendsType(FunctionTypeId) Return String.FromSizeT(Size_T Byte Ptr NullFunctionError) 
-			Case IsClass() Or IsInterface() Return bbRefNullObject
+			Case IsReferenceType() Return bbRefNullObject
 			Case IsStruct() Return NewObject()
-			Case IsEnum() If IsFlagsEnum() Then Return "0" Else Return TConstant(_consts.First()).Get()
+			Case IsFlagsEnum() Return "0"
+			Case IsEnum() Return TConstant(_consts.First()).Get()
+		End Select
+		Return Null
+	End Method
+	
+	Rem
+	bbdoc: Get Null value
+	about: Like @NullValue, but always returns a @TBoxedValue for value types instead of converting the value to a string.
+	End Rem
+	Method NullValueBoxed:Object()
+		Select Self
+			Case ByteTypeId     Local n:Byte     Return New TBoxedValue(Self, Varptr n)
+			Case ShortTypeId    Local n:Short    Return New TBoxedValue(Self, Varptr n)
+			Case IntTypeId      Local n:Int      Return New TBoxedValue(Self, Varptr n)
+			Case UIntTypeId     Local n:UInt     Return New TBoxedValue(Self, Varptr n)
+			Case LongTypeId     Local n:Long     Return New TBoxedValue(Self, Varptr n)
+			Case ULongTypeId    Local n:ULong    Return New TBoxedValue(Self, Varptr n)
+			Case SizetTypeId    Local n:Size_T   Return New TBoxedValue(Self, Varptr n)
+			Case FloatTypeId    Local n:Float    Return New TBoxedValue(Self, Varptr n)
+			Case DoubleTypeId   Local n:Double   Return New TBoxedValue(Self, Varptr n)
+			Case LongIntTypeId  Local n:LongInt  Return New TBoxedValue(Self, Varptr n)
+			Case ULongIntTypeId Local n:ULongInt Return New TBoxedValue(Self, Varptr n)
+			Case StringTypeId Return bbRefEmptyString
+		End Select
+		Select True
+			Case ExtendsType(ArrayTypeId) Return bbRefEmptyArray
+			Case ExtendsType(PointerTypeId)  Local n:Byte Ptr Return New TBoxedValue(Self, Varptr n)
+			Case ExtendsType(VarTypeId)      Local n:Byte Ptr Return New TBoxedValue(Self, Varptr n)
+			Case ExtendsType(FunctionTypeId) Local n()        Return New TBoxedValue(Self, Varptr n)
+			Case IsReferenceType() Return bbRefNullObject
+			Case IsStruct() Return NewObject()
+			Case IsFlagsEnum() Return UnderlyingType().NullValueBoxed()
+			Case IsEnum()
+				Local v:Object = TConstant(_consts.First()).Get()
+				Local b:TBoxedValue = New TBoxedValue(Self)
+				_Assign b.valuePtr, Self, v
+				Return b
 		End Select
 		Return Null
 	End Method
@@ -2908,12 +3109,31 @@ Type TTypeId Extends TMember
 	
 	Rem
 	bbdoc: Get an array element
-	about: This method should only be called on the type ID corresponding to the type of the array.
+	about:
+	This method should only be called on the type ID corresponding to the type of the array.
+	For arrays of reference types, this returns the object from the array. For structs, it returns a @TBoxedValue.
+	For other value types, it returns a string representation of the value.
 	End Rem
 	Method GetArrayElement:Object(_array:Object, index:Int)
 		If (Not _elementType) Or (Not _class) Throw "Type ID is not an array type"
-		Local p:Byte Ptr = bbRefArrayElementPtr(Size_T _elementType._size, _array, index)
+		Local p:Byte Ptr = bbRefArrayElementPtr(_elementType._size, _array, index)
 		Return _Get(p, _elementType)
+	End Method
+	
+	Rem
+	bbdoc: Get an array element
+	about:
+	This method should only be called on the type ID corresponding to the type of the array.
+	Like @Get, but always returns a @TBoxedValue for arrays of value types instead of converting the value to a string.
+	End Rem
+	Method GetBoxedArrayElement:Object(_array:Object, index:Int)
+		If (Not _elementType) Or (Not _class) Throw "Type ID is not an array type"
+		Local p:Byte Ptr = bbRefArrayElementPtr(_elementType._size, _array, index)
+		If _elementType.IsReferenceType() Then
+			Return bbRefGetObject(p)
+		Else
+			Return New TBoxedValue(_elementType, p)
+		End If
 	End Method
 	
 	Rem
@@ -2956,7 +3176,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -2989,7 +3209,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3022,7 +3242,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3055,7 +3275,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3088,7 +3308,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3121,7 +3341,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3154,7 +3374,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3187,7 +3407,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3220,7 +3440,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3253,7 +3473,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3286,7 +3506,7 @@ Type TTypeId Extends TMember
 			Case ULongIntTypeId
 				Return (ULongInt Ptr p)[0]
 		End Select
-		If _elementType.IsUnmanagedPointerType() Then Return (Size_T Ptr p)[0]
+		If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then Return (Size_T Ptr p)[0]
 	End Method
 	
 	Rem
@@ -3408,7 +3628,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt(value)
 			Default
-				If _elementType.IsUnmanagedPointerType() Then
+				If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3448,7 +3668,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt(value)
 			Default
-				If _elementType.IsUnmanagedPointerType() Then
+				If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3488,7 +3708,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromInt(value)
 			Default
-				If _elementType.IsUnmanagedPointerType() Then
+				If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3528,7 +3748,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromUInt(value)
 			Default
-				If _elementType.IsUnmanagedPointerType() Then
+				If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3568,7 +3788,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromLong(value)
 			Default
-				If _elementType.IsUnmanagedPointerType() Then
+				If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3608,7 +3828,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromULong(value)
 			Default
-				If _elementType.IsUnmanagedPointerType() Then
+				If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3648,7 +3868,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromSizeT(value)
 			Default
-				If _elementType.IsUnmanagedPointerType() Then
+				If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3688,7 +3908,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromFloat(value)
 			Default
-				If _elementType.IsUnmanagedPointerType() Then
+				If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3728,7 +3948,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromDouble(value)
 			Default
-				If _elementType.IsUnmanagedPointerType() Then
+				If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3768,7 +3988,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromDouble(value)
 			Default
-				If _elementType.IsUnmanagedPointerType() Then
+				If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3808,7 +4028,7 @@ Type TTypeId Extends TMember
 			Case StringTypeId
 				bbRefAssignObject p,String.FromDouble(value)
 			Default
-				If _elementType.IsUnmanagedPointerType() Then
+				If _elementType.ExtendsType(PointerTypeId) Or _elementType.ExtendsType(VarTypeId) Or _elementType.ExtendsType(FunctionTypeId) Then
 					(Size_T Ptr p)[0]=Size_T(value)
 				Else
 					Throw "Unable to assign value of incompatible type"
@@ -3829,7 +4049,7 @@ Type TTypeId Extends TMember
 	bbdoc: Size of the type in bytes
 	about: For reference types such as classes and interfaces, this function will return the size of the reference (equal to the size of PointerTypeId), not the size of the pointed to instance.
 	End Rem
-	Method Size:Int()
+	Method Size:Size_T()
 		Return _size
 	End Method
 	
@@ -3931,7 +4151,7 @@ Type TTypeId Extends TMember
 	End Rem	
 	Function ForObject:TTypeId(obj:Object)
 		_Update
-		Local box:TBoxedStruct = TBoxedStruct(obj)
+		Local box:TBoxedValue = TBoxedValue(obj)
 		If box Then Return box.typeId
 		Local class:Byte Ptr = bbRefGetObjectClass(obj)
 		If class = ArrayTypeId._class
@@ -4006,10 +4226,6 @@ Type TTypeId Extends TMember
 	
 	Private
 	
-	Method IsUnmanagedPointerType:Int()
-		Return ExtendsType(PointerTypeId) Or ExtendsType(VarTypeId) Or ExtendsType(FunctionTypeId)
-	End Method
-	
 	Method Init:TTypeId(name$, size:Size_T, class:Byte Ptr = Null, supor:TTypeId = Null)
 		_name = name
 		_size = size
@@ -4043,6 +4259,7 @@ Type TTypeId Extends TMember
 		_modifiers = ModifiersForTag(modifierString)
 		InitMeta(meta)
 		_class = class
+		_size = SizeOf Byte Ptr Null
 		
 		_nameMap.Insert _name.ToLower(), Self
 		_classMap.Insert class, Self
@@ -4068,6 +4285,7 @@ Type TTypeId Extends TMember
 		InitMeta(meta)
 		_interface = ifc
 		_class = bbInterfaceClass(ifc)
+		_size = SizeOf Byte Ptr Null
 		
 		_nameMap.Insert _name.ToLower(), Self
 		_interfaceMap.Insert ifc, Self
@@ -4271,7 +4489,7 @@ Type TTypeId Extends TMember
 	Field _struct:Byte Ptr ' BBDebugScope*
 	Field _enum:Byte Ptr ' BBDebugScope*
 	
-	Field _size:Size_T = SizeOf Byte Ptr Null ' size of the object reference, not the actual object
+	Field _size:Size_T
 	
 	Field _consts:TList
 	Field _fields:TList
@@ -4280,7 +4498,7 @@ Type TTypeId Extends TMember
 	Field _methods:TList
 	Field _constructors:TList
 	Field _defaultConstructor:TMethod
-	Field _toString:String(structPtr:Byte Ptr)
+	Field _toString:String(valuePtr:Byte Ptr)
 	Field _interfaces:TList
 	Field _super:TTypeId
 	Field _derived:TList
