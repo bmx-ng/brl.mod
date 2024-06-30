@@ -480,7 +480,7 @@ Type TGNetHost
 			
 			Select ev.event()
 			Case ENET_EVENT_TYPE_CONNECT
-				Assert Not peer Else "GNet error, ENET_EVENT_TYPE_CONNECT with invalid peer"
+				Assert Not peer Else "GNet error, ENET_EVENT_TYPE_CONNECT while already having a valid peer"
 				peer=AddPeer( ev.peer() )
 			Case ENET_EVENT_TYPE_DISCONNECT, ENET_EVENT_TYPE_DISCONNECT_TIMEOUT
 				If peer				
@@ -495,7 +495,7 @@ Type TGNetHost
 					_peers.Remove peer
 				EndIf
 			Case ENET_EVENT_TYPE_RECEIVE
-				Assert Not peer Else "GNet error, ENET_EVENT_TYPE_RECEIVE with invalid peer"
+				Assert peer Else "GNet error, ENET_EVENT_TYPE_RECEIVE without having a valid peer"
 				Local msg:TGNetMsg=peer.RecvMsg( ev.packet() )
 				enet_packet_destroy ev.packet()
 				Select msg.state

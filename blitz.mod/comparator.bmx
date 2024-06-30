@@ -85,3 +85,21 @@ End Function
 Function DefaultComparator_Compare:Int(o1:Byte Ptr, o2:Byte Ptr)
 	Return o1 - o2
 End Function
+
+Function DefaultComparator_Compare:Int(o1:LongInt, o2:LongInt)
+	If o1 < o2 Then
+		Return -1
+	Else If o2 < o1 Then
+		Return 1
+	End If
+	Return 0
+End Function
+
+Function DefaultComparator_Compare:Int(o1:ULongInt, o2:ULongInt)
+	If o1 < o2 Then
+		Return -1
+	Else If o2 < o1 Then
+		Return 1
+	End If
+	Return 0
+End Function

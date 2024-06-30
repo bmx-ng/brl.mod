@@ -451,14 +451,16 @@ Type TMax2DGraphics Extends TGraphics
 		color = New SColor8(red, green, blue)
 		_max2dDriver.SetColor(red,green,blue)
 
-		SetAlpha(alpha)
+		color_alpha = alpha
+		_max2dDriver.SetAlpha(alpha)
 	End Method
 
 	Method SetColor( color:SColor8, alpha:Float )
 		Self.color = color
 		_max2dDriver.SetColor(color)
 		
-		SetAlpha(alpha)
+		self.color_alpha = alpha
+		_max2dDriver.SetAlpha(alpha)
 	End Method
 
 
@@ -468,8 +470,20 @@ Type TMax2DGraphics Extends TGraphics
 		blue = color.b
 	End Method
 
+	Method GetColor( red:Int Var,green:Int Var,blue:Int Var,alpha:Float Var )
+		red = color.r
+		green = color.g
+		blue = color.b
+		alpha = color_alpha
+	End Method
+
 	Method GetColor( color:SColor8 Var )
 		color = Self.color
+	End Method
+
+	Method GetColor( color:SColor8 Var,alpha:Float Var )
+		color = Self.color
+		alpha = Self.color_alpha
 	End Method
 
 
@@ -507,18 +521,18 @@ Type TMax2DGraphics Extends TGraphics
 	End Method
 
 
-	Method SetMaskColor( red:Int, green:Int, blue:Int )
+	Function SetMaskColor( red:Int, green:Int, blue:Int )
 		mask_red = red
 		mask_green = green
 		mask_blue = blue
-	End Method
+	End Function
 
 
-	Method GetMaskColor( red:Int Var, green:Int Var, blue:Int Var )
+	Function GetMaskColor( red:Int Var, green:Int Var, blue:Int Var )
 		red = mask_red
 		green = mask_green
 		blue = mask_blue
-	End Method
+	End Function
 
 
 	Method SetVirtualResolution( width:Float, height:Float )
@@ -686,48 +700,48 @@ Type TMax2DGraphics Extends TGraphics
 	End Method
 
 
-	Method AutoMidHandle( enable:Int )
+	Function AutoMidHandle( enable:Int )
 		auto_midhandle = enable
-	End Method
+	End Function
 
 
-	Method AutoImageFlags( flags:Int )
+	Function AutoImageFlags( flags:Int )
 		auto_imageflags = flags
-	End Method
+	End Function
 
 
-	Method GetAutoImageFlags:Int()
+	Function GetAutoImageFlags:Int()
 		Return auto_imageflags
-	End Method
+	End Function
 
 
-	Method LoadImage:TImage( url:Object, flags:Int = -1 )
+	Function LoadImage:TImage( url:Object, flags:Int = -1 )
 		If flags = -1 Then flags = auto_imageflags
 		Local image:TImage = TImage.Load(url, flags, mask_red, mask_green, mask_blue)
 		If Not image Then Return Null
 		
 		If auto_midhandle Then MidHandleImage(image)
 		Return image
-	End Method
+	End Function
 
 
-	Method LoadAnimImage:TImage( url:Object, cell_width:Int, cell_height:Int, first_cell:Int, cell_count:Int, flags:Int = -1 )
+	Function LoadAnimImage:TImage( url:Object, cell_width:Int, cell_height:Int, first_cell:Int, cell_count:Int, flags:Int = -1 )
 		If flags = -1 Then flags = auto_imageflags
 		Local image:TImage = TImage.LoadAnim(url, cell_width, cell_height, first_cell, cell_count, flags, mask_red, mask_green, mask_blue)
 		If Not image Then Return Null
 
 		If auto_midhandle Then MidHandleImage(image)
 		Return image
-	End Method 
+	End Function
 
 
-	Method CreateImage:TImage( width:Int, height:Int, frames:Int = 1, flags:Int = -1 )
+	Function CreateImage:TImage( width:Int, height:Int, frames:Int = 1, flags:Int = -1 )
 		If flags = -1 Then flags = auto_imageflags
 		Local image:TImage = TImage.Create(width, height, frames, flags | DYNAMICIMAGE, mask_red, mask_green, mask_blue)
 	
 		If auto_midhandle Then MidHandleImage(image)
 		Return image
-	End Method
+	End Function
 
 
 	Method GrabImage( image:TImage, x:Int, y:Int, frame:Int = 0 )
@@ -743,13 +757,13 @@ Type TMax2DGraphics Extends TGraphics
 		_max2ddriver.SetBackBuffer()
 	EndMethod
 	
-	Method CreateRenderImage:TRenderImage(width:UInt, height:UInt, flags:Int=-1)
+	Function CreateRenderImage:TRenderImage(width:UInt, height:UInt, flags:Int=-1)
 		If flags = -1 Then flags = auto_imageflags
 		Local image:TRenderImage = TRenderImage.Create(width, height, flags, mask_red, mask_green, mask_blue)
 		
 		If auto_midhandle Then MidHandleImage(image)
 		Return image
-	End Method
+	End Function
 
 	Method SetRenderImageFrame(RenderImageFrame:TImageFrame)
 		If Not RenderImageFrame
@@ -1110,9 +1124,50 @@ Function SetColor( red:Int,green:Int,blue:Int )
 	TMax2DGraphics.Current().SetColor(red, green, blue)
 End Function
 
-Function SetColor( color:SColor8 )
+Rem
+bbdoc: Set current color and alpha (transparency) level
+about:
+The #SetColor command affects the color of #Plot, #DrawRect, #DrawLine, #DrawText,
+#DrawImage and #DrawPoly.
+
+The @red, @green and @blue parameters should be in the range of 0 to 255.
+
+@alpha controls the transparancy level when the ALPHABLEND blend mode is in effect.
+The range from 0.0 to 1.0 allows a range of transparancy from completely transparent 
+to completely solid.
+End Rem
+Function SetColor( red:Int, green:Int, blue:Int, alpha:Float )
+	TMax2DGraphics.Current().SetColor(red, green, blue, alpha)
+End Function
+
+Rem
+bbdoc: Set current color
+about:
+The #SetColor command affects the color of #Plot, #DrawRect, #DrawLine, #DrawText,
+#DrawImage and #DrawPoly.
+
+@color defines the red, green and blue values.
+End Rem
+Function SetColor( color:SColor8)
 	TMax2DGraphics.Current().SetColor(color)
 End Function
+
+Rem
+bbdoc: Set current color and alpha (transparency)
+about:
+The #SetColor command affects the color of #Plot, #DrawRect, #DrawLine, #DrawText,
+#DrawImage and #DrawPoly.
+
+@color defines the red, green and blue values.
+
+@alpha controls the transparancy level when the ALPHABLEND blend mode is in effect.
+The range from 0.0 to 1.0 allows a range of transparancy from completely transparent 
+to completely solid.
+End Rem
+Function SetColor( color:SColor8, alpha:Float )
+	TMax2DGraphics.Current().SetColor(color, alpha)
+End Function
+
 
 Rem
 bbdoc: Get red, green and blue component of current color.
@@ -1122,8 +1177,28 @@ Function GetColor( red:Int Var,green:Int Var,blue:Int Var )
 	TMax2DGraphics.Current().GetColor(red, green, blue)
 End Function
 
+Rem
+bbdoc: Get red, green, blue component of current color and the current alpha (transparency) value.
+returns: Red, green and blue values in the range 0..255 and alpha (transparency) in the range 0..1.0 in the variables supplied.
+End Rem
+Function GetColor( red:Int Var, green:Int Var, blue:Int Var, alpha:Float Var )
+	TMax2DGraphics.Current().GetColor(red, green, blue, alpha)
+End Function
+
+Rem
+bbdoc: Get current color encoded as SColor8.
+returns: Red, green, blue values in the range 0..255 stored in the supplied SColor8 element.
+End Rem
 Function GetColor( color:SColor8 Var )
 	TMax2DGraphics.Current().GetColor(color)
+End Function
+
+Rem
+bbdoc: Get current rgb color encoded as SColor8 and current alpha (transparency) value separately.
+returns: Red, green, blue values in the range 0..255 in the supplied SColor8 element and separately the alpha (transparency) value in the range 0..1.0.
+End Rem
+Function GetColor( color:SColor8 Var, alpha:Float Var)
+	TMax2DGraphics.Current().GetColor(color, alpha)
 End Function
 
 Rem
@@ -1219,7 +1294,7 @@ The current mask color is used to build an alpha mask when images are loaded or 
 The @red, @green and @blue parameters should be in the range of 0 to 255.
 End Rem
 Function SetMaskColor( red:Int, green:Int, blue:Int )
-	TMax2DGraphics.Current().SetMaskColor(red, green, blue)
+	TMax2DGraphics.SetMaskColor(red, green, blue)
 End Function
 
 Rem
@@ -1227,7 +1302,7 @@ bbdoc: Get red, green and blue component of current mask color
 returns: Red, green and blue values in the range 0..255 
 End Rem
 Function GetMaskColor( red:Int Var, green:Int Var, blue:Int Var )
-	TMax2DGraphics.Current().GetMaskColor(red, green, blue)
+	TMax2DGraphics.GetMaskColor(red, green, blue)
 End Function
 
 Rem
@@ -1565,7 +1640,7 @@ If flags is -1, the auto image flags are used: See #AutoImageFlags.
 To combine flags, use the | (boolean OR) operator.
 End Rem
 Function LoadImage:TImage( url:Object, flags:Int = -1 )
-	Return TMax2DGraphics.Current().LoadImage(url, flags)
+	Return TMax2DGraphics.LoadImage(url, flags)
 End Function
 
 Rem
@@ -1578,7 +1653,7 @@ existing pixmap.
 See #LoadImage for valid @flags values.
 End Rem
 Function LoadAnimImage:TImage( url:Object, cell_width:Int, cell_height:Int, first_cell:Int, cell_count:Int, flags:Int = -1 )
-	Return TMax2DGraphics.Current().LoadAnimImage(url, cell_width, cell_height, first_cell, cell_count, flags)
+	Return TMax2DGraphics.LoadAnimImage(url, cell_width, cell_height, first_cell, cell_count, flags)
 End Function
 
 Rem
@@ -1639,7 +1714,7 @@ when they are created. If auto midhandle mode is disabled, images are handled by
 AutoMidHandle defaults to False after calling #Graphics.
 End Rem
 Function AutoMidHandle( enable:Int )
-	TMax2DGraphics.Current().AutoMidHandle(enable)
+	TMax2DGraphics.AutoMidHandle(enable)
 End Function
 
 Rem
@@ -1650,11 +1725,11 @@ flags are specified. See #LoadImage for a full list of valid image flags.
 AutoImageFlags defaults to MASKEDIMAGE | FILTEREDIMAGE.
 End Rem
 Function AutoImageFlags( flags:Int )
-	TMax2DGraphics.Current().AutoImageFlags(flags)
+	TMax2DGraphics.AutoImageFlags(flags)
 End Function
 
 Function GetAutoImageFlags:Int()
-	Return TMax2DGraphics.Current().GetAutoImageFlags()
+	Return TMax2DGraphics.GetAutoImageFlags()
 End Function
 
 Rem
@@ -1691,7 +1766,7 @@ before being drawn.
 Please refer to #LoadImage for valid @flags values. The @flags value is always combined with DYNAMICIMAGE.
 End Rem
 Function CreateImage:TImage( width:Int, height:Int, frames:Int = 1, flags:Int = -1 )
-	Return TMax2DGraphics.Current().CreateImage(width, height, frames, flags)
+	Return TMax2DGraphics.CreateImage(width, height, frames, flags)
 End Function
 
 Rem
@@ -1754,7 +1829,7 @@ about:
 returns: #TRenderImage with the given dimension
 End Rem
 Function CreateRenderImage:TRenderImage(width:UInt, height:UInt, flags:Int=-1)
-	Return TMax2DGraphics.Current().CreateRenderImage(width, height, flags)
+	Return TMax2DGraphics.CreateRenderImage(width, height, flags)
 End Function
 
 

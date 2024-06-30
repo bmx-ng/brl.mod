@@ -21,25 +21,19 @@
     distribution.
 */
 #include <unistd.h>
+#include <sys/sysctl.h>
 
 int bmx_os_getproccount() {
-	int procCount = 0;
+	uint32_t cpuCount;
+	size_t size = sizeof(cpuCount);
 
-#if defined(_ARM_) || defined(_ARM64_)
-	procCount = sysconf(_SC_NPROCESSORS_CONF);
-#else
-	procCount = sysconf(_SC_NPROCESSORS_ONLN);
-#endif
-
-	return procCount;
+	int res = sysctlbyname("hw.logicalcpu", &cpuCount, &size, NULL, 0);
+    return cpuCount;
 }
 
 int bmx_os_getphysproccount() {
-    int procCount = 0;
-#if defined(_ARM_) || defined(_ARM64_)
-	procCount = sysconf(_SC_NPROCESSORS_CONF);
-#else
-	procCount = sysconf(_SC_NPROCESSORS_ONLN);
-#endif
-    return procCount;
+	uint32_t cpuCount;
+	size_t size = sizeof(cpuCount);
+	int res = sysctlbyname("hw.physicalcpu", &cpuCount, &size, NULL, 0);
+    return cpuCount;
 }

@@ -1,4 +1,4 @@
-' Copyright (c) 2019-2020 Bruce A Henderson
+' Copyright (c) 2019-2023 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -26,10 +26,15 @@ bbdoc: Platform utils
 End Rem
 Module BRL.Platform
 
-ModuleInfo "Version: 1.02"
+ModuleInfo "Version: 1.04"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Improved calculation for Win32."
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Added PhysicalProcessorCount()."
+ModuleInfo "History: Added build number for Win32 OS version."
 ModuleInfo "History: 1.02"
 ModuleInfo "History: Fixed for Android."
 ModuleInfo "History: 1.01"
@@ -45,10 +50,14 @@ Import SDL.SDL
 
 ?win32
 Import "win32_glue.c"
-?Not win32 And Not android And Not haiku
+?Not win32 And Not android And Not haiku and not macos
 Import "glue.c"
 ?haiku
 Import "haiku_glue.c"
+?macos
+Import "macos_glue.c"
+?linux
+Import "linux.bmx"
 ?
 
 Private
@@ -116,7 +125,7 @@ End Function
 Private
 Extern
 ?win32
-	Function bmx_os_getwindowsversion(major:Int Var, minor:Int Var)
+	Function bmx_os_getwindowsversion(major:Int Var, minor:Int Var, build:Int Var)
 ?haiku
 	Function bmx_os_gethaikuversion:String()
 ?
@@ -133,8 +142,9 @@ Function WindowsVersion:String()
 
 	Local major:Int
 	Local minor:Int
-	bmx_os_getwindowsversion(major, minor)
-	_version = major + "." + minor
+	Local build:Int
+	bmx_os_getwindowsversion(major, minor, build)
+	_version = major + "." + minor + "." + build
 	Return _version
 ?
 End Function
@@ -164,9 +174,26 @@ Function LogicalProcessorCount:Int()
 ?
 End Function
 
+Rem
+bbdoc: Returns the number of physical processors available.
+End Rem
+Function PhysicalProcessorCount:Int()
+?Not android And Not linux
+	Return bmx_os_getphysproccount()
+?linux And Not android
+	Local count:Int = _linux_physical_processor_count()
+	If Not count Then
+		Return LogicalProcessorCount()
+	End If
+	Return count
+?android
+	Return SDLGetCPUCount()
+?
+End Function
 
 
 Extern
 	Function bmx_os_getproccount:Int()
+	Function bmx_os_getphysproccount:Int()
 End Extern
 

@@ -89,6 +89,25 @@ Function Max:Size_T(a:Size_T, b:Size_T) Inline
 	Return a
 End Function
 
+Rem
+bbdoc: Returns the larger of the two #LongInt arguments.
+End Rem
+Function Max:LongInt(a:LongInt, b:LongInt) Inline
+	If a < b Then
+		Return b
+	End If
+	Return a
+End Function
+
+Rem
+bbdoc: Returns the larger of the two #ULongInt arguments.
+End Rem
+Function Max:ULongInt(a:ULongInt, b:ULongInt) Inline
+	If a < b Then
+		Return b
+	End If
+	Return a
+End Function
 
 
 Rem
@@ -175,6 +194,26 @@ Rem
 bbdoc: Returns the lesser of the two #Size_T arguments.
 End Rem
 Function Min:Size_T(a:Size_T, b:Size_T) Inline
+	If a > b Then
+		Return b
+	End If
+	Return a
+End Function
+
+Rem
+bbdoc: Returns the lesser of the two #LongInt arguments.
+End Rem
+Function Min:LongInt(a:LongInt, b:LongInt) Inline
+	If a > b Then
+		Return b
+	End If
+	Return a
+End Function
+
+Rem
+bbdoc: Returns the lesser of the two #ULongInt arguments.
+End Rem
+Function Min:ULongInt(a:ULongInt, b:ULongInt) Inline
 	If a > b Then
 		Return b
 	End If

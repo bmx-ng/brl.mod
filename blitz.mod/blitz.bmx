@@ -868,6 +868,16 @@ keyword: "Double128"
 End Rem
 
 Rem
+bbdoc: Signed 32/64 bit integer type depending on platform
+keyword: "LongInt"
+EndRem
+
+Rem
+bbdoc: Unsigned 32/64 bit integer type depending on platform
+keyword: "ULongInt"
+EndRem
+
+Rem
 bbdoc: String type
 keyword: "String"
 End Rem
