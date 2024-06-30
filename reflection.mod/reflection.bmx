@@ -3065,11 +3065,17 @@ Type TTypeId Extends TMember
 	Method NewArray:Object(length:Int = 0, dims:Int[] = Null)
 		If Self = ArrayTypeId Then Throw "Unable to create array of " + Name() + " type"
 		If (Not _elementType) Or (Not _class) Throw "TypeID is not an array type"
-		Local tag:Byte Ptr = _elementType._typeTag
-		If Not tag
-			tag = TypeTagForId(_elementType).ToCString()
-			_elementType._typeTag = tag
-		EndIf
+		Local tag:Byte Ptr
+		Try
+			ReflectionMutex.Lock
+			tag = _elementType._typeTag
+			If Not tag
+				tag = TypeTagForId(_elementType).ToCString()
+				_elementType._typeTag = tag
+			EndIf
+		Finally
+			ReflectionMutex.Unlock
+		End Try
 		If Not dims Then
 			If _dimensions <> 1 Then Throw "Array dimensions do not match type"
 			Return bbArrayNew1D(tag, length)
