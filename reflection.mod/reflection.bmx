@@ -1996,7 +1996,7 @@ Type TGlobal Extends TMember
 	bbdoc: Get global value
 	about: Like @Get, but always returns a @TBoxedValue for value types instead of converting the value to a string.
 	End Rem
-	Method GetBoxed:Object(obj:Object)
+	Method GetBoxed:Object()
 		If _typeId.IsReferenceType() Then
 			Return bbRefGetObject(_ref)
 		Else
@@ -2057,7 +2057,7 @@ Type TGlobal Extends TMember
 	bbdoc: Get global value as struct
 	about: @targetPtr must be a pointer to a variable of the correct struct type.
 	EndRem
-	Method GetStruct(obj:Object, targetPtr:Byte Ptr)
+	Method GetStruct(targetPtr:Byte Ptr)
 		If Not _typeId.IsStruct() Then Throw "Global type is not a struct"
 		MemCopy targetPtr, _ref, Size_T _typeId._size
 	EndMethod
@@ -2122,7 +2122,7 @@ Type TGlobal Extends TMember
 	bbdoc: Set field value from struct
 	about: @structPtr must be a pointer to a variable of the correct struct type.
 	EndRem
-	Method SetStruct(obj:Object, structPtr:Byte Ptr)
+	Method SetStruct(structPtr:Byte Ptr)
 		If Not _typeId.IsStruct() Then Throw "Global type is not a struct"
 		MemCopy _ref, structPtr, Size_T _typeId._size
 	EndMethod
