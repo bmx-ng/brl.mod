@@ -6,10 +6,12 @@ bbdoc: System/Threads
 End Rem
 Module BRL.Threads
 
-ModuleInfo "Version: 1.02"
+ModuleInfo "Version: 1.03"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Added TFuture type."
 ModuleInfo "History: 1.02"
 ModuleInfo "History: Changed to use macOS dispatch semphores."
 ModuleInfo "History: 1.01"
@@ -360,6 +362,48 @@ Type TCondVar
 	End Method
 	
 	Field _handle:Byte Ptr
+
+End Type
+
+Rem
+bbdoc: A generic type for asynchronous result handling, allowing threads to wait for and retrieve results safely.
+about: It provides a mechanism for one thread to produce a result that another thread can wait for and retrieve
+at a later time. This is particularly useful for tasks that are executed in parallel, where the completion
+time may vary, and the consumer needs to wait for the result before proceeding.
+End Rem
+Type TFuture<V>
+Private
+	Field value:V
+
+	Field ready:Int
+
+	Field condvar:TCondVar=CreateCondVar()
+	Field mutex:TMutex=CreateMutex()
+Public
+	Rem
+	bbdoc: Waits for the result to become available and then returns it.
+	about: This method blocks the calling thread until result is available.
+	End Rem
+	Method GetResult:V()
+		mutex.Lock()
+		While Not ready
+			condvar.Wait( mutex )
+		Wend
+		Local result:V = value
+		mutex.Unlock()
+		Return result
+	End Method
+
+	Rem
+	bbdoc: Sets the result of the asynchronous operation and signals any waiting threads.
+	End Rem
+	Method SetResult( value:V )
+		mutex.Lock()
+		Self.value=value
+		Self.ready=True
+		condvar.Signal()
+		mutex.Unlock()
+	End Method
 
 End Type
 
