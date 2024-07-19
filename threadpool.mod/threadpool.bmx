@@ -42,6 +42,7 @@ ModuleInfo "History: Initial Release"
 
 Import BRL.Threads
 Import BRL.LinkedList
+Import BRL.Time
 Import pub.stdc
 
 Rem
@@ -286,17 +287,6 @@ Public
 		return jobQueue.IsEmpty()
 	end method
 End Type
-
-Rem
-bbdoc: A unit of date-time, such as Days or Hours.
-End Rem
-Enum ETimeUnit
-	Milliseconds
-	Seconds
-	Minutes
-	Hours
-	Days
-End Enum
 
 Rem
 bbdoc: An executor that can be used to schedule commands to run after a given delay, or to execute commands periodically.
