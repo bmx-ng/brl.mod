@@ -42,6 +42,7 @@ ModuleInfo "History: Initial Release"
 
 Import BRL.Threads
 Import BRL.LinkedList
+Import BRL.Time
 Import pub.stdc
 
 Rem
@@ -288,17 +289,6 @@ Public
 End Type
 
 Rem
-bbdoc: A unit of date-time, such as Days or Hours.
-End Rem
-Enum ETimeUnit
-	Milliseconds
-	Seconds
-	Minutes
-	Hours
-	Days
-End Enum
-
-Rem
 bbdoc: An executor that can be used to schedule commands to run after a given delay, or to execute commands periodically.
 End Rem
 Type TScheduledThreadPoolExecutor Extends TThreadPoolExecutor
@@ -337,26 +327,12 @@ Type TScheduledThreadPoolExecutor Extends TThreadPoolExecutor
 	bbdoc: Schedules a recurring command to run after a given initial delay, and subsequently with the given period.
 	End Rem
 	Method schedule(command:TRunnable, initialDelay:ULong, period:ULong, unit:ETimeUnit = ETimeUnit.Milliseconds)
-			Local now:ULong = CurrentUnixTime()
+		Local now:ULong = CurrentUnixTime()
 
 		Local newTask:TScheduledTask = New TScheduledTask
 
-		Local delayMs:ULong = initialDelay
-		Local periodMs:ULong = period
-		Select unit
-			Case ETimeUnit.Seconds
-				delayMs :* 1000
-				periodMs :* 1000
-			Case ETimeUnit.Minutes
-				delayMs :* 60000
-				periodMs :* 60000
-			Case ETimeUnit.Hours
-				delayMs :* 3600000
-				periodMs :* 3600000
-			Case ETimeUnit.Days
-				delayMs :* 86400000
-				periodMs :* 86400000
-		End Select
+		Local delayMs:ULong = TimeUnitToMillis(initialDelay, unit)
+		Local periodMs:ULong = TimeUnitToMillis(period, unit)
 
 		newTask.executeAt = now + delayMs
 		newTask.intervalMs = periodMs

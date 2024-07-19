@@ -3,6 +3,7 @@ SuperStrict
 Import "collection.bmx"
 ?threaded
 Import BRL.threads
+Import BRL.Time
 ?
 
 Rem
@@ -350,6 +351,53 @@ Type TBlockingQueue<T> Extends TQueue<T>
 		lock.Unlock()
 	End Method
 	
+	Rem
+	bbdoc: Adds an element to the end of the #TBlockingQueue, waiting up to the specified wait time if necessary for space to become available
+	about: If the queue is full, the operation will block until space becomes available or the specified timeout elapses.
+	Throws a #TTimeoutException if the operation times out.
+	End Rem
+	Method Enqueue(element:T, timeout:ULong, unit:ETimeUnit = ETimeUnit.Milliseconds)
+		Local timeoutMs:ULong = TimeUnitToMillis(timeout, unit)
+	
+		Local startTime:ULong = CurrentUnixTime()
+		lock.Lock()
+		While full
+			Local now:ULong = CurrentUnixTime()
+			If timeout > 0 And now - startTime >= timeoutMs
+				lock.Unlock()
+				Throw New TTimeoutException("The operation timed out after " + timeoutMs + "ms")
+			End If
+			notFull.TimedWait(lock, Int(timeoutMs - (now - startTime)))
+		Wend
+		Super.Enqueue(element)
+		notEmpty.Signal()
+		lock.Unlock()
+	End Method
+	
+	Rem
+	bbdoc: Removes and returns the element at the beginning of the #TBlockingQueue, waiting up to the specified wait time if necessary for an element to become available.
+	about: If the queue is empty, the operation will block until an element becomes available or the specified timeout elapses.
+	Throws a #TTimeoutException if the operation times out.
+	End Rem
+	Method Dequeue:T(timeout:ULong, unit:ETimeUnit = ETimeUnit.Milliseconds)
+		Local timeoutMs:ULong = TimeUnitToMillis(timeout, unit)
+	
+		Local startTime:Long = CurrentUnixTime()
+		lock.Lock()
+		While IsEmpty()
+			Local now:ULong = CurrentUnixTime()
+			If timeout > 0 And now - startTime >= timeoutMs
+				lock.Unlock()
+				Throw New TTimeoutException("The operation timed out after " + timeoutMs + "ms")
+			End If
+			notEmpty.TimedWait(lock, Int(timeoutMs - (now - startTime)))
+		Wend
+		Local element:T = Super.Dequeue()
+		notFull.Signal()
+		lock.Unlock()
+		Return element
+	End Method
+
 	Method Dequeue:T()
 		lock.Lock()
 		While IsEmpty()
