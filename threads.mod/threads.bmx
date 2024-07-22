@@ -25,6 +25,8 @@ Import "threads_mac.m"
 
 ?Threaded
 
+Import Pub.Stdc
+Import BRL.Time
 Import "threads.c"
 
 Private
@@ -405,6 +407,88 @@ Public
 		mutex.Unlock()
 	End Method
 
+End Type
+
+Rem
+bbdoc: A thread event object.
+about: A basic synchronization object that allows one thread to signal an event to other threads.
+It manages an internal flag that can be set or cleared, and provides methods to wait for the event to be set.
+End rem
+Type TThreadEvent
+    Private
+        Field lock:TMutex
+        Field condition:TCondVar
+        Field _isSet:Int
+	Public
+    Method New()
+        lock = TMutex.Create()
+        condition = TCondVar.Create()
+        _isSet = False
+    End Method
+
+    Rem
+	bboc: Sets the internal flag to #True and signals any waiting threads.
+	about: All threads waiting for it to become #True are awakened. Threads that call #Wait once the flag is true will not block at all.
+	End Rem
+    Method Set()
+        lock.Lock()
+        _isSet = True
+        condition.Broadcast()
+        lock.Unlock()
+    End Method
+
+    Rem
+	bbdoc: Resets the internal flag to false.
+	about: After clearing, threads calling #Wait will block until #Set is called to set the internal flag to #True again.
+	End Rem
+    Method Clear()
+        lock.Lock()
+        _isSet = False
+        lock.Unlock()
+    End Method
+
+    Rem
+	bbdoc: Waits for the event to be set.
+	about: This method could block indefinitely if the event is never set.
+	If the event is already set, the method returns immediately.
+	End Rem
+    Method Wait()
+        lock.Lock()
+        While Not _isSet
+            condition.Wait(lock)
+        Wend
+        lock.Unlock()
+    End Method
+
+    Rem
+	bbdoc: Waits for the event to be set, with a timeout.
+	about: If the timeout is reached before the event is set, the method returns #False.
+	End Rem
+    Method Wait:Int(timeout:ULong, unit:ETimeUnit = ETimeUnit.Milliseconds)
+        lock.Lock()
+		Local timeoutMs:ULong = TimeUnitToMillis(timeout, unit)
+        Local endTime:ULong = CurrentUnixTime() + timeoutMs
+        While Not _isSet
+            Local now:ULong = CurrentUnixTime()
+            If now >= timeoutMs Then
+                lock.Unlock()
+                Return False
+            End If
+            condition.TimedWait(lock, Int(timeoutMs - now))
+        Wend
+        lock.Unlock()
+        Return True
+    End Method
+
+    Rem
+	bbdoc: Returns whether the event is set or not.
+	End Rem
+    Method IsSet:Int()
+        lock.Lock()
+        Local result:Int = _isSet
+        lock.Unlock()
+        Return result
+    End Method
 End Type
 
 Rem
