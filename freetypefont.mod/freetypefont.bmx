@@ -49,6 +49,7 @@ Type TFreeTypeGlyph Extends TGlyph
 
 	Field _pixmap:TPixmap
 	Field _advance:Float,_x:Int,_y:Int,_w:Int,_h:Int
+	Field _index:Int
 	
 	Method Pixels:TPixmap() Override
 		If _pixmap Return _pixmap
@@ -65,6 +66,10 @@ Type TFreeTypeGlyph Extends TGlyph
 		y=_y
 		w=_w
 		h=_h
+	End Method
+
+	Method Index:Int() Override
+		Return _index
 	End Method
 
 End Type
@@ -111,6 +116,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 		If glyph Return glyph
 
 		glyph=New TFreeTypeGlyph
+		glyph._index=index
 		_glyphs[index]=glyph
 		
 		If FT_Load_Glyph( _ft_face,index+1,FT_LOAD_RENDER ) Return glyph
@@ -162,16 +168,43 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 		Return glyph
 
 	End Method
+
+	Method LoadGlyphs:TGlyph[]( text:String )
+		Throw "Not supported"
+	End Method
 	
 	Function Load:TFreeTypeFont( src:Object,size:Int,style:Int )
+
+		Local buf:Byte[]
+				
+		Local ft_face:Byte Ptr = LoadFace(src, size, style, buf)
+
+		If Not ft_face Then
+			Return Null
+		End If
+		
+		Local ft_size:Byte Ptr = bmx_freetype_Face_size(ft_face)
+		
+		Local font:TFreeTypeFont=New TFreeTypeFont
+		font._ft_face=ft_face
+		font._style=style
+		font._height=bmx_freetype_Size_height(ft_size) Sar 6
+		font._ascend=bmx_freetype_Size_ascend(ft_size) Sar 6
+		font._descend=bmx_freetype_Size_descend(ft_size) Sar 6
+		font._glyphs=New TFreeTypeGlyph[bmx_freetype_Face_numglyphs(ft_face)]
+		font._buf=buf
+		
+		Return font
+	
+	End Function
+
+	Function LoadFace:Byte Ptr( src:Object,size:Int,style:Int, buf:Byte[] Var )
 
 		Global ft_lib:Byte Ptr
 		
 		If Not ft_lib
 			If FT_Init_FreeType( Varptr ft_lib ) Return Null
 		EndIf
-
-		Local buf:Byte[]
 				
 		Local ft_face:Byte Ptr
 
@@ -241,20 +274,8 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 			FT_Done_Face ft_face
 			Return Null
 		EndIf
-		
-		Local ft_size:Byte Ptr = bmx_freetype_Face_size(ft_face)
-		
-		Local font:TFreeTypeFont=New TFreeTypeFont
-		font._ft_face=ft_face
-		font._style=style
-		font._height=bmx_freetype_Size_height(ft_size) Sar 6
-		font._ascend=bmx_freetype_Size_ascend(ft_size) Sar 6
-		font._descend=bmx_freetype_Size_descend(ft_size) Sar 6
-		font._glyphs=New TFreeTypeGlyph[bmx_freetype_Face_numglyphs(ft_face)]
-		font._buf=buf
-		
-		Return font
-	
+
+		Return ft_face
 	End Function
 
 End Type

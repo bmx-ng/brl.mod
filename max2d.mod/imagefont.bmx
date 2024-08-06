@@ -34,6 +34,7 @@ Type TImageFont
 	Field _src_font:TFont
 	Field _glyphs:TImageGlyph[]
 	Field _imageFlags:Int
+	Field _style:Int
 
 	Method Style:Int()
 		If _src_font Return _src_font.Style()
@@ -78,29 +79,82 @@ Type TImageFont
 		Return glyph
 		
 	End Method
+
+	Method LoadGlyphs:TImageGlyph[]( text:String )
+
+		Local src_glyph:TGlyph[]=_src_font.LoadGlyphs( text )
+
+		Local glyphs:TImageGlyph[]=New TImageGlyph[text.length]
+
+		For Local i:Int=0 Until text.length
+			Local src:TGlyph=src_glyph[i]
+
+			Local glyph:TImageGlyph=New TImageGlyph
+			glyphs[i]=glyph
+
+			If src Then
+				Local index:Int = src.Index()
+				Local cachedGlyph:TImageGlyph = _glyphs[index]
+
+				If cachedGlyph Then
+					glyph._image = cachedGlyph._image
+				End If
+		
+				glyph._advance=src.Advance()
+				src.GetRect glyph._x,glyph._y,glyph._w,glyph._h
+				If Not glyph._image
+					Local pixmap:TPixmap=TPixmap( src.Pixels() )
+					If pixmap Then
+						glyph._image=TImage.Load( pixmap.Copy(),_imageFlags,0,0,0 )
+					End If
+				End If
+			End If
+		Next
+
+		Return glyphs
+	End Method
 	
 	Method Draw( text:String,x:Float,y:Float,ix:Float,iy:Float,jx:Float,jy:Float )
 
-		For Local i:Int=0 Until text.length
-		
-			Local n:Int=CharToGlyph( text[i] )
-			If n<0 Continue
+		If Not (_style & KERNFONT) Then
+			For Local i:Int=0 Until text.length
 			
-			Local glyph:TImageGlyph=LoadGlyph(n)
-			Local image:TImage=glyph._image
-			
-			If image
-				Local frame:TImageFrame=image.Frame(0)
-				If frame
-					Local tx:Float=glyph._x*ix+glyph._y*iy
-					Local ty:Float=glyph._x*jx+glyph._y*jy			
-					frame.Draw 0,0,image.width,image.height,x+tx,y+ty,0,0,image.width,image.height
+				Local n:Int=CharToGlyph( text[i] )
+				If n<0 Continue
+				
+				Local glyph:TImageGlyph=LoadGlyph(n)
+				Local image:TImage=glyph._image
+				
+				If image
+					Local frame:TImageFrame=image.Frame(0)
+					If frame
+						Local tx:Float=glyph._x*ix+glyph._y*iy
+						Local ty:Float=glyph._x*jx+glyph._y*jy			
+						frame.Draw 0,0,image.width,image.height,x+tx,y+ty,0,0,image.width,image.height
+					EndIf
 				EndIf
-			EndIf
-			
-			x:+glyph._advance*ix
-			y:+glyph._advance*jx
-		Next
+				
+				x:+glyph._advance*ix
+				y:+glyph._advance*jx
+			Next
+		Else
+			Local glyphs:TImageGlyph[] = LoadGlyphs( text )
+
+			For Local i:Int=0 Until glyphs.length
+				Local glyph:TImageGlyph=glyphs[i]
+				Local image:TImage=glyph._image
+				If image
+					Local frame:TImageFrame=image.Frame(0)
+					If frame
+						Local tx:Float=glyph._x*ix+glyph._y*iy
+						Local ty:Float=glyph._x*jx+glyph._y*jy			
+						frame.Draw 0,0,image.width,image.height,x+tx,y+ty,0,0,image.width,image.height
+					EndIf
+				EndIf
+				x:+glyph._advance*ix
+				y:+glyph._advance*jx
+			Next
+		End If
 		
 	End Method
 	
@@ -112,6 +166,7 @@ Type TImageFont
 		Local font:TImageFont=New TImageFont
 		font._src_font=src
 		font._glyphs=New TImageGlyph[src.CountGlyphs()]
+		font._style=style
 		If style & SMOOTHFONT font._imageFlags=FILTEREDIMAGE|MIPMAPPEDIMAGE
 		
 		Return font
