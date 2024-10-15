@@ -1,4 +1,4 @@
-' Copyright (c) 2018-2023 Bruce A Henderson
+' Copyright (c) 2018-2024 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -89,6 +89,16 @@ Extern
 	Function bmx_stringbuilder_splitbuffer_text:String(splitPtr:Byte Ptr, index:Int)
 	Function bmx_stringbuilder_splitbuffer_free(splitPtr:Byte Ptr)
 	Function bmx_stringbuilder_splitbuffer_toarray:String[](splitPtr:Byte Ptr)
+	Function bmx_stringbuilder_splitbuffer_split:Byte Ptr(splitPtr:Byte Ptr, separator:String, index:Int)
+	Function bmx_stringbuilder_splitbuffer_toint:Int(splitPtr:Byte Ptr, index:Int)
+	Function bmx_stringbuilder_splitbuffer_tofloat:Float(splitPtr:Byte Ptr, index:Int)
+	Function bmx_stringbuilder_splitbuffer_todouble:Double(splitPtr:Byte Ptr, index:Int)
+	Function bmx_stringbuilder_splitbuffer_tolong:Long(splitPtr:Byte Ptr, index:Int)
+	Function bmx_stringbuilder_splitbuffer_toulong:ULong(splitPtr:Byte Ptr, index:Int)
+	Function bmx_stringbuilder_splitbuffer_toshort:Short(splitPtr:Byte Ptr, index:Int)
+	Function bmx_stringbuilder_splitbuffer_touint:UInt(splitPtr:Byte Ptr, index:Int)
+	Function bmx_stringbuilder_splitbuffer_tosizet:Size_T(splitPtr:Byte Ptr, index:Int)
+	Function bmx_stringbuilder_splitbuffer_tobyte:Byte(splitPtr:Byte Ptr, index:Int)
 
 End Extern
 
