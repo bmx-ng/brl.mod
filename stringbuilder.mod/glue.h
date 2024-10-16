@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2023 Bruce A Henderson
+  Copyright (c) 2018-2024 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -89,6 +89,7 @@ void bmx_stringbuilder_rightalign(struct MaxStringBuilder * buf, int length);
 char * bmx_stringbuilder_toutf8string(struct MaxStringBuilder * buf);
 BBChar * bmx_stringbuilder_towstring(struct MaxStringBuilder * buf);
 void bmx_stringbuilder_toutf8_buffer(BBString *str, char * buf, size_t length);
+void bmx_stringbuilder_toutf8_sbuffer(BBChar * p, int len, char * buf, size_t length);
 void bmx_stringbuilder_format_string(struct MaxStringBuilder * buf, BBString * formatText, BBString * value);
 void bmx_stringbuilder_format_byte(struct MaxStringBuilder * buf, BBString * formatText, BBBYTE value);
 void bmx_stringbuilder_format_short(struct MaxStringBuilder * buf, BBString * formatText, BBSHORT value);
@@ -109,5 +110,15 @@ int bmx_stringbuilder_splitbuffer_length(struct MaxSplitBuffer * buf);
 BBString * bmx_stringbuilder_splitbuffer_text(struct MaxSplitBuffer * buf, int index);
 void bmx_stringbuilder_splitbuffer_free(struct MaxSplitBuffer * buf);
 BBArray * bmx_stringbuilder_splitbuffer_toarray(struct MaxSplitBuffer * buf);
+struct MaxSplitBuffer * bmx_stringbuilder_splitbuffer_split(struct MaxSplitBuffer * splitBuffer, BBString * separator, int index);
+int bmx_stringbuilder_splitbuffer_toint(struct MaxSplitBuffer * splitBuffer, int index);
+unsigned int bmx_stringbuilder_splitbuffer_touint(struct MaxSplitBuffer * splitBuffer, int index);
+float bmx_stringbuilder_splitbuffer_tofloat(struct MaxSplitBuffer * splitBuffer, int index);
+double bmx_stringbuilder_splitbuffer_todouble(struct MaxSplitBuffer * splitBuffer, int index);
+BBInt64 bmx_stringbuilder_splitbuffer_tolong(struct MaxSplitBuffer * splitBuffer, int index);
+BBUInt64 bmx_stringbuilder_splitbuffer_toulong(struct MaxSplitBuffer * splitBuffer, int index);
+size_t bmx_stringbuilder_splitbuffer_tosizet(struct MaxSplitBuffer * splitBuffer, int index);
+BBSHORT bmx_stringbuilder_splitbuffer_toshort(struct MaxSplitBuffer * splitBuffer, int index);
+BBBYTE bmx_stringbuilder_splitbuffer_tobyte(struct MaxSplitBuffer * splitBuffer, int index);
 
 #endif

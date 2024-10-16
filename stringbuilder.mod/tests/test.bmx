@@ -188,3 +188,213 @@ Type TStringBuilderTest Extends TTest
 	End Method
 
 End Type
+
+Type TSplitBufferTest Extends TTest
+
+	Field sb:TStringBuilder
+	
+	Method setup() { before }
+		sb = New TStringBuilder
+	End Method
+
+	Method testSplitBuffer() { test }
+		sb.Append("a,b,c,d,e,f,g")
+
+		Local split:TSplitBuffer = sb.Split(",")
+
+		assertEquals(7, split.Length())
+		assertEquals("a", split.Text(0))
+		assertEquals("d", split.Text(3))
+		assertEquals("g", split.Text(6))
+		
+	End Method
+
+	Method testSplitBufferEmpty() { test }
+		sb.Append("a,b,c,d,e,f,g")
+
+		Local split:TSplitBuffer = sb.Split(" ")
+
+		assertEquals(1, split.Length())
+		assertEquals("a,b,c,d,e,f,g", split.Text(0))
+		
+	End Method
+
+	Method testSplitBufferEmptyString() { test }
+		sb.Append("")
+
+		Local split:TSplitBuffer = sb.Split(",")
+
+		assertEquals(1, split.Length())
+		assertEquals("", split.Text(0))
+		
+	End Method
+
+	Method testSplitBufferEmptySeparator() { test }
+		sb.Append("a,b,c,d,e,f,g")
+
+		Local split:TSplitBuffer = sb.Split("")
+
+		assertEquals(1, split.Length())
+		assertEquals("a,b,c,d,e,f,g", split.Text(0))
+		
+	End Method
+
+	Method testSplitBufferEmptyFields() { test }
+		sb.Append("1,,,3,4,5")
+
+		Local split:TSplitBuffer = sb.Split(",")
+
+		assertEquals(6, split.Length())
+		assertEquals("1", split.Text(0))
+		assertEquals("", split.Text(1))
+		assertEquals("3", split.Text(3))
+		assertEquals("5", split.Text(5))
+
+	End Method
+
+	Method testSplitBufferSplit() { test }
+		sb.Append("1,2,3|4,5,6|7,8,9")
+
+		Local split:TSplitBuffer = sb.Split("|")
+
+		assertEquals(3, split.Length())
+		assertEquals("1,2,3", split.Text(0))
+
+		Local split2:TSplitBuffer = split.Split(0, ",")
+
+		assertEquals(3, split2.Length())
+
+		assertEquals("1", split2.Text(0))
+		assertEquals("2", split2.Text(1))
+		assertEquals("3", split2.Text(2))
+	End Method
+
+	Method testSplitBufferSplitEmptyFields() { test }
+		sb.Append("1,2,3|4,,6|7,8,9")
+
+		Local split:TSplitBuffer = sb.Split("|")
+
+		assertEquals(3, split.Length())
+		assertEquals("4,,6", split.Text(1))
+
+		Local split2:TSplitBuffer = split.Split(1, ",")
+
+		assertEquals(3, split2.Length())
+
+		assertEquals("4", split2.Text(0))
+		assertEquals("", split2.Text(1))
+		assertEquals("6", split2.Text(2))
+	End Method
+
+	Method testSplitBufferSplitEmptyFields2() { test }
+		sb.Append("1,2,3||7,8,9")
+
+		Local split:TSplitBuffer = sb.Split("|")
+
+		assertEquals(3, split.Length())
+		assertEquals("", split.Text(1))
+
+		Local split2:TSplitBuffer = split.Split(1, ",")
+
+		assertEquals(1, split2.Length())
+		assertEquals("", split2.Text(0))
+	End Method
+
+	Method testSplitBufferEnumeration() { test }
+		sb.Append("a,b,c,d,e,f,g")
+
+		Local split:TSplitBuffer = sb.Split(",")
+
+		Local txt:String
+		For Local s:String = EachIn split
+			txt :+ s
+		Next
+
+		assertEquals("abcdefg", txt)
+	End Method
+
+	Method testSplitBufferSplitEnumeration() { test }
+		sb.Append("1,2,3|4,5,6|7,8,9")
+
+		Local split:TSplitBuffer = sb.Split("|")
+		Local split2:TSplitBuffer = split.Split(1, ",")
+
+		Local txt:String
+		For Local s:String = EachIn split2
+			txt :+ s
+		Next
+
+		assertEquals("456", txt)
+	End Method
+
+	Method testSplitBufferToInt() { test }
+		sb.Append("1,22,333,4444,-55555,666666,777777,8888888,99999999")
+
+		Local split:TSplitBuffer = sb.Split(",")
+
+		assertEquals(1, split.ToInt(0))
+		assertEquals(-55555, split.ToInt(4))
+		assertEquals(99999999, split.ToInt(8))
+	End Method
+
+	Method testSplitBufferToFloat() { test }
+		sb.Append("1.1,2.2,3.3,4.4,5.5,6.6,7.7,8.8,-9.9")
+
+		Local split:TSplitBuffer = sb.Split(",")
+
+		assertEquals(1.1, split.ToFloat(0), 0.0001)
+		assertEquals(5.5, split.ToFloat(4), 0.0001)
+		assertEquals(-9.9, split.ToFloat(8), 0.0001)
+	End Method
+
+	Method testSplitBufferToDouble() { test }
+		sb.Append("1.1,2.2,3.3,4.4,-5.5,6.6,7.7,8.8,9.9")
+
+		Local split:TSplitBuffer = sb.Split(",")
+
+		assertEquals(1.1, split.ToDouble(0), 0.0001)
+		assertEquals(-5.5, split.ToDouble(4), 0.0001)
+		assertEquals(9.9, split.ToDouble(8), 0.0001)
+	End Method
+
+	Method testSplitBufferToShort() { test }
+		sb.Append("1,2,3,4,5,6,7,8,9")
+
+		Local split:TSplitBuffer = sb.Split(",")
+
+		assertEquals(1, split.ToShort(0))
+		assertEquals(5, split.ToShort(4))
+		assertEquals(9, split.ToShort(8))
+	End Method
+
+	Method testSplitBufferToByte() { test }
+		sb.Append("1,2,3,4,5,6,7,8,9")
+
+		Local split:TSplitBuffer = sb.Split(",")
+
+		assertEquals(1, split.ToByte(0))
+		assertEquals(5, split.ToByte(4))
+		assertEquals(9, split.ToByte(8))
+	End Method
+
+	Method testSplitBufferToLong() { test }
+		sb.Append("-1,2,3,4,5,6,7,8,9")
+
+		Local split:TSplitBuffer = sb.Split(",")
+
+		assertEquals(-1, split.ToLong(0))
+		assertEquals(5, split.ToLong(4))
+		assertEquals(9, split.ToLong(8))
+	End Method
+
+	Method testSplitBufferToULong() { test }
+		sb.Append("1111,22222,333333,4444444,55555555,666666666,777777777,8888888,99999999999")
+
+		Local split:TSplitBuffer = sb.Split(",")
+
+		assertEquals(1111, split.ToULong(0))
+		assertEquals(55555555, split.ToULong(4))
+		assertEquals(99999999999:ULong, split.ToULong(8))
+	End Method
+
+End Type
