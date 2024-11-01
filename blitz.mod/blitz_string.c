@@ -8,7 +8,7 @@
 #define XXH_IMPLEMENTATION
 #define XXH_STATIC_LINKING_ONLY
 
-#include "hash/xxh3.h"
+#include "hash/xxhash.h"
 
 static void bbStringFree( BBObject *o );
 
