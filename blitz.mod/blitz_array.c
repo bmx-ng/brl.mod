@@ -54,7 +54,7 @@ static void bbArrayFree( BBObject *o ){
 	}
 }
 
-static int arrayCellSize(const char * type, unsigned short data_size, int * flags) {
+int arrayCellSize(const char * type, unsigned short data_size, int * flags) {
 	int size = 4;
 	
 	switch( type[0] ){
@@ -88,7 +88,7 @@ static int arrayCellSize(const char * type, unsigned short data_size, int * flag
 	return size;
 }
 
-static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned short data_size ){
+BBArray *allocateArray( const char *type,int dims,int *lens, unsigned short data_size ){
 	int k,*len;
 	unsigned int size=4;
 	int length=1;

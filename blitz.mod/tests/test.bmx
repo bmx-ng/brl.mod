@@ -24,4 +24,57 @@ Type TStringTest Extends TTest
 		Next
 	End Method
 
+	Method testToUTF8StringBuffer() { test }
+		Local s:String = "1234567890"
+		Local buf:Byte Ptr = StackAlloc(50)
+
+		Local length:size_t = 10
+		s.ToUTF8StringBuffer(buf, length)
+
+	End Method
+
 End Type
+
+Struct STestStruct
+	Field a:Int
+	Field c:Float
+	Field d:Double
+	Field b:ULong
+End Struct
+
+Type TStructArrayTest Extends TTest
+
+	Method testStructArray() { test }
+
+		Local arr:STestStruct[] = New STestStruct[10]
+		
+		For Local i:Int = 0 Until 10
+			arr[i].a = i
+			arr[i].b = i * i
+		Next
+
+		For Local i:Int = 0 Until 10
+			assertEquals(i, arr[i].a)
+			assertEquals(i * i, arr[i].b)
+		Next
+	End Method
+
+	Method testStructArraySlice() { test }
+
+		Local arr:STestStruct[] = New STestStruct[10]
+		
+		For Local i:Int = 0 Until 10
+			arr[i].a = i
+			arr[i].b = i * i
+		Next
+
+		Local slice:STestStruct[] = arr[2..5]
+
+		assertEquals(3, slice.Length)
+		assertEquals(2, slice[0].a)
+		assertEquals(3, slice[1].a)
+		assertEquals(4, slice[2].a)
+	End Method
+
+End Type
+

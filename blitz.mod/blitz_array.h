@@ -15,6 +15,61 @@ extern "C"{
 #define BBARRAYDATA(p,n) ((void*)((char*)(p)+((BBArray*)(p))->data_start))
 #define BBARRAYDATAINDEX(p,n,i) bbArrayIndex(p,n,i)
 
+#define BBARRAYNEW1DSTRUCT_FUNC(FUNC_SUFFIX, STRUCT_TYPE, CONSTRUCTOR_FUNC, TYPE_STRING) \
+BBArray *bbArrayNew1DStruct_##FUNC_SUFFIX(int length) { \
+    BBArray *arr = allocateArray(TYPE_STRING, 1, &length, sizeof(struct STRUCT_TYPE)); \
+    if (!arr->size) return arr; \
+    struct STRUCT_TYPE *p = (struct STRUCT_TYPE *)(BBARRAYDATA(arr, arr->dims)); \
+    memset(p, 0, arr->size); \
+    struct STRUCT_TYPE *s = p; \
+    for (int k = arr->scales[0]; k > 0; --k) { \
+        CONSTRUCTOR_FUNC(s); \
+        s++; \
+    } \
+    return arr; \
+}
+
+#define BBARRAYSLICESTRUCT_FUNC(FUNC_SUFFIX, STRUCT_TYPE, CONSTRUCTOR_FUNC, TYPE_STRING) \
+BBArray *bbArraySliceStruct_##FUNC_SUFFIX(BBArray *inarr, int beg, int end) { \
+    int k; \
+    int length = end - beg; \
+    if (length <= 0) return &bbEmptyArray; \
+    BBArray *arr = allocateArray(TYPE_STRING, 1, &length, sizeof(struct STRUCT_TYPE)); \
+    int el_size = sizeof(struct STRUCT_TYPE); \
+    struct STRUCT_TYPE *p = (struct STRUCT_TYPE *)BBARRAYDATA(arr, 1); \
+    int n = -beg; \
+    if (n > 0) { \
+        if (beg + n > end) n = end - beg; \
+        memset(p, 0, n * el_size); \
+        struct STRUCT_TYPE *s = p; \
+        for (k = 0; k < n; ++k) { \
+            CONSTRUCTOR_FUNC(s); \
+            s++; \
+        } \
+        p += n; \
+        beg += n; \
+        if (beg == end) return arr; \
+    } \
+    n = inarr->scales[0] - beg; \
+    if (n > 0) { \
+        if (beg + n > end) n = end - beg; \
+        memcpy(p, (struct STRUCT_TYPE *)BBARRAYDATA(inarr, inarr->dims) + beg, n * el_size); \
+        p += n; \
+        beg += n; \
+        if (beg == end) return arr; \
+    } \
+    n = end - beg; \
+    if (n > 0) { \
+        memset(p, 0, n * el_size); \
+        struct STRUCT_TYPE *s = p; \
+        for (k = 0; k < n; ++k) { \
+            CONSTRUCTOR_FUNC(s); \
+            s++; \
+        } \
+    } \
+    return arr; \
+}
+
 struct BBArray{
 	//extends BBObject
 	BBClass*        clas;
@@ -84,6 +139,9 @@ BBArray*	bbArrayNew1DNoInit( const char *type,int length );
 void bbArrayCopy(BBArray * srcArr, int srcPos, BBArray * dstArr, int dstPos, int length);
 
 int bbObjectIsEmptyArray(BBObject * o);
+
+int arrayCellSize(const char * type, unsigned short data_size, int * flags);
+BBArray *allocateArray( const char *type,int dims,int *lens, unsigned short data_size );
 
 #ifdef __cplusplus
 }
