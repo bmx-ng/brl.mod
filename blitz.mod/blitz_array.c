@@ -88,7 +88,7 @@ static int arrayCellSize(const char * type, unsigned short data_size, int * flag
 	return size;
 }
 
-static BBArray *allocateArray( const char *type,int dims,int *lens, unsigned short data_size ){
+BBArray *bbAllocateArray( const char *type,int dims,int *lens, unsigned short data_size ){
 	int k,*len;
 	unsigned int size=4;
 	int length=1;
@@ -169,7 +169,7 @@ BBArray *bbArrayNew( const char *type,int dims,... ){
 	}
 	va_end(lengths);
 
-	BBArray *arr=allocateArray( type,dims, lens, 0 );
+	BBArray *arr=bbAllocateArray( type,dims, lens, 0 );
 	
 	initializeArray( arr, 0 );
 	
@@ -190,7 +190,7 @@ BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, BBArraySt
 	}
 	va_end(lengths);
 
-	BBArray *arr=allocateArray( type,dims, lens, data_size );
+	BBArray *arr=bbAllocateArray( type,dims, lens, data_size );
 	
 	initializeArray( arr, init );
 	
@@ -199,7 +199,7 @@ BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, BBArraySt
 
 BBArray *bbArrayNewEx( const char *type,int dims,int *lens ){
 
-	BBArray *arr=allocateArray( type,dims,lens,0 );
+	BBArray *arr=bbAllocateArray( type,dims,lens,0 );
 	
 	initializeArray( arr, 0 );
 	
@@ -208,7 +208,7 @@ BBArray *bbArrayNewEx( const char *type,int dims,int *lens ){
 
 BBArray *bbArrayNew1D( const char *type,int length ){
 
-	BBArray *arr=allocateArray( type,1,&length, 0 );
+	BBArray *arr=bbAllocateArray( type,1,&length, 0 );
 	
 	initializeArray( arr, 0 );
 	
@@ -216,12 +216,12 @@ BBArray *bbArrayNew1D( const char *type,int length ){
 }
 
 BBArray *bbArrayNew1DNoInit( const char *type,int length ){
-	return allocateArray( type,1,&length, 0 );
+	return bbAllocateArray( type,1,&length, 0 );
 }
 
 BBArray *bbArrayNew1DStruct( const char *type,int length, unsigned short data_size, BBArrayStructInit init ){
 
-	BBArray *arr=allocateArray( type,1,&length, data_size );
+	BBArray *arr=bbAllocateArray( type,1,&length, data_size );
 	
 	initializeArray( arr, init );
 	
@@ -241,7 +241,7 @@ BBArray *bbArraySliceStruct( const char *type,BBArray *inarr,int beg,int end, un
 
 	if( length<=0 ) return &bbEmptyArray;
 	
-	arr=allocateArray( type,1,&length,data_size );
+	arr=bbAllocateArray( type,1,&length,data_size );
 
 	el_size=arr->size/length;
 	
@@ -342,7 +342,7 @@ BBArray *bbArrayConcat( const char *type,BBArray *x,BBArray *y ){
 		brl_blitz_RuntimeError(bbStringFromCString("Incompatible array element types for concatenation"));
 	}
 
-	arr=allocateArray( type,1,&length, data_size );
+	arr=bbAllocateArray( type,1,&length, data_size );
 	
 	data=(char*)BBARRAYDATA( arr,1 );
 	
@@ -362,7 +362,7 @@ BBArray *bbArrayFromDataSize( const char *type,int length,void *data, unsigned s
 
 	if( length<=0 ) return &bbEmptyArray;
 	
-	arr=allocateArray( type,1,&length,data_size );
+	arr=bbAllocateArray( type,1,&length,data_size );
 
 	memcpy( BBARRAYDATA( arr,1 ),data,arr->size );
 
@@ -375,7 +375,7 @@ BBArray *bbArrayFromDataStruct( const char *type,int length,void *data, unsigned
 
 	if( length<=0 ) return &bbEmptyArray;
 	
-	arr=allocateArray( type,1,&length, data_size );
+	arr=bbAllocateArray( type,1,&length, data_size );
 
 	memcpy( BBARRAYDATA( arr,1 ),data,arr->size );
 
