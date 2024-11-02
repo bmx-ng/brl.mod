@@ -54,7 +54,7 @@ static void bbArrayFree( BBObject *o ){
 	}
 }
 
-int arrayCellSize(const char * type, unsigned short data_size, int * flags) {
+static int arrayCellSize(const char * type, unsigned short data_size, int * flags) {
 	int size = 4;
 	
 	switch( type[0] ){
