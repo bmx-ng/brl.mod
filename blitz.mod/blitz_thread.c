@@ -186,7 +186,7 @@ int bbThreadResume( BBThread *thread ){
 	return ResumeThread( thread->handle );
 }
 
-BBThread *bbThreadRegister( DWORD id ) {
+BBThread *bbThreadRegister( bb_thread_t id ) {
 
 	GC_call_with_stack_base(bbRegisterGCThread, NULL);
 
@@ -364,7 +364,7 @@ static void *threadProc( void *p ){
 
 	GC_call_with_stack_base(bbRegisterGCThread, NULL);
 
-	BBThread *thread=p;
+	BBThread *thread=(BBThread *)p;
 	
 	pthread_setspecific( curThreadTls,thread );
 	
@@ -406,7 +406,7 @@ BBThread *bbThreadCreate( BBThreadProc proc,BBObject *data ){
 	return 0;
 }
 
-BBThread *bbThreadRegister( void * thd ) {
+BBThread *bbThreadRegister( bb_thread_t thd ) {
 
 	GC_call_with_stack_base(bbRegisterGCThread, NULL);
 
@@ -444,7 +444,7 @@ void bbThreadDetach( BBThread *thread ){
 BBObject *bbThreadWait( BBThread *thread ){
 	BBObject *p=0;
 	thread->detached=1;
-	pthread_join( thread->handle,&p );
+	pthread_join( thread->handle,(void**)&p );
 	return p;
 }
 
