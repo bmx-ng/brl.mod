@@ -30,7 +30,7 @@ unsigned int bmx_debugger_DebugDeclKind(struct BBDebugDecl * decl) {
 }
 
 struct BBDebugDecl * bmx_debugger_DebugDeclNext( struct BBDebugDecl * decl ) {
-	return ((char *)decl) + sizeof(struct BBDebugDecl);
+	return decl + 1;
 }
 
 void * bmx_debugger_DebugDecl_VarAddress( struct BBDebugDecl * decl ) {

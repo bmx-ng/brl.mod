@@ -9,6 +9,7 @@ extern "C"{
 #ifdef _WIN32
 
 #include <windows.h>
+typedef DWORD bb_thread_t;
 typedef CRITICAL_SECTION bb_mutex_t;
 #define bb_mutex_init(MUTPTR) (InitializeCriticalSection(MUTPTR),1)
 #define bb_mutex_destroy(MUTPTR) DeleteCriticalSection(MUTPTR)
@@ -37,6 +38,7 @@ typedef HANDLE bb_sem_t;
 #include<switch/kernel/semaphore.h>
 #include <threads.h>
 
+typedef thrd_t bb_thread_t;
 typedef mtx_t bb_mutex_t;
 #define bb_mutex_init(MUTPTR) (mtx_init(MUTPTR,mtx_recursive),1)
 #define bb_mutex_destroy(MUTPTR)
@@ -53,6 +55,7 @@ typedef Semaphore bb_sem_t;
 #else
 
 #include <pthread.h>
+typedef pthread_t bb_thread_t;
 typedef pthread_mutex_t bb_mutex_t;
 extern pthread_mutexattr_t _bb_mutexattr;
 #define bb_mutex_init(MUTPTR) (pthread_mutex_init((MUTPTR),&_bb_mutexattr)>=0)
@@ -107,11 +110,9 @@ struct BBThread{
 #ifdef _WIN32
 	BBObject * result;
 	HANDLE handle;
-	DWORD id;
-#elif __SWITCH__
-	thrd_t handle;
+	bb_thread_t id;
 #else
-	pthread_t handle;
+	bb_thread_t handle;
 #endif
 };
 
@@ -134,11 +135,7 @@ BBObject*		bbThreadGetData( int index );
 int			bbAtomicCAS( volatile int *target,int oldVal,int newVal );
 int			bbAtomicAdd( volatile int *target,int incr );
 
-#ifdef _WIN32
-BBThread *bbThreadRegister( DWORD id );
-#else
-BBThread *bbThreadRegister( void * thd );
-#endif
+BBThread *bbThreadRegister( bb_thread_t id );
 void bbThreadUnregister( BBThread * thread );
 
 
