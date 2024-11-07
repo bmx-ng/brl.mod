@@ -363,7 +363,7 @@ BBString *bbStringToString( BBString *t ){
 
 int bbStringCompare( BBString *x,BBString *y ){
 	int k,n,sz;
-	if (x->clas != &bbStringClass || y->clas != &bbStringClass) return -1; // only compare strings with strings
+	if (x->clas != (BBClass*)&bbStringClass || y->clas != (BBClass*)&bbStringClass) return -1; // only compare strings with strings
 
 	sz=x->length<y->length ? x->length : y->length;
 	if (x->length == y->length && x->hash) {

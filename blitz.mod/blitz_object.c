@@ -99,7 +99,7 @@ void bbObjectReserved(){
 }
 
 BBObject *bbObjectStringcast( BBObject *o ){
-	if (o->clas == &bbStringClass) {
+	if (o->clas == (BBClass *)&bbStringClass) {
 		return o;
 	} else {
 		return (BBObject *)&bbEmptyString;
@@ -107,11 +107,11 @@ BBObject *bbObjectStringcast( BBObject *o ){
 }
 
 int bbObjectIsString( BBObject *o ){
-	return o->clas == &bbStringClass;
+	return o->clas == (BBClass *)&bbStringClass;
 }
 
 BBObject *bbObjectArraycast( BBObject *o ){
-	if (o->clas == &bbArrayClass) {
+	if (o->clas == (BBClass *)&bbArrayClass) {
 		return o;
 	} else {
 		return (BBObject *)&bbEmptyArray;
@@ -119,13 +119,13 @@ BBObject *bbObjectArraycast( BBObject *o ){
 }
 
 int bbObjectIsArray( BBObject *o ){
-	return o->clas == &bbArrayClass;
+	return o->clas == (BBClass *)&bbArrayClass;
 }
 
 BBObject *bbObjectDowncast( BBObject *o,BBClass *t ){
 	BBClass *p=o->clas;
 	while( p && p!=t ) p=p->super;
-	return p ? o : (t==&bbStringClass) ? (BBObject *)&bbEmptyString : (t==&bbArrayClass) ? (BBObject *)&bbEmptyArray : &bbNullObject;
+	return p ? o : (t==(BBClass *)&bbStringClass) ? (BBObject *)&bbEmptyString : (t==(BBClass *)&bbArrayClass) ? (BBObject *)&bbEmptyArray : &bbNullObject;
 }
 
 void bbObjectRegisterType( BBClass *clas ){
