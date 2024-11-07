@@ -188,7 +188,7 @@ inline BBULONG bbStringHash( BBString * x ) {
 }
 
 inline int bbStringEquals( BBString *x,BBString *y ){
-	if (x->clas != &bbStringClass || y->clas != &bbStringClass) return 0; // only strings with strings
+	if (x->clas != (BBClass *)&bbStringClass || y->clas != (BBClass *)&bbStringClass) return 0; // only strings with strings
 
 	if (x->length-y->length != 0) return 0;
 	if (x->hash != 0 ) {
