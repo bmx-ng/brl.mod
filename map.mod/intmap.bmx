@@ -8,7 +8,7 @@ Extern
 	Function bmx_map_intmap_insert(key:Int, value:Object, root:SavlRoot Ptr Ptr)
 	Function bmx_map_intmap_contains:Int(key:Int, root:SavlRoot Ptr)
 	Function bmx_map_intmap_valueforkey:Object(key:Int, root:SavlRoot Ptr)
-	Function bmx_map_intmap_remove:Int(key:Int, root:SavlRoot Ptr)
+	Function bmx_map_intmap_remove:Int(key:Int, root:SavlRoot Ptr Ptr)
 	Function bmx_map_intmap_firstnode:SIntMapNode Ptr(root:SavlRoot Ptr)
 	Function bmx_map_intmap_nextnode:SIntMapNode Ptr(node:SIntMapNode Ptr)
 	Function bmx_map_intmap_key:Int(node:SIntMapNode Ptr)
