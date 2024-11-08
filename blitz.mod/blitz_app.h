@@ -20,8 +20,6 @@ extern BBString*	bbAppTitle;
 extern BBString*	bbLaunchDir;
 extern BBArray*	bbAppArgs;
 
-extern void**		bbGCStackTop;
-
 extern char * bbArgv0;
 
 void		bbEnd();

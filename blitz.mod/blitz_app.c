@@ -9,8 +9,6 @@ BBString*	bbAppTitle=BBNULLSTRING;
 BBString*	bbLaunchDir=BBNULLSTRING;
 BBArray*	bbAppArgs=BBNULLARRAY;
 
-void **bbGCStackTop;
-
 char * bbArgv0 = NULL;
 
 void bbEnd(){
@@ -467,15 +465,10 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 
 #elif __linux__
 
-	char *ebp;
 	char buf[PATH_MAX];
 	char lnk[PATH_MAX];
 	pid_t pid;
-	
-	// asm( "movl %%ebp,%0;":"=r"(ebp) );//::"%ebp" );
-	
-	bbGCStackTop=ebp+28;
-	
+		
 	bbThreadPreStartup();
 	bbGCStartup();
 	bbThreadStartup();
@@ -510,12 +503,6 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	
 	CFURLRef url;
 	char buf[PATH_MAX],*e;
-	
-//#if BB_ARGP
-//	bbGCStackTop=bbArgp(0);
-//#else
-	bbGCStackTop=&argc;
-//#endif
 
 	bbGCStartup();
 	bbThreadPreStartup();
