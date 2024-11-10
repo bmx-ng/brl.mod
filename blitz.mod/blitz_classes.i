@@ -15,7 +15,7 @@ String^Object{
 	@length:Int
 
 	-ToString:String()="bbStringToString"
-	-Compare:Int(otherObject:Object)="bbStringCompare"
+	-Compare:Int(otherString:String)="bbStringCompare"
 	
 	-Find:Int( subString:String,startIndex=0 )="bbStringFind"
 	-FindLast:Int( subString:String,startIndex=0 )="bbStringFindLast"
