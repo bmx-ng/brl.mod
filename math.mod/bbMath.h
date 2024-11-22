@@ -70,6 +70,13 @@ inline double bbRound( double x ){
 inline double bbTrunc( double x ){
 	return trunc( x );
 }
+inline double bbDeg2Rad( double x ){
+	return x * DEG_TO_RAD;
+}
+inline double bbRad2Deg( double x ){
+	return x * RAD_TO_DEG;
+}
+
 
 #define RAD_TO_DEGF 57.2957795
 #define DEG_TO_RADF 0.0174532
@@ -128,6 +135,12 @@ inline float bbRoundf( float x ){
 inline float bbTruncf( float x ){
 	return truncf( x );
 }
+inline float bbDeg2Radf( float x ){
+	return x * DEG_TO_RADF;
+}
+inline float bbRad2Degf( float x ){
+	return x * RAD_TO_DEGF;
+}
 #else
 int bbIsNan( double x );
 int bbIsInf( double x );
@@ -149,6 +162,8 @@ double bbLog10( double x );
 double bbCeil( double x );
 double bbRound( double x );
 double bbTrunc( double x );
+double bbDeg2Rad( double x );
+double bbRad2Deg( double x );
 
 int bbIsNanf( float x );
 int bbIsInff( float x );
@@ -170,4 +185,6 @@ float bbLog10f( float x );
 float bbCeilf( float x );
 float bbRoundf( float x );
 float bbTruncf( float x );
+float bbDeg2Radf( float x );
+float bbRad2Degf( float x );
 #endif

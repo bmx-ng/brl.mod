@@ -25,6 +25,8 @@ extern double bbLog10( double x );
 extern double bbCeil( double x );
 extern double bbRound( double x );
 extern double bbTrunc( double x );
+extern double bbDeg2Rad( double x );
+extern double bbRad2Deg( double x );
 
 extern int bbIsNanf( float x );
 extern int bbIsInff( float x );
@@ -46,6 +48,8 @@ extern float bbLog10f( float x );
 extern float bbCeilf( float x );
 extern float bbRoundf( float x );
 extern float bbTruncf( float x );
+extern float bbDeg2Radf( float x );
+extern float bbRad2Degf( float x );
 
 #else
 
@@ -109,6 +113,12 @@ double bbRound( double x ){
 double bbTrunc( double x ){
 	return trunc( x );
 }
+double bbDeg2Rad( double x ){
+	return x * DEG_TO_RAD;
+}
+double bbRad2Deg( double x ){
+	return x * RAD_TO_DEG;
+}
 
 #define RAD_TO_DEGF RAD_TO_DEG
 #define DEG_TO_RADF DEG_TO_RAD
@@ -131,6 +141,8 @@ double bbTrunc( double x ){
 #define ceilf ceil
 #define roundf round
 #define truncf trunc
+#define deg2radf deg2rad
+#define rad2degf rad2deg
 
 float bbSqrf( float x ){
 	return sqrtf( x );
@@ -185,5 +197,11 @@ float bbRoundf( float x ){
 }
 float bbTruncf( float x ){
 	return truncf( x );
+}
+float bbDeg2Radf( float x ){
+	return x * DEG_TO_RADF;
+}
+float bbRad2Degf( float x ){
+	return x * RAD_TO_DEGF;
 }
 #endif
