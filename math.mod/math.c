@@ -141,8 +141,6 @@ double bbRad2Deg( double x ){
 #define ceilf ceil
 #define roundf round
 #define truncf trunc
-#define deg2radf deg2rad
-#define rad2degf rad2deg
 
 float bbSqrf( float x ){
 	return sqrtf( x );
