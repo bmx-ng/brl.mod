@@ -131,12 +131,14 @@ End Rem
 Function Trunc:Double( x:Double )="double bbTrunc(double)!"
 
 Rem
-bbdoc: Radiant value of degree value @x.
+bbdoc: Converts a degree value @x of type #Double to its equivalent radiant value.
+about: Takes a degree value and converts it to radiants using the formula: `radiant = degree × (π / 180)`.
 End Rem
 Function Deg2Rad:Double( x:Double )="double bbDeg2Rad(double)!"
 
 Rem
-bbdoc: Degree value of radiant value @x.
+bbdoc: Converts a radiant value @x of type #Double to its equivalent degree value.
+about: Takes a radiant value and converts it to degrees using the formula: `degree = radiant × (180 / π)`.
 End Rem
 Function Rad2Deg:Double( x:Double )="double bbRad2Deg(double)!"
 
@@ -232,12 +234,14 @@ End Rem
 Function TruncF:Float( x:Float )="float bbTruncf(float)!"
 
 Rem
-bbdoc: Radiant value of degree value @x.
+bbdoc: Converts a degree value @x of type #Float to its equivalent radiant value.
+about: Takes a degree value and converts it to radiants using the formula: `radiant = degree × (π / 180)`.
 End Rem
 Function Deg2RadF:Float( x:Float )="float bbDeg2Radf(float)!"
 
 Rem
-bbdoc: Degree value of radiant value @x.
+bbdoc: Converts a radiant value @x of type #Float to its equivalent degree value.
+about: Takes a radiant value and converts it to degrees using the formula: `degree = radiant × (180 / π)`.
 End Rem
 Function Rad2DegF:Float( x:Float )="float bbRad2Degf(float)!"
 
