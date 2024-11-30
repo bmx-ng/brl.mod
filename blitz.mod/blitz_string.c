@@ -849,13 +849,37 @@ BBString *bbStringToLower( BBString *str ){
 	int n = 0;
 	
 	while (n < str->length) {
-		int c=str->buf[n];
-		// ascii upper or other unicode char
-		if (c >= 192 || (c>='A' && c<='Z')) {
-			break;
-		}
-		++n;
-	}
+        int c = str->buf[n];
+        if (c < 192) {
+            // ASCII character
+            if (c >= 'A' && c <= 'Z') {
+                // Found an uppercase ASCII character
+                break;
+            }
+        } else {
+            // Unicode character
+            // Check if the character is an uppercase Unicode character
+            int lo = 0, hi = (3828 / 4) - 1; // sizeof(bbToLowerData) = 3828
+            int is_upper = 0;
+            while (lo <= hi) {
+                int mid = (lo + hi) / 2;
+                int upper = bbToLowerData[mid * 2];
+                if (c < upper) {
+                    hi = mid - 1;
+                } else if (c > upper) {
+                    lo = mid + 1;
+                } else {
+                    // Found an uppercase Unicode character
+                    is_upper = 1;
+                    break;
+                }
+            }
+            if (is_upper) {
+                break;
+            }
+        }
+        ++n;
+    }
 	
 	if (n == str->length) {
 		return str;
@@ -896,13 +920,37 @@ BBString *bbStringToUpper( BBString *str ){
 	int n = 0;
 	
 	while (n < str->length) {
-		int c=str->buf[n];
-		// ascii lower or other unicode char
-		if (c >= 181 || (c>='a' && c<='z')) {
-			break;
-		}
-		++n;
-	}
+        int c = str->buf[n];
+        if (c < 181) {
+            // ASCII character
+            if (c >= 'a' && c <= 'z') {
+                // Found a lowercase ASCII character
+                break;
+            }
+        } else {
+            // Unicode character
+            // Check if the character is a lowercase Unicode character
+            int lo = 0, hi = (3860 / 4) - 1; // sizeof(bbToUpperData) = 3860
+            int is_lower = 0;
+            while (lo <= hi) {
+                int mid = (lo + hi) / 2;
+                int lower = bbToUpperData[mid * 2];
+                if (c < lower) {
+                    hi = mid - 1;
+                } else if (c > lower) {
+                    lo = mid + 1;
+                } else {
+                    // Found a lowercase Unicode character
+                    is_lower = 1;
+                    break;
+                }
+            }
+            if (is_lower) {
+                break;
+            }
+        }
+        ++n;
+    }
 	
 	if (n == str->length) {
 		return str;
