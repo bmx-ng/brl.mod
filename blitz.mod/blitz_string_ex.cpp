@@ -13,6 +13,17 @@
 */
 #include "fast_float/fast_float.h"
 #include "blitz_debug.h"
+#ifdef _WIN32
+#if defined(_WIN64)
+ typedef __int64 LONG_PTR; 
+ typedef unsigned __int64 UINT_PTR;
+#else
+ typedef long LONG_PTR;
+ typedef unsigned int UINT_PTR;
+#endif
+typedef UINT_PTR WPARAM;
+typedef LONG_PTR LPARAM;
+#endif
 #include "blitz_string.h"
 
 // extracts a double from a string, from the range startPos to endPos
