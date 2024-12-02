@@ -162,6 +162,16 @@ unsigned char* bbStringToUTF8String( BBString *str );
 BBLONGINT bbStringToLongInt( BBString *str );
 BBULONGINT bbStringToULongInt( BBString *str );
 
+int	bbStringToDoubleEx( BBString *str, double *val, int start, int end, BBULONG format, BBString *sep );
+int	bbStringToFloatEx( BBString *str, float *val, int start, int end, BBULONG format, BBString *sep );
+int	bbStringToIntEx( BBString *str, int *val, int start, int end, BBULONG format, int base );
+int	bbStringToUIntEx( BBString *str, unsigned int *val, int start, int end, BBULONG format, int base );
+int	bbStringToLongEx( BBString *str, BBInt64 *val, int start, int end, BBULONG format, int base );
+int	bbStringToULongEx( BBString *str, BBUInt64 *val, int start, int end, BBULONG format, int base );
+int	bbStringToSizeTEx( BBString *str, BBSIZET *val, int start, int end, BBULONG format, int base );
+int	bbStringToLongIntEx( BBString *str, BBLONGINT *val, int start, int end, BBULONG format, int base );
+int	bbStringToULongIntEx( BBString *str, BBULONGINT *val, int start, int end, BBULONG format, int base );
+
 BBUINT* bbStringToUTF32String( BBString *str );
 BBString* bbStringFromUTF32String( const BBUINT *p );
 BBString* bbStringFromUTF32Bytes( const BBUINT *p, int n );
