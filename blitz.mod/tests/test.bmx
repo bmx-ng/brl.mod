@@ -205,3 +205,128 @@ Type TStructArrayTest Extends TTest
 
 End Type
 
+Type TStringToDoubleExTest Extends TTest
+
+	Method testToDoubleEx() { test }
+		Local val:Double
+		Local s:String = "123.456"
+		assertEquals(7, s.ToDoubleEx(val))
+		assertEquals(123.456, val, 0.0001)
+	End Method
+
+	Method testToDoubleExMulti() { test }
+		Local val:Double
+		Local s:String = "1,2,3,4,5,6,7,8,9,10"
+
+		Local start:Int = 0
+		For Local i:Int = 0 Until 10
+			start = s.ToDoubleEx(val, start) + 1
+
+			assertFalse(start = 1)
+			assertEquals(i + 1, val, 0.0001)
+		Next
+	End Method
+
+	Method testToDoubleExMultiTab() { test }
+		Local val:Double
+		Local s:String = "1~t2~t3~t4~t5~t6~t7~t8~t9~t10"
+
+		Local start:Int = 0
+		For Local i:Int = 0 Until 10
+			start = s.ToDoubleEx(val, start,,CHARSFORMAT_SKIPWHITESPACE)
+			assertFalse(start = 0)
+			assertEquals(i + 1, val, 0.0001)
+		Next
+	End Method
+
+	Method testLeadingWhitespace() { test }
+		Local val:Double
+		Local s:String = "  ~t123.456"
+		assertEquals(10, s.ToDoubleEx(val,,,CHARSFORMAT_SKIPWHITESPACE))
+		assertEquals(123.456, val, 0.0001)
+	End Method
+
+	Method testToDoubleExCommaSeparator() { test }
+		Local val:Double
+		Local s:String = "123,456"
+		assertEquals(7, s.ToDoubleEx(val,,,,","))
+		assertEquals(123.456, val, 0.0001)
+	End Method
+
+End Type
+
+Type TStringToFloatExTest Extends TTest
+
+	Method testToFloatEx() { test }
+		Local val:Float
+		Local s:String = "123.456"
+		assertEquals(7, s.ToFloatEx(val))
+		assertEquals(123.456, val, 0.0001)
+	End Method
+
+	Method testToFloatExMulti() { test }
+		Local val:Float
+		Local s:String = "1,2,3,4,5,6,7,8,9,10"
+
+		Local start:Int = 0
+		For Local i:Int = 0 Until 10
+			start = s.ToFloatEx(val, start) + 1
+
+			assertFalse(start = 1)
+			assertEquals(i + 1, val, 0.0001)
+		Next
+	End Method
+
+	Method testLeadingWhitespace() { test }
+		Local val:Float
+		Local s:String = "  ~t123.456"
+		assertEquals(10, s.ToFloatEx(val,,,CHARSFORMAT_SKIPWHITESPACE))
+		assertEquals(123.456, val, 0.0001)
+	End Method
+
+	Method testToFloatExCommaSeparator() { test }
+		Local val:Float
+		Local s:String = "123,456"
+		assertEquals(7, s.ToFloatEx(val,,,,","))
+		assertEquals(123.456, val, 0.0001)
+	End Method
+
+End Type
+
+Type TStringToIntExTest Extends TTest
+
+	Method testToIntEx() { test }
+		Local val:Int
+		Local s:String = "123456"
+		assertEquals(6, s.ToIntEx(val))
+		assertEquals(123456, val)
+	End Method
+
+	Method testToIntExMulti() { test }
+		Local val:Int
+		Local s:String = "1,2,3,4,5,6,7,8,9,10"
+
+		Local start:Int = 0
+		For Local i:Int = 0 Until 10
+			start = s.ToIntEx(val, start) + 1
+
+			assertFalse(start = 1)
+			assertEquals(i + 1, val)
+		Next
+	End Method
+
+	Method testLeadingWhitespace() { test }
+		Local val:Int
+		Local s:String = "  ~t123456"
+		assertEquals(9, s.ToIntEx(val,,,CHARSFORMAT_SKIPWHITESPACE))
+		assertEquals(123456, val)
+	End Method
+
+	Method testHex() { test }
+		Local val:Int
+		Local s:String = "abc001"
+		assertEquals(6, s.ToIntEx(val,,,,16))
+		assertEquals(11255809, val)
+	End Method
+
+End Type
