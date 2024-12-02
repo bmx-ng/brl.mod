@@ -18,7 +18,7 @@
 // extracts a double from a string, from the range startPos to endPos
 // endPos of -1 means the end of the string
 // returns 0 if the string is not a valid double, or the position of the first character after the double otherwise
-int	bbStringToDoubleEx( BBString *str, double * val, int startPos, int endPos, BBULONG format, BBString* sep ) {
+int bbStringToDoubleEx( BBString *str, double * val, int startPos, int endPos, BBULONG format, BBString* sep ) {
     if ( startPos < 0 || startPos >= str->length || endPos < -1 || endPos > str->length ) {
         return 0;
     }
@@ -53,7 +53,7 @@ int	bbStringToDoubleEx( BBString *str, double * val, int startPos, int endPos, B
 // extracts a float from a string, from the range startPos to endPos
 // endPos of -1 means the end of the string
 // returns 0 if the string is not a valid float, or the position of the first character after the float otherwise
-int	bbStringToFloatEx( BBString *str, float * val, int startPos, int endPos, BBULONG format, BBString* sep ) {
+int bbStringToFloatEx( BBString *str, float * val, int startPos, int endPos, BBULONG format, BBString* sep ) {
     if ( startPos < 0 || startPos >= str->length || endPos < -1 || endPos > str->length ) {
         return 0;
     }
@@ -88,7 +88,7 @@ int	bbStringToFloatEx( BBString *str, float * val, int startPos, int endPos, BBU
 // extracts a int from a string, from the range startPos to endPos
 // endPos of -1 means the end of the string
 // returns 0 if the string is not a valid int, or the position of the first character after the int otherwise
-int	bbStringToIntEx( BBString *str, int * val, int startPos, int endPos, BBULONG format, int base ) {
+int bbStringToIntEx( BBString *str, int * val, int startPos, int endPos, BBULONG format, int base ) {
     if ( startPos < 0 || startPos >= str->length || endPos < -1 || endPos > str->length ) {
         return 0;
     }
@@ -113,7 +113,7 @@ int	bbStringToIntEx( BBString *str, int * val, int startPos, int endPos, BBULONG
 // extracts a UInt from a string, from the range startPos to endPos
 // endPos of -1 means the end of the string
 // returns 0 if the string is not a valid UInt, or the position of the first character after the UInt otherwise
-int	bbStringToUIntEx( BBString *str, unsigned int * val, int startPos, int endPos, BBULONG format, int base ) {
+int bbStringToUIntEx( BBString *str, unsigned int * val, int startPos, int endPos, BBULONG format, int base ) {
     if ( startPos < 0 || startPos >= str->length || endPos < -1 || endPos > str->length ) {
         return 0;
     }
@@ -138,7 +138,7 @@ int	bbStringToUIntEx( BBString *str, unsigned int * val, int startPos, int endPo
 // extracts a Long from a string, from the range startPos to endPos
 // endPos of -1 means the end of the string
 // returns 0 if the string is not a valid Long, or the position of the first character after the Long otherwise
-int	bbStringToLongEx( BBString *str, BBInt64 * val, int startPos, int endPos, BBULONG format, int base ) {
+int bbStringToLongEx( BBString *str, BBInt64 * val, int startPos, int endPos, BBULONG format, int base ) {
     if ( startPos < 0 || startPos >= str->length || endPos < -1 || endPos > str->length ) {
         return 0;
     }
@@ -163,7 +163,7 @@ int	bbStringToLongEx( BBString *str, BBInt64 * val, int startPos, int endPos, BB
 // extracts a ULong from a string, from the range startPos to endPos
 // endPos of -1 means the end of the string
 // returns 0 if the string is not a valid ULong, or the position of the first character after the ULong otherwise
-int	bbStringToULongEx( BBString *str, BBUInt64 * val, int startPos, int endPos, BBULONG format, int base ) {
+int bbStringToULongEx( BBString *str, BBUInt64 * val, int startPos, int endPos, BBULONG format, int base ) {
     if ( startPos < 0 || startPos >= str->length || endPos < -1 || endPos > str->length ) {
         return 0;
     }
@@ -188,7 +188,7 @@ int	bbStringToULongEx( BBString *str, BBUInt64 * val, int startPos, int endPos, 
 // extracts a Size_T from a string, from the range startPos to endPos
 // endPos of -1 means the end of the string
 // returns 0 if the string is not a valid Size_T, or the position of the first character after the Size_T otherwise
-int	bbStringToSizeTEx( BBString *str, BBSIZET * val, int startPos, int endPos, BBULONG format, int base ) {
+int bbStringToSizeTEx( BBString *str, BBSIZET * val, int startPos, int endPos, BBULONG format, int base ) {
     if ( startPos < 0 || startPos >= str->length || endPos < -1 || endPos > str->length ) {
         return 0;
     }
@@ -213,7 +213,7 @@ int	bbStringToSizeTEx( BBString *str, BBSIZET * val, int startPos, int endPos, B
 // extracts a LongInt from a string, from the range startPos to endPos
 // endPos of -1 means the end of the string
 // returns -1 if the string is not a valid LongInt, or the position of the first character after the LongInt otherwise
-int	bbStringToLongIntEx( BBString *str, BBLONGINT * val, int startPos, int endPos, BBULONG format, int base ) {
+int bbStringToLongIntEx( BBString *str, BBLONGINT * val, int startPos, int endPos, BBULONG format, int base ) {
     if ( startPos < 0 || startPos >= str->length || endPos < -1 || endPos > str->length ) {
         return 0;
     }
@@ -238,7 +238,7 @@ int	bbStringToLongIntEx( BBString *str, BBLONGINT * val, int startPos, int endPo
 // extracts a ULongInt from a string, from the range startPos to endPos
 // endPos of -1 means the end of the string
 // returns 0 if the string is not a valid ULongInt, or the position of the first character after the ULongInt otherwise
-int	bbStringToULongIntEx( BBString *str, BBULONGINT * val, int startPos, int endPos, BBULONG format, int base ) {
+int bbStringToULongIntEx( BBString *str, BBULONGINT * val, int startPos, int endPos, BBULONG format, int base ) {
     if ( startPos < 0 || startPos >= str->length || endPos < -1 || endPos > str->length ) {
         return 0;
     }
