@@ -1099,7 +1099,7 @@ int bmx_stringbuilder_splitbuffer_toint(struct MaxSplitBuffer * splitBuffer, int
         return 0;
     }
 
-    char *segment = (char *) &(splitBuffer->buffer->buffer[start]);
+    BBChar *segment = (BBChar *)&(splitBuffer->buffer->buffer[start]);
 
 	char numbuf[256];
 	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
@@ -1133,7 +1133,7 @@ unsigned int bmx_stringbuilder_splitbuffer_touint(struct MaxSplitBuffer * splitB
         return 0;
     }
 
-    char *segment = (char *) &(splitBuffer->buffer->buffer[start]);
+    BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
 	char numbuf[256];
 	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
@@ -1162,7 +1162,7 @@ float bmx_stringbuilder_splitbuffer_tofloat(struct MaxSplitBuffer * splitBuffer,
         return 0.0f;
     }
 
-    char *segment = (char *) &(splitBuffer->buffer->buffer[start]);
+    BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
 	char numbuf[256];
 	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
@@ -1191,7 +1191,7 @@ double bmx_stringbuilder_splitbuffer_todouble(struct MaxSplitBuffer * splitBuffe
         return 0.0;
     }
 
-    char *segment = (char *) &(splitBuffer->buffer->buffer[start]);
+    BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 	
 	char numbuf[256];
 	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
@@ -1220,7 +1220,7 @@ BBInt64 bmx_stringbuilder_splitbuffer_tolong(struct MaxSplitBuffer * splitBuffer
         return 0;
     }
 
-    char *segment = (char *) &(splitBuffer->buffer->buffer[start]);
+    BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
 	char numbuf[256];
 	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
@@ -1249,7 +1249,7 @@ BBUInt64 bmx_stringbuilder_splitbuffer_toulong(struct MaxSplitBuffer * splitBuff
         return 0;
     }
 
-    char *segment = (char *) &(splitBuffer->buffer->buffer[start]);
+    BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
 	char numbuf[256];
 	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
@@ -1278,7 +1278,7 @@ size_t bmx_stringbuilder_splitbuffer_tosizet(struct MaxSplitBuffer * splitBuffer
         return 0;
     }
 
-    char *segment = (char *) &(splitBuffer->buffer->buffer[start]);
+    BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
 	char numbuf[256];
 	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
@@ -1307,7 +1307,7 @@ BBSHORT bmx_stringbuilder_splitbuffer_toshort(struct MaxSplitBuffer * splitBuffe
         return 0;
     }
 
-    char *segment = (char *) &(splitBuffer->buffer->buffer[start]);
+    BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
 	char numbuf[256];
 	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
@@ -1336,7 +1336,7 @@ BBBYTE bmx_stringbuilder_splitbuffer_tobyte(struct MaxSplitBuffer * splitBuffer,
         return 0;
     }
 
-    char *segment = (char *) &(splitBuffer->buffer->buffer[start]);
+    BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
 	char numbuf[256];
 	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
