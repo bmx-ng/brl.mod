@@ -66,9 +66,9 @@ Type TLink
 	bbdoc: Removes the link from the List.
 	End Rem
 	Method Remove()
-		_value=Null
-		_succ._pred=_pred
 		_pred._succ=_succ
+		_succ._pred=_pred
+		_value=Null
 	End Method
 
 End Type
