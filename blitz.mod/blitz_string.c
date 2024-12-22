@@ -1033,7 +1033,7 @@ unsigned char *bbStringToUTF8StringBuffer( BBString *str, unsigned char * buf, s
 				++i;
 			}
 		}
-		int n = q - buf;
+		size_t n = q - buf;
 		if( c<0x80 ){
 			if (buflen <= n+1) break;
 			*q++=c;
