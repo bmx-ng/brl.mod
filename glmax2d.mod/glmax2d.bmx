@@ -371,10 +371,9 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 	
 	Function Create:TGLRenderImageFrame(width:UInt, height:UInt, flags:Int)
 		' Need this to enable frame buffer objects - glGenFramebuffers
-		Global GlewIsInitialised:Int = False
-		If Not GlewIsInitialised
+		If Not glewIsInit
 			GlewInit()
-			GlewIsInitialised = True
+			glewIsInit = True
 		EndIf
 		
 		' store so that we can restore once the fbo is created
@@ -383,7 +382,10 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		
 		Local TextureName:Int
 		glGenTextures(1, Varptr TextureName)
-		glBindTexture(GL_TEXTURE_2D, TextureName)
+		' inform engine about TextureName being GL_TEXTURE_2D target 
+		' do not just call glBindTexture directly!
+		BindTex(TextureName)
+		'glBindTexture(GL_TEXTURE_2D, TextureName)
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Null)
 		
 		If flags & FILTEREDIMAGE
@@ -486,6 +488,13 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glMatrixMode GL_MODELVIEW
 		glLoadIdentity
 		glViewport 0,0,gw,gh
+
+		' Need this to enable "glBlendFuncSeparate" (required for
+		' alpha blending on non-opaque backgrounds like render images)
+		If Not glewIsInit
+			GlewInit()
+			glewIsInit = True
+		EndIf
 		
 		' Create default back buffer render image - the FBO will be value 0 which is the default for the existing backbuffer
 		Local BackBufferRenderImageFrame:TGLRenderImageFrame = New TGLRenderImageFrame
@@ -528,7 +537,11 @@ Type TGLMax2DDriver Extends TMax2DDriver
 			glDisable( GL_ALPHA_TEST )
 		Case ALPHABLEND
 			glEnable( GL_BLEND )
-			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
+			' simple alphablend:
+			'glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
+			' more advanced blend function allows blending on a non-opaque
+			' "background" (eg. render image)
+			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
 			glDisable( GL_ALPHA_TEST )
 		Case LIGHTBLEND
 			glEnable( GL_BLEND )
@@ -716,8 +729,6 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	EndMethod
 	
 Private
-	Field _glewIsInitialised:Int = False
-
 	Method SetMatrixAndViewportToCurrentRenderImage()
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
