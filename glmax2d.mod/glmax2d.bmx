@@ -193,6 +193,43 @@ Function AdjustTexSize( width:Int Var, height:Int Var )
 	Forever
 End Function
 
+
+
+Global dead_FBOs:TDynamicArray = New TDynamicArray(32)
+Global dead_FBO_seq:Int
+
+'Enqueues a FBO for deletion, to prevent releasing framebuffers on wrong thread.
+Function DeleteFBO( FBO:Int,seq:Int )
+	If seq<>dead_FBO_seq Return
+
+	dead_FBOs.AddLast(FBO)
+End Function
+
+Function CreateFBO:Int(TextureName:Int )
+	Local FrameBufferObject:Int
+	glGenFramebuffers(1, Varptr FrameBufferObject)
+	glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferObject)
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TextureName, 0)
+
+	' Flush dead FBOs, this ensures to delete FBOs from within the
+	' main thread, while Delete() of image frames can happen from subthread
+	' too.
+	' This also means, it only deletes FBOs if a new is created!
+	If dead_FBO_seq = GraphicsSeq
+		Local deadFBO:Int = dead_FBOs.RemoveLast()
+		While deadFBO <> $FFFFFFFF
+			glDeleteFramebuffers(1, Varptr deadFBO) ' gl ignores 0
+
+			deadFBO = dead_FBOs.RemoveLast()
+		Wend
+	EndIf
+
+	dead_FBO_seq = GraphicsSeq
+
+	Return FrameBufferObject
+End Function
+
+
 Type TDynamicArray
 
 	Private
@@ -399,11 +436,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 		
-		Local FrameBufferObject:Int
-		glGenFramebuffers(1, Varptr FrameBufferObject)
-		glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferObject)
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TextureName, 0)
-		
+		Local FrameBufferObject:Int = CreateFBO(TextureName)
 		Local RenderTarget:TGLRenderImageFrame = New TGLRenderImageFrame
 		RenderTarget.name = TextureName
 		RenderTarget.FBO = FrameBufferObject
@@ -424,11 +457,13 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 	
 Private
 	Method Delete()
-		'remove framebuffer if used
-		if FBO <> 0
-			glDeleteFramebuffers(1, Varptr FBO) ' gl ignores 0
-		EndIf
-	EndMethod
+		If Not seq Then Return
+		If Not FBO Then Return
+
+		'delete FBO deferred
+		DeleteFBO( FBO, seq )
+		FBO = 0
+	End Method
 
 	Method New()
 	EndMethod
