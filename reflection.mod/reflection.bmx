@@ -2756,7 +2756,7 @@ Type TTypeId Extends TMember
 		name = name.ToLower()
 		
 		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
-			For Local cons:TConstant = EachIn _consts
+			For Local cons:TConstant = EachIn tid._consts
 				If cons.Name().ToLower() = name Then Return cons
 			Next
 		Next
@@ -2770,7 +2770,7 @@ Type TTypeId Extends TMember
 		name = name.ToLower()
 		
 		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
-			For Local fld:TField = EachIn _fields
+			For Local fld:TField = EachIn tid._fields
 				If fld.Name().ToLower() = name Then Return fld
 			Next
 		Next
@@ -2784,7 +2784,7 @@ Type TTypeId Extends TMember
 		name = name.ToLower()
 		
 		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
-			For Local glob:TGlobal = EachIn _globals
+			For Local glob:TGlobal = EachIn tid._globals
 				If glob.Name().ToLower() = name Then Return glob
 			Next
 		Next
@@ -2799,7 +2799,7 @@ Type TTypeId Extends TMember
 		name = name.ToLower()
 		
 		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
-			For Local func:TFunction = EachIn _functions
+			For Local func:TFunction = EachIn tid._functions
 				If func.Name().ToLower() = name Then Return func
 			Next
 		Next
@@ -2814,7 +2814,7 @@ Type TTypeId Extends TMember
 		name = name.ToLower()
 		
 		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
-			For Local func:TFunction = EachIn _functions
+			For Local func:TFunction = EachIn tid._functions
 				If func.Name().ToLower() = name And TypeListsIdentical(func.ArgTypes(), argTypes) Then Return func
 			Next
 		Next
@@ -2850,7 +2850,7 @@ Type TTypeId Extends TMember
 	Method FindMethod:TMethod(name:String)
 		name = name.ToLower()
 		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
-			For Local meth:TMethod = EachIn _methods
+			For Local meth:TMethod = EachIn tid._methods
 				If meth.Name().ToLower() = name Then Return meth
 			Next
 		Next
@@ -2865,7 +2865,7 @@ Type TTypeId Extends TMember
 	Method FindMethod:TMethod(name:String, argTypes:TTypeId[])
 		name = name.ToLower()
 		For Local tid:TTypeId = EachIn Self.TypeHierarchy().Reversed()
-			For Local meth:TMethod = EachIn _methods
+			For Local meth:TMethod = EachIn tid._methods
 				If meth.Name().ToLower() = name And TypeListsIdentical(meth.ArgTypes(), argTypes) Then Return meth
 			Next
 		Next
