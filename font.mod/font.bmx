@@ -63,7 +63,7 @@ End Type
 Type TFontLoader
 	Field _succ:TFontLoader
 
-	Method LoadFont:TFont( url:Object,size:Int,style:Int ) Abstract
+	Method LoadFont:TFont( url:Object,size:Float,style:Int ) Abstract
 
 End Type
 
@@ -79,7 +79,7 @@ Function AddFontLoader( loader:TFontLoader )
 	_loaders=loader
 End Function
 
-Function LoadFont:TFont( url:Object,size:Int,style:Int=SMOOTHFONT )
+Function LoadFont:TFont( url:Object,size:Float,style:Int=SMOOTHFONT )
 
 	Local loader:TFontLoader=_loaders
 	
