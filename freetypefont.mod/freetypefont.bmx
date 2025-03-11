@@ -99,7 +99,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 	End Method
 	
 	Method CharToGlyph:Int( char:Int ) Override
-		Return FT_Get_Char_Index( _ft_face,char )-1
+		Return FT_Get_Char_Index( _ft_face,ULongInt(char) )-1
 	End Method
 
 	Method FamilyName:String()
@@ -119,7 +119,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 		glyph._index=index
 		_glyphs[index]=glyph
 		
-		If FT_Load_Glyph( _ft_face,index+1,FT_LOAD_RENDER ) Return glyph
+		If FT_Load_Glyph( _ft_face,UInt(index+1),FT_LOAD_RENDER ) Return glyph
 			
 		Local _slot:Byte Ptr = bmx_freetype_Face_glyph(_ft_face)
 
@@ -229,7 +229,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 			
 			buf = data
 			
-			If FT_New_Memory_Face( ft_lib, buf, buf.length, 0, Varptr ft_face )
+			If FT_New_Memory_Face( ft_lib, buf, LongInt(buf.length), 0, Varptr ft_face )
 				Return Null
 			EndIf
 
@@ -244,7 +244,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 			MemCopy(buf, data, TBank(src).Size())
 			TBank(src).UnLock()
 			
-			If FT_New_Memory_Face( ft_lib, buf, buf.length, 0, Varptr ft_face )
+			If FT_New_Memory_Face( ft_lib, buf, LongInt(buf.length), 0, Varptr ft_face )
 				Return Null
 			EndIf
 
@@ -256,7 +256,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 
 				If Not buf.length Return Null
 
-				If FT_New_Memory_Face( ft_lib,buf,buf.length,0,Varptr ft_face )
+				If FT_New_Memory_Face( ft_lib,buf,LongInt(buf.length),0,Varptr ft_face )
 					Return Null
 				EndIf
 			Else
