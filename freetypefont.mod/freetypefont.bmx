@@ -173,7 +173,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 		Throw "Not supported"
 	End Method
 	
-	Function Load:TFreeTypeFont( src:Object,size:Int,style:Int )
+	Function Load:TFreeTypeFont( src:Object,size:Float,style:Int )
 
 		Local buf:Byte[]
 				
@@ -198,7 +198,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 	
 	End Function
 
-	Function LoadFace:Byte Ptr( src:Object,size:Int,style:Int, buf:Byte[] Var )
+	Function LoadFace:Byte Ptr( src:Object,size:Float,style:Int, buf:Byte[] Var )
 
 		Global ft_lib:Byte Ptr
 		
@@ -265,10 +265,19 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 		Else
 			Return Null
 		End If
-		
+
+
+		' Freetype's char height is "FreeType 26.6 Fixed-Point"
+		' -> 26 bit for the integer part, 6 bit for the decimal places
+		' -> "64" equals to 1.0 in floating point numbers
+		' So the module only support fractional sizes with a detail of 1/64
 		While size
-			If Not FT_Set_Pixel_Sizes( ft_face,0,size ) Exit
-			size:-1
+			'default DPI is 72 (setting 0,0 will use that)
+			If Not FT_Set_Char_Size( ft_face, 0, LongInt(size * 64), 0,0 ) Then Exit
+			' If it failed, ensure to use only integer sizes now
+			' (eg. a bitmap font was tried to get loaded) 
+			' First try will be the next integer (10.5 -> 10)
+			size = Ceil(size) - 1
 		Wend
 		If Not size 
 			FT_Done_Face ft_face
@@ -282,7 +291,7 @@ End Type
 
 Type TFreeTypeFontLoader Extends TFontLoader
 
-	Method LoadFont:TFreeTypeFont( url:Object,size:Int,style:Int ) Override
+	Method LoadFont:TFreeTypeFont( url:Object,size:Float,style:Int ) Override
 	
 		Return TFreeTypeFont.Load( url,size,style )
 	
