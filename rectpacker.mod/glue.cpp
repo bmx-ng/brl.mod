@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2024 Bruce A Henderson
+  Copyright (c) 2024-2025 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -29,10 +29,10 @@ extern "C" {
     BBObject * brl_rectpacker_TPackedSheet__Create(int width, int height, int size);
     void brl_rectpacker_TPackedSheet__SetRect(BBObject * sheet, int index, int id, int x, int y, int width, int height, int rotated);
 
-    BBArray * bmx_rectpacker_pack(BBObject * packer, int packingMethod, int maxSheets, int powerOfTwo, int square, int allowRotate, int alignWidth, int borderPadding, int overAllocate, int minWidth, int minHeight, int maxWidth, int maxHeight, int count);
+    BBArray * bmx_rectpacker_pack(BBObject * packer, int packingMethod, int maxSheets, int powerOfTwo, int square, int allowRotate, int alignWidth, int borderPadding, int sheetPadding, int overAllocate, int minWidth, int minHeight, int maxWidth, int maxHeight, int count);
 }
 
-BBArray * bmx_rectpacker_pack(BBObject * packer, int packingMethod, int maxSheets, int powerOfTwo, int square, int allowRotate, int alignWidth, int borderPadding, int overAllocate, int minWidth, int minHeight, int maxWidth, int maxHeight, int count) {
+BBArray * bmx_rectpacker_pack(BBObject * packer, int packingMethod, int maxSheets, int powerOfTwo, int square, int allowRotate, int alignWidth, int borderPadding, int sheetPadding, int overAllocate, int minWidth, int minHeight, int maxWidth, int maxHeight, int count) {
     rect_pack::Settings settings;
     settings.method = static_cast<rect_pack::Method>(packingMethod);
     settings.max_sheets = maxSheets;
@@ -40,7 +40,7 @@ BBArray * bmx_rectpacker_pack(BBObject * packer, int packingMethod, int maxSheet
     settings.square = static_cast<bool>(square);
     settings.allow_rotate = static_cast<bool>(allowRotate);
     settings.align_width = static_cast<bool>(alignWidth);
-    settings.border_padding = borderPadding;
+    settings.border_padding = sheetPadding;
     settings.over_allocate = overAllocate;
     settings.min_width = minWidth;
     settings.min_height = minHeight;
@@ -52,6 +52,10 @@ BBArray * bmx_rectpacker_pack(BBObject * packer, int packingMethod, int maxSheet
     for (int i = 0; i < count; i++) {
         rect_pack::Size s;
         brl_rectpacker_TRectPacker__GetSize(packer, i, &s.width, &s.height, &s.id);
+        if ( borderPadding > 0 ) {
+            s.width += borderPadding * 2;
+            s.height += borderPadding * 2;
+        }
         sizes.push_back(s);
     }
 
@@ -63,6 +67,12 @@ BBArray * bmx_rectpacker_pack(BBObject * packer, int packingMethod, int maxSheet
         BBObject * sheet = brl_rectpacker_TPackedSheet__Create(sheets[i].width, sheets[i].height, sheets[i].rects.size());
         for (int j = 0; j < sheets[i].rects.size(); j++) {
             rect_pack::Rect r = sheets[i].rects[j];
+            if ( borderPadding > 0 ) {
+                r.x += borderPadding;
+                r.y += borderPadding;
+                r.width -= borderPadding;
+                r.height -= borderPadding;
+            }
             brl_rectpacker_TPackedSheet__SetRect(sheet, j, r.id, r.x, r.y, r.width, r.height, r.rotated);
         }
         brl_rectpacker_TRectPacker__SetSheet(result, i, sheet);
