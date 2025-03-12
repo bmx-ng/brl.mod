@@ -70,8 +70,8 @@ BBArray * bmx_rectpacker_pack(BBObject * packer, int packingMethod, int maxSheet
             if ( borderPadding > 0 ) {
                 r.x += borderPadding;
                 r.y += borderPadding;
-                r.width -= borderPadding;
-                r.height -= borderPadding;
+                r.width -= borderPadding * 2;
+                r.height -= borderPadding * 2;
             }
             brl_rectpacker_TPackedSheet__SetRect(sheet, j, r.id, r.x, r.y, r.width, r.height, r.rotated);
         }
