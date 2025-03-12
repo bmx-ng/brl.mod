@@ -1,4 +1,4 @@
-' Copyright (c) 2024 Bruce A Henderson
+' Copyright (c) 2024-2025 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -24,11 +24,14 @@ about: Useful for creating texture atlases, sprite sheets, and other similar thi
 End Rem
 Module BRL.RectPacker
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2024 Bruce A Henderson"
+ModuleInfo "Copyright: 2024-2025 Bruce A Henderson"
 ModuleInfo "rect_pack: Albert Kalchmair 2021, Sean Barrett 2014, Jukka Jylänki"
 
+ModuleInfo "History: 1.01"
+ModuleInfo "History: borderPadding now applies to individual rects."
+ModuleInfo "History: Added sheetPadding to add padding around the edge of the sheet."
 ModuleInfo "History: 1.00 Initial Release"
 
 ModuleInfo "CPP_OPTS: -std=c++11"
@@ -84,9 +87,14 @@ Type TRectPacker
 	Field alignWidth:Int = False
 
 	Rem
-	bbdoc: The amount of padding to add.
+	bbdoc: The amount of padding to add around individual rects.
 	End Rem
 	Field borderPadding:Int
+
+	Rem
+	bbdoc: The amount of padding to add around the edge of the sheet.
+	End Rem
+	Field sheetPadding:Int
 
 	Rem
 	bbdoc: The amount to over-allocate the sheet by.
@@ -132,7 +140,7 @@ Type TRectPacker
 	Any rectangles that don't fit into the sheets will be discarded, and not be included in the returned array.
 	End Rem
 	Method Pack:TPackedSheet[]()
-		Return bmx_rectpacker_pack(Self, packingMethod, maxSheets, powerOfTwo, square, allowRotate, alignWidth, borderPadding, overAllocate, minWidth, minHeight, maxWidth, maxHeight, sizes.Count())
+		Return bmx_rectpacker_pack(Self, packingMethod, maxSheets, powerOfTwo, square, allowRotate, alignWidth, borderPadding, sheetPadding, overAllocate, minWidth, minHeight, maxWidth, maxHeight, sizes.Count())
 	End Method
 
 Private
@@ -282,6 +290,6 @@ End Type
 
 Extern
 
-	Function bmx_rectpacker_pack:TPackedSheet[](packer:TRectPacker, packingMethod:EPackingMethod, maxSheets:Int, powerOfTwo:Int, square:Int, allowRotate:Int, alignWidth:Int, borderPadding:Int, overAllocate:Int, minWidth:Int, minHeight:Int, maxWidth:Int, maxHeight:Int, count:Int)
+	Function bmx_rectpacker_pack:TPackedSheet[](packer:TRectPacker, packingMethod:EPackingMethod, maxSheets:Int, powerOfTwo:Int, square:Int, allowRotate:Int, alignWidth:Int, borderPadding:Int, sheetPadding:Int, overAllocate:Int, minWidth:Int, minHeight:Int, maxWidth:Int, maxHeight:Int, count:Int)
 
 End Extern
