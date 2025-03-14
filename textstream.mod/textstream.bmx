@@ -512,7 +512,10 @@ Function IsProbablyUTF8:Int(data:Byte Ptr, size:Int)
 	Next
 
 	If count Then
-		Return False
+		' If there was no new-line or non-multi-byte-character at the 
+		' end of the buffer then count will be > 0. So we also have to
+		' check if we can decode the remaining buffer content.
+		If Decode(buf, count) = -1 Then Return False
 	End If
 	
 	Return True
