@@ -330,3 +330,114 @@ Type TStringToIntExTest Extends TTest
 	End Method
 
 End Type
+
+Type TStringFromUTF8BytesTest Extends TTest
+
+    ' Test valid ASCII conversion.
+    Method testASCII() { test }
+        Local data:Byte[] = [72, 101, 108, 108, 111] ' "Hello"
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        assertEquals("Hello", text)
+    End Method
+
+    ' Test conversion of a 2-byte UTF-8 sequence (e.g. ©: U+00A9).
+    Method testTwoByteSequence() { test }
+        ' © U+00A9: UTF-8: $C2, $A9.
+        Local data:Byte[] = [$C2, $A9]
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        assertEquals(Chr($00A9), text)
+    End Method
+
+    ' Test conversion of a 3-byte UTF-8 sequence (e.g. €: U+20AC).
+    Method testThreeByteSequence() { test }
+        ' € U+20AC: UTF-8: $E2, $82, $AC.
+        Local data:Byte[] = [$E2, $82, $AC]
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        assertEquals(Chr($20AC), text)
+    End Method
+
+    ' Test conversion of a 4-byte UTF-8 sequence (e.g. U+1F600: grinning face emoji).
+    Method testFourByteSequence() { test }
+        ' Grinning Face U+1F600: UTF-8: $F0, $9F, $98, $80.
+        Local data:Byte[] = [$F0, $9F, $98, $80]
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        ' Expected string in UTF-16: surrogate pair (high: $D83D, low: $DE00).
+        Local expected:String = Chr($D83D) + Chr($DE00)
+        assertEquals(expected, text)
+    End Method
+
+    ' Test an incomplete sequence (missing continuation bytes).
+    Method testIncompleteSequence() { test }
+        ' Incomplete 3-byte sequence: [$E2, $82] missing the final byte.
+        Local data:Byte[] = [$E2, $82]
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        ' Expect a replacement character.
+        assertEquals(Chr($FFFD), text)
+    End Method
+
+    ' Test an invalid continuation byte following a valid starter.
+    Method testInvalidContinuation() { test }
+        ' [$C2, $20]: $20 is not a valid continuation byte.
+        Local data:Byte[] = [$C2, $20]
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        assertEquals(Chr($FFFD), text)
+    End Method
+
+    ' Test a stray continuation byte.
+    Method testStrayContinuation() { test }
+        ' A single continuation byte $80 is invalid.
+        Local data:Byte[] = [$80]
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        assertEquals(Chr($FFFD), text)
+    End Method
+
+    ' Test a mix of valid and invalid sequences.
+    Method testMixedValidInvalid() { test }
+        ' "A" ($41), stray continuation ($80), then "B" ($42).
+        Local data:Byte[] = [65, $80, 66]
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        Local expected:String = Chr(65) + Chr($FFFD) + Chr(66)
+        assertEquals(expected, text)
+    End Method
+
+    ' Test overlong encoding.
+    Method testOverlongEncoding() { test }
+        ' Overlong encoding for NUL: [$C0, $80] should be rejected.
+        Local data:Byte[] = [$C0, $80]
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        assertEquals(Chr($FFFD), text)
+    End Method
+
+    ' Test a UTF-8 sequence encoding a surrogate half (e.g. U+D800).
+    Method testSurrogateHalf() { test }
+        ' U+D800 encoded in UTF-8: [$ED, $A0, $80].
+        Local data:Byte[] = [$ED, $A0, $80]
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        assertEquals(Chr($FFFD), text)
+    End Method
+
+	' Test conversion of Russian "hello" ("привет").
+	Method testRussianHello() { test }
+		' "привет": [$D0, $BF, $D1, $80, $D0, $B8, $D0, $B2, $D0, $B5, $D1, $82]
+		Local data:Byte[] = [$D0, $BF, $D1, $80, $D0, $B8, $D0, $B2, $D0, $B5, $D1, $82]
+		Local text:String = String.FromUTF8Bytes(data, data.Length)
+		assertEquals("привет", text)
+	End Method
+
+	' Test conversion of Japanese "hello" ("こんにちは").
+	Method testJapaneseHello() { test }
+		' "こんにちは": [$E3, $81, $93, $E3, $82, $93, $E3, $81, $AB, $E3, $81, $A1, $E3, $81, $AF]
+		Local data:Byte[] = [$E3, $81, $93, $E3, $82, $93, $E3, $81, $AB, $E3, $81, $A1, $E3, $81, $AF]
+		Local text:String = String.FromUTF8Bytes(data, data.Length)
+		assertEquals("こんにちは", text)
+	End Method
+
+	' Test conversion of Chinese "hello" ("你好").
+	Method testChineseHello() { test }
+		' "你好": [$E4, $BD, $A0, $E5, $A5, $BD]
+		Local data:Byte[] = [$E4, $BD, $A0, $E5, $A5, $BD]
+		Local text:String = String.FromUTF8Bytes(data, data.Length)
+		assertEquals("你好", text)
+	End Method
+
+End Type
