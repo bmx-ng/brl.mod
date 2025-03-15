@@ -4,27 +4,29 @@
 #define SIZEALIGN 16
 #define ALIGNMASK (SIZEALIGN-1)
 
-/* use malloc/free() in Debug mode, otherwise use the GC heap */
-void *bbMemAlloc( size_t size ){
-	void *p;
-#ifdef BMX_DEBUG
-	p=malloc( size );
-#else
-	p=GC_MALLOC_ATOMIC_UNCOLLECTABLE( size );
-	#ifdef BBCC_ALLOCCOUNT
-	++bbGCAllocCount;
-	#endif
-#endif
-	return p;
-	
+void *bbMemAlloc(size_t size) {
+    size_t totalSize = size + SIZEALIGN - 1 + sizeof(void*);
+    void *p = malloc(totalSize);
+    if (!p) {
+        GC_gcollect();
+        p = malloc(totalSize);
+        if (!p) return NULL;
+    }
+    
+    uintptr_t rawAddr = (uintptr_t)p + sizeof(void*);
+    uintptr_t alignedAddr = (rawAddr + SIZEALIGN - 1) & ~(uintptr_t)ALIGNMASK;
+    
+    // Store the original pointer just before the aligned memory.
+    ((void**)alignedAddr)[-1] = p;
+    return (void*)alignedAddr;
 }
 
-void bbMemFree( void *p ){
-#ifdef BMX_DEBUG
-	if ( p ) free(p);
-#else
-	if( p ) GC_free( p );
-#endif
+void bbMemFree(void *p) {
+    if (p) {
+        // Get the original pointer stored before the aligned block and free it.
+        void *original = ((void**)p)[-1];
+        free(original);
+    }
 }
 
 void *bbMemExtend( void *mem,size_t size,size_t new_size ){
