@@ -21,6 +21,9 @@
 '
 SuperStrict
 
+Rem
+bbdoc: Other/Time
+EndRem
 Module BRL.Time
 
 ModuleInfo "Version: 1.0"
@@ -61,6 +64,9 @@ Function TimeUnitToMillis:ULong( value:ULong, unit:ETimeUnit )
 	End Select
 End Function
 
+Rem
+bbdoc: A timeout exception.
+EndRem
 Type TTimeoutException Extends TRuntimeException
 
 	Method New(message:String)
