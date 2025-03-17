@@ -754,7 +754,7 @@ Type TMax2DGraphics Extends TGraphics
 	End Method
 
 	Method SetBackBuffer()
-		_max2ddriver.SetBackBuffer()
+		SetRenderImage(Null)
 	EndMethod
 	
 	Function CreateRenderImage:TRenderImage(width:UInt, height:UInt, flags:Int=-1)
@@ -765,13 +765,75 @@ Type TMax2DGraphics Extends TGraphics
 		Return image
 	End Function
 
-	Method SetRenderImageFrame(RenderImageFrame:TImageFrame)
-		If Not RenderImageFrame
-			_max2ddriver.SetBackBuffer()
-		Else
-			_max2ddriver.SetRenderImageFrame(RenderImageFrame)
+
+	Function CreateRenderImage:TRenderImage(fromImage:TImage, frame:Int = 0)
+		If Not fromImage Then Return Null
+
+		Local pixmap:TPixmap = LockImage(fromImage, frame)
+		Return CreateRenderImage(pixmap, fromImage.flags)
+	End Function
+
+
+	Function CreateRenderImage:TRenderImage(fromPixmap:TPixmap, flags:Int = -1)
+		If Not fromPixmap Then Return Null
+
+		If flags = -1 Then flags = auto_imageflags
+		
+		' backup old target
+		Local currentTarget:TImageFrame = GetRenderImageFrame()
+
+		' set newly created as target
+		Local image:TRenderImage = TRenderImage.Create(fromPixmap.width, fromPixmap.height, flags, mask_red, mask_green, mask_blue)
+		Local frame:TImageFrame = image.frames[0]
+		If Not frame
+			frame = image.Frame(0)
 		EndIf
+		SetRenderImageFrame(frame)
+		
+		' render content into it
+		' (it by default ignores scale, rotation, setColor...)
+		_max2dDriver.DrawPixmap(fromPixmap, 0,0)
+		
+		' set old target as current again
+		SetRenderImageFrame(currentTarget)
+
+		If auto_midhandle Then MidHandleImage(image)
+		Return image
+	End Function	
+
+
+	Method SetRenderImage(renderImage:TRenderImage, frame:Int = 0)
+		If Not renderImage
+			_max2ddriver.SetRenderImageFrame(Null)
+			_max2ddriver.SetRenderImageContainer(Null)
+		Else
+			Local imageFrame:TImageFrame = renderImage.Frame(frame)
+			_max2ddriver.SetRenderImageFrame(imageFrame)
+			_max2ddriver.SetRenderImageContainer(renderImage)
+		EndIf
+	End Method
+
+
+	Method SetRenderImageFrame(renderImageFrame:TImageFrame)
+		If Not RenderImageFrame
+			_max2ddriver.SetRenderImageFrame(Null)
+		Else
+			_max2ddriver.SetRenderImageFrame(renderImageFrame)
+		EndIf
+		' while it might belong to a TRenderImage we do not know here
+		_max2ddriver.SetRenderImageContainer(Null)
 	EndMethod
+
+
+	Method GetRenderImage:TRenderImage()
+		' when currently rendering to the backbuffer, this is Null!
+		Return TRenderImage(_max2ddriver.GetRenderImageContainer())
+	EndMethod
+
+
+	Method GetRenderImageFrame:TImageFrame()
+		Return _max2ddriver.GetRenderImageFrame()
+	End Method
 End Type
 
 Rem
@@ -1822,14 +1884,52 @@ bbdoc: Create a new render image
 about:
 @width, @height specify the dimensions of the render image.
 
-@useLinearFlitering defines the image flag to filter images when scaling.
-
-@max2DGraphics is an optional parameter to pass a custom Max2DGraphics context.
+@flags defines the image flags.
 
 returns: #TRenderImage with the given dimension
 End Rem
-Function CreateRenderImage:TRenderImage(width:UInt, height:UInt, flags:Int=-1)
+Function CreateRenderImage:TRenderImage(width:UInt, height:UInt, flags:Int = -1)
 	Return TMax2DGraphics.CreateRenderImage(width, height, flags)
+End Function
+
+
+Rem
+bbdoc: Create a new render image
+about:
+@image specifies the source image to initiate the renderimage with
+
+returns: #TRenderImage with the image rendered into it
+End Rem
+Function CreateRenderImage:TRenderImage(image:TImage)
+	Return TMax2DGraphics.CreateRenderImage(image)
+End Function
+
+
+Rem
+bbdoc: Create a new render image
+about:
+@pixmap specifies the source pixmap to initiate the renderimage with
+
+@flags defines the image flags.
+
+returns: #TRenderImage with the pixmap rendered into it
+End Rem
+Function CreateRenderImage:TRenderImage(pixmap:TPixmap, flags:Int = -1)
+	Return TMax2DGraphics.CreateRenderImage(pixmap, flags)
+End Function
+
+
+Rem
+bbdoc: Create a new render image
+about:
+Alias to CreateRenderImage(pixmap) for backwards compatibility reasons (was available until 2023)
+
+@image specifies the source pixmap to initiate the renderimage with
+
+returns: #TRenderImage with the pixmap rendered into it
+End Rem
+Function CreateRenderImageFromPixmap:TRenderImage(pixmap:TPixmap)
+	Return CreateRenderImage(pixmap)
 End Function
 
 
@@ -1837,18 +1937,43 @@ Rem
 bbdoc: Set a render image as currently active render target
 about:
 @renderImage defines the render image to use as target. Set to Null to render on the default graphics buffer again.
+
+@frame defines the frame to use in the image
 End Rem
-Function SetRenderImage(renderImage:TRenderImage)
-	If Not renderImage
-		TMax2DGraphics.Current().SetRenderImageFrame(Null)
-	Else
-		Local frame:TImageFrame = renderImage.frames[0]
-		If Not frame
-			frame = renderImage.Frame(0)
-		EndIf
-		TMax2DGraphics.Current().SetRenderImageFrame(frame)
-	EndIf
+Function SetRenderImage(renderImage:TRenderImage, frame:Int = 0)
+	TMax2DGraphics.Current().SetRenderImage(renderImage)
 End Function
+
+
+Rem
+bbdoc: Get the render image currently set as active render target
+about:
+Returns Null in case of the backbuffer being the active render target.
+End Rem
+Function GetRenderImage:TRenderImage()
+	Return TMax2DGraphics.Current().GetRenderImage()
+End Function
+
+
+Rem
+bbdoc: Set a render image frame as currently active render target
+about:
+@renderImageFrame defines the render image frame to use as target. Set to Null to render on the default graphics buffer again.
+End Rem
+Function SetRenderImageFrame(renderImageFrame:TImageFrame)
+	TMax2DGraphics.Current().SetRenderImageFrame(renderImageFrame)
+End Function
+
+
+Rem
+bbdoc: Get the render image frame currently set as active render target
+about:
+Returns the active render targets image frame or Null in case of rendering to the backbuffer.
+End Rem
+Function GetRenderImageFrame:TImageFrame()
+	Return TMax2DGraphics.Current().GetRenderImageFrame()
+End Function
+
 
 
 Const COLLISION_LAYER_ALL:Int=0

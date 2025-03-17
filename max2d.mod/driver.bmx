@@ -38,9 +38,11 @@ Type TMax2DDriver Extends TGraphicsDriver
 
 	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags:Int ) Abstract
 	Method CreateRenderImageFrame:TImageFrame(width:UInt, height:UInt, flags:Int) Abstract
-	Method SetBackBuffer() Abstract
 	Method SetRenderImageFrame(RenderImageFrame:TImageFrame) Abstract
-	
+	Method GetRenderImageFrame:TImageFrame() Abstract
+	Method SetRenderImageContainer(renderImageContainer:Object) Abstract
+	Method GetRenderImageContainer:Object() Abstract
+			
 	Method SetBlend( blend:Int ) Abstract
 	Method SetAlpha( alpha:Float ) Abstract
 	Method SetColor( red:Int,green:Int,blue:Int ) Abstract
