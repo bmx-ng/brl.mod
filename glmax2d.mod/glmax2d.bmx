@@ -385,7 +385,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 	Field width:Int
 	Field height:Int
 	
-	Method Draw( x0#,y0#,x1#,y1#,tx#,ty#,sx#,sy#,sw#,sh# ) Override
+	Method Draw( x0:Float, y0:Float, x1:Float, y1:Float, tx:Float, ty:Float, sx:Float, sy:Float, sw:Float, sh:Float ) Override
 		Assert seq=GraphicsSeq Else "Image does not exist"
 
 		' Note for a TGLRenderImageFrame the V texture coordinate is flipped compared to the regular TImageFrame.Draw method
@@ -405,7 +405,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		glTexCoord2f u0,v1
 		glVertex2f x0*ix+y1*iy+tx,x0*jx+y1*jy+ty
 		glEnd
-	EndMethod
+	End Method
 	
 	Function Create:TGLRenderImageFrame(width:UInt, height:UInt, flags:Int)
 		' Need this to enable frame buffer objects - glGenFramebuffers
@@ -441,7 +441,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		Local RenderTarget:TGLRenderImageFrame = New TGLRenderImageFrame
 		RenderTarget.name = TextureName
 		RenderTarget.FBO = FrameBufferObject
-		
+
 		RenderTarget.width = width
 		RenderTarget.height = height
 		RenderTarget.uscale = 1.0 / width
@@ -454,7 +454,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		EndIf
 		
 		Return RenderTarget
-	EndFunction
+	End Function
 	
 Private
 	Method Delete()
@@ -467,7 +467,7 @@ Private
 	End Method
 
 	Method New()
-	EndMethod
+	End Method
 EndType
 
 Type TGLMax2DDriver Extends TMax2DDriver
@@ -481,7 +481,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	Method GraphicsModes:TGraphicsMode[]() Override
 		Return GLGraphicsDriver().GraphicsModes()
 	End Method
-	
+
 	Method AttachGraphics:TMax2DGraphics( widget:Byte Ptr,flags:Long ) Override
 		Local g:TGLGraphics = GLGraphicsDriver().AttachGraphics( widget,flags )
 		If g Return TMax2DGraphics.Create( g,Self )
@@ -525,7 +525,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glLoadIdentity
 		glViewport 0,0,gw,gh
 
-		' Need this to enable "glBlendFuncSeparate" (required for
+		' Need glew to enable "glBlendFuncSeparate" (required for
 		' alpha blending on non-opaque backgrounds like render images)
 		If Not glewIsInit
 			GlewInit()
@@ -748,7 +748,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		Return TGLRenderImageFrame.Create(width, height, flags)
 	End Method
 	
-	Method SetRenderImageFrame(renderImageFrame:TImageFrame) Override
+	Method SetRenderImageFrame(RenderImageFrame:TImageFrame) Override
 		If RenderImageFrame = _CurrentRenderImageFrame
 			Return
 		ElseIf renderImageFrame = Null
@@ -759,7 +759,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		_CurrentRenderImageFrame = TGLRenderImageFrame(RenderImageFrame)
 		'unset render image container (re-assign in SetRenderImage if called from there!)
 		_CurrentRenderImageContainer = Null
-		
+
 		Local vp:Rect = _GLScissor_BMaxViewport
 		SetScissor(vp.x, vp.y, vp.width, vp.height)
 		SetMatrixAndViewportToCurrentRenderImage()
