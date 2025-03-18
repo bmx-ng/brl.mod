@@ -1910,12 +1910,12 @@ bbdoc: Create a new render image
 about:
 @pixmap specifies the source pixmap to initiate the renderimage with
 
-@flags defines the image flags.
+@imageFlags defines the image flags.
 
 returns: #TRenderImage with the pixmap rendered into it
 End Rem
-Function CreateRenderImage:TRenderImage(pixmap:TPixmap, flags:Int = -1)
-	Return TMax2DGraphics.CreateRenderImage(pixmap, flags)
+Function CreateRenderImage:TRenderImage(pixmap:TPixmap, imageFlags:Int = -1)
+	Return TMax2DGraphics.CreateRenderImage(pixmap, imageFlags)
 End Function
 
 
@@ -1926,10 +1926,19 @@ Alias to CreateRenderImage(pixmap) for backwards compatibility reasons (was avai
 
 @image specifies the source pixmap to initiate the renderimage with
 
+@useLinearFiltering specifies if the resulting image should be using FILTEREDIMAGE
+
+@max2DGraphics is no longer used, but there for backwards compatibility
+
 returns: #TRenderImage with the pixmap rendered into it
 End Rem
-Function CreateRenderImageFromPixmap:TRenderImage(pixmap:TPixmap)
-	Return CreateRenderImage(pixmap)
+Function CreateRenderImageFromPixmap:TRenderImage(pixmap:TPixmap, useLinearFiltering:Int = True, max2DGraphics:TMax2DGraphics = Null)
+	If max2DGraphics Then Throw "CreateRenderImageFromPixmap() is deprecated, use CreateRenderImage(pixmap, imageFlags) instead!"
+
+	Local imageFlags:Int = -1
+	if useLinearFiltering then imageFlags = FILTEREDIMAGE
+
+	Return CreateRenderImage(pixmap, imageFlags)
 End Function
 
 
