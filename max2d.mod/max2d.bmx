@@ -757,11 +757,17 @@ Type TMax2DGraphics Extends TGraphics
 		SetRenderImage(Null)
 	EndMethod
 	
+	
+	Method CanUpdateRenderImages:Int()
+		Return _max2ddriver.CanUpdateRenderImages()
+	End Method
+
+	
 	Function CreateRenderImage:TRenderImage(width:UInt, height:UInt, flags:Int=-1)
 		If flags = -1 Then flags = auto_imageflags
 		Local image:TRenderImage = TRenderImage.Create(width, height, flags, mask_red, mask_green, mask_blue)
 		
-		If auto_midhandle Then MidHandleImage(image)
+		If image And auto_midhandle Then MidHandleImage(image)
 		Return image
 	End Function
 
@@ -784,44 +790,63 @@ Type TMax2DGraphics Extends TGraphics
 
 		' set newly created as target
 		Local image:TRenderImage = TRenderImage.Create(fromPixmap.width, fromPixmap.height, flags, mask_red, mask_green, mask_blue)
-		Local frame:TImageFrame = image.frames[0]
-		If Not frame
-			frame = image.Frame(0)
+		If Not image
+			Return Null
 		EndIf
-		SetRenderImageFrame(frame)
 		
+		Local frame:TImageFrame = image.Frame(0)
+		If Not frame
+			Return Null
+		EndIf
+
+		' if render image activation fails, content would be incorrect
+		' and thus it is better to return null than drawing on the wrong
+		' canvas and returning an image without the desired content.
+		If Not _max2ddriver.SetRenderImageFrame(frame)
+			Return Null
+		EndIf
+
 		' render content into it
 		' (it by default ignores scale, rotation, setColor...)
 		_max2dDriver.DrawPixmap(fromPixmap, 0,0)
-		
+	
 		' set old target as current again
-		SetRenderImageFrame(currentTarget)
+		_max2ddriver.SetRenderImageFrame(currentTarget)
 
 		If auto_midhandle Then MidHandleImage(image)
 		Return image
 	End Function	
 
 
-	Method SetRenderImage(renderImage:TRenderImage, frame:Int = 0)
+	Method SetRenderImage:Int(renderImage:TRenderImage, frame:Int = 0)
 		If Not renderImage
 			_max2ddriver.SetRenderImageFrame(Null)
 			_max2ddriver.SetRenderImageContainer(Null)
+			Return True
 		Else
 			Local imageFrame:TImageFrame = renderImage.Frame(frame)
-			_max2ddriver.SetRenderImageFrame(imageFrame)
-			_max2ddriver.SetRenderImageContainer(renderImage)
+			If imageFrame
+				If _max2ddriver.SetRenderImageFrame(imageFrame)
+					_max2ddriver.SetRenderImageContainer(renderImage)
+					Return True
+				EndIf
+			EndIf
 		EndIf
+		Return False
 	End Method
 
 
-	Method SetRenderImageFrame(renderImageFrame:TImageFrame)
+	Method SetRenderImageFrame:Int(renderImageFrame:TImageFrame)
 		If Not RenderImageFrame
 			_max2ddriver.SetRenderImageFrame(Null)
 		Else
-			_max2ddriver.SetRenderImageFrame(renderImageFrame)
+			If Not _max2ddriver.SetRenderImageFrame(renderImageFrame)
+				Return False
+			EndIf
 		EndIf
 		' while it might belong to a TRenderImage we do not know here
 		_max2ddriver.SetRenderImageContainer(Null)
+		Return True
 	EndMethod
 
 
@@ -1879,6 +1904,21 @@ Function GrabPixmap:TPixmap( x:Int,y:Int,width:Int,height:Int )
 End Function
 
 
+
+Rem
+bbdoc: Request if render images can be updated now
+about:
+Certain Backends can not always update render images. 
+Ex. Direct3D9 cannot, when the application runs in exclusive fullscreen
+    mode and currently is not having focus (running in the background).
+
+returns: True if updating is possible, else False
+End Rem
+Function CanUpdateRenderImages:Int()
+	Return TMax2DGraphics.Current().CanUpdateRenderImages()
+End Function
+
+
 Rem
 bbdoc: Create a new render image
 about:
@@ -1948,9 +1988,11 @@ about:
 @renderImage defines the render image to use as target. Set to Null to render on the default graphics buffer again.
 
 @frame defines the frame to use in the image
+
+Returns True if successful, else False 
 End Rem
-Function SetRenderImage(renderImage:TRenderImage, frame:Int = 0)
-	TMax2DGraphics.Current().SetRenderImage(renderImage)
+Function SetRenderImage:Int(renderImage:TRenderImage, frame:Int = 0)
+	Return TMax2DGraphics.Current().SetRenderImage(renderImage)
 End Function
 
 
@@ -1968,9 +2010,11 @@ Rem
 bbdoc: Set a render image frame as currently active render target
 about:
 @renderImageFrame defines the render image frame to use as target. Set to Null to render on the default graphics buffer again.
+
+Returns True if successful, else False 
 End Rem
-Function SetRenderImageFrame(renderImageFrame:TImageFrame)
-	TMax2DGraphics.Current().SetRenderImageFrame(renderImageFrame)
+Function SetRenderImageFrame:Int(renderImageFrame:TImageFrame)
+	Return TMax2DGraphics.Current().SetRenderImageFrame(renderImageFrame)
 End Function
 
 

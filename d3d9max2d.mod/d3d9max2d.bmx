@@ -61,6 +61,7 @@ Global _max2dGraphics:TMax2dGraphics
 Global _BackbufferRenderImageFrame:TD3D9RenderImageFrame
 Global _CurrentRenderImageFrame:TD3D9RenderImageFrame
 Global _CurrentRenderImageContainer:Object
+Global _CanUpdateRenderImages:Int = False
 Global _D3D9Scissor_BMaxViewport:Rect = New Rect
 Global _Lock:TMutex = CreateMutex()
 
@@ -928,6 +929,18 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		RenderImageManager_RemoveRenderImage(RenderImage)
 		UnlockMutex(_Lock)
 	End Method
+	
+
+	Method CanUpdateRenderImages:Int() Override
+		If CurrentThread() <> MainThread() 
+			Return False
+		EndIf
+
+		' as it can only be read from the main thread (which is the one
+		' which updates this variable) this is thread-safe.
+		Return _CanUpdateRenderImages
+	End Method
+
 
 	Method CreateRenderImageFrame:TImageFrame(width:UInt, height:UInt, flags:Int) Override
 		Local RenderImage:TD3D9RenderImageFrame = TD3D9RenderImageFrame.Create(width, height, flags)
@@ -935,15 +948,18 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		Return RenderImage
 	End Method
 	
-	Method SetRenderImageFrame(RenderImageFrame:TImageFrame) Override
+	Method SetRenderImageFrame:Int(RenderImageFrame:TImageFrame) Override
 		If RenderImageFrame = _CurrentRenderImageFrame
-			Return
+			Return True
 		ElseIf renderImageFrame = Null
 			renderImageFrame = _BackBufferRenderImageFrame
 		EndIf
 
 		Local D3D9RenderImageFrame:TD3D9RenderImageFrame = TD3D9RenderImageFrame(RenderImageFrame)
-		_d3dDev.SetRenderTarget(0, D3D9RenderImageFrame._surface)
+		If _d3dDev.SetRenderTarget(0, D3D9RenderImageFrame._surface) < 0
+			Return False
+		EndIf
+
 		_CurrentRenderImageFrame = D3D9RenderImageFrame
 		'unset render image container (re-assign in SetRenderImage if called from there!)
 		_CurrentRenderImageContainer = Null
@@ -951,6 +967,8 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		Local vp:Rect = _D3D9Scissor_BMaxViewport
 		SetScissor(vp.x, vp.y, vp.width, vp.height)
 		SetMatrixAndViewportToCurrentRenderImage()
+		
+		Return True
 	End Method
 
 	Method GetRenderImageFrame:TImageFrame() Override
@@ -971,8 +989,11 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	EndMethod
 	
 	Function OnDeviceLost(obj:Object)
-		LockMutex(_Lock)
+		'only "flip" from main threads will lead to the callback execution
+		'so it is save to manipulate it unmutexed
+		_CanUpdateRenderImages = False
 
+		LockMutex(_Lock)
 		RenderImageManager_ResetIterator()
 		Local RenderImage:TD3D9RenderImageFrame
 		While RenderImageManager_GetNextValue(Varptr RenderImage)
@@ -983,8 +1004,8 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	
 	Function OnDeviceReset(obj:Object)
 		Local driver:TD3D9Max2DDriver = TD3D9Max2DDriver(obj)
+
 		LockMutex(_Lock)
-		
 		RenderImageManager_ResetIterator()
 		Local RenderImage:TD3D9RenderImageFrame
 		While RenderImageManager_GetNextValue(Varptr RenderImage)
@@ -998,6 +1019,10 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 			EndIf
 		Wend
 		UnlockMutex(_Lock)
+		
+		'only "flip" from main threads will lead to the callback execution
+		'so it is save to manipulate it unmutexed
+		_CanUpdateRenderImages = True
 	End Function
 
 		

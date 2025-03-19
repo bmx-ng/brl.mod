@@ -36,9 +36,10 @@ Type TMax2DDriver Extends TGraphicsDriver
 		Return Null
 	End Method
 
+	Method CanUpdateRenderImages:Int() Abstract
 	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags:Int ) Abstract
 	Method CreateRenderImageFrame:TImageFrame(width:UInt, height:UInt, flags:Int) Abstract
-	Method SetRenderImageFrame(RenderImageFrame:TImageFrame) Abstract
+	Method SetRenderImageFrame:Int(RenderImageFrame:TImageFrame) Abstract
 	Method GetRenderImageFrame:TImageFrame() Abstract
 	Method SetRenderImageContainer(renderImageContainer:Object) Abstract
 	Method GetRenderImageContainer:Object() Abstract
