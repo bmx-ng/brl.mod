@@ -559,8 +559,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 	
 	Method ResetDevice()
-		_d3d9graphics.ValidateSize
-		_d3d9graphics.GetSettings _gw,_gh,_gd,_gr,_gf,_gx,_gy
+		_d3d9graphics.GetSettings(_gw,_gh,_gd,_gr,_gf,_gx,_gy)
 	
 		Local viewport:D3DVIEWPORT9
 		viewport.X = 0

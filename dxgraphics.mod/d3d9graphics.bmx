@@ -381,14 +381,17 @@ Type TD3D9Graphics Extends TGraphics
 
 	Method ValidateSize()
 		If _attached
+			' if size changed, backbuffer needs to be resized and so 
+			' device a reset
 			Local rect:Int[4]
-			GetClientRect _hwnd,rect
-			_width=rect[2]-rect[0]
-			_height=rect[3]-rect[1]
-			If _width>_presentParams.BackBufferWidth Or _height>_presentParams.BackBufferHeight
-				_presentParams.BackBufferWidth = Max( _width,_presentParams.BackBufferWidth) 
-				_presentParams.BackBufferHeight = Max( _height,_presentParams.BackbufferHeight) 
-				ResetD3DDevice
+			GetClientRect(_hwnd, rect)
+			_width = rect[2] - rect[0]
+			_height = rect[3] - rect[1]
+			If _width > _presentParams.BackBufferWidth Or _height > _presentParams.BackBufferHeight
+				_presentParams.BackBufferWidth = Max(_width, _presentParams.BackBufferWidth) 
+				_presentParams.BackBufferHeight = Max(_height, _presentParams.BackbufferHeight)
+
+				ResetD3DDevice()
 			EndIf
 		EndIf
 	End Method
@@ -435,9 +438,9 @@ Type TD3D9Graphics Extends TGraphics
 	End Method
 	
 	Method GetSettings( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Long Var, x:Int Var, y:Int Var ) Override
-		'
-		ValidateSize
-		'
+		' check if window size changed and device has to be reset
+		ValidateSize()
+
 		width=_width
 		height=_height
 		depth=_depth
@@ -469,7 +472,7 @@ Type TD3D9Graphics Extends TGraphics
 	End Method
 
 	Method Resize(width:Int, height:Int) Override
- 	End Method
+	End Method
 
 	Method Position(x:Int, y:Int) Override
 	End Method
@@ -497,7 +500,7 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 
 		'get caps
 		'_d3dCaps=New D3DCAPS9
-		If _d3d.GetDeviceCaps( D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,_d3dCaps)<0
+		If _d3d.GetDeviceCaps( D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,_d3dCaps )<0
 			_d3d.Release_
 			_d3d=Null
 			Return Null
@@ -510,7 +513,7 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 
 		Local d3dmode:D3DDISPLAYMODE' = New D3DDISPLAYMODE
 		For Local i:Int=0 Until n
-			If _d3d.EnumAdapterModes( D3DADAPTER_DEFAULT,D3DFMT_X8R8G8B8,i,d3dmode)<0
+			If _d3d.EnumAdapterModes( D3DADAPTER_DEFAULT,D3DFMT_X8R8G8B8,i,d3dmode )<0
 				Continue
 			EndIf
 
@@ -524,7 +527,7 @@ Type TD3D9GraphicsDriver Extends TGraphicsDriver
 		Next
 		_modes=_modes[..j]
 	
-	
+
 		Local name:Short Ptr = _wndClass.ToWString()
 		'register wndclass
 		Local wndclass:WNDCLASSW=New WNDCLASSW
