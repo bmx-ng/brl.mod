@@ -8,7 +8,7 @@
 #define XXH_IMPLEMENTATION
 #define XXH_STATIC_LINKING_ONLY
 
-#include "hash/xxh3.h"
+#include "hash/xxhash.h"
 
 static void bbStringFree( BBObject *o );
 
@@ -316,49 +316,105 @@ BBString *bbStringFromUTF8String( const unsigned char *p ){
 	return p ? bbStringFromUTF8Bytes( p,strlen((char*)p) ) : &bbEmptyString;
 }
 
-BBString *bbStringFromUTF8Bytes( const unsigned char *p,int n ){
-	int c;
-	unsigned short *d,*q;
-	BBString *str;
+#define REPLACEMENT_CHAR 0xFFFD
 
-	if( !p || n <= 0 ) return &bbEmptyString;
-	
-	d=(unsigned short*)malloc( n*2 );
-	q=d;
-	
-	while( n-- && (c=*p++ & 0xff)){
-		if( c<0x80 ){
-			*q++=c;
-		}else{
-			if (!n--) break;
-			int d=*p++ & 0x3f;
-			if( c<0xe0 ){
-				*q++=((c&31)<<6) | d;
-			}else{
-				if (!n--) break;
-				int e=*p++ & 0x3f;
-				if( c<0xf0 ){
-					*q++=((c&15)<<12) | (d<<6) | e;
-				}else{
-					if (!n--) break;
-					int f=*p++ & 0x3f;
-					int v=((c&7)<<18) | (d<<12) | (e<<6) | f;
-					if( v & 0xffff0000 ) {
-						v -= 0x10000;
-						d = ((v >> 10) & 0x7ff) + 0xd800;
-						e = (v & 0x3ff) + 0xdc00;
-						*q++=d;
-						*q++=e;
-					}else{
-						*q++=v;
-					}
-				}
-			}
-		}
-	}
-	str=bbStringFromShorts( d,q-d );
-	free( d );
-	return str;
+BBString *bbStringFromUTF8Bytes(const unsigned char *p, int n) {
+    if (!p || n <= 0) return &bbEmptyString;
+
+    // Allocate worst-case: one output code unit per input byte.
+    unsigned short *buffer = (unsigned short*)malloc(n * sizeof(unsigned short));
+    if (!buffer) return &bbEmptyString; // Allocation failed
+
+    unsigned short *dest = buffer;
+    const unsigned char *end = p + n;
+
+    while (p < end) {
+        unsigned int codepoint;
+        unsigned char byte = *p++;
+
+        if (byte < 0x80) {
+            // 1-byte (ASCII)
+            *dest++ = byte;
+        } else if (byte < 0xC0) {
+            // Unexpected continuation byte; insert replacement.
+            *dest++ = REPLACEMENT_CHAR;
+        } else if (byte < 0xE0) {
+            // 2-byte sequence: 110xxxxx 10xxxxxx
+            if (p >= end) {
+                *dest++ = REPLACEMENT_CHAR;
+                break;
+            }
+            unsigned char byte2 = *p++;
+            if ((byte2 & 0xC0) != 0x80) {
+                *dest++ = REPLACEMENT_CHAR;
+                continue;
+            }
+            codepoint = ((byte & 0x1F) << 6) | (byte2 & 0x3F);
+            if (codepoint < 0x80) { // Overlong encoding
+                *dest++ = REPLACEMENT_CHAR;
+            } else {
+                *dest++ = (unsigned short)codepoint;
+            }
+        } else if (byte < 0xF0) {
+            // 3-byte sequence: 1110xxxx 10xxxxxx 10xxxxxx
+            if (p + 1 >= end) {
+                *dest++ = REPLACEMENT_CHAR;
+                break;
+            }
+            unsigned char byte2 = *p++;
+            unsigned char byte3 = *p++;
+            if ((byte2 & 0xC0) != 0x80 || (byte3 & 0xC0) != 0x80) {
+                *dest++ = REPLACEMENT_CHAR;
+                continue;
+            }
+            codepoint = ((byte & 0x0F) << 12) |
+                        ((byte2 & 0x3F) << 6) |
+                        (byte3 & 0x3F);
+            // Reject overlong sequences and surrogate halves.
+            if (codepoint < 0x800 || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
+                *dest++ = REPLACEMENT_CHAR;
+            } else {
+                *dest++ = (unsigned short)codepoint;
+            }
+        } else if (byte < 0xF8) {
+            // 4-byte sequence: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+            if (p + 2 >= end) {
+                *dest++ = REPLACEMENT_CHAR;
+                break;
+            }
+            unsigned char byte2 = *p++;
+            unsigned char byte3 = *p++;
+            unsigned char byte4 = *p++;
+            if ((byte2 & 0xC0) != 0x80 ||
+                (byte3 & 0xC0) != 0x80 ||
+                (byte4 & 0xC0) != 0x80) {
+                *dest++ = REPLACEMENT_CHAR;
+                continue;
+            }
+            codepoint = ((byte & 0x07) << 18) |
+                        ((byte2 & 0x3F) << 12) |
+                        ((byte3 & 0x3F) << 6) |
+                        (byte4 & 0x3F);
+            // Ensure codepoint is within valid range.
+            if (codepoint < 0x10000 || codepoint > 0x10FFFF) {
+                *dest++ = REPLACEMENT_CHAR;
+            } else {
+                // Convert to surrogate pair.
+                codepoint -= 0x10000;
+                unsigned short highSurrogate = 0xD800 | ((codepoint >> 10) & 0x3FF);
+                unsigned short lowSurrogate  = 0xDC00 | (codepoint & 0x3FF);
+                *dest++ = highSurrogate;
+                *dest++ = lowSurrogate;
+            }
+        } else {
+            // Bytes above 0xF7 are invalid in modern UTF-8.
+            *dest++ = REPLACEMENT_CHAR;
+        }
+    }
+
+    BBString *str = bbStringFromShorts(buffer, dest - buffer);
+    free(buffer);
+    return str;
 }
 
 BBString *bbStringToString( BBString *t ){
@@ -367,7 +423,7 @@ BBString *bbStringToString( BBString *t ){
 
 int bbStringCompare( BBString *x,BBString *y ){
 	int k,n,sz;
-	if (x->clas != &bbStringClass || y->clas != &bbStringClass) return -1; // only compare strings with strings
+	if (x->clas != (BBClass*)&bbStringClass || y->clas != (BBClass*)&bbStringClass) return -1; // only compare strings with strings
 
 	sz=x->length<y->length ? x->length : y->length;
 	if (x->length == y->length && x->hash) {
@@ -853,13 +909,37 @@ BBString *bbStringToLower( BBString *str ){
 	int n = 0;
 	
 	while (n < str->length) {
-		int c=str->buf[n];
-		// ascii upper or other unicode char
-		if (c >= 192 || (c>='A' && c<='Z')) {
-			break;
-		}
-		++n;
-	}
+        int c = str->buf[n];
+        if (c < 192) {
+            // ASCII character
+            if (c >= 'A' && c <= 'Z') {
+                // Found an uppercase ASCII character
+                break;
+            }
+        } else {
+            // Unicode character
+            // Check if the character is an uppercase Unicode character
+            int lo = 0, hi = (3828 / 4) - 1; // sizeof(bbToLowerData) = 3828
+            int is_upper = 0;
+            while (lo <= hi) {
+                int mid = (lo + hi) / 2;
+                int upper = bbToLowerData[mid * 2];
+                if (c < upper) {
+                    hi = mid - 1;
+                } else if (c > upper) {
+                    lo = mid + 1;
+                } else {
+                    // Found an uppercase Unicode character
+                    is_upper = 1;
+                    break;
+                }
+            }
+            if (is_upper) {
+                break;
+            }
+        }
+        ++n;
+    }
 	
 	if (n == str->length) {
 		return str;
@@ -900,13 +980,37 @@ BBString *bbStringToUpper( BBString *str ){
 	int n = 0;
 	
 	while (n < str->length) {
-		int c=str->buf[n];
-		// ascii lower or other unicode char
-		if (c >= 181 || (c>='a' && c<='z')) {
-			break;
-		}
-		++n;
-	}
+        int c = str->buf[n];
+        if (c < 181) {
+            // ASCII character
+            if (c >= 'a' && c <= 'z') {
+                // Found a lowercase ASCII character
+                break;
+            }
+        } else {
+            // Unicode character
+            // Check if the character is a lowercase Unicode character
+            int lo = 0, hi = (3860 / 4) - 1; // sizeof(bbToUpperData) = 3860
+            int is_lower = 0;
+            while (lo <= hi) {
+                int mid = (lo + hi) / 2;
+                int lower = bbToUpperData[mid * 2];
+                if (c < lower) {
+                    hi = mid - 1;
+                } else if (c > lower) {
+                    lo = mid + 1;
+                } else {
+                    // Found a lowercase Unicode character
+                    is_lower = 1;
+                    break;
+                }
+            }
+            if (is_lower) {
+                break;
+            }
+        }
+        ++n;
+    }
 	
 	if (n == str->length) {
 		return str;
@@ -989,7 +1093,7 @@ unsigned char *bbStringToUTF8StringBuffer( BBString *str, unsigned char * buf, s
 				++i;
 			}
 		}
-		int n = q - buf;
+		size_t n = q - buf;
 		if( c<0x80 ){
 			if (buflen <= n+1) break;
 			*q++=c;

@@ -134,7 +134,7 @@ int bbGCValidate( void *q ){
 			}
 		}
 		// maybe an array?
-		if (clas == &bbArrayClass) {
+		if (clas == (BBClass *)&bbArrayClass) {
 			return 1;
 		}
 	}

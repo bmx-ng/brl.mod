@@ -335,7 +335,7 @@ Type TSet<T> Implements ISet<T>
 		End If
 
 		If Not size Then
-			Union(other)
+			UnionOf(other)
 			Return
 		End If
 		
@@ -374,7 +374,7 @@ Type TSet<T> Implements ISet<T>
 	Rem
 	bbdoc: Modifies the current #TSet so that it contains all elements that are present in either the current #TSet or the specified #IIterable.
 	End Rem
-	Method Union(other:IIterable<T>)
+	Method UnionOf(other:IIterable<T>)
 		If Not other Then
 			Throw New TArgumentNullException("other")
 		End If

@@ -104,6 +104,16 @@ struct BBClass_String{
 	BBString* (*bbStringFromLongInt)( BBLONGINT n );
 	BBULONGINT (*bbStringToULongInt)( BBString *t );
 	BBString* (*bbStringFromULongInt)( BBULONGINT n );
+
+	int (*bbStringToDoubleEx)( BBString *str, double *val, int start, int end, BBULONG format, BBString *sep );
+	int (*bbStringToFloatEx)( BBString *str, float *val, int start, int end, BBULONG format, BBString *sep );
+	int (*bbStringToIntEx)( BBString *str, int *val, int start, int end, BBULONG format, int base );
+	int (*bbStringToUIntEx)( BBString *str, unsigned int *val, int start, int end, BBULONG format, int base );
+	int (*bbStringToLongEx)( BBString *str, BBInt64 *val, int start, int end, BBULONG format, int base );
+	int (*bbStringToULongEx)( BBString *str, BBUInt64 *val, int start, int end, BBULONG format, int base );
+	int (*bbStringToSizeTEx)( BBString *str, BBSIZET *val, int start, int end, BBULONG format, int base );
+	int (*bbStringToLongIntEx)( BBString *str, BBLONGINT *val, int start, int end, BBULONG format, int base );
+	int (*bbStringToULongIntEx)( BBString *str, BBULONGINT *val, int start, int end, BBULONG format, int base );
 };
 
 extern	struct BBClass_String bbStringClass;
@@ -162,6 +172,16 @@ unsigned char* bbStringToUTF8String( BBString *str );
 BBLONGINT bbStringToLongInt( BBString *str );
 BBULONGINT bbStringToULongInt( BBString *str );
 
+int	bbStringToDoubleEx( BBString *str, double *val, int start, int end, BBULONG format, BBString *sep );
+int	bbStringToFloatEx( BBString *str, float *val, int start, int end, BBULONG format, BBString *sep );
+int	bbStringToIntEx( BBString *str, int *val, int start, int end, BBULONG format, int base );
+int	bbStringToUIntEx( BBString *str, unsigned int *val, int start, int end, BBULONG format, int base );
+int	bbStringToLongEx( BBString *str, BBInt64 *val, int start, int end, BBULONG format, int base );
+int	bbStringToULongEx( BBString *str, BBUInt64 *val, int start, int end, BBULONG format, int base );
+int	bbStringToSizeTEx( BBString *str, BBSIZET *val, int start, int end, BBULONG format, int base );
+int	bbStringToLongIntEx( BBString *str, BBLONGINT *val, int start, int end, BBULONG format, int base );
+int	bbStringToULongIntEx( BBString *str, BBULONGINT *val, int start, int end, BBULONG format, int base );
+
 BBUINT* bbStringToUTF32String( BBString *str );
 BBString* bbStringFromUTF32String( const BBUINT *p );
 BBString* bbStringFromUTF32Bytes( const BBUINT *p, int n );
@@ -188,7 +208,7 @@ inline BBULONG bbStringHash( BBString * x ) {
 }
 
 inline int bbStringEquals( BBString *x,BBString *y ){
-	if (x->clas != &bbStringClass || y->clas != &bbStringClass) return 0; // only strings with strings
+	if (x->clas != (BBClass *)&bbStringClass || y->clas != (BBClass *)&bbStringClass) return 0; // only strings with strings
 
 	if (x->length-y->length != 0) return 0;
 	if (x->hash != 0 ) {

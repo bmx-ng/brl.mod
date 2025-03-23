@@ -177,7 +177,7 @@ Type TPtrMap
 	about: If the map does not contain @key, a #Null object is returned.
 	End Rem
 	Method Operator[]:Object(key:Byte Ptr)
-		Return bmx_map_ptrmap_valueforkey(key, Varptr _root)
+		Return bmx_map_ptrmap_valueforkey(key, _root)
 	End Method
 	
 	Rem

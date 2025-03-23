@@ -6,12 +6,14 @@ bbdoc: Math/Math
 End Rem
 Module BRL.Math
 
-ModuleInfo "Version: 1.08"
+ModuleInfo "Version: 1.09"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.09"
+ModuleInfo "History: Added Deg2Rad, Rad2Deg functions."
 ModuleInfo "History: 1.08"
 ModuleInfo "History: Inlined math functions."
 ModuleInfo "History: 1.07"
@@ -128,6 +130,18 @@ bbdoc: Nearest integral not greater in magnitude than @x.
 End Rem
 Function Trunc:Double( x:Double )="double bbTrunc(double)!"
 
+Rem
+bbdoc: Converts a degree value @x of type #Double to its equivalent radiant value.
+about: Takes a degree value and converts it to radiants using the formula: `radiant = degree × (π / 180)`.
+End Rem
+Function Deg2Rad:Double( x:Double )="double bbDeg2Rad(double)!"
+
+Rem
+bbdoc: Converts a radiant value @x of type #Double to its equivalent degree value.
+about: Takes a radiant value and converts it to degrees using the formula: `degree = radiant × (180 / π)`.
+End Rem
+Function Rad2Deg:Double( x:Double )="double bbRad2Deg(double)!"
+
 
 Rem
 bbdoc: Square root of @x
@@ -218,5 +232,17 @@ Rem
 bbdoc: Nearest integral not greater in magnitude than @x.
 End Rem
 Function TruncF:Float( x:Float )="float bbTruncf(float)!"
+
+Rem
+bbdoc: Converts a degree value @x of type #Float to its equivalent radiant value.
+about: Takes a degree value and converts it to radiants using the formula: `radiant = degree × (π / 180)`.
+End Rem
+Function Deg2RadF:Float( x:Float )="float bbDeg2Radf(float)!"
+
+Rem
+bbdoc: Converts a radiant value @x of type #Float to its equivalent degree value.
+about: Takes a radiant value and converts it to degrees using the formula: `degree = radiant × (180 / π)`.
+End Rem
+Function Rad2DegF:Float( x:Float )="float bbRad2Degf(float)!"
 
 End Extern

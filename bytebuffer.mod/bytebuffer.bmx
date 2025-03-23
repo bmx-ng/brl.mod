@@ -1,4 +1,4 @@
-' Copyright (c) 2020 Bruce A Henderson
+' Copyright (c) 2024 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,14 +23,15 @@ bbdoc: Byte Buffer
 End Rem
 Module BRL.ByteBuffer
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2020 Bruce A Henderson"
+ModuleInfo "Copyright: 2024 Bruce A Henderson"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Added Slice() and Compact() methods"
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Added GetBytes() and PutBytes()"
 ModuleInfo "History: 1.00 Initial Release"
-
 
 Import "glue.c"
 
@@ -56,6 +57,13 @@ Protected
 	Method New(size:Int)
 		_size = size
 		_limit = size
+	End Method
+
+	Method New(mark:Int, position:Int, limit:Int, capacity:Int)
+		_mark = mark
+		_position = position
+		_limit = limit
+		_size = capacity
 	End Method
 	
 Public
@@ -330,15 +338,29 @@ Type TByteBuffer Extends TBuffer
 
 	Rem
 	bbdoc: Returns a sliced #TByteBuffer that shares its content with this one.
-	about: TODO
+	about: The new buffer's position, limit, and mark are independent of this buffer.
 	End Rem
 	Method Slice:TByteBuffer() Abstract
-	
+
+	Rem
+	bbdoc: Returns a sliced #TByteBuffer that shares its content with this one.
+	about: The new buffer's position, limit, and mark are independent of this buffer.
+	End Rem
+	Method Slice:TByteBuffer(length:Int) Abstract
+
 	Rem
 	bbdoc: Creates a duplicate #TByteBuffer that shares its content with this one.
 	End Rem
 	Method Duplicate:TByteBuffer() Abstract
 	
+	Rem
+	bbdoc: Compacts this #TByteBuffer.
+	End Rem
+	Method Compact:TByteBuffer() Abstract
+
+	Method BytePtr:Byte Ptr() Abstract
+	Method Offset:Int() Abstract
+
 End Type
 
 Rem
@@ -489,7 +511,7 @@ Type TBytePtrBuffer Extends TByteBuffer
 		
 		Local pos:Int = _position + _offset
 		MemCopy(dst, _data + pos, Size_T(length))
-		
+
 		_position = newPosition
 	End Method
 
@@ -699,8 +721,42 @@ Type TBytePtrBuffer Extends TByteBuffer
 		Return New TBytePtrBuffer(_data, remaining(), _offset + _position, _readOnly)
 	End Method
 
+	Method Slice:TByteBuffer(length:Int) Override
+		If length > remaining() Then
+			Throw New TBufferOverflowException
+		End If
+
+		Return New TBytePtrBuffer(_data, length, _offset + _position, _readOnly)
+	End Method
+
 	Method Duplicate:TByteBuffer() Override
 		Return Copy(Self, _mark, _readOnly)
+	End Method
+
+	Method Compact:TByteBuffer() Override
+		Local remaining:Int
+		If _position <= _limit Then
+			remaining = _limit - _position
+		End If
+
+		MemCopy(_data + _offset, _data + _offset + _position, Size_T(remaining))
+        Position(remaining)
+        Limit(_size)
+        _mark = -1
+
+		Return Self
+	End Method
+
+	Method BytePtr:Byte Ptr()
+		If _readOnly Then
+            Throw New TReadOnlyBufferException()
+		End If
+
+		Return _data
+	End Method
+
+	Method Offset:Int()
+		Return _offset
 	End Method
 
 Private
@@ -746,14 +802,27 @@ Private
 
 Public
 	Method Slice:TByteBuffer() Override
-		Return New TByteArrayBuffer(_data, remaining(), _offset + _position, _readOnly)
+		Return New TByteArrayBuffer(_array, remaining(), _offset + _position, _readOnly)
+	End Method
+
+	Method Slice:TByteBuffer(length:Int) Override
+		If length > remaining() Then
+			Throw New TBufferOverflowException
+		End If
+		Return New TByteArrayBuffer(_array, length, _offset + _position, _readOnly)
 	End Method
 
 	Method Duplicate:TByteBuffer() Override
 		Return Copy(Self, _mark, _readOnly)
 	End Method
 
-Private
+	Method BytePtr:Byte Ptr()
+        If _readOnly Then
+            Throw New TReadOnlyBufferException()
+		End If
+
+		Return _array
+	End Method
 
 End Type
 
@@ -766,6 +835,8 @@ End Type
 
 Type TReadOnlyBufferException Extends TBlitzException
 End Type
+
+Private
 
 Extern
 	Function bmx_bytebuffer_intbitstofloat:Float(value:Int)

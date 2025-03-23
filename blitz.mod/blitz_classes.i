@@ -15,7 +15,7 @@ String^Object{
 	@length:Int
 
 	-ToString:String()="bbStringToString"
-	-Compare:Int(otherObject:Object)="bbStringCompare"
+	-Compare:Int(otherString:String)="bbStringCompare"
 	
 	-Find:Int( subString:String,startIndex=0 )="bbStringFind"
 	-FindLast:Int( subString:String,startIndex=0 )="bbStringFindLast"
@@ -75,6 +75,16 @@ String^Object{
 	+FromLongInt:String( longIntValue:LongInt )="bbStringFromLongInt"
 	-ToULongInt:ULongInt()="bbStringToULongInt"
 	+FromULongInt:String( ulongIntValue:ULongInt )="bbStringFromULongInt"
+
+	-ToDoubleEx:Int( val:Double Var,startPos:Int=0,endPos:Int=-1,format:Int=5,sep:String="." )="bbStringToDoubleEx"
+	-ToFloatEx:Int( val:Float Var,startPos:Int=0,endPos:Int=-1,format:Int=5,sep:String="." )="bbStringToFloatEx"
+	-ToIntEx:Int( val:Int Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToIntEx"
+	-ToUIntEx:Int( val:UInt Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToUIntEx"
+	-ToLongEx:Int( val:Long Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToLongEx"
+	-ToULongEx:Int( val:ULong Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToULongEx"
+	-ToSizeTEx:Int( val:Size_T Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToSizeTEx"
+	-ToLongIntEx:Int( val:LongInt Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToLongIntEx"
+	-ToULongIntEx:Int( val:ULongInt Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToULongIntEx"
 }AF="bbStringClass"
 
 ___Array^Object{

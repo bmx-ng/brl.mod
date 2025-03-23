@@ -1,4 +1,4 @@
-' Copyright (c) 2018-2023 Bruce A Henderson
+' Copyright (c) 2018-2024 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,10 +23,13 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.18"
+ModuleInfo "Version: 1.19"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2018-2023 Bruce A Henderson"
+ModuleInfo "Copyright: 2018-2024 Bruce A Henderson"
 
+ModuleInfo "History: 1.19"
+ModuleInfo "History: Added TSplitBuffer Split() method."
+ModuleInfo "History: Added TSplitBuffer to number methods."
 ModuleInfo "History: 1.18"
 ModuleInfo "History: Added optional startIndex to StartsWith()."
 ModuleInfo "History: 1.17"
@@ -970,6 +973,88 @@ Public
 	End Rem
 	Method ToArray:String[]()
 		Return bmx_stringbuilder_splitbuffer_toarray(splitPtr)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as an #Int.
+	about: If the element is not a valid #Int, 0 is returned.
+	End Rem
+	Method ToInt:Int(index:Int)
+		Return bmx_stringbuilder_splitbuffer_toint(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #Float.
+	about: If the element is not a valid #Float, 0.0 is returned.
+	End Rem
+	Method ToFloat:Float(index:Int)
+		Return bmx_stringbuilder_splitbuffer_tofloat(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #Double.
+	about: If the element is not a valid #Double, 0.0 is returned.
+	End Rem
+	Method ToDouble:Double(index:Int)
+		Return bmx_stringbuilder_splitbuffer_todouble(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #Long.
+	about: If the element is not a valid #Long, 0 is returned.
+	End Rem
+	Method ToLong:Long(index:Int)
+		Return bmx_stringbuilder_splitbuffer_tolong(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #ULong.
+	about: If the element is not a valid #ULong, 0 is returned.
+	End Rem
+	Method ToULong:ULong(index:Int)
+		Return bmx_stringbuilder_splitbuffer_toulong(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #UInt.
+	about: If the element is not a valid #UInt, 0 is returned.
+	End Rem
+	Method ToUInt:UInt(index:Int)
+		Return bmx_stringbuilder_splitbuffer_touint(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #Short.
+	about: If the element is not a valid #Short, 0 is returned.
+	End Rem
+	Method ToShort:Short(index:Int)
+		Return bmx_stringbuilder_splitbuffer_toshort(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #Byte.
+	about: If the element is not a valid #Byte, 0 is returned.
+	End Rem
+	Method ToByte:Byte(index:Int)
+		Return bmx_stringbuilder_splitbuffer_tobyte(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #Size_T.
+	about: If the element is not a valid #Size_T, 0 is returned.
+	End Rem
+	Method ToSizeT:Size_T(index:Int)
+		Return bmx_stringbuilder_splitbuffer_tosizet(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Creates a new split buffer of the split element at the specified index.
+	End Rem
+	Method Split:TSplitBuffer(index:Int, separator:String)
+		Local buf:TSplitBuffer = New TSplitBuffer
+		buf.buffer = buffer
+		buf.splitPtr = bmx_stringbuilder_splitbuffer_split(splitPtr, separator, index)
+		Return buf
 	End Method
 
 	Method ObjectEnumerator:TSplitBufferEnum()

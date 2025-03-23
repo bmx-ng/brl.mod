@@ -193,6 +193,43 @@ Function AdjustTexSize( width:Int Var, height:Int Var )
 	Forever
 End Function
 
+
+
+Global dead_FBOs:TDynamicArray = New TDynamicArray(32)
+Global dead_FBO_seq:Int
+
+'Enqueues a FBO for deletion, to prevent releasing framebuffers on wrong thread.
+Function DeleteFBO( FBO:Int,seq:Int )
+	If seq<>dead_FBO_seq Return
+
+	dead_FBOs.AddLast(FBO)
+End Function
+
+Function CreateFBO:Int(TextureName:Int )
+	Local FrameBufferObject:Int
+	glGenFramebuffers(1, Varptr FrameBufferObject)
+	glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferObject)
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TextureName, 0)
+
+	' Flush dead FBOs, this ensures to delete FBOs from within the
+	' main thread, while Delete() of image frames can happen from subthread
+	' too.
+	' This also means, it only deletes FBOs if a new is created!
+	If dead_FBO_seq = GraphicsSeq
+		Local deadFBO:Int = dead_FBOs.RemoveLast()
+		While deadFBO <> $FFFFFFFF
+			glDeleteFramebuffers(1, Varptr deadFBO) ' gl ignores 0
+
+			deadFBO = dead_FBOs.RemoveLast()
+		Wend
+	EndIf
+
+	dead_FBO_seq = GraphicsSeq
+
+	Return FrameBufferObject
+End Function
+
+
 Type TDynamicArray
 
 	Private
@@ -371,10 +408,9 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 	
 	Function Create:TGLRenderImageFrame(width:UInt, height:UInt, flags:Int)
 		' Need this to enable frame buffer objects - glGenFramebuffers
-		Global GlewIsInitialised:Int = False
-		If Not GlewIsInitialised
+		If Not glewIsInit
 			GlewInit()
-			GlewIsInitialised = True
+			glewIsInit = True
 		EndIf
 		
 		' store so that we can restore once the fbo is created
@@ -383,7 +419,10 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		
 		Local TextureName:Int
 		glGenTextures(1, Varptr TextureName)
-		glBindTexture(GL_TEXTURE_2D, TextureName)
+		' inform engine about TextureName being GL_TEXTURE_2D target 
+		' do not just call glBindTexture directly!
+		BindTex(TextureName)
+		'glBindTexture(GL_TEXTURE_2D, TextureName)
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Null)
 		
 		If flags & FILTEREDIMAGE
@@ -397,11 +436,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 		
-		Local FrameBufferObject:Int
-		glGenFramebuffers(1, Varptr FrameBufferObject)
-		glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferObject)
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TextureName, 0)
-		
+		Local FrameBufferObject:Int = CreateFBO(TextureName)
 		Local RenderTarget:TGLRenderImageFrame = New TGLRenderImageFrame
 		RenderTarget.name = TextureName
 		RenderTarget.FBO = FrameBufferObject
@@ -422,11 +457,13 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 	
 Private
 	Method Delete()
-		'remove framebuffer if used
-		if FBO <> 0
-			glDeleteFramebuffers(1, Varptr FBO) ' gl ignores 0
-		EndIf
-	EndMethod
+		If Not seq Then Return
+		If Not FBO Then Return
+
+		'delete FBO deferred
+		DeleteFBO( FBO, seq )
+		FBO = 0
+	End Method
 
 	Method New()
 	EndMethod
@@ -486,6 +523,13 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glMatrixMode GL_MODELVIEW
 		glLoadIdentity
 		glViewport 0,0,gw,gh
+
+		' Need this to enable "glBlendFuncSeparate" (required for
+		' alpha blending on non-opaque backgrounds like render images)
+		If Not glewIsInit
+			GlewInit()
+			glewIsInit = True
+		EndIf
 		
 		' Create default back buffer render image - the FBO will be value 0 which is the default for the existing backbuffer
 		Local BackBufferRenderImageFrame:TGLRenderImageFrame = New TGLRenderImageFrame
@@ -528,7 +572,11 @@ Type TGLMax2DDriver Extends TMax2DDriver
 			glDisable( GL_ALPHA_TEST )
 		Case ALPHABLEND
 			glEnable( GL_BLEND )
-			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
+			' simple alphablend:
+			'glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA )
+			' more advanced blend function allows blending on a non-opaque
+			' "background" (eg. render image)
+			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
 			glDisable( GL_ALPHA_TEST )
 		Case LIGHTBLEND
 			glEnable( GL_BLEND )
@@ -716,8 +764,6 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	EndMethod
 	
 Private
-	Field _glewIsInitialised:Int = False
-
 	Method SetMatrixAndViewportToCurrentRenderImage()
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()

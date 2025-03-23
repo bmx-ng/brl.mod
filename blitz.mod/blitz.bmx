@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.25"
+ModuleInfo "Version: 1.26"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 '
+ModuleInfo "History: 1.26"
+ModuleInfo "History: Added extended string to number conversion methods"
 ModuleInfo "History: 1.25"
 ModuleInfo "History: Added suport for risc-v"
 ModuleInfo "History: 1.24"
@@ -98,6 +100,9 @@ ModuleInfo "CC_OPTS: -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION"
 ModuleInfo "CC_OPTS: -DBMX_DEBUG"
 ?
 
+' c++11 required for fast float
+ModuleInfo "CPP_OPTS: -std=c++11"
+
 ' uncomment to enable allocation counting
 'ModuleInfo "CC_OPTS: -DBBCC_ALLOCCOUNT"
 
@@ -118,6 +123,7 @@ Import "blitz_gc.c"
 Import "blitz_unicode.c"
 Import "blitz_enum.c"
 Import "blitz_coverage.c"
+Import "blitz_string_ex.cpp"
 
 ?coverage
 Import "hashmap/hashmap.c"
@@ -322,6 +328,47 @@ end rem
 Function DebugLog( message:String )
 	OnDebugLog message
 End Function
+
+Rem
+bbdoc: Enables parsing of scientific notation in extended string to number conversion methods.
+End Rem
+Const CHARSFORMAT_SCIENTIFIC:ULong = 1 Shl 0
+Rem
+bbdoc: Enables parsing of fixed point notation in extended string to number conversion methods.
+End Rem
+Const CHARSFORMAT_FIXED:ULong = 1 Shl 2
+Rem
+bbdoc: Enables parsing of hexadecimal notation in extended string to number conversion methods.
+End Rem
+Const CHARSFORMAT_HEX:ULong = 1 Shl 3
+Rem
+bbdoc: Do not allow Infinity or NaN in extended string to number conversion methods.
+End Rem
+Const CHARSFORMAT_NOINFNAN:ULong = 1 Shl 4
+Rem
+bbdoc: Enforces JSON number format in extended string to number conversion methods.
+End Rem
+Const CHARSFORMAT_JSON:ULong = 1 Shl 5 | CHARSFORMAT_FIXED | CHARSFORMAT_SCIENTIFIC | CHARSFORMAT_NOINFNAN
+Rem
+bbdoc: Parses JSON number format or Infinity or NaN in extended string to number conversion methods.
+End Rem
+Const CHARSFORMAT_JSONORINFNAN:ULong = 1 Shl 5 | CHARSFORMAT_FIXED | CHARSFORMAT_SCIENTIFIC
+Rem
+bbdoc: Allows parsing of Fortran-style numbers in extended string to number conversion methods.
+End Rem
+Const CHARSFORMAT_FORTRAN:ULong = 1 Shl 6 | CHARSFORMAT_FIXED | CHARSFORMAT_SCIENTIFIC
+Rem
+bbdoc: The default format for extended string to number conversion methods.
+End Rem
+Const CHARSFORMAT_GENERAL:ULong = CHARSFORMAT_FIXED | CHARSFORMAT_SCIENTIFIC
+Rem
+bbdoc: Allows leading plus sign in extended string to number conversion methods.
+End Rem
+Const CHARSFORMAT_ALLOWLEADINGPLUS:ULong = 1 Shl 7
+Rem
+bbdoc: Enables skipping leading whitespace in extended string to number conversion methods.
+End Rem
+Const CHARSFORMAT_SKIPWHITESPACE:ULong = 1 Shl 8
 
 Extern
 

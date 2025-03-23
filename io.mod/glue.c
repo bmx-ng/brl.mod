@@ -213,10 +213,8 @@ int bmx_PHYSFS_setRoot(BBString * archive, BBString * subdir) {
 	char sbuf[1024];
 	size_t slen = 1024;
 
-	char * sd = 0;
 	if (subdir != &bbEmptyString) {
 		bbStringToUTF8StringBuffer(subdir, sbuf, &slen);
-		sd = &sbuf;
 	}
 
 	return PHYSFS_setRoot(abuf, sbuf);
