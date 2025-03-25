@@ -708,7 +708,7 @@ Global DoubleTypeId:TTypeId = New TTypeId.Init("Double", SizeOf Double Null)
 Rem
 bbdoc: Object type ID
 End Rem
-Global ObjectTypeId:TTypeId = New TTypeId.Init("Object", SizeOf Byte Ptr Null, bbRefObjectClass)
+Global ObjectTypeId:TTypeId = New TTypeId.Init("Object", SizeOf Byte Ptr Null, bbRefObjectClass, , False)
 
 Rem
 bbdoc: String type ID
@@ -785,22 +785,22 @@ Global VoidTypeId:TTypeId = New TTypeId.Init("", 0)
 Rem
 bbdoc: Mock array base type ID
 End Rem
-Global ArrayTypeId:TTypeId = New TTypeId.Init("Null[]", SizeOf Byte Ptr Null, bbRefArrayClass, ObjectTypeId)
+Global ArrayTypeId:TTypeId = New TTypeId.Init("Null[]", SizeOf Byte Ptr Null, bbRefArrayClass, ObjectTypeId, False)
 
 Rem
 bbdoc: Mock pointer base type ID
 End Rem
-Global PointerTypeId:TTypeId = New TTypeId.Init("Ptr", SizeOf Byte Ptr Null)
+Global PointerTypeId:TTypeId = New TTypeId.Init("Ptr", SizeOf Byte Ptr Null, , , False)
 
 Rem
 bbdoc: Mock var base type ID
 End Rem
-Global VarTypeId:TTypeId = New TTypeId.Init("Var", SizeOf Byte Ptr Null)
+Global VarTypeId:TTypeId = New TTypeId.Init("Var", SizeOf Byte Ptr Null, , , False)
 
 Rem
 bbdoc: Mock function/method base type ID
 End Rem
-Global FunctionTypeId:TTypeId = New TTypeId.Init("Null()", SizeOf Byte Ptr Null)
+Global FunctionTypeId:TTypeId = New TTypeId.Init("Null()", SizeOf Byte Ptr Null, , , False)
 
 
 
@@ -2451,11 +2451,7 @@ Type TTypeId Extends TMember
 			If Not _pointerType Then
 				Local t:TTypeId = New TTypeId.Init(_name + " Ptr", PointerTypeId._size)
 				t._elementType = Self
-				If _super Then
-					t._super = _super.PointerType()
-				Else
-					t._super = PointerTypeId
-				EndIf
+				t._super = PointerTypeId
 				_pointerType = t
 			EndIf
 			Return _pointerType
@@ -2473,11 +2469,7 @@ Type TTypeId Extends TMember
 			If Not _varType Then
 				Local t:TTypeId = New TTypeId.Init(_name + " Var", VarTypeId._size)
 				t._elementType = Self
-				If _super Then
-					t._super = _super.VarType()
-				Else
-					t._super = VarTypeId
-				EndIf
+				t._super = VarTypeId
 				_varType = t
 			EndIf
 			Return _varType
@@ -2647,7 +2639,7 @@ Type TTypeId Extends TMember
 	bbdoc: Determine if type is a struct
 	End Rem
 	Method IsStruct:Int()
-		Return _struct <> Null
+		Return _struct <> Null Or (_class = Null And _enum = Null)
 	End Method
 	
 	Rem
@@ -2675,7 +2667,7 @@ Type TTypeId Extends TMember
 	bbdoc: Determine if type is final
 	End Rem
 	Method IsFinal:Int()
-		Return Not _class Or _modifiers & EModifiers.IsFinal <> Null
+		Return _modifiers & EModifiers.IsFinal <> Null
 	End Method
 	
 	Rem
@@ -4232,11 +4224,12 @@ Type TTypeId Extends TMember
 	
 	Private
 	
-	Method Init:TTypeId(name$, size:Size_T, class:Byte Ptr = Null, supor:TTypeId = Null)
+	Method Init:TTypeId(name$, size:Size_T, class:Byte Ptr = Null, supor:TTypeId = Null, isFinal:Int = True)
 		_name = name
 		_size = size
 		_class = class
 		_super = supor
+		If isFinal Then _modifiers = EModifiers.IsFinal Else _modifiers = Null
 		_consts = New TList
 		_fields = New TList
 		_globals = New TList
@@ -4314,7 +4307,7 @@ Type TTypeId Extends TMember
 			name = name[..i]
 		EndIf
 		_name = name
-		_modifiers = ModifiersForTag(modifierString)
+		_modifiers = ModifiersForTag(modifierString) | EModifiers.IsFinal
 		InitMeta(meta)
 		_struct = scope
 		
@@ -4344,7 +4337,7 @@ Type TTypeId Extends TMember
 			name = name[..i]
 		EndIf
 		_name = name
-		_modifiers = ModifiersForTag(modifierString)
+		_modifiers = ModifiersForTag(modifierString) | EModifiers.IsFinal
 		InitMeta(meta)
 		_enum = scope
 		
