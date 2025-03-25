@@ -37,9 +37,9 @@ Const PF_COLORALPHA=		PF_BGRA
 
 Global BytesPerPixel[]=			[0,1,1,3,3,4,4 , 1,1,1,1,1,1]
 
-Global RedBitsPerPixel[]=		[0,0,0,8,8,8,8, 8,0,0,0,0,0]
-Global GreenBitsPerPixel[]=		[0,0,0,8,8,8,8, 0,8,0,0,0,0]
-Global BlueBitsPerPixel[]=		[0,0,0,8,8,8,8, 0,0,8,0,0,0]
+Global RedBitsPerPixel[]=		[1,0,0,8,8,8,8, 8,0,0,0,0,0] ' Max2d compressed textures version
+Global GreenBitsPerPixel[]=		[0,0,0,8,8,8,8, 0,8,0,0,0,0] ' stores dds format
+Global BlueBitsPerPixel[]=		[0,0,0,8,8,8,8, 0,0,8,0,0,0] ' stores texture name
 Global AlphaBitsPerPixel[]=		[0,0,8,0,0,8,8, 0,0,0,8,0,0]
 Global IntensityBitsPerPixel[]=	[0,0,0,0,0,0,0, 0,0,0,0,8,0]
 Global LuminanceBitsPerPixel[]=	[0,0,0,0,0,0,0, 0,0,0,0,0,8]

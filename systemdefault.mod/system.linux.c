@@ -101,9 +101,18 @@ void bbSystemShutdown(){
 //	XCloseDisplay(x_display);	causes crash with fltk canvas usage
 }
 
+void bbAppTerminate(int signum) {
+    bbSystemEmitEvent( BBEVENT_APPTERMINATE,&bbNullObject,0,0,0,0,&bbNullObject );
+}
+
 void bbSystemStartup(){
 	atexit( bbSystemShutdown );
-	
+
+	struct sigaction action;
+    memset(&action, 0, sizeof(struct sigaction));
+    action.sa_handler = bbAppTerminate;
+    sigaction(SIGTERM, &action, NULL);
+
 	XInitThreads();
 	
 	x_display=XOpenDisplay(0);
@@ -150,6 +159,38 @@ void bbSetMouseVisible(visible){
 
 void bbSystemEventHandler( int(*handler)(XEvent*) ){
 	xeventhandler=handler;
+}
+
+static inline void bbHandleMouse(int event, int eventButton, int * id, int * data) {
+	*id=event;
+
+	switch (eventButton) {
+		case Button1:
+			*data = 1;
+			return;
+		case Button2:
+			*data = 3;
+			return;
+		case Button3:
+			*data = 2;
+			return;
+		case 8:
+			*data = 4;
+			return;
+		case 9:
+			*data = 5;
+			return;
+		default:
+			if (eventButton == 4) {
+				*id=BBEVENT_MOUSEWHEEL;
+				*data=1;
+				return;
+			} else if (eventButton == 5) {
+				*id=BBEVENT_MOUSEWHEEL;
+				*data=-1;
+				return;
+			}
+	}
 }
 
 void bbSystemEmitOSEvent( XEvent *xevent,BBObject *source ){
@@ -208,26 +249,10 @@ void bbSystemEmitOSEvent( XEvent *xevent,BBObject *source ){
 		id=BBEVENT_KEYUP;
 		break;
 	case ButtonPress:
-		data=xevent->xbutton.button;
-		if (data==4)
-		{
-			id=BBEVENT_MOUSEWHEEL;
-			data=1;
-			break;
-		}
-		if (data==5)
-		{
-			id=BBEVENT_MOUSEWHEEL;
-			data=-1;
-			break;
-		}
-		id=BBEVENT_MOUSEDOWN;
-		if (data>1) data=5-data;
+		bbHandleMouse(BBEVENT_MOUSEDOWN, xevent->xbutton.button, &id, &data);
 		break;
 	case ButtonRelease:
-		id=BBEVENT_MOUSEUP;
-		data=xevent->xbutton.button;
-		if (data>1) data=5-data;
+		bbHandleMouse(BBEVENT_MOUSEUP, xevent->xbutton.button, &id, &data);
 		break;
 	case MotionNotify:
 		id=BBEVENT_MOUSEMOVE;

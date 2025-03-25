@@ -65,6 +65,11 @@ static void removeThread( BBThread *thread ){
 	}
 }
 
+static void * bbRegisterGCThread(struct GC_stack_base * sb, void * arg) {
+    GC_register_my_thread(sb);
+    return NULL; 
+}
+
 int bbThreadAllocData(){
 	if( threadDataId<31 ) return ++threadDataId;
 	return 0;
@@ -89,13 +94,17 @@ static DWORD WINAPI threadProc( void *p ){
 	
 	TlsSetValue( curThreadTls,thread );
 	
-	DWORD ret=(DWORD)thread->proc( thread->data[0] );
-	
+	BBObject * result = thread->proc( thread->data[0] );
+	thread->result = result;
+
 	BB_LOCK
 	removeThread( thread );
 	BB_UNLOCK
 	
-	return ret;
+	return 0;
+}
+
+void bbThreadPreStartup(){
 }
 
 void bbThreadStartup(){
@@ -128,6 +137,7 @@ BBThread *bbThreadCreate( BBThreadProc proc,BBObject *data ){
 	memset( thread->data,0,sizeof(thread->data) );
 	thread->data[0]=data;
 	thread->detached=0;
+	thread->result = &bbNullObject;
 	thread->handle=CreateThread( 0,0,threadProc,thread,CREATE_SUSPENDED,&thread->id );
 
 	BB_LOCK
@@ -145,10 +155,10 @@ void bbThreadDetach( BBThread *thread ){
 
 BBObject *bbThreadWait( BBThread *thread ){
 	if( WaitForSingleObject( thread->handle,INFINITE )==WAIT_OBJECT_0 ){
-		BBObject *p;
-		if( GetExitCodeThread( thread->handle,(DWORD*)&p ) ){
+		DWORD res;
+		if( GetExitCodeThread( thread->handle, &res ) ){
 			thread->detached=1;
-			return p;
+			return thread->result;
 		}else{
 			printf( "ERROR! bbThreadWait: GetExitCodeThread failed!\n" );
 		}
@@ -176,7 +186,10 @@ int bbThreadResume( BBThread *thread ){
 	return ResumeThread( thread->handle );
 }
 
-BBThread *bbThreadRegister( DWORD id ) {
+BBThread *bbThreadRegister( bb_thread_t id ) {
+
+	GC_call_with_stack_base(bbRegisterGCThread, NULL);
+
 	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
 	memset( thread->data,0,sizeof(thread->data) );
 	
@@ -196,6 +209,9 @@ BBThread *bbThreadRegister( DWORD id ) {
 }
 
 void bbThreadUnregister( BBThread * thread ) {
+
+	GC_unregister_my_thread();
+
 	BB_LOCK
 	removeThread( thread );
 	BB_UNLOCK
@@ -204,6 +220,9 @@ void bbThreadUnregister( BBThread * thread ) {
 #elif __SWITCH__
 
 static __thread BBThread * bbThread;
+
+void bbThreadPreStartup(){
+}
 
 void bbThreadStartup() {
 
@@ -220,7 +239,10 @@ void bbThreadStartup() {
 	mainThread=thread;
 }
 
-static int threadProc( void *p ){
+static BBObject * threadProc( void *p ){
+
+	GC_call_with_stack_base(bbRegisterGCThread, NULL);
+
 	BBThread *thread = p;
 	
 	bbThread = thread;
@@ -233,7 +255,9 @@ static int threadProc( void *p ){
 	printf( "Thread %p added\n",thread );fflush( stdout );
 #endif
 	
-	void *ret=thread->proc( thread->data[0] );
+	BBObject * ret=thread->proc( thread->data[0] );
+	
+	GC_unregister_my_thread();
 	
 	BB_LOCK
 	removeThread( thread );
@@ -291,12 +315,15 @@ int bbThreadResume( BBThread *thread ) {
 #include <unistd.h>
 #include <signal.h>
 
-#if __linux
+#if __linux__
 #define MUTEX_RECURSIVE 1
 #elif __APPLE__
 #define MUTEX_RECURSIVE 2
+#define MUTEX_POLICY_FIRSTFIT 3
 #elif __SWITCH__
 #define MUTEX_RECURSIVE 1
+#elif __HAIKU__
+#define MUTEX_RECURSIVE 3
 #endif
 
 pthread_mutexattr_t _bb_mutexattr;
@@ -304,11 +331,17 @@ pthread_mutexattr_t _bb_mutexattr;
 static BBThread *threads;
 static pthread_key_t curThreadTls;
 
-void bbThreadStartup(){
-
+void bbThreadPreStartup(){
 	if( pthread_mutexattr_init( &_bb_mutexattr )<0 ) exit(-1);
 	if( pthread_mutexattr_settype( &_bb_mutexattr,MUTEX_RECURSIVE )<0 ) exit(-1);
-	
+#if __APPLE__
+	// can fail on 10.13 or lower, which we ignore
+	pthread_mutexattr_setpolicy_np(&_bb_mutexattr, MUTEX_POLICY_FIRSTFIT);
+#endif
+}
+
+void bbThreadStartup(){
+
 	if( pthread_key_create( &curThreadTls,0 )<0 ) exit(-1);
 
 	if( bb_mutex_init( &_bbLock )<0 ) exit(-1);
@@ -328,7 +361,10 @@ void bbThreadStartup(){
 }
 
 static void *threadProc( void *p ){
-	BBThread *thread=p;
+
+	GC_call_with_stack_base(bbRegisterGCThread, NULL);
+
+	BBThread *thread=(BBThread *)p;
 	
 	pthread_setspecific( curThreadTls,thread );
 	
@@ -341,6 +377,8 @@ static void *threadProc( void *p ){
 #endif
 	
 	void *ret=thread->proc( thread->data[0] );
+	
+	GC_unregister_my_thread();
 	
 	BB_LOCK
 	removeThread( thread );
@@ -368,7 +406,10 @@ BBThread *bbThreadCreate( BBThreadProc proc,BBObject *data ){
 	return 0;
 }
 
-BBThread *bbThreadRegister( void * thd ) {
+BBThread *bbThreadRegister( bb_thread_t thd ) {
+
+	GC_call_with_stack_base(bbRegisterGCThread, NULL);
+
 	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
 	memset( thread->data,0,sizeof(thread->data) );
 	
@@ -387,6 +428,9 @@ BBThread *bbThreadRegister( void * thd ) {
 }
 
 void bbThreadUnregister( BBThread * thread ) {
+
+	GC_unregister_my_thread();
+
 	BB_LOCK
 	removeThread( thread );
 	BB_UNLOCK
@@ -400,7 +444,7 @@ void bbThreadDetach( BBThread *thread ){
 BBObject *bbThreadWait( BBThread *thread ){
 	BBObject *p=0;
 	thread->detached=1;
-	pthread_join( thread->handle,&p );
+	pthread_join( thread->handle,(void**)&p );
 	return p;
 }
 
@@ -421,7 +465,7 @@ int bbThreadResume( BBThread *thread ){
 int bbAtomicCAS( volatile int *addr,int old,int new_val ){
 #if !defined(__ANDROID__) && !defined(_WIN32)
 #	ifndef __APPLE__
-		return AO_compare_and_swap(addr, old, new_val);
+		return __sync_bool_compare_and_swap(addr, old, new_val);
 #	else
 		return OSAtomicCompareAndSwap32(old, new_val, addr);
 #	endif
@@ -433,7 +477,7 @@ int bbAtomicCAS( volatile int *addr,int old,int new_val ){
 int bbAtomicAdd( volatile int *p,int incr ){
 #if !defined(__ANDROID__) && !defined(_WIN32)
 #	ifndef __APPLE__
-		return AO_fetch_and_add((AO_t*)p, incr);
+		return __sync_fetch_and_add(p, incr);
 #	else
 		return OSAtomicAdd32(incr, p);
 #	endif

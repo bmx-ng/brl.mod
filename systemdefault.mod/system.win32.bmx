@@ -17,12 +17,12 @@ Function bbSystemWait()
 Function bbSystemMoveMouse( x:Int,y:Int )
 Function bbSystemSetMouseVisible( visible:Int )
 
-Function bbSystemNotify( text$,serious:Int )
-Function bbSystemConfirm:Int( text$,serious:Int )
-Function bbSystemProceed:Int( text$,serious:Int )
-Function bbSystemRequestFile$( text$,exts$,defext:Int,save:Int,file$,dir$ )
-Function bbSystemRequestDir$( text$,dir$ )
-Function bbOpenURL:Int( url$ )
+Function bbSystemNotify( text:String,serious:Int )
+Function bbSystemConfirm:Int( text:String,serious:Int )
+Function bbSystemProceed:Int( text:String,serious:Int )
+Function bbSystemRequestFile:String( text:String,exts:String,defext:Int,save:Int,file:String,dir:String )
+Function bbSystemRequestDir:String( text:String,dir:String )
+Function bbOpenURL:Int( url:String )
 
 Function bbSystemEmitOSEvent( hwnd:Byte Ptr,msg:Int,WParam:WParam,LParam:LParam,source:Object )
 
@@ -58,20 +58,20 @@ Type TWin32SystemDriver Extends TSystemDriver
 		bbSystemSetMouseVisible visible
 	End Method
 
-	Method Notify( Text$,serious:Int ) Override
+	Method Notify( Text:String,serious:Int ) Override
 		bbSystemNotify Text,serious
 	End Method
 	
-	Method Confirm:Int( Text$,serious:Int ) Override
+	Method Confirm:Int( Text:String,serious:Int ) Override
 		Return bbSystemConfirm( Text,serious )
 	End Method
 	
-	Method Proceed:Int( Text$,serious:Int ) Override
+	Method Proceed:Int( Text:String,serious:Int ) Override
 		Return bbSystemProceed( Text,serious )
 	End Method
 
-	Method RequestFile$( Text$,exts$,save:Int,path$ ) Override
-		Local file$,dir$
+	Method RequestFile:String( Text:String,exts:String,save:Int,path:String ) Override
+		Local file:String,dir:String
 		
 		path=path.Replace( "/","\" )
 		
@@ -85,11 +85,11 @@ Type TWin32SystemDriver Extends TSystemDriver
 
 ' calculate default index of extension in extension list from path name
 
-		Local ext$,defext:Int,p:Int,q:Int
+		Local ext:String,defext:Int,p:Int,q:Int
 		p=path.Find(".")
 		If (p>-1)
 			ext=","+path[p+1..].toLower()+","
-			Local exs$=exts.toLower()
+			Local exs:String=exts.toLower()
 			exs=exs.Replace(":",":,")
 			exs=exs.Replace(";",",;")
 			p=exs.find(ext)
@@ -119,7 +119,7 @@ Type TWin32SystemDriver Extends TSystemDriver
 
 	End Method
 
-	Method RequestDir$( Text$,dir$ ) Override
+	Method RequestDir:String( Text:String,dir:String ) Override
 	
 		dir=dir.Replace( "/","\" )
 		
@@ -127,23 +127,23 @@ Type TWin32SystemDriver Extends TSystemDriver
 	
 	End Method
 	
-	Method OpenURL:Int( url$ ) Override
+	Method OpenURL:Int( url:String ) Override
 		Return bbOpenURL( url )
 	End Method
 
-	Method DesktopWidth:Int() Override
+	Method DesktopWidth:Int(display:Int) Override
 		Return bbSystemDesktopWidth()
 	End Method
 	
-	Method DesktopHeight:Int() Override
+	Method DesktopHeight:Int(display:Int) Override
 		Return bbSystemDesktopHeight()
 	End Method
 	
-	Method DesktopDepth:Int() Override
+	Method DesktopDepth:Int(display:Int) Override
 		Return bbSystemDesktopDepth()
 	End Method
 	
-	Method DesktopHertz:Int() Override
+	Method DesktopHertz:Int(display:Int) Override
 		Return bbSystemDesktopHertz()
 	End Method
 

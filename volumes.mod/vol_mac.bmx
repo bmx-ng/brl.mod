@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2019 Bruce A Henderson
+' Copyright (c) 2007-2022 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -291,8 +291,8 @@ Type TMacVolume Extends TVolume
 		Return volume
 	End Method
 	
-	Method GetPath:String(folderType:Int, flags:Int = 0) Override
-		Local buf:Byte[1024],ref:Byte[80]
+	Method GetPath:String(folderType:Int, flags:Int = 0)
+		Local buf:Byte[1025],ref:Byte[80]
 		
 		If flags Then
 			If FSFindFolder( flags, folderType, False, ref ) Return Null

@@ -3,12 +3,16 @@ SuperStrict
 
 Module BRL.FreeTypeFont
 
-ModuleInfo "Version: 1.10"
+ModuleInfo "Version: 1.12"
 ModuleInfo "Author: Simon Armstrong, Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.12"
+ModuleInfo "History: Added support for loading fonts from TBanks."
+ModuleInfo "History: 1.11"
+ModuleInfo "History: Added support for loading fonts from streams."
 ModuleInfo "History: 1.10"
 ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.09 Release"
@@ -28,6 +32,7 @@ ModuleInfo "History: Added stream hooks"
 Import BRL.Font
 Import BRL.Pixmap
 Import Pub.FreeType
+Import BRL.Bank
 
 Private
 
@@ -43,7 +48,8 @@ Public
 Type TFreeTypeGlyph Extends TGlyph
 
 	Field _pixmap:TPixmap
-	Field _advance#,_x:Int,_y:Int,_w:Int,_h:Int
+	Field _advance:Float,_x:Int,_y:Int,_w:Int,_h:Int
+	Field _index:Int
 	
 	Method Pixels:TPixmap() Override
 		If _pixmap Return _pixmap
@@ -51,7 +57,7 @@ Type TFreeTypeGlyph Extends TGlyph
 		Return _pixmap
 	End Method
 	
-	Method Advance#() Override
+	Method Advance:Float() Override
 		Return _advance
 	End Method
 	
@@ -62,20 +68,22 @@ Type TFreeTypeGlyph Extends TGlyph
 		h=_h
 	End Method
 
+	Method Index:Int() Override
+		Return _index
+	End Method
+
 End Type
 
 Type TFreeTypeFont Extends BRL.Font.TFont
 
-	'Field _face:FTFace
 	Field _ft_face:Byte Ptr
 	Field _style:Int,_height:Int
 	Field _ascend:Int,_descend:Int
 	Field _glyphs:TFreeTypeGlyph[]
-	Field _buf:Byte Ptr,_buf_size:Int
+	Field _buf:Byte[]
 	
 	Method Delete()
 		FT_Done_Face _ft_face
-		MemFree _buf
 	End Method
 
 	Method Style:Int() Override
@@ -91,21 +99,28 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 	End Method
 	
 	Method CharToGlyph:Int( char:Int ) Override
-		Return FT_Get_Char_Index( _ft_face,char )-1
+		Return FT_Get_Char_Index( _ft_face,ULongInt(char) )-1
 	End Method
-	
+
+	Method FamilyName:String()
+		return bmx_freetype_Face_family_name(_ft_face)
+	End Method
+
+	Method StyleName:String()
+		return bmx_freetype_Face_style_name(_ft_face)
+	End Method
+
 	Method LoadGlyph:TFreeTypeGlyph( index:Int ) Override
 	
 		Local glyph:TFreeTypeGlyph=_glyphs[index]
 		If glyph Return glyph
 
 		glyph=New TFreeTypeGlyph
+		glyph._index=index
 		_glyphs[index]=glyph
 		
-		If FT_Load_Glyph( _ft_face,index+1,FT_LOAD_RENDER ) Return glyph
+		If FT_Load_Glyph( _ft_face,UInt(index+1),FT_LOAD_RENDER ) Return glyph
 			
-		'Local slot:FTGlyph=New FTGlyph
-		'MemCopy slot,bmx_freetype_Face_glyph(_ft_face),SizeOf slot
 		Local _slot:Byte Ptr = bmx_freetype_Face_glyph(_ft_face)
 
 		Local width:Int = bmx_freetype_Slot_bitmap_width(_slot)
@@ -153,51 +168,24 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 		Return glyph
 
 	End Method
+
+	Method LoadGlyphs:TGlyph[]( text:String )
+		Throw "Not supported"
+	End Method
 	
-	Function Load:TFreeTypeFont( src$,size:Int,style:Int )
+	Function Load:TFreeTypeFont( src:Object,size:Float,style:Int )
 
-		Global ft_lib:Byte Ptr
-		
-		If Not ft_lib
-			If FT_Init_FreeType( Varptr ft_lib ) Return Null
-		EndIf
-
-		Local buf:Byte Ptr,buf_size:Int
+		Local buf:Byte[]
 				
-		Local ft_face:Byte Ptr
+		Local ft_face:Byte Ptr = LoadFace(src, size, style, buf)
 
-		If src.Find( "::" )>0
-			Local tmp:Byte[]=LoadByteArray( src )
-			buf_size=tmp.length
-			If Not buf_size Return Null
-			buf=MemAlloc( Size_T(buf_size) )
-			MemCopy buf,tmp,Size_T(buf_size)
-			If FT_New_Memory_Face( ft_lib,buf,buf_size,0,Varptr ft_face )
-				MemFree buf
-				Return Null
-			EndIf
-		Else
-			If FT_New_Face( ft_lib,src$,0,Varptr ft_face ) Return Null
-		EndIf
-		
-		While size
-			If Not FT_Set_Pixel_Sizes( ft_face,0,size ) Exit
-			size:-1
-		Wend
-		If Not size 
-			FT_Done_Face ft_face
+		If Not ft_face Then
 			Return Null
-		EndIf
-		
-		'Local face:FTFace=New FTFace
-		'MemCopy face,ft_face,SizeOf face
+		End If
 		
 		Local ft_size:Byte Ptr = bmx_freetype_Face_size(ft_face)
-		'Local metrics:FTMetrics=New FTMetrics
-		'MemCopy metrics,face.metrics,SizeOf metrics
 		
 		Local font:TFreeTypeFont=New TFreeTypeFont
-		'font._face=face
 		font._ft_face=ft_face
 		font._style=style
 		font._height=bmx_freetype_Size_height(ft_size) Sar 6
@@ -205,21 +193,107 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 		font._descend=bmx_freetype_Size_descend(ft_size) Sar 6
 		font._glyphs=New TFreeTypeGlyph[bmx_freetype_Face_numglyphs(ft_face)]
 		font._buf=buf
-		font._buf_size=buf_size
 		
 		Return font
 	
+	End Function
+
+	Function LoadFace:Byte Ptr( src:Object,size:Float,style:Int, buf:Byte[] Var )
+
+		Global ft_lib:Byte Ptr
+		
+		If Not ft_lib
+			If FT_Init_FreeType( Varptr ft_lib ) Return Null
+		EndIf
+				
+		Local ft_face:Byte Ptr
+
+		If TStream(src) Then
+			Local stream:TStream = TStream(src)
+			Local data:Byte[1024 * 90]
+			Local dataSize:Int
+
+			While Not stream.Eof()
+				If dataSize = data.length
+					data = data[..dataSize * 3 / 2]
+				EndIf
+				dataSize :+ stream.Read( (Byte Ptr data) + dataSize, data.length - dataSize )
+			Wend
+			If dataSize <> data.length
+				data = data[..dataSize]
+			EndIf
+			
+			If Not data.length Then
+				Return Null
+			End If
+			
+			buf = data
+			
+			If FT_New_Memory_Face( ft_lib, buf, LongInt(buf.length), 0, Varptr ft_face )
+				Return Null
+			EndIf
+
+		Else If TBank(src) Then
+
+			If Not TBank(src).Size() Then
+				Return Null
+			End If
+
+			Local data:Byte Ptr = TBank(src).Lock()
+			buf = New Byte[TBank(src).Size()]
+			MemCopy(buf, data, TBank(src).Size())
+			TBank(src).UnLock()
+			
+			If FT_New_Memory_Face( ft_lib, buf, LongInt(buf.length), 0, Varptr ft_face )
+				Return Null
+			EndIf
+
+		Else If String(src) Then
+			Local filename:String = String(src)
+			
+			If filename.Find( "::" )>0
+				buf=LoadByteArray( filename )
+
+				If Not buf.length Return Null
+
+				If FT_New_Memory_Face( ft_lib,buf,LongInt(buf.length),0,Varptr ft_face )
+					Return Null
+				EndIf
+			Else
+				If FT_New_Face( ft_lib,filename,0,Varptr ft_face ) Return Null
+			EndIf
+		Else
+			Return Null
+		End If
+
+
+		' Freetype's char height is "FreeType 26.6 Fixed-Point"
+		' -> 26 bit for the integer part, 6 bit for the decimal places
+		' -> "64" equals to 1.0 in floating point numbers
+		' So the module only support fractional sizes with a detail of 1/64
+		While size
+			'default DPI is 72 (setting 0,0 will use that)
+			If Not FT_Set_Char_Size( ft_face, 0, LongInt(size * 64), 0,0 ) Then Exit
+			' If it failed, ensure to use only integer sizes now
+			' (eg. a bitmap font was tried to get loaded) 
+			' First try will be the next integer (10.5 -> 10)
+			size = Ceil(size) - 1
+		Wend
+		If Not size 
+			FT_Done_Face ft_face
+			Return Null
+		EndIf
+
+		Return ft_face
 	End Function
 
 End Type
 
 Type TFreeTypeFontLoader Extends TFontLoader
 
-	Method LoadFont:TFreeTypeFont( url:Object,size:Int,style:Int ) Override
+	Method LoadFont:TFreeTypeFont( url:Object,size:Float,style:Int ) Override
 	
-		Local src$=String( url )
-		
-		If src Return TFreeTypeFont.Load( src,size,style )
+		Return TFreeTypeFont.Load( url,size,style )
 	
 	End Method
 

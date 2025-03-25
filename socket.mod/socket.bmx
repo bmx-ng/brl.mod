@@ -6,12 +6,16 @@ bbdoc: Networking/Sockets
 End Rem
 Module BRL.Socket
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.05"
 ModuleInfo "Author: Mark Sibly and Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.05"
+ModuleInfo "History: Added ShutdownSocket()."
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Fixed for Android."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Added IPV6 support."
 ModuleInfo "History: 1.02 Release"
@@ -24,48 +28,69 @@ Private
 Extern "os"
 ?Win32
 Const FIONREAD=$4004667F
+?win32 and ptr32
+Const INVALID_SOCKET:Int = ~0
 Function ioctl_( socket,opt,buf:Byte Ptr )="int ioctlsocket(SOCKET ,long ,u_long *)!"
+?win32 and ptr64
+Const INVALID_SOCKET:Long = ~0
+Function ioctl_( socket:Long,opt,buf:Byte Ptr )="int ioctlsocket(SOCKET ,long ,u_long *)!"
+?not win32
+Const INVALID_SOCKET:Int = -1
 ?MacOS
 Const FIONREAD=$4004667F
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
-?Linux
+?Linux And Not android
 Const FIONREAD=$541b
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
+?android
+Const FIONREAD=$541b
+Function ioctl_( socket,opt,buf:Byte Ptr )="int ioctl(int, int, BBBYTE*)!"
 ?emscripten
 Const FIONREAD=$541b
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
 ?nx
 Const FIONREAD=$4004667F
 Function ioctl_( socket,opt,buf:Byte Ptr )="ioctl"
+?haiku
+Const FIONREAD=$be000001
+Function ioctl_( socket,opt,buf:Byte Ptr )="int ioctl(int, unsigned long, BBBYTE*)!"
 ?
 End Extern
 
 Public
 
 Type TSocketException
-	Method ToString$() Override
+	Method ToString:String() Override
 		Return "Internal socket error"
 	End Method
 End Type
 
 Type TSocket
 
-	Method Send:Size_T( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
-		Local n:Size_T=send_( _socket,buf,count,flags )
-		If n<0 Return 0
+?Ptr64
+	Method Send:Long( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
+		Local n:Long=send_( _socket,buf,count,flags )
+?Not ptr64
+	Method Send:Int( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
+		Local n:Int=send_( _socket,buf,count,flags )
+?
 		Return n
 	End Method
 
-	Method Recv:Size_T( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
-		Local n:Size_T=recv_( _socket,buf,count,flags )
-		If n<0 Return 0
+?ptr64
+	Method Recv:Long( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
+		Local n:Long=recv_( _socket,buf,count,flags )
+?Not ptr64
+	Method Recv:Int( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
+		Local n:Int=recv_( _socket,buf,count,flags )
+?
 		Return n
 	End Method
 
 	Method Close()
-		If _socket<0 Return
+		If _socket=INVALID_SOCKET Return
 		If _autoClose closesocket_ _socket
-		_socket=-1
+		_socket=INVALID_SOCKET
 		_localIp=""
 		_localPort=-1
 		_remoteIp=""
@@ -73,9 +98,15 @@ Type TSocket
 	End Method
 	
 	Method Connected()
-		If _socket<0 Return False
-		Local Read=_socket
-		If select_( 1,Varptr Read,0,Null,0,Null,0 )<>1 Or ReadAvail()<>0 Return True
+		If _socket=INVALID_SOCKET Return False
+?not win32
+		Local Read:Int = _socket
+?win32 and ptr32
+		Local Read:Int = _socket
+?win32 and ptr64
+		Local Read:Long = _socket
+?
+	If select_( 1,Varptr Read,0,Null,0,Null,0 )<>1 Or ReadAvail()<>0 Return True
 		Close
 		Return False
 	End Method		
@@ -107,7 +138,13 @@ Type TSocket
 	
 	Method Accept:TSocket( timeout:Int = -1, storage:TSockaddrStorage = Null )
 		If timeout >= 0 Then
+?not win32
 			Local Read:Int = _socket
+?win32 and ptr32
+			Local Read:Int = _socket
+?win32 and ptr64
+			Local Read:Long = _socket
+?
 			If select_( 1,Varptr Read,0,Null,0,Null,timeout )<>1 Then
 				Return
 			End If
@@ -145,8 +182,14 @@ Type TSocket
 		End If
 		Return True
 	End Method
-	
+
+?not win32
 	Method Socket:Int()
+?win32 and ptr32
+	Method Socket:Int()
+?win32 and ptr64
+	Method Socket:Long()
+?
 		Return _socket
 	End Method
 	
@@ -166,16 +209,35 @@ Type TSocket
 		Return _remotePort
 	End Method
 	
-	Method UpdateLocalName()
-		_localIp = bmx_stdc_getsockname(_socket, _localPort)
+	Method Shutdown(how:Int)
+		If _socket = INVALID_SOCKET Then
+			Return
+		End If
+		shutdown_(_socket, how)
 	End Method
 	
-	Method UpdateRemoteName()
-		_remoteIp = bmx_stdc_getpeername(_socket, _remotePort)
+	Method UpdateLocalName:Int()
+		If bmx_stdc_getsockname(_socket, _localPort, _localIp) < 0 Then
+			Return False
+		End If
+		Return True
 	End Method
 	
+	Method UpdateRemoteName:Int()
+		If bmx_stdc_getpeername(_socket, _remotePort, _remoteIp) < 0 Then
+			Return False
+		End If
+		Return True
+	End Method
+	
+?not win32
 	Function Create:TSocket( socket:Int, autoClose:Int = True )
-		If socket < 0 Then
+?win32 and ptr32
+	Function Create:TSocket( socket:Int, autoClose:Int = True )
+?win32 and ptr64
+	Function Create:TSocket( socket:Long, autoClose:Int = True )
+?
+		If socket = INVALID_SOCKET Then
 			Return
 		End If
 		Local addr:Byte[16],size:Int
@@ -188,26 +250,51 @@ Type TSocket
 	End Function
 	
 	Function CreateUDP:TSocket(family:Int = AF_INET_)
-		Local socket=socket_( family,SOCK_DGRAM_,0 )
-		If socket>=0 Return Create( socket,True )
+?not win32
+		Local socket:Int=socket_( family,SOCK_DGRAM_,0 )
+?win32 and ptr32
+		Local socket:Int=socket_( family,SOCK_DGRAM_,0 )
+?win32 and ptr64
+		Local socket:Long=socket_( family,SOCK_DGRAM_,0 )
+?
+		If socket<>INVALID_SOCKET Return Create( socket,True )
 	End Function
 	
 	Function CreateTCP:TSocket(family:Int = AF_INET_)
-		Local socket=socket_( family,SOCK_STREAM_,0 )
-		If socket>=0 Return Create( socket,True )
+?not win32
+		Local socket:Int=socket_( family,SOCK_STREAM_,0 )
+?win32 and ptr32
+		Local socket:Int=socket_( family,SOCK_STREAM_,0 )
+?win32 and ptr64
+		Local socket:Long=socket_( family,SOCK_STREAM_,0 )
+?
+		If socket<>INVALID_SOCKET Return Create( socket,True )
 	End Function
 
 	Rem
 	bbdoc: 
 	End Rem
 	Function Create:TSocket(info:TAddrInfo)
+?not win32
 		Local socket:Int = socket_( info.family(),info.sockType(),info.protocol() )
-		If socket >= 0 Then
+?win32 and ptr32
+		Local socket:Int = socket_( info.family(),info.sockType(),info.protocol() )
+?win32 and ptr64
+		Local socket:Long = socket_( info.family(),info.sockType(),info.protocol() )
+?
+		If socket <> INVALID_SOCKET Then
 			Return Create( socket, True )
 		End If
 	End Function
 
-	Field _socket:Int,_autoClose:Int
+?not win32
+	Field _socket:Int
+?win32 and ptr32
+	Field _socket:Int
+?win32 and ptr64
+	Field _socket:Long
+?
+	Field _autoClose:Int
 	
 	Field _localIp:String,_localPort:Int
 	Field _remoteIp:String,_remotePort:Int
@@ -342,7 +429,7 @@ Rem
 bbdoc: Convert an ip address to a dotted string
 returns: Dotted string version of ip address
 End Rem
-Function DottedIP$( ip:Int )
+Function DottedIP:String( ip:Int )
 	Return (ip Shr 24)+"."+(ip Shr 16 & 255)+"."+(ip Shr 8 & 255 )+"."+(ip & 255)
 End Function
 
@@ -373,7 +460,7 @@ Rem
 bbdoc: Convert a host name to an ip address
 returns: Host ip address, or 0 if host not found
 End Rem
-Function HostIp:String( HostName$, index:Int=0, family:Int = AF_UNSPEC_ )
+Function HostIp:String( HostName:String, index:Int=0, family:Int = AF_UNSPEC_ )
 	If index<0 Return
 	Local ips:String[]=HostIps( HostName, family )
 	If index < ips.length Then
@@ -385,7 +472,7 @@ Rem
 bbdoc: Get all ip addresses for a host name
 returns: Array of host ips, or Null if host not found
 End Rem
-Function HostIps:String[]( HostName$, family:Int = AF_UNSPEC_ )
+Function HostIps:String[]( HostName:String, family:Int = AF_UNSPEC_ )
 	Local addr:TAddrInfo[] = AddrInfo(HostName, , family)
 	Local ips:String[] = New String[addr.length]
 	For Local i:Int = 0 Until addr.length
@@ -398,7 +485,7 @@ Rem
 bbdoc: Convert a host ip address to a name
 returns: Name of host, or Null if host not found
 End Rem
-Function HostName$( HostIp:String, family:Int = AF_UNSPEC_ )
+Function HostName:String( HostIp:String, family:Int = AF_UNSPEC_ )
 	Local addr:TAddrInfo[] = AddrInfo(HostIp, , family)
 	If addr Then
 		Return addr[0].HostName()
@@ -419,4 +506,20 @@ Function AddrInfo:TAddrInfo[](host:String, service:String, hints:TAddrInfo)
 	Return getaddrinfo_hints(host, service, hints.infoPtr)
 End Function
 
+Rem
+bbdoc: Disables sends or receives on a socket.
+about: Typically, #ShutdownSocket should be called before #CloseSocket to assure that all data is sent
+and received on a connected socket before it is closed.
 
+@how is one of the following options :
+
+| Value      | Meaning                                   |
+|------------|-------------------------------------------|
+| SD_RECEIVE | Shutdown receive operations               |
+| SD_SEND    | Shutdown send operations                  |
+| SD_BOTH    | Shutdown both send and receive operations |
+
+End Rem
+Function ShutdownSocket( socket:TSocket, how:Int=SD_SEND )
+	socket.Shutdown(how)
+End Function

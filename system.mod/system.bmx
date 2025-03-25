@@ -121,57 +121,6 @@ Function WaitSystem()
 End Function
 
 Rem
-bbdoc: Get current date
-returns: The current date as a string
-about:
-By default, it returns the current date in the format: DD MON YYYY (i.e. 10 DEC 2000).
-You can also specify some parameters to return the date in a format of your choice:
-[ @parameter | @description
-* %%a | Abbreviated day name (sun - mon).
-* %%A | Long day name (Sunday - Monday).
-* %%b | Abbreviated month name (jan - feb).
-* %%B | Long month name (January...).
-* %%c | Locale date & time.
-* %%d | day - in number (1..31).
-* %%H | hour - in number (0..23).
-* %%I | hour - in number (1..12).
-* %%j | day of the year (1..366).
-* %%m | month - in number (1..12).
-* %%M | minutes - in number (00..59).
-* %%P | AM / PM.
-* %%S | seconds - in number (00..59).
-* %%U | week number
-* %%w | day of the week (0..6).
-* %%W | week of the year (0..53).
-* %%x | locale data representation.
-* %%y | year without century (2014 --> 14).
-* %%Y | Year (2014).
-* %%Z | Time zone name.
-]
-You can use these parameters together:<br>
-CurrentDate("Month: %%a Day: %%d")<br>
-End Rem
-Function CurrentDate$(_format$="%d %b %Y")
-	Local	time[256],buff:Byte[256]
-	time_(time)
-	strftime_(buff,256,_format,localtime_( time ))
-	Return String.FromCString(buff)
-End Function
-
-Rem
-bbdoc: Get current time
-returns: The current time as a string
-about:
-Returns the current time in the format: HH:MM:SS (i.e. 14:31:57).
-End Rem
-Function CurrentTime$()
-	Local	time[256],buff:Byte[256]
-	time_(time)
-	strftime_( buff,256,"%H:%M:%S",localtime_( time ) );
-	Return String.FromCString(buff)
-End Function
-
-Rem
 bbdoc: Move mouse pointer
 about:
 #MoveMouse positions the mouse cursor at a specific location within
@@ -203,7 +152,7 @@ The optional @serious flag can be used to indicate a 'critical' event.
 
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
-Function Notify( text$,serious=False )
+Function Notify( text:String,serious=False )
 	SystemDriver().Notify text,serious
 End Function
 
@@ -217,7 +166,7 @@ False is returned.
 
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
-Function Confirm( text$,serious=False )
+Function Confirm( text:String,serious=False )
 	Return SystemDriver().Confirm( text,serious )
 End Function
 
@@ -231,7 +180,7 @@ selects NO, then #Proceed returns 0. Otherwise, #Proceed returns -1.
 
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
-Function Proceed( text$,serious=False )
+Function Proceed( text:String,serious=False )
 	Return SystemDriver().Proceed( text,serious )
 End Function
 
@@ -250,7 +199,7 @@ that begin with a "group:" and separated by a semicolon.
 
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
-Function RequestFile$( text$,extensions$="",save_flag=False,initial_path$="" )
+Function RequestFile:String( text:String,extensions:String="",save_flag=False,initial_path:String="" )
 	Return SystemDriver().RequestFile( text,extensions,save_flag,initial_path )
 End Function
 
@@ -264,7 +213,7 @@ about:
 
 Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
-Function RequestDir$( text$,initial_path$="" )
+Function RequestDir:String( text:String,initial_path:String="" )
 	Return SystemDriver().RequestDir( text,initial_path )
 End Function
 
@@ -272,8 +221,8 @@ Rem
 bbdoc: Opens a URL with the system's default web browser.
 about: Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
-Function OpenURL( url$ )
-	Local dev$,anchor$
+Function OpenURL( url:String )
+	Local dev:String,anchor:String
 
 	dev=url[..5].toLower()
 	If dev<>"http:" And dev<>"file:" And url[..6].ToLower()<>"https:"
@@ -282,7 +231,7 @@ Function OpenURL( url$ )
 			anchor=url[h..]
 			url=url[..h]
 		EndIf
-		Local f$=RealPath(url)
+		Local f:String=RealPath(url)
 		If FileType(f) 
 			url="file:"+f +anchor
 		Else
@@ -297,16 +246,16 @@ Rem
 bbdoc: Get desktop width
 returns: Width of the desktop, in pixels
 End Rem
-Function DesktopWidth()
-	Return SystemDriver().DesktopWidth()
+Function DesktopWidth(display:Int = 0)
+	Return SystemDriver().DesktopWidth(display)
 End Function
 
 Rem
 bbdoc: Get desktop height
 returns: Height of the desktop, in pixels
 End Rem
-Function DesktopHeight()
-	Return SystemDriver().DesktopHeight()
+Function DesktopHeight(display:Int = 0)
+	Return SystemDriver().DesktopHeight(display)
 End Function
 
 Rem
@@ -317,8 +266,8 @@ The depth of the desktop is the number of bits per pixel.
 
 Note that on some platforms this function may return 0 if the desktop depth cannot be determined.
 End Rem
-Function DesktopDepth()
-	Return SystemDriver().DesktopDepth()
+Function DesktopDepth(display:Int = 0)
+	Return SystemDriver().DesktopDepth(display)
 End Function
 
 Rem
@@ -327,8 +276,8 @@ returns: Refresh rate, in cycles per second, of the desktop
 about:
 Note that on some platforms this function may return 0 if the desktop refresh rate cannot be determined.
 End Rem
-Function DesktopHertz()
-	Return SystemDriver().DesktopHertz()
+Function DesktopHertz(display:Int = 0)
+	Return SystemDriver().DesktopHertz(display)
 End Function
 
 'End Extern

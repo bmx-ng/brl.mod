@@ -15,7 +15,7 @@ String^Object{
 	@length:Int
 
 	-ToString:String()="bbStringToString"
-	-Compare:Int(otherObject:Object)="bbStringCompare"
+	-Compare:Int(otherString:String)="bbStringCompare"
 	
 	-Find:Int( subString:String,startIndex=0 )="bbStringFind"
 	-FindLast:Int( subString:String,startIndex=0 )="bbStringFindLast"
@@ -52,6 +52,7 @@ String^Object{
 	
 	+FromUTF8String:String( utf8String:Byte Ptr )="bbStringFromUTF8String"
 	-ToUTF8String:Byte Ptr()="bbStringToUTF8String"
+	+FromUTF8Bytes:String( utf8String:Byte Ptr, count )="bbStringFromUTF8Bytes"
 
 	-ToSizet:size_t()="bbStringToSizet"
 	+FromSizet:String( sizetValue:size_t )="bbStringFromSizet"
@@ -66,6 +67,29 @@ String^Object{
 	-ToLParam:LParam()="bbStringToLParam"
 	+FromLParam:String( lparamValue:LParam )="bbStringFromLParam"
 
+	-ToUTF8StringBuffer:Byte Ptr(buf:Byte Ptr, length:Size_T Var)="bbStringToUTF8StringBuffer"
+	-Hash:ULong()="bbStringHash"
+
+	-ToUTF32String:UInt Ptr()="bbStringToUTF32String"
+	+FromUTF32String:String( utf32String:UInt Ptr )="bbStringFromUTF32String"
+	+FromUTF32Bytes:String( utf32String:UInt Ptr, count )="bbStringFromUTF32Bytes"
+
+	-ToWStringBuffer:Short Ptr(buf:Short Ptr, length:Size_T Var)="bbStringToWStringBuffer"
+
+	-ToLongInt:LongInt()="bbStringToLongInt"
+	+FromLongInt:String( longIntValue:LongInt )="bbStringFromLongInt"
+	-ToULongInt:ULongInt()="bbStringToULongInt"
+	+FromULongInt:String( ulongIntValue:ULongInt )="bbStringFromULongInt"
+
+	-ToDoubleEx:Int( val:Double Var,startPos:Int=0,endPos:Int=-1,format:Int=5,sep:String="." )="bbStringToDoubleEx"
+	-ToFloatEx:Int( val:Float Var,startPos:Int=0,endPos:Int=-1,format:Int=5,sep:String="." )="bbStringToFloatEx"
+	-ToIntEx:Int( val:Int Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToIntEx"
+	-ToUIntEx:Int( val:UInt Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToUIntEx"
+	-ToLongEx:Int( val:Long Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToLongEx"
+	-ToULongEx:Int( val:ULong Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToULongEx"
+	-ToSizeTEx:Int( val:Size_T Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToSizeTEx"
+	-ToLongIntEx:Int( val:LongInt Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToLongIntEx"
+	-ToULongIntEx:Int( val:ULongInt Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToULongIntEx"
 }AF="bbStringClass"
 
 ___Array^Object{

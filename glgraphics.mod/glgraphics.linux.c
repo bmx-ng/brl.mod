@@ -44,13 +44,16 @@ enum{
 	FLAGS_DEPTHBUFFER=	0x8,
 	FLAGS_STENCILBUFFER=0x10,
 	FLAGS_ACCUMBUFFER=	0x20,
-	FLAGS_FULLSCREEN=0x80000000
+	FLAGS_BORDERLESS=	0x40,
+	FLAGS_FULLSCREEN_DESKTOP=0x80
 };
 
 typedef struct BBGLContext BBGLContext;
 
 struct BBGLContext{
-	int mode,width,height,depth,hertz,flags,sync;
+	int mode,width,height,depth,hertz;
+	BBInt64 flags;
+	int sync;
 	Window window;
 	GLXContext glContext;
 };
@@ -58,9 +61,9 @@ struct BBGLContext{
 // glgraphics.bmx interface
 
 int bbGLGraphicsGraphicsModes( int *imodes,int maxcount );
-BBGLContext *bbGLGraphicsAttachGraphics( void * window,int flags );
-BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,int flags );
-void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hz,int *flags );
+BBGLContext *bbGLGraphicsAttachGraphics( void * window,BBInt64 flags );
+BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,BBInt64 flags, int x, int y );
+void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hz,BBInt64 *flags );
 void bbGLGraphicsClose( BBGLContext *context );
 void bbGLGraphicsSetGraphics( BBGLContext *context );
 void bbGLGraphicsFlip( int sync );
@@ -84,7 +87,7 @@ int _calchertz(XF86VidModeModeInfo *m){
 }
 
 int _initDisplay(){
-	int		major,minor;
+	int major,minor;
 	if (xdisplay) return 0;
 	xdisplay=bbSystemDisplay();
 	if (!xdisplay) return -1;
@@ -130,7 +133,7 @@ static void _swapBuffers( BBGLContext *context ){
 	bbSystemPoll();
 }
 
-BBGLContext *bbGLGraphicsAttachGraphics( void * window,int flags ){
+BBGLContext *bbGLGraphicsAttachGraphics( void * window,BBInt64 flags ){
 	BBGLContext *context=(BBGLContext*)malloc( sizeof(BBGLContext) );
 	memset( context,0,sizeof(BBGLContext) );
 	context->mode=MODE_WIDGET;
@@ -140,7 +143,7 @@ BBGLContext *bbGLGraphicsAttachGraphics( void * window,int flags ){
 	return context;
 }
 
-XVisualInfo *_chooseVisual(flags){
+XVisualInfo *_chooseVisual(BBInt64 flags){
 	int glspec[32],*s;
 	s=glspec;
 	*s++=GLX_RGBA;
@@ -192,7 +195,7 @@ static void _validateContext( BBGLContext *context ){
 	bbSetSystemWindow(context->window);
 }
 
-void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,int *flags ){
+void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *depth,int *hertz,BBInt64 *flags ){
 	_validateSize( context );
 	*width=context->width;
 	*height=context->height;
@@ -207,10 +210,10 @@ static Bool WaitForNotify(Display *display,XEvent *event,XPointer arg){
 
 void bbGLGraphicsShareContexts(){
 	if( _sharedContext ) return;
-	_sharedContext=bbGLGraphicsCreateGraphics(0,0,0,0,0);
+	_sharedContext=bbGLGraphicsCreateGraphics(0,0,0,0,0,0,0);
 }
 
-BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,int flags ){
+BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,BBInt64 flags, int x, int y ){
 	XSetWindowAttributes swa;
 	XVisualInfo *vizinfo;
 	XEvent event;
@@ -239,6 +242,8 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,i
 	}
 
 	vizinfo=_chooseVisual(flags);
+
+	int border = (flags & FLAGS_BORDERLESS) ? 0 : CWBorderPixel;
 
 	if (depth)
 	{
@@ -288,7 +293,7 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,i
 			vizinfo->depth,
 			InputOutput,
 			vizinfo->visual,
-			CWBorderPixel|CWEventMask|CWColormap|CWOverrideRedirect,
+			border|CWEventMask|CWColormap|CWOverrideRedirect,
 			&swa
 		);
 
@@ -300,6 +305,9 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,i
 		Atom atom;
 		XSizeHints *hints;
 		
+		if (x < 0) x = 0 ;
+		if (y < 0) y = 0 ;	
+		
 		swa.border_pixel=0;
 		swa.event_mask=StructureNotifyMask;
 		swa.colormap=XCreateColormap( xdisplay,RootWindow(xdisplay,0),vizinfo->visual,AllocNone );
@@ -307,14 +315,14 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,i
 		window=XCreateWindow(
 			xdisplay,
 			RootWindow(xdisplay,xscreen),
-			0,
-			0,  
+			x,
+			y,  
 			width,height,
 			0,
 			vizinfo->depth,
 			InputOutput,
 			vizinfo->visual,
-			CWBorderPixel|CWColormap|CWEventMask,
+			border|CWColormap|CWEventMask,
 			&swa
 		);
 
@@ -324,7 +332,9 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,i
 
 		//Set window min/max size		
 		hints=XAllocSizeHints();
-		hints->flags=PMinSize|PMaxSize;
+		hints->flags=PMinSize|PMaxSize|PPosition;
+		hints->x = x;
+		hints->y = y;
 		hints->min_width=hints->max_width=width;
 		hints->min_height=hints->max_height=height;
 		XSetWMNormalHints( xdisplay,window,hints );
@@ -350,13 +360,12 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,i
 		bbSetSystemWindow(xwindow);
 	}
 
-	appTitle=bbTmpUTF8String( bbAppTitle );
+	appTitle=bbStringToUTF8String( bbAppTitle );
 	
-	XChangeProperty( xdisplay,window,
-	XInternAtom( xdisplay,"_NET_WM_NAME",True ),
-	XInternAtom( xdisplay,"UTF8_STRING",True ),
-	8,PropModeReplace,appTitle,strlen( appTitle ) );
+	XChangeProperty( xdisplay,window, XInternAtom( xdisplay,"_NET_WM_NAME",True ),
+		XInternAtom( xdisplay,"UTF8_STRING",True ), 8,PropModeReplace,appTitle,strlen( appTitle ) );
 
+	bbMemFree(appTitle);
 //	XStoreName( xdisplay,window,appTitle );
 	
 	bbSystemPoll();

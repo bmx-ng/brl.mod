@@ -4,7 +4,7 @@
 
 #include "blitz_types.h"
 
-#include "pub.mod/libffi.mod/include/ffi.h"
+//#include "pub.mod/libffi.mod/include/ffi.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -32,12 +32,12 @@ enum{
 	BBDEBUGDECL_TYPEFUNCTION=7
 };
 
-typedef struct BBCif {
+/*typedef struct BBCif {
 	ffi_abi abi;
 	unsigned int nargs;
 	ffi_type *rtype;
 	ffi_type **arg_types;
-} BBCif;
+} BBCif;*/
 
 struct BBDebugDecl{
 	unsigned int     kind;
@@ -46,12 +46,14 @@ struct BBDebugDecl{
 		BBString*    const_value;
 		size_t       field_offset;
 		void*        var_address;
+		BBFuncPtr    func_ptr;
 		size_t       struct_size;
+		char         is_flags_enum;
 	};
-	union{
-		void           (*reflection_wrapper)(void**);
-		BBCif * cif;
-	};
+//	union{
+		void   (*reflection_wrapper)(void**);
+//		BBCif* cif;
+//	};
 };
 
 enum{
@@ -70,9 +72,16 @@ struct BBDebugScope{
 };
 
 struct BBDebugStm{
-	const char		*source_file;
-	int				line_num,char_num;
+	BBULONG      id;
+	int          line_num,char_num;
 };
+
+typedef struct BBSource {
+	BBULONG id;
+	char * file;
+	unsigned int count;
+	unsigned int lines[32];
+} BBSource;
 
 extern void bbCAssertEx();
 
@@ -84,6 +93,10 @@ extern void (*bbOnDebugLeaveScope)();
 extern void (*bbOnDebugPushExState)();
 extern void (*bbOnDebugPopExState)();
 extern void (*bbOnDebugUnhandledEx)( BBObject *ex );
+
+void bbRegisterSource(BBULONG sourceId, const char * source);
+BBSource * bbSourceForId(BBULONG id);
+BBSource * bbSourceForName(BBString * filename);
 
 #ifdef __cplusplus
 }

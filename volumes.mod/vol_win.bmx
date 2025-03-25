@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2019 Bruce A Henderson
+' Copyright (c) 2007-2022 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -38,9 +38,9 @@ Extern "win32"
 	Function SetErrorMode:Int(Mode:Int) = "UINT SetErrorMode(UINT )!"
 
 	' volumes
-	Function FindFirstVolume:Int(volumeName:Short Ptr, bufferSize:Int) = "HANDLE FindFirstVolumeW(LPSTR , DWORD )!"
-	Function FindNextVolume:Int(handle:Int, volumeName:Short Ptr, bufferSize:Int) = "WINBOOL FindNextVolumeW(HANDLE , LPSTR , DWORD )!"
-	Function FindVolumeClose:Int(handle:Int) = "WINBOOL FindVolumeClose(HANDLE)!"
+	Function FindFirstVolume:Byte Ptr(volumeName:Short Ptr, bufferSize:Int) = "HANDLE FindFirstVolumeW(LPSTR , DWORD )!"
+	Function FindNextVolume:Int(handle:Byte Ptr, volumeName:Short Ptr, bufferSize:Int) = "WINBOOL FindNextVolumeW(HANDLE , LPSTR , DWORD )!"
+	Function FindVolumeClose:Int(handle:Byte Ptr) = "WINBOOL FindVolumeClose(HANDLE)!"
 	
 	' volume paths
 	Function GetVolumePathNamesForVolumeName:Int(volumeName:Short Ptr, volumePaths:Short Ptr, bufferSize:Int, copiedSize:Int Ptr) = "WINBOOL GetVolumePathNamesForVolumeNameW(LPCSTR , LPCH , DWORD , PDWORD )!"
@@ -243,7 +243,7 @@ Type TWinVolume Extends TVolume
 		Local mpBuffer:Short[] = New Short[PATH_MAX]
 		
 		' get the first volume
-		Local handle:Int = FindFirstVolume(nameBuffer, PATH_MAX)
+		Local handle:Byte Ptr = FindFirstVolume(nameBuffer, PATH_MAX)
 		If handle Then
 
 			volumes = New TMap

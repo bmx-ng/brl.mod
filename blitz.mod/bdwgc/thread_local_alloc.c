@@ -1,11 +1,12 @@
 /*
  * Copyright (c) 2000-2005 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 2008-2022 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
  *
  * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
+ * for any purpose, provided the above notices are retained on all copies.
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
@@ -15,13 +16,11 @@
 
 #if defined(THREAD_LOCAL_ALLOC)
 
-#ifndef THREADS
-# error "invalid config - THREAD_LOCAL_ALLOC requires GC_THREADS"
+#if !defined(THREADS) && !defined(CPPCHECK)
+# error Invalid config - THREAD_LOCAL_ALLOC requires GC_THREADS
 #endif
 
 #include "private/thread_local_alloc.h"
-
-#include <stdlib.h>
 
 #if defined(USE_COMPILER_TLS)
   __thread GC_ATTR_TLS_FAST
@@ -53,8 +52,7 @@ static void return_single_freelist(void *fl, void **gfl)
     }
 }
 
-/* Recover the contents of the freelist array fl into the global one gfl.*/
-/* We hold the allocator lock.                                          */
+/* Recover the contents of the freelist array fl into the global one gfl. */
 static void return_freelists(void **fl, void **gfl)
 {
     int i;
@@ -68,10 +66,11 @@ static void return_freelists(void **fl, void **gfl)
         fl[i] = (ptr_t)HBLKSIZE;
     }
     /* The 0 granule freelist really contains 1 granule objects.        */
-#   ifdef GC_GCJ_SUPPORT
-      if (fl[0] == ERROR_FL) return;
-#   endif
-    if ((word)(fl[0]) >= HBLKSIZE) {
+    if ((word)fl[0] >= HBLKSIZE
+#       ifdef GC_GCJ_SUPPORT
+          && fl[0] != ERROR_FL
+#       endif
+       ) {
         return_single_freelist(fl[0], &gfl[1]);
     }
 }
@@ -97,7 +96,10 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
 
     GC_ASSERT(I_HOLD_LOCK());
     if (!EXPECT(keys_initialized, TRUE)) {
-        GC_ASSERT((word)&GC_thread_key % sizeof(word) == 0);
+#       ifdef USE_CUSTOM_SPECIFIC
+          /* Ensure proper alignment of a "pushed" GC symbol.   */
+          GC_ASSERT((word)(&GC_thread_key) % sizeof(word) == 0);
+#       endif
         res = GC_key_create(&GC_thread_key, reset_thread_key);
         if (COVERT_DATAFLOW(res) != 0) {
             ABORT("Failed to create key for local allocator");
@@ -124,11 +126,11 @@ GC_INNER void GC_init_thread_local(GC_tlfs p)
 #   endif
 }
 
-/* We hold the allocator lock.  */
 GC_INNER void GC_destroy_thread_local(GC_tlfs p)
 {
     int k;
 
+    GC_ASSERT(I_HOLD_LOCK());
     /* We currently only do this from the thread itself.        */
     GC_STATIC_ASSERT(THREAD_FREELISTS_KINDS <= MAXOBJKINDS);
     for (k = 0; k < THREAD_FREELISTS_KINDS; ++k) {
@@ -176,10 +178,15 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int kind)
     GC_ASSERT(GC_is_initialized);
     GC_ASSERT(GC_is_thread_tsd_valid(tsd));
     granules = ROUNDED_UP_GRANULES(bytes);
+#   if defined(CPPCHECK)
+#     define MALLOC_KIND_PTRFREE_INIT (void*)1
+#   else
+#     define MALLOC_KIND_PTRFREE_INIT NULL
+#   endif
     GC_FAST_MALLOC_GRANS(result, granules,
                          ((GC_tlfs)tsd) -> _freelists[kind], DIRECT_GRANULES,
                          kind, GC_malloc_kind_global(bytes, kind),
-                         (void)(kind == PTRFREE ? NULL
+                         (void)(kind == PTRFREE ? MALLOC_KIND_PTRFREE_INIT
                                                : (obj_link(result) = 0)));
 #   ifdef LOG_ALLOCS
       GC_log_printf("GC_malloc_kind(%lu, %d) returned %p, recent GC #%lu\n",
@@ -191,7 +198,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_kind(size_t bytes, int kind)
 
 #ifdef GC_GCJ_SUPPORT
 
-# include "gc_gcj.h"
+# include "gc/gc_gcj.h"
 
 /* Gcj-style allocation without locks is extremely tricky.  The         */
 /* fundamental issue is that we may end up marking a free list, which   */
@@ -223,7 +230,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_gcj_malloc(size_t bytes,
     void *result;
     void **tiny_fl;
 
-    GC_ASSERT(GC_gcj_malloc_initialized);
+    GC_ASSERT(GC_gcjobjfreelist != NULL);
     tiny_fl = ((GC_tlfs)GC_getspecific(GC_thread_key))->gcj_freelists;
     GC_FAST_MALLOC_GRANS(result, granules, tiny_fl, DIRECT_GRANULES,
                          GC_gcj_kind,

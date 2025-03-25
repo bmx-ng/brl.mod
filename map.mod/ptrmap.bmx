@@ -1,20 +1,27 @@
-Strict
+SuperStrict
 
+Import "common.bmx"
 
 Extern
-	Function bmx_map_ptrmap_clear(root:Byte Ptr Ptr)
-	Function bmx_map_ptrmap_isempty:Int(root:Byte Ptr Ptr)
-	Function bmx_map_ptrmap_insert(key:Byte Ptr, value:Object, root:Byte Ptr Ptr)
-	Function bmx_map_ptrmap_contains:Int(key:Byte Ptr, root:Byte Ptr Ptr)
-	Function bmx_map_ptrmap_valueforkey:Object(key:Byte Ptr, root:Byte Ptr Ptr)
-	Function bmx_map_ptrmap_remove:Int(key:Byte Ptr, root:Byte Ptr Ptr)
-	Function bmx_map_ptrmap_firstnode:Byte Ptr(root:Byte Ptr)
-	Function bmx_map_ptrmap_nextnode:Byte Ptr(node:Byte Ptr)
-	Function bmx_map_ptrmap_key:Byte Ptr(node:Byte Ptr)
-	Function bmx_map_ptrmap_value:Object(node:Byte Ptr)
-	Function bmx_map_ptrmap_hasnext:Int(node:Byte Ptr, root:Byte Ptr)
-	Function bmx_map_ptrmap_copy(dst:Byte Ptr Ptr, _root:Byte Ptr)
+	Function bmx_map_ptrmap_clear(root:SavlRoot Ptr Ptr)
+	Function bmx_map_ptrmap_isempty:Int(root:SavlRoot Ptr)
+	Function bmx_map_ptrmap_insert(key:Byte Ptr, value:Object, root:SavlRoot Ptr Ptr)
+	Function bmx_map_ptrmap_contains:Int(key:Byte Ptr, root:SavlRoot Ptr)
+	Function bmx_map_ptrmap_valueforkey:Object(key:Byte Ptr, root:SavlRoot Ptr)
+	Function bmx_map_ptrmap_remove:Int(key:Byte Ptr, root:SavlRoot Ptr Ptr)
+	Function bmx_map_ptrmap_firstnode:SPtrMapNode Ptr(root:SavlRoot Ptr)
+	Function bmx_map_ptrmap_nextnode:SPtrMapNode Ptr(node:SPtrMapNode Ptr)
+	Function bmx_map_ptrmap_key:Byte Ptr(node:SPtrMapNode Ptr)
+	Function bmx_map_ptrmap_value:Object(node:SPtrMapNode Ptr)
+	Function bmx_map_ptrmap_hasnext:Int(node:SPtrMapNode Ptr, root:SavlRoot Ptr)
+	Function bmx_map_ptrmap_copy(dst:SavlRoot Ptr Ptr, _root:SavlRoot Ptr)
 End Extern
+
+Struct SPtrMapNode
+	Field link:SavlRoot
+	Field key:Byte Ptr
+	Field value:Object
+End Struct
 
 Rem
 bbdoc: A key/value (Byte Ptr/Object) map.
@@ -42,8 +49,8 @@ Type TPtrMap
 	bbdoc: Checks if the map is empty.
 	about: #True if @map is empty, otherwise #False.
 	End Rem
-	Method IsEmpty()
-		Return bmx_map_ptrmap_isempty(Varptr _root)
+	Method IsEmpty:Int()
+		Return bmx_map_ptrmap_isempty(_root)
 	End Method
 	
 	Rem
@@ -62,7 +69,7 @@ Type TPtrMap
 	returns: #True if the map contains @key.
 	End Rem
 	Method Contains:Int( key:Byte Ptr )
-		Return bmx_map_ptrmap_contains(key, Varptr _root)
+		Return bmx_map_ptrmap_contains(key, _root)
 	End Method
 	
 	Rem
@@ -71,14 +78,14 @@ Type TPtrMap
 	about: If the map does not contain @key, a #Null object is returned.
 	End Rem
 	Method ValueForKey:Object( key:Byte Ptr )
-		Return bmx_map_ptrmap_valueforkey(key, Varptr _root)
+		Return bmx_map_ptrmap_valueforkey(key, _root)
 	End Method
 	
 	Rem
 	bbdoc: Remove a key/value pair from the map.
 	returns: #True if @key was removed, or #False otherwise.
 	End Rem
-	Method Remove( key:Byte Ptr )
+	Method Remove:Int( key:Byte Ptr )
 ?ngcmod
 		_modCount :+ 1
 ?
@@ -170,7 +177,7 @@ Type TPtrMap
 	about: If the map does not contain @key, a #Null object is returned.
 	End Rem
 	Method Operator[]:Object(key:Byte Ptr)
-		Return bmx_map_ptrmap_valueforkey(key, Varptr _root)
+		Return bmx_map_ptrmap_valueforkey(key, _root)
 	End Method
 	
 	Rem
@@ -181,7 +188,7 @@ Type TPtrMap
 		bmx_map_ptrmap_insert(key, value, Varptr _root)
 	End Method
 
-	Field _root:Byte Ptr
+	Field _root:SavlRoot Ptr
 	
 ?ngcmod
 	Field _modCount:Int
@@ -190,8 +197,8 @@ Type TPtrMap
 End Type
 
 Type TPtrNode
-	Field _root:Byte Ptr
-	Field _nodePtr:Byte Ptr
+	Field _root:SavlRoot Ptr
+	Field _nodePtr:SPtrMapNode Ptr
 	
 	Method Key:Byte Ptr()
 		Return bmx_map_ptrmap_key(_nodePtr)
@@ -201,7 +208,7 @@ Type TPtrNode
 		Return bmx_map_ptrmap_value(_nodePtr)
 	End Method
 
-	Method HasNext()
+	Method HasNext:Int()
 		Return bmx_map_ptrmap_hasnext(_nodePtr, _root)
 	End Method
 	
@@ -229,7 +236,7 @@ Type TPtrKey
 End Type
 
 Type TPtrNodeEnumerator
-	Method HasNext()
+	Method HasNext:Int()
 		Local has:Int = _node.HasNext()
 		If Not has Then
 			_map = Null
@@ -288,7 +295,7 @@ Type TPtrMapEnumerator
 End Type
 
 Type TPtrEmptyEnumerator Extends TPtrNodeEnumerator
-	Method HasNext() Override
+	Method HasNext:Int() Override
 		_map = Null
 		Return False
 	End Method

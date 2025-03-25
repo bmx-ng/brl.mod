@@ -16,12 +16,14 @@ many text processing applications are unable to handle UTF8 and UTF16 files.
 End Rem
 Module BRL.TextStream
 
-ModuleInfo "Version: 1.04"
+ModuleInfo "Version: 1.05"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.05"
+ModuleInfo "History: UCS-2 surrogate pairs."
 ModuleInfo "History: 1.04"
 ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.03 Release"
@@ -35,14 +37,22 @@ ModuleInfo "History: Added TextStream module"
 
 Import BRL.Stream
 
+Enum ETextStreamFormat
+	LATIN1
+	UTF8
+	UTF16BE
+	UTF16LE
+End Enum
+
 Type TTextStream Extends TStreamWrapper
 
-	'***** PUBLIC *****
+	' deprecated
+	Const LATIN1:Int = 1
+	Const UTF8:Int = 2
+	Const UTF16BE:Int = 3
+	Const UTF16LE:Int = 4
 
-	Const LATIN1:Int=1
-	Const UTF8:Int=2
-	Const UTF16BE:Int=3
-	Const UTF16LE:Int=4
+	'***** PUBLIC *****
 
 	Method Read:Long( buf:Byte Ptr,count:Long ) Override
 		For Local i:Long=0 Until count
@@ -131,7 +141,7 @@ Type TTextStream Extends TStreamWrapper
 		WriteLine n
 	End Method
 	
-	Method ReadLine$() Override
+	Method ReadLine:String() Override
 		_FlushRead
 		Local buf:Short[1024],i:Int
 		While Not Eof()
@@ -146,7 +156,7 @@ Type TTextStream Extends TStreamWrapper
 		Return String.FromShorts(buf,i)
 	End Method
 	
-	Method ReadFile$()
+	Method ReadFile:String()
 		_FlushRead
 		Local buf:Short[1024],i:Int
 		While Not Eof()
@@ -158,13 +168,13 @@ Type TTextStream Extends TStreamWrapper
 		Return String.FromShorts( buf,i )
 	End Method
 	
-	Method WriteLine:Int( str$ ) Override
+	Method WriteLine:Int( str:String ) Override
 		_FlushWrite
 		WriteString str
 		WriteString "~r~n"
 	End Method
 	
-	Method ReadString$( length:Int ) Override
+	Method ReadString:String( length:Int ) Override
 		_FlushRead
 		Local buf:Short[length]
 		For Local i:Int=0 Until length
@@ -173,7 +183,7 @@ Type TTextStream Extends TStreamWrapper
 		Return String.FromShorts(buf,length)
 	End Method
 	
-	Method WriteString( str$ ) Override
+	Method WriteString( str:String ) Override
 		_FlushWrite
 		For Local i:Int=0 Until str.length
 			WriteChar str[i]
@@ -181,51 +191,97 @@ Type TTextStream Extends TStreamWrapper
 	End Method
 	
 	Method ReadChar:Int()
-		Local c:Int=_ReadByte()
-		Select _encoding
-		Case LATIN1
+		Local c:Int
+		If _carried Then
+			c = _carried
+			_carried = 0
 			Return c
-		Case UTF8
+		End If
+		
+		c = _ReadByte()
+		Select _encoding
+		Case ETextStreamFormat.LATIN1
+			Return c
+		Case ETextStreamFormat.UTF8
 			If c<128 Return c
-			Local d:Int=_ReadByte()
-			If c<224 Return (c-192)*64+(d-128)
-			Local e:Int=_ReadByte()
-			If c<240 Return (c-224)*4096+(d-128)*64+(e-128)
-		Case UTF16BE
+			Local d:Int=_ReadByte() & $3f
+			If c<224 Return ((c & 31) Shl 6) | d
+			Local e:Int=_ReadByte() & $3f
+			If c<240 Return ((c & 15) Shl 12) | (d Shl 6) | e
+			Local f:Int = _ReadByte() & $3f
+			Local v:Int = ((c & 7) Shl 18) | (d Shl 12) | (e Shl 6) | f
+			If v & $ffff0000 Then
+				v :- $10000
+				d = ((v Shr 10) & $7ffff) + $d800
+				e = (v & $3ff) + $dc00
+				_carried = e
+				Return d
+			Else
+				Return v
+			End If
+		Case ETextStreamFormat.UTF16BE
 			Local d:Int=_ReadByte()
 			Return c Shl 8 | d
-		Case UTF16LE
+		Case ETextStreamFormat.UTF16LE
 			Local d:Int=_ReadByte()
 			Return d Shl 8 | c
 		End Select
 	End Method
 	
 	Method WriteChar( char:Int )
+		If _carried Then
+			Local c:Int = ((_carried - $d800) Shl 10) + (char - $dc00) + $10000
+			_WriteByte (c Shr 18) | $f0
+			_WriteByte ((c Shr 12) & $3f) | $80
+			_WriteByte ((c Shr 6) & $3f) | $80
+			_WriteByte (c & $3f) | $80
+			_carried = 0
+			Return
+		End If
+	
 		Assert char>=0 And char<=$ffff
 		Select _encoding
-		Case LATIN1
+		Case ETextStreamFormat.LATIN1
 			_WriteByte char
-		Case UTF8
+		Case ETextStreamFormat.UTF8
 			If char<128
 				_WriteByte char
 			Else If char<2048
 				_WriteByte char/64 | 192
 				_WriteByte char Mod 64 | 128
-			Else
+			Else If char < $d800 Or char > $dbff
 				_WriteByte char/4096 | 224
 				_WriteByte char/64 Mod 64 | 128
 				_WriteByte char Mod 64 | 128
+			Else
+				_carried = char
+				Return
 			EndIf
-		Case UTF16BE
+		Case ETextStreamFormat.UTF16BE
 			_WriteByte char Shr 8
 			_WriteByte char
-		Case UTF16LE
+		Case ETextStreamFormat.UTF16LE
 			_WriteByte char
 			_WriteByte char Shr 8
 		End Select
 	End Method
 
 	Function Create:TTextStream( stream:TStream,encoding:Int )
+		Local enc:ETextStreamFormat
+		Select encoding
+			Case LATIN1
+				enc = ETextStreamFormat.LATIN1
+			Case UTF8
+				enc = ETextStreamFormat.UTF8
+			Case UTF16BE
+				enc = ETextStreamFormat.UTF16BE
+			Case UTF16LE
+				enc = ETextStreamFormat.UTF16LE
+		End Select
+		Return Create(stream, enc)
+	End Function
+	
+	Function Create:TTextStream( stream:TStream,encoding:ETextStreamFormat )
 		Local t:TTextStream=New TTextStream
 		t._encoding=encoding
 		t.SetStream stream
@@ -257,26 +313,28 @@ Type TTextStream Extends TStreamWrapper
 		_bufcount=0
 	End Method
 	
-	Field _encoding:Int,_bufcount:Int
+	Field _encoding:ETextStreamFormat
+	Field _bufcount:Int
+	Field _carried:Int
 	
 End Type
 	
 Type TTextStreamFactory Extends TStreamFactory
 
-	Method CreateStream:TStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Override
-		Local encoding:Int
-		Select proto$
+	Method CreateStream:TStream( url:Object,proto:String,path:String,readable:Int,writeMode:Int ) Override
+		Local encoding:ETextStreamFormat
+		Select proto
 		Case "latin1"
-			encoding=TTextStream.LATIN1
+			encoding=ETextStreamFormat.LATIN1
 		Case "utf8"
-			encoding=TTextStream.UTF8
+			encoding=ETextStreamFormat.UTF8
 		Case "utf16be"
-			encoding=TTextStream.UTF16BE
+			encoding=ETextStreamFormat.UTF16BE
 		Case "utf16le"
-			encoding=TTextStream.UTF16LE
+			encoding=ETextStreamFormat.UTF16LE
 		End Select
 		If Not encoding Return Null
-		Local stream:TStream=OpenStream( path,readable,writeable )
+		Local stream:TStream=OpenStream( path,readable,writeMode )
 		If stream Return TTextStream.Create( stream,encoding )
 	End Method
 End Type
@@ -296,16 +354,18 @@ The first bytes read from the stream control the format of the text:
 ]
 
 If the first bytes don't match any of the above values, the stream
-is assumed to contain LATIN1 text.
+is assumed to contain LATIN1 text. Additionally, when @checkForUTF8 is enabled, the
+stream will be tested for UTF8 compatibility, and loaded as such as appropriate.
 
 A #TStreamReadException is thrown if not all bytes could be read.
 End Rem
-Function LoadText$( url:Object )
+Function LoadText:String( url:Object, checkForUTF8:Int = True )
 
 	Local stream:TStream=ReadStream( url )
 	If Not stream Throw New TStreamReadException
 
-	Local format:Int,size:Int,c:Int,d:Int,e:Int
+	Local format:ETextStreamFormat
+	Local size:Int,c:Int,d:Int,e:Int
 
 	If Not stream.Eof()
 		c=stream.ReadByte()
@@ -314,14 +374,14 @@ Function LoadText$( url:Object )
 			d=stream.ReadByte()
 			size:+1
 			If c=$fe And d=$ff
-				format=TTextStream.UTF16BE
+				format=ETextStreamFormat.UTF16BE
 			Else If c=$ff And d=$fe
-				format=TTextStream.UTF16LE
+				format=ETextStreamFormat.UTF16LE
 			Else If c=$ef And d=$bb
 				If Not stream.Eof()
 					e=stream.ReadByte()
 					size:+1
-					If e=$bf format=TTextStream.UTF8
+					If e=$bf format=ETextStreamFormat.UTF8
 				EndIf
 			EndIf
 		EndIf
@@ -331,15 +391,19 @@ Function LoadText$( url:Object )
 		Local data:Byte[1024]
 		data[0]=c;data[1]=d;data[2]=e
 		While Not stream.Eof()
-			If size=data.length data=data[..size*2]
-			size:+stream.Read( (Byte Ptr data)+size,data.length-size )
+			If size=data.length-1 data=data[..size*2]
+			size:+stream.Read( (Byte Ptr data)+size,data.length-size-1 )
 		Wend
 		stream.Close
-		Return String.FromBytes( data,size )
+		If checkForUTF8 And IsProbablyUTF8(data, size) Then
+			Return String.FromUTF8String(data)
+		Else
+			Return String.FromBytes( data,size )
+		End If
 	EndIf
 	
 	Local TStream:TTextStream=TTextStream.Create( stream,format )
-	Local str$=TStream.ReadFile()
+	Local str:String=TStream.ReadFile()
 	TStream.Close
 	stream.Close
 	Return str
@@ -356,21 +420,22 @@ then @str is saved in UTF16 format. Otherwise, @str is saved in LATIN1 format.
 
 A #TStreamWriteException is thrown if not all bytes could be written.
 End Rem
-Function SaveText:Int( str$,url:Object )
+Function SaveText:Int( str:String,url:Object, format:ETextStreamFormat = ETextStreamFormat.LATIN1, withBOM:Int = True )
 
-	Local format:Int
-	For Local i:Int=0 Until str.length
-		If str[i]>255
+	If format <> ETextStreamFormat.LATIN1 And format <> ETextStreamFormat.UTF8
+		For Local i:Int=0 Until str.length
+			If str[i]>255
 ?BigEndian
-			format=TTextStream.UTF16BE
+				format=ETextStreamFormat.UTF16BE
 ?LittleEndian
-			format=TTextStream.UTF16LE
+				format=ETextStreamFormat.UTF16LE
 ?
-			Exit
-		EndIf
-	Next
+				Exit
+			EndIf
+		Next
+	End If
 	
-	If Not format
+	If format = ETextStreamFormat.LATIN1
 		SaveString str,url
 		Return True
 	EndIf
@@ -378,17 +443,20 @@ Function SaveText:Int( str$,url:Object )
 	Local stream:TStream=WriteStream( url )
 	If Not stream Throw New TStreamWriteException
 	
-	Select format
-	Case TTextStream.UTF8
-		stream.WriteByte $ef
-		stream.WriteByte $bb
-	Case TTextStream.UTF16BE
-		stream.WriteByte $fe
-		stream.WriteByte $ff
-	Case TTextStream.UTF16LE
-		stream.WriteByte $ff
-		stream.WriteByte $fe
-	End Select
+	If withBOM Then
+		Select format
+		Case ETextStreamFormat.UTF8
+			stream.WriteByte $ef
+			stream.WriteByte $bb
+			stream.WriteByte $bf
+		Case ETextStreamFormat.UTF16BE
+			stream.WriteByte $fe
+			stream.WriteByte $ff
+		Case ETextStreamFormat.UTF16LE
+			stream.WriteByte $ff
+			stream.WriteByte $fe
+		End Select
+	End If
 	
 	Local TStream:TTextStream=TTextStream.Create( stream,format )
 	TStream.WriteString str
@@ -398,3 +466,133 @@ Function SaveText:Int( str$,url:Object )
 
 End Function
 
+Private
+Function IsProbablyUTF8:Int(data:Byte Ptr, size:Int)
+	Local count:Int
+	Local buf:Byte[6]
+	Local encodeBuf:Byte[6]
+
+	For Local i:Int = 0 Until size
+		Local c:Int = data[i]
+		
+		If c < $80 Or (c & $c0) <> $80 Then
+			
+			If count > 0 Then
+				Local char:Int = Decode(buf, count)
+				If char = -1 Then
+					Return False
+				End If
+
+				Local encodedCount:Int = Encode(char, encodeBuf, count)
+
+				If count <> encodedCount Then
+					Return False
+				End If
+				
+				For Local n:Int = 0 Until count
+					If buf[n] <> encodeBuf[n] Then
+						Return False
+					End If
+				Next
+			End If
+			
+			count = 0
+			
+			If c >= $80 Then
+				buf[count] = c
+				count :+ 1
+			End If
+		Else
+			If count = 6 Then
+				Return False
+			End If
+			buf[count] = c
+			count :+ 1
+		End If
+	Next
+
+	If count Then
+		' If there was no new-line or non-multi-byte-character at the 
+		' end of the buffer then count will be > 0. So we also have to
+		' check if we can decode the remaining buffer content.
+		If Decode(buf, count) = -1 Then Return False
+	End If
+	
+	Return True
+End Function
+
+Function Decode:Int(buf:Byte Ptr, count:Int)
+	If count <= 0 Then
+		Return -1
+	End If
+	
+	If count = 1 Then
+		If buf[0] >= $80 Then
+			Return -1
+		Else
+			Return buf[0]
+		End If
+	End If
+	
+	Local bits:Int = 0
+	Local c:Int = buf[0]
+	
+	While c & $80 = $80
+		bits :+ 1
+		c :Shl 1
+	Wend
+	
+	If bits <> count Then
+		Return -1
+	End If
+	
+	Local v:Int = buf[0] & ($ff Shr bits)
+	For Local i:Int = 1 Until count
+		If buf[i] & $c0 <> $80 Then
+			Return -1
+		End If
+		v = (v Shl 6) | (buf[i] & $3f)
+	Next
+	
+	If v >= $d800 And v <= $dfff Then
+		Return -1
+	End If
+	
+	If v = $fffe Or v = $ffff Then
+		Return -1
+	End If
+	
+	Return v
+End Function
+
+Function Encode:Int(char:Int, buf:Byte Ptr, count:Int)
+	If char<128
+		buf[0] = char
+		Return 1
+	Else If char<2048
+		If count <> 2 Then
+			Return -1
+		End If
+		buf[0] = char/64 | 192
+		buf[1] = char Mod 64 | 128
+		Return 2
+	Else If char < $10000
+		If count <> 3 Then
+			Return -1
+		End If
+		buf[0] = char/4096 | 224
+		buf[1] = char/64 Mod 64 | 128
+		buf[2] = char Mod 64 | 128
+		Return 3
+	Else
+		If count <> 4 Then
+			Return -1
+		End If
+		buf[0] = (char Shr 18) | $f0
+		buf[1] = ((char Shr 12) & $3f) | $80
+		buf[2] = ((char Shr 6) & $3f) | $80
+		buf[3] = (char & $3f) | $80
+		Return 4
+	End If
+	Return -1
+End Function

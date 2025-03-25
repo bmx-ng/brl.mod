@@ -9,7 +9,7 @@
 
 void brl_timerdefault__TimerFired( BBObject *bbTimer );
 
-static int timers[MAX_TIMERS],n_timers;
+static uintptr_t timers[MAX_TIMERS],n_timers;
 
 static void timerSyncOp( BBObject *bbTimer,int timer ){
 	int i;
@@ -22,11 +22,11 @@ static void __stdcall timerProc( UINT timer,UINT msg,DWORD_PTR user,DWORD_PTR u1
 }
 
 void * bbTimerStart( float hertz,BBObject *bbTimer ){
-	int timer;
+	uintptr_t timer;
 	
 	if( n_timers==MAX_TIMERS ) return 0;
 	
-	timer=(int)timeSetEvent( 1000.0/hertz,0,timerProc,(DWORD_PTR)bbTimer,TIME_PERIODIC );
+	timer=(uintptr_t)timeSetEvent( 1000.0/hertz,0,timerProc,(DWORD_PTR)bbTimer,TIME_PERIODIC );
 	if( !timer ) return 0;
 	
 	BBRETAIN( bbTimer );
@@ -38,7 +38,7 @@ void * bbTimerStart( float hertz,BBObject *bbTimer ){
 void bbTimerStop( void* t,BBObject *bbTimer ){
 	int i;
 	
-	int timer=(int)t;
+	uintptr_t timer=(uintptr_t)t;
 	for( i=0;i<n_timers && timer!=timers[i];++i ) {}
 	if( i==n_timers ) return;
 

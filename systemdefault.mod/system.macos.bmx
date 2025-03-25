@@ -13,12 +13,12 @@ Function bbSystemWait()
 Function bbSystemIntr()
 Function bbSystemMoveMouse( x:Int,y:Int )
 Function bbSystemSetMouseVisible( visible:Int )
-Function bbSystemNotify( text$,serious:Int )
-Function bbSystemConfirm:Int( text$,serious:Int )
-Function bbSystemProceed:Int( text$,serious:Int )
-Function bbSystemRequestFile$( text$,exts$,save:Int,file$,dir$ )
-Function bbSystemRequestDir$( text$,dir$ )
-Function bbOpenURL:Int( url$ )
+Function bbSystemNotify( text:String,serious:Int )
+Function bbSystemConfirm:Int( text:String,serious:Int )
+Function bbSystemProceed:Int( text:String,serious:Int )
+Function bbSystemRequestFile:String( text:String,exts:String,save:Int,file:String,dir:String )
+Function bbSystemRequestDir:String( text:String,dir:String )
+Function bbOpenURL:Int( url:String )
 
 Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet:Int ),syncInfo:Object,asyncRet:Int )
 Function bbSystemStartAsyncOp( asyncOp( asyncInfo:Int ),asyncInfo:Int,syncOp( syncInfo:Object,asyncRet:Int ),syncInfo:Object )
@@ -63,20 +63,20 @@ Type TMacOSSystemDriver Extends TSystemDriver
 		bbSystemSetMouseVisible visible
 	End Method
 	
-	Method Notify( Text$,serious:Int ) Override
+	Method Notify( Text:String,serious:Int ) Override
 		bbSystemNotify Text,serious
 	End Method
 	
-	Method Confirm:Int( Text$,serious:Int ) Override
+	Method Confirm:Int( Text:String,serious:Int ) Override
 		Return bbSystemConfirm( Text,serious)
 	End Method
 	
-	Method Proceed:Int( Text$,serious:Int ) Override
+	Method Proceed:Int( Text:String,serious:Int ) Override
 		Return bbSystemProceed( Text,serious )
 	End Method
 
-	Method RequestFile$( Text$,exts$,save:Int,path$ ) Override
-		Local file$,dir$,filter$
+	Method RequestFile:String( Text:String,exts:String,save:Int,path:String ) Override
+		Local file:String,dir:String,filter:String
 		
 		path=path.Replace( "\","/" )
 		Local i:Int=path.FindLast( "/" )
@@ -101,29 +101,29 @@ Type TMacOSSystemDriver Extends TSystemDriver
 		Return bbSystemRequestFile( Text,filter,save,file,dir )
 	End Method
 
-	Method RequestDir$( Text$,dir$ ) Override
+	Method RequestDir:String( Text:String,dir:String ) Override
 		dir=dir.Replace( "\","/" )
 		Return bbSystemRequestDir( Text,dir )
 	End Method
 	
-	Method OpenURL:Int( url$ ) Override
+	Method OpenURL:Int( url:String ) Override
 '		Return system_( "open "" + url.Replace("~q","") + "~q" )
 		Return bbOpenURL( url )
 	End Method
 
-	Method DesktopWidth:Int() Override
+	Method DesktopWidth:Int(display:Int) Override
 		Return bbSystemDesktopWidth()
 	End Method
 	
-	Method DesktopHeight:Int() Override
+	Method DesktopHeight:Int(display:Int) Override
 		Return bbSystemDesktopHeight()
 	End Method
 	
-	Method DesktopDepth:Int() Override
+	Method DesktopDepth:Int(display:Int) Override
 		Return bbSystemDesktopDepth()
 	End Method
 	
-	Method DesktopHertz:Int() Override
+	Method DesktopHertz:Int(display:Int) Override
 		Return bbSystemDesktopHertz()
 	End Method
 

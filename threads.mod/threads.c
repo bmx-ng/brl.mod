@@ -42,6 +42,7 @@ int threads_TryLockMutex( bb_mutex_t *mutex ){
 }
 
 //***** Semaphores *****
+#ifndef __APPLE__
 bb_sem_t *threads_CreateSemaphore( int count ){
 	bb_sem_t *sem=malloc( sizeof(bb_sem_t) );
 	if( bb_sem_init( sem,count ) ) return sem;
@@ -61,9 +62,20 @@ void threads_WaitSemaphore( bb_sem_t *sem ){
 void threads_PostSemaphore( bb_sem_t *sem ){
 	bb_sem_post( sem );
 }
-
+#endif
 //***** CondVars *****
 #ifdef _WIN32
+
+int threads_TimedWaitSemaphore( bb_sem_t *sem, int millisecs ){
+
+	int res = bb_sem_timed_wait( sem, millisecs );
+	if (res == WAIT_TIMEOUT) {
+		return 1;
+	} else if (res == WAIT_FAILED) {
+		return -1;
+	}
+	return 0;
+}
 
 typedef struct BBCond BBCond;
 
@@ -99,6 +111,28 @@ void threads_WaitCond( BBCond *cond,bb_mutex_t *mutex ){
 	bb_sem_wait( &cond->sema );
 
 	bb_mutex_lock( mutex );
+}
+
+int threads_TimedWaitCond( BBCond *cond,bb_mutex_t *mutex, int millisecs ){
+	bbAtomicAdd( &cond->waiters,1 );
+
+	//Ok, the below is not strictly speaking 'fair'.
+	//A context switch below the mutex_unlock and sem_wait could end up
+	//starving this thread (I think). Possibly not a problem unless app is 
+	//really thrashing, but should be fixed none-the-less. 
+	//
+	bb_mutex_unlock( mutex );
+
+	int res = bb_sem_timed_wait( &cond->sema, millisecs );
+
+	bb_mutex_lock( mutex );
+	
+	if (res == WAIT_TIMEOUT) {
+		return 1;
+	} else if (res == WAIT_FAILED) {
+		return -1;
+	}
+	return 0;
 }
 
 void threads_SignalCond( BBCond *cond ){
@@ -150,6 +184,8 @@ void threads_BroadcastCond( cnd_t *cond ){
 
 #else
 
+#include <errno.h>
+
 pthread_cond_t *threads_CreateCond(){
 	pthread_cond_t *cond=malloc( sizeof( pthread_cond_t ) );
 	if( pthread_cond_init( cond,0 )>=0 ) return cond;
@@ -174,4 +210,54 @@ void threads_BroadcastCond( pthread_cond_t *cond ){
 	pthread_cond_broadcast( cond );
 }
 
+int threads_TimedWaitCond(pthread_cond_t *cond,bb_mutex_t *mutex, int millisecs) {
+	struct timespec ts;
+	
+	if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+		return -1;
+	}
+	
+	ts.tv_sec += millisecs / 1000;
+	BBInt64 nsec = ts.tv_nsec + ((millisecs % 1000) * 1000000L);
+	if (nsec <= 999999999L) {
+		ts.tv_nsec = nsec;
+	} else {
+		ts.tv_sec += 1;
+		ts.tv_nsec = nsec - 999999999L;
+	}
+
+	int res = pthread_cond_timedwait(cond, mutex, &ts);
+
+	if (res == 0) {
+		return 0;
+	} else if (res == ETIMEDOUT) {
+		return 1;
+	}
+
+	return -1;	
+}
+
+#endif
+
+#if __linux__ || __HAIKU__
+int threads_TimedWaitSemaphore( bb_sem_t *sem, int millisecs ){
+	struct timespec ts;
+	
+	if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+		return -1;
+	}
+	
+	ts.tv_sec += millisecs / 1000;
+	ts.tv_nsec += (millisecs % 1000) * 1000000L;
+	
+	int res = sem_timedwait(sem, &ts);
+	
+	if (res == 0) {
+		return 0;
+	} else if (res == ETIMEDOUT) {
+		return 1;
+	}
+
+	return -1;
+}
 #endif

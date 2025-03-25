@@ -2,9 +2,14 @@
 #ifndef BLITZ_THREAD_H
 #define BLITZ_THREAD_H
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 #ifdef _WIN32
 
 #include <windows.h>
+typedef DWORD bb_thread_t;
 typedef CRITICAL_SECTION bb_mutex_t;
 #define bb_mutex_init(MUTPTR) (InitializeCriticalSection(MUTPTR),1)
 #define bb_mutex_destroy(MUTPTR) DeleteCriticalSection(MUTPTR)
@@ -26,12 +31,14 @@ typedef HANDLE bb_sem_t;
 #define bb_sem_destroy(SEMPTR) CloseHandle(*(SEMPTR))
 #define bb_sem_wait(SEMPTR) WaitForSingleObject(*(SEMPTR),INFINITE)
 #define bb_sem_post(SEMPTR) ReleaseSemaphore(*(SEMPTR),1,0)
+#define bb_sem_timed_wait(SEMPTR, MILLIS) WaitForSingleObject(*(SEMPTR),MILLIS)
 
 #elif __SWITCH__
 #include<switch/kernel/mutex.h>
 #include<switch/kernel/semaphore.h>
 #include <threads.h>
 
+typedef thrd_t bb_thread_t;
 typedef mtx_t bb_mutex_t;
 #define bb_mutex_init(MUTPTR) (mtx_init(MUTPTR,mtx_recursive),1)
 #define bb_mutex_destroy(MUTPTR)
@@ -48,6 +55,7 @@ typedef Semaphore bb_sem_t;
 #else
 
 #include <pthread.h>
+typedef pthread_t bb_thread_t;
 typedef pthread_mutex_t bb_mutex_t;
 extern pthread_mutexattr_t _bb_mutexattr;
 #define bb_mutex_init(MUTPTR) (pthread_mutex_init((MUTPTR),&_bb_mutexattr)>=0)
@@ -58,19 +66,7 @@ extern pthread_mutexattr_t _bb_mutexattr;
 
 #endif
 
-#ifdef __APPLE__
-
-#include <mach/semaphore.h>
-#include <mach/task.h>
-typedef semaphore_t bb_sem_t;
-#define bb_sem_init(SEMPTR,COUNT) (semaphore_create( mach_task_self(),(SEMPTR),SYNC_POLICY_FIFO,(COUNT) )>=0)
-#define bb_sem_destroy(SEMPTR) semaphore_destroy( mach_task_self(),*(SEMPTR) )
-#define bb_sem_wait(SEMPTR) semaphore_wait( *(SEMPTR) )
-#define bb_sem_post(SEMPTR) semaphore_signal( *(SEMPTR) )
-
-#endif
-
-#ifdef __linux
+#ifdef __linux__
 
 #include <semaphore.h>
 typedef sem_t bb_sem_t;
@@ -78,6 +74,16 @@ typedef sem_t bb_sem_t;
 #define bb_sem_destroy sem_destroy
 #define bb_sem_wait sem_wait
 #define bb_sem_post sem_post
+#define bb_sem_timed_wait sem_timedwait
+
+#elif __HAIKU__
+#include <semaphore.h>
+typedef sem_t bb_sem_t;
+#define bb_sem_init(SEMPTR,COUNT) (sem_init((SEMPTR),0,(COUNT))>=0)
+#define bb_sem_destroy sem_destroy
+#define bb_sem_wait sem_wait
+#define bb_sem_post sem_post
+#define bb_sem_timed_wait sem_timedwait
 
 #endif
 
@@ -102,15 +108,15 @@ struct BBThread{
 	int detached;
 	int locked_regs[BB_THREADREGS];
 #ifdef _WIN32
+	BBObject * result;
 	HANDLE handle;
-	DWORD id;
-#elif __SWITCH__
-	thrd_t handle;
+	bb_thread_t id;
 #else
-	pthread_t handle;
+	bb_thread_t handle;
 #endif
 };
 
+void bbThreadPreStartup();
 void			bbThreadStartup();
 
 BBThread*		bbThreadCreate( BBThreadProc entry,BBObject *data );
@@ -129,11 +135,7 @@ BBObject*		bbThreadGetData( int index );
 int			bbAtomicCAS( volatile int *target,int oldVal,int newVal );
 int			bbAtomicAdd( volatile int *target,int incr );
 
-#ifdef _WIN32
-BBThread *bbThreadRegister( DWORD id );
-#else
-BBThread *bbThreadRegister( void * thd );
-#endif
+BBThread *bbThreadRegister( bb_thread_t id );
 void bbThreadUnregister( BBThread * thread );
 
 
@@ -143,5 +145,11 @@ extern bb_mutex_t _bbLock;
 
 #define BB_LOCK if( _bbNeedsLock ){ bb_mutex_lock( &_bbLock ); }
 #define BB_UNLOCK if( _bbNeedsLock ){ bb_mutex_unlock( &_bbLock ); }
+
+#define BBThreadLocal __thread
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

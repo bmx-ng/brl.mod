@@ -58,7 +58,7 @@ Type TSocketStream Extends TStream
 		Return t
 	End Function
 	
-	Function CreateClient:TSocketStream( remoteHost$,remotePort:Int, family:Int = AF_INET_ )
+	Function CreateClient:TSocketStream( remoteHost:String,remotePort:Int, family:Int = AF_INET_ )
 		Local AddrInfo:TAddrInfo[] = AddrInfo(remoteHost, remotePort, family)
 		If Not AddrInfo Return Null
 		
@@ -77,9 +77,9 @@ Type TSocketStream Extends TStream
 End Type
 
 Type TSocketStreamFactory Extends TStreamFactory
-	Method CreateStream:TSocketStream( url:Object,proto$,path$,readable:Int,writeable:Int ) Override
-		If proto$="tcp"
-			Local i:Int=path.Find( ":",0 ),server$,port:Int
+	Method CreateStream:TSocketStream( url:Object,proto:String,path:String,readable:Int,writeMode:Int ) Override
+		If proto="tcp"
+			Local i:Int=path.Find( ":",0 ),server:String,port:Int
 			If i>=0 Return TSocketStream.CreateClient( path[..i],Int(path[i+1..]) )
 			Return TSocketStream.CreateClient( path,80 )
 		EndIf

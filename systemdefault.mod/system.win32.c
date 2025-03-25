@@ -26,14 +26,6 @@ static HWND mouseHwnd;
 static BBObject *mouseSource;
 static int mouseVisible;
 
-static const wchar_t *appTitleW(){
-	return bbStringToWString( bbAppTitle );
-}
-
-static const char *appTitleA(){
-	return bbStringToCString( bbAppTitle );
-}
-
 static int keyCode( WPARAM wp,LPARAM lp){
 	switch( ((lp>>17)&0x80)|((lp>>16)&0x7f) ){
 	case 42:return VK_LSHIFT;
@@ -163,17 +155,49 @@ void bbSystemEmitOSEvent( HWND hwnd,UINT msg,WPARAM wp,LPARAM lp,BBObject *sourc
 		id=BBEVENT_KEYCHAR;
 		data=wp;
 		break;
-	case WM_LBUTTONDOWN:case WM_RBUTTONDOWN:case WM_MBUTTONDOWN:
+	case WM_LBUTTONDOWN:case WM_RBUTTONDOWN:case WM_MBUTTONDOWN:case WM_XBUTTONDOWN:
 		SetCapture( hwnd );
 		id=BBEVENT_MOUSEDOWN;
-		data=(msg==WM_LBUTTONDOWN) ? 1 : (msg==WM_RBUTTONDOWN ? 2 : 3);
+		switch (msg) {
+			case WM_LBUTTONDOWN:
+				data = 1;
+				break;
+			case WM_RBUTTONDOWN:
+				data = 2;
+				break;
+			case WM_MBUTTONDOWN:
+				data = 3;
+				break;
+			case WM_XBUTTONDOWN:
+				if (GET_XBUTTON_WPARAM(wp) == XBUTTON1) {
+					data = 4;
+				} else {
+					data = 5;
+				}
+		}
 		x=(short)LOWORD(lp);
 		y=(short)HIWORD(lp);
 		break;
-	case WM_LBUTTONUP:case WM_RBUTTONUP:case WM_MBUTTONUP:
+	case WM_LBUTTONUP:case WM_RBUTTONUP:case WM_MBUTTONUP:case WM_XBUTTONUP:
 		ReleaseCapture();
 		id=BBEVENT_MOUSEUP;
-		data=(msg==WM_LBUTTONUP) ? 1 : (msg==WM_RBUTTONUP ? 2 : 3);
+		switch (msg) {
+			case WM_LBUTTONUP:
+				data = 1;
+				break;
+			case WM_RBUTTONUP:
+				data = 2;
+				break;
+			case WM_MBUTTONUP:
+				data = 3;
+				break;
+			case WM_XBUTTONUP:
+				if (GET_XBUTTON_WPARAM(wp) == XBUTTON1) {
+					data = 4;
+				} else {
+					data = 5;
+				}
+		}
 		x=(short)LOWORD(lp);
 		y=(short)HIWORD(lp);
 		break;
@@ -206,7 +230,7 @@ void bbSystemEmitOSEvent( HWND hwnd,UINT msg,WPARAM wp,LPARAM lp,BBObject *sourc
 	case WM_ACTIVATE:
 		if( LOWORD(wp)==WA_INACTIVE || !IsIconic(hwnd) ){
 			DWORD proc;
-			GetWindowThreadProcessId( lp,&proc );
+			GetWindowThreadProcessId( hwnd,&proc );
 			if( proc!=GetCurrentProcessId() ){
 				id = (LOWORD(wp) == WA_INACTIVE) ? BBEVENT_APPSUSPEND : BBEVENT_APPRESUME;
 				break;
@@ -315,9 +339,17 @@ static int systemPanel( BBString *text,int flags ){
 	
 	beginPanel();
 	if( _usew ){
-		n=MessageBoxW( GetActiveWindow(),bbTmpWString(text),appTitleW(),flags );
+		BBChar *p=bbStringToWString( text );
+		BBChar *t=bbStringToWString( bbAppTitle );
+		n=MessageBoxW( GetActiveWindow(),p,t,flags );
+		bbMemFree(t);
+		bbMemFree(p);
 	}else{
-		n=MessageBoxA( GetActiveWindow(),bbTmpCString(text),appTitleA(),flags );
+		char *p=bbStringToCString( text );
+		char *t=bbStringToCString( bbAppTitle );
+		n=MessageBoxA( GetActiveWindow(),p,t,flags );
+		bbMemFree(t);
+		bbMemFree(p);
 	}
 	endPanel();
 	return n;
@@ -354,14 +386,20 @@ BBString *bbSystemRequestFile( BBString *text,BBString *exts,int defext,int save
 		wchar_t buf[MAX_PATH];
 		OPENFILENAMEW of={sizeof(of)};
 		
-		wcscpy( buf,bbTmpWString( file ) );
+		BBChar *p=bbStringToWString( file );
+		wcscpy( buf,p );
+		bbMemFree(p);
+
+		BBChar *t=bbStringToWString( text );
+		BBChar *e=bbStringToWString( exts );
+		BBChar *d = 0;
 
 		of.hwndOwner=GetActiveWindow();
-		of.lpstrTitle=bbTmpWString( text );
-		of.lpstrFilter=bbTmpWString( exts );
+		of.lpstrTitle=t;
+		of.lpstrFilter=e;
 		of.nFilterIndex=defext;
 		of.lpstrFile=buf;
-		of.lpstrInitialDir=dir->length ? bbTmpWString( dir ) : 0;
+		of.lpstrInitialDir=dir->length ? d=bbStringToWString( dir ) : 0;
 		of.nMaxFile=MAX_PATH;
 		of.Flags=OFN_HIDEREADONLY|OFN_NOCHANGEDIR;
 		
@@ -379,18 +417,28 @@ BBString *bbSystemRequestFile( BBString *text,BBString *exts,int defext,int save
 			}
 		}
 		endPanel();
+		
+		bbMemFree(d);
+		bbMemFree(e);
+		bbMemFree(t);
 	}else{
 		char buf[MAX_PATH];
 		OPENFILENAMEA of={sizeof(of)};
 
-		strcpy( buf,bbTmpCString( file ) );
+		char *p=bbStringToCString( file );
+		strcpy( buf,p );
+		bbMemFree(p);
 
+		char *t=bbStringToCString( text );
+		char *e=bbStringToCString( exts );
+		char *d=0;
+		
 		of.hwndOwner=GetActiveWindow();
-		of.lpstrTitle=bbTmpCString( text );
-		of.lpstrFilter=bbTmpCString( exts );
+		of.lpstrTitle=t;
+		of.lpstrFilter=e;
 		of.nFilterIndex=defext;
 		of.lpstrFile=buf;
-		of.lpstrInitialDir=dir->length ? bbTmpCString( dir ) : 0;
+		of.lpstrInitialDir=dir->length ? d=bbStringToCString( dir ) : 0;
 		of.nMaxFile=MAX_PATH;
 		of.Flags=OFN_HIDEREADONLY|OFN_NOCHANGEDIR;
 		
@@ -409,6 +457,10 @@ BBString *bbSystemRequestFile( BBString *text,BBString *exts,int defext,int save
 			}
 		}
 		endPanel();
+		
+		bbMemFree(d);
+		bbMemFree(e);
+		bbMemFree(t);
 	}
 	return str;
 }
@@ -453,10 +505,14 @@ BBString *bbSystemRequestDir( BBString *text,BBString *dir ){
 		BROWSEINFOW bi={0};
 		wchar_t buf[MAX_PATH],*p;
 
-		GetFullPathNameW( bbTmpWString(dir),MAX_PATH,buf,&p );
+		BBChar *d=bbStringToWString( dir );
+		GetFullPathNameW( d,MAX_PATH,buf,&p );
+		bbMemFree(d);
+		
+		BBChar *t=bbStringToWString( text );
 		
 		bi.hwndOwner=GetActiveWindow();
-		bi.lpszTitle=bbTmpWString( text );
+		bi.lpszTitle=t;
 		bi.ulFlags=BIF_RETURNONLYFSDIRS|BIF_NEWDIALOGSTYLE;
 		bi.lpfn=BrowseForFolderCallbackW;
 		bi.lParam=(LPARAM)buf;
@@ -464,6 +520,8 @@ BBString *bbSystemRequestDir( BBString *text,BBString *dir ){
 		beginPanel();
 		idlist=SHBrowseForFolderW(&bi);
 		endPanel();
+		
+		bbMemFree(t);
 		
 		if( idlist ){
 			SHGetPathFromIDListW( idlist,buf );
@@ -476,10 +534,14 @@ BBString *bbSystemRequestDir( BBString *text,BBString *dir ){
 		BROWSEINFOA bi={0};
 		char buf[MAX_PATH],*p;
 		
-		GetFullPathNameA( bbTmpCString(dir),MAX_PATH,buf,&p );
+		char *d=bbStringToCString( dir );
+		GetFullPathNameA( d,MAX_PATH,buf,&p );
+		bbMemFree(d);
+
+		char *t=bbStringToCString( text );
 
 		bi.hwndOwner=GetActiveWindow();
-		bi.lpszTitle=bbTmpCString( text );
+		bi.lpszTitle=t;
 		bi.ulFlags=BIF_RETURNONLYFSDIRS|BIF_NEWDIALOGSTYLE;
 		bi.lpfn=BrowseForFolderCallbackA;
 		bi.lParam=(LPARAM)buf;
@@ -487,6 +549,8 @@ BBString *bbSystemRequestDir( BBString *text,BBString *dir ){
 		beginPanel();
 		idlist=SHBrowseForFolderA(&bi);
 		endPanel();
+		
+		bbMemFree(t);
 		
 		if( idlist ){
 			SHGetPathFromIDListA( idlist,buf );
@@ -500,9 +564,13 @@ BBString *bbSystemRequestDir( BBString *text,BBString *dir ){
 int bbOpenURL( BBString *url ){
 	int n;
 	if( _usew ){
-		n=(int)ShellExecuteW( 0,0,(wchar_t*)bbTmpWString(url),0,0,10 )>32;	//SW_SHOWDEFAULT
+		BBChar *p=bbStringToWString( url );
+		n=(int)ShellExecuteW( 0,0,(wchar_t*)p,0,0,10 )>32;	//SW_SHOWDEFAULT
+		bbMemFree(p);
 	}else{
-		n=(int)ShellExecuteA( 0,0,bbTmpCString(url),0,0,10 )>32;	//SW_SHOWDEFAULT
+		char *p=bbStringToCString( url );
+		n=(int)ShellExecuteA( 0,0,p,0,0,10 )>32;	//SW_SHOWDEFAULT
+		bbMemFree(p);
 	}
 	return n;
 }

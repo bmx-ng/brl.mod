@@ -34,7 +34,7 @@ Function bbIsMainThread()="bbIsMainThread"
 Function bbGCValidate:Int( mem:Int ) = "bbGCValidate"
 End Extern
 
-Function ToHex$( val )
+Function ToHex:String( val )
 	Local buf:Short[8]
 	For Local k=7 To 0 Step -1
 		Local n=(val&15)+Asc("0")
@@ -61,21 +61,21 @@ Function IsUnderscore( ch )
 	Return ch=Asc("_")
 End Function
 
-Function Ident$( tag$ Var )
+Function Ident:String( tag:String Var )
 	If Not tag Return ""
 	If Not IsAlpha( tag[0] ) And Not IsUnderscore( tag[0] ) Return ""
 	Local i=1
 	While i<tag.length And (IsAlphaNumeric(tag[i]) Or IsUnderscore(tag[i]))
 		i:+1
 	Wend
-	Local id$=tag[..i]
+	Local id:String=tag[..i]
 	tag=tag[i..]
 	Return id
 End Function
 
-Function TypeName$( tag$ Var )
+Function TypeName:String( tag:String Var )
 
-	Local t$=tag[..1]
+	Local t:String=tag[..1]
 	tag=tag[1..]
 
 	Select t
@@ -98,7 +98,7 @@ Function TypeName$( tag$ Var )
 	Case "w"
 		Return "WString"
 	Case ":","?"
-		Local id$=Ident( tag )
+		Local id:String=Ident( tag )
 		While tag And tag[0]=Asc(".")
 			tag=tag[1..]
 			id=Ident( tag )
@@ -163,12 +163,12 @@ Const DEBUGSCOPEKIND_FUNCTION=1
 Const DEBUGSCOPEKIND_TYPE=2
 Const DEBUGSCOPEKIND_LOCAL=3
 
-Function DebugError( t$ )
+Function DebugError( t:String )
 	WriteStderr "Debugger Error:"+t+"~n"
 	End
 End Function
 
-Function DebugStmFile$( stm:Int Ptr )
+Function DebugStmFile:String( stm:Int Ptr )
 	Return String.FromCString( Byte Ptr stm[DEBUGSTM_FILE] )
 End Function
 
@@ -180,7 +180,7 @@ Function DebugStmChar( stm:Int Ptr )
 	Return stm[DEBUGSTM_CHAR]
 End Function
 
-Function DebugDeclKind$( decl:Int Ptr )
+Function DebugDeclKind:String( decl:Int Ptr )
 	Select decl[DEBUGDECL_KIND]
 	Case DEBUGDECLKIND_CONST Return "Const"
 	Case DEBUGDECLKIND_LOCAL Return "Local"
@@ -191,13 +191,13 @@ Function DebugDeclKind$( decl:Int Ptr )
 	DebugError "Invalid decl kind"
 End Function
 
-Function DebugDeclName$( decl:Int Ptr )
+Function DebugDeclName:String( decl:Int Ptr )
 	Return String.FromCString( Byte Ptr decl[DEBUGDECL_NAME] )
 End Function
 
-Function DebugDeclType$( decl:Int Ptr )
-	Local t$=String.FromCString( Byte Ptr decl[DEBUGDECL_TYPE] )
-	Local ty$=TypeName( t )
+Function DebugDeclType:String( decl:Int Ptr )
+	Local t:String=String.FromCString( Byte Ptr decl[DEBUGDECL_TYPE] )
+	Local ty:String=TypeName( t )
 	Return ty
 End Function
 
@@ -216,7 +216,7 @@ Function DebugDeclSize( decl:Int Ptr )
 
 End Function
 
-Function DebugEscapeString$( s$ )
+Function DebugEscapeString:String( s:String )
 	s=s.Replace( "~~","~~~~")
 	s=s.Replace( "~0","~~0" )
 	s=s.Replace( "~t","~~t" )
@@ -226,7 +226,7 @@ Function DebugEscapeString$( s$ )
 	Return "~q"+s+"~q"
 End Function
 
-Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
+Function DebugDeclValue:String( decl:Int Ptr,inst:Byte Ptr )
 	If decl[DEBUGDECL_KIND]=DEBUGDECLKIND_CONST
 		Local p:Byte Ptr=Byte Ptr decl[DEBUGDECL_ADDR]
 		Return DebugEscapeString(String.FromShorts( Short Ptr(p+12),(Int Ptr (p+8))[0] ))
@@ -263,17 +263,17 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 	Case Asc("$")
 		p=(Byte Ptr Ptr p)[0]
 		Local sz=Int Ptr(p+8)[0]
-		Local s$=String.FromShorts( Short Ptr(p+12),sz )
+		Local s:String=String.FromShorts( Short Ptr(p+12),sz )
 		Return DebugEscapeString( s )
 	Case Asc("z")
 		p=(Byte Ptr Ptr p)[0]
 		If Not p Return "Null"
-		Local s$=String.FromCString( p )
+		Local s:String=String.FromCString( p )
 		Return DebugEscapeString( s )
 	Case Asc("w")
 		p=(Byte Ptr Ptr p)[0]
 		If Not p Return "Null"
-		Local s$=String.FromWString( Short Ptr p )
+		Local s:String=String.FromWString( Short Ptr p )
 		Return DebugEscapeString( s )
 	Case Asc("*"),Asc("?")
 		Return "$"+ToHex( (Int Ptr p)[0] )
@@ -297,7 +297,7 @@ Function DebugDeclValue$( decl:Int Ptr,inst:Byte Ptr )
 
 End Function
 
-Function DebugScopeKind$( scope:Int Ptr )
+Function DebugScopeKind:String( scope:Int Ptr )
 	Select scope[DEBUGSCOPE_KIND]
 	Case DEBUGSCOPEKIND_FUNCTION Return "Function"
 	Case DEBUGSCOPEKIND_TYPE Return "Type"
@@ -306,7 +306,7 @@ Function DebugScopeKind$( scope:Int Ptr )
 	DebugError "Invalid scope kind"
 End Function
 
-Function DebugScopeName$( scope:Int Ptr )
+Function DebugScopeName:String( scope:Int Ptr )
 	Return String.FromCString( Byte Ptr scope[DEBUGSCOPE_NAME] )
 End Function
 
@@ -329,7 +329,7 @@ End Function
 
 Extern
 Global bbOnDebugStop()
-Global bbOnDebugLog( message$ )
+Global bbOnDebugLog( message:String )
 Global bbOnDebugEnterStm( stm:Int Ptr )
 Global bbOnDebugEnterScope( scope:Int Ptr,inst:Byte Ptr )
 Global bbOnDebugLeaveScope()
@@ -372,11 +372,11 @@ Global currentScope:TScope=New TScope
 Global scopeStack:TScope[],scopeStackTop
 Global exStateStack:TExState[],exStateStackTop
 
-Function ReadDebug$()
+Function ReadDebug:String()
 	Return ReadStdin()
 End Function
 
-Function WriteDebug( t$ )
+Function WriteDebug( t:String )
 	WriteStderr "~~>"+t
 End Function
 
@@ -384,7 +384,7 @@ Function DumpScope( scope:Int Ptr,inst:Byte Ptr )
 
 	Local decl:Int Ptr=scope+DEBUGSCOPE_DECLS
 	
-	Local kind$=DebugScopeKind( scope ),name$=DebugScopeName( scope )
+	Local kind:String=DebugScopeKind( scope ),name:String=DebugScopeName( scope )
 	
 	If Not name name="<local>"
 	
@@ -398,10 +398,10 @@ Function DumpScope( scope:Int Ptr,inst:Byte Ptr )
 			Continue
 		End Select
 
-		Local kind$=DebugDeclKind( decl )
-		Local name$=DebugDeclname( decl )
-		Local tipe$=DebugDeclType( decl )
-		Local value$=DebugDeclValue( decl,inst )
+		Local kind:String=DebugDeclKind( decl )
+		Local name:String=DebugDeclname( decl )
+		Local tipe:String=DebugDeclType( decl )
+		Local value:String=DebugDeclValue( decl,inst )
 		
 		WriteDebug kind+" "+name+":"+tipe+"="+value+"~n"
 
@@ -451,7 +451,7 @@ Function DumpObject( inst:Byte Ptr,index )
 			
 			decl[3]=Int(p+index*sz)
 		
-			Local value$=DebugDeclValue( decl,inst )
+			Local value:String=DebugDeclValue( decl,inst )
 			
 			WriteDebug "["+index+"]="+value+"~n"
 			
@@ -488,7 +488,7 @@ Function DumpScopeStack()
 	Next
 End Function
 
-Function UpdateDebug( msg$ )
+Function UpdateDebug( msg:String )
 	Global indebug
 	If indebug Return
 	indebug=True
@@ -507,7 +507,7 @@ Function UpdateDebug( msg$ )
 	WriteDebug msg
 	Repeat
 		WriteDebug "~n"
-		Local line$=ReadDebug()
+		Local line:String=ReadDebug()
 
 		Select line[..1].ToLower()
 		Case "r"
@@ -529,7 +529,7 @@ Function UpdateDebug( msg$ )
 			DumpScopeStack
 			WriteDebug "}~n"
 		Case "d"
-			Local t$=line[1..].Trim()
+			Local t:String=line[1..].Trim()
 			Local index
 			Local i=t.Find(":")
 			If i<>-1
@@ -542,9 +542,9 @@ Function UpdateDebug( msg$ )
 			If Not (pointer And bbGCValidate(pointer)) Then Continue
 			Local inst:Int Ptr=Int Ptr pointer
 			
-			Local cmd$="ObjectDump@"+ToHex( Int inst )
+			Local cmd:String="ObjectDump@"+ToHex( Int inst )
 			If i<>-1 cmd:+":"+index
-			WriteDebug cmd$+"{~n"
+			WriteDebug cmd+"{~n"
 
 			DumpObject inst,index
 			WriteDebug "}~n"
@@ -582,7 +582,7 @@ Function OnDebugStop()
 	UpdateDebug "DebugStop:~n"
 End Function
 
-Function OnDebugLog( message$ )
+Function OnDebugLog( message:String )
 ?Threaded
 	If Not bbIsMainThread() Return
 ?

@@ -1,17 +1,22 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Data structures/Maps
 End Rem
 Module BRL.Map
 
-ModuleInfo "Version: 1.09"
+ModuleInfo "Version: 1.11"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.11"
+ModuleInfo "History: Refactored tree based maps."
+ModuleInfo "History: Added unit tests."
+ModuleInfo "History: 1.10"
+ModuleInfo "History: Changed to SuperStrict."
 ModuleInfo "History: 1.09"
 ModuleInfo "History: Added index operator overloads to maps."
 ModuleInfo "History: 1.08"
@@ -127,23 +132,16 @@ Type TNode Extends TKeyValue
 
 	'***** PRIVATE *****
 	
-	Field _color,_parent:TNode=nil,_left:TNode=nil,_right:TNode=nil
+	Field _color:Int,_parent:TNode=nil,_left:TNode=nil,_right:TNode=nil
 
 End Type
 
 Type TNodeEnumerator
-	Method HasNext()
-		Local has:Int = _node<>nil
-		If Not has Then
-			_map = Null
-		End If
-		Return has
+	Method HasNext:Int()
+		Return _node<>nil
 	End Method
 	
 	Method NextObject:Object()
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
-?
 		Local node:TNode=_node
 		_node=_node.NextNode()
 		Return node
@@ -152,16 +150,10 @@ Type TNodeEnumerator
 	'***** PRIVATE *****
 		
 	Field _node:TNode
-	
-	Field _map:TMap
-	Field _expectedModCount:Int
 End Type
 
 Type TKeyEnumerator Extends TNodeEnumerator
 	Method NextObject:Object() Override
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
-?
 		Local node:TNode=_node
 		_node=_node.NextNode()
 		Return node._key
@@ -170,9 +162,6 @@ End Type
 
 Type TValueEnumerator Extends TNodeEnumerator
 	Method NextObject:Object() Override
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TMap Concurrent Modification"
-?
 		Local node:TNode=_node
 		_node=_node.NextNode()
 		Return node._value
@@ -206,16 +195,13 @@ Type TMap
 		If _root=nil Return
 		_root.Clear
 		_root=nil
-?ngcmod
-		_modCount :+ 1
-?
 	End Method
 	
 	Rem
 	bbdoc: Checks if the map is empty.
 	about: #True if @map is empty, otherwise #False.
 	End Rem
-	Method IsEmpty()
+	Method IsEmpty:Int()
 		Return _root=nil
 	End Method
 	
@@ -227,7 +213,7 @@ Type TMap
 
 		Assert key Else "Can't insert Null key into map"
 
-		Local node:TNode=_root,parent:TNode=nil,cmp
+		Local node:TNode=_root,parent:TNode=nil,cmp:Int
 		
 		While node<>nil
 			parent=node
@@ -248,10 +234,6 @@ Type TMap
 		node._color=RED
 		node._parent=parent
 
-?ngcmod
-		_modCount :+ 1
-?
-		
 		If parent=nil
 			_root=node
 			Return
@@ -269,7 +251,7 @@ Type TMap
 	bbdoc: Checks if the map contains @key.
 	returns: #True if the map contains @key.
 	End Rem
-	Method Contains( key:Object )
+	Method Contains:Int( key:Object )
 		Return _FindNode( key )<>nil
 	End Method
 
@@ -287,13 +269,10 @@ Type TMap
 	bbdoc: Remove a key/value pair from the map.
 	returns: #True if @key was removed, or #False otherwise.
 	End Rem
-	Method Remove( key:Object )
+	Method Remove:Int( key:Object )
 		Local node:TNode=_FindNode( key )
 		If node=nil Return 0
-		 _RemoveNode node
-?ngcmod
-		_modCount :+ 1
-?
+		_RemoveNode node
 		Return 1
 	End Method
 	
@@ -307,10 +286,6 @@ Type TMap
 		nodeenum._node=_FirstNode()
 		Local mapenum:TMapEnumerator=New TMapEnumerator
 		mapenum._enumerator=nodeenum
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
 		Return mapenum
 	End Method
 	
@@ -324,10 +299,6 @@ Type TMap
 		nodeenum._node=_FirstNode()
 		Local mapenum:TMapEnumerator=New TMapEnumerator
 		mapenum._enumerator=nodeenum
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
 		Return mapenum
 	End Method
 	
@@ -350,10 +321,6 @@ Type TMap
 	Method ObjectEnumerator:TNodeEnumerator()
 		Local nodeenum:TNodeEnumerator=New TNodeEnumerator
 		nodeenum._node=_FirstNode()
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
 		Return nodeenum
 	End Method
 	
@@ -378,7 +345,7 @@ Type TMap
 	Method _FindNode:TNode( key:Object )
 		Local node:TNode=_root
 		While node<>nil
-			Local cmp=key.Compare( node._key )
+			Local cmp:Int=key.Compare( node._key )
 			If cmp>0
 				node=node._right
 			Else If cmp<0
@@ -584,13 +551,9 @@ Type TMap
 		Insert(key, value)
 	End Method
 
-	Const RED=-1,BLACK=1
+	Const RED:Int=-1,BLACK:Int=1
 	
 	Field _root:TNode=nil
-	
-?ngcmod
-	Field _modCount:Int
-?
 End Type
 
 Rem
@@ -614,7 +577,7 @@ Rem
 bbdoc: Checks if a map is empty
 returns: True if @map is empty, otherwise false
 End Rem
-Function MapIsEmpty( map:TMap )
+Function MapIsEmpty:Int( map:TMap )
 	Return map.IsEmpty()
 End Function
 
@@ -641,7 +604,7 @@ Rem
 bbdoc: Checks if a map contains a key
 returns: True if @map contains @key
 End Rem
-Function MapContains( map:TMap,key:Object )
+Function MapContains:Int( map:TMap,key:Object )
 	Return map.Contains( key )
 End Function
 

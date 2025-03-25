@@ -31,8 +31,10 @@ struct BBClass{
 	BBINTERFACETABLE itable;
 	void*   extra;
 	unsigned int obj_size;
+	unsigned int instance_count;
+	unsigned int fields_offset;
 
-	void*	vfns[32];
+	void*	vfns[40];
 };
 
 struct BBObject{
@@ -75,9 +77,16 @@ BBObject*	bbObjectSendMessage( BBObject * o, BBObject *m,BBObject *s );
 void		bbObjectReserved();
 
 BBObject*	bbObjectDowncast( BBObject *o,BBClass *t );
+BBObject*	bbObjectStringcast( BBObject *o );
+BBObject*	bbObjectArraycast( BBObject *o );
+int bbObjectIsString( BBObject *o );
+int bbObjectIsArray( BBObject *o );
 
 void		bbObjectRegisterType( BBClass *clas );
 BBClass**	bbObjectRegisteredTypes( int *count );
+void bbObjectDumpInstanceCounts(char * buf, int size, int includeZeros);
+extern int bbCountInstances;
+
 
 void bbObjectRegisterInterface( BBInterface * ifc );
 BBInterface **bbObjectRegisteredInterfaces( int *count );
@@ -91,6 +100,7 @@ struct struct_node {
 };
 
 void bbObjectRegisterStruct( BBDebugScope *p );
+BBDebugScope **bbObjectRegisteredStructs( int *count );
 BBDebugScope * bbObjectStructInfo( char * name );
 
 BBObject * bbNullObjectTest( BBObject *o );
@@ -101,7 +111,19 @@ struct enum_node {
 };
 
 void bbObjectRegisterEnum( BBDebugScope *p );
+BBDebugScope **bbObjectRegisteredEnums( int *count );
 BBDebugScope * bbObjectEnumInfo( char * name );
+
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+inline void * bbObjectToFieldOffset(BBOBJECT o) {
+	if ( !o->clas ) {
+		return &bbNullObject;
+	}
+	return (void*)(((unsigned char*)o) + o->clas->fields_offset);
+}
+#else
+void * bbObjectToFieldOffset(BBOBJECT o);
+#endif
 
 #ifdef __cplusplus
 }

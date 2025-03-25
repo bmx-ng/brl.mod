@@ -105,19 +105,19 @@ Type TFreeAudioChannel Extends TChannel
 		fa_SetChannelPaused fa_channel,paused
 	End Method
 	
-	Method SetVolume( volume# ) Override
+	Method SetVolume( volume:Float ) Override
 		fa_SetChannelVolume fa_channel,volume
 	End Method
 	
-	Method SetPan( pan# ) Override
+	Method SetPan( pan:Float ) Override
 		fa_SetChannelPan fa_channel,pan
 	End Method
 	
-	Method SetDepth( depth# ) Override
+	Method SetDepth( depth:Float ) Override
 		fa_SetChannelDepth fa_channel,depth
 	End Method
 	
-	Method SetRate( rate# ) Override
+	Method SetRate( rate:Float ) Override
 		fa_SetChannelRate fa_channel,rate
 	End Method
 	
@@ -143,7 +143,7 @@ End Type
 
 Type TFreeAudioAudioDriver Extends TAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return _name
 	End Method
 	
@@ -190,19 +190,21 @@ Type TFreeAudioAudioDriver Extends TAudioDriver
 		If fa_channel Return TFreeAudioChannel.CreateWithChannel( fa_channel )
 	End Method
 		
-	Function Create:TFreeAudioAudioDriver( name$,Mode:Int )
+	Function Create:TFreeAudioAudioDriver( name:String,Mode:Int )
 		Local t:TFreeAudioAudioDriver=New TFreeAudioAudioDriver
 		t._name=name
 		t._mode=Mode
 		Return t
 	End Function
 	
-	Field _name$,_mode:Int
+	Field _name:String,_mode:Int
 	
 End Type
 
 ?Win32
-'If DirectSoundCreate TFreeAudioAudioDriver.Create "FreeAudio DirectSound",1
+If DirectSoundCreate 
+	TFreeAudioAudioDriver.Create "FreeAudio DirectSound",1
+EndIf
 TFreeAudioAudioDriver.Create "FreeAudio Multimedia",0
 ?MacOS
 TFreeAudioAudioDriver.Create "FreeAudio CoreAudio",0

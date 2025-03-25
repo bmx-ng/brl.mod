@@ -44,12 +44,12 @@ Function LuaState:Byte Ptr(reset:Int = False)
 	Return _luaState
 End Function
 
-Function LuaRegInt( name$,value )
+Function LuaRegInt( name:String,value )
 	lua_pushinteger LuaState(),value
 	lua_setfield LuaState(),LUA_GLOBALSINDEX,name
 End Function
 
-Function LuaRegFunc( name$,value:Byte Ptr )
+Function LuaRegFunc( name:String,value:Byte Ptr )
 	lua_pushcclosure LuaState(),value,0
 	lua_setfield LuaState(),LUA_GLOBALSINDEX,name
 End Function
@@ -76,7 +76,25 @@ Function Invoke( L:Byte Ptr )
 		Case StringTypeId
 			args[i]=lua_tostring( L,i+1 )
 		Default
-			args[i]=lua_unboxobject( L,i+1 )
+			If lua_isnil(L, i + 1)
+				'correctly pass null
+				args[i] = null
+			ElseIf lua_isuserdata(L, i + 1)
+				'got valid data to unbox
+				Local obj:object = lua_unboxobject(L, i + 1)
+				'invalid object
+				If not obj
+					Throw "MaxLua - Invoke(): "+meth.name()+"() got broken param #"+i+" (expected ~q"+tys[i].name()+"~q, got ~qNULL~q)."
+				'given param derives from requested param type
+				ElseIf TTypeID.ForObject(obj).ExtendsType(tys[i])
+					args[i] = obj
+				Else
+					Throw "MaxLua - Invoke(): "+meth.name()+"() got broken param #"+i+" (expected ~q"+tys[i].name()+"~q, got ~q"+TTypeID.ForObject(obj).name()+"~q)."
+				EndIf
+			Else
+				'something "non object" got passed
+				Throw "MaxLua - Invoke(): "+meth.name()+"() got broken param #"+i+" (expected ~q"+tys[i].name()+"~q)."
+			EndIf
 		End Select
 	Next
 	Local t:Object=meth.Invoke( obj,args )
@@ -88,7 +106,7 @@ Function Invoke( L:Byte Ptr )
 	Case DoubleTypeId
 		lua_pushnumber L,t.ToString().ToDouble()
 	Case StringTypeId
-		Local s$=t.ToString()
+		Local s:String=t.ToString()
 		lua_pushlstring L,s,s.length
 	Default
 		lua_pushobject L,t
@@ -99,7 +117,7 @@ End Function
 Function Index( L:Byte Ptr )
 	Local obj:Object=lua_unboxobject( L,1 )
 	Local typeId:TTypeId=TTypeId.ForObject( obj )
-	Local ident$=lua_tostring( L,2 )
+	Local ident:String=lua_tostring( L,2 )
 	
 	Local mth:TMethod=typeId.FindMethod( ident )
 	If mth
@@ -119,7 +137,7 @@ Function Index( L:Byte Ptr )
 		Case DoubleTypeId
 			lua_pushnumber L,fld.GetDouble( obj )
 		Case StringTypeId
-			Local t$=fld.GetString( obj )
+			Local t:String=fld.GetString( obj )
 			lua_pushlstring L,t,t.length
 		Default
 			lua_pushobject L,fld.Get( obj )
@@ -131,7 +149,7 @@ End Function
 Function NewIndex( L:Byte Ptr )
 	Local obj:Object=lua_unboxobject( L,1 )
 	Local typeId:TTypeId=TTypeId.ForObject( obj )
-	Local ident$=lua_tostring( L,2 )
+	Local ident:String=lua_tostring( L,2 )
 
 	Local mth:TMethod=typeId.FindMethod( ident )
 	If mth
@@ -235,7 +253,7 @@ Function lua_pusharray( L:Byte Ptr,obj:Object )
 	
 End Function
 
-Function lua_registerobject( L:Byte Ptr,obj:Object,name$ )
+Function lua_registerobject( L:Byte Ptr,obj:Object,name:String )
 	lua_pushobject L,obj
 	lua_setglobal L,name
 End Function
@@ -306,7 +324,7 @@ Type TLuaObject
 	about:
 	@name should refer to a function within the object's classes' source code.
 	End Rem
-	Method Invoke:Object( name$,args:Object[] )
+	Method Invoke:Object( name:String,args:Object[] )
 		Local L:Byte Ptr=LuaState()
 	
 		lua_pushfenv
@@ -392,7 +410,7 @@ Type TLuaClass
 	bbdoc: Get source code
 	returns: The lua source code for the class.
 	End Rem
-	Method SourceCode$()
+	Method SourceCode:String()
 		Return _source
 	End Method
 
@@ -404,7 +422,7 @@ Type TLuaClass
 	If the class was created with the TLuaClass.Create function, you do not need to call this
 	method.
 	End Rem
-	Method SetSourceCode:TLuaClass( source$ )
+	Method SetSourceCode:TLuaClass( source:String )
 		Local L:Byte Ptr=LuaState()
 		_source=source
 		If _chunk
@@ -423,7 +441,7 @@ Type TLuaClass
 	
 	These functions can later be invoked by using the TLuaObject.Invoke method.
 	End Rem	
-	Function Create:TLuaClass( source$ )
+	Function Create:TLuaClass( source:String )
 		Return New TLuaClass.SetSourceCode( source )
 	End Function
 	
@@ -448,7 +466,7 @@ Type TLuaClass
 		luaL_unref L,LUA_REGISTRYINDEX,_chunk
 	End Method
 	
-	Field _source$
+	Field _source:String
 	Field _chunk
 
 End Type
@@ -458,7 +476,7 @@ bbdoc: Register a global object with Lua
 about:
 Once registered, the object can be accessed from within Lua scripts using the @name identifer.
 End Rem
-Function LuaRegisterObject( obj:Object,name$ )
+Function LuaRegisterObject( obj:Object,name:String )
 	lua_registerobject LuaState(),obj,name
 End Function
 

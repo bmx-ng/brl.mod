@@ -1,4 +1,4 @@
-' Copyright (c)2016 Bruce A Henderson
+' Copyright (c)2019 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -26,11 +26,15 @@ bbdoc: System/ThreadPool
 End Rem
 Module BRL.ThreadPool
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.02"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Bruce A Henderson"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Added scheduled pool executor"
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Added cached pool executor"
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release"
 
@@ -38,7 +42,8 @@ ModuleInfo "History: Initial Release"
 
 Import BRL.Threads
 Import BRL.LinkedList
-
+Import BRL.Time
+Import pub.stdc
 
 Rem
 bbdoc: An object that is intended to be executed by a thread pool.
@@ -71,6 +76,7 @@ Type TThreadPoolExecutor Extends TExecutor
 	Field maxThreads:Int
 
 	Field threads:TList
+	Field threadsLock:TMutex
 	Field jobQueue:TJobQueue
 	
 	Field threadsAlive:Int
@@ -79,12 +85,16 @@ Type TThreadPoolExecutor Extends TExecutor
 	Field countLock:TMutex
 	Field threadsIdle:TCondVar
 	
+	Field maxIdleWait:Int
+	
 	Rem
 	bbdoc: 
 	End Rem
-	Method New(initial:Int)
+	Method New(initial:Int, idleWait:Int = 0)
 		maxThreads = initial
+		maxIdleWait = idleWait
 		
+		threadsLock = TMutex.Create()
 		jobQueue = New TJobQueue
 		
 		countLock = TMutex.Create()
@@ -109,10 +119,10 @@ Type TThreadPoolExecutor Extends TExecutor
 		Local thread:TPooledThread = TPooledThread(data)
 		Local pool:TThreadPoolExecutor = thread.pool
 		
-		Return pool.processThread()
+		Return pool.processThread(thread)
 	End Function
 	
-	Method processThread:Object()
+	Method processThread:Object(thread:TPooledThread)
 
 		countLock.Lock()
 		threadsAlive :+ 1
@@ -120,7 +130,13 @@ Type TThreadPoolExecutor Extends TExecutor
 		
 		While keepThreadsAlive
 		
-			jobQueue.Wait()
+			If maxIdleWait Then
+				If jobQueue.TimedWait(maxIdleWait) = 1 Then
+					Exit
+				End If
+			Else
+				jobQueue.Wait()
+			End If
 		
 			If keepThreadsAlive Then
 			
@@ -154,6 +170,10 @@ Type TThreadPoolExecutor Extends TExecutor
 		countLock.Lock()
 		threadsAlive :- 1
 		countLock.Unlock()
+		
+		threadsLock.Lock()
+		threads.Remove(thread)
+		threadsLock.Unlock()
 
 		Return Null
 	End Method
@@ -164,11 +184,30 @@ Type TThreadPoolExecutor Extends TExecutor
 	End Rem
 	Method execute(command:TRunnable) Override
 		If Not isShutdown Then
-			jobQueue.Lock()
-			jobQueue.Add(command)
-			jobQueue.Unlock()
+			doExecute(command)
 		End If
 	End Method
+
+Private
+	Method doExecute(command:TRunnable)
+		If maxThreads < 0 Then
+			Local newThread:Int
+			countLock.Lock()
+			If threadsWorking = threadsAlive Then
+				newThread = True
+			End If
+			countLock.Unlock()
+			If newThread Then
+				threadsLock.Lock()
+				threads.AddLast(New TPooledThread(Self, _processThread))
+				threadsLock.Unlock()
+			End If
+		End If
+		jobQueue.Lock()
+		jobQueue.Add(command)
+		jobQueue.Unlock()
+	End Method
+Public
 
 	Rem
 	bbdoc: Creates an executor that uses a single worker thread operating off an unbounded queue.
@@ -185,6 +224,13 @@ Type TThreadPoolExecutor Extends TExecutor
 	Function newFixedThreadPool:TThreadPoolExecutor(threads:Int)
 		Assert threads > 0
 		Return New TThreadPoolExecutor(threads)
+	End Function
+	
+	Rem
+	bbdoc: 
+	End Rem
+	Function newCachedThreadPool:TThreadPoolExecutor(idleWait:Int = 60000)
+		Return New TThreadPoolExecutor(-1, idleWait)
 	End Function
 
 	Rem
@@ -227,6 +273,190 @@ Type TThreadPoolExecutor Extends TExecutor
 
 	End Method
 	
+	Rem
+	bbdoc: Returns the approximate number of threads that are actively executing tasks.
+	end rem
+	Method getActiveCount:Int()
+		countLock.Lock()
+		Local count:Int = threadsWorking
+		countLock.unlock()
+		return count
+	End Method
+	
+	Method IsQueueEmpty:Int()
+		return jobQueue.IsEmpty()
+	end method
+End Type
+
+Rem
+bbdoc: An executor that can be used to schedule commands to run after a given delay, or to execute commands periodically.
+End Rem
+Type TScheduledThreadPoolExecutor Extends TThreadPoolExecutor
+
+	Field tasks:TScheduledTask
+
+	Field taskMutex:TMutex
+	Field taskCond:TCondVar
+
+	Field schedulerThread:TThread
+
+	Method New(initial:Int, idleWait:Int = 0)
+		Super.New(initial, idleWait)
+		taskMutex = TMutex.Create()
+		taskCond = TCondVar.Create()
+
+		schedulerThread = CreateThread(taskScheduler, Self)
+	End Method
+
+	Method schedule(command:TRunnable, delay_:Int, unit:ETimeUnit = ETimeUnit.Milliseconds)
+		schedule(command, ULong(delay_), 0, unit)
+	End Method
+
+	Method schedule(command:TRunnable, initialDelay:Int, period:Int, unit:ETimeUnit = ETimeUnit.Milliseconds)
+		schedule(command, ULong(initialDelay), ULong(period), unit)
+	End Method
+	
+	Rem
+	bbdoc: Schedules a one-shot command to run after a given delay.
+	End Rem
+	Method schedule(command:TRunnable, delay_:ULong, unit:ETimeUnit = ETimeUnit.Milliseconds)
+		schedule(command, delay_, 0, unit)
+	End Method
+
+	Rem
+	bbdoc: Schedules a recurring command to run after a given initial delay, and subsequently with the given period.
+	End Rem
+	Method schedule(command:TRunnable, initialDelay:ULong, period:ULong, unit:ETimeUnit = ETimeUnit.Milliseconds)
+		Local now:ULong = CurrentUnixTime()
+
+		Local newTask:TScheduledTask = New TScheduledTask
+
+		Local delayMs:ULong = TimeUnitToMillis(initialDelay, unit)
+		Local periodMs:ULong = TimeUnitToMillis(period, unit)
+
+		newTask.executeAt = now + delayMs
+		newTask.intervalMs = periodMs
+		newTask.command = command
+		
+		taskMutex.Lock()
+		
+		insertTask(newTask)
+
+		taskMutex.Unlock()
+		
+	End Method
+
+	Rem
+	bbdoc: Initiates an orderly shutdown in which previously submitted tasks are executed, but no new tasks will be accepted.
+	End Rem
+	Method shutdown() Override
+		isShutdown = True
+		schedulerThread.Wait()
+		Super.shutdown()
+	End Method
+
+Private
+	Method insertTask(newTask:TScheduledTask)
+		Local headChanged:Int = False
+		If Not tasks Or newTask.executeAt < tasks.executeAt Then
+			newTask.nextTask = tasks
+			tasks = newTask
+			headChanged = True
+		Else
+			Local current:TScheduledTask = tasks
+			While current.nextTask And current.nextTask.executeAt < newTask.executeAt
+				current = current.nextTask
+			Wend
+			newTask.nextTask = current.nextTask
+			current.nextTask = newTask
+		End If
+
+		If headChanged Then
+			taskCond.Signal()
+		End If
+	End Method
+
+	Function taskScheduler:Object( data:Object )
+		Local exec:TScheduledThreadPoolExecutor = TScheduledThreadPoolExecutor(data)
+
+		While True
+
+			exec.taskMutex.Lock()
+
+			While Not exec.tasks
+				
+				If exec.isShutdown Then
+					exec.taskMutex.Unlock()
+					Return Null
+				End If
+
+				exec.taskCond.Wait(exec.taskMutex)
+			Wend
+
+			Local now:ULong = CurrentUnixTime()
+
+			If now < exec.tasks.executeAt Then
+				' Wait until the next task is due or a new task is scheduled
+				exec.taskCond.TimedWait(exec.taskMutex, Int(exec.tasks.executeAt - now))
+			End If
+
+			now = CurrentUnixTime()
+
+			While exec.tasks And exec.tasks.executeAt <= now
+				Local task:TScheduledTask = exec.tasks
+
+				exec.doExecute(task.command)
+
+				If task.intervalMs And Not exec.isShutdown Then
+					' If the task is recurring, reschedule it, unless the executor is shutting down
+					task.executeAt = now + task.intervalMs
+					exec.tasks = task.nextTask
+					exec.insertTask(task)
+				Else
+					' Otherwise, remove it from the list
+					exec.tasks = task.nextTask
+				End If
+			Wend
+
+			exec.taskMutex.Unlock()
+		Wend
+	End Function
+Public
+
+Rem
+	bbdoc: Creates an executor that uses a single worker thread operating off an unbounded queue.
+	End Rem
+	Function newSingleThreadExecutor:TScheduledThreadPoolExecutor()
+		Return New TScheduledThreadPoolExecutor(1)
+	End Function
+	
+	Rem
+	bbdoc: Creates a thread pool that reuses a fixed number of threads operating off a shared unbounded queue.
+	about: At any point, at most @threads threads will be active processing tasks. If additional tasks are
+	submitted when all threads are active, they will wait in the queue until a thread is available.
+	End Rem
+	Function newFixedThreadPool:TScheduledThreadPoolExecutor(threads:Int)
+		Assert threads > 0
+		Return New TScheduledThreadPoolExecutor(threads)
+	End Function
+	
+	Rem
+	bbdoc: Creates a thread pool that creates new threads as needed, but will reuse previously constructed threads when they are available.
+	about: These pools will typically improve the performance of programs that execute many short-lived asynchronous tasks.
+	Threads that remain idle for more than the specified @idleWait time will be terminated and removed from the pool.
+	End Rem
+	Function newCachedThreadPool:TScheduledThreadPoolExecutor(idleWait:Int = 60000)
+		Return New TScheduledThreadPoolExecutor(-1, idleWait)
+	End Function
+End Type
+
+Type TScheduledTask
+	Field executeAt:Long ' the time to execute the task, in ms since the epoch
+	Field command:TRunnable
+	
+	Field intervalMs:ULong ' zero for one-shot tasks
+
+	Field nextTask:TScheduledTask
 End Type
 
 Private
@@ -253,6 +483,20 @@ Type TBinarySemaphore
 		mutex.lock()
 		While value <> 1
 			cond.Wait(mutex)
+		Wend
+		value = 0
+		mutex.Unlock()
+	End Method
+
+	Method TimedWait:Int(millis:Int)
+		mutex.lock()
+		While value <> 1
+			Local res:Int = cond.TimedWait(mutex, millis)
+			If res = 1 Then
+				value = 0
+				mutex.Unlock()
+				Return res
+			End If
 		Wend
 		value = 0
 		mutex.Unlock()
@@ -309,6 +553,13 @@ Type TJobQueue
 		Return job
 	End Method
 
+	Method IsEmpty:Int()
+		Lock()
+		Local empty:Int = jobs.IsEmpty()
+		UnLock()
+		return empty
+	End Method
+
 	Method Lock()
 		mutex.Lock()
 	End Method
@@ -319,6 +570,10 @@ Type TJobQueue
 	
 	Method Wait()
 		hasJobs.Wait()
+	End Method
+
+	Method TimedWait:Int(millis:Int)
+		Return hasJobs.TimedWait(millis)
 	End Method
 	
 	Method PostAll()

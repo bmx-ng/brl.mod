@@ -37,7 +37,7 @@ Const CLOG:Int=False
 Global _sources:TOpenALSource
 
 Function CheckAL:Int()
-	Local err$
+	Local err:String
 	Select alGetError()
 	Case AL_NO_ERROR
 		Return True
@@ -94,10 +94,10 @@ Type TOpenALSource
 	
 End Type
 
-Function EnumOpenALDevices$[]()
+Function EnumOpenALDevices:String[]()
 	Local p:Byte Ptr=alcGetString(Null,ALC_DEVICE_SPECIFIER )
 	If Not p Return Null
-	Local devs$[100],n:Int
+	Local devs:String[100],n:Int
 	While p[0] And n<100
 		Local sz:Int
 		Repeat
@@ -229,24 +229,24 @@ Type TOpenALChannel Extends TChannel
 		EndIf
 	End Method
 	
-	Method SetVolume( volume# ) Override
+	Method SetVolume( volume:Float ) Override
 		If _seq<>_source._seq Return
 
 		alSourcef _source._id,AL_GAIN,volume
 	End Method
 	
-	Method SetPan( pan# ) Override
+	Method SetPan( pan:Float ) Override
 		If _seq<>_source._seq Return
 
 		pan:*90
 		alSource3f _source._id,AL_POSITION,Float(Sin(pan)),0,Float(-Cos(pan))
 	End Method
 	
-	Method SetDepth( depth# ) Override
+	Method SetDepth( depth:Float ) Override
 		If _seq<>_source._seq Return
 	End Method
 	
-	Method SetRate( rate# ) Override
+	Method SetRate( rate:Float ) Override
 		If _seq<>_source._seq Return
 
 		alSourcef _source._id,AL_PITCH,rate
@@ -325,7 +325,7 @@ End Type
 
 Type TOpenALAudioDriver Extends TAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return _name
 	End Method
 	
@@ -367,14 +367,14 @@ Type TOpenALAudioDriver Extends TAudioDriver
 		Return TOpenALChannel.Create( True )
 	End Method
 	
-	Function Create:TOpenALAudioDriver( name$,devname$ )
+	Function Create:TOpenALAudioDriver( name:String,devname:String )
 		Local t:TOpenALAudioDriver=New TOpenALAudioDriver
 		t._name=name
 		t._devname=devname
 		Return t
 	End Function
 	
-	Field _name$,_devname$,_device:Byte Ptr,_context:Byte Ptr
+	Field _name:String,_devname:String,_device:Byte Ptr,_context:Byte Ptr
 
 End Type
 
@@ -391,7 +391,7 @@ Function EnableOpenALAudio:Int()
 	Global done:Int,okay:Int
 	If done Return okay
 	If OpenALInstalled() And alcGetString
-		For Local devname$=EachIn EnumOpenALDevices()
+		For Local devname:String=EachIn EnumOpenALDevices()
 			TOpenALAudioDriver.Create( "OpenAL "+devname,devname )
 		Next
 		TOpenALAudioDriver.Create "OpenAL Default",String.FromCString( alcGetString( Null,ALC_DEFAULT_DEVICE_SPECIFIER ) )

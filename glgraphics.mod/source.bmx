@@ -1,4 +1,4 @@
-Strict
+SuperStrict
 
 Import BRL.Graphics
 Import BRL.Pixmap
@@ -12,13 +12,13 @@ Incbin "gldrawtextfont.bin"
 
 Extern
 	Function bbGLGraphicsShareContexts()
-	Function bbGLGraphicsGraphicsModes( buf:Byte Ptr,size )
-	Function bbGLGraphicsAttachGraphics:Byte Ptr( widget:Byte Ptr,flags )
-	Function bbGLGraphicsCreateGraphics:Byte Ptr( width,height,depth,hertz,flags )
-	Function bbGLGraphicsGetSettings( context:Byte Ptr,width Var,height Var,depth Var,hertz Var,flags Var )
+	Function bbGLGraphicsGraphicsModes:Int( buf:Byte Ptr,size:Int )
+	Function bbGLGraphicsAttachGraphics:Byte Ptr( widget:Byte Ptr,flags:Long )
+	Function bbGLGraphicsCreateGraphics:Byte Ptr( width:Int,height:Int,depth:Int,hertz:Int,flags:Long,x:Int,y:Int )
+	Function bbGLGraphicsGetSettings( context:Byte Ptr,width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Long Var )
 	Function bbGLGraphicsClose( context:Byte Ptr )	
 	Function bbGLGraphicsSetGraphics( context:Byte Ptr )
-	Function bbGLGraphicsFlip( sync )
+	Function bbGLGraphicsFlip( sync:Int )
 End Extern
 
 Public
@@ -30,15 +30,17 @@ Type TGLGraphics Extends TGraphics
 		Return GLGraphicsDriver()
 	End Method
 	
-	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var ) Override
+	Method GetSettings( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Long Var, x:Int Var, y:Int Var ) Override
 		Assert _context
-		Local w,h,d,r,f
+		Local w:Int,h:Int,d:Int,r:Int,f:Long,xp:Int,yp:Int
 		bbGLGraphicsGetSettings _context,w,h,d,r,f
 		width=w
 		height=h
 		depth=d
 		hertz=r
 		flags=f
+		x=-1
+		y=-1
 	End Method
 	
 	Method Close() Override
@@ -47,6 +49,12 @@ Type TGLGraphics Extends TGraphics
 		_context=0
 	End Method
 	
+	Method Resize(width:Int, height:Int) Override
+	End Method
+	
+	Method Position(x:Int, y:Int) Override
+	End Method
+
 	Field _context:Byte Ptr
 	
 End Type
@@ -54,10 +62,10 @@ End Type
 Type TGLGraphicsDriver Extends TGraphicsDriver
 
 	Method GraphicsModes:TGraphicsMode[]() Override
-		Local buf[1024*4]
-		Local count=bbGLGraphicsGraphicsModes( buf,1024 )
+		Local buf:Int[1024*4]
+		Local count:Int=bbGLGraphicsGraphicsModes( buf,1024 )
 		Local modes:TGraphicsMode[count],p:Int Ptr=buf
-		For Local i=0 Until count
+		For Local i:Int=0 Until count
 			Local t:TGraphicsMode=New TGraphicsMode
 			t.width=p[0]
 			t.height=p[1]
@@ -69,15 +77,15 @@ Type TGLGraphicsDriver Extends TGraphicsDriver
 		Return modes
 	End Method
 	
-	Method AttachGraphics:TGLGraphics( widget:Byte Ptr,flags ) Override
+	Method AttachGraphics:TGLGraphics( widget:Byte Ptr,flags:Long ) Override
 		Local t:TGLGraphics=New TGLGraphics
 		t._context=bbGLGraphicsAttachGraphics( widget,flags )
 		Return t
 	End Method
 	
-	Method CreateGraphics:TGLGraphics( width,height,depth,hertz,flags ) Override
+	Method CreateGraphics:TGLGraphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Long,x:Int,y:Int ) Override
 		Local t:TGLGraphics=New TGLGraphics
-		t._context=bbGLGraphicsCreateGraphics( width,height,depth,hertz,flags )
+		t._context=bbGLGraphicsCreateGraphics( width,height,depth,hertz,flags,x,y )
 		Return t
 	End Method
 	
@@ -88,10 +96,13 @@ Type TGLGraphicsDriver Extends TGraphicsDriver
 		bbGLGraphicsSetGraphics context
 	End Method
 	
-	Method Flip( sync ) Override
+	Method Flip:Int( sync:Int) Override
 		bbGLGraphicsFlip sync
 	End Method
 	
+	Method ToString:String() Override
+		Return "TGLGraphicsDriver"
+	End Method
 End Type
 
 Rem
@@ -111,7 +122,7 @@ returns: An OpenGL graphics object
 about:
 This is a convenience function that allows you to easily create an OpenGL graphics context.
 End Rem
-Function GLGraphics:TGraphics( width,height,depth=0,hertz=60,flags=GRAPHICS_BACKBUFFER|GRAPHICS_DEPTHBUFFER )
+Function GLGraphics:TGraphics( width:Int,height:Int,depth:Int=0,hertz:Int=60,flags:Long=GRAPHICS_BACKBUFFER|GRAPHICS_DEPTHBUFFER )
 	SetGraphicsDriver GLGraphicsDriver()
 	Return Graphics( width,height,depth,hertz,flags )
 End Function
@@ -122,13 +133,13 @@ SetGraphicsDriver GLGraphicsDriver()
 
 Private
 
-Global fontTex
-Global fontSeq
+Global fontTex:Int
+Global fontSeq:Int
 
 Global ortho_mv![16],ortho_pj![16]
 
 Function BeginOrtho()
-	Local vp[4]
+	Local vp:Int[4]
 	
 	glPushAttrib GL_ENABLE_BIT|GL_TEXTURE_BIT|GL_TRANSFORM_BIT
 	
@@ -162,9 +173,9 @@ Rem
 bbdoc: Helper function to calculate nearest valid texture size
 about: This functions rounds @width and @height up to the nearest valid texture size
 End Rem
-Function GLAdjustTexSize( width Var,height Var )
-	Function Pow2Size( n )
-		Local t=1
+Function GLAdjustTexSize( width:Int Var,height:Int Var )
+	Function Pow2Size:Int( n:Int )
+		Local t:Int=1
 		While t<n
 			t:*2
 		Wend
@@ -173,7 +184,7 @@ Function GLAdjustTexSize( width Var,height Var )
 	width=Pow2Size( width )
 	height=Pow2Size( height )
 	Repeat
-		Local t
+		Local t:Int
 		glTexImage2D GL_PROXY_TEXTURE_2D,0,4,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,Null
 		glGetTexLevelParameteriv GL_PROXY_TEXTURE_2D,0,GL_TEXTURE_WIDTH,Varptr t
 		If t Return
@@ -188,21 +199,21 @@ bbdoc: Helper function to create a texture from a pixmap
 returns: Integer GL Texture name
 about: @pixmap is resized to a valid texture size before conversion.
 end rem
-Function GLTexFromPixmap( pixmap:TPixmap,mipmap=True )
+Function GLTexFromPixmap:Int( pixmap:TPixmap,mipmap:Int=True )
 	If pixmap.format<>PF_RGBA8888 pixmap=pixmap.Convert( PF_RGBA8888 )
-	Local width=pixmap.width,height=pixmap.height
+	Local width:Int=pixmap.width,height:Int=pixmap.height
 	GLAdjustTexSize width,height
 	If width<>pixmap.width Or height<>pixmap.height pixmap=ResizePixmap( pixmap,width,height )
 	
-	Local old_name,old_row_len
+	Local old_name:Int,old_row_len:Int
 	glGetIntegerv GL_TEXTURE_BINDING_2D,Varptr old_name
 	glGetIntegerv GL_UNPACK_ROW_LENGTH,Varptr old_row_len
 
-	Local name
+	Local name:Int
 	glGenTextures 1,Varptr name
 	glBindtexture GL_TEXTURE_2D,name
 	
-	Local mip_level
+	Local mip_level:Int
 	Repeat
 		glPixelStorei GL_UNPACK_ROW_LENGTH,pixmap.pitch/BytesPerPixel[pixmap.format]
 		glTexImage2D GL_TEXTURE_2D,mip_level,GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixmap.pixels
@@ -225,7 +236,7 @@ bbdoc:Helper function to output a simple rectangle
 about:
 Draws a rectangle relative to top-left of current viewport.
 End Rem
-Function GLDrawRect( x,y,width,height )
+Function GLDrawRect( x:Int,y:Int,width:Int,height:Int )
 	BeginOrtho
 	glBegin GL_QUADS
 	glVertex2i x,y
@@ -239,21 +250,21 @@ End Function
 Rem
 bbdoc: Helper function to output some simple 8x16 font text
 about:
-Draws text relative to top-left of current viewport.<br>
-<br>
-The font used is an internal fixed point 8x16 font.<br>
-<br>
+Draws text relative to top-left of current viewport.<br/>
+<br/>
+The font used is an internal fixed point 8x16 font.<br/>
+<br/>
 This function is intended for debugging purposes only - performance is unlikely to be stellar.
 End Rem
-Function GLDrawText( Text$,x,y )
+Function GLDrawText( Text:String,x:Int,y:Int )
 '	If fontSeq<>graphicsSeq
 	If Not fontTex
 		Local pixmap:TPixmap=TPixmap.Create( 1024,16,PF_RGBA8888 )
 		Local p:Byte Ptr=IncbinPtr( "gldrawtextfont.bin" )
-		For Local y=0 Until 16
-			For Local x=0 Until 96
-				Local b=p[x]
-				For Local n=0 Until 8
+		For Local y:Int=0 Until 16
+			For Local x:Int=0 Until 96
+				Local b:Int=p[x]
+				For Local n:Int=0 Until 8
 					If b & (1 Shl n) 
 						pixmap.WritePixel x*8+n,y,~0
 					Else
@@ -272,8 +283,8 @@ Function GLDrawText( Text$,x,y )
 	glEnable GL_TEXTURE_2D
 	glBindTexture GL_TEXTURE_2D,fontTex
 	
-	For Local i=0 Until Text.length
-		Local c=Text[i]-32
+	For Local i:Int=0 Until Text.length
+		Local c:Int=Text[i]-32
 		If c>=0 And c<96
 			Const adv#=8/1024.0
 			Local t#=c*adv;
@@ -297,11 +308,11 @@ End Function
 Rem
 bbdoc: Helper function to draw a pixmap to a gl context
 about:
-Draws the pixmap relative to top-left of current viewport.<br>
-<br>
+Draws the pixmap relative to top-left of current viewport.<br/>
+<br/>
 This function is intended for debugging purposes only - performance is unlikely to be stellar.
 End Rem
-Function GLDrawPixmap( pixmap:TPixmap,x,y )
+Function GLDrawPixmap( pixmap:TPixmap,x:Int,y:Int )
 	BeginOrtho
 
 	Local t:TPixmap=YFlipPixmap(pixmap)

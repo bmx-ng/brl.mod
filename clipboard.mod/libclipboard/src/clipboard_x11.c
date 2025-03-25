@@ -28,6 +28,8 @@
 #  undef gettimeofday
 #endif
 
+#define VALID_MODE(x) ((x) >= LCB_CLIPBOARD && (x) < LCB_MODE_END)
+
 /**
  *  Enumeration of standard X11 atom identifiers
  */
@@ -134,12 +136,13 @@ const char const *g_std_atom_names[X_ATOM_END] = {
  *  \return true iff all atoms were interned.
  */
 static bool x11_intern_atoms(xcb_connection_t *xc, atom_c *atoms, const char const **atom_names, int number) {
-    for (int i = 0; i < number; i++) {
+    int i;
+    for (i = 0; i < number; i++) {
         atoms[i].cookie = xcb_intern_atom(xc, 0,
                                           strlen(atom_names[i]), atom_names[i]);
     }
 
-    for (int i  = 0; i < number; i++) {
+    for (i  = 0; i < number; i++) {
         xcb_intern_atom_reply_t *reply = xcb_intern_atom_reply(xc,
                                          atoms[i].cookie, NULL);
         if (reply == NULL) {
@@ -186,7 +189,8 @@ static void x11_clear_selection(clipboard_c *cb, xcb_selection_clear_event_t *e)
         return;
     }
 
-    for (int i = 0; i < LCB_MODE_END; i++) {
+    int i;
+    for (i = 0; i < LCB_MODE_END; i++) {
         selection_c *sel = &cb->selections[i];
         if (sel->xmode == e->selection && (pthread_mutex_lock(&cb->mu) == 0)) {
             cb->free(sel->data);
@@ -215,7 +219,7 @@ static void x11_retrieve_selection(clipboard_c *cb, xcb_selection_notify_event_t
     xcb_atom_t actual_type;
     uint8_t actual_format;
 
-    if (e->property != XCB_ATOM_PRIMARY && e->property != cb->std_atoms[X_ATOM_CLIPBOARD].atom) {
+    if (e->property != XCB_ATOM_PRIMARY && e->property != XCB_ATOM_SECONDARY && e->property != cb->std_atoms[X_ATOM_CLIPBOARD].atom) {
         fprintf(stderr, "x11_retrieve_selection: [Warn] Unknown selection property returned: %d\n", e->property);
         return;
     }
@@ -267,7 +271,8 @@ static void x11_retrieve_selection(clipboard_c *cb, xcb_selection_notify_event_t
 
     if (buf != NULL && (pthread_mutex_lock(&cb->mu) == 0)) {
         selection_c *sel = NULL;
-        for (int i = 0; i < LCB_MODE_END; i++) {
+        int i;
+        for (i = 0; i < LCB_MODE_END; i++) {
             if (cb->selections[i].xmode == e->property) {
                 sel = &cb->selections[i];
                 break;
@@ -326,7 +331,8 @@ static bool x11_transmit_selection(clipboard_c *cb, xcb_selection_request_event_
             return false;
         }
 
-        for (int i = 0; i < LCB_MODE_END; i++) {
+        int i;
+        for (i = 0; i < LCB_MODE_END; i++) {
             if (cb->selections[i].xmode == e->selection) {
                 sel = &cb->selections[i];
                 break;
@@ -468,7 +474,8 @@ LCB_API clipboard_c *LCB_CC clipboard_new(clipboard_opts *cb_opts) {
     }
 
     cb->selections[LCB_CLIPBOARD].xmode = cb->std_atoms[X_ATOM_CLIPBOARD].atom;
-    cb->selections[LCB_SELECTION].xmode = XCB_ATOM_PRIMARY;
+    cb->selections[LCB_PRIMARY].xmode   = XCB_ATOM_PRIMARY;
+    cb->selections[LCB_SECONDARY].xmode = XCB_ATOM_SECONDARY;
 
     /* Structure notify mask to get DestroyNotify messages */
     /* Property change mask for PropertyChange messages */
@@ -524,7 +531,8 @@ LCB_API void LCB_CC clipboard_free(clipboard_c *cb) {
     }
 
     /* Free selection data */
-    for (int i = 0; i < LCB_MODE_END; i++) {
+    int i;
+    for (i = 0; i < LCB_MODE_END; i++) {
         if (cb->selections[i].data != NULL) {
             cb->free(cb->selections[i].data);
         }
@@ -544,8 +552,11 @@ LCB_API void LCB_CC clipboard_clear(clipboard_c *cb, clipboard_mode mode) {
         case LCB_CLIPBOARD:
             sel = cb->std_atoms[X_ATOM_CLIPBOARD].atom;
             break;
-        case LCB_SELECTION:
+        case LCB_PRIMARY:
             sel = XCB_ATOM_PRIMARY;
+            break;
+        case LCB_SECONDARY:
+            sel = XCB_ATOM_SECONDARY;
             break;
         default:
             return;
@@ -558,7 +569,7 @@ LCB_API void LCB_CC clipboard_clear(clipboard_c *cb, clipboard_mode mode) {
 LCB_API bool LCB_CC clipboard_has_ownership(clipboard_c *cb, clipboard_mode mode) {
     bool ret = false;
 
-    if (mode != LCB_CLIPBOARD && mode != LCB_SELECTION) {
+    if (!VALID_MODE(mode)) {
         return false;
     }
 
@@ -594,7 +605,7 @@ static void retrieve_text_selection(clipboard_c *cb, selection_c *sel, char **re
 LCB_API char LCB_CC *clipboard_text_ex(clipboard_c *cb, int *length, clipboard_mode mode) {
     char *ret = NULL;
 
-    if (cb == NULL || (mode != LCB_CLIPBOARD && mode != LCB_SELECTION)) {
+    if (cb == NULL || !VALID_MODE(mode)) {
         return NULL;
     }
 
@@ -653,7 +664,7 @@ LCB_API char LCB_CC *clipboard_text_ex(clipboard_c *cb, int *length, clipboard_m
 LCB_API bool LCB_CC clipboard_set_text_ex(clipboard_c *cb, const char *src, int length, clipboard_mode mode) {
     bool ret = false;
 
-    if (cb == NULL || src == NULL || length == 0 || (mode != LCB_CLIPBOARD && mode != LCB_SELECTION)) {
+    if (cb == NULL || src == NULL || length == 0 || !VALID_MODE(mode)) {
         return false;
     }
 

@@ -1,20 +1,27 @@
-Strict
+SuperStrict
 
+Import "common.bmx"
 
 Extern
-	Function bmx_map_objectmap_clear(root:Byte Ptr Ptr)
-	Function bmx_map_objectmap_isempty:Int(root:Byte Ptr Ptr)
-	Function bmx_map_objectmap_insert(key:Object, value:Object, root:Byte Ptr Ptr)
-	Function bmx_map_objectmap_contains:Int(key:Object, root:Byte Ptr Ptr)
-	Function bmx_map_objectmap_valueforkey:Object(key:Object, root:Byte Ptr Ptr)
-	Function bmx_map_objectmap_remove:Int(key:Object, root:Byte Ptr Ptr)
-	Function bmx_map_objectmap_firstnode:Byte Ptr(root:Byte Ptr)
-	Function bmx_map_objectmap_nextnode:Byte Ptr(node:Byte Ptr)
-	Function bmx_map_objectmap_key:Object(node:Byte Ptr)
-	Function bmx_map_objectmap_value:Object(node:Byte Ptr)
-	Function bmx_map_objectmap_hasnext:Int(node:Byte Ptr, root:Byte Ptr)
-	Function bmx_map_objectmap_copy(dst:Byte Ptr Ptr, _root:Byte Ptr)
+	Function bmx_map_objectmap_clear(root:SavlRoot Ptr Ptr)
+	Function bmx_map_objectmap_isempty:Int(root:SavlRoot Ptr)
+	Function bmx_map_objectmap_insert(key:Object, value:Object, root:SavlRoot Ptr Ptr)
+	Function bmx_map_objectmap_contains:Int(key:Object, root:SavlRoot Ptr)
+	Function bmx_map_objectmap_valueforkey:Object(key:Object, root:SavlRoot Ptr)
+	Function bmx_map_objectmap_remove:Int(key:Object, root:SavlRoot Ptr Ptr)
+	Function bmx_map_objectmap_firstnode:SObjectMapNode Ptr(root:SavlRoot Ptr)
+	Function bmx_map_objectmap_nextnode:SObjectMapNode Ptr(node:SObjectMapNode Ptr)
+	Function bmx_map_objectmap_key:Object(node:SObjectMapNode Ptr)
+	Function bmx_map_objectmap_value:Object(node:SObjectMapNode Ptr)
+	Function bmx_map_objectmap_hasnext:Int(node:SObjectMapNode Ptr, root:SavlRoot Ptr)
+	Function bmx_map_objectmap_copy(dst:SavlRoot Ptr Ptr, _root:SavlRoot Ptr)
 End Extern
+
+Struct SObjectMapNode
+	Field link:SavlRoot
+	Field key:Object
+	Field value:Object
+End Struct
 
 Type TObjectMap
 
@@ -31,8 +38,8 @@ Type TObjectMap
 		bmx_map_objectmap_clear(Varptr _root)
 	End Method
 	
-	Method IsEmpty()
-		Return bmx_map_objectmap_isempty(Varptr _root)
+	Method IsEmpty:Int()
+		Return bmx_map_objectmap_isempty(_root)
 	End Method
 	
 	Method Insert( key:Object,value:Object )
@@ -43,14 +50,14 @@ Type TObjectMap
 	End Method
 
 	Method Contains:Int( key:Object )
-		Return bmx_map_objectmap_contains(key, Varptr _root)
+		Return bmx_map_objectmap_contains(key, _root)
 	End Method
 	
 	Method ValueForKey:Object( key:Object )
-		Return bmx_map_objectmap_valueforkey(key, Varptr _root)
+		Return bmx_map_objectmap_valueforkey(key, _root)
 	End Method
 	
-	Method Remove( key:Object )
+	Method Remove:Int( key:Object )
 ?ngcmod
 		_modCount :+ 1
 ?
@@ -119,7 +126,7 @@ Type TObjectMap
 		Return nodeenum
 	End Method
 
-	Field _root:Byte Ptr
+	Field _root:SavlRoot Ptr
 
 ?ngcmod
 	Field _modCount:Int
@@ -128,8 +135,8 @@ Type TObjectMap
 End Type
 
 Type TObjectNode
-	Field _root:Byte Ptr
-	Field _nodePtr:Byte Ptr
+	Field _root:SavlRoot Ptr
+	Field _nodePtr:SObjectMapNode Ptr
 	
 	Method Key:Object()
 		Return bmx_map_objectmap_key(_nodePtr)
@@ -139,7 +146,7 @@ Type TObjectNode
 		Return bmx_map_objectmap_value(_nodePtr)
 	End Method
 
-	Method HasNext()
+	Method HasNext:Int()
 		Return bmx_map_objectmap_hasnext(_nodePtr, _root)
 	End Method
 	
@@ -156,7 +163,7 @@ Type TObjectNode
 End Type
 
 Type TObjectNodeEnumerator
-	Method HasNext()
+	Method HasNext:Int()
 		Local has:Int = _node.HasNext()
 		If Not has Then
 			_map = Null
@@ -213,7 +220,7 @@ Type TObjectMapEnumerator
 End Type
 
 Type TObjectEmptyEnumerator Extends TObjectNodeEnumerator
-	Method HasNext() Override
+	Method HasNext:Int() Override
 		_map = Null
 		Return False
 	End Method

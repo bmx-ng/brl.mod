@@ -12,17 +12,11 @@ void* bbRefArrayElementPtr(size_t sz, BBArray* array, int index) {
 	return (char*)BBARRAYDATA(array, array->dims) + sz * index;
 }
 
-void* bbRefArrayClass() {
-	return &bbArrayClass;
-}
+void* bbRefArrayClass = &bbArrayClass;
 
-void* bbRefStringClass() {
-	return &bbStringClass;
-}
+void* bbRefStringClass = &bbStringClass;
 
-void* bbRefObjectClass() {
-	return &bbObjectClass;
-}
+void* bbRefObjectClass = &bbObjectClass;
 
 int bbRefArrayLength(BBArray* array, int dim) {
 	return array->scales[((dim <= array->dims) ? dim : 0)];
@@ -80,8 +74,16 @@ void* bbDebugDeclVarAddress(BBDebugDecl* decl) {
 	return decl->var_address;
 }
 
+void* bbDebugDeclFuncPtr(BBDebugDecl* decl) {
+	return decl->func_ptr;
+}
+
 size_t bbDebugDeclStructSize(BBDebugDecl* decl) {
 	return decl->struct_size;
+}
+
+char bbDebugDeclIsFlagsEnum(BBDebugDecl* decl) {
+	return decl->is_flags_enum;
 }
 
 void* bbDebugDeclReflectionWrapper(BBDebugDecl* decl) {
@@ -116,14 +118,19 @@ void bbRefPushObject(BBObject** p, BBObject* t) {
 }
 
 void bbRefInitObject(BBObject** p, BBObject* t) {
-	BBRETAIN(t);
 	*p = t;
 }
 
 void bbRefAssignObject(BBObject** p, BBObject* t) {
-	BBRETAIN(t);
-	BBRELEASE(*p);
 	*p = t;
+}
+
+void* bbStructBoxAlloc(size_t size) {
+	return GC_malloc_uncollectable(size);
+}
+
+void bbStructBoxFree(void* p) {
+	GC_free(p);
 }
 
 BBClass* bbRefGetObjectClass(BBObject* p) {
@@ -138,9 +145,11 @@ BBString* bbStringFromRef(void* ref) {
 	return (BBString*)ref;
 }
 
-BBArray* bbRefArrayNull() {
-	return &bbEmptyArray;
-}
+BBObject* bbRefNullObject = &bbNullObject;
+
+BBString* bbRefEmptyString = &bbEmptyString;
+
+BBArray* bbRefEmptyArray = &bbEmptyArray;
 
 const char* bbInterfaceName(BBInterface* ifc) {
 	return ifc->clas->debug_scope->name;

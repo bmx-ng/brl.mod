@@ -6,17 +6,27 @@ bbdoc: System/Threads
 End Rem
 Module BRL.Threads
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.03"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Added TFuture type."
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Changed to use macOS dispatch semphores."
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Use Byte Ptr instead of Int handles."
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial release."
 
+?Threaded And macos
+
+Import "threads_mac.m"
+
 ?Threaded
 
+Import Pub.Stdc
+Import BRL.Time
 Import "threads.c"
 
 Private
@@ -44,12 +54,14 @@ Function threads_CreateSemaphore:Byte Ptr( count:Int )
 Function threads_CloseSemaphore( sema:Byte Ptr )
 Function threads_WaitSemaphore( sema:Byte Ptr )
 Function threads_PostSemaphore( sema:Byte Ptr )
+Function threads_TimedWaitSemaphore:Int( sema:Byte Ptr, millis:Int )
 
 Function threads_CreateCond:Byte Ptr()
 Function threads_WaitCond( cond:Byte Ptr,mutex:Byte Ptr )
 Function threads_SignalCond( cond:Byte Ptr )
 Function threads_BroadcastCond( cond:Byte Ptr )
 Function threads_CloseCond( cond:Byte Ptr )
+Function threads_TimedWaitCond:Int( cond:Byte Ptr,mutex:Byte Ptr, millis:Int )
 
 End Extern
 
@@ -254,6 +266,14 @@ Type TSemaphore
 		Assert _handle
 		threads_WaitSemaphore _handle
 	End Method
+
+	Rem
+	bbdoc: Wait for the semaphore
+	End Rem
+	Method TimedWait:Int(millis:Int)
+		Assert _handle
+		Return threads_TimedWaitSemaphore(_handle, millis)
+	End Method
 	
 	Rem
 	bbdoc: Post the semaphore
@@ -303,6 +323,14 @@ Type TCondVar
 		Assert _handle
 		threads_WaitCond _handle,mutex._handle
 	End Method
+
+	Rem
+	bbdoc: Wait for the condvar
+	End Rem	
+	Method TimedWait:Int( mutex:TMutex, millis:Int )
+		Assert _handle
+		Return threads_TimedWaitCond(_handle,mutex._handle, millis)
+	End Method
 	
 	Rem 
 	bbdoc: Signal the condvar
@@ -337,6 +365,130 @@ Type TCondVar
 	
 	Field _handle:Byte Ptr
 
+End Type
+
+Rem
+bbdoc: A generic type for asynchronous result handling, allowing threads to wait for and retrieve results safely.
+about: It provides a mechanism for one thread to produce a result that another thread can wait for and retrieve
+at a later time. This is particularly useful for tasks that are executed in parallel, where the completion
+time may vary, and the consumer needs to wait for the result before proceeding.
+End Rem
+Type TFuture<V>
+Private
+	Field value:V
+
+	Field ready:Int
+
+	Field condvar:TCondVar=CreateCondVar()
+	Field mutex:TMutex=CreateMutex()
+Public
+	Rem
+	bbdoc: Waits for the result to become available and then returns it.
+	about: This method blocks the calling thread until result is available.
+	End Rem
+	Method GetResult:V()
+		mutex.Lock()
+		While Not ready
+			condvar.Wait( mutex )
+		Wend
+		Local result:V = value
+		mutex.Unlock()
+		Return result
+	End Method
+
+	Rem
+	bbdoc: Sets the result of the asynchronous operation and signals any waiting threads.
+	End Rem
+	Method SetResult( value:V )
+		mutex.Lock()
+		Self.value=value
+		Self.ready=True
+		condvar.Signal()
+		mutex.Unlock()
+	End Method
+
+End Type
+
+Rem
+bbdoc: A thread event object.
+about: A basic synchronization object that allows one thread to signal an event to other threads.
+It manages an internal flag that can be set or cleared, and provides methods to wait for the event to be set.
+End rem
+Type TThreadEvent
+    Private
+        Field lock:TMutex
+        Field condition:TCondVar
+        Field _isSet:Int
+	Public
+    Method New()
+        lock = TMutex.Create()
+        condition = TCondVar.Create()
+        _isSet = False
+    End Method
+
+    Rem
+	bboc: Sets the internal flag to #True and signals any waiting threads.
+	about: All threads waiting for it to become #True are awakened. Threads that call #Wait once the flag is true will not block at all.
+	End Rem
+    Method Set()
+        lock.Lock()
+        _isSet = True
+        condition.Broadcast()
+        lock.Unlock()
+    End Method
+
+    Rem
+	bbdoc: Resets the internal flag to false.
+	about: After clearing, threads calling #Wait will block until #Set is called to set the internal flag to #True again.
+	End Rem
+    Method Clear()
+        lock.Lock()
+        _isSet = False
+        lock.Unlock()
+    End Method
+
+    Rem
+	bbdoc: Waits for the event to be set.
+	about: This method could block indefinitely if the event is never set.
+	If the event is already set, the method returns immediately.
+	End Rem
+    Method Wait()
+        lock.Lock()
+        While Not _isSet
+            condition.Wait(lock)
+        Wend
+        lock.Unlock()
+    End Method
+
+    Rem
+	bbdoc: Waits for the event to be set, with a timeout.
+	about: If the timeout is reached before the event is set, the method returns #False.
+	End Rem
+    Method Wait:Int(timeout:ULong, unit:ETimeUnit = ETimeUnit.Milliseconds)
+        lock.Lock()
+		Local timeoutMs:ULong = TimeUnitToMillis(timeout, unit)
+        Local endTime:ULong = CurrentUnixTime() + timeoutMs
+        While Not _isSet
+            Local now:ULong = CurrentUnixTime()
+            If now >= timeoutMs Then
+                lock.Unlock()
+                Return False
+            End If
+            condition.TimedWait(lock, Int(timeoutMs - now))
+        Wend
+        lock.Unlock()
+        Return True
+    End Method
+
+    Rem
+	bbdoc: Returns whether the event is set or not.
+	End Rem
+    Method IsSet:Int()
+        lock.Lock()
+        Local result:Int = _isSet
+        lock.Unlock()
+        Return result
+    End Method
 End Type
 
 Rem
@@ -563,3 +715,4 @@ Function AtomicSwap:Int( target:Int Var,value:Int )
 End Function
 
 ?
+

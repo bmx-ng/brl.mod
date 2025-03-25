@@ -39,6 +39,7 @@
 #include "blitz_handle.h"
 #include "blitz_app.h" 
 #include "blitz_enum.h"
+#include "blitz_coverage.h"
 
 #ifdef __cplusplus
 extern "C"{
@@ -50,6 +51,7 @@ extern void brl_blitz_NullFunctionError();
 extern void brl_blitz_ArrayBoundsError();
 extern void brl_blitz_OutOfDataError();
 extern void brl_blitz_RuntimeError( BBString *error );
+extern void brl_blitz_InvalidEnumError();
 
 // BaH
 struct BBClass_brl_blitz_TBlitzException;
@@ -72,6 +74,9 @@ extern struct BBClass_brl_blitz_TOutOfDataException brl_blitz_TOutOfDataExceptio
 
 struct BBClass_brl_blitz_TRuntimeException;
 extern struct BBClass_brl_blitz_TRuntimeException brl_blitz_TRuntimeExeption;
+
+struct BBClass_brl_blitz_TInvalidEnumException;
+extern struct BBClass_brl_blitz_TInvalidEnumException brl_blitz_TInvalidEnumException;
 
 
 #if 0

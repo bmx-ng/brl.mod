@@ -9,7 +9,7 @@ BBString*	bbAppTitle=BBNULLSTRING;
 BBString*	bbLaunchDir=BBNULLSTRING;
 BBArray*	bbAppArgs=BBNULLARRAY;
 
-void **bbGCStackTop;
+char * bbArgv0 = NULL;
 
 void bbEnd(){
 	exit(0);
@@ -20,14 +20,14 @@ void bbOnEnd( void (*f)() ){
 }
 
 void bbWriteStdout( BBString *t ){
-	char *p=bbStringToUTF8String( t );
+	char *p=(char*)bbStringToUTF8String( t );
 	fprintf( stdout,"%s",p );
 	fflush( stdout );
 	bbMemFree(p);
 }
 
 void bbWriteStderr( BBString *t ){
-	char *p=bbStringToUTF8String( t );
+	char *p=(char*)bbStringToUTF8String( t );
 	fprintf( stderr,"%s",p );
 	fflush( stderr );
 	bbMemFree(p);
@@ -44,7 +44,7 @@ BBString *bbReadStdin(){
 		char buf[BUF_SIZE],*p;
 		fgets( buf,BUF_SIZE,stdin );
 		buf[BUF_SIZE-1]=0;
-		if( p=strchr( buf,'\n' ) ){
+		if( (p=strchr( buf,'\n' )) ){
 			t_sz=p-buf;
 			if( t_sz && isspace(buf[t_sz-1]) ) --t_sz;
 		}else{
@@ -55,7 +55,7 @@ BBString *bbReadStdin(){
 		sz+=t_sz;
 		if( t_sz<BUF_SIZE-1 ) break;
 	}
-	if( sz ) t=bbStringFromBytes( str,sz );
+	if( sz ) t=bbStringFromBytes( (unsigned char*)str,sz );
 	else t=&bbEmptyString;
 	bbMemFree( str );
 	return t;
@@ -70,6 +70,7 @@ BBString *bbReadStdin(){
 #include <limits.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
 
 static pthread_t _mainThread;
 
@@ -79,8 +80,18 @@ static void startup(){
 
 void bbDelay( int millis ){
 	if (millis<0) return;
-	usleep( millis*1000 );
+	struct timespec rqt = { (int)(millis / 1000), (millis % 1000) * 1000000 };
+	while(nanosleep(&rqt, &rqt));
 }
+
+#if __STDC_VERSION__ >= 199901L
+extern void bbUDelay( int microseconds );
+#else
+void bbUDelay( int microseconds ) {
+	if (microseconds <0) return
+	usleep( microseconds );
+}
+#endif
 
 int bbMilliSecs(){
 	static mach_timebase_info_data_t info;
@@ -120,6 +131,20 @@ int bbMilliSecs(){
 	return timeGetTime();
 }
 
+void bbUDelay( int microseconds ) {
+	LARGE_INTEGER time1;
+	LARGE_INTEGER time2;
+	LARGE_INTEGER freq;
+
+	QueryPerformanceCounter(&time1);
+	QueryPerformanceFrequency(&freq);
+
+	do {
+		Sleep(0);
+		QueryPerformanceCounter(&time2);
+	} while(time2.QuadPart-time1.QuadPart < microseconds*freq.QuadPart/1000000);
+}
+
 int bbIsMainThread(){
 	return GetCurrentThreadId()==_mainThread;
 }
@@ -141,7 +166,11 @@ void bbGetAppFileDir(wchar_t * buf) {
 	}
 }
 
-#elif __linux
+HICON bbAppIcon(HINSTANCE hInstance) {
+	return LoadIcon(hInstance, "APP_ICON");
+}
+
+#elif __linux__
 
 #include <unistd.h>
 #include <pthread.h>
@@ -149,6 +178,7 @@ void bbGetAppFileDir(wchar_t * buf) {
 #include <signal.h>
 #include <sys/time.h>
 #include <sys/sysinfo.h>
+#include <time.h>
 
 static int base_time;
 static pthread_t _mainThread;
@@ -164,21 +194,19 @@ static void startup(){
 
 //***** ThreadSafe! *****
 void bbDelay( int millis ){
-	int i,e;
-	
 	if( millis<0 ) return;
-
-	e=bbMilliSecs()+millis;
-	
-	for( i=0;;++i ){
-		int t=e-bbMilliSecs();
-		if( t<=0 ){
-			if( !i ) usleep( 0 );	//always sleep at least once.
-			break;
-		}
-		usleep( t*1000 );
-	}
+	struct timespec rqt = { (int)(millis / 1000), (millis % 1000) * 1000000 };
+	while(nanosleep(&rqt, &rqt));
 }
+
+#if __STDC_VERSION__ >= 199901L
+extern void bbUDelay( int microseconds );
+#else
+void bbUDelay( int microseconds ) {
+	if (microseconds <0) return
+	usleep( microseconds );
+}
+#endif
 
 //***** ThreadSafe! *****
 int bbMilliSecs(){
@@ -305,6 +333,67 @@ int bbIsMainThread(){
 //	return pthread_self()==_mainThread;
 }
 
+#elif __HAIKU__
+
+#include <unistd.h>
+#include <pthread.h>
+#include <limits.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <kernel/OS.h>
+
+static int base_time;
+static pthread_t _mainThread;
+
+static void startup(){
+	
+	_mainThread=pthread_self();
+
+	bigtime_t uptime = system_time();
+	base_time=bbMilliSecs()-uptime/1000;
+}
+
+//***** ThreadSafe! *****
+void bbDelay( int millis ){
+	int i,e;
+	
+	if( millis<0 ) return;
+
+	e=bbMilliSecs()+millis;
+	
+	for( i=0;;++i ){
+		int t=e-bbMilliSecs();
+		if( t<=0 ){
+			if( !i ) usleep( 0 );	//always sleep at least once.
+			break;
+		}
+		usleep( t*1000 );
+	}
+}
+
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+extern void bbUDelay( int microseconds );
+#else
+void bbUDelay( int microseconds ) {
+	if (microseconds <0) return
+	usleep( microseconds );
+}
+#endif
+
+//***** ThreadSafe! *****
+int bbMilliSecs(){
+	int t;
+	struct timeval tv;
+	gettimeofday(&tv,0);
+	t=tv.tv_sec*1000;
+	t+=tv.tv_usec/1000;
+	return t-base_time;
+}
+
+int bbIsMainThread(){
+	return pthread_self()==_mainThread;
+}
+
 #endif
 
 
@@ -313,16 +402,13 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	int i,k;
 	BBString **p;
 	
+	bbArgv0 = argv[0];
+	
 	//Start up GC and create bbAppFile, bbAppDir and bbLaunchDir
 	
 #if _WIN32
 
-	char *ebp;
 	OSVERSIONINFO os={ sizeof(os) };
-	
-	//asm( "movl %%ebp,%0;":"=r"(ebp) );//::"%ebp" );
-	
-	//bbGCStackTop=ebp+28;
 	
 	bbGCStartup();
 	bbThreadStartup();
@@ -334,7 +420,6 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	}
 	
 	if( _bbusew ){
-		int e=0;
 		wchar_t buf[MAX_PATH];
 		
 		_wgetcwd( buf,MAX_PATH );
@@ -345,7 +430,9 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 
 		GetModuleFileNameW( GetModuleHandleW(0),buf,MAX_PATH );
 		bbGetAppFileDir(buf);
-		_wchdir( bbTmpWString( bbAppDir ) );
+		BBChar * p = bbStringToWString(bbAppDir);
+		_wchdir( p );
+		bbMemFree(p);
 		
 	}else{
 		int e=0;
@@ -366,25 +453,23 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 
 		if( e ){
 			if( buf[e-1]==':' ) ++e;
-			bbAppDir=bbStringFromBytes( buf,e );
+			bbAppDir=bbStringFromBytes( (unsigned char*)buf,e );
 		}else{
 			bbAppDir=&bbEmptyString;
 		}
 
-		_chdir( bbTmpCString( bbAppDir ) );
+		char *p=(char*)bbStringToCString( bbAppDir );
+		_chdir( p );
+		bbMemFree(p);
 	}
 
-#elif __linux
+#elif __linux__
 
-	char *ebp;
 	char buf[PATH_MAX];
 	char lnk[PATH_MAX];
 	pid_t pid;
-	
-	// asm( "movl %%ebp,%0;":"=r"(ebp) );//::"%ebp" );
-	
-	bbGCStackTop=ebp+28;
-	
+		
+	bbThreadPreStartup();
 	bbGCStartup();
 	bbThreadStartup();
 	
@@ -410,20 +495,17 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 		bbAppDir=&bbEmptyString;
 	}
 	
-	chdir( bbTmpUTF8String( bbAppDir ) );
+	char *d=bbStringToUTF8String( bbAppDir );
+	chdir( d );
+	bbMemFree(d);
 	
 #elif __APPLE__
 	
 	CFURLRef url;
 	char buf[PATH_MAX],*e;
-	
-//#if BB_ARGP
-//	bbGCStackTop=bbArgp(0);
-//#else
-	bbGCStackTop=&argc;
-//#endif
 
 	bbGCStartup();
+	bbThreadPreStartup();
 	bbThreadStartup();
 	
 	getcwd( buf,PATH_MAX );
@@ -445,14 +527,53 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 		bbAppDir=&bbEmptyString;
 	}
 	
-	chdir( bbTmpUTF8String( bbAppDir ) );
+	char *d=bbStringToCString( bbAppDir );
+	chdir( d );
+	bbMemFree(d);
 
 #elif __SWITCH__
 
 //	bbThreadStartup();
 	bbGCStartup();
+
+#elif __HAIKU__
+
+	#include <kernel/image.h>
+
+	bbThreadPreStartup();
+	bbGCStartup();
+	bbThreadStartup();
+
+	char buf[MAXPATHLEN];
+
+	getcwd( buf,MAXPATHLEN );
+	bbLaunchDir=bbStringFromUTF8String( buf );
 	
+	image_info info;
+	int cookie = 0;
+	get_next_image_info(B_CURRENT_TEAM, &cookie, &info);
+	
+	snprintf(buf, PATH_MAX, "%s", info.name);
+	char *e;
+	bbAppFile=bbStringFromUTF8String( buf );
+	e=strrchr( buf,'/' );
+	if( e ){
+		*e=0;
+		bbAppDir=bbStringFromUTF8String( buf );
+	}else{
+		bbAppDir=&bbEmptyString;
+	}
+
+	char *d=bbStringToUTF8String( bbAppDir );
+	chdir( d );
+	bbMemFree(d);
+
 #endif
+
+	#ifdef BMX_COVERAGE
+		bbCoverageStartup();
+		atexit( bbCoverageGenerateOutput );
+	#endif
 
 	BBINCREFS( bbLaunchDir );
 	BBINCREFS( bbAppDir );

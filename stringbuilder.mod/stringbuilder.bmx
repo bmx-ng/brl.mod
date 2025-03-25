@@ -1,4 +1,4 @@
-' Copyright (c) 2018 Bruce A Henderson
+' Copyright (c) 2018-2024 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,10 +23,42 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.04"
+ModuleInfo "Version: 1.19"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2018 Bruce A Henderson"
+ModuleInfo "Copyright: 2018-2024 Bruce A Henderson"
 
+ModuleInfo "History: 1.19"
+ModuleInfo "History: Added TSplitBuffer Split() method."
+ModuleInfo "History: Added TSplitBuffer to number methods."
+ModuleInfo "History: 1.18"
+ModuleInfo "History: Added optional startIndex to StartsWith()."
+ModuleInfo "History: 1.17"
+ModuleInfo "History: Added AppendCStringBytes() method."
+ModuleInfo "History: 1.16"
+ModuleInfo "History: Added AppendUTF32() and AppendUTF32Bytes() method."
+ModuleInfo "History: 1.15"
+ModuleInfo "History: Added AppendUTF8Bytes() method."
+ModuleInfo "History: 1.14"
+ModuleInfo "History: Added Hash() method."
+ModuleInfo "History: 1.13"
+ModuleInfo "History: Changes for low-level external use - header, exposing buffer."
+ModuleInfo "History: 1.12"
+ModuleInfo "History: Improved equality checks."
+ModuleInfo "History: 1.11"
+ModuleInfo "History: Added Format() methods."
+ModuleInfo "History: 1.10"
+ModuleInfo "History: Added JoinStrings() method."
+ModuleInfo "History: 1.09"
+ModuleInfo "History: Added ToUTF8String() and ToWString() methods."
+ModuleInfo "History: 1.08"
+ModuleInfo "History: Added LeftAlign() and RightAlign() methods."
+ModuleInfo "History: 1.07"
+ModuleInfo "History: Fixed AppendByte and AppendShort not using unsigned variants."
+ModuleInfo "History: 1.06"
+ModuleInfo "History: Implemented Compare(), and added overloads for = and <>."
+ModuleInfo "History: 1.05"
+ModuleInfo "History: NG Refactoring."
+ModuleInfo "History: Added overloaded Append() methods."
 ModuleInfo "History: 1.04"
 ModuleInfo "History: Added shorts appender."
 ModuleInfo "History: 1.03"
@@ -46,11 +78,9 @@ It is an order of magnitude faster to append Strings to a TStringBuilder than it
 End Rem	
 Type TStringBuilder
 
-?bmxng
-Private
-?
 	' the char buffer
 	Field buffer:Byte Ptr
+Private
 	
 	Field newLine:String
 	Field nullText:String
@@ -63,32 +93,39 @@ Private
 	Const NEW_LINE:String = "~n"
 ?
 
-?bmxng
 Public
-?	
+	Rem
+	bbdoc: Constructs a #TStringBuilder with the default capacity.
+	End Rem
 	Method New()
 		buffer = bmx_stringbuilder_new(initialCapacity)
 	End Method
-?bmxng
+
+	Rem
+	bbdoc: Constructs a #TStringBuilder with a specified @initialCapacity.
+	End Rem
 	Method New(initialCapacity:Int)
 		buffer = bmx_stringbuilder_new(initialCapacity)
 	End Method
-?
+
 	Rem
-	bbdoc: Constructs a string builder initialized to the contents of the specified string.
+	bbdoc: Constructs a #TStringBuilder initialized to the contents of @Text.
+	End Rem
+	Method New(Text:String)
+		If Text.length > initialCapacity Then
+			buffer = bmx_stringbuilder_new(Text.Length)
+		Else
+			buffer = bmx_stringbuilder_new(initialCapacity)
+		End If
+		
+		bmx_stringbuilder_append_string(buffer, Text)
+	End Method
+
+	Rem
+	bbdoc: Constructs a #TStringBuilder initialized to the contents of the specified string.
 	End Rem	
 	Function Create:TStringBuilder(Text:String)
-?Not bmxng
-		Local this:TStringBuilder = New TStringBuilder
-?bmxng
-		Local this:TStringBuilder
-		If Text.length > initialCapacity Then
-			this = New TStringBuilder(Text.length)
-		Else
-			this = New TStringBuilder
-		End If
-?
-		Return this.Append(Text)
+		Return New TStringBuilder(Text)
 	End Function
 
 	Rem
@@ -115,17 +152,34 @@ Public
 	End Method
 	
 	Rem
-	bbdoc: Appends the text onto the string builder.
+	bbdoc: Appends a #String onto the string builder.
 	End Rem	
 	Method Append:TStringBuilder(value:String)
 		bmx_stringbuilder_append_string(buffer, value)
 		Return Self
 	End Method
+	
+	Rem
+	bbdoc: Appends a #String onto the string builder with new line at the end.
+	End Rem	
+	Method AppendLine:TStringBuilder(value:String)
+		Append(value)
+		AppendNewLine()
+		Return Self
+	End Method
 
 	Rem
-	bbdoc: Appends a byte value to the string builder.
+	bbdoc: Appends a #Byte value to the string builder.
 	End Rem
 	Method AppendByte:TStringBuilder(value:Byte)
+		bmx_stringbuilder_append_byte(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Byte value onto the string builder.
+	End Rem	
+	Method Append:TStringBuilder(value:Byte)
 		bmx_stringbuilder_append_byte(buffer, value)
 		Return Self
 	End Method
@@ -147,6 +201,28 @@ Public
 		End If
 		Return Self
 	End Method
+
+	Rem
+	bbdoc: Appends an object onto the string builder.
+	about: This generally calls the object's ToString() method.
+	TStringBuilder objects are simply mem-copied.
+	End Rem
+	Method Append:TStringBuilder(obj:Object)
+		If obj Then
+			bmx_stringbuilder_append_string(buffer, obj.ToString())
+		Else
+			Return AppendNull()
+		End If
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #TStringBuilder onto the string builder.
+	End Rem
+	Method Append:TStringBuilder(sb:TStringBuilder)
+		bmx_stringbuilder_append_stringbuffer(buffer, sb.buffer)
+		Return Self
+	End Method
 	
 	Rem
 	bbdoc: Appends a null-terminated C string onto the string builder.
@@ -155,9 +231,17 @@ Public
 		bmx_stringbuilder_append_cstring(buffer, chars)
 		Return Self
 	End Method
-	
+
 	Rem
-	bbdoc: Appends a double value to the string builder.
+	bbdoc: Appends a C string of @length bytes onto the string builder.
+	End Rem
+	Method AppendCStringBytes:TStringBuilder(chars:Byte Ptr, length:Int)
+		bmx_stringbuilder_append_cstringbytes(buffer, chars, length)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Double value to the string builder.
 	End Rem
 	Method AppendDouble:TStringBuilder(value:Double)
 		bmx_stringbuilder_append_double(buffer, value)
@@ -165,7 +249,15 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Appends a float value to the string builder.
+	bbdoc: Appends a #Double value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:Double)
+		bmx_stringbuilder_append_double(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Float value to the string builder.
 	End Rem
 	Method AppendFloat:TStringBuilder(value:Float)
 		bmx_stringbuilder_append_float(buffer, value)
@@ -173,7 +265,15 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Appends a int value to the string builder.
+	bbdoc: Appends a #Float value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:Float)
+		bmx_stringbuilder_append_float(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends an #Int value to the string builder.
 	End Rem
 	Method AppendInt:TStringBuilder(value:Int)
 		bmx_stringbuilder_append_int(buffer, value)
@@ -181,16 +281,33 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Appends a Long value to the string builder.
+	bbdoc: Appends an #Int value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:Int)
+		bmx_stringbuilder_append_int(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Long value to the string builder.
 	End Rem
 	Method AppendLong:TStringBuilder(value:Long)
+		bmx_stringbuilder_append_long(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Long value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:Long)
 		bmx_stringbuilder_append_long(buffer, value)
 		Return Self
 	End Method
 	
 	Rem
 	bbdoc: Appends the new line string to the string builder.
-	about: The new line string can be altered using #SetNewLineText. This might be used to force the output to always use Unix line endings even when on Windows.
+	about: The new line string can be altered using #SetNewLineText. This might be used to force the output to always
+	use Unix line endings even when on Windows.
 	End Rem
 	Method AppendNewLine:TStringBuilder()
 		If newLine Then
@@ -218,10 +335,17 @@ Public
 		bmx_stringbuilder_append_short(buffer, value)
 		Return Self
 	End Method
-	
-?bmxng
+
 	Rem
-	bbdoc: Appends a UInt value to the string builder.
+	bbdoc: Appends a #Short value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:Short)
+		bmx_stringbuilder_append_short(buffer, value)
+		Return Self
+	End Method
+	
+	Rem
+	bbdoc: Appends a #UInt value to the string builder.
 	End Rem
 	Method AppendUInt:TStringBuilder(value:UInt)
 		bmx_stringbuilder_append_uint(buffer, value)
@@ -229,7 +353,15 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Appends a Ulong value to the string builder.
+	bbdoc: Appends a #UInt value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:UInt)
+		bmx_stringbuilder_append_uint(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Ulong value to the string builder.
 	End Rem
 	Method AppendULong:TStringBuilder(value:ULong)
 		bmx_stringbuilder_append_ulong(buffer, value)
@@ -237,13 +369,28 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Appends a Size_T value to the string builder.
+	bbdoc: Appends a #Ulong value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:ULong)
+		bmx_stringbuilder_append_ulong(buffer, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Size_T value to the string builder.
 	End Rem
 	Method AppendSizet:TStringBuilder(value:Size_T)
 		bmx_stringbuilder_append_sizet(buffer, value)
 		Return Self
 	End Method
-?
+
+	Rem
+	bbdoc: Appends a #Size_T value to the string builder.
+	End Rem
+	Method Append:TStringBuilder(value:Size_T)
+		bmx_stringbuilder_append_sizet(buffer, value)
+		Return Self
+	End Method
 
 	Rem
 	bbdoc: Appends a null-terminated UTF-8 string onto the string builder.
@@ -254,11 +401,59 @@ Public
 	End Method
 
 	Rem
+	bbdoc: Appends a UTF-8 string of @length bytes onto the string builder.
+	End Rem
+	Method AppendUTF8Bytes:TStringBuilder(chars:Byte Ptr, length:Int)
+		bmx_stringbuilder_append_utf8bytes(buffer, chars, length)
+		Return Self
+	End Method
+
+	Rem
 	bbdoc: Appends an array of shorts onto the string builder.
 	End Rem
 	Method AppendShorts:TStringBuilder(shorts:Short Ptr, length:Int)
 		bmx_stringbuilder_append_shorts(buffer, shorts, length)
 		Return Self
+	End Method
+	
+	Rem
+	bbdoc: Appends a character of the given @char code point to the string builder.
+	End Rem
+	Method AppendChar:TStringBuilder(char:Int)
+		bmx_stringbuilder_append_char(buffer, char)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a null-terminated UTF-32 string onto the string builder.
+	End Rem
+	Method AppendUTF32String:TStringBuilder(chars:UInt Ptr)
+		bmx_stringbuilder_append_utf32string(buffer, chars)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a UTF-32 string of @length characters (n bytes / 4) onto the string builder.
+	End Rem
+	Method AppendUTF32Bytes:TStringBuilder(chars:UInt Ptr, length:Int)
+		bmx_stringbuilder_append_utf32bytes(buffer, chars, length)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Compares the string builder with another object.
+	about: If the other object is a string builder then, the contents of two are compared lexicographically, as
+	determined by the unicode value of each character in order.
+	If there is no difference, then the shorter of the two contents precedes the longer.
+	
+	If the other object is not a string builder, the standard object comparison is made.
+	End Rem
+	Method Compare:Int(o:Object) Override
+		If TStringBuilder(o) Then
+			Return bmx_stringbuilder_compare(buffer, TStringBuilder(o).buffer)
+		End If
+		
+		Return Super.Compare(o)
 	End Method
 	
 	Rem
@@ -275,6 +470,193 @@ Public
 	End Rem
 	Method FindLast:Int(subString:String, startIndex:Int = 0)
 		Return bmx_stringbuilder_findlast(buffer, subString, startIndex)
+	End Method
+
+	Rem
+	bbdoc: Appends a #String value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:String)
+		bmx_stringbuilder_format_string(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Byte value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Byte)
+		bmx_stringbuilder_format_byte(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Short value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Short)
+		bmx_stringbuilder_format_short(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Int value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Int)
+		bmx_stringbuilder_format_int(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #UInt value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:UInt)
+		bmx_stringbuilder_format_uint(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Long value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Long)
+		bmx_stringbuilder_format_long(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #ULong value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:ULong)
+		bmx_stringbuilder_format_ulong(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Size_T value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Size_T)
+		bmx_stringbuilder_format_sizet(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Float value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Float)
+		bmx_stringbuilder_format_float(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Double value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method Format:TStringBuilder(formatText:String, value:Double)
+		bmx_stringbuilder_format_double(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #String value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatString:TStringBuilder(formatText:String, value:String)
+		bmx_stringbuilder_format_string(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Byte value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatByte:TStringBuilder(formatText:String, value:Byte)
+		bmx_stringbuilder_format_byte(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Short value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatShort:TStringBuilder(formatText:String, value:Short)
+		bmx_stringbuilder_format_short(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Int value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatInt:TStringBuilder(formatText:String, value:Int)
+		bmx_stringbuilder_format_int(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #UInt value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatUInt:TStringBuilder(formatText:String, value:UInt)
+		bmx_stringbuilder_format_uint(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Long value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatLong:TStringBuilder(formatText:String, value:Long)
+		bmx_stringbuilder_format_long(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #ULong value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatULong:TStringBuilder(formatText:String, value:ULong)
+		bmx_stringbuilder_format_ulong(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Size_T value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatSizeT:TStringBuilder(formatText:String, value:Size_T)
+		bmx_stringbuilder_format_sizet(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Float value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatFloat:TStringBuilder(formatText:String, value:Float)
+		bmx_stringbuilder_format_float(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Appends a #Double value to the string builder using the specified printf style @formatText.
+	about: @formatText is limited to 256 character bytes. Formatted text is limited to 2048 character bytes.
+	End Rem
+	Method FormatDouble:TStringBuilder(formatText:String, value:Double)
+		bmx_stringbuilder_format_double(buffer, formatText, value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Returns the calculated hash for the content of the string builder.
+	End Rem
+	Method Hash:ULong()
+		Return bmx_stringbuilder_hash(buffer)
 	End Method
 	
 	Rem
@@ -303,10 +685,10 @@ Public
 	End Method
 	
 	Rem
-	bbdoc: Returns true if string starts with @subString.
+	bbdoc: Returns #True if string starts with @prefix.
 	End Rem
-	Method StartsWith:Int(subString:String)
-		Return bmx_stringbuilder_startswith(buffer, subString)
+	Method StartsWith:Int(prefix:String, startIndex:Int = 0)
+		Return bmx_stringbuilder_startswith(buffer, prefix, startIndex)
 	End Method
 	
 	Rem
@@ -326,6 +708,18 @@ Public
 	End Method
 	
 	Rem
+	bbdoc: Returns the char value in the buffer at the specified index.
+	about: The first char value is at index 0, the next at index 1, and so on, as in array indexing.
+	@index must be greater than or equal to 0, and less than the length of the buffer.
+	End Rem
+	Method Operator[]:Int(index:Int)
+?debug
+		If index < 0 Or index >= Length() Throw New TArrayBoundsException
+?
+		Return bmx_stringbuilder_charat(buffer, index)
+	End Method
+	
+	Rem
 	bbdoc: Returns true if string contains @subString.
 	End Rem
 	Method Contains:Int(subString:String)
@@ -334,12 +728,23 @@ Public
 	
 	Rem
 	bbdoc: Joins @bits together by inserting this string builder between each bit.
-	returns: A new TStringBuilder object.
+	returns: @buf or a new TStringBuilder object of @buf is #Null.
+	about: Optionally accepts a preassigned string builder for populating with the result of the join.
 	End Rem
-	Method Join:TStringBuilder(bits:String[])
-		Local buf:TStringBuilder = New TStringBuilder
+	Method Join:TStringBuilder(bits:String[], buf:TStringBuilder = Null)
+		If Not buf Then
+			buf = New TStringBuilder
+		End If
 		bmx_stringbuilder_join(buffer, bits, buf.buffer)
 		Return buf
+	End Method
+
+	Rem
+	bbdoc: Joins @bits together by inserting @joiner between each bit, appending to the end of this string builder.
+	End Rem
+	Method JoinStrings:TStringBuilder(bits:String[], joiner:String)
+		bmx_stringbuilder_join_strings(buffer, bits, joiner)
+		Return Self
 	End Method
 
 	Rem
@@ -355,6 +760,26 @@ Public
 	End Rem	
 	Method ToUpper:TStringBuilder()
 		bmx_stringbuilder_toupper(buffer)
+		Return Self
+	End Method
+	
+	Rem
+	bbdoc: Left aligns the buffer, adjusted to the specified @length.
+	about: If buffer is longer than the specified length, the buffer is shortened to the specified length.
+	If the buffer is shorter than the specified length, spaces are added to the right end of the buffer to produce the appropriate length.
+	End Rem
+	Method LeftAlign:TStringBuilder(length:Int)
+		bmx_stringbuilder_leftalign(buffer, length)
+		Return Self
+	End Method
+	
+	Rem
+	bbdoc: Right aligns the buffer, adjusted to the specified @length.
+	about: If buffer is longer than the specified length, the buffer is shortened to the specified length.
+	If the buffer is shorter than the specified length, spaces are added to the left end of the buffer to produce the appropriate length.
+	End Rem
+	Method RightAlign:TStringBuilder(length:Int)
+		bmx_stringbuilder_rightalign(buffer, length)
 		Return Self
 	End Method
 
@@ -410,6 +835,17 @@ Public
 	End Method
 	
 	Rem
+	bbdoc: The character at the specified index is set to @char.
+	about: @index must be greater than or equal to 0, and less than the length of the buffer.
+	End Rem
+	Method Operator []= (index:Int, char:Int)
+?debug
+		If index < 0 Or index >= Length() Throw New TArrayBoundsException
+?
+		bmx_stringbuilder_setcharat(buffer, index, char)
+	End Method
+	
+	Rem
 	bbdoc: Sets the text to be appended when a new line is added.
 	End Rem
 	Method SetNewLineText:TStringBuilder(newLine:String)
@@ -436,7 +872,8 @@ Public
 	End Method
 	
 	Rem
-	bbdoc: 
+	bbdoc: Creates a split buffer using the specified separator.
+	about: The #TSplitBuffer can be used to iterate over the split text.
 	End Rem
 	Method Split:TSplitBuffer(separator:String)
 		Local buf:TSplitBuffer = New TSplitBuffer
@@ -452,6 +889,52 @@ Public
 		Return bmx_stringbuilder_tostring(buffer)
 	End Method
 
+	Rem
+	bbdoc: Converts the value of the string builder to a UTF-8 formatted #Byte sequence.
+	returns: A pointer to a sequence of Bytes, or #Null if the string builder is empty.
+	about: The resulting Byte Ptr must be freed with #MemFree.
+	End Rem
+	Method ToUTF8String:Byte Ptr()
+		Return bmx_stringbuilder_toutf8string(buffer)
+	End Method
+
+	Rem
+	bbdoc: Converts the value of the string builder to a sequence of Shorts.
+	returns: A pointer to a sequence of Shorts, or #Null if the string builder is empty.
+	about: The resulting Short Ptr must be freed with #MemFree.
+	End Rem
+	Method ToWString:Short Ptr()
+		Return bmx_stringbuilder_towstring(buffer)
+	End Method
+	
+	Rem
+	bbdoc: Returns #True if @obj is equal to this string builder.
+	End Rem
+	Method Operator =:Int (obj:Object)
+		Return Compare(obj) = 0
+	End Method
+
+	Rem
+	bbdoc: Returns #True if @sb is lexicographically equal to this string builder.
+	End Rem
+	Method Operator =:Int (sb:TStringBuilder)
+		Return bmx_stringbuilder_equals(buffer, sb.buffer)
+	End Method
+
+	Rem
+	bbdoc: Returns #True if @obj is not equal to this string builder.
+	End Rem
+	Method Operator <>:Int (obj:Object)
+		Return Compare(obj) <> 0
+	End Method
+
+	Rem
+	bbdoc: Returns #True if @sb is not lexicographically equal to this string builder.
+	End Rem
+	Method Operator <>:Int (sb:TStringBuilder)
+		Return Not bmx_stringbuilder_equals(buffer, sb.buffer)
+	End Method
+
 	Method Delete()
 		If buffer Then
 			bmx_stringbuilder_free(buffer)
@@ -463,13 +946,14 @@ End Type
 
 Rem
 bbdoc: An array of split text from a TStringBuilder.
-about: Note that the TSplitBuffer is only valid while its parent TStringBuilder is unchanged.
-Once you modify the TStringBuffer you should call Split() again.
+about: Note that the #TSplitBuffer is only valid while its parent #TStringBuilder is unchanged.
+Once you modify the #TSplitBuffer you should call Split() again.
 End Rem
 Type TSplitBuffer
+Private
 	Field buffer:TStringBuilder
 	Field splitPtr:Byte Ptr
-	
+Public
 	Rem
 	bbdoc: The number of split elements.
 	End Rem
@@ -489,6 +973,88 @@ Type TSplitBuffer
 	End Rem
 	Method ToArray:String[]()
 		Return bmx_stringbuilder_splitbuffer_toarray(splitPtr)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as an #Int.
+	about: If the element is not a valid #Int, 0 is returned.
+	End Rem
+	Method ToInt:Int(index:Int)
+		Return bmx_stringbuilder_splitbuffer_toint(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #Float.
+	about: If the element is not a valid #Float, 0.0 is returned.
+	End Rem
+	Method ToFloat:Float(index:Int)
+		Return bmx_stringbuilder_splitbuffer_tofloat(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #Double.
+	about: If the element is not a valid #Double, 0.0 is returned.
+	End Rem
+	Method ToDouble:Double(index:Int)
+		Return bmx_stringbuilder_splitbuffer_todouble(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #Long.
+	about: If the element is not a valid #Long, 0 is returned.
+	End Rem
+	Method ToLong:Long(index:Int)
+		Return bmx_stringbuilder_splitbuffer_tolong(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #ULong.
+	about: If the element is not a valid #ULong, 0 is returned.
+	End Rem
+	Method ToULong:ULong(index:Int)
+		Return bmx_stringbuilder_splitbuffer_toulong(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #UInt.
+	about: If the element is not a valid #UInt, 0 is returned.
+	End Rem
+	Method ToUInt:UInt(index:Int)
+		Return bmx_stringbuilder_splitbuffer_touint(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #Short.
+	about: If the element is not a valid #Short, 0 is returned.
+	End Rem
+	Method ToShort:Short(index:Int)
+		Return bmx_stringbuilder_splitbuffer_toshort(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #Byte.
+	about: If the element is not a valid #Byte, 0 is returned.
+	End Rem
+	Method ToByte:Byte(index:Int)
+		Return bmx_stringbuilder_splitbuffer_tobyte(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Returns the split element at the specified index as a #Size_T.
+	about: If the element is not a valid #Size_T, 0 is returned.
+	End Rem
+	Method ToSizeT:Size_T(index:Int)
+		Return bmx_stringbuilder_splitbuffer_tosizet(splitPtr, index)
+	End Method
+
+	Rem
+	bbdoc: Creates a new split buffer of the split element at the specified index.
+	End Rem
+	Method Split:TSplitBuffer(index:Int, separator:String)
+		Local buf:TSplitBuffer = New TSplitBuffer
+		buf.buffer = buffer
+		buf.splitPtr = bmx_stringbuilder_splitbuffer_split(splitPtr, separator, index)
+		Return buf
 	End Method
 
 	Method ObjectEnumerator:TSplitBufferEnum()
@@ -525,4 +1091,3 @@ Type TSplitBufferEnum
 	End Method
 
 End Type
-

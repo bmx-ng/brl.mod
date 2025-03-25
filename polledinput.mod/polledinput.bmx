@@ -6,12 +6,16 @@ bbdoc: User input/Polled input
 End Rem
 Module BRL.PolledInput
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.05"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.05"
+ModuleInfo "History: Fixed mouse functions not supporting 5 buttons."
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Support for 5 mouse buttons."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Improved Win32 KeyDown handling."
 ModuleInfo "History: 1.02"
@@ -31,8 +35,8 @@ Global suspended,terminate
 Global keyStates[256],keyHits[256]
 Global charGet,charPut,charQueue[256]
 
-Global mouseStates[4],mouseHits[4]
-Global mouseLocation[4],lastMouseLocation[4]
+Global mouseStates[5],mouseHits[5]
+Global mouseLocation[3],lastMouseLocation[3]
 
 Function Hook:Object( id,data:Object,context:Object )
 
@@ -57,12 +61,12 @@ Function Hook:Object( id,data:Object,context:Object )
 			charPut:+1
 		EndIf
 	Case EVENT_MOUSEDOWN
-		If Not mouseStates[ev.data]
-			mouseStates[ev.data]=1
-			mouseHits[ev.data]:+1
+		If Not mouseStates[ev.data-1]
+			mouseStates[ev.data-1]=1
+			mouseHits[ev.data-1]:+1
 		EndIf
 	Case EVENT_MOUSEUP
-		mouseStates[ev.data]=0
+		mouseStates[ev.data-1]=0
 	Case EVENT_MOUSEMOVE
 		mouseLocation[0]=ev.x
 		mouseLocation[1]=ev.y
@@ -188,12 +192,12 @@ Function FlushKeys(resetStates:Int = True)
 	charGet=0
 	charPut=0
 	If resetStates Then
-		For Local i=0 Until 256
+		For Local i:Int=0 Until keyStates.length
 			keyStates[i]=0
 			keyHits[i]=0
 		Next
 	Else
-		For Local i=0 Until 256
+		For Local i:Int=0 Until keyHits.length
 			keyHits[i]=0
 		Next
 	End If
@@ -273,7 +277,7 @@ about:
 End Rem
 Function FlushMouse()
 	PollSystem
-	For Local i=0 Until 4
+	For Local i:Int=0 Until mouseStates.length
 		mouseStates[i]=0
 		mouseHits[i]=0
 	Next
@@ -288,12 +292,12 @@ The returned value represents the number of the times @button has been clicked s
 last call to #MouseHit with the same @button.
 
 @button should be 1 for the left mouse button, 2 for the right mouse button or 3 for the
-middle mouse button.
+middle mouse button. Two further buttons, 4 and 5, are also available for mice that support them.
 End Rem
 Function MouseHit( button )
 	If autoPoll PollSystem
-	Local n=mouseHits[button]
-	mouseHits[button]=0
+	Local n=mouseHits[button-1]
+	mouseHits[button-1]=0
 	Return n
 End Function
 
@@ -302,11 +306,11 @@ bbdoc: Check for mouse button down state
 returns: #True if @button is currently down
 about:
 @button should be 1 for the left mouse button, 2 for the right mouse button or 3 for the
-middle mouse button.
-end rem
+middle mouse button. Two further buttons, 4 and 5, are also available for mice that support them.
+End Rem
 Function MouseDown( button )
 	If autoPoll PollSystem
-	Return mouseStates[button]
+	Return mouseStates[button-1]
 End Function
 
 Rem
@@ -322,7 +326,7 @@ Function WaitKey()
 	FlushKeys
 	Repeat
 		WaitSystem
-		For Local n=1 To 255
+		For Local n:Int = 1 To keyStates.length - 1
 			If KeyHit(n) Return n
 		Next
 	Forever
@@ -351,13 +355,13 @@ about:
 #WaitMouse suspends program execution until a mouse button is clicked.
 
 #WaitMouse returns 1 if the left mouse button was clicked, 2 if the right mouse button was
-clicked or 3 if the middle mouse button was clicked.
+clicked or 3 if the middle mouse button was clicked. Further buttons (>3) are also checked for mice that support them. 
 End Rem
 Function WaitMouse()
 	FlushMouse
 	Repeat
 		WaitSystem
-		For Local n=1 To 3
+		For Local n:Int=1 To mouseHits.length
 			If MouseHit(n) Return n
 		Next
 	Forever

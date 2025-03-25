@@ -1,4 +1,4 @@
-
+#define _GNU_SOURCE
 #include <brl.mod/blitz.mod/blitz.h>
 
 #include <signal.h>

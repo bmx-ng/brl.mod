@@ -1,4 +1,4 @@
-' Copyright (c) 2018-2019 Bruce A Henderson
+' Copyright (c) 2018-2020 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -48,4 +48,9 @@ Const LCB_CLIPBOARD:Int = 0
 Rem
 bbdoc: The (global) mouse selection clipboard.
 End Rem
-Const LCB_SELECTION:Int = 1
+Const LCB_PRIMARY:Int = 1
+
+Rem
+bbdoc: The largely unused (global) secondary selection clipboard.
+End Rem
+Const LCB_SECONDARY:Int = 2

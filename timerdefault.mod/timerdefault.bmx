@@ -25,7 +25,7 @@ Import "timer.linux.c"
 ?
 
 Extern
-Function bbTimerStart:Byte Ptr( hertz#,timer:TTimer )
+Function bbTimerStart:Byte Ptr( hertz:Float,timer:TTimer )
 Function bbTimerStop( handle:Byte Ptr,timer:TTimer )
 End Extern
 
@@ -67,7 +67,7 @@ Type TDefaultTimer Extends TTimer
 		Return n
 	End Method
 	
-	Function Create:TTimer( hertz#,event:TEvent=Null ) Override
+	Function Create:TTimer( hertz:Float,event:TEvent=Null ) Override
 		Local t:TDefaultTimer =New TDefaultTimer
 		Local handle:Byte Ptr=bbTimerStart( hertz,t )
 		If Not handle Return Null
@@ -90,7 +90,7 @@ Type TDefaultTimerFactory Extends TTimerFactory
 		Return "DefaultTimer"
 	End Method
 	
-	Method Create:TTimer(hertz#,event:TEvent=Null) Override
+	Method Create:TTimer(hertz:Float,event:TEvent=Null) Override
 		Return TDefaultTimer.Create( hertz,event )
 	End Method
 		

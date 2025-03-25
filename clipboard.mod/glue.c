@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2019 Bruce A Henderson
+  Copyright (c) 2018-2020 Bruce A Henderson
  
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -23,14 +23,14 @@
 #include "brl.mod/blitz.mod/blitz.h"
 
 clipboard_c * bmx_clipboard_new_win32(int maxRetries, int retryDelay) {
-	clipboard_opts opts;
+	clipboard_opts opts = {0};
 	opts.win32.max_retries = maxRetries;
 	opts.win32.retry_delay = retryDelay;
 	return clipboard_new(&opts);
 }
 
 clipboard_c * bmx_clipboard_new_x11(int actionTimeout, int transferSize, BBString * displayName) {
-	clipboard_opts opts;
+	clipboard_opts opts = {0};
 	opts.x11.action_timeout = actionTimeout;
 	opts.x11.transfer_size = transferSize;
 	if (displayName != &bbEmptyString) {

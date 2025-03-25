@@ -24,6 +24,8 @@ typedef struct BBInterfaceTable BBInterfaceTable;
 typedef struct BBInterface BBInterface;
 typedef struct BBInterfaceOffsets BBInterfaceOffsets;
 typedef struct BBEnum BBEnum;
+typedef struct BBClass_String BBClass_String;
+typedef struct BBClass_Array BBClass_Array;
 
 typedef unsigned char	BBBYTE;
 typedef unsigned short	BBSHORT;
@@ -34,6 +36,8 @@ typedef BBUInt64		BBULONG;
 typedef float			BBFLOAT;
 typedef double			BBDOUBLE;
 typedef size_t			BBSIZET;
+typedef long			BBLONGINT;
+typedef unsigned long	BBULONGINT;
 typedef BBClass*		BBCLASS;
 typedef BBObject*		BBOBJECT;
 typedef BBString*		BBSTRING;
@@ -41,6 +45,7 @@ typedef BBArray*		BBARRAY;
 typedef BBInterfaceTable*	BBINTERFACETABLE;
 typedef BBInterface*	BBINTERFACE;
 typedef BBInterfaceOffsets * BBINTERFACEOFFSETS;
+typedef void (*BBFuncPtr)(void);
 
 #ifdef __x86_64__
 #include <immintrin.h>
@@ -58,6 +63,8 @@ extern const char *bbUIntTypeTag;	//"u"
 extern const char *bbLongTypeTag;	//"l"
 extern const char *bbULongTypeTag;	//"y"
 extern const char *bbSizetTypeTag;	//"z"
+extern const char *bbLongIntTypeTag; //"v"
+extern const char *bbULongIntTypeTag; //"e"
 extern const char *bbFloatTypeTag;	//"f"
 extern const char *bbDoubleTypeTag;	//"d"
 extern const char *bbStringTypeTag;	//"$"
@@ -75,6 +82,8 @@ struct bbDataDef {
 		BBLONG l;
 		BBULONG y;
 		BBSIZET z;
+		BBLONGINT v;
+		BBULONGINT e;
 		BBFLOAT f;
 		BBDOUBLE d;
 		BBSTRING t;
@@ -89,6 +98,8 @@ BBFLOAT bbConvertToFloat( struct bbDataDef * data );
 BBDOUBLE bbConvertToDouble( struct bbDataDef * data );
 BBSTRING bbConvertToString( struct bbDataDef * data );
 BBSIZET bbConvertToSizet( struct bbDataDef * data );
+BBLONGINT bbConvertToLongInt( struct bbDataDef * data );
+BBULONGINT bbConvertToULongInt( struct bbDataDef * data );
 
 #ifdef __cplusplus
 }

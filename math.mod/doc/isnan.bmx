@@ -1,7 +1,7 @@
 SuperStrict
 
 For Local f:Float=-0.4 Until 0.4 Step 0.2
-    If IsNan(Sqr(f)) = True Then
+    If IsNan(Sqr(f)) Then
        Print "Square Root of "+f+" is not a real number"
     Else
        Print "Square Root of  "+f+" = "+Sqr(f)
