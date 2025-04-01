@@ -787,7 +787,7 @@ End Interface
 'BlitzMax keyword definitions
 
 Rem
-bbdoc: Set strict mode
+bbdoc: Set Strict mode (default in BlitzMax-NG)
 about:
 See the <a href="../../../../doc/bmxlang/compatibility.html">BlitzMax Language Reference</a> for more information on Strict mode programming.
 keyword: "Strict"

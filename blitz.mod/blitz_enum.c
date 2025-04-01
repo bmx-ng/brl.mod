@@ -6,14 +6,19 @@
 BBArray * bbEnumValues(BBEnum * bbEnum) {
 	BBArray * values = &bbEmptyArray;
 
-	int size = 4;
+	int size = 0;
 	char t = bbEnum->type[0];
 	switch( t ) {
-		case 'b':size=1;break;
-		case 's':size=2;break;
-		case 'l':size=8;break;
-		case 'y':size=8;break;
-		case 'z':size=sizeof(BBSIZET);break;
+		case 'b':size=sizeof(BBBYTE);break;
+		case 's':size=sizeof(BBSHORT);break;
+		case 'i':size=sizeof(BBINT);break;
+		case 'u':size=sizeof(BBUINT);break;
+		case 'l':size=sizeof(BBLONG);break;
+		case 'y':size=sizeof(BBULONG);break;
+		case 't':size=sizeof(BBSIZET);break;
+		default:
+			printf( "ERROR! bbEnumValues: unrecognized type tag!\n" );
+			return &bbEmptyArray;
 	}
 
 	values = bbArrayNew1DStruct(bbEnum->atype, bbEnum->length, size, 0);
