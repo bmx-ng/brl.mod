@@ -510,7 +510,11 @@ Function DeleteDir:Int( path:String,recurse:Int=False )
 		Forever
 		CloseDir dir
 	EndIf
-	rmdir_ path
+	If MaxIO.ioInitialized Then
+		MaxIO.DeletePath(path)
+	Else
+		rmdir_ path
+	EndIf
 	If FileType( path )=0 Return True
 End Function
 
