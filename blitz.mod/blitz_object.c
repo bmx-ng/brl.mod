@@ -5,13 +5,23 @@
 
 int bbCountInstances = 0;
 
-static BBClass **reg_base,**reg_put,**reg_end;
-static BBInterface **ireg_base,**ireg_put,**ireg_end;
+static BBClass **reg_base=NULL,**reg_put=NULL,**reg_end=NULL;
+static BBInterface **ireg_base=NULL,**ireg_put=NULL,**ireg_end=NULL;
+static BBDebugScope **sreg_base=NULL,**sreg_put=NULL,**sreg_end=NULL;
+static BBDebugScope **ereg_base=NULL,**ereg_put=NULL,**ereg_end=NULL;
 
 static BBDebugScope debugScope={
 	BBDEBUGSCOPE_USERTYPE,
 	"Object",
-	BBDEBUGDECL_END
+	{
+		{
+			BBDEBUGDECL_END,
+			"",
+			"",
+			.var_address=(void*)0,
+			(void (*)(void**))0
+		}
+	}
 };
 
 BBClass bbObjectClass={
@@ -250,6 +260,19 @@ void bbObjectRegisterStruct( BBDebugScope *p ) {
 		// note : should never happen as structs should only ever be registered once.
 		free(node);
 	}
+	
+	if( sreg_put==sreg_end ){
+		int len=sreg_put-sreg_base,new_len=len+REG_GROW;
+		sreg_base=(BBDebugScope**)bbMemExtend( sreg_base,len*sizeof(BBDebugScope*),new_len*sizeof(BBDebugScope*) );
+		sreg_end=sreg_base+new_len;
+		sreg_put=sreg_base+len;
+	}
+	*sreg_put++=p;
+}
+
+BBDebugScope **bbObjectRegisteredStructs( int *count ) {
+	*count = sreg_put-sreg_base;
+	return sreg_base;
 }
 
 BBDebugScope * bbObjectStructInfo( char * name ) {
@@ -294,6 +317,19 @@ void bbObjectRegisterEnum( BBDebugScope *p ) {
 		// note : should never happen as structs should only ever be registered once.
 		free(node);
 	}
+	
+	if( ereg_put==ereg_end ){
+		int len=ereg_put-ereg_base,new_len=len+REG_GROW;
+		ereg_base=(BBDebugScope**)bbMemExtend( ereg_base,len*sizeof(BBDebugScope*),new_len*sizeof(BBDebugScope*) );
+		ereg_end=ereg_base+new_len;
+		ereg_put=ereg_base+len;
+	}
+	*ereg_put++=p;
+}
+
+BBDebugScope **bbObjectRegisteredEnums( int *count ) {
+	*count = ereg_put-ereg_base;
+	return ereg_base;
 }
 
 BBDebugScope * bbObjectEnumInfo( char * name ) {

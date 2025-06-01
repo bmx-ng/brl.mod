@@ -17,7 +17,11 @@ static BBDebugScope debugScope={
 	"String",
 	{
 		{
-			BBDEBUGDECL_END
+			BBDEBUGDECL_END,
+			"",
+			"",
+			.var_address=(void*)0,
+			(void (*)(void**))0
 		}
 	}
 };

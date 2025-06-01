@@ -4,6 +4,8 @@
 
 #include "blitz_types.h"
 
+//#include "pub.mod/libffi.mod/include/ffi.h"
+
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -30,15 +32,28 @@ enum{
 	BBDEBUGDECL_TYPEFUNCTION=7
 };
 
+/*typedef struct BBCif {
+	ffi_abi abi;
+	unsigned int nargs;
+	ffi_type *rtype;
+	ffi_type **arg_types;
+} BBCif;*/
+
 struct BBDebugDecl{
 	unsigned int     kind;
 	const char       *name,*type_tag;
 	union{
 		BBString*    const_value;
-		unsigned int field_offset;
+		size_t       field_offset;
 		void*        var_address;
 		BBFuncPtr    func_ptr;
+		size_t       struct_size;
+		char         is_flags_enum;
 	};
+//	union{
+		void   (*reflection_wrapper)(void**);
+//		BBCif* cif;
+//	};
 };
 
 enum{
