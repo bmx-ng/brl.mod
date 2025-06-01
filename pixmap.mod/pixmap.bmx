@@ -1,17 +1,19 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: Graphics/Pixmaps
 End Rem
 Module BRL.Pixmap
 
-ModuleInfo "Version: 1.07"
+ModuleInfo "Version: 1.08"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.08 Release"
+ModuleInfo "History: Made SuperStrict"
 ModuleInfo "History: 1.07 Release"
 ModuleInfo "History: Added ClearPixels"
 ModuleInfo "History: 1.06 Release"
@@ -42,34 +44,34 @@ Type TPixmap
 	Rem
 	bbdoc: The width, in pixels, of the pixmap
 	end rem
-	Field width
+	Field width:Int
 	
 	Rem
 	bbdoc: The height, in pixels, of the pixmap
 	end rem
-	Field height
+	Field height:Int
 	
 	Rem
 	bbdoc: The pitch, in bytes, of the pixmap
 	end rem
-	Field pitch
+	Field pitch:Int
 	
 	Rem
 	bbdoc: The pixel format of the pixmap
 	end rem
-	Field format
+	Field format:Int
 	
 	Rem
 	bbdoc: The capacity, in bytes, of the pixmap, or -1 for a static pixmap
 	end rem
-	Field capacity
+	Field capacity:Int
 	
 	'Hack to provide robust PixmapWindow functionality
 	Field _source:Object
 	
-	Field dds_fmt=0 ' dds format
+	Field dds_fmt:Int=0 ' dds format
 	
-	Field tex_name=0 ' texture name
+	Field tex_name:Int=0 ' texture name
 	
 	Method Delete()
 		If capacity>=0 
@@ -81,7 +83,7 @@ Type TPixmap
 	bbdoc: Get memory address of a pixel
 	returns: A byte pointer to the pixel at coordinates @x, @y
 	End Rem
-	Method PixelPtr:Byte Ptr( x,y )
+	Method PixelPtr:Byte Ptr( x:Int,y:Int )
 		Return pixels+y*pitch+x*BytesPerPixel[format]
 	End Method
 
@@ -89,7 +91,7 @@ Type TPixmap
 	bbdoc: Create a virtual window into a pixmap
 	returns: A static pixmap that references the specified rectangle.
 	End Rem
-	Method Window:TPixmap( x,y,width,height )
+	Method Window:TPixmap( x:Int,y:Int,width:Int,height:Int )
 		Assert..
 		x>=0 And width>=0 And x+width<=Self.width And..
 		y>=0 And height>=0 And y+height<=Self.height Else "Pixmap coordinates out of bounds"
@@ -104,7 +106,7 @@ Type TPixmap
 	end rem
 	Method Copy:TPixmap()
 		Local pixmap:TPixmap=Create( width,height,format )
-		For Local y=0 Until height
+		For Local y:Int=0 Until height
 			CopyPixels Self.PixelPtr(0,y),pixmap.PixelPtr(0,y),format,width
 		Next
 		Return pixmap
@@ -113,8 +115,8 @@ Type TPixmap
 	Rem
 	bbdoc: Paste a pixmap
 	end rem
-	Method Paste( source:TPixmap,x,y )
-		For Local h=0 Until source.height
+	Method Paste( source:TPixmap,x:Int,y:Int )
+		For Local h:Int=0 Until source.height
 			ConvertPixels source.PixelPtr(0,h),source.format,Self.PixelPtr(x,y+h),Self.format,source.width
 		Next
 	End Method
@@ -123,9 +125,9 @@ Type TPixmap
 	bbdoc: Convert a pixmap
 	returns: A new TPixmap object in the specified format
 	end rem
-	Method Convert:TPixmap( format )
+	Method Convert:TPixmap( format:Int )
 		Local pixmap:TPixmap=Create( width,height,format )
-		For Local y=0 Until height
+		For Local y:Int=0 Until height
 			ConvertPixels Self.PixelPtr(0,y),Self.format,pixmap.PixelPtr(0,y),pixmap.format,pixmap.width
 		Next
 		Return pixmap
@@ -135,7 +137,7 @@ Type TPixmap
 	bbdoc: Read a pixel from a pixmap
 	returns: The pixel at the specified coordinates packed into an integer
 	End Rem
-	Method ReadPixel( x,y )
+	Method ReadPixel:Int( x:Int,y:Int )
 		Assert x>=0 And x<width And y>=0 And y<height Else "Pixmap coordinates out of bounds"
 		Local p:Byte Ptr=PixelPtr(x,y)
 		Select format
@@ -151,17 +153,21 @@ Type TPixmap
 			Return p[0] Shl 16 | p[1] Shl 8 | p[2] | p[3] Shl 24
 		Case PF_BGRA8888
 			Return p[2] Shl 16 | p[1] Shl 8 | p[0] | p[3] Shl 24
+		Case PF_ARGB8888
+			Return p[1] Shl 16 | p[2] Shl 8 | p[3] | p[0] Shl 24
+		Case PF_ABGR8888
+			Return p[3] Shl 16 | p[2] Shl 8 | p[1] | p[0] Shl 24
 		End Select
 	End Method
 
-	Method ReadPixelColor:SColor8( x,y )
+	Method ReadPixelColor:SColor8( x:Int,y:Int )
 		Return New SColor8(ReadPixel(x, y))
 	End Method
 
 	Rem
 	bbdoc: Write a pixel to a pixmap
 	end rem
-	Method WritePixel( x,y,argb )
+	Method WritePixel( x:Int,y:Int,argb:Int )
 		Assert x>=0 And x<width And y>=0 And y<height Else "Pixmap coordinates out of bounds"
 		Local p:Byte Ptr=PixelPtr(x,y)
 		Select format
@@ -177,6 +183,10 @@ Type TPixmap
 			p[0]=argb Shr 16 ; p[1]=argb Shr 8 ; p[2]=argb ; p[3]=argb Shr 24
 		Case PF_BGRA8888
 			p[0]=argb ; p[1]=argb Shr 8 ; p[2]=argb Shr 16 ; p[3]=argb Shr 24
+		Case PF_ARGB8888
+			p[0]=argb Shr 24 ; p[1]=argb Shr 16 ; p[2]=argb Shr 8 ; p[3]=argb
+		Case PF_ABGR8888
+			p[0]=argb Shr 24 ; p[1]=argb Shr 8 ; p[2]=argb Shr 16 ; p[3]=argb Shr 8
 		End Select
 	End Method
 	
@@ -199,6 +209,10 @@ Type TPixmap
 			p[0]=col.r ; p[1]=col.g ; p[2]=col.b; p[3]=col.a
 		Case PF_BGRA8888
 			p[0]=col.b ; p[1]=col.g ; p[2]=col.r ; p[3]=col.a
+		Case PF_ARGB8888
+			p[0]=col.a ; p[1]=col.r ; p[2]=col.g ; p[3]=col.b
+		Case PF_ABGR8888
+			p[0]=col.a ; p[1]=col.b ; p[2]=col.g ; p[3]=col.r
 		End Select	
 	End Method
 	
@@ -206,8 +220,8 @@ Type TPixmap
 	bbdoc: Create a pixmap
 	returns: A new TPixmap object
 	end rem	
-	Function Create:TPixmap( width,height,format,align=4 )
-		Local pitch=width*BytesPerPixel[format]
+	Function Create:TPixmap( width:Int,height:Int,format:Int,align:Int=4 )
+		Local pitch:Int=width*BytesPerPixel[format]
 		pitch=(pitch+(align-1))/align*align
 		Local capacity:Size_T=pitch*height
 		Local pixmap:TPixmap=New TPixmap
@@ -223,8 +237,10 @@ Type TPixmap
 	Rem
 	bbdoc: Create a static pixmap
 	returns: A new TPixmap object
+	about: The memory referenced by a static pixmap is not released when the pixmap is deleted.
+	The memory must not freed before the pixmap is deleted.
 	end rem
-	Function CreateStatic:TPixmap( pixels:Byte Ptr,width,height,pitch,format )
+	Function CreateStatic:TPixmap( pixels:Byte Ptr,width:Int,height:Int,pitch:Int,format:Int )
 		Local pixmap:TPixmap=New TPixmap
 		pixmap.pixels=pixels
 		pixmap.width=width
@@ -238,12 +254,12 @@ Type TPixmap
 	Rem
 	bbdoc: Clear a pixmap
 	End Rem	
-	Method ClearPixels( argb )
+	Method ClearPixels( argb:Int )
 		If Not argb And width*BytesPerPixel[format]=pitch
 			MemClear pixels,Size_T(pitch*height)
 			Return
 		EndIf
-		For Local y=0 Until height
+		For Local y:Int=0 Until height
 			Local p:Byte Ptr=PixelPtr(0,y)
 			If Not argb
 				MemClear p,Size_T(width*BytesPerPixel[format])
@@ -251,28 +267,36 @@ Type TPixmap
 			EndIf			
 			Select format
 			Case PF_A8
-				For Local x=0 Until width
+				For Local x:Int=0 Until width
 					p[x]=argb Shr 24
 				Next
 			Case PF_I8
-				For Local x=0 Until width
+				For Local x:Int=0 Until width
 					p[x]=( (argb Shr 16 & $ff)+(argb Shr 8 & $ff)+(argb & $ff) )/3
 				Next
 			Case PF_RGB888
-				For Local x=0 Until width*3 Step 3
+				For Local x:Int=0 Until width*3 Step 3
 					p[x]=argb Shr 16 ; p[x+1]=argb Shr 8 ; p[x+2]=argb
 				Next
 			Case PF_BGR888
-				For Local x=0 Until width*3 Step 3
+				For Local x:Int=0 Until width*3 Step 3
 					p[x]=argb ; p[x+1]=argb Shr 8 ; p[x+2]=argb Shr 16
 				Next
 			Case PF_RGBA8888
-				For Local x=0 Until width*4 Step 4
+				For Local x:Int=0 Until width*4 Step 4
 					p[x]=argb Shr 16 ; p[x+1]=argb Shr 8 ; p[x+2]=argb ; p[x+3]=argb Shr 24
 				Next
 			Case PF_BGRA8888
-				For Local x=0 Until width*4 Step 4
+				For Local x:Int=0 Until width*4 Step 4
 					p[x]=argb ; p[x+1]=argb Shr 8 ; p[x+2]=argb Shr 16 ; p[x+3]=argb Shr 24
+				Next
+			Case PF_ARGB8888 ' arg is already in ARGB format
+				For Local x:Int=0 Until width*4 Step 4
+					(Int Ptr p)[x]=argb
+				Next
+			Case PF_ABGR8888
+				For Local x:Int=0 Until width*4 Step 4
+					p[x]=argb Shr 24 ; p[x+1]=argb Shr 8 ; p[x+2]=argb Shr 16 ; p[x+3]=argb Shr 8
 				Next
 			End Select
 		Next
@@ -332,7 +356,7 @@ about:
 Note that the newly created pixmap will contain random data. #ClearPixels can
 be used to set all pixels to a known value prior to use.
 End Rem
-Function CreatePixmap:TPixmap( width,height,format,align_bytes=4 )
+Function CreatePixmap:TPixmap( width:Int,height:Int,format:Int,align_bytes:Int=4 )
 	Return TPixmap.Create( width,height,format,align_bytes )
 End Function
 
@@ -344,7 +368,7 @@ The memory referenced by a static pixmap is not released when the pixmap is dele
 
 See #CreatePixmap for valid pixmap formats.
 End Rem
-Function CreateStaticPixmap:TPixmap( pixels:Byte Ptr,width,height,pitch,format )
+Function CreateStaticPixmap:TPixmap( pixels:Byte Ptr,width:Int,height:Int,pitch:Int,format:Int )
 	Return TPixmap.CreateStatic( pixels,width,height,pitch,format )
 End Function
 
@@ -362,7 +386,7 @@ returns: A new pixmap object with the specified pixel format
 about:
 See #CreatePixmap for valid pixmap formats.
 end rem
-Function ConvertPixmap:TPixmap( pixmap:TPixmap,format )
+Function ConvertPixmap:TPixmap( pixmap:TPixmap,format:Int )
 	Return pixmap.Convert( format )
 End Function
 
@@ -370,7 +394,7 @@ Rem
 bbdoc: Get pixmap width
 returns: The width, in pixels, of @pixmap
 end rem
-Function PixmapWidth( pixmap:TPixmap )
+Function PixmapWidth:Int( pixmap:TPixmap )
 	Return pixmap.width
 End Function
 
@@ -378,7 +402,7 @@ Rem
 bbdoc: Get pixmap width
 returns: The height, in pixels, of @pixmap
 end rem
-Function PixmapHeight( pixmap:TPixmap )
+Function PixmapHeight:Int( pixmap:TPixmap )
 	Return pixmap.height
 End Function
 
@@ -388,7 +412,7 @@ returns: The pitch, in bytes, of @pixmap
 about:
 Pitch refers to the difference, in bytes, between the start of one row of pixels and the start of the next row.
 end rem
-Function PixmapPitch( pixmap:TPixmap )
+Function PixmapPitch:Int( pixmap:TPixmap )
 	Return pixmap.pitch
 End Function
 
@@ -398,7 +422,7 @@ returns: The format of the pixels stored in @pixmap
 about:
 See #CreatePixmap for supported formats.
 End Rem
-Function PixmapFormat( pixmap:TPixmap )
+Function PixmapFormat:Int( pixmap:TPixmap )
 	Return pixmap.format
 End Function
 
@@ -406,7 +430,7 @@ Rem
 bbdoc: Get pixmap pixels
 returns: A byte pointer to the pixels stored in @pixmap
 end rem
-Function PixmapPixelPtr:Byte Ptr( pixmap:TPixmap,x=0,y=0 )
+Function PixmapPixelPtr:Byte Ptr( pixmap:TPixmap,x:Int=0,y:Int=0 )
 	Return pixmap.PixelPtr( x,y )
 End Function
 
@@ -415,7 +439,7 @@ bbdoc: Create a pixmap window
 returns: A new pixmap object
 about: #PixmapWindow creates a 'virtual' window into @pixmap.
 end rem
-Function PixmapWindow:TPixmap( pixmap:TPixmap,x,y,width,height )
+Function PixmapWindow:TPixmap( pixmap:TPixmap,x:Int,y:Int,width:Int,height:Int )
 	Return pixmap.Window( x,y,width,height )
 End Function
 
@@ -426,27 +450,27 @@ about: @MaskPixmap builds a new pixmap with alpha components set to '0' wherever
 in the original @pixmap match @mask_red, @mask_green and @mask_blue. @mask_red, @mask_green and @mask_blue
 should be in the range 0 to 255.
 end rem
-Function MaskPixmap:TPixmap( pixmap:TPixmap,mask_red,mask_green,mask_blue ) NoDebug
+Function MaskPixmap:TPixmap( pixmap:TPixmap,mask_red:Int,mask_green:Int,mask_blue:Int ) NoDebug
 
 	Local tmp:TPixmap=pixmap
 	If tmp.format<>PF_RGBA8888 tmp=tmp.Convert( PF_RGBA8888 )
 	
 	Local out:TPixmap=CreatePixmap( tmp.width,tmp.height,PF_RGBA8888 )
 	
-	For Local y=0 Until pixmap.height
+	For Local y:Int=0 Until pixmap.height
 		Local t:Byte Ptr=tmp.PixelPtr( 0,y )
 		Local o:Byte Ptr=out.PixelPtr( 0,y )
-		For Local x=0 Until pixmap.width
+		For Local x:Int=0 Until pixmap.width
 			If t[0]<>mask_red Or t[1]<>mask_green Or t[2]<>mask_blue
 				o[0]=t[0]
 				o[1]=t[1]
 				o[2]=t[2]
 				o[3]=255
 			Else
-				Local r,g,b,n
-				For Local ty=y-1 To y+1
+				Local r:Int,g:Int,b:Int,n:Int
+				For Local ty:Int=y-1 To y+1
 					Local t:Byte Ptr=tmp.pixelptr( x-1,ty )
-					For Local tx=x-1 To x+1
+					For Local tx:Int=x-1 To x+1
 						If tx>=0 And tx<tmp.width And ty>=0 And ty<tmp.height
 							If t[0]<>mask_red Or t[1]<>mask_green Or t[2]<>mask_blue
 								r:+t[0]
@@ -482,7 +506,7 @@ returns: A new pixmap object
 end rem
 Function XFlipPixmap:TPixmap( pixmap:TPixmap ) NoDebug
 	Local out:TPixmap=CreatePixmap( pixmap.width,pixmap.height,pixmap.format )
-	For Local x=0 Until pixmap.width
+	For Local x:Int=0 Until pixmap.width
 		out.Paste pixmap.Window(pixmap.width-x-1,0,1,pixmap.height),x,0
 	Next
 	Return out
@@ -494,7 +518,7 @@ returns: A new pixmap object
 end rem
 Function YFlipPixmap:TPixmap( pixmap:TPixmap ) NoDebug
 	Local out:TPixmap=CreatePixmap( pixmap.width,pixmap.height,pixmap.format )
-	For Local y=0 Until pixmap.height
+	For Local y:Int=0 Until pixmap.height
 		out.paste pixmap.Window(0,pixmap.height-y-1,pixmap.width,1),0,y
 	Next
 	Return out
@@ -504,34 +528,34 @@ Rem
 bbdoc: Resize a pixmap
 returns: A new pixmap object of the specified @width and @height
 end rem
-Function ResizePixmap:TPixmap( pixmap:TPixmap,width,height ) NoDebug
+Function ResizePixmap:TPixmap( pixmap:TPixmap,width:Int,height:Int ) NoDebug
 	Local in_pixmap:TPixmap=pixmap
 	If in_pixmap.format<>PF_STDFORMAT in_pixmap=pixmap.Convert( PF_STDFORMAT )
 	Local tmp:Byte[width*4]
 	Local x_sc#=Float(in_pixmap.width)/width
 	Local y_sc#=Float(in_pixmap.height)/height
 	Local out_pixmap:TPixmap=CreatePixmap( width,height,pixmap.format )
-	For Local y=0 Until height
+	For Local y:Int=0 Until height
 		Local ty#=(y+.5)*y_sc-.5
 		Local iy#=Floor(ty),fy#=ty-iy
-		Local in_pitch=in_pixmap.pitch
+		Local in_pitch:Int=in_pixmap.pitch
 		If iy<0
 			iy=0;fy=0;in_pitch=0
 		Else If iy>=in_pixmap.height-1
 			iy=in_pixmap.height-1;fy=0;in_pitch=0
 		EndIf
 		Local src:Byte Ptr=in_pixmap.PixelPtr(0,Int(iy)),dst:Byte Ptr=tmp
-		For Local x=0 Until width
+		For Local x:Int=0 Until width
 			Local tx#=(x+.5)*x_sc-.5
 			Local ix#=Floor(tx),fx#=tx-ix
-			Local in_off=4
+			Local in_off:Int=4
 			If ix<0
 				ix=0;fx=0;in_off=0
 			Else If ix>=in_pixmap.width-1
 				ix=in_pixmap.width-1;fx=0;in_off=0
 			EndIf
 			Local p:Byte Ptr=src+Int(ix)*4
-			For Local n=0 Until 4
+			For Local n:Int=0 Until 4
 				Local v0#=p[n],v1#=p[n+in_off]
 				Local v2#=p[n+in_pitch],v3#=p[n+in_pitch+in_off]
 				Local va#=(v1-v0)*fx+v0,vb#=(v3-v2)*fx+v2,vt#=(vb-va)*fy+va
@@ -550,12 +574,12 @@ returns: A pixmap object
 end rem
 Function LoadPixmap:TPixmap( url:Object )
 	Local stream:TStream=ReadStream( url )
-	If Not stream Return
+	If Not stream Return Null
 
-	Local pos=stream.Pos()
+	Local pos:Long=stream.Pos()
 	If pos=-1
 		stream.Close
-		Return
+		Return Null
 	EndIf
 
 	Local pixmap:TPixmap
@@ -586,11 +610,11 @@ The returned 32 bit value contains the following components:
 * bits 0-7 | pixel blue
 ]
 End Rem
-Function ReadPixel( pixmap:TPixmap,x,y )
+Function ReadPixel:Int( pixmap:TPixmap,x:Int,y:Int )
 	Return pixmap.ReadPixel( x,y )
 End Function
 
-Function ReadPixelColor:SColor8( pixmap:TPixmap,x,y )
+Function ReadPixelColor:SColor8( pixmap:TPixmap,x:Int,y:Int )
 	Return pixmap.ReadPixelColor( x,y )
 End Function
 
@@ -605,11 +629,11 @@ The 32 bit @argb value contains the following components:
 * bits 0-7 | pixel blue
 ]
 End Rem
-Function WritePixel( pixmap:TPixmap,x,y,argb )
+Function WritePixel( pixmap:TPixmap,x:Int,y:Int,argb:Int )
 	pixmap.WritePixel x,y,argb
 End Function
 
-Function WritePixel( pixmap:TPixmap,x,y,color:SColor8 )
+Function WritePixel( pixmap:TPixmap,x:Int,y:Int,color:SColor8 )
 	pixmap.WritePixel x,y,color
 End Function
 
@@ -626,7 +650,7 @@ The 32 bit @argb value contains the following components:
 * bits 0-7 | pixel blue
 ]
 End Rem
-Function ClearPixels( pixmap:TPixmap,argb=0 )
+Function ClearPixels( pixmap:TPixmap,argb:Int=0 )
 	pixmap.ClearPixels argb
 End Function
 
