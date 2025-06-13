@@ -1204,8 +1204,13 @@ returns: A Byte array
 about:
 The specified @url is opened for reading, and each byte in the resultant stream 
 (until eof of reached) is read into a byte array.
+If @url is a TStream, @closeStream can be set to False to prevent the stream from being closed after reading.
 End Rem
-Function LoadByteArray:Byte[]( url:Object )
+Function LoadByteArray:Byte[]( url:Object, closeStream:Int=True )
+	Local ownStream:Int = True
+	If TStream(url) Then
+		ownStream = False
+	End If
 	Local stream:TStream=ReadStream( url )
 	If Not stream Throw New TStreamReadException
 	Local data:Byte[1024],size:Int
@@ -1213,7 +1218,10 @@ Function LoadByteArray:Byte[]( url:Object )
 		If size=data.length data=data[..size*3/2]
 		size:+stream.Read( (Byte Ptr data)+size,data.length-size )
 	Wend
-	stream.Close
+	' If the stream was not owned, we may not want to close it
+	If ownStream Or closeStream Then
+		stream.Close()
+	End If
 	Return data[..size]
 End Function
 
