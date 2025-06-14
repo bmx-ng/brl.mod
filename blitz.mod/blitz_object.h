@@ -100,6 +100,7 @@ struct struct_node {
 };
 
 void bbObjectRegisterStruct( BBDebugScope *p );
+BBDebugScope **bbObjectRegisteredStructs( int *count );
 BBDebugScope * bbObjectStructInfo( char * name );
 
 BBObject * bbNullObjectTest( BBObject *o );
@@ -110,6 +111,7 @@ struct enum_node {
 };
 
 void bbObjectRegisterEnum( BBDebugScope *p );
+BBDebugScope **bbObjectRegisteredEnums( int *count );
 BBDebugScope * bbObjectEnumInfo( char * name );
 
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L

@@ -49,7 +49,7 @@ BBString * bmx_debugger_DebugDecl_StringFromAddress(BBString * p) {
 	return p;
 }
 
-int bmx_debugger_DebugDeclTypeChar(struct BBDebugDecl * decl, int index) {
+BBChar bmx_debugger_DebugDeclTypeChar(struct BBDebugDecl * decl, int index) {
 	return decl->type_tag[index];
 }
 
@@ -79,7 +79,7 @@ struct BBDebugDecl * bmx_debugger_DebugDecl_ArrayDecl(BBArray  * arr) {
 	decl->kind = BBDEBUGDECL_LOCAL;
 	decl->name = 0;
 	decl->type_tag = arr->type;
-
+	
 	return decl;
 }
 
@@ -91,9 +91,11 @@ void bmx_debugger_DebugDecl_ArrayDeclFree(struct BBDebugDecl * decl) {
 	free(decl);
 }
 
-BBString * bmx_debugger_DebugEnumDeclValue(struct BBDebugDecl * decl, void * val) {
-	BBEnum * bbEnum = bbEnumGetInfo(decl->type_tag);
-
+BBString * bmx_debugger_DebugEnumDeclValue(BBString * decl_type_tag, void * val) {
+	unsigned char * decl_type_tag_cstr = bbStringToCString(decl_type_tag);
+	BBEnum * bbEnum = bbEnumGetInfo(decl_type_tag_cstr);
+	bbMemFree(decl_type_tag_cstr);
+	
 	switch( bbEnum->type[0] ){
 		case 'b': return bbEnumToString_b(bbEnum, *((BBBYTE*)val));
 		case 's': return bbEnumToString_s(bbEnum, *((BBSHORT*)val));
@@ -103,7 +105,7 @@ BBString * bmx_debugger_DebugEnumDeclValue(struct BBDebugDecl * decl, void * val
 		case 'y': return bbEnumToString_y(bbEnum, *((BBULONG*)val));
 		case 't': return bbEnumToString_t(bbEnum, *((BBSIZET*)val));
 	}
-
+	
 	return &bbEmptyString;
 }
 
