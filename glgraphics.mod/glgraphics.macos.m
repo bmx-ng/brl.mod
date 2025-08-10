@@ -257,9 +257,19 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 			initWithContentRect:NSMakeRect( 0,0,width,height )
 			styleMask:NSBorderlessWindowMask
 			backing:NSBackingStoreBuffered
-			willUseFullScreenPresentationOptions:NSApplicationPresentationAutoHideToolbar | NSApplicationPresentationAutoHideMenuBar | NSApplicationPresentationFullScreen
 			defer:YES];
-		
+
+		// set window to fullscreen friendly
+		[window setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
+		// let it start right in fullscreen
+		[window toggleFullScreen:nil];	
+
+		// make it a "real fullscreen / kiosk application"
+		[[NSApplication sharedApplication] setPresentationOptions:
+			NSApplicationPresentationAutoHideToolbar |
+			NSApplicationPresentationAutoHideMenuBar |
+			NSApplicationPresentationFullScreen];
+	
 		[window setOpaque:YES];
 		[window setBackgroundColor:[NSColor blackColor]];
 		[window setLevel:CGShieldingWindowLevel()];
