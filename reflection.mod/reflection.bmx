@@ -195,8 +195,7 @@ Type TBoxedValue Final
 			Case ULongIntTypeId  Return String.FromULongInt((ULongInt Ptr valuePtr)[0])
 		Default
 			If typeId.ExtendsType(PointerTypeId) Or typeId.ExtendsType(VarTypeId) Or typeId.ExtendsType(FunctionTypeId) Then
-				Return String (Byte Ptr Ptr valuePtr)[0]
-			Else If typeId.IsEnum() Then
+				Return String (Size_T((Byte Ptr Ptr valuePtr)[0]))
 				Return ToString(typeId.UnderlyingType())
 			Else If typeId._toString Then 
 				' forward call to the type's ToString method if it exists
@@ -945,7 +944,7 @@ Type TConstant Extends TMember
 	Rem
 	bbdoc: Get constant value as @Float
 	EndRem	
-	Method GetFloat:Int()
+	Method GetFloat:Float()
 		Return GetString().ToFloat()
 	EndMethod
 	
@@ -2668,6 +2667,10 @@ Type TTypeId Extends TMember
 	End Rem
 	Method IsFinal:Int()
 		Return _modifiers & EModifiers.IsFinal <> Null
+	End Method
+
+	Method IsArrayType:Int()
+		Return _elementType <> Null And _class = Null And _enum = Null
 	End Method
 	
 	Rem
