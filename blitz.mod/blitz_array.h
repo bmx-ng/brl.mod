@@ -130,7 +130,9 @@ void*	bbArrayIndex( BBArray *, int, int );
 typedef void (*BBArrayStructInit)(void * ref);
 
 BBArray*	bbArrayNew1DStruct( const char *type,int length, unsigned short data_size, BBArrayStructInit init );
+BBArray*	bbArrayNew1DEnum( const char *type,int length, BBEnum * bbEnum );
 BBArray*	bbArrayNewStruct( const char *type,unsigned short data_size, BBArrayStructInit init, int dims, ... );
+BBArray*	bbArrayNewEnum( const char *type, BBEnum * bbEnum, int dims, ... );
 BBArray*	bbArrayFromDataStruct( const char *type,int length,void *data, unsigned short data_size );
 BBArray*	bbArraySliceStruct( const char *type,BBArray *inarr,int beg,int end, unsigned short data_size, BBArrayStructInit structInit );
 BBArray*	bbArrayFromDataSize( const char *type,int length,void *data, unsigned short data_size );

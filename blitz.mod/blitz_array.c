@@ -10,7 +10,11 @@ static BBDebugScope debugScope={
 	"Array",
 	{
 		{
-			BBDEBUGDECL_END
+			BBDEBUGDECL_END,
+			"",
+			"",
+			.var_address=(void*)0,
+			(void (*)(void**))0
 		}
 	}
 };
@@ -68,7 +72,7 @@ static int arrayCellSize(const char * type, unsigned short data_size, int * flag
 		case '$':size=sizeof(void*);*flags=0;break;
 		case '[':size=sizeof(void*);*flags=0;break;
 		case '(':size=sizeof(void*);break;
-		case 'z':size=sizeof(BBSIZET);break;
+		case 't':size=sizeof(BBSIZET);break;
 		case 'v':size=sizeof(BBLONGINT);break;
 		case 'e':size=sizeof(BBULONGINT);break;
 		#ifdef _WIN32
@@ -131,7 +135,7 @@ static void *arrayInitializer( BBArray *arr ){
 	return 0;
 }
 
-static void initializeArray( BBArray *arr, BBArrayStructInit structInit ){
+static void initializeArray( BBArray *arr, BBArrayStructInit structInit, BBEnum * bbEnum ){
 	void *init,**p;
 	
 	if( !arr->size ) return;
@@ -143,13 +147,22 @@ static void initializeArray( BBArray *arr, BBArrayStructInit structInit ){
 		int k;
 		for( k=arr->scales[0];k>0;--k ) *p++=init;
 	}else{
-		memset( p,0,arr->size );
-		if (structInit) {
+		if (bbEnum && !bbEnum->flags) {
 			int k;
 			char * s = (char*)p;
 			for( k=arr->scales[0];k>0;--k ) {
-				structInit(s);
+				memcpy(s, bbEnum->values, arr->data_size);
 				s += arr->data_size;
+			}
+		} else {
+			memset( p,0,arr->size );
+			if (structInit) {
+				int k;
+				char * s = (char*)p;
+				for( k=arr->scales[0];k>0;--k ) {
+					structInit(s);
+					s += arr->data_size;
+				}
 			}
 		}
 	}
@@ -171,7 +184,7 @@ BBArray *bbArrayNew( const char *type,int dims,... ){
 
 	BBArray *arr=bbAllocateArray( type,dims, lens, 0 );
 	
-	initializeArray( arr, 0 );
+	initializeArray( arr, 0, 0 );
 	
 	return arr;
 }
@@ -192,7 +205,28 @@ BBArray *bbArrayNewStruct( const char *type, unsigned short data_size, BBArraySt
 
 	BBArray *arr=bbAllocateArray( type,dims, lens, data_size );
 	
-	initializeArray( arr, init );
+	initializeArray( arr, init, 0 );
+	
+	return arr;
+}
+
+BBArray *bbArrayNewEnum( const char *type, BBEnum * bbEnum, int dims, ... ){
+	int lens[256];
+
+	va_list lengths;
+	
+	va_start(lengths, dims);
+	
+	int i;
+	for (i = 0; i < dims; i++) {
+		lens[i] = va_arg(lengths, int);
+	}
+	va_end(lengths);
+	
+	BBArray *arr=bbAllocateArray( bbEnum->type,dims, lens, 0 );
+	arr->type=bbEnum->atype;
+	
+	initializeArray( arr, 0, bbEnum );
 	
 	return arr;
 }
@@ -201,7 +235,7 @@ BBArray *bbArrayNewEx( const char *type,int dims,int *lens ){
 
 	BBArray *arr=bbAllocateArray( type,dims,lens,0 );
 	
-	initializeArray( arr, 0 );
+	initializeArray( arr, 0, 0 );
 	
 	return arr;
 }
@@ -210,7 +244,7 @@ BBArray *bbArrayNew1D( const char *type,int length ){
 
 	BBArray *arr=bbAllocateArray( type,1,&length, 0 );
 	
-	initializeArray( arr, 0 );
+	initializeArray( arr, 0, 0 );
 	
 	return arr;
 }
@@ -223,7 +257,17 @@ BBArray *bbArrayNew1DStruct( const char *type,int length, unsigned short data_si
 
 	BBArray *arr=bbAllocateArray( type,1,&length, data_size );
 	
-	initializeArray( arr, init );
+	initializeArray( arr, init, 0 );
+	
+	return arr;
+}
+
+BBArray *bbArrayNew1DEnum( const char *type,int length, BBEnum * bbEnum ){
+
+	BBArray *arr=bbAllocateArray( bbEnum->type,1,&length, 0 );
+	arr->type=bbEnum->atype;
+	
+	initializeArray( arr, 0, bbEnum );
 	
 	return arr;
 }
@@ -508,7 +552,7 @@ void bbArraySort( BBArray *arr,int ascending ){
 		case 'f':qsort_f( (float*)p,(float*)p+n );break;
 		case 'd':qsort_d( (double*)p,(double*)p+n );break;
 		case '$':case ':':qsort_obj( (BBObject**)p,(BBObject**)p+n );break;
-		case 'z':qsort_z( (BBSIZET*)p,(BBSIZET*)p+n );break;
+		case 't':qsort_z( (BBSIZET*)p,(BBSIZET*)p+n );break;
 		case 'v':qsort_v( (BBLONGINT*)p,(BBLONGINT*)p+n );break;
 		case 'e':qsort_e( (BBULONGINT*)p,(BBULONGINT*)p+n );break;
 #ifdef _WIN32
@@ -527,7 +571,7 @@ void bbArraySort( BBArray *arr,int ascending ){
 		case 'f':qsort_f_d( (float*)p,(float*)p+n );break;
 		case 'd':qsort_d_d( (double*)p,(double*)p+n );break;
 		case '$':case ':':qsort_obj_d( (BBObject**)p,(BBObject**)p+n );break;
-		case 'z':qsort_z_d( (BBSIZET*)p,(BBSIZET*)p+n );break;
+		case 't':qsort_z_d( (BBSIZET*)p,(BBSIZET*)p+n );break;
 		case 'v':qsort_v_d( (BBLONGINT*)p,(BBLONGINT*)p+n );break;
 		case 'e':qsort_e_d( (BBULONGINT*)p,(BBULONGINT*)p+n );break;
 #ifdef _WIN32
