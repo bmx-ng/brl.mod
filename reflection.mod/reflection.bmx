@@ -196,6 +196,7 @@ Type TBoxedValue Final
 		Default
 			If typeId.ExtendsType(PointerTypeId) Or typeId.ExtendsType(VarTypeId) Or typeId.ExtendsType(FunctionTypeId) Then
 				Return String (Size_T((Byte Ptr Ptr valuePtr)[0]))
+			Else If typeId.IsEnum() Then
 				Return ToString(typeId.UnderlyingType())
 			Else If typeId._toString Then 
 				' forward call to the type's ToString method if it exists
