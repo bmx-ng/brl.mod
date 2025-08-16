@@ -1,4 +1,4 @@
-' Copyright (c) 2023 Bruce A Henderson
+' Copyright (c) 2023-2025 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -29,7 +29,7 @@ Module BRL.UTF8Stream
 ModuleInfo "Version: 1.00"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: zlib"
-ModuleInfo "Copyright: 2023 Bruce A Henderson"
+ModuleInfo "Copyright: 2023-2025 Bruce A Henderson"
 
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release"
@@ -39,7 +39,7 @@ Import BRL.Stream
 Rem
 bbdoc: Supported encodings.
 about: Only a few of the most common encodings are provided in BRL.UTF8Stream.
-More encodings are available in the Text.Encoding module.
+More encodings are available in the Text.Encoding and Text.CP932Encoding modules.
 End Rem
 Enum EStreamEncoding
     UTF16
@@ -69,6 +69,9 @@ Enum EStreamEncoding
     ISO_8859_8
     ISO_8859_9
     ISO_8859_15
+	WINDOWS_932
+	CP932=WINDOWS_932
+	MS_KANJI=WINDOWS_932
 End Enum
 
 Rem
@@ -234,43 +237,19 @@ Type TEncodingNotAvailableException Extends TBlitzException
 	End Method
 End Type
 
-Rem
-bbdoc: Base class for encoding strategies that use a single byte to represent a character.
-End Rem
-Type TBaseSingleByteEncodingStrategy Implements IEncodingStrategy Abstract
-    Field stream:TStream
-	Field StaticArray encodingTable:Short[128]
+Type TBaseEncodingStrategy Implements IEncodingStrategy Abstract
 
-    Method New(sourceStream:TStream)
-        stream = sourceStream
-    End Method
+	Field stream:TStream
 
-	Method LoadTable(table:Short Ptr) Abstract
-
-	Method LoadMapping()
-		LoadTable(encodingTable)
+	Method New(sourceStream:TStream)
+		stream = sourceStream
 	End Method
 
-	Method ReadEncodedChar(utf8Char:SUTF8Char Var) Override
+	Method ReadEncodedChar(utf8Char:SUTF8Char Var) Abstract
 
-		Local StaticArray buf:Byte[1]
-        If stream.Read(buf, 1) = 0 Then
-            utf8Char.count = 0
-            Return
-        End If
+	Method LoadMapping() Abstract
 
-        Local unicodeChar:Int = buf[0]
-
-        If unicodeChar < 128
-			utf8Char.bytes[0] = unicodeChar
-			utf8Char.count = 1
-		Else
-			EncodeSingleByteToUTF8(utf8Char, encodingTable[unicodeChar - 128])
-		End If
-
-    End Method
-
-    Method EncodeSingleByteToUTF8(utf8Char:SUTF8Char Var, c:Short)
+    Method EncodeSingleCharacterToUTF8(utf8Char:SUTF8Char Var, c:Short)
 
 		If c = 0 Then
 			utf8Char.count = 0
@@ -292,6 +271,46 @@ Type TBaseSingleByteEncodingStrategy Implements IEncodingStrategy Abstract
 
 End Type
 
+Rem
+bbdoc: Base class for encoding strategies that use a single byte to represent a character.
+End Rem
+Type TBaseSingleByteEncodingStrategy Extends TBaseEncodingStrategy Abstract
+
+	Field StaticArray encodingTable:Short[128]
+
+	Method LoadTable(table:Short Ptr) Abstract
+
+	Method LoadMapping()
+		LoadTable(encodingTable)
+	End Method
+
+	Method ReadEncodedChar(utf8Char:SUTF8Char Var) Override
+
+		Local StaticArray buf:Byte[1]
+        If stream.Read(buf, 1) = 0 Then
+            utf8Char.count = 0
+            Return
+        End If
+
+        Local unicodeChar:Int = buf[0]
+
+        If unicodeChar < 128
+			utf8Char.bytes[0] = unicodeChar
+			utf8Char.count = 1
+		Else
+			EncodeSingleCharacterToUTF8(utf8Char, encodingTable[unicodeChar - 128])
+		End If
+
+    End Method
+
+End Type
+
+Type TBaseMultiByteEncodingStrategy Extends TBaseEncodingStrategy Abstract
+
+	Method LoadMapping()
+	End Method
+
+End Type
 
 Type TEncodingStrategyLoaderWindows1252 Extends TEncodingStrategyLoader
 	Method Encoding:EStreamEncoding()
