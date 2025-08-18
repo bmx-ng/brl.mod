@@ -347,7 +347,7 @@ Function _Invoke:Object(reflectionWrapper(buf:Byte Ptr Ptr), retType:TTypeId, ar
 	End If
 End Function
 
-
+Public
 
 Function TypeTagForId$(id:TTypeId)
 	' TODO: extern type tags (#, *#)
@@ -541,6 +541,39 @@ Function ModifiersForTag:EModifiers(modifierString:String)
 	Return modifiers
 End Function
 
+Function TypeListsIdentical:Int(a1:TTypeId[], a2:TTypeId[])
+	If a1.Length <> a2.Length Then Return False
+	For Local i:Int = 0 Until a1.Length
+		If a1[i] <> a2[i] Then Return False
+	Next
+	Return True
+End Function
+
+Function ArgTypesIdentical:Int(f1:TFunction, f2:TFunction)
+	Return TypeListsIdentical(f1.ArgTypes(), f2.ArgTypes())
+End Function
+
+Function ArgTypesIdentical:Int(m1:TMethod, m2:TMethod)
+	Return TypeListsIdentical(m1.ArgTypes(), m2.ArgTypes())
+End Function
+
+Function NamesAndArgTypesIdentical:Int(f1:TFunction, f2:TFunction)
+	Return f1.Name().ToLower() = f2.Name().ToLower() And ArgTypesIdentical(f1, f2)
+End Function
+
+Function NamesAndArgTypesIdentical:Int(m1:TMethod, m2:TMethod)
+	Return m1.Name().ToLower() = m2.Name().ToLower() And ArgTypesIdentical(m1, m2)
+End Function
+
+Function SignaturesIdentical:Int(f1:TFunction, f2:TFunction)
+	Return NamesAndArgTypesIdentical(f1, f2) And f1.ReturnType() = f2.ReturnType()
+End Function
+
+Function SignaturesIdentical:Int(m1:TMethod, m2:TMethod)
+	Return NamesAndArgTypesIdentical(m1, m2) And m1.ReturnType() = m2.ReturnType()
+End Function
+
+Private
 
 Function ExtractMetaMap:TStringMap( meta:String )
 	If Not meta Then
@@ -580,38 +613,6 @@ Function ExtractMetaMap:TStringMap( meta:String )
 	Wend
 	
 	Return map
-End Function
-
-Function TypeListsIdentical:Int(a1:TTypeId[], a2:TTypeId[])
-	If a1.Length <> a2.Length Then Return False
-	For Local i:Int = 0 Until a1.Length
-		If a1[i] <> a2[i] Then Return False
-	Next
-	Return True
-End Function
-
-Function ArgTypesIdentical:Int(f1:TFunction, f2:TFunction)
-	Return TypeListsIdentical(f1.ArgTypes(), f2.ArgTypes())
-End Function
-
-Function ArgTypesIdentical:Int(m1:TMethod, m2:TMethod)
-	Return TypeListsIdentical(m1.ArgTypes(), m2.ArgTypes())
-End Function
-
-Function NamesAndArgTypesIdentical:Int(f1:TFunction, f2:TFunction)
-	Return f1.Name().ToLower() = f2.Name().ToLower() And ArgTypesIdentical(f1, f2)
-End Function
-
-Function NamesAndArgTypesIdentical:Int(m1:TMethod, m2:TMethod)
-	Return m1.Name().ToLower() = m2.Name().ToLower() And ArgTypesIdentical(m1, m2)
-End Function
-
-Function SignaturesIdentical:Int(f1:TFunction, f2:TFunction)
-	Return NamesAndArgTypesIdentical(f1, f2) And f1.ReturnType() = f2.ReturnType()
-End Function
-
-Function SignaturesIdentical:Int(m1:TMethod, m2:TMethod)
-	Return NamesAndArgTypesIdentical(m1, m2) And m1.ReturnType() = m2.ReturnType()
 End Function
 
 Function AddFunctionsToList(tid:TTypeId, list:TList, initialLastLink:TLink, funcNameLower:String = "")
