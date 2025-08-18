@@ -2578,6 +2578,12 @@ Type TTypeId Extends TMember
 			If Not _class Then Throw "Unable to create instance of this type"
 			If _interface Then Throw "Unable to create instance from interface"
 			If _elementType Then Throw "Unable to create array this way"
+			If _class = bbRefStringClass Then
+				Return bbRefEmptyString
+			End If
+			If _class = bbRefArrayClass Then
+				Return bbRefEmptyArray
+			End If
 			Return bbObjectNew(_class)
 		End If
 	End Method
@@ -2598,6 +2604,9 @@ Type TTypeId Extends TMember
 			If Not _class Then Throw "Unable to create instance of this type"
 			If _interface Then Throw "Unable to create instance from interface"
 			If _elementType Then Throw "Unable to create array this way"
+			If _class = bbRefStringClass or _class = bbRefArrayClass Then
+				Throw "Unable to create instance of this type with constructor"
+			End If
 			' make sure we were actually given a constructor for this class
 			If Not constructor Then Throw "Constructor is Null"
 			If Not _constructors.Contains(constructor) Then Throw "Method is not a constructor of this type"
