@@ -8,6 +8,9 @@
 extern "C"{
 #endif
 
+void *bbMemAllocCollectable(size_t size);
+void bbMemFreeCollectable( void *mem );
+void *bbMemExtendCollectable( void *mem,size_t size,size_t new_size );
 void*	bbMemAlloc( size_t );
 void		bbMemFree( void *mem );
 void*	bbMemExtend( void *mem,size_t size,size_t new_size );

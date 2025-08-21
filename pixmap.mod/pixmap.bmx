@@ -75,7 +75,7 @@ Type TPixmap
 	
 	Method Delete()
 		If capacity>=0 
-			MemFree pixels
+			MemFree pixels, True
 		EndIf
 	End Method
 
@@ -225,7 +225,7 @@ Type TPixmap
 		pitch=(pitch+(align-1))/align*align
 		Local capacity:Size_T=pitch*height
 		Local pixmap:TPixmap=New TPixmap
-		pixmap.pixels=MemAlloc( capacity )
+		pixmap.pixels=MemAlloc( capacity, True )
 		pixmap.width=width
 		pixmap.height=height
 		pixmap.pitch=pitch

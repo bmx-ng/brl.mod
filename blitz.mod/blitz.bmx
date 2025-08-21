@@ -371,6 +371,59 @@ End Rem
 Const CHARSFORMAT_SKIPWHITESPACE:ULong = 1 Shl 8
 
 Extern
+	Function bbMemAllocCollectable:Byte Ptr(size:Size_T)="void * bbMemAllocCollectable(size_t)"
+	Function bbMemFreeCollectable(mem:Byte Ptr)="void bbMemFreeCollectable( void * )"
+	Function bbMemExtendCollectable:Byte Ptr(mem:Byte Ptr,size:Size_T,new_size:Size_T)="void * bbMemExtendCollectable(void *,size_t,size_t)"
+
+	Function bbMemAlloc:Byte Ptr(size:Size_T)="void * bbMemAlloc(size_t)"
+	Function bbMemFree(mem:Byte Ptr)="void bbMemFree( void * )"
+	Function bbMemExtend:Byte Ptr(mem:Byte Ptr,size:Size_T,new_size:Size_T)="void * bbMemExtend( void *,size_t,size_t )"
+End Extern
+
+Rem
+bbdoc: Allocates memory
+returns: A new block of memory @size bytes long
+about: Allocates a new block of memory @size bytes long. If @collectable is #False, the memory is not collectable and must be freed manually with #MemFree.
+Otherwise, the memory is collectable and can either be freed with #MemFree (with collectable set to #True) or will be automatically freed by the garbage collector.
+End Rem
+Function MemAlloc:Byte Ptr( size:Size_T, collectable:Int = False )
+	If collectable Then
+		Return bbMemAllocCollectable(size)
+	Else
+		Return bbMemAlloc(size)
+	End If
+End Function
+
+Rem
+bbdoc: Free allocated memory
+about: The memory specified by @mem must have been previously allocated by #MemAlloc or #MemExtend.
+Note: If the memory was allocated with #MemAlloc and @collectable is #True, @collectable must be #True when freeing the memory.
+End Rem
+Function MemFree( mem:Byte Ptr, collectable:Int = False )
+	If collectable Then
+		bbMemFreeCollectable(mem)
+	Else
+		bbMemFree(mem)
+	End If
+End Function
+
+Rem
+bbdoc: Extend a block of memory
+returns: A new block of memory @new_size bytes long
+about: An existing block of memory specified by @mem and @size is copied into a new block
+of memory @new_size bytes long. The existing block is released and the new block is returned.
+
+Use @collectable set to #True if the memory you are extending was allocated with #MemAlloc and @collectable is #True.
+End Rem
+Function MemExtend:Byte Ptr( mem:Byte Ptr,size:Size_T,new_size:Size_T, collectable:Int = False )
+	If collectable Then
+		Return bbMemExtendCollectable(mem, size, new_size)
+	Else
+		Return bbMemExtend(mem, size, new_size)
+	End If
+End Function
+
+Extern
 
 Rem
 bbdoc: Application directory
@@ -476,25 +529,6 @@ A millisecond is one thousandth of a second.
 End Rem
 Function MilliSecs:Int()="bbMilliSecs"
 
-Rem
-bbdoc: Allocate memory
-returns: A new block of memory @size bytes long
-End Rem
-Function MemAlloc:Byte Ptr( size:Size_T )="void* bbMemAlloc( size_t )"
-
-Rem
-bbdoc: Free allocated memory
-about: The memory specified by @mem must have been previously allocated by #MemAlloc or #MemExtend.
-End Rem
-Function MemFree( mem:Byte Ptr )="void bbMemFree( void * )"
-
-Rem
-bbdoc: Extend a block of memory
-returns: A new block of memory @new_size bytes long
-about: An existing block of memory specified by @mem and @size is copied into a new block
-of memory @new_size bytes long. The existing block is released and the new block is returned. 
-End Rem
-Function MemExtend:Byte Ptr( mem:Byte Ptr,size:Size_T,new_size:Size_T )="void* bbMemExtend( void *,size_t ,size_t )"
 
 Rem
 bbdoc: Clear a block of memory to 0
