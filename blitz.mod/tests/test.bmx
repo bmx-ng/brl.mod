@@ -440,4 +440,41 @@ Type TStringFromUTF8BytesTest Extends TTest
 		assertEquals("你好", text)
 	End Method
 
+	 ' Test an incomplete 4-byte sequence where only the first byte is provided,
+    ' followed by valid ASCII ("A").
+    Method testIncomplete4ByteSequenceAfterOneByte() { test }
+        ' Array: [$F0, 65, 65, 65, 65]
+        ' $F0 begins a 4-byte sequence, but $41 (65) is not a valid continuation byte.
+        ' Expected output: Replacement character then "A".
+        Local data:Byte[] = [$F0, 65, 65, 65, 65]
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        Local expected:String = Chr($FFFD) + Chr(65)
+        assertEquals(expected, text)
+    End Method
+
+    ' Test an incomplete 4-byte sequence with one valid continuation byte,
+    ' followed by a valid ASCII ("A").
+    Method testIncomplete4ByteSequenceAfterTwoBytes() { test }
+        ' Array: [$F0, $9F, 65, 65, 65]
+        ' $F0 followed by $9F (a valid continuation candidate), then 65 which is invalid as a continuation.
+        ' Expected output: Replacement character then "A".
+        Local data:Byte[] = [$F0, $9F, 65, 65, 65]
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        Local expected:String = Chr($FFFD) + Chr(65)
+        assertEquals(expected, text)
+    End Method
+
+    ' Test an incomplete 4-byte sequence with two valid continuation bytes,
+    ' followed by a valid ASCII ("A").
+    Method testIncomplete4ByteSequenceAfterThreeBytes() { test }
+        ' Array: [$F0, $9F, $98, 65, 65]
+        ' $F0, $9F, $98 are read as the first three bytes of a 4-byte sequence;
+        ' then 65 is encountered instead of a valid continuation byte.
+        ' Expected output: Replacement character then "A".
+        Local data:Byte[] = [$F0, $9F, $98, 65, 65]
+        Local text:String = String.FromUTF8Bytes(data, data.Length)
+        Local expected:String = Chr($FFFD) + Chr(65)
+        assertEquals(expected, text)
+    End Method
+	
 End Type
