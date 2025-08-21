@@ -4,6 +4,24 @@
 #define SIZEALIGN 16
 #define ALIGNMASK (SIZEALIGN-1)
 
+void *bbMemAllocCollectable(size_t size) {
+    void * p = GC_malloc_atomic(size);
+    return p;
+}
+
+void bbMemFreeCollectable(void *p) {
+    GC_free(p);
+}
+
+void *bbMemExtendCollectable( void *mem,size_t size,size_t new_size ){
+    void *p = bbMemAllocCollectable(new_size);
+    if (mem) {
+        bbMemCopy(p, mem, size);
+        bbMemFreeCollectable(mem);
+    }
+    return p;
+}
+
 void *bbMemAlloc(size_t size) {
     size_t totalSize = size + SIZEALIGN - 1 + sizeof(void*);
     void *p = malloc(totalSize);

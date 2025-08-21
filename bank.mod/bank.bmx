@@ -113,9 +113,9 @@ Type TBank
 		If size>_capacity
 			Local n:Size_T=_capacity*3/2
 			If n<size n=size
-			Local tmp:Byte Ptr=MemAlloc(n)
+			Local tmp:Byte Ptr=MemAlloc(n, True)
 			MemCopy tmp,_buf,_size
-			MemFree _buf
+			MemFree _buf, True
 			_capacity=n
 			_buf=tmp
 		EndIf
@@ -384,7 +384,7 @@ Type TBank
 	End Rem
 	Function Create:TBank( size:Size_T )
 		Local bank:TBank=New TBank
-		bank._buf=MemAlloc( size )
+		bank._buf=MemAlloc( size, True )
 		bank._size=size
 		bank._capacity=size
 		Return bank
