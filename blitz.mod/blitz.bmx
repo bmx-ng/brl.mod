@@ -1438,3 +1438,8 @@ Rem
 bbdoc: Denotes an array as a static array, with its content allocated on the stack.
 keyword: "StaticArray"
 End Rem
+
+Rem
+bbdoc: Marks a function as inline which replaces the function call with the acual code of the function for less overhead.
+keyword: "Inline"
+End Rem
