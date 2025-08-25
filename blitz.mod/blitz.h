@@ -40,6 +40,7 @@
 #include "blitz_app.h" 
 #include "blitz_enum.h"
 #include "blitz_coverage.h"
+#include "blitz_strto.h"
 
 #ifdef __cplusplus
 extern "C"{

@@ -1,4 +1,4 @@
-' Copyright (c) 2018-2024 Bruce A Henderson
+' Copyright (c) 2018-2025 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.19"
+ModuleInfo "Version: 1.20"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2018-2024 Bruce A Henderson"
+ModuleInfo "Copyright: 2018-2025 Bruce A Henderson"
 
+ModuleInfo "History: 1.20"
+ModuleInfo "History: Added ToNumber methods."
 ModuleInfo "History: 1.19"
 ModuleInfo "History: Added TSplitBuffer Split() method."
 ModuleInfo "History: Added TSplitBuffer to number methods."
@@ -933,6 +935,103 @@ Public
 	End Rem
 	Method Operator <>:Int (sb:TStringBuilder)
 		Return Not bmx_stringbuilder_equals(buffer, sb.buffer)
+	End Method
+
+	Rem
+	bbdoc: Returns the string builder as an #Int.
+	about: If the string builder is not a valid #Int, 0 is returned.
+	If the calculated value is out of range for an #Int, either int max or int min is returned.
+	End Rem
+	Method ToInt:Int()
+		Return bmx_stringbuilder_toint(buffer)
+	End Method
+
+	Rem
+	bbdoc: Returns the string builder as a #Long.
+	about: If the string builder is not a valid #Long, 0 is returned.
+	If the calculated value is out of range for a #Long, either long max or long min is returned.
+	End Rem
+	Method ToLong:Long()
+		Return bmx_stringbuilder_tolong(buffer)
+	End Method
+
+	Rem
+	bbdoc: Returns the string builder as a #Short.
+	about: If the string builder is not a valid #Short, 0 is returned.
+	If the calculated value is out of range for a #Short, short max is returned.
+	End Rem
+	Method ToShort:Short()
+		Return bmx_stringbuilder_toshort(buffer)
+	End Method
+
+	Rem
+	bbdoc: Returns the string builder as a #Byte.
+	about: If the string builder is not a valid #Byte, 0 is returned.
+	If the calculated value is out of range for a #Byte, byte max is returned.
+	End Rem
+	Method ToByte:Byte()
+		Return bmx_stringbuilder_tobyte(buffer)
+	End Method
+
+	Rem
+	bbdoc: Returns the string builder as a #UInt.
+	about: If the string builder is not a valid #UInt, 0 is returned.
+	If the calculated value is out of range for a #UInt, uint max is returned.
+	End Rem
+	Method ToUInt:UInt()
+		Return bmx_stringbuilder_touint(buffer)
+	End Method
+
+	Rem
+	bbdoc: Returns the string builder as a #ULong.
+	about: If the string builder is not a valid #ULong, 0 is returned.
+	If the calculated value is out of range for a #ULong, ulong max is returned.
+	End Rem
+	Method ToULong:ULong()
+		Return bmx_stringbuilder_toulong(buffer)
+	End Method
+
+	Rem
+	bbdoc: Returns the string builder as a #Size_T.
+	about: If the string builder is not a valid #Size_T, 0 is returned.
+	If the calculated value is out of range for a #Size_T, Size_T max is returned.
+	End Rem
+	Method ToSizeT:Size_T()
+		Return bmx_stringbuilder_tosizet(buffer)
+	End Method
+
+	Rem
+	bbdoc: Returns the string builder as a #LongInt.
+	about: If the string builder is not a valid #LongInt, 0 is returned.
+	If the calculated value is out of range for a #LongInt, either long int max or long int min is returned.
+	End Rem
+	Method ToLongInt:LongInt()
+		Return bmx_stringbuilder_tolongint(buffer)
+	End Method
+
+	Rem
+	bbdoc: Returns the string builder as a #ULongInt.
+	about: If the string builder is not a valid #ULongInt, 0 is returned.
+	If the calculated value is out of range for a #ULongInt, either ulong int max or ulong int min is returned.
+	End Rem
+	Method ToULongInt:ULongInt()
+		Return bmx_stringbuilder_toulongint(buffer)
+	End Method
+
+	Rem
+	bbdoc: Returns the string builder as a #Float.
+	about: If the string builder is not a valid #Float, 0.0 is returned.
+	End Rem
+	Method ToFloat:Float()
+		Return bmx_stringbuilder_tofloat(buffer)
+	End Method
+
+	Rem
+	bbdoc: Returns the string builder as a #Double.
+	about: If the string builder is not a valid #Double, 0.0 is returned.
+	End Rem
+	Method ToDouble:Double()
+		Return bmx_stringbuilder_todouble(buffer)
 	End Method
 
 	Method Delete()
