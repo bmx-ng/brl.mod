@@ -123,6 +123,7 @@ Import "blitz_gc.c"
 Import "blitz_unicode.c"
 Import "blitz_enum.c"
 Import "blitz_coverage.c"
+Import "blitz_strto.c"
 Import "blitz_string_ex.cpp"
 
 ?coverage

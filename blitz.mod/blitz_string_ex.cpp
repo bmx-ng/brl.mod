@@ -30,14 +30,18 @@ typedef LONG_PTR LPARAM;
 // endPos of -1 means the end of the string
 // returns 0 if the string is not a valid double, or the position of the first character after the double otherwise
 int bbStringToDoubleEx( BBString *str, double * val, int startPos, int endPos, BBULONG format, BBString* sep ) {
-    if ( startPos < 0 || startPos >= str->length || endPos < -1 || endPos > str->length ) {
+    return bbStrToDoubleEx( str->buf, str->length, val, startPos, endPos, format, sep );
+}
+
+int bbStrToDoubleEx( BBChar *buf, int length, double * val, int startPos, int endPos, BBULONG format, BBString* sep ) {
+    if ( startPos < 0 || startPos >= length || endPos < -1 || endPos > length ) {
         return 0;
     }
     if (endPos == -1) {
-        endPos = str->length;
+        endPos = length;
     }
-    const char16_t * start = (char16_t*)str->buf;
-    const char16_t * end = start + str->length;
+    const char16_t * start = (char16_t*)buf;
+    const char16_t * end = start + length;
     const char16_t * p = start + startPos;
     const char16_t * e = start + endPos;
     const char16_t sepChar = sep->length > 0 ? sep->buf[0] : '.';
@@ -65,14 +69,18 @@ int bbStringToDoubleEx( BBString *str, double * val, int startPos, int endPos, B
 // endPos of -1 means the end of the string
 // returns 0 if the string is not a valid float, or the position of the first character after the float otherwise
 int bbStringToFloatEx( BBString *str, float * val, int startPos, int endPos, BBULONG format, BBString* sep ) {
-    if ( startPos < 0 || startPos >= str->length || endPos < -1 || endPos > str->length ) {
+    return bbStrToFloatEx( str->buf, str->length, val, startPos, endPos, format, sep );
+}
+
+int bbStrToFloatEx( BBChar *buf, int length, float * val, int startPos, int endPos, BBULONG format, BBString* sep ) {
+    if ( startPos < 0 || startPos >= length || endPos < -1 || endPos > length ) {
         return 0;
     }
     if (endPos == -1) {
-        endPos = str->length;
+        endPos = length;
     }
-    const char16_t * start = (char16_t*)str->buf;
-    const char16_t * end = start + str->length;
+    const char16_t * start = (char16_t*)buf;
+    const char16_t * end = start + length;
     const char16_t * p = start + startPos;
     const char16_t * e = start + endPos;
     const char16_t sepChar = sep->length > 0 ? sep->buf[0] : '.';
