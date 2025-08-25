@@ -38,13 +38,19 @@ BBLONGINT bbStrToLongInt(const BBChar *s, int length, int *end_index) {
     errno = 0;
     int last;
     BBLONG v = bbStrToLong(s, length, &last);
-    if (end_index) *end_index = last;
+    if (end_index) {
+        *end_index = last;
+    }
 
-    if (last <= 0)             return 0;           // no digits
-    if (errno == ERANGE)       return 0;           // overflow/underflow
+    if (last <= 0) {
+        return 0; // no digits
+    }
+    if (errno == ERANGE) {
+        return 0; // overflow/underflow
+    }
     if (v < LONG_MIN || v > LONG_MAX) {
         errno = ERANGE;
-        return 0;               // out of int range
+        return 0; // out of int range
     }
     return (BBLONGINT)v;
 }
@@ -53,16 +59,22 @@ BBINT bbStrToInt(const BBChar *s, int length, int *end_index) {
     errno = 0;
     int last;
     BBLONG v = bbStrToLong(s, length, &last);
-    if (end_index) *end_index = last;
+    if (end_index) {
+        *end_index = last;
+    }
 
-    if (last <= 0)             return 0;           // no digits
-    if (errno == ERANGE)       return 0;           // overflow/underflow
+    if (last <= 0) {
+        return 0; // no digits
+    }
+    if (errno == ERANGE) {
+        return 0; // overflow/underflow
+    }
     if (v < INT_MIN) {
         errno = ERANGE;
-        return INT_MIN;               // out of int range
+        return INT_MIN; // out of int range
     } else if (v > INT_MAX) {
         errno = ERANGE;
-        return INT_MAX;               // out of int range
+        return INT_MAX; // out of int range
     }
     return (int)v;
 }
@@ -71,13 +83,19 @@ BBULONGINT bbStrToULongInt(const BBChar *s, int length, int *end_index) {
     errno = 0;
     int last;
     BBULONG v = bbStrToULong(s, length, &last);
-    if (end_index) *end_index = last;
+    if (end_index) {
+        *end_index = last;
+    }
 
-    if (last <= 0)              return 0;           // no digits
-    if (errno == ERANGE)       return 0;           // overflow/underflow
+    if (last <= 0) {
+        return 0;  // no digits
+    }
+    if (errno == ERANGE) {
+        return 0; // overflow/underflow
+    }
     if (v > ULONG_MAX) {
         errno = ERANGE;
-        return 0;               // out of int range
+        return 0; // out of int range
     }
     return (BBULONGINT)v;
 }
@@ -86,13 +104,19 @@ BBBYTE bbStrToByte(const BBChar *s, int length, int *end_index) {
     errno = 0;
     int last;
     BBULONG v = bbStrToULong(s, length, &last);
-    if (end_index) *end_index = last;
+    if (end_index) {
+        *end_index = last;
+    }
 
-    if (last <= 0)              return 0;           // no digits
-    if (errno == ERANGE)       return 0;           // overflow/underflow
+    if (last <= 0) {
+        return 0; // no digits
+    }
+    if (errno == ERANGE) {
+        return 0; // overflow/underflow
+    }
     if (v > UCHAR_MAX) {
         errno = ERANGE;
-        return 0;               // out of int range
+        return 0; // out of int range
     }
     return (BBBYTE)v;
 }
@@ -101,13 +125,19 @@ BBSHORT bbStrToShort(const BBChar *s, int length, int *end_index) {
     errno = 0;
     int last;
     BBULONG v = bbStrToULong(s, length, &last);
-    if (end_index) *end_index = last;
+    if (end_index) {
+        *end_index = last;
+    }
 
-    if (last <= 0)              return 0;           // no digits
-    if (errno == ERANGE)       return 0;           // overflow/underflow
+    if (last <= 0) {
+        return 0; // no digits
+    }
+    if (errno == ERANGE) {
+        return 0; // overflow/underflow
+    }
     if (v > USHRT_MAX) {
         errno = ERANGE;
-        return 0;               // out of int range
+        return 0; // out of int range
     }
     return (BBSHORT)v;
 }
@@ -116,13 +146,19 @@ BBUINT bbStrToUInt(const BBChar *s, int length, int *end_index) {
     errno = 0;
     int last;
     BBULONG v = bbStrToULong(s, length, &last);
-    if (end_index) *end_index = last;
+    if (end_index) {
+        *end_index = last;
+    }
 
-    if (last <= 0)              return 0;           // no digits
-    if (errno == ERANGE)       return 0;           // overflow/underflow
+    if (last <= 0) {
+        return 0; // no digits
+    }
+    if (errno == ERANGE) {
+        return 0; // overflow/underflow
+    }
     if (v > UINT_MAX) {
         errno = ERANGE;
-        return 0;               // out of int range
+        return 0; // out of int range
     }
     return (BBUINT)v;
 }
@@ -131,20 +167,36 @@ BBLONG bbStrToLong(const BBChar *s, int length, int *end_index) {
     BBLONG acc, cutoff;
     int i, any, neg, base, overflowed, digits_start, cutlim, d;
 
-    if (end_index) *end_index = 0;
-    if (!s || length <= 0) { errno = EINVAL; return 0; }
+    if (end_index) {
+        *end_index = 0;
+    }
+    if (!s || length <= 0) {
+        errno = EINVAL;
+        return 0;
+    }
 
     i = 0;
     while (i < length && bbIsspace(s[i])) ++i;
-    if (i >= length) { errno = EINVAL; return 0; }
+    if (i >= length) {
+        errno = EINVAL;
+        return 0;
+    }
 
     neg = 0;
-    if (s[i] == '+' || s[i] == '-') { neg = (s[i] == '-'); ++i; }
+    if (s[i] == '+' || s[i] == '-') {
+        neg = (s[i] == '-');
+        ++i;
+    }
 
     base = 10;
     if (i < length) {
-        if (s[i] == '%') { base = 2;  ++i; }
-        else if (s[i] == '$') { base = 16; ++i; }
+        if (s[i] == '%') {
+            base = 2;
+            ++i;
+        } else if (s[i] == '$') {
+            base = 16;
+            ++i;
+        }
     }
 
     acc = 0;
@@ -161,7 +213,9 @@ BBLONG bbStrToLong(const BBChar *s, int length, int *end_index) {
     for (; i < length; ++i) {
         d = bbGetdigit(s[i], base);
 
-        if (d < 0) break;
+        if (d < 0) {
+            break;
+        }
 
         if (!overflowed) {
             if (acc < cutoff || (acc == cutoff && d > cutlim)) {
@@ -173,9 +227,14 @@ BBLONG bbStrToLong(const BBChar *s, int length, int *end_index) {
         any = 1;
     }
 
-    if (!any || i == digits_start) { errno = EINVAL; return 0; }
+    if (!any || i == digits_start) {
+        errno = EINVAL;
+        return 0;
+    }
 
-    if (end_index) *end_index = i;  /* first unparsed char (one-past-last) */
+    if (end_index) {
+        *end_index = i;  /* first unparsed char (one-past-last) */
+    }
 
     if (overflowed) {
         errno = ERANGE;
@@ -190,22 +249,38 @@ BBULONG bbStrToULong(const BBChar *s, int length, int *end_index) {
     int i, neg, base, any, overflowed, digits_start, d;
     BBULONG acc, cutoff, cutlim;
 
-    if (end_index) *end_index = 0;
-    if (!s || length <= 0) { errno = EINVAL; return 0; }
+    if (end_index) {
+        *end_index = 0;
+    }
+    if (!s || length <= 0) {
+        errno = EINVAL;
+        return 0;
+    }
 
     i = 0;
     while (i < length && bbIsspace(s[i])) ++i;
-    if (i >= length) { errno = EINVAL; return 0; }
+    if (i >= length) {
+        errno = EINVAL;
+        return 0;
+    }
 
     /* optional sign */
     neg = 0;
-    if (s[i] == '+' || s[i] == '-') { neg = (s[i] == '-'); ++i; }
+    if (s[i] == '+' || s[i] == '-') {
+        neg = (s[i] == '-');
+        ++i;
+    }
 
     /* optional BlitzMax prefix after sign: % (bin) or $ (hex); default base 10 */
     base = 10;
     if (i < length) {
-        if (s[i] == '%') { base = 2;  ++i; }
-        else if (s[i] == '$') { base = 16; ++i; }
+        if (s[i] == '%') {
+            base = 2;
+            ++i;
+        } else if (s[i] == '$') {
+            base = 16;
+            ++i;
+        }
     }
 
     acc = 0;
@@ -220,7 +295,9 @@ BBULONG bbStrToULong(const BBChar *s, int length, int *end_index) {
 
     for (; i < length; ++i) {
         d = bbGetdigit(s[i], base);
-        if (d < 0) break;
+        if (d < 0) {
+            break;
+        }
 
         if (!overflowed) {
             if (acc > cutoff || (acc == cutoff && (BBULONG)d > cutlim)) {
@@ -232,9 +309,14 @@ BBULONG bbStrToULong(const BBChar *s, int length, int *end_index) {
         any = 1;
     }
 
-    if (!any || i == digits_start) { errno = EINVAL; return 0; }
+    if (!any || i == digits_start) {
+        errno = EINVAL;
+        return 0;
+    }
 
-    if (end_index) *end_index = i;   /* first unparsed character (one-past-last) */
+    if (end_index) {
+        *end_index = i;   /* first unparsed character (one-past-last) */
+    }
 
     if (overflowed) {
         errno = ERANGE;
@@ -250,11 +332,17 @@ BBSIZET bbStrToSizet(const BBChar *s, int length, int *end_index) {
     errno = 0;
     int last;
     BBULONG v = bbStrToULong(s, length, &last);
-    if (end_index) *end_index = last;
+    if (end_index) {
+        *end_index = last;
+    }
 
-    if (last <= 0)              return 0;           // no digits
-    if (errno == ERANGE)       return 0;           // overflow/underflow
-    if (v > SIZE_T_MAX) {
+    if (last <= 0) {
+        return 0;           // no digits
+    }
+    if (errno == ERANGE) {
+        return 0;           // overflow/underflow
+    }
+    if (v > SIZE_MAX) {
         errno = ERANGE;
         return 0;               // out of int range
     }
@@ -264,13 +352,17 @@ BBSIZET bbStrToSizet(const BBChar *s, int length, int *end_index) {
 BBDOUBLE bbStrToDouble(const BBChar *s, int length, int *end_index) {
     double value = 0.0;
     int res = bbStrToDoubleEx(s, length, &value, 0, length, 0, &bbEmptyString);
-    if (end_index) *end_index = res;
+    if (end_index) {
+        *end_index = res;
+    }
     return value;
 }
 
 BBFLOAT bbStrToFloat(const BBChar *s, int length, int *end_index) {
     float value = 0.0f;
     int res = bbStrToFloatEx(s, length, &value, 0, length, 0, &bbEmptyString);
-    if (end_index) *end_index = res;
+    if (end_index) {
+        *end_index = res;
+    }
     return value;
 }
