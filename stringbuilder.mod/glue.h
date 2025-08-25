@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2024 Bruce A Henderson
+  Copyright (c) 2018-2025 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -103,6 +103,17 @@ void bmx_stringbuilder_format_double(struct MaxStringBuilder * buf, BBString * f
 BBULONG bmx_stringbuilder_hash(struct MaxStringBuilder * buf);
 void bmx_stringbuilder_append_utf32string(struct MaxStringBuilder * buf, BBUINT * chars);
 void bmx_stringbuilder_append_utf32bytes(struct MaxStringBuilder * buf, BBUINT * chars, int length);
+int bmx_stringbuilder_toint(struct MaxStringBuilder * buf);
+BBLONG bmx_stringbuilder_tolong(struct MaxStringBuilder * buf);
+BBUINT bmx_stringbuilder_touint(struct MaxStringBuilder * buf);
+BBSHORT bmx_stringbuilder_toshort(struct MaxStringBuilder * buf);
+BBBYTE bmx_stringbuilder_tobyte(struct MaxStringBuilder * buf);
+BBULONG bmx_stringbuilder_toulong(struct MaxStringBuilder * buf);
+BBLONGINT bmx_stringbuilder_tolongint(struct MaxStringBuilder * buf);
+BBULONGINT bmx_stringbuilder_toulongint(struct MaxStringBuilder * buf);
+BBSIZET bmx_stringbuilder_tosizet(struct MaxStringBuilder * buf);
+BBFLOAT bmx_stringbuilder_tofloat(struct MaxStringBuilder * buf);
+BBDOUBLE bmx_stringbuilder_todouble(struct MaxStringBuilder * buf);
 
 /* ----------------------------------------------------- */
 

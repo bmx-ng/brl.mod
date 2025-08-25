@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2024 Bruce A Henderson
+  Copyright (c) 2018-2025 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -990,6 +990,94 @@ void bmx_stringbuilder_append_utf32bytes(struct MaxStringBuilder * buf, BBUINT *
 	buf->hash = 0;
 }
 
+int bmx_stringbuilder_toint(struct MaxStringBuilder * buf) {
+	if (buf->count == 0) {
+		return 0;
+	}
+
+	return bbStrToInt(buf->buffer, buf->count, NULL);
+}
+
+BBLONG bmx_stringbuilder_tolong(struct MaxStringBuilder * buf) {
+	if (buf->count == 0) {
+		return 0;
+	}
+
+	return bbStrToLong(buf->buffer, buf->count, NULL);
+}
+
+BBUINT bmx_stringbuilder_touint(struct MaxStringBuilder * buf) {
+	if (buf->count == 0) {
+		return 0;
+	}
+
+	return bbStrToUInt(buf->buffer, buf->count, NULL);
+}
+
+BBSHORT bmx_stringbuilder_toshort(struct MaxStringBuilder * buf) {
+	if (buf->count == 0) {
+		return 0;
+	}
+
+	return bbStrToShort(buf->buffer, buf->count, NULL);
+}
+
+BBBYTE bmx_stringbuilder_tobyte(struct MaxStringBuilder * buf) {
+	if (buf->count == 0) {
+		return 0;
+	}
+
+	return bbStrToByte(buf->buffer, buf->count, NULL);
+}
+
+BBULONG bmx_stringbuilder_toulong(struct MaxStringBuilder * buf) {
+	if (buf->count == 0) {
+		return 0;
+	}
+
+	return bbStrToULong(buf->buffer, buf->count, NULL);
+}
+
+BBLONGINT bmx_stringbuilder_tolongint(struct MaxStringBuilder * buf) {
+	if (buf->count == 0) {
+		return 0;
+	}
+
+	return bbStrToLongInt(buf->buffer, buf->count, NULL);
+}
+
+BBULONGINT bmx_stringbuilder_toulongint(struct MaxStringBuilder * buf) {
+	if (buf->count == 0) {
+		return 0;
+	}
+
+	return bbStrToULongInt(buf->buffer, buf->count, NULL);
+}
+
+BBSIZET bmx_stringbuilder_tosizet(struct MaxStringBuilder * buf) {
+	if (buf->count == 0) {
+		return 0;
+	}
+
+	return bbStrToSizet(buf->buffer, buf->count, NULL);
+}
+
+BBFLOAT bmx_stringbuilder_tofloat(struct MaxStringBuilder * buf) {
+	if (buf->count == 0) {
+		return 0;
+	}
+
+	return bbStrToFloat(buf->buffer, buf->count, NULL);
+}
+
+BBDOUBLE bmx_stringbuilder_todouble(struct MaxStringBuilder * buf) {
+	if (buf->count == 0) {
+		return 0;
+	}
+
+	return bbStrToDouble(buf->buffer, buf->count, NULL);
+}
+
 /* ----------------------------------------------------- */
 
 int bmx_stringbuilder_splitbuffer_length(struct MaxSplitBuffer * buf) {
@@ -1101,23 +1189,7 @@ int bmx_stringbuilder_splitbuffer_toint(struct MaxSplitBuffer * splitBuffer, int
 
     BBChar *segment = (BBChar *)&(splitBuffer->buffer->buffer[start]);
 
-	char numbuf[256];
-	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
-
-    char *endPtr;
-    errno = 0;
-    long result = strtol(numbuf, &endPtr, 10);
-
-    // Make sure that endPtr does not exceed the bounds of the segment
-    if (endPtr > numbuf + length) {
-        return 0;
-    }
-
-    if (errno == ERANGE || result > INT_MAX || result < INT_MIN || endPtr == numbuf) {
-        return 0;
-    }
-
-    return (int)result;
+	return bbStrToInt(segment, length, NULL);
 }
 
 unsigned int bmx_stringbuilder_splitbuffer_touint(struct MaxSplitBuffer * splitBuffer, int index) {
@@ -1135,18 +1207,7 @@ unsigned int bmx_stringbuilder_splitbuffer_touint(struct MaxSplitBuffer * splitB
 
     BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
-	char numbuf[256];
-	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
-
-    char *endPtr;
-    errno = 0;
-    unsigned long result = strtoul(numbuf, &endPtr, 10);
-
-    if (endPtr > numbuf + length || errno == ERANGE || endPtr == numbuf || result > UINT_MAX) {
-        return 0;
-    }
-
-    return (unsigned int)result;
+	return bbStrToUInt(segment, length, NULL);
 }
 
 float bmx_stringbuilder_splitbuffer_tofloat(struct MaxSplitBuffer * splitBuffer, int index) {
@@ -1164,18 +1225,7 @@ float bmx_stringbuilder_splitbuffer_tofloat(struct MaxSplitBuffer * splitBuffer,
 
     BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
-	char numbuf[256];
-	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
-
-    char *endPtr;
-    errno = 0;
-    float result = strtof(numbuf, &endPtr);
-
-    if (endPtr > numbuf + length || errno == ERANGE || endPtr == numbuf) {
-        return 0.0f;
-    }
-
-    return result;
+	return bbStrToFloat(segment, length, NULL);
 }
 
 double bmx_stringbuilder_splitbuffer_todouble(struct MaxSplitBuffer * splitBuffer, int index) {
@@ -1192,19 +1242,8 @@ double bmx_stringbuilder_splitbuffer_todouble(struct MaxSplitBuffer * splitBuffe
     }
 
     BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
-	
-	char numbuf[256];
-	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
 
-    char *endPtr;
-    errno = 0;
-    double result = strtod(numbuf, &endPtr);
-
-    if (endPtr > numbuf + length || errno == ERANGE || endPtr == numbuf) {
-        return 0.0;
-    }
-
-    return result;
+	return bbStrToDouble(segment, length, NULL);
 }
 
 BBInt64 bmx_stringbuilder_splitbuffer_tolong(struct MaxSplitBuffer * splitBuffer, int index) {
@@ -1222,18 +1261,7 @@ BBInt64 bmx_stringbuilder_splitbuffer_tolong(struct MaxSplitBuffer * splitBuffer
 
     BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
-	char numbuf[256];
-	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
-
-    char *endPtr;
-    errno = 0;
-    BBInt64 result = strtoll(numbuf, &endPtr, 10);
-
-    if (endPtr > numbuf + length || errno == ERANGE || endPtr == numbuf) {
-        return 0;
-    }
-
-    return result;
+	return bbStrToLong(segment, length, NULL);
 }
 
 BBUInt64 bmx_stringbuilder_splitbuffer_toulong(struct MaxSplitBuffer * splitBuffer, int index) {
@@ -1251,18 +1279,7 @@ BBUInt64 bmx_stringbuilder_splitbuffer_toulong(struct MaxSplitBuffer * splitBuff
 
     BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
-	char numbuf[256];
-	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
-
-    char *endPtr;
-    errno = 0;
-    BBUInt64 result = strtoull(numbuf, &endPtr, 10);
-
-    if (endPtr > numbuf + length || errno == ERANGE || endPtr == numbuf) {
-        return 0;
-    }
-
-    return result;
+	return bbStrToULong(segment, length, NULL);
 }
 
 size_t bmx_stringbuilder_splitbuffer_tosizet(struct MaxSplitBuffer * splitBuffer, int index) {
@@ -1280,18 +1297,7 @@ size_t bmx_stringbuilder_splitbuffer_tosizet(struct MaxSplitBuffer * splitBuffer
 
     BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
-	char numbuf[256];
-	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
-
-    char *endPtr;
-    errno = 0;
-    unsigned long long result = strtoull(numbuf, &endPtr, 10);
-
-    if (endPtr > numbuf + length || errno == ERANGE || endPtr == numbuf) {
-        return 0;
-    }
-
-    return (size_t)result;
+	return bbStrToSizet(segment, length, NULL);
 }
 
 BBSHORT bmx_stringbuilder_splitbuffer_toshort(struct MaxSplitBuffer * splitBuffer, int index) {
@@ -1309,18 +1315,7 @@ BBSHORT bmx_stringbuilder_splitbuffer_toshort(struct MaxSplitBuffer * splitBuffe
 
     BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
-	char numbuf[256];
-	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
-
-    char *endPtr;
-    errno = 0;
-    long result = strtol(numbuf, &endPtr, 10);
-
-    if (endPtr > numbuf + length || errno == ERANGE || endPtr == numbuf || result < 0 || result > USHRT_MAX) {
-        return 0;
-    }
-
-    return (BBSHORT)result;
+	return bbStrToShort(segment, length, NULL);
 }
 
 BBBYTE bmx_stringbuilder_splitbuffer_tobyte(struct MaxSplitBuffer * splitBuffer, int index) {
@@ -1338,16 +1333,5 @@ BBBYTE bmx_stringbuilder_splitbuffer_tobyte(struct MaxSplitBuffer * splitBuffer,
 
     BBChar *segment = (BBChar *) &(splitBuffer->buffer->buffer[start]);
 
-	char numbuf[256];
-	bmx_stringbuilder_toutf8_sbuffer(segment, length, numbuf, sizeof(numbuf));
-
-    char *endPtr;
-    errno = 0;
-    long result = strtol(numbuf, &endPtr, 10);
-
-    if (endPtr > numbuf + length || errno == ERANGE || endPtr == numbuf || result < 0 || result > UCHAR_MAX) {
-        return 0;
-    }
-
-    return (BBBYTE)result;
+	return bbStrToByte(segment, length, NULL);
 }

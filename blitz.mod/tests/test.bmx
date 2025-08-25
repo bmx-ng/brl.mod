@@ -478,3 +478,587 @@ Type TStringFromUTF8BytesTest Extends TTest
     End Method
 	
 End Type
+
+Extern
+	Function bbStrToInt:Int(s:Short Ptr, length:Int, end_index:Int Ptr)="int bbStrToInt(const BBChar *,int,int*)"
+	Function bbStrToLong:Long(s:Short Ptr, length:Int, end_index:Int Ptr)="BBLONG bbStrToLong(const BBChar *,int,int*)"
+	Function bbStrToUInt:UInt(s:Short Ptr, length:Int, end_index:Int Ptr)="BBUINT bbStrToUInt(const BBChar *,int,int*)"
+	Function bbStrToShort:Short(s:Short Ptr, length:Int, end_index:Int Ptr)="BBSHORT bbStrToShort(const BBChar *,int,int*)"
+	Function bbStrToByte:Byte(s:Short Ptr, length:Int, end_index:Int Ptr)="BBBYTE bbStrToByte(const BBChar *,int,int*)"
+	Function bbStrToULong:ULong(s:Short Ptr, length:Int, end_index:Int Ptr)="BBULONG bbStrToULong(const BBChar *,int,int*)"
+End Extern
+
+Const INT_MAX:Int = 2147483647
+Const INT_MIN:Int = -2147483648
+
+' Set this to False if your C parser stops updating end_index on overflow (i.e., leaves it on the last valid digit).
+Const OVERFLOW_CONSUMES_ALL_DIGITS:Int = True
+
+Type TIntCase
+	Field s:String
+	Field expected:Int
+	Field consumed:Int
+	Field isOverflow:Int  ' 1 if this row expects overflow clamping
+
+	Method New(s:String, expected:Int, consumed:Int, isOverflow:Int = False)
+		self.s = s
+		self.expected = expected
+		self.consumed = consumed
+		self.isOverflow = isOverflow
+	End Method
+
+	' Adjust consumed for implementations that don't advance end_index across overflow digits.
+	Method AdjustConsumed:Int()
+		If isOverflow And Not OVERFLOW_CONSUMES_ALL_DIGITS Then Return consumed - 1
+		Return consumed
+	End Method
+
+	Method ParseWithBBInt:Int(consumed:Int Var)
+		' Prepare UTF-16 buffer
+		Local n:Size_t = s.Length + 1
+		Local buf:Short[] = New Short[n]
+		s.ToWStringBuffer(buf, n)
+		' Call the native parser
+		Local end_index:Int = -1
+		Local value:Int = bbStrToInt(buf, Int(n), VarPtr end_index)
+
+		consumed = end_index
+		Return value
+	End Method
+End Type
+
+Const LONG_MAX:Long = (Long(1) Shl 63) - 1
+Const LONG_MIN:Long = - (Long(1) Shl 63)
+
+Type TLongCase
+	Field s:String
+	Field expected:Long
+	Field consumed:Int
+	Field isOverflow:Int  ' 1 if this row expects overflow clamping
+
+	Method New(s:String, expected:Long, consumed:Int, isOverflow:Int = False)
+		Self.s = s
+		Self.expected = expected
+		Self.consumed = consumed
+		Self.isOverflow = isOverflow
+	End Method
+
+	' Adjust consumed for implementations that don't advance end_index across overflow digits.
+	Method AdjustConsumed:Int()
+		If isOverflow And Not OVERFLOW_CONSUMES_ALL_DIGITS Then Return consumed - 1
+		Return consumed
+	End Method
+
+	Method ParseWithBBLong:Long(consumed:Int Var)
+		' Prepare UTF-16 buffer (+1 for NUL)
+		Local n:Size_t = s.Length + 1
+		Local buf:Short[] = New Short[n]
+		s.ToWStringBuffer(buf, n)
+
+		' Call the native parser
+		Local end_index:Int = -1
+		Local value:Long = bbStrToLong(buf, Int(n), VarPtr end_index)
+
+		consumed = end_index
+		Return value
+	End Method
+End Type
+
+Type TUIntCase
+	Field s:String
+	Field expected:UInt
+	Field consumed:Int
+	Field isOverflow:Int  ' treat as overflow/out-of-range (end_index rules may differ)
+
+	Method New(s:String, expected:UInt, consumed:Int, isOverflow:Int = False)
+		Self.s = s
+		Self.expected = expected
+		Self.consumed = consumed
+		Self.isOverflow = isOverflow
+	End Method
+
+	' Adjust consumed if your C impl stops at last valid digit instead of scanning all digits.
+	Method AdjustConsumed:Int()
+		If isOverflow And Not OVERFLOW_CONSUMES_ALL_DIGITS Then Return consumed - 1
+		Return consumed
+	End Method
+
+	Method ParseWithBBUInt:UInt(consumed:Int Var)
+		' Prepare UTF-16 buffer (+1 for NUL)
+		Local n:Size_t = s.Length + 1
+		Local buf:Short[] = New Short[n]
+		s.ToWStringBuffer(buf, n)
+
+		' Call the native parser
+		Local end_index:Int = -1
+		Local value:UInt = bbStrToUInt(buf, Int(n), VarPtr end_index)
+
+		consumed = end_index
+		Return value
+	End Method
+End Type
+
+Type TShortCase
+	Field s:String
+	Field expected:Short
+	Field consumed:Int
+	Field isOverflow:Int
+
+	Method New(s:String, expected:Short, consumed:Int, isOverflow:Int = False)
+		Self.s = s
+		Self.expected = expected
+		Self.consumed = consumed
+		Self.isOverflow = isOverflow
+	End Method
+
+	Method AdjustConsumed:Int()
+		If isOverflow And Not OVERFLOW_CONSUMES_ALL_DIGITS Then Return consumed - 1
+		Return consumed
+	End Method
+
+	Method ParseWithBBShort:Short(consumed:Int Var)
+		Local n:Size_t = s.Length + 1
+		Local buf:Short[] = New Short[n]
+		s.ToWStringBuffer(buf, n)
+		Local end_index:Int = -1
+		Local value:Short = bbStrToShort(buf, Int(n), VarPtr end_index)
+		consumed = end_index
+		Return value
+	End Method
+End Type
+
+Type TByteCase
+	Field s:String
+	Field expected:Byte
+	Field consumed:Int
+	Field isOverflow:Int
+
+	Method New(s:String, expected:Byte, consumed:Int, isOverflow:Int = False)
+		Self.s = s
+		Self.expected = expected
+		Self.consumed = consumed
+		Self.isOverflow = isOverflow
+	End Method
+
+	Method AdjustConsumed:Int()
+		If isOverflow And Not OVERFLOW_CONSUMES_ALL_DIGITS Then Return consumed - 1
+		Return consumed
+	End Method
+
+	Method ParseWithBBByte:Byte(consumed:Int Var)
+		Local n:Size_t = s.Length + 1
+		Local buf:Short[] = New Short[n]
+		s.ToWStringBuffer(buf, n)
+		Local end_index:Int = -1
+		Local value:Byte = bbStrToByte(buf, Int(n), VarPtr end_index)
+		consumed = end_index
+		Return value
+	End Method
+End Type
+
+Const UL64_MAX:ULong = ULong(-1)  ' 0xFFFFFFFFFFFFFFFF
+
+Type TULongCase
+	Field s:String
+	Field expected:ULong
+	Field consumed:Int
+	Field isOverflow:Int
+
+	Method New(s:String, expected:ULong, consumed:Int, isOverflow:Int = False)
+		Self.s = s
+		Self.expected = expected
+		Self.consumed = consumed
+		Self.isOverflow = isOverflow
+	End Method
+
+	Method AdjustConsumed:Int()
+		If isOverflow And Not OVERFLOW_CONSUMES_ALL_DIGITS Then Return consumed - 1
+		Return consumed
+	End Method
+
+	Method ParseWithBBULong:ULong(consumed:Int Var)
+		Local n:Size_t = s.Length + 1
+		Local buf:Short[] = New Short[n]
+		s.ToWStringBuffer(buf, n)
+		Local end_index:Int = -1
+		Local value:ULong = bbStrToULong(buf, Int(n), VarPtr end_index)
+		consumed = end_index
+		Return value
+	End Method
+End Type
+
+Function RepeatChar:String(ch:String, count:Int)
+	Local s:String = ""
+	For Local i:Int = 0 Until count
+		s :+ ch
+	Next
+	Return s
+End Function
+
+Type TStringToNumStrToNumTest Extends TTest
+
+		' Safer equality for ULong without relying on string/overloads.
+	Function AssertULongEquals(expected:ULong, actual:ULong, msg:String)
+		assertEquals(Int(expected Shr 32), Int(actual Shr 32), msg + " (hi)")
+		assertEquals(Int(expected & $FFFFFFFF), Int(actual & $FFFFFFFF), msg + " (lo)")
+	End Function
+
+	Method test_ToInt_All() { test }
+		Local cases:TIntCase[] = [ ..
+			..' --- Decimal (base 10)
+			New TIntCase("0",                      0,                  1),
+			New TIntCase("123",                    123,                3),
+			New TIntCase("-123",                   -123,               4),
+			New TIntCase("   +42",                 42,                 6),
+			New TIntCase("   -0",                  0,                  5),
+			New TIntCase("00123",                  123,                5),
+			New TIntCase("123abc",                 123,                3),
+			New TIntCase("123   ",                 123,                3),
+
+			' Exact limits
+			New TIntCase("2147483647",             INT_MAX,            10),
+			New TIntCase("-2147483648",            INT_MIN,            11),
+
+			' Overflows (clamp; mark with isOverflow=1)
+			New TIntCase("2147483648",             INT_MAX,            10, True),
+			New TIntCase("-2147483649",            INT_MIN,            11, True),
+
+			' Errors (no digits)
+			New TIntCase("",                       0,                  0),
+			New TIntCase("   ",                    0,                  0),
+			New TIntCase("+",                      0,                  0),
+			New TIntCase("-",                      0,                  0),
+			New TIntCase("abc",                    0,                  0),
+
+			' --- Hex with $ (base 16)
+			New TIntCase("$7FFFFFFF",              INT_MAX,            9),
+			New TIntCase("-$80000000",             INT_MIN,            10),
+			New TIntCase("$80000000",              INT_MAX,            9,  True),     ' +2^31 overflows
+			New TIntCase("-$80000001",             INT_MIN,            10, True),     ' -(2^31+1) overflows
+			New TIntCase("$7fffffff",              INT_MAX,            9),            ' lowercase
+			New TIntCase("   $1a",                 26,                 6),
+			New TIntCase("$",                      0,                  0),            ' no digits after prefix
+			New TIntCase("$G1",                    0,                  0),            ' first is invalid -> no digits
+			New TIntCase("$FFxyz",                 255,                3),            ' stops at first invalid
+
+			' --- Binary with % (base 2)
+			New TIntCase("%0",                     0,                  2),
+			New TIntCase("%101010",                42,                 7),
+			New TIntCase("-%10000000000000000000000000000000", INT_MIN, 34),          ' -2^31
+			New TIntCase("%10000000000000000000000000000000",  INT_MAX, 33, True),    ' +2^31 overflows
+			New TIntCase("%1002",                  4,                  4),            ' stops at '2'
+			New TIntCase("%",                      0,                  0),            ' no digits after prefix
+			New TIntCase("   %101",                5,                  7),
+
+			' --- With +sign and prefixes
+			New TIntCase("+$7fffffff",             INT_MAX,            10),
+			New TIntCase("+%101",                  5,                  5),
+
+			' --- Trailing junk after signed number
+			New TIntCase("-42xyz",                 -42,                3)..
+		]
+
+		For Local t:TIntCase = EachIn cases
+			Local gotConsumed:Int
+			Local gotValue:Int = t.ParseWithBBInt(gotConsumed)
+			Local expectConsumed:Int = t.AdjustConsumed()
+
+			assertEquals(expectConsumed, gotConsumed, "consumed mismatch for '"+t.s+"'")
+			assertEquals(t.expected, gotValue, "value mismatch for '"+t.s+"'")
+		Next
+	End Method
+
+	Method test_ToLong_All() { test }
+		' Build the 64-bit binary limit strings:
+		' -%1 + 63 zeros  (=-2^63) and  %1 + 63 zeros (=+2^63, overflow)
+		Local z63:String = "0000000000000000000000000000000" + "00000000000000000000000000000000" ' 31 + 32 = 63 zeros
+		Local BIN64_MIN:String = "-%1" + z63
+		Local BIN64_POS_OVF:String = "%1" + z63
+
+		Local cases:TLongCase[] = [..
+			..' --- Decimal (base 10)
+			New TLongCase("0",                        0,                    1),
+			New TLongCase("123",                      123,                  3),
+			New TLongCase("-123",                     -123,                 4),
+			New TLongCase("   +42",                   42,                   6),
+			New TLongCase("   -0",                    0,                    5),
+			New TLongCase("00123",                    123,                  5),
+			New TLongCase("123abc",                   123,                  3),
+			New TLongCase("123   ",                   123,                  3),
+
+			' Exact 64-bit limits
+			New TLongCase("9223372036854775807",      LONG_MAX,             19),
+			New TLongCase("-9223372036854775808",     LONG_MIN,             20),
+
+			' Overflows (clamp; mark with isOverflow=1)
+			New TLongCase("9223372036854775808",      LONG_MAX,             19, True),
+			New TLongCase("-9223372036854775809",     LONG_MIN,             20, True),
+
+			' Errors (no digits)
+			New TLongCase("",                         0,                    0),
+			New TLongCase("   ",                      0,                    0),
+			New TLongCase("+",                        0,                    0),
+			New TLongCase("-",                        0,                    0),
+			New TLongCase("abc",                      0,                    0),
+
+			' --- Hex with $ (base 16)
+			New TLongCase("$7FFFFFFFFFFFFFFF",        LONG_MAX,             17),
+			New TLongCase("-$8000000000000000",       LONG_MIN,             18),
+			New TLongCase("$8000000000000000",        LONG_MAX,             17, True), ' +2^63 overflows
+			New TLongCase("-$8000000000000001",       LONG_MIN,             18, True), ' -(2^63+1) overflows
+			New TLongCase("$7fffffffffffffff",        LONG_MAX,             17),       ' lowercase
+			New TLongCase("   $1a",                   26,                   6),
+			New TLongCase("$",                        0,                    0),        ' no digits after prefix
+			New TLongCase("$G1",                      0,                    0),        ' first is invalid -> no digits
+			New TLongCase("$FFxyz",                   255,                  3),        ' stops at first invalid
+
+			' --- Binary with % (base 2)
+			New TLongCase("%0",                       0,                    2),
+			New TLongCase("%101010",                  42,                   7),
+			New TLongCase(BIN64_MIN,                  LONG_MIN,             66),       ' -2^63
+			New TLongCase(BIN64_POS_OVF,              LONG_MAX,             65, True), ' +2^63 overflows
+			New TLongCase("%1002",                    4,                    4),        ' stops at '2'
+			New TLongCase("%",                        0,                    0),        ' no digits after prefix
+			New TLongCase("   %101",                  5,                    7),
+
+			' --- With +sign and prefixes
+			New TLongCase("+$7fffffffffffffff",       LONG_MAX,             18),
+			New TLongCase("+%101",                    5,                    5),
+
+			' --- Trailing junk after signed number
+			New TLongCase("-42xyz",                   -42,                  3)..
+		]
+
+		For Local t:TLongCase = EachIn cases
+			Local gotConsumed:Int
+			Local gotValue:Long = t.ParseWithBBLong(gotConsumed)
+			Local expectConsumed:Int = t.AdjustConsumed()
+
+			assertEquals(expectConsumed, gotConsumed, "consumed mismatch for '"+t.s+"'")
+			assertEquals(t.expected, gotValue, "value mismatch for '"+t.s+"'")
+		Next
+	End Method
+
+	Method test_ToUInt_All() { test }
+		' Prebuilt strings for 32-bit edges
+		Local BIN32_MAX:String = "%11111111111111111111111111111111" ' 32 ones
+		Local zeros32:String = "00000000000000000000000000000000"  ' 32 zeros
+		Local BIN32_POS_OVF:String = "%1" + zeros32                   ' 2^32 -> overflow
+
+		Local cases:TUIntCase[] = [..
+			..' --- Decimal (base 10)
+			New TUIntCase("0",                       UInt(0),                 1),
+			New TUIntCase("123",                     UInt(123),               3),
+			New TUIntCase("+123",                    UInt(123),               4),
+			New TUIntCase("   +42",                  UInt(42),                6),
+			New TUIntCase("   -0",                   UInt(0),                 5),     ' -0 is still 0
+			New TUIntCase("00123",                   UInt(123),               5),
+			New TUIntCase("123abc",                  UInt(123),               3),
+			New TUIntCase("123   ",                  UInt(123),               3),
+
+			' Range edges
+			New TUIntCase("2147483647",              UInt($7FFFFFFF),         10),    ' INT_MAX fits in UInt
+			New TUIntCase("2147483648",              UInt($80000000),         10),    ' 2^31 fits
+			New TUIntCase("4294967295",              UInt($FFFFFFFF),         10),    ' UINT_MAX
+			New TUIntCase("4294967296",              UInt(0),                 10, True), ' overflow -> 0
+
+			' Negatives are out-of-range (wrapper returns 0) but digits are consumed
+			New TUIntCase("-1",                      UInt(0),                 2,  True),
+			New TUIntCase("-",                       UInt(0),                 0),
+			New TUIntCase("+",                       UInt(0),                 0),
+
+			' Errors (no digits)
+			New TUIntCase("",                        UInt(0),                 0),
+			New TUIntCase("   ",                     UInt(0),                 0),
+			New TUIntCase("abc",                     UInt(0),                 0),
+
+			' --- Hex with $ (base 16)
+			New TUIntCase("$0",                      UInt(0),                 2),
+			New TUIntCase("$FFFFFFFF",               UInt($FFFFFFFF),         9),
+			New TUIntCase("$7FFFFFFF",               UInt($7FFFFFFF),         9),
+			New TUIntCase("$80000000",               UInt($80000000),         9),
+			New TUIntCase("$100000000",              UInt(0),                 10, True),   ' 0x1_0000_0000 overflow
+			New TUIntCase("-$1",                     UInt(0),                 3,  True),   ' negative -> out-of-range
+			New TUIntCase("$7fffffff",               UInt($7FFFFFFF),         9),         ' lowercase
+			New TUIntCase("   $1a",                  UInt(26),                6),
+			New TUIntCase("$",                       UInt(0),                 0),         ' no digits after prefix
+			New TUIntCase("$G1",                     UInt(0),                 0),         ' first is invalid -> no digits
+			New TUIntCase("$FFxyz",                  UInt(255),               3),         ' stops at first invalid
+			New TUIntCase("+$FFFFFFFF",              UInt($FFFFFFFF),         10),
+
+			' --- Binary with % (base 2)
+			New TUIntCase("%0",                      UInt(0),                 2),
+			New TUIntCase("%101010",                 UInt(42),                7),
+			New TUIntCase(BIN32_MAX,                 UInt($FFFFFFFF),         33),       ' 32 ones
+			New TUIntCase("%10000000000000000000000000000000", UInt($80000000), 33),     ' 2^31
+			New TUIntCase(BIN32_POS_OVF,             UInt(0),                 34, True), ' 2^32 -> overflow
+			New TUIntCase("%1002",                   UInt(4),                 4),        ' stops at '2'
+			New TUIntCase("%",                       UInt(0),                 0),        ' no digits after prefix
+			New TUIntCase("   %101",                 UInt(5),                 7),
+			New TUIntCase("+%101",                   UInt(5),                 5),
+			New TUIntCase("-%1",                     UInt(0),                 3,  True)..  ' negative -> out-of-range
+		]
+
+		For Local t:TUIntCase = EachIn cases
+			Local gotConsumed:Int
+			Local gotValue:UInt = t.ParseWithBBUInt(gotConsumed)
+			Local expectConsumed:Int = t.AdjustConsumed()
+
+			assertEquals(expectConsumed, gotConsumed, "consumed mismatch for '"+t.s+"'")
+			' Cast to Long in assertion to avoid any UInt overload ambiguity
+			assertEquals(Long(t.expected), Long(gotValue), "value mismatch for '"+t.s+"'")
+		Next
+	End Method
+
+	Method test_ToShort_All() { test }
+		Local BIN16_MAX:String = "%" + RepeatChar("1", 16)
+		Local BIN16_POS_OVF:String = "%1" + RepeatChar("0", 16)  ' 2^16
+
+		Local cases:TShortCase[] = [..
+			..' Decimal
+			New TShortCase("0",           Short(0),       1),
+			New TShortCase("65535",       Short(65535),   5),
+			New TShortCase("65536",       Short(0),       5, True),
+			New TShortCase("123abc",      Short(123),     3),
+			New TShortCase("   +42",      Short(42),      6),
+			New TShortCase("-1",          Short(0),       2, True),
+
+			' Errors
+			New TShortCase("",            Short(0),       0),
+			New TShortCase("   ",         Short(0),       0),
+			New TShortCase("+",           Short(0),       0),
+			New TShortCase("-",           Short(0),       0),
+			New TShortCase("abc",         Short(0),       0),
+
+			' Hex ($)
+			New TShortCase("$0",          Short(0),       2),
+			New TShortCase("$FFFF",       Short(65535),   5),
+			New TShortCase("$10000",      Short(0),       6, True),
+			New TShortCase("$fffe",       Short(65534),   5),
+			New TShortCase("+$00FF",      Short(255),     6),
+			New TShortCase("-$1",         Short(0),       3, True),
+			New TShortCase("$",           Short(0),       0),
+			New TShortCase("$G1",         Short(0),       0),
+			New TShortCase("$FFxyz",      Short(255),     3),
+
+			' Binary (%)
+			New TShortCase("%0",          Short(0),       2),
+			New TShortCase("%1111111111111111", Short(65535), 17),
+			New TShortCase(BIN16_POS_OVF, Short(0),       18, True),
+			New TShortCase("%1002",       Short(4),       4),
+			New TShortCase("%",           Short(0),       0),
+			New TShortCase("   %101",     Short(5),       7)..
+		]
+
+		For Local t:TShortCase = EachIn cases
+			Local gotConsumed:Int
+			Local gotValue:Short = t.ParseWithBBShort(gotConsumed)
+			assertEquals(t.AdjustConsumed(), gotConsumed, "consumed mismatch for '"+t.s+"'")
+			assertEquals(Int(t.expected), Int(gotValue), "value mismatch for '"+t.s+"'")
+		Next
+	End Method
+
+	Method test_ToByte_All() { test }
+		Local BIN8_MAX:String = "%" + RepeatChar("1", 8)
+		Local BIN8_POS_OVF:String = "%1" + RepeatChar("0", 8)   ' 2^8
+
+		Local cases:TByteCase[] = [..
+			..' Decimal
+			New TByteCase("0",        Byte(0),     1),
+			New TByteCase("255",      Byte(255),   3),
+			New TByteCase("256",      Byte(0),     3, True),
+			New TByteCase("123abc",   Byte(123),   3),
+			New TByteCase("   +42",   Byte(42),    6),
+			New TByteCase("-1",       Byte(0),     2, True),
+
+			' Errors
+			New TByteCase("",         Byte(0),     0),
+			New TByteCase("   ",      Byte(0),     0),
+			New TByteCase("+",        Byte(0),     0),
+			New TByteCase("-",        Byte(0),     0),
+			New TByteCase("abc",      Byte(0),     0),
+
+			' Hex ($)
+			New TByteCase("$0",       Byte(0),     2),
+			New TByteCase("$FF",      Byte(255),   3),
+			New TByteCase("$100",     Byte(0),     4, True),
+			New TByteCase("$7f",      Byte(127),   3),
+			New TByteCase("+$0A",     Byte(10),    4),
+			New TByteCase("-$1",      Byte(0),     3, True),
+			New TByteCase("$",        Byte(0),     0),
+			New TByteCase("$G1",      Byte(0),     0),
+			New TByteCase("$FFxyz",   Byte(255),   3),
+
+			' Binary (%)
+			New TByteCase("%0",       Byte(0),     2),
+			New TByteCase(BIN8_MAX,   Byte(255),   9),
+			New TByteCase(BIN8_POS_OVF, Byte(0),   10, True),
+			New TByteCase("%1002",    Byte(4),     4),
+			New TByteCase("%",        Byte(0),     0),
+			New TByteCase("   %1010", Byte(10),    8),
+			New TByteCase("+%1010",   Byte(10),    6)..
+		]
+
+		For Local t:TByteCase = EachIn cases
+			Local gotConsumed:Int
+			Local gotValue:Byte = t.ParseWithBBByte(gotConsumed)
+			assertEquals(t.AdjustConsumed(), gotConsumed, "consumed mismatch for '"+t.s+"'")
+			assertEquals(Int(t.expected), Int(gotValue), "value mismatch for '"+t.s+"'")
+		Next
+	End Method
+
+		Method test_ToULong_All() { test }
+		Local decMax:String = "18446744073709551615"      ' 2^64 - 1
+		Local decOvf:String = "18446744073709551616"      ' 2^64
+
+		Local BIN64_MAX:String = "%" + RepeatChar("1", 64)
+		Local BIN64_POS_OVF:String = "%1" + RepeatChar("0", 64)
+
+		Local cases:TULongCase[] = [..
+			..' Decimal
+			New TULongCase("0",                 ULong(0),         1),
+			New TULongCase("123",               ULong(123),       3),
+			New TULongCase("   +42",            ULong(42),        6),
+			New TULongCase(decMax,              UL64_MAX,        20),
+			New TULongCase(decOvf,              UL64_MAX,        20, True),  ' clamp on overflow
+
+			' Accept leading '-' with wrap (POSIX strtoul style)
+			New TULongCase("-1",                UL64_MAX,         2),
+			New TULongCase("-0",                ULong(0),         2),
+
+			' Errors
+			New TULongCase("",                  ULong(0),         0),
+			New TULongCase("   ",               ULong(0),         0),
+			New TULongCase("+",                 ULong(0),         0),
+			New TULongCase("-",                 ULong(0),         0),
+			New TULongCase("abc",               ULong(0),         0),
+
+			' Hex ($)
+			New TULongCase("$0",                ULong(0),         2),
+			New TULongCase("$FFFFFFFFFFFFFFFF", UL64_MAX,        17),
+			New TULongCase("$10000000000000000", UL64_MAX,       18, True),  ' overflow
+			New TULongCase("-$1",               UL64_MAX,         3),        ' wrap
+			New TULongCase("$FFxyz",            ULong(255),       3),
+			New TULongCase("$",                 ULong(0),         0),
+			New TULongCase("$G1",               ULong(0),         0),
+			New TULongCase("+$FFFFFFFFFFFFFFFF", UL64_MAX,       18),
+
+			' Binary (%)
+			New TULongCase("%0",                ULong(0),         2),
+			New TULongCase(BIN64_MAX,           UL64_MAX,        65),
+			New TULongCase(BIN64_POS_OVF,       UL64_MAX,        66, True),
+			New TULongCase("-%1",               UL64_MAX,         3),        ' wrap
+			New TULongCase("%1002",             ULong(4),         4),
+			New TULongCase("%",                 ULong(0),         0),
+			New TULongCase("   %101",           ULong(5),         7)..
+		]
+
+		For Local t:TULongCase = EachIn cases
+			Local gotConsumed:Int
+			Local gotValue:ULong = t.ParseWithBBULong(gotConsumed)
+			assertEquals(t.AdjustConsumed(), gotConsumed, "consumed mismatch for '"+t.s+"'")
+			AssertULongEquals(t.expected, gotValue, "value mismatch for '"+t.s+"'")
+		Next
+	End Method
+
+End Type

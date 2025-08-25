@@ -1,4 +1,4 @@
-' Copyright (c) 2018-2024 Bruce A Henderson
+' Copyright (c) 2018-2025 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -84,6 +84,17 @@ Extern
 	Function bmx_stringbuilder_hash:ULong(buffer:Byte Ptr)
 	Function bmx_stringbuilder_append_utf32string(buffer:Byte Ptr, chars:UInt Ptr)
 	Function bmx_stringbuilder_append_utf32bytes(buffer:Byte Ptr, chars:UInt Ptr, length:Int)
+	Function bmx_stringbuilder_toint:Int(buffer:Byte Ptr)
+	Function bmx_stringbuilder_tolong:Long(buffer:Byte Ptr)
+	Function bmx_stringbuilder_touint:UInt(buffer:Byte Ptr)
+	Function bmx_stringbuilder_toshort:Short(buffer:Byte Ptr)
+	Function bmx_stringbuilder_tobyte:Byte(buffer:Byte Ptr)
+	Function bmx_stringbuilder_toulong:ULong(buffer:Byte Ptr)
+	Function bmx_stringbuilder_tolongint:LongInt(buffer:Byte Ptr)
+	Function bmx_stringbuilder_toulongint:ULongInt(buffer:Byte Ptr)
+	Function bmx_stringbuilder_tosizet:Size_T(buffer:Byte Ptr)
+	Function bmx_stringbuilder_tofloat:Float(buffer:Byte Ptr)
+	Function bmx_stringbuilder_todouble:Double(buffer:Byte Ptr)
 
 	Function bmx_stringbuilder_splitbuffer_length:Int(splitPtr:Byte Ptr)
 	Function bmx_stringbuilder_splitbuffer_text:String(splitPtr:Byte Ptr, index:Int)
