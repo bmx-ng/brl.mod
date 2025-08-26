@@ -124,6 +124,7 @@ Import "blitz_unicode.c"
 Import "blitz_enum.c"
 Import "blitz_coverage.c"
 Import "blitz_strto.c"
+Import "blitz_atstart.c"
 Import "blitz_string_ex.cpp"
 
 ?coverage
@@ -804,6 +805,14 @@ Function ObjectIsString:Int(obj:Object)="int bbObjectIsString(BBOBJECT)!"
 
 Function DumpObjectCounts(buffer:Byte Ptr, size:Int, includeZeros:Int)="void bbObjectDumpInstanceCounts(char *, int, int)!"
 Global CountObjectInstances:Int="bbCountInstances"
+
+Rem
+bbdoc: Adds a function to the startup queue, optionally with a priority.
+about: After all modules have been loaded, and before the main loop starts, the functions
+in the startup queue are called in order of priority, with higher priority functions being
+called first.
+End Rem
+Function AtStart:Int(func(), priority:Int = 0)="bbAtstart"
 
 End Extern
 
