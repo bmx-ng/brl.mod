@@ -110,11 +110,12 @@ Extern
 	Function bbDebugDeclIsFlagsEnum:Byte(decl:Byte Ptr)
 	Function bbDebugDeclReflectionWrapper:Byte Ptr(decl:Byte Ptr)
 	Function bbDebugDeclNext:Byte Ptr(decl:Byte Ptr)
-	
+	?x64
 	Global DebugScopePtrInt128:Byte Ptr = "debugScopePtrInt128"
 	Global DebugScopePtrFloat64:Byte Ptr = "debugScopePtrFloat64"
 	Global DebugScopePtrFloat128:Byte Ptr = "debugScopePtrFloat128"
 	Global DebugScopePtrDouble128:Byte Ptr = "debugScopePtrDouble128"
+	?
 End Extern
 
 
@@ -4069,7 +4070,7 @@ Type TTypeId Extends TMember
 	bbdoc: Get type by name
 	End Rem
 	Function ForName:TTypeId(name:String)
-		_Update
+
 		Return ForName_(name.ToLower())
 		
 		Function ForName_:TTypeId(name:String)
@@ -4162,7 +4163,6 @@ Type TTypeId Extends TMember
 	bbdoc: Get type by object
 	End Rem	
 	Function ForObject:TTypeId(obj:Object)
-		_Update
 		Local box:TBoxedValue = TBoxedValue(obj)
 		If box Then Return box.typeId
 		Local class:Byte Ptr = bbRefGetObjectClass(obj)
@@ -4178,7 +4178,6 @@ Type TTypeId Extends TMember
 	bbdoc: Get list of all data types currently used in this program
 	End Rem
 	Function EnumTypes:TList()
-		_Update
 		Local list:TList = New TList
 		For Local t:TTypeId = EachIn _nameMap.Values()
 			list.AddLast t
@@ -4191,7 +4190,6 @@ Type TTypeId Extends TMember
 	about: Does not include array types.
 	End Rem
 	Function EnumClasses:TList()
-		_Update
 		Local list:TList = New TList
 		For Local t:TTypeId = EachIn _classMap.Values()
 			If t._super = ArrayTypeId Then Continue	' filter out Object[]
@@ -4204,7 +4202,6 @@ Type TTypeId Extends TMember
 	bbdoc: Get a list of all interface types
 	End Rem
 	Function EnumInterfaces:TList()
-		_Update
 		Local list:TList = New TList
 		For Local t:TTypeId = EachIn _interfaceMap.Values()
 			list.AddFirst t
@@ -4216,7 +4213,6 @@ Type TTypeId Extends TMember
 	bbdoc: Get a list of all struct types
 	End Rem
 	Function EnumStructs:TList()
-		_Update
 		Local list:TList = New TList
 		For Local t:TTypeId = EachIn _structMap.Values()
 			list.AddFirst t
@@ -4228,7 +4224,6 @@ Type TTypeId Extends TMember
 	bbdoc: Get a list of all enum types
 	End Rem
 	Function EnumEnums:TList()
-		_Update
 		Local list:TList = New TList
 		For Local t:TTypeId = EachIn _enumMap.Values()
 			list.AddFirst t
@@ -4367,8 +4362,12 @@ Type TTypeId Extends TMember
 		_enumMap.Insert scope, Self
 		Return Self
 	End Method
-	
-	Function _Update()
+
+	Global _inited:Int = False
+
+	Function _Initialize()
+		If _inited Then Return
+		_inited = True
 		Try
 			ReflectionMutex.Lock
 			Local ccount:Int
@@ -4536,4 +4535,5 @@ Type TTypeId Extends TMember
 	
 End Type
 
-
+' Initialize reflection system
+AtStart(TTypeId._Initialize, $FFFFFF)
