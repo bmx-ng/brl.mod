@@ -351,7 +351,7 @@ End Function
 
 Public
 
-Function TypeTagForId$(id:TTypeId)
+Function TypeTagForId:String(id:TTypeId)
 	' TODO: extern type tags (#, *#)
 	Select id
 		Case ByteTypeId      Return "b"
@@ -406,124 +406,162 @@ Function TypeTagForId$(id:TTypeId)
 	Throw "TypeTagForId error"
 End Function
 
-Function TypeIdForTag:TTypeId(ty$)
-	Select ty
-		Case "b" Return ByteTypeId
-		Case "s" Return ShortTypeId
-		Case "i" Return IntTypeId
-		Case "u" Return UIntTypeId
-		Case "l" Return LongTypeId
-		Case "y" Return ULongTypeId
-		Case "t" Return SizeTTypeId
-		Case "f" Return FloatTypeId
-		Case "d" Return DoubleTypeId
-		Case "$" Return StringTypeId
-		Case "*" Return PointerTypeId
-		Case "&" Return VarTypeId
-		Case "(" Return FunctionTypeId
-		Case ""  Return VoidTypeId
-		? Win32
-		Case "X" Return LParamTypeId
-		Case "W" Return WParamTypeId
-		? x64
-		Case "j" Return Int128TypeId
-		Case "h" Return Float64TypeId
-		Case "k" Return Float128TypeId
-		Case "m" Return Double128TypeId
-		?
-		Case "v" Return LongIntTypeId
-		Case "e" Return ULongIntTypeId
-	End Select
-	Select True
-		Case ty.StartsWith("[") ' array
-			Local dims:Int = ty.split(", ").length
-			ty = ty[ty.Find("]") + 1..]
-			Local id:TTypeId = TypeIdForTag(ty)
-			If id Then
-				id = id.ArrayType(dims)
-			End If
-			Return id
-		Case ty.StartsWith(":") Or ty.StartsWith("@") Or ty.StartsWith("/") ' class/interface or struct or enum
-			ty = ty[1..]
-			Local i:Int = ty.FindLast(".")
-			If i <> -1 ty = ty[i + 1..]
-			Return TTypeId.ForName(ty)
-		Case ty.StartsWith("*") ' pointer
-			ty = ty[1..]
-			Local id:TTypeId = TypeIdForTag(ty)
-			If id Then
-				id = id.PointerType()
-			EndIf
-			Return id
-		Case ty.StartsWith("&") ' var
-			ty = ty[1..]
-			Local id:TTypeId = TypeIdForTag(ty)
-			If id Then
-				id = id.VarType()
-			EndIf
-			Return id
-		Case ty.StartsWith("(") ' function
-			Local idx:Int
-			Local p:Int = 1
-			For idx = 1 Until ty.Length
-				If ty[idx] = "("[0] Then p :+ 1 Else If ty[idx] = ")"[0] Then p :- 1
-				If p = 0 Then Exit
-			Next
-			Local t:String[] = [ty[1..idx], ty[idx + 1..]]
-			Local retType:TTypeId = TypeIdForTag(t[1]), argTypes:TTypeId[]
-			If t[0].length > 0 Then
-				Local i:Int
-				Local b:Int
-				Local q:String = t[0]
-				Local args:TList = New TList
-				While i < q.length
-					Select q[i]
-						Case Asc(", ")
-							args.AddLast q[b..i]
-							i :+ 1
-							b = i
-						Case Asc("[")
-							i :+ 1
-							While i < q.length And q[i] = Asc(", ")
-								i :+ 1
-							Wend
-						Case Asc("(")
-							Local level:Int = 1
-							i:+1
-							While i < q.Length
-								If q[i] = Asc(", ") Then
-									If level = 0 Then 
-										Exit
-									End If
-								Else If q[i] = Asc(")") Then
-									level :- 1
-								Else If q[i] = Asc("(") Then 
-									level :+ 1
-								EndIf
-								i :+ 1
-							Wend
-						Default
-							i :+ 1
-					End Select
-				Wend
-				If b < q.Length Then args.AddLast q[b..]
-				
-				argTypes = New TTypeId[args.Count()]
-				
-				i = 0
-				For Local s:String = EachIn args
-					argTypes[i] = TypeIdForTag(s)
-					If Not argTypes[i] Then argTypes[i] = ObjectTypeId
-					i :+ 1
-				Next
-			End If
-			If Not retType Then retType = ObjectTypeId
-			'retType._functionType = Null
-			Return retType.FunctionType(argTypes)
-	End Select
-	Throw "TypeIdForTag error: ~q" + ty + "~q"
+
+Function TypeIdForTag:TTypeId(ty:String)
+	If ty.length = 0 Then Return VoidTypeId
+	
+	Local s:SSubstring = New SSubstring(ty)
+	Return TypeIdForTag(s)
 End Function
 
+
+Function TypeIdForTag:TTypeId(ty:SSubstring var)
+	If ty.length = 0
+		Return VoidTypeId
+	ElseIf ty.length = 1
+		Select ty.CharAt(0)
+			Case Asc("b") Return ByteTypeId
+			Case Asc("s") Return ShortTypeId
+			Case Asc("i") Return IntTypeId
+			Case Asc("u") Return UIntTypeId
+			Case Asc("l") Return LongTypeId
+			Case Asc("y") Return ULongTypeId
+			Case Asc("t") Return SizeTTypeId
+			Case Asc("f") Return FloatTypeId
+			Case Asc("d") Return DoubleTypeId
+			Case Asc("$") Return StringTypeId
+			Case Asc("*") Return PointerTypeId
+			Case Asc("&") Return VarTypeId
+			Case Asc("(") Return FunctionTypeId
+			? Win32
+			Case Asc("X") Return LParamTypeId
+			Case Asc("W") Return WParamTypeId
+			? x64
+			Case Asc("j") Return Int128TypeId
+			Case Asc("h") Return Float64TypeId
+			Case Asc("k") Return Float128TypeId
+			Case Asc("m") Return Double128TypeId
+			?
+			Case Asc("v") Return LongIntTypeId
+			Case Asc("e") Return ULongIntTypeId
+		End Select
+	Else
+		Select True
+			' array
+			Case ty.StartsWith("[")
+				Local commaCount:Int = ty.Count(Asc(","))
+				ty.Adjust(ty.Find("]") + 1)
+
+				Local id:TTypeId = TypeIdForTag(ty)
+				If id Then
+					id = id.ArrayType(commaCount + 1)
+				End If
+				Return id
+			' class/interface or struct or enum
+			Case ty.StartsWith(":") Or ty.StartsWith("@") Or ty.StartsWith("/")
+				ty.Adjust(1)
+				Local i:Int = ty.FindLast(Asc("."))
+				If i <> -1 Then
+					ty.Adjust(i + 1)
+				EndIf
+				
+				Return TTypeId.ForName(ty)
+			' pointer
+			Case ty.StartsWith("*")
+				ty.Adjust(1)
+				Local id:TTypeId = TypeIdForTag(ty)
+				If id Then
+					id = id.PointerType()
+				EndIf
+				Return id
+			' var
+			Case ty.StartsWith("&")
+				ty.Adjust(1)
+				Local id:TTypeId = TypeIdForTag(ty)
+				If id Then
+					id = id.VarType()
+				EndIf
+				Return id
+			Case ty.StartsWith("(") ' function
+				Local idx:Int
+				Local p:Int = 1
+				For idx = 1 Until ty.Length
+					Local charAtIndex:Int = ty.CharAt(idx)
+					If charAtIndex = Asc("(") Then p :+ 1 Else If charAtIndex = Asc(")") Then p :- 1
+					If p = 0 Then Exit
+				Next
+				Local t0:SSubstring = ty.Substring(1, idx - 1)
+				Local t1:SSubstring = ty.Substring(idx + 1)
+
+				Local retType:TTypeId = TypeIdForTag(t1)
+				Local argTypes:TTypeId[]
+				If t0.length > 0 Then
+					Local i:Int
+					Local b:Int
+					local argsArr:SSubstring[4] '4 looks like a good average
+					local argCount:Int = 0
+
+					While i < t0.length
+						Local charAtIndex:Int = t0.CharAt(i)
+						Select charAtIndex
+							Case Asc(",")
+								if argsArr.length = argCount Then argsArr = argsArr[.. (argsArr.length * 1.5 + 1)]
+								argsArr[argCount] = t0.Substring(b, i - b)
+								argCount :+ 1
+								i :+ 1
+								b = i
+							Case Asc("[")
+								i :+ 1
+								While i < t0.length And t0.CharAt(i) = Asc(",")
+									i :+ 1
+								Wend
+							Case Asc("(")
+								Local level:Int = 1
+								i:+1
+								While i < t0.Length
+									Local charAtIndex:Int = t0.CharAt(i) 
+									If charAtIndex = Asc(",") Then
+										If level = 0 Then 
+											Exit
+										End If
+									Else If charAtIndex = Asc(")") Then
+										level :- 1
+									Else If charAtIndex = Asc("(") Then 
+										level :+ 1
+									EndIf
+									i :+ 1
+								Wend
+							Default
+								i :+ 1
+						End Select
+					Wend
+					If b < t0.Length 
+						if argsArr.length <= argCount Then argsArr = argsArr[.. (argCount +1)]
+						argsArr[argCount] = t0.Substring(b)
+						argCount :+ 1
+					EndIf
+					argTypes = New TTypeId[argCount]
+					
+
+					i = 0
+					For Local argIndex:int = 0 until argCount
+						If argsArr[argIndex].length = 0 Then Throw "Reflection.TypeIdForTag - got empty arg!"
+
+						argTypes[argIndex] = TypeIdForTag(argsArr[argIndex])
+						If Not argTypes[argIndex] Then argTypes[argIndex] = ObjectTypeId
+
+						i :+ 1
+					Next
+
+
+				End If
+				If Not retType Then retType = ObjectTypeId
+
+				Return retType.FunctionType(argTypes)
+		End Select
+	EndIf
+	Throw "TypeIdForTag error: ~q" + ty.ToString() + "~q"
+End Function
 
 
 Private
@@ -4079,24 +4117,35 @@ Type TTypeId Extends TMember
 	Rem
 	bbdoc: Get type by name
 	End Rem
-	Function ForName:TTypeId(name:String)
+	Function ForName_OLD:TTypeId(name:String)
 		_Update
-		Return ForName_(name.ToLower())
+		Local t:TTypeID = ForName_(name.ToLower())
+		
+'		Local s:SSubstring = New SSubstring(name)
+'		Local tComp:TTypeID = ForName_New(s)
+'		if t <> tComp Then throw "name: "+ name
+		return t
 		
 		Function ForName_:TTypeId(name:String)
 			name = name.Trim()
 			If Not name Then
 				Return VoidTypeId
-			Else If name.EndsWith("]")
+			' arrays
+			ElseIf name[name.Length-1] = Asc("]")
 				Local b:Int = name.FindLast("[")
-				Local sp:String[] = name[b + 1..name.Length - 1].Split(", ")
-				For Local s:String = EachIn sp
-					If s.Trim() Then Return Null
+				Local commaCount:Int
+				'only comma and space allowed between "[, ,,, ]"
+				For Local i:Int = b + 1 To name.Length - 2
+					If name[i] = Asc(",")
+						commaCount :+ 1
+					ElseIf name[i] <> Asc(" ")
+						Return Null
+					EndIf
 				Next
 				Local baseType:TTypeId = ForName_(name[..b])
 				' check for valid array base types
 				If baseType And Not (baseType = ArrayTypeId Or baseType = VoidTypeId Or baseType = FunctionTypeId Or baseType = PointerTypeId) Then
-					Return baseType.ArrayType(sp.Length)
+					Return baseType.ArrayType(commaCount + 1)
 				Else
 					Return Null
 				End If
@@ -4114,13 +4163,13 @@ Type TTypeId Extends TMember
 				Local baseType:TTypeId = ForName_(name[..name.length-4])
 				Return baseType.VarType()
 			' function pointers
-			Else If name.EndsWith(")")
+			ElseIf name[name.Length-1] = Asc(")")
 				Local i:Int
 				Local depth:Int = 1
 				For i = name.Length - 2 To 0 Step -1
 					Select name[i]
-						Case ")"[0] depth :+ 1 
-						Case "("[0] depth :- 1
+						Case Asc(")") depth :+ 1 
+						Case Asc("(") depth :- 1
 					End Select
 					If depth = 0 Then Exit
 				Next
@@ -4133,17 +4182,17 @@ Type TTypeId Extends TMember
 					Local argListStr:String = name[i + 1..name.Length - 1].Trim()
 					If argListStr Then
 						' split parameter list
-						Local argsStr:String[]' = argListStr.Split(", ")
+						Local argsStr:String[]
 						Local depthP:Int = 0
 						Local depthB:Int = 0
 						Local i:Int = 0
 						For Local j:Int = 0 Until argListStr.Length
 							Select argListStr[j]
-								Case "("[0] depthP :+ 1
-								Case ")"[0] depthP :- 1
-								Case "["[0] depthB :+ 1
-								Case "]"[0] depthB :- 1
-								Case ", "[0] If depthP = 0 And depthB = 0 Then argsStr :+ [argListStr[i..j]]; i = j + 1
+								Case Asc("(") depthP :+ 1
+								Case Asc(")") depthP :- 1
+								Case Asc("[") depthB :+ 1
+								Case Asc("]") depthB :- 1
+								Case Asc(",") If depthP = 0 And depthB = 0 Then argsStr :+ [argListStr[i..j]]; i = j + 1
 							End Select
 						Next
 						If depthP <> 0 Or depthB <> 0 Then Return Null ' unbalanced parentheses
@@ -4165,6 +4214,133 @@ Type TTypeId Extends TMember
 				EndIf
 			Else
 				Return TTypeId(_nameMap.ValueForKey(name))
+			EndIf
+		End Function
+	End Function
+
+
+
+	Function ForName:TTypeId(name:String)
+		Local s:SSubstring = New SSubstring(name)
+		Return ForName(s)
+	End Function
+
+
+	Function ForName:TTypeId(name:SSubstring var)
+		_Update
+		
+		' keep other information intact, toLower() returns same string if 
+		' lower case already
+		name.s = name.s.ToLower() 
+
+		Return ForName_(name)
+		
+		Function ForName_:TTypeId(name:SSubstring var)
+			name.Trim()
+
+			If name.length = 0 Then
+				Return VoidTypeId
+			' arrays
+			ElseIf name.EndsWith(Asc("]"))
+				Local b:Int = name.FindLast("[")
+				Local commaCount:Int
+				'only comma and space allowed between "[, ,,, ]"
+				For Local i:Int = b + 1 To name.Length - 2
+					local charAtIndex:Int = name.CharAt(i)
+					If charAtIndex = Asc(",")
+						commaCount :+ 1
+					ElseIf charAtIndex <> Asc(" ")
+						Return Null
+					EndIf
+				Next
+				Local baseName:SSubstring = name.Left(b)
+				Local baseType:TTypeId = ForName_(baseName)
+				' check for valid array base types
+				If baseType And Not (baseType = ArrayTypeId Or baseType = VoidTypeId Or baseType = FunctionTypeId Or baseType = PointerTypeId) Then
+					Return baseType.ArrayType(commaCount + 1)
+				Else
+					Return Null
+				End If
+			' pointers
+			Else If name.EndsWith(" ptr")
+				Local baseName:SSubstring = name.Left(name.Length-4)
+				Local baseType:TTypeId = ForName_(baseName)
+				' check for valid pointer base types
+				If baseType And Not (baseType._class Or baseType = VoidTypeId Or baseType = FunctionTypeId Or baseType = PointerTypeId) Then
+					Return baseType.PointerType()
+				Else
+					Return Null
+				End If
+			' vars
+			Else If name.EndsWith(" var")
+				Local baseName:SSubstring = name.Left(name.Length-4)
+				Local baseType:TTypeId = ForName_(baseName)
+				Return baseType.VarType()
+			' function pointers
+			ElseIf name.EndsWith(Asc(")"))
+				Local i:Int
+				Local depth:Int = 1
+				For i = name.Length - 2 To 0 Step -1
+					Select name.CharAt(i)
+						Case Asc(")") depth :+ 1 
+						Case Asc("(") depth :- 1
+					End Select
+					If depth = 0 Then Exit
+				Next
+				If depth <> 0 Then Return Null ' unbalanced parentheses
+				
+				Local retStr:SSubstring = name.Left(i)
+				retStr.Trim()
+				Local returnType:TTypeId
+				If retStr.Length = 0 Then returnType = VoidTypeId Else returnType = ForName_(retStr)
+				If returnType Then
+					Local argListStr:SSubstring = name.Substring(i + 1, name.Length - (i + 1) - 1)
+					argListStr.Trim()
+					If argListStr.length > 0
+						' split parameter list
+						Local argsStr:SSubstring[4] '4 is a good average parameter count
+						Local argCount:int
+						Local depthP:Int = 0
+						Local depthB:Int = 0
+						Local startPos:Int = 0
+						For Local j:Int = 0 Until argListStr.Length
+							Select argListStr.CharAt(j)
+								Case Asc("(") depthP :+ 1
+								Case Asc(")") depthP :- 1
+								Case Asc("[") depthB :+ 1
+								Case Asc("]") depthB :- 1
+								Case Asc(",") 
+									If depthP = 0 And depthB = 0
+										if argsStr.length = argCount Then argsStr = argsStr[.. (argsStr.length * 1.5 + 1)]
+										argsStr[argCount] = argListStr.Substring(startPos, j - startPos)
+										startPos = j + 1
+										argCount :+ 1
+									EndIf
+							End Select
+						Next
+						If depthP <> 0 Or depthB <> 0 Then Return Null ' unbalanced parentheses
+
+						if argsStr.length <= argCount Then argsStr = argsStr[.. (argCount +1)]
+						argsStr[argCount] = argListStr.Substring(startPos)
+						argCount :+ 1
+
+						
+						Local argTypes:TTypeId[argCount]
+						For Local a:Int = 0 Until argCount
+							argTypes[a] = ForName_(argsStr[a])
+							If Not argTypes[a] Then Return Null
+						Next
+						
+						'returnType._functionType = Null
+						Return returnType.FunctionType(argTypes)
+					Else
+						Return returnType.FunctionType(Null)
+					End If
+				Else 
+					Return Null
+				EndIf
+			Else
+				Return TTypeId(_nameMap.ValueForKey(name.ToString()))
 			EndIf
 		End Function
 	End Function
@@ -4246,6 +4422,13 @@ Type TTypeId Extends TMember
 		Next
 		Return list
 	End Function
+	
+
+	Function SetInitialized()
+		_Update() 'ensure at least ONE final update
+		_inited = True
+	End Function
+	Global _inited:Int = False
 	
 	Private
 	
@@ -4375,6 +4558,8 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Function _Update()
+		If _inited Then Return
+		
 		Try
 			ReflectionMutex.Lock
 			Local ccount:Int
@@ -4539,6 +4724,11 @@ End Type
 
 
 Private
+
+
+
+
+
 
 Struct STypeHierarchyEnumerator
 	Field ReadOnly typeId:TTypeId
