@@ -347,6 +347,8 @@ Function _Invoke:Object(reflectionWrapper(buf:Byte Ptr Ptr), retType:TTypeId, ar
 	End If
 End Function
 
+
+
 Public
 
 Function TypeTagForId$(id:TTypeId)
@@ -523,6 +525,9 @@ Function TypeIdForTag:TTypeId(ty$)
 End Function
 
 
+
+Private
+
 Enum EModifiers Flags
 	IsPrivate
 	IsProtected
@@ -541,7 +546,7 @@ Function ModifiersForTag:EModifiers(modifierString:String)
 	Return modifiers
 End Function
 
-Function TypeListsIdentical:Int(a1:TTypeId[], a2:TTypeId[])
+Function TypeListsEqual:Int(a1:TTypeId[], a2:TTypeId[])
 	If a1.Length <> a2.Length Then Return False
 	For Local i:Int = 0 Until a1.Length
 		If a1[i] <> a2[i] Then Return False
@@ -549,31 +554,45 @@ Function TypeListsIdentical:Int(a1:TTypeId[], a2:TTypeId[])
 	Return True
 End Function
 
-Function ArgTypesIdentical:Int(f1:TFunction, f2:TFunction)
-	Return TypeListsIdentical(f1.ArgTypes(), f2.ArgTypes())
+Function ArgTypesEqual:Int(f1:TFunction, f2:TFunction)
+	Return TypeListsEqual(f1.ArgTypes(), f2.ArgTypes())
 End Function
 
-Function ArgTypesIdentical:Int(m1:TMethod, m2:TMethod)
-	Return TypeListsIdentical(m1.ArgTypes(), m2.ArgTypes())
+Function ArgTypesEqual:Int(m1:TMethod, m2:TMethod)
+	Return TypeListsEqual(m1.ArgTypes(), m2.ArgTypes())
 End Function
 
-Function NamesAndArgTypesIdentical:Int(f1:TFunction, f2:TFunction)
-	Return f1.Name().ToLower() = f2.Name().ToLower() And ArgTypesIdentical(f1, f2)
+Function NamesAndArgTypesEqual:Int(f1:TFunction, f2:TFunction)
+	Return NamesEqual(f1.Name(), f2.Name()) And ArgTypesEqual(f1, f2)
 End Function
 
-Function NamesAndArgTypesIdentical:Int(m1:TMethod, m2:TMethod)
-	Return m1.Name().ToLower() = m2.Name().ToLower() And ArgTypesIdentical(m1, m2)
+Function NamesAndArgTypesEqual:Int(m1:TMethod, m2:TMethod)
+	Return NamesEqual(m1.Name(), m2.Name()) And ArgTypesEqual(m1, m2)
 End Function
 
-Function SignaturesIdentical:Int(f1:TFunction, f2:TFunction)
-	Return NamesAndArgTypesIdentical(f1, f2) And f1.ReturnType() = f2.ReturnType()
+Function SignaturesEqual:Int(f1:TFunction, f2:TFunction)
+	Return NamesAndArgTypesEqual(f1, f2) And f1.ReturnType() = f2.ReturnType()
 End Function
 
-Function SignaturesIdentical:Int(m1:TMethod, m2:TMethod)
-	Return NamesAndArgTypesIdentical(m1, m2) And m1.ReturnType() = m2.ReturnType()
+Function SignaturesEqual:Int(m1:TMethod, m2:TMethod)
+	Return NamesAndArgTypesEqual(m1, m2) And m1.ReturnType() = m2.ReturnType()
 End Function
 
-Private
+Function NamesEqual:Int(a:String, b:String)
+	If a.length <> b.length Then Return False
+	If a = b Then Return True
+	For Local c:Int = 0 Until a.length
+		If Not NameCharactersEqual(Short a[c], Short b[c]) Then Return False
+	Next
+	Return True
+	
+	Function NameCharactersEqual:Int(a:Short, b:Short)
+		Return .. ' case-insensitive comparison
+			a = b Or  ..
+			a >= Asc("A") And a <= Asc("Z") And a + (Asc("a") - Asc("A")) = b Or ..
+			a >= Asc("a") And a <= Asc("z") And a + (Asc("A") - Asc("a")) = b
+	End Function
+End Function
 
 Function ExtractMetaMap:TStringMap( meta:String )
 	If Not meta Then
@@ -615,20 +634,20 @@ Function ExtractMetaMap:TStringMap( meta:String )
 	Return map
 End Function
 
-Function AddFunctionsToList(tid:TTypeId, list:TList, initialLastLink:TLink, funcNameLower:String = "")
+Function AddFunctionsToList(tid:TTypeId, list:TList, initialLastLink:TLink, funcName:String = "")
 	Local insertPos:TLink = initialLastLink.NextLink()
 	If Not insertPos Then insertPos = list._head
 	' go through every function defined in the type described by tid
 	#AddFunctionsLoop
 	For Local func:TFunction = EachIn tid._functions
 		' skip it if it has the wrong name
-		If funcNameLower And funcNameLower <> func.Name().ToLower() Then Continue
+		If funcName And Not NamesEqual(funcName, func.Name()) Then Continue
 		' check if it's overridden by something that was already in the list
 		Local overrideCheckLink:TLink = insertPos
 		If overrideCheckLink <> list._head Then 
 			While overrideCheckLink
 				Local func2:TFunction = TFunction(overrideCheckLink.Value())
-				If NamesAndArgTypesIdentical(func, func2) Then Continue AddFunctionsLoop ' if so, skip it
+				If NamesAndArgTypesEqual(func, func2) Then Continue AddFunctionsLoop ' if so, skip it
 				overrideCheckLink = overrideCheckLink.NextLink()
 			Wend
 		End If
@@ -636,20 +655,20 @@ Function AddFunctionsToList(tid:TTypeId, list:TList, initialLastLink:TLink, func
 	Next
 End Function
 
-Function AddMethodsToList(tid:TTypeId, list:TList, initialLastLink:TLink, methNameLower:String = "")
+Function AddMethodsToList(tid:TTypeId, list:TList, initialLastLink:TLink, methName:String = "")
 	Local insertPos:TLink = initialLastLink.NextLink()
 	If Not insertPos Then insertPos = list._head
 	' go through every method defined in the type described by tid
 	#AddMethodsLoop
 	For Local meth:TMethod = EachIn tid._methods
 		' skip it if it has the wrong name
-		If methNameLower And methNameLower <> meth.Name().ToLower() Then Continue
+		If methName And Not NamesEqual(methName, meth.Name()) Then Continue
 		' check if it's overridden by something that was already in the list
 		Local overrideCheckLink:TLink = insertPos
 		If overrideCheckLink <> list._head Then 
 			While overrideCheckLink
 				Local meth2:TMethod = TMethod(overrideCheckLink.Value())
-				If NamesAndArgTypesIdentical(meth, meth2) Then Continue AddMethodsLoop ' if so, skip it
+				If NamesAndArgTypesEqual(meth, meth2) Then Continue AddMethodsLoop ' if so, skip it
 				overrideCheckLink = overrideCheckLink.NextLink()
 			Wend
 		End If
@@ -2337,6 +2356,8 @@ Type TMethod Extends TMember
 	
 End Type
 
+
+
 Rem
 bbdoc: Type ID
 about: Represents a type. Type IDs can be compared for equality to find out if two types are equal.
@@ -2364,42 +2385,23 @@ Type TTypeId Extends TMember
 		End If
 		Return list
 	End Method
-
-	Rem
-	bbdoc: Get list of types and interfaces an object inherits from
-	End Rem
-	Method TypeHierarchy:TList(list:TList = Null)
-		If Not list Then list = New TList
-
-		If Self.IsInterface() Then
-			list.AddFirst(Self)
-		Else
-			Local tid:TTypeId = Self
-			While tid
-				list.AddFirst(tid)
-				tid = tid.SuperType()
-			Wend
-		End If
-		Local insertPos:TLink = list.FirstLink()
-		For Local tid:TTypeId = EachIn Self.Interfaces()
-			list.InsertBeforeLink(tid, insertPos)
+	
+	Method TypeHierarchy:TList()
+		Local list:TList = New TList
+		
+		For Local tid:TTypeId = EachIn TypeHierarchyEnumerator()
+			list.AddLast tid
 		Next
-
+		
 		Return list
 	End Method
-
 	
-	Method _TypeHierarchy()
-		If Not _typeHierarchyArray or _typeHierarchyArray.length = 0
-			Local _typeHierarchy:TList = TypeHierarchy()
-		
-			_typeHierarchyArray = New TTypeID[_typeHierarchy.Count()]
-			Local _typeHierarchyIndex:Int = 0
-			For local t:TTypeID = EachIn _typeHierarchy
-				_typeHierarchyArray[_typeHierarchyIndex] = t
-				_typeHierarchyIndex :+ 1
-			Next
-		EndIf
+	Method TypeHierarchyEnumerator:STypeHierarchyEnumerator()
+		Return New STypeHierarchyEnumerator(Self)
+	End Method
+	
+	Method TypeHierarchyReverseEnumerator:STypeHierarchyReverseEnumerator()
+		Return New STypeHierarchyReverseEnumerator(Self)
 	End Method
 	
 	Rem
@@ -2621,12 +2623,18 @@ Type TTypeId Extends TMember
 			If Not _class Then Throw "Unable to create instance of this type"
 			If _interface Then Throw "Unable to create instance from interface"
 			If _elementType Then Throw "Unable to create array this way"
-			If _class = bbRefStringClass or _class = bbRefArrayClass Then
+			If _class = bbRefStringClass Or _class = bbRefArrayClass Then
 				Throw "Unable to create instance of this type with constructor"
 			End If
 			' make sure we were actually given a constructor for this class
 			If Not constructor Then Throw "Constructor is Null"
-			If Not _constructors.Contains(constructor) Then Throw "Method is not a constructor of this type"
+			Function Contains:Int(constructors:TMethod[], constructor:TMethod)
+				For Local c:TMethod = EachIn constructors
+					If c = constructor Then Return True
+				Next
+				Return False
+			End Function
+			If Not Contains(_constructors, constructor) Then Throw "Method is not a constructor of this type"
 			Local o:Object = bbObjectNewNC(_class) ' TODO: bbObjectAtomicNewNC?
 			constructor.Invoke o, args
 			Return o
@@ -2776,15 +2784,10 @@ Type TTypeId Extends TMember
 	about: Searches type hierarchy for a constant called @name.
 	End Rem
 	Method FindConstant:TConstant(name:String)
-		name = name.ToLower()
-		
-		' go through them reversed
-		For Local i:Int = Self._typeHierarchyArray.length -1 to 0 step -1
-			Local tid:TTypeId = Self._typeHierarchyArray[i]
-			If Not tid Then continue
-			
-			Local cons:TConstant = TConstant(tid._constsLookup.ValueForKey(name))
-			If cons Then return cons
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyReverseEnumerator()
+			For Local cons:TConstant = EachIn tid._consts
+				If NamesEqual(cons.Name(), name) Then Return cons
+			Next
 		Next
 	End Method	
 	
@@ -2793,15 +2796,10 @@ Type TTypeId Extends TMember
 	about: Searches type hierarchy for a field called @name.
 	End Rem
 	Method FindField:TField(name:String)
-		name = name.ToLower()
-
-		'go through them reversed
-		For Local i:Int = Self._typeHierarchyArray.length -1 to 0 step -1
-			Local tid:TTypeId = Self._typeHierarchyArray[i]
-			If Not tid Then continue
-
-			Local fld:TField = TField(tid._fieldsLookup.ValueForKey(name))
-			If fld Then Return fld
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyReverseEnumerator()
+			For Local fld:TField = EachIn tid._fields
+				If NamesEqual(fld.Name(), name) Then Return fld
+			Next
 		Next
 	End Method
 	
@@ -2810,15 +2808,9 @@ Type TTypeId Extends TMember
 	about: Searches type hierarchy for a global called @name.
 	End Rem
 	Method FindGlobal:TGlobal(name:String)
-		name = name.ToLower()
-		
-		'go through them reversed
-		For Local i:Int = Self._typeHierarchyArray.length -1 to 0 step -1
-			Local tid:TTypeId = Self._typeHierarchyArray[i]
-			If Not tid Then continue
-
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyReverseEnumerator()
 			For Local glob:TGlobal = EachIn tid._globals
-				If glob.Name().ToLower() = name Then Return glob
+				If NamesEqual(glob.Name(), name) Then Return glob
 			Next
 		Next
 	End Method
@@ -2829,15 +2821,10 @@ Type TTypeId Extends TMember
 	If the function is overloaded, the first overload declared in the most derived type will be returned.
 	End Rem
 	Method FindFunction:TFunction(name:String)
-		name = name.ToLower()
-		
-		'go through them reversed
-		For Local i:Int = Self._typeHierarchyArray.length -1 to 0 step -1
-			Local tid:TTypeId = Self._typeHierarchyArray[i]
-			If Not tid Then continue
-
-			Local func:TFunction = TFunction(tid._functionsLookup.ValueForKey(name))
-			If func Then Return func
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyReverseEnumerator()
+			For Local func:TFunction = EachIn tid._functions
+				If NamesEqual(func.Name(), name) Then Return func
+			Next
 		Next
 	End Method
 	
@@ -2847,15 +2834,9 @@ Type TTypeId Extends TMember
 	This can be used to find a specific overload of a function.
 	End Rem
 	Method FindFunction:TFunction(name:String, argTypes:TTypeId[])
-		name = name.ToLower()
-		
-		'go through them reversed
-		For Local i:Int = Self._typeHierarchyArray.length -1 to 0 step -1
-			Local tid:TTypeId = Self._typeHierarchyArray[i]
-			If Not tid Then continue
-
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyReverseEnumerator()
 			For Local func:TFunction = EachIn tid._functions
-				If func.Name().ToLower() = name And TypeListsIdentical(func.ArgTypes(), argTypes) Then Return func
+				If NamesEqual(func.Name(), name) And TypeListsEqual(func.ArgTypes(), argTypes) Then Return func
 			Next
 		Next
 	End Method
@@ -2867,7 +2848,6 @@ Type TTypeId Extends TMember
 	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
 	End Rem
 	Method FindFunctions:TList(name:String, list:TList = Null)
-		name = name.ToLower()
 		If Not list Then list = New TList
 		
 		' list might be non-empty => retrieve the last link
@@ -2875,11 +2855,7 @@ Type TTypeId Extends TMember
 		If Not initialLastLink Then initialLastLink = list._head
 		
 		' add the functions
-		' go through them reversed
-		For Local i:Int = Self._typeHierarchyArray.length -1 to 0 step -1
-			Local tid:TTypeId = Self._typeHierarchyArray[i]
-			If Not tid Then continue
-
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyReverseEnumerator()
 			AddFunctionsToList tid, list, initialLastLink, name
 		Next
 		
@@ -2892,15 +2868,10 @@ Type TTypeId Extends TMember
 	If the method is overloaded, the first overload declared in the most derived type will be returned.
 	End Rem
 	Method FindMethod:TMethod(name:String)
-		name = name.ToLower()
-
-		'go through them reversed
-		For Local i:Int = Self._typeHierarchyArray.length -1 to 0 step -1
-			Local tid:TTypeId = Self._typeHierarchyArray[i]
-			If Not tid Then continue
-
-			Local meth:TMethod = TMethod(tid._methodsLookup.ValueForKey(name))
-			If meth Then Return meth
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyReverseEnumerator()
+			For Local meth:TMethod = EachIn tid._methods
+				If NamesEqual(meth.Name(), name) Then Return meth
+			Next
 		Next
 		Return Null
 	End Method
@@ -2911,15 +2882,9 @@ Type TTypeId Extends TMember
 	This can be used to find a specific overload of a method.
 	End Rem
 	Method FindMethod:TMethod(name:String, argTypes:TTypeId[])
-		name = name.ToLower()
-
-		'go through them reversed
-		For Local i:Int = Self._typeHierarchyArray.length -1 to 0 step -1
-			Local tid:TTypeId = Self._typeHierarchyArray[i]
-			If Not tid Then continue
-
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyReverseEnumerator()
 			For Local meth:TMethod = EachIn tid._methods
-				If meth.Name().ToLower() = name And TypeListsIdentical(meth.ArgTypes(), argTypes) Then Return meth
+				If NamesEqual(meth.Name(), name) And TypeListsEqual(meth.ArgTypes(), argTypes) Then Return meth
 			Next
 		Next
 		Return Null
@@ -2932,7 +2897,6 @@ Type TTypeId Extends TMember
 	If an existing list is passed, retains the elements in that list and appends the results to the end. Otherwise, creates a new list.
 	End Rem
 	Method FindMethods:TList(name:String, list:TList = Null)
-		name = name.ToLower()
 		If Not list Then list = New TList
 		
 		' list might be non-empty => retrieve the last link
@@ -2940,11 +2904,7 @@ Type TTypeId Extends TMember
 		If Not initialLastLink Then initialLastLink = list._head
 		
 		' add the methods
-		' go through them reversed
-		For Local i:Int = Self._typeHierarchyArray.length -1 to 0 step -1
-			Local tid:TTypeId = Self._typeHierarchyArray[i]
-			If Not tid Then continue
-
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyReverseEnumerator()
 			AddMethodsToList tid, list, initialLastLink, name
 		Next
 		
@@ -2958,8 +2918,8 @@ Type TTypeId Extends TMember
 	End Rem
 	Method EnumConstants:TList(list:TList = Null)
 		If Not list Then list = New TList
-
-		For Local tid:TTypeId = EachIn Self._typeHierarchyArray
+		
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyEnumerator()
 			For Local cons:TConstant = EachIn tid._consts
 				list.AddLast cons
 			Next
@@ -2976,7 +2936,7 @@ Type TTypeId Extends TMember
 	Method EnumFields:TList(list:TList = Null)
 		If Not list Then list = New TList
 		
-		For Local tid:TTypeId = EachIn Self._typeHierarchyArray
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyEnumerator()
 			For Local fld:TField = EachIn tid._fields
 				list.AddLast fld
 			Next
@@ -2993,7 +2953,7 @@ Type TTypeId Extends TMember
 	Method EnumGlobals:TList(list:TList = Null)
 		If Not list Then list = New TList
 		
-		For Local tid:TTypeId = EachIn Self._typeHierarchyArray
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyEnumerator()
 			For Local glob:TGlobal = EachIn tid._globals
 				list.AddLast glob
 			Next
@@ -3015,11 +2975,7 @@ Type TTypeId Extends TMember
 		If Not initialLastLink Then initialLastLink = list._head
 		
 		' add the functions
-		'go through them reversed
-		For Local i:Int = Self._typeHierarchyArray.length -1 to 0 step -1
-			Local tid:TTypeId = Self._typeHierarchyArray[i]
-			If Not tid Then continue
-			
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyReverseEnumerator()
 			AddFunctionsToList tid, list, initialLastLink
 		Next
 		
@@ -3039,11 +2995,7 @@ Type TTypeId Extends TMember
 		If Not initialLastLink Then initialLastLink = list._head
 		
 		' add the methods
-		' go through them reversed
-		For Local i:Int = Self._typeHierarchyArray.length -1 to 0 step -1
-			Local tid:TTypeId = Self._typeHierarchyArray[i]
-			If Not tid Then continue
-
+		For Local tid:TTypeId = EachIn Self.TypeHierarchyReverseEnumerator()
 			AddMethodsToList tid, list, initialLastLink
 		Next
 		
@@ -3079,7 +3031,7 @@ Type TTypeId Extends TMember
 			Case IsReferenceType() Return bbRefNullObject
 			Case IsStruct() Return NewObject()
 			Case IsFlagsEnum() Return "0"
-			Case IsEnum() Return TConstant(_consts.First()).Get()
+			Case IsEnum() Return TConstant(_consts[0]).Get()
 		End Select
 		Return Null
 	End Method
@@ -3112,7 +3064,7 @@ Type TTypeId Extends TMember
 			Case IsStruct() Return NewObject()
 			Case IsFlagsEnum() Return UnderlyingType().NullValueBoxed()
 			Case IsEnum()
-				Local v:Object = TConstant(_consts.First()).Get()
+				Local v:Object = TConstant(_consts[0]).Get()
 				Local b:TBoxedValue = New TBoxedValue(Self)
 				_Assign b.valuePtr, Self, v
 				Return b
@@ -4303,15 +4255,6 @@ Type TTypeId Extends TMember
 		_class = class
 		_super = supor
 		If isFinal Then _modifiers = EModifiers.IsFinal Else _modifiers = Null
-		_consts = New TList
-		_constsLookup = New TStringMap
-		_fields = New TList
-		_fieldsLookup = New TStringMap
-		_globals = New TList
-		_functions = New TList
-		_functionsLookup = New TStringMap
-		_methods = New TList
-		_methodsLookup = New TStringMap
 		_nameMap.Insert _name.ToLower(), Self
 		If class _classMap.Insert class, Self
 		Return Self
@@ -4473,17 +4416,6 @@ Type TTypeId Extends TMember
 	Method _Resolve()
 		If _fields Then Return
 		If Not (_class Or _struct Or _enum) Then Return
-		_consts = New TList
-		_constsLookup = New TStringMap
-		_fields = New TList
-		_fieldsLookup = New TStringMap
-		_globals = New TList
-		_functions = New TList
-		_functionsLookup = New TStringMap
-		_methods = New TList
-		_methodsLookup = New TStringMap
-		_constructors = New TList
-		_interfaces = New TList
 		
 		Local p:Byte Ptr
 		
@@ -4519,38 +4451,25 @@ Type TTypeId Extends TMember
 			Select bbDebugDeclKind(p)
 				Case 1 ' const
 					Local typeId:TTypeId = TypeIdForTag(ty)
-					If typeId 
-						Local c:TConstant = New TConstant.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclConstValue(p))
-						_consts.AddLast(c)
-						_constsLookup.Insert(c.Name().ToLower(), c)
-					EndIf
+					If typeId Then _consts :+ [New TConstant.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclConstValue(p))]
 				Case 3 ' field
 					Local typeId:TTypeId = TypeIdForTag(ty)
-					If typeId 
-						Local f:TField = New TField.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclFieldOffset(p))
-						_fields.AddLast(f)
-						_fieldsLookup.Insert(f.Name().ToLower(), f)
-					EndIf
+					If typeId Then _fields :+ [New TField.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclFieldOffset(p))]
 				Case 4 ' global
 					Local typeId:TTypeId = TypeIdForTag(ty)
-					If typeId Then _globals.AddLast New TGlobal.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclVarAddress(p))
+					If typeId Then _globals :+ [New TGlobal.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclVarAddress(p))]
 				Case 6 ' method
 					Local typeId:TTypeId = TypeIdForTag(ty)
 					If typeId Then
 						Local selfTypeId:TTypeId = Self
 						If selfTypeId.IsStruct() Then selfTypeId = selfTypeId.PointerType()
 						Local meth:TMethod = New TMethod.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclFuncPtr(p), bbDebugDeclReflectionWrapper(p), selfTypeId)
-						_methods.AddLast meth
-						'store FIRST method as default
-						'TODO - store list / array / TMethodVariants if overloads exist
-						If Not _methodsLookup.ValueForKey(meth.name().ToLower())
-							_methodsLookup.Insert(meth.name().ToLower(), meth)
-						EndIf
-
+						Local m:TMethod[] = [meth]
+						_methods :+ m
 						If id = "New" Then
-							_constructors.AddLast meth
+							_constructors :+ m
 							If Not typeId._argTypes Then _defaultConstructor = meth
-						Else If id.ToLower() = "tostring" And typeId = StringTypeId.FunctionType() Then
+						Else If NamesEqual(id, "ToString") And typeId = StringTypeId.FunctionType() Then
 							_toString = meth._ref
 						End If
 					End If
@@ -4558,12 +4477,7 @@ Type TTypeId Extends TMember
 					Local typeId:TTypeId = TypeIdForTag(ty)
 					If typeId Then
 						Local func:TFunction = New TFunction.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclFuncPtr(p), bbDebugDeclReflectionWrapper(p))
-						_functions.AddLast func
-						'store FIRST function as default
-						'TODO - store list / array / TFunctionVariants if overloads exist
-						If Not _functionsLookup.ValueForKey(func.name().ToLower())
-							_functionsLookup.Insert(func.name().ToLower(), func)
-						EndIf
+						_functions :+ [func]
 					End If
 			End Select
 			p = bbDebugDeclNext(p)
@@ -4576,14 +4490,11 @@ Type TTypeId Extends TMember
 				Local imps:Int = bbObjectImplementedCount(_class)
 				If imps > 0 Then
 					For Local i:Int = 0 Until imps
-						_interfaces.AddLast(_interfaceMap.ValueForKey(bbObjectImplementedInterface(_class, i)))
+						_interfaces :+ [TTypeId(_interfaceMap.ValueForKey(bbObjectImplementedInterface(_class, i)))]
 					Next
 				End If
 			End If
 		End If
-		
-		' create type hierarchy cache
-		_TypeHierarchy()
 	End Method
 	
 	Field _class:Byte Ptr ' BBClass*
@@ -4593,24 +4504,18 @@ Type TTypeId Extends TMember
 	
 	Field _size:Size_T
 	
-	Field _consts:TList
-	Field _constsLookup:TStringMap
-	Field _fields:TList
-	Field _fieldsLookup:TStringMap
-	Field _globals:TList
-	Field _functions:TList
-	Field _functionsLookup:TStringMap
-	Field _methods:TList
-	Field _methodsLookup:TStringMap
-	Field _constructors:TList
+	Field _consts:TConstant[]
+	Field _fields:TField[]
+	Field _globals:TGlobal[]
+	Field _functions:TFunction[]
+	Field _methods:TMethod[]
+	Field _constructors:TMethod[]
 	Field _defaultConstructor:TMethod
 	Field _toString:String(valuePtr:Byte Ptr)
-	Field _interfaces:TList
+	Field _interfaces:TTypeId[]
 	Field _super:TTypeId
 	Field _derived:TList
 	Field _typeTag:Byte Ptr
-
-	Field _typeHierarchyArray:TTypeID[]
 	
 	Field _arrayTypes:TTypeId[]
 	Field _pointerType:TTypeId
@@ -4632,3 +4537,159 @@ Type TTypeId Extends TMember
 End Type
 
 
+
+Private
+
+Struct STypeHierarchyEnumerator
+	Field ReadOnly typeId:TTypeId
+	
+	Field state:Int = 0
+	Field currentObject:TTypeId
+	
+	Field superChainPosition:Int
+	Field interfaceIndex:Int
+	Field StaticArray superChain1:TTypeId[8]
+	Field superChain2:TTypeId[] ' in case superChain1 is not large enough
+	
+	Method New(typeId:TTypeId)
+		Self.typeId = typeId
+		Advance
+	End Method
+	
+	Method ObjectEnumerator:STypeHierarchyEnumerator()
+		Return Self
+	End Method
+	
+	Method Advance()
+		If state = 0 Then
+			interfaceIndex = 0
+			state = 1
+		End If
+		If state = 1 Then
+			If interfaceIndex < typeId._interfaces.length Then
+				currentObject = typeId._interfaces[interfaceIndex]
+				interfaceIndex :+ 1
+				Return
+			Else
+				state = 2
+			End If
+		End If	
+		If state = 2 Then
+			If typeId.IsInterface() Then
+				state = 4
+			Else
+				superChainPosition = 0
+				Local superType:TTypeId = typeId
+				Repeat
+					superType = superType.SuperType()
+					If Not superType Then Exit
+					If superChainPosition < superChain1.length Then
+						superChain1[superChainPosition] = superType
+					Else
+						If superChainPosition - superChain1.length >= superChain2.length Then superChain2 = superChain2[..superChain2.length + superChain1.length]
+						superChain2[superChainPosition - superChain1.length] = superType
+					End If
+					superChainPosition :+ 1
+				Forever
+				state = 3
+			End If
+		End If
+		If state = 3 Then
+			superChainPosition :- 1
+			If superChainPosition >= 0 Then
+				If superChainPosition < superChain1.length Then
+					currentObject = superChain1[superChainPosition]
+				Else
+					currentObject = superChain2[superChainPosition - superChain1.length]
+				End If
+				Return
+			Else
+				state = 4
+			End If
+		End If
+		If state = 4 Then
+			currentObject = typeId
+			state = 5
+			Return
+		End If
+		If state = 5 Then
+			currentObject = Null
+			state = 6
+		End If
+	End Method
+	
+	Method HasNext:Int()
+		Return currentObject <> Null
+	End Method
+	
+	Method NextObject:TTypeId()
+		Local obj:TTypeId = currentObject
+		Advance
+		Return obj
+	End Method
+End Struct
+
+Struct STypeHierarchyReverseEnumerator
+	Field ReadOnly typeId:TTypeId
+	
+	Field state:Int = 0
+	Field currentObject:TTypeId
+	
+	Field superChainTypeId:TTypeId
+	Field interfaceIndex:Int
+	
+	Method New(typeId:TTypeId)
+		Self.typeId = typeId
+		Advance
+	End Method
+	
+	Method ObjectEnumerator:STypeHierarchyReverseEnumerator()
+		Return Self
+	End Method
+	
+	Method Advance()
+		If state = 0 Then
+			If typeId.IsInterface() Then
+				currentObject = typeId
+				state = 2
+				Return
+			Else
+				superChainTypeId = typeId
+				state = 1
+			End If
+		End If
+		If state = 1 Then
+			If superChainTypeId Then
+				currentObject = superChainTypeId
+				superChainTypeId = superChainTypeId.SuperType()
+				Return
+			Else
+				state = 2
+			End If
+		End If
+		If state = 2 Then
+			interfaceIndex = typeId._interfaces.length - 1
+			state = 3
+		End If
+		If state = 3 Then
+			If interfaceIndex >= 0 Then
+				currentObject = typeId._interfaces[interfaceIndex]
+				interfaceIndex :- 1
+				Return
+			Else
+				currentObject = Null
+				state = 4
+			End If
+		End If
+	End Method
+	
+	Method HasNext:Int()
+		Return currentObject <> Null
+	End Method
+	
+	Method NextObject:TTypeId()
+		Local obj:TTypeId = currentObject
+		Advance
+		Return obj
+	End Method
+End Struct
