@@ -212,12 +212,12 @@ inline BBULONG bbStringHash( BBString * x ) {
 
 inline int bbStringEquals( BBString *x,BBString *y ){
 	if (x->clas != (BBClass *)&bbStringClass || y->clas != (BBClass *)&bbStringClass) return 0; // only strings with strings
+	
+	if (x == y) return 1;
+	if (x->length != y->length) return 0;
+	
+	if (x->hash && y->hash && x->hash != y->hash) return 0;
 
-	if (x->length-y->length != 0) return 0;
-	if (x->hash != 0 ) {
-		if (!y->hash) bbStringHash(y);
-		return (x->hash == y->hash);
-	}
 	return memcmp(x->buf, y->buf, x->length * sizeof(BBChar)) == 0;
 }
 
