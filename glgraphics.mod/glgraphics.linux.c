@@ -270,7 +270,7 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,B
 				}
 			}	
 		}
-		if (mode==0) return;
+		if (mode==0) return 0;
 		width=mode->hdisplay;
 		height=mode->vdisplay;
 		vizinfo=_chooseVisual(flags);
