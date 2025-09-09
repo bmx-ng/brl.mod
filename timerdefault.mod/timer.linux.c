@@ -2,6 +2,7 @@
 //Oh the fun...no multiple timers in Linux (!) so we have to roll our own...
 //
 #include <brl.mod/blitz.mod/blitz.h>
+#include "brl.mod/systemdefault.mod/system.h"
 
 #include <pthread.h>
 

@@ -134,7 +134,7 @@ void bbMoveMouse(int x,int y){
 	XWarpPointer(x_display,None,x_window,0,0,0,0,x,y);
 }
 
-void bbSetMouseVisible(visible){
+void bbSetMouseVisible(int visible){
 	if (!x_window) return;
 
 	if (visible)
@@ -217,7 +217,7 @@ void bbSystemEmitOSEvent( XEvent *xevent,BBObject *source ){
 		//
 		//Mark swapped above/below - ie: keydown before keychar
 		//
-		n=XLookupString( xevent,mybuffer,15,&mykeysym,0 );
+		n=XLookupString( (XKeyEvent*)xevent,mybuffer,15,&mykeysym,0 );
 		for (i=0;i<n;i++){
 			bbSystemEmitEvent( BBEVENT_KEYCHAR,source,mybuffer[i],0,0,0,&bbNullObject );
 		}
@@ -239,7 +239,7 @@ void bbSystemEmitOSEvent( XEvent *xevent,BBObject *source ){
 				bbSystemEmitEvent( BBEVENT_KEYREPEAT,source,data,mods,x,y,&bbNullObject );
 				//
 				//generate KEYCHAR events...
-				n=XLookupString( xevent,mybuffer,15,&mykeysym,0 );
+				n=XLookupString( (XKeyEvent*)xevent,mybuffer,15,&mykeysym,0 );
 				for (i=0;i<n;i++){
 					bbSystemEmitEvent( BBEVENT_KEYCHAR,source,mybuffer[i],0,0,0,&bbNullObject );
 				}
