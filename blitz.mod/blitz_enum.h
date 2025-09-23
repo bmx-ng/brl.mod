@@ -35,6 +35,14 @@ int bbEnumTryConvert_l(BBEnum * bbEnum, BBLONG ordinalValue, BBLONG * ordinalRes
 int bbEnumTryConvert_y(BBEnum * bbEnum, BBULONG ordinalValue, BBULONG * ordinalResult);
 int bbEnumTryConvert_t(BBEnum * bbEnum, BBSIZET ordinalValue, BBSIZET * ordinalResult);
 
+BBBYTE bbEnumFromString_b(BBEnum * bbEnum, BBString * name);
+BBSHORT bbEnumFromString_s(BBEnum * bbEnum, BBString * name);
+BBINT bbEnumFromString_i(BBEnum * bbEnum, BBString * name);
+BBUINT bbEnumFromString_u(BBEnum * bbEnum, BBString * name);
+BBLONG bbEnumFromString_l(BBEnum * bbEnum, BBString * name);
+BBULONG bbEnumFromString_y(BBEnum * bbEnum, BBString * name);
+BBSIZET bbEnumFromString_t(BBEnum * bbEnum, BBString * name);
+
 #ifndef NDEBUG
 
 BBBYTE bbEnumCast_b(BBEnum * bbEnum, BBBYTE ordinalValue);
@@ -49,6 +57,8 @@ BBSIZET bbEnumCast_t(BBEnum * bbEnum, BBSIZET ordinalValue);
 
 void bbEnumRegister(BBEnum * bbEnum, BBDebugScope *p);
 BBEnum * bbEnumGetInfo( char * name );
+
+extern void brl_blitz_IllegalArgumentError();
 
 #ifdef __cplusplus
 }

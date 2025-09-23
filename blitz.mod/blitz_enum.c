@@ -1,7 +1,15 @@
 
 #include "blitz.h"
 
-
+struct BBString_19{BBClass_String* clas;BBULONG hash;int length;BBChar buf[19];};
+// 'Unknown Enum name: '
+static struct BBString_19 _illegal_enum_name={
+	&bbStringClass,
+	0xc1ec5a5e5123e8c,
+	19,
+	{85,110,107,110,111,119,110,32,69,110,117,109,32,110,97,109,101
+	,58,32}
+};
 
 BBArray * bbEnumValues(BBEnum * bbEnum) {
 	BBArray * values = &bbEmptyArray;
@@ -134,6 +142,29 @@ ENUM_CAST(BBULONG,y)
 ENUM_CAST(BBSIZET,t)
 
 #endif
+
+// throws if not found
+#define ENUM_FROM_STRING(type,chr)\
+type bbEnumFromString_##chr(BBEnum * bbEnum, BBString * name) {\
+	int i;\
+	type * value = (type*)bbEnum->values;\
+	for (i = 0; i < bbEnum->length; i++) {\
+		if (bbStringEquals(bbEnum->names[i], name)) {\
+			return *value;\
+		}\
+		value++;\
+	}\
+	brl_blitz_IllegalArgumentError(bbStringConcat(&_illegal_enum_name, name));\
+	return 0;\
+}
+
+ENUM_FROM_STRING(BBBYTE,b)
+ENUM_FROM_STRING(BBSHORT,s)
+ENUM_FROM_STRING(BBINT,i)
+ENUM_FROM_STRING(BBUINT,u)
+ENUM_FROM_STRING(BBLONG,l)
+ENUM_FROM_STRING(BBULONG,y)
+ENUM_FROM_STRING(BBSIZET,t)
 
 struct enum_info_node {
 	struct avl_root link;
