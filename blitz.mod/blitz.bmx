@@ -283,6 +283,15 @@ Type TInvalidEnumException Extends TBlitzException
 	End Method
 End Type
 
+Rem
+bbdoc: Illegal argument exception
+End Rem
+Type TIllegalArgumentException Extends TRuntimeException
+	Method New(error:String)
+		Self.error = error
+	End Method
+End Type
+
 Function NullObjectError()
 	Throw New TNullObjectException
 End Function
@@ -313,6 +322,14 @@ about: Throws a #TRuntimeException.
 End Rem
 Function RuntimeError( message:String )
 	Throw New TRuntimeException( message )
+End Function
+
+Rem
+bbdoc: Generates an illegal argument error
+about: Throws a #TIllegalArgumentException.
+End Rem
+Function IllegalArgumentError( message:String )
+	Throw New TIllegalArgumentException( message )
 End Function
 
 Rem
