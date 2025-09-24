@@ -234,6 +234,9 @@ BBULONG bbStringHash( BBString * x );
 unsigned char *bbStringToUTF8StringBuffer( BBString *str, unsigned char * buf, size_t * length );
 BBChar *bbStringToWStringBuffer( BBString *str, BBChar * buf, size_t * length );
 
+int bbStringIdentifierEqualsNoCase(BBString *x, BBString *y);
+int bbStringIdentifierEqualsNoCaseChars(BBString *x, BBChar * y, int ylen);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1314,3 +1314,40 @@ BBString* bbStringFromUTF32Bytes( const BBUINT *p, int n ) {
 	free( d );
 	return str;
 }
+
+static inline unsigned int ascii_is_upper(unsigned int c) {
+    return (unsigned int)(c - 'A') <= 25u;
+}
+
+static inline unsigned int ascii_lower(unsigned int c) {
+    return c + ascii_is_upper(c) * 32u;
+}
+
+// Case-insensitive comparison for string identifiers (ASCII only)
+int bbStringIdentifierEqualsNoCase(BBString *x, BBString *y) {
+	return bbStringIdentifierEqualsNoCaseChars(x, y->buf, y->length);
+}
+
+// Case-insensitive comparison for string identifiers (ASCII only)
+int bbStringIdentifierEqualsNoCaseChars(BBString *x, BBChar * y, int ylen) {
+    if (x->clas != (BBClass *)&bbStringClass)
+        return 0;
+
+    if (x->length != ylen)
+        return 0;
+
+    const BBChar *xb = x->buf;
+    const BBChar *yb = y;
+    int n = x->length;
+
+    for (int i = 0; i < n; ++i) {
+		unsigned int xc = (unsigned int)xb[i];
+        unsigned int yc = (unsigned int)yb[i];
+
+        xc = ascii_lower(xc);
+        yc = ascii_lower(yc);
+
+        if (xc != yc) return 0;
+    }
+    return 1;
+}
