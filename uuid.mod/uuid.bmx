@@ -1,4 +1,4 @@
-' Copyright (c) 2015-2019 Bruce A Henderson
+' Copyright (c) 2015-2025 Bruce A Henderson
 ' All rights reserved.
 '
 ' Redistribution and use in source and binary forms, with or without
@@ -30,16 +30,23 @@ bbdoc: Generate UUIDs
 End Rem
 Module BRL.uuid
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "License: BSD"
-ModuleInfo "Copyright: Wrapper - 2015-2019 Bruce A Henderson"
+ModuleInfo "Copyright: Wrapper - 2015-2025 Bruce A Henderson"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Changed win32 to use Rpcrt4."
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Update to util-linux 2.34"
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release."
 
+?not win32
 Import Pub.libuuid
+?win32
+Import "-lRpcrt4"
+Import "win32_glue.c"
+?
 
 Rem
 bbdoc: Generates a UUID in canonical form, optionally in uppercase.
@@ -67,5 +74,15 @@ Function uuidToCanonical:String(buf:Byte[], upperCase:Int = False)
 	Else
 		uuid_unparse(buf, out)
 	End If
-	Return String.FromBytes(out, strlen(out))
+	Return String.FromBytes(out, Int(strlen(out)))
 End Function
+
+?win32
+Extern
+	Function strlen:Size_T(buf:Byte Ptr)
+
+	Function uuid_generate(buf:Byte Ptr)
+	Function uuid_unparse(buf:Byte Ptr, out:Byte Ptr)
+	Function uuid_unparse_upper(buf:Byte Ptr, out:Byte Ptr)
+End Extern
+?
