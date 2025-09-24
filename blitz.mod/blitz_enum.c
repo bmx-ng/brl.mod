@@ -51,25 +51,35 @@ static BBString * bbAppend(BBString * x, BBString * y) {
 }
 
 #define ENUM_TO_STRING(type,chr)\
-BBString * bbEnumToString_##chr(BBEnum * bbEnum, type ordinal) {\
-	int i;\
-	type * value = (type*)bbEnum->values;\
-	int flags = bbEnum->flags;\
-	BBString * val = &bbEmptyString;\
-	for (i = 0; i < bbEnum->length; i++) {\
-		if (flags) {\
-			type v = *value++;\
-			if (v == ordinal || (v & ordinal && v == (v & ordinal))) {\
-				val = bbAppend(val, bbEnum->names[i]);\
-			}\
-		} else {\
-			if (*value++ == ordinal) {\
-				return bbEnum->names[i];\
-			}\
-		}\
-	}\
-	return val;\
-}
+BBString* bbEnumToString_##chr(BBEnum* bbEnum, type ordinal) {\
+    type* values = (type*)bbEnum->values;\
+    BBString* out = &bbEmptyString;\
+    if (!bbEnum->flags) {\
+        for (int i = 0; i < bbEnum->length; ++i) {\
+            if (values[i] == ordinal) {\
+                return bbEnum->names[i];\
+            }\
+        }\
+        return out;\
+    }\
+    type remaining = ordinal;\
+    int zero_emitted = 0;\
+    for (int i = 0; i < bbEnum->length; ++i) {\
+        type v = values[i];\
+        if (v == 0) {\
+            if (!zero_emitted && ordinal == 0) {\
+                out = bbAppend(out, bbEnum->names[i]);\
+                zero_emitted = 1;\
+            }\
+            continue;\
+        }\
+        if ((remaining & v) == v) {\
+            out = bbAppend(out, bbEnum->names[i]);\
+            remaining &= ~v;\
+        }\
+    }\
+    return out;\
+}\
 
 ENUM_TO_STRING(BBBYTE,b)
 ENUM_TO_STRING(BBSHORT,s)
@@ -145,17 +155,51 @@ ENUM_CAST(BBSIZET,t)
 
 // throws if not found
 #define ENUM_FROM_STRING(type,chr)\
-type bbEnumFromString_##chr(BBEnum * bbEnum, BBString * name) {\
-	int i;\
-	type * value = (type*)bbEnum->values;\
-	for (i = 0; i < bbEnum->length; i++) {\
-		if (bbStringEquals(bbEnum->names[i], name)) {\
-			return *value;\
-		}\
-		value++;\
-	}\
-	brl_blitz_IllegalArgumentError(bbStringConcat(&_illegal_enum_name, name));\
-	return 0;\
+type bbEnumFromString_##chr(BBEnum* bbEnum, BBString* name) {\
+    if (!bbEnum->flags) {\
+        type* value = (type*)bbEnum->values;\
+        for (int i = 0; i < bbEnum->length; ++i, ++value) {\
+            if (bbStringIdentifierEqualsNoCase(bbEnum->names[i], name)) {\
+                return *value;\
+            }\
+        }\
+        brl_blitz_IllegalArgumentError(bbStringConcat(&_illegal_enum_name, name));\
+        return 0;\
+    }\
+    const BBChar* buf = name->buf;\
+    const int n = name->length;\
+    if (n == 0) {\
+        brl_blitz_IllegalArgumentError(bbStringConcat(&_illegal_enum_name, name));\
+        return 0;\
+    }\
+    type result = 0;\
+    int seg_start = 0;\
+    type* values = (type*)bbEnum->values;\
+    for (int i = 0; i <= n; ++i) {\
+        const int at_end = (i == n);\
+        const int is_delim = (!at_end && buf[i] == (BBChar)'|');\
+        if (at_end || is_delim) {\
+            const int seg_len = i - seg_start;\
+            if (seg_len <= 0) {\
+                brl_blitz_IllegalArgumentError(bbStringConcat(&_illegal_enum_name, name));\
+                return 0;\
+            }\
+            int matched = 0;\
+            for (int j = 0; j < bbEnum->length; ++j) {\
+                if (bbStringIdentifierEqualsNoCaseChars(bbEnum->names[j], (BBChar*)(buf + seg_start), seg_len)) {\
+                    result |= values[j];\
+                    matched = 1;\
+                    break;\
+                }\
+            }\
+            if (!matched) {\
+                brl_blitz_IllegalArgumentError(bbStringConcat(&_illegal_enum_name, name));\
+                return 0;\
+            }\
+            seg_start = i + 1;\
+        }\
+    }\
+    return result;\
 }
 
 ENUM_FROM_STRING(BBBYTE,b)
