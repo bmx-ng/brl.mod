@@ -8,6 +8,7 @@ Interface IMap<K, V> Extends ICollection<TMapNode<K,V>>
 	Method Keys:ICollection<K>()
 	Method Values:ICollection<V>()
 	Method Add(key:K, value:V)
+	Method Put:V(key:K, value:V)
 	Method ContainsKey:Int(key:K)
 	Method Remove:Int(key:K)
 	Method TryGetValue:Int(key:K, value:V Var)
@@ -106,7 +107,12 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 		If FindNode(key) Then
 			Throw New TArgumentException("An element with the same key already exists in the map")
 		End If
+		_AddNew(key, value)
+	End Method
 	
+	Private
+	' Internal method to add a new node knowing that the key does not already exist
+	Method _AddNew(key:K, value:V)
 		Local node:TMapNode<K,V>=root
 		Local parent:TMapNode<K,V>
 		Local cmp:Int
@@ -149,6 +155,22 @@ Type TTreeMap<K, V> Implements IMap<K,V>
 		EndIf
 		
 		RepairAdd node		
+	End Method
+	Public
+
+	Rem
+	bbdoc: Adds a key/value pair to the #TTreeMap. If the key already exists, updates the value.
+	returns: The old value if @key already existed; otherwise returns the default/#Null value for the value type.
+	End Rem
+	Method Put:V(key:K, value:V)
+		Local node:TMapNode<K,V> = FindNode(key)
+		If node Then
+			Local oldValue:V = node.value
+			node.value = value
+			Return oldValue
+		Else
+			_AddNew(key, value)
+		End If
 	End Method
 
 	Rem
@@ -333,7 +355,7 @@ Private
 
 	Method FirstNode:TMapNode<K,V>()
 		Local node:TMapNode<K,V> = root
-		While node.leftNode <> Null
+		While node <> Null And node.leftNode <> Null
 			node = node.leftNode
 		Wend
 		Return node
@@ -481,6 +503,10 @@ Public
 		Return parent
 	End Method
 
+	Method HasNext:Int()
+		Return NextNode() <> Null
+	End Method
+
 	Rem
 	bbdoc: Returns the key for this node.
 	End Rem
@@ -511,6 +537,18 @@ Type TMapIterator<K,V> Implements IIterator<TMapNode<K,V>>
 
 	Method Current:TMapNode<K,V>()
 		Return node
+	End Method
+
+	Method HasNext:Int()
+		If initial Then
+			Return True
+		End If
+
+		If node Then
+			Return node.HasNext()
+		End If
+
+		Return False
 	End Method
 	
 	Method MoveNext:Int()
