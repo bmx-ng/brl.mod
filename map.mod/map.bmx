@@ -6,12 +6,14 @@ bbdoc: Data structures/Maps
 End Rem
 Module BRL.Map
 
-ModuleInfo "Version: 1.11"
+ModuleInfo "Version: 1.12"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.12"
+ModuleInfo "History: Refactored tree based maps to use brl.collections."
 ModuleInfo "History: 1.11"
 ModuleInfo "History: Refactored tree based maps."
 ModuleInfo "History: Added unit tests."
@@ -40,7 +42,6 @@ Import "intmap.bmx"
 Import "ptrmap.bmx"
 Import "stringmap.bmx"
 Import "objectmap.bmx"
-Import "map.c"
 
 Private
 

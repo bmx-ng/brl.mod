@@ -1,231 +1,85 @@
 SuperStrict
 
-Import "common.bmx"
+Import BRL.Collections
 
-Extern
-	Function bmx_map_ptrmap_clear(root:SavlRoot Ptr Ptr)
-	Function bmx_map_ptrmap_isempty:Int(root:SavlRoot Ptr)
-	Function bmx_map_ptrmap_insert(key:Byte Ptr, value:Object, root:SavlRoot Ptr Ptr)
-	Function bmx_map_ptrmap_contains:Int(key:Byte Ptr, root:SavlRoot Ptr)
-	Function bmx_map_ptrmap_valueforkey:Object(key:Byte Ptr, root:SavlRoot Ptr)
-	Function bmx_map_ptrmap_remove:Int(key:Byte Ptr, root:SavlRoot Ptr Ptr)
-	Function bmx_map_ptrmap_firstnode:SPtrMapNode Ptr(root:SavlRoot Ptr)
-	Function bmx_map_ptrmap_nextnode:SPtrMapNode Ptr(node:SPtrMapNode Ptr)
-	Function bmx_map_ptrmap_key:Byte Ptr(node:SPtrMapNode Ptr)
-	Function bmx_map_ptrmap_value:Object(node:SPtrMapNode Ptr)
-	Function bmx_map_ptrmap_hasnext:Int(node:SPtrMapNode Ptr, root:SavlRoot Ptr)
-	Function bmx_map_ptrmap_copy(dst:SavlRoot Ptr Ptr, _root:SavlRoot Ptr)
-End Extern
-
-Struct SPtrMapNode
-	Field link:SavlRoot
-	Field key:Byte Ptr
-	Field value:Object
-End Struct
-
-Rem
-bbdoc: A key/value (Byte Ptr/Object) map.
-End Rem
 Type TPtrMap
 
-	Method Delete()
-		Clear
-	End Method
+	Field _map:TTreeMap<Byte Ptr, Object> = New TTreeMap<Byte Ptr, Object>()
 
-	Rem
-	bbdoc: Clears the map.
-	about: Removes all keys and values.
-	End Rem
 	Method Clear()
-?ngcmod
-		If Not IsEmpty() Then
-			_modCount :+ 1
-		End If
-?
-		bmx_map_ptrmap_clear(Varptr _root)
+		_map.Clear()
 	End Method
-	
-	Rem
-	bbdoc: Checks if the map is empty.
-	about: #True if @map is empty, otherwise #False.
-	End Rem
+
 	Method IsEmpty:Int()
-		Return bmx_map_ptrmap_isempty(_root)
+		Return _map.IsEmpty()
 	End Method
-	
-	Rem
-	bbdoc: Inserts a key/value pair into the map.
-	about: If the map already contains @key, its value is overwritten with @value. 
-	End Rem
+
 	Method Insert( key:Byte Ptr,value:Object )
-		bmx_map_ptrmap_insert(key, value, Varptr _root)
-?ngcmod
-		_modCount :+ 1
-?
+		_map.Put(key, value)
 	End Method
 
-	Rem
-	bbdoc: Checks if the map contains @key.
-	returns: #True if the map contains @key.
-	End Rem
 	Method Contains:Int( key:Byte Ptr )
-		Return bmx_map_ptrmap_contains(key, _root)
+		Return _map.ContainsKey(key)
 	End Method
-	
-	Rem
-	bbdoc: Finds a value given a @key.
-	returns: The value associated with @key.
-	about: If the map does not contain @key, a #Null object is returned.
-	End Rem
+
 	Method ValueForKey:Object( key:Byte Ptr )
-		Return bmx_map_ptrmap_valueforkey(key, _root)
+		Local v:Object
+		If _map.TryGetValue( key, v ) Then
+			Return v
+		End If
+		Return Null
 	End Method
-	
-	Rem
-	bbdoc: Remove a key/value pair from the map.
-	returns: #True if @key was removed, or #False otherwise.
-	End Rem
+
 	Method Remove:Int( key:Byte Ptr )
-?ngcmod
-		_modCount :+ 1
-?
-		Return bmx_map_ptrmap_remove(key, Varptr _root)
+		Return _map.Remove(key)
 	End Method
 
-	Method _FirstNode:TPtrNode()
-		If Not IsEmpty() Then
-			Local node:TPtrNode= New TPtrNode
-			node._root = _root
-			Return node
-		Else
-			Return Null
-		End If
-	End Method
-	
-	Rem
-	bbdoc: Gets the map keys.
-	returns: An enumeration object
-	about: The object returned by #Keys can be used with #EachIn to iterate through the keys in the map.
-	End Rem
 	Method Keys:TPtrMapEnumerator()
-		Local nodeenum:TPtrNodeEnumerator
-		If Not isEmpty() Then
-			nodeenum=New TPtrKeyEnumerator
-			nodeenum._node=_FirstNode()
-		Else
-			nodeenum=New TPtrEmptyEnumerator
-		End If
-		Local mapenum:TPtrMapEnumerator=New TPtrMapEnumerator
-		mapenum._enumerator=nodeenum
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
-		Return mapenum
+		Local nodeEnumerator:TPtrKeyEnumerator = New TPtrKeyEnumerator
+		nodeEnumerator._mapIterator = TMapIterator<Byte Ptr,Object>(_map.GetIterator())
+		Local mapEnumerator:TPtrMapEnumerator = New TPtrMapEnumerator
+		mapEnumerator._enumerator = nodeEnumerator
+		Return mapEnumerator
 	End Method
-	
-	Rem
-	bbdoc: Get the map values.
-	returns: An enumeration object.
-	about: The object returned by #Values can be used with #EachIn to iterate through the values in the map.
-	End Rem
+
 	Method Values:TPtrMapEnumerator()
-		Local nodeenum:TPtrNodeEnumerator
-		If Not isEmpty() Then
-			nodeenum=New TPtrValueEnumerator
-			nodeenum._node=_FirstNode()
-		Else
-			nodeenum=New TPtrEmptyEnumerator
-		End If
-		Local mapenum:TPtrMapEnumerator=New TPtrMapEnumerator
-		mapenum._enumerator=nodeenum
-		nodeenum._map = Self
-?ngcmod
-		nodeenum._expectedModCount = _modCount
-?
-		Return mapenum
+		Local nodeEnumerator:TPtrValueEnumerator = New TPtrValueEnumerator
+		nodeEnumerator._mapIterator = TMapIterator<Byte Ptr,Object>(_map.GetIterator())
+		Local mapEnumerator:TPtrMapEnumerator = New TPtrMapEnumerator
+		mapEnumerator._enumerator = nodeEnumerator
+		Return mapEnumerator
 	End Method
-	
-	Rem
-	bbdoc: Returns a copy the contents of this map.
-	End Rem
+
 	Method Copy:TPtrMap()
-		Local map:TPtrMap=New TPtrMap
-		bmx_map_ptrmap_copy(Varptr map._root, _root)
-		Return map
+		Local newMap:TPtrMap = New TPtrMap
+		Local iter:TMapIterator<Byte Ptr,Object> = TMapIterator<Byte Ptr,Object>(_map.GetIterator())
+		While iter.MoveNext()
+			Local n:TMapNode<Byte Ptr,Object> = iter.Current()
+			If n Then
+				newMap._map.Add( n.GetKey(), n.GetValue() )
+			End If
+		Wend
+		Return newMap
 	End Method
-	
-	Rem
-	bbdoc: Returns a node enumeration object.
-	about: The object returned by #ObjectEnumerator can be used with #EachIn to iterate through the nodes in the map.
-	End Rem
+
 	Method ObjectEnumerator:TPtrNodeEnumerator()
-		Local nodeenum:TPtrNodeEnumerator
-		If Not isEmpty() Then
-			nodeenum = New TPtrNodeEnumerator
-			nodeenum._node=_FirstNode()
-			nodeenum._map = Self
-		Else
-			nodeenum = New TPtrEmptyEnumerator
-		End If
-		Return nodeenum
+		Local nodeEnumerator:TPtrNodeEnumerator = New TPtrNodeEnumerator
+		nodeEnumerator._mapIterator = TMapIterator<Byte Ptr,Object>(_map.GetIterator())
+		Return nodeEnumerator
 	End Method
 
-	Rem
-	bbdoc: Finds a value given a @key using index syntax.
-	returns: The value associated with @key.
-	about: If the map does not contain @key, a #Null object is returned.
-	End Rem
 	Method Operator[]:Object(key:Byte Ptr)
-		Return bmx_map_ptrmap_valueforkey(key, _root)
+		Return _map[key]
 	End Method
-	
-	Rem
-	bbdoc: Inserts a key/value pair into the map using index syntax.
-	about: If the map already contains @key, its value is overwritten with @value. 
-	End Rem
+
 	Method Operator[]=(key:Byte Ptr, value:Object)
-		bmx_map_ptrmap_insert(key, value, Varptr _root)
+		_map[key] = value
 	End Method
 
-	Field _root:SavlRoot Ptr
-	
-?ngcmod
-	Field _modCount:Int
-?
-	
-End Type
-
-Type TPtrNode
-	Field _root:SavlRoot Ptr
-	Field _nodePtr:SPtrMapNode Ptr
-	
-	Method Key:Byte Ptr()
-		Return bmx_map_ptrmap_key(_nodePtr)
-	End Method
-	
-	Method Value:Object()
-		Return bmx_map_ptrmap_value(_nodePtr)
-	End Method
-
-	Method HasNext:Int()
-		Return bmx_map_ptrmap_hasnext(_nodePtr, _root)
-	End Method
-	
-	Method NextNode:TPtrNode()
-		If Not _nodePtr Then
-			_nodePtr = bmx_map_ptrmap_firstnode(_root)
-		Else
-			_nodePtr = bmx_map_ptrmap_nextnode(_nodePtr)
-		End If
-
-		Return Self
-	End Method
-	
 End Type
 
 Rem
-bbdoc: Byte Ptr holder for key returned by TPtrMap.Keys() enumerator.
+bbdoc: Int holder for key returned by TPtrMap.Keys() enumerator.
 about: Because a single instance of #TPtrKey is used during enumeration, #value changes on each iteration.
 End Rem
 Type TPtrKey
@@ -235,55 +89,62 @@ Type TPtrKey
 	Field value:Byte Ptr
 End Type
 
-Type TPtrNodeEnumerator
-	Method HasNext:Int()
-		Local has:Int = _node.HasNext()
-		If Not has Then
-			_map = Null
-		End If
-		Return has
+Type TPtrKeyValue
+
+	Field _key:Byte Ptr
+	Field _value:Object
+
+	Method Key:Byte Ptr()
+		Return _key
 	End Method
-	
+
+	Method Value:Object()
+		Return _value
+	End Method
+End Type
+
+Type TPtrNodeEnumerator
+
+	Method HasNext:Int()
+		Return _mapIterator.HasNext()
+	End Method
+
 	Method NextObject:Object()
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
-?
-		Local node:TPtrNode=_node
-		_node=_node.NextNode()
-		Return node
+		_mapIterator.MoveNext()
+		Local n:TMapNode<Byte Ptr,Object> = _mapIterator.Current()
+		If n Then
+			keyValue._key = n.GetKey()
+			keyValue._value = n.GetValue()
+			Return keyValue
+		End If	
 	End Method
 
 	'***** PRIVATE *****
 		
-	Field _node:TPtrNode	
+	Field _mapIterator:TMapIterator<Byte Ptr,Object>
+	Field keyValue:TPtrKeyValue = New TPtrKeyValue
 
-	Field _map:TPtrMap
-?ngcmod
-	Field _expectedModCount:Int
-?
 End Type
 
 Type TPtrKeyEnumerator Extends TPtrNodeEnumerator
 	Field _key:TPtrKey = New TPtrKey
 	Method NextObject:Object() Override
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
-?
-		Local node:TPtrNode=_node
-		_node=_node.NextNode()
-		_key.value = node.Key()
-		Return _key
+		_mapIterator.MoveNext()
+		Local n:TMapNode<Byte Ptr,Object> = _mapIterator.Current()
+		If n Then
+			_key.value = n.GetKey()
+			Return _key
+		End If
 	End Method
 End Type
 
 Type TPtrValueEnumerator Extends TPtrNodeEnumerator
 	Method NextObject:Object() Override
-?ngcmod
-		Assert _expectedModCount = _map._modCount, "TPtrMap Concurrent Modification"
-?
-		Local node:TPtrNode=_node
-		_node=_node.NextNode()
-		Return node.Value()
+		_mapIterator.MoveNext()
+		Local n:TMapNode<Byte Ptr,Object> = _mapIterator.Current()
+		If n Then
+			Return n.GetValue()
+		End If
 	End Method
 End Type
 
@@ -293,11 +154,3 @@ Type TPtrMapEnumerator
 	End Method
 	Field _enumerator:TPtrNodeEnumerator
 End Type
-
-Type TPtrEmptyEnumerator Extends TPtrNodeEnumerator
-	Method HasNext:Int() Override
-		_map = Null
-		Return False
-	End Method
-End Type
-
