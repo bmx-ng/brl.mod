@@ -15,7 +15,7 @@ extern "C"{
 
 struct BBString{
 	BBClass*	clas;
-	BBULONG hash;
+	BBUINT hash;
 	int		length;
 	BBChar	buf[];
 };
@@ -35,6 +35,7 @@ struct BBClass_String{
 	BBString*	(*ToString)( BBObject *x );
 	int		(*Compare)( BBObject *x,BBObject *y );
 	BBObject*	(*SendMessage)( BBObject * o, BBObject *m,BBObject *s );
+	unsigned int (*HashCode)( BBObject *o );
 
 	BBINTERFACETABLE itable;
 	void*   extra;
@@ -94,7 +95,6 @@ struct BBClass_String{
 #endif
 
 	unsigned char* (*bbStringToUTF8StringBuffer)( BBString *str, unsigned char * buf, size_t * length );
-	BBULONG (*bbStringHash)( BBString * x );
 	BBUINT* (*bbStringToUTF32String)( BBString *str );
 	BBString* (*bbStringFromUTF32String)( const BBUINT *p );
 	BBString* (*bbStringFromUTF32Bytes)( const BBUINT *p, int n );
@@ -204,9 +204,10 @@ BBChar*	bbTmpWString( BBString *str );
 char*	bbTmpUTF8String( BBString *str );
 
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-inline BBULONG bbStringHash( BBString * x ) {
-	if (x->hash > 0) return x->hash;
-	x->hash = XXH3_64bits(x->buf, x->length * sizeof(BBChar));
+inline BBUINT bbStringHash( BBString * x ) {
+	if (x->hash) return x->hash;
+	BBULONG h = XXH3_64bits(x->buf, x->length * sizeof(BBChar));
+	x->hash = (BBUINT)(h ^ (h >> 32));
 	return x->hash;
 }
 

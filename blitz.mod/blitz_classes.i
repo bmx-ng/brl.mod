@@ -7,6 +7,7 @@ Object^Null{
 	-ToString:String()="bbObjectToString"
 	-Compare:Int( otherObject:Object )="bbObjectCompare"
 	-SendMessage:Object( message:Object,source:object )="bbObjectSendMessage"
+	-HashCode:UInt()="bbObjectHashCode"
 	
 }="bbObjectClass"
 
@@ -16,6 +17,7 @@ String^Object{
 
 	-ToString:String()="bbStringToString"
 	-Compare:Int(otherString:String)="bbStringCompare"
+	-HashCode:UInt()="bbStringHash"
 	
 	-Find:Int( subString:String,startIndex=0 )="bbStringFind"
 	-FindLast:Int( subString:String,startIndex=0 )="bbStringFindLast"
@@ -63,7 +65,6 @@ String^Object{
 	+FromULong:String( ulongValue:ULong )="bbStringFromULong"
 	
 	-ToUTF8StringBuffer:Byte Ptr(buf:Byte Ptr, length:Size_T Var)="bbStringToUTF8StringBuffer"
-	-Hash:ULong()="bbStringHash"
 
 	-ToUTF32String:UInt Ptr()="bbStringToUTF32String"
 	+FromUTF32String:String( utf32String:UInt Ptr )="bbStringFromUTF32String"

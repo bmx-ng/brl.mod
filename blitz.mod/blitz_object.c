@@ -104,6 +104,32 @@ BBObject *bbObjectSendMessage( BBObject * o, BBObject *m,BBObject *s ){
 	return &bbNullObject;
 }
 
+static inline BBUINT bb_mix32(BBUINT x) {
+    x ^= x >> 16;
+    x *= 0x85ebca6bU;
+    x ^= x >> 13;
+    x *= 0xc2b2ae35U;
+    x ^= x >> 16;
+    return x;
+}
+
+static inline BBUINT bb_mix64_to_32(BBULONG x) {
+    x ^= x >> 30; x *= 0xbf58476d1ce4e5b9ULL;
+    x ^= x >> 27; x *= 0x94d049bb133111ebULL;
+    x ^= x >> 31;
+    return (BBUINT)(x ^ (x >> 32));
+}
+
+BBUINT bbObjectHashCode( BBObject *o ){
+	uintptr_t p = (uintptr_t)o;
+
+#if INTPTR_MAX == INT64_MAX
+    return bb_mix64_to_32((uint64_t)p);
+#else
+    return bb_mix32((uint32_t)p);
+#endif
+}
+
 void bbObjectReserved(){
 	bbExThrowCString( "Illegal call to reserved method" );
 }
