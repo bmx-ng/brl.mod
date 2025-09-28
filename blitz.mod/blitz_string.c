@@ -37,6 +37,7 @@ struct BBClass_String bbStringClass={
 	(BBString*(*)(BBObject*))bbStringToString,
 	(int(*)(BBObject*,BBObject*))bbStringCompare,
 	bbObjectSendMessage,
+	(unsigned int(*)(BBObject*))bbStringHash,
 	0,              //interface
 	0,              //extra
 	0,
@@ -95,7 +96,6 @@ struct BBClass_String bbStringClass={
 #endif
 
 	bbStringToUTF8StringBuffer,
-	bbStringHash,
 
 	bbStringToUTF32String,
 	bbStringFromUTF32String,
@@ -110,7 +110,7 @@ struct BBClass_String bbStringClass={
 
 BBString bbEmptyString={
 	(BBClass*)&bbStringClass, //clas
-	0x776eddfb6bfd9195, // hash
+	0x1c934c6e, // hash
 	0				//length
 };
 
@@ -137,11 +137,12 @@ static int charsEqual( unsigned short *a,unsigned short *b,int n ){
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 extern int bbStringEquals( BBString *x,BBString *y);
 extern int bbObjectIsEmptyString(BBObject * o);
-extern BBULONG bbStringHash( BBString * x );
+extern BBUINT bbStringHash( BBString * x );
 #else
-BBULONG bbStringHash( BBString * x ) {
-	if (x->hash > 0) return x->hash;
-	x->hash = XXH3_64bits(x->buf, x->length * sizeof(BBChar));
+BBUINT bbStringHash( BBString * x ) {
+	if (x->hash) return x->hash;
+	BBULONG h = XXH3_64bits(x->buf, x->length * sizeof(BBChar));
+	x->hash = (BBUINT)(h ^ (h >> 32));
 	return x->hash;
 }
 
