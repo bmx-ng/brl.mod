@@ -655,7 +655,7 @@ int bmx_stringbuilder_equals(struct MaxStringBuilder * buf1, struct MaxStringBui
 		return 1;
 	}
 	if (buf1->count-buf2->count != 0) return 0;
-	if (buf1->hash > 0 && buf1->hash == buf2->hash) return 1;
+	if (buf1->hash != 0 && buf2->hash != 0 && buf1->hash != buf2->hash) return 0;
 	return memcmp(buf1->buffer, buf2->buffer, buf1->count * sizeof(BBChar)) == 0;
 }
 
@@ -947,9 +947,10 @@ void bmx_stringbuilder_format_double(struct MaxStringBuilder * buf, BBString * f
 	bmx_stringbuilder_append_utf8string(buf, buffer);
 }
 
-BBULONG bmx_stringbuilder_hash(struct MaxStringBuilder * buf) {
+BBUINT bmx_stringbuilder_hashcode(struct MaxStringBuilder * buf) {
 	if (buf->hash > 0) return buf->hash;
-	buf->hash = XXH3_64bits(buf->buffer, buf->count * sizeof(BBChar));
+	BBULONG hash = XXH3_64bits(buf->buffer, buf->count * sizeof(BBChar));
+	buf->hash = (BBUINT)(hash ^ (hash >> 32));
 	return buf->hash;
 }
 

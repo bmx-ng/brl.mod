@@ -81,7 +81,7 @@ Extern
 	Function bmx_stringbuilder_format_float(buffer:Byte Ptr, formatText:String, value:Float)
 	Function bmx_stringbuilder_format_double(buffer:Byte Ptr, formatText:String, value:Double)
 	Function bmx_stringbuilder_equals:Int(buffer:Byte Ptr, other:Byte Ptr)
-	Function bmx_stringbuilder_hash:ULong(buffer:Byte Ptr)
+	Function bmx_stringbuilder_hashcode:UInt(buffer:Byte Ptr)
 	Function bmx_stringbuilder_append_utf32string(buffer:Byte Ptr, chars:UInt Ptr)
 	Function bmx_stringbuilder_append_utf32bytes(buffer:Byte Ptr, chars:UInt Ptr, length:Int)
 	Function bmx_stringbuilder_toint:Int(buffer:Byte Ptr)

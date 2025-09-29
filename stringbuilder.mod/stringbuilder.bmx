@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.20"
+ModuleInfo "Version: 1.21"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2018-2025 Bruce A Henderson"
 
+ModuleInfo "History: 1.21"
+ModuleInfo "History: Changed Hash() to HashCode() to match new Object method."
 ModuleInfo "History: 1.20"
 ModuleInfo "History: Added ToNumber methods."
 ModuleInfo "History: 1.19"
@@ -657,8 +659,8 @@ Public
 	Rem
 	bbdoc: Returns the calculated hash for the content of the string builder.
 	End Rem
-	Method Hash:ULong()
-		Return bmx_stringbuilder_hash(buffer)
+	Method HashCode:UInt() Override
+		Return bmx_stringbuilder_hashcode(buffer)
 	End Method
 	
 	Rem
