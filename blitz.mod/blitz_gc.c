@@ -112,7 +112,7 @@ BBObject * bbGCAllocObject( unsigned int sz,BBClass *clas,int flags ){
 		bbAtomicAdd(&clas->instance_count, 1);
 	}
 	
-	if( (flags & BBGC_FINALIZE) || bbCountInstances ){
+	if( (flags & BBGC_FINALIZE) || (bbCountInstances && !bbCountInstanceTotals) ){
 		GC_finalization_proc ofn;
 		void *ocd;
 		GC_REGISTER_FINALIZER_NO_ORDER( q,gc_finalizer,clas,&ofn,&ocd );

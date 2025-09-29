@@ -4,6 +4,7 @@
 #define REG_GROW 256
 
 int bbCountInstances = 0;
+int bbCountInstanceTotals = 0;
 
 static BBClass **reg_base=NULL,**reg_put=NULL,**reg_end=NULL;
 static BBInterface **ireg_base=NULL,**ireg_put=NULL,**ireg_end=NULL;
@@ -76,7 +77,7 @@ BBObject *bbObjectAtomicNewNC( BBClass *clas ){
 void bbObjectFree( BBObject *o ){
 	BBClass *clas=o->clas;
 
-	if (bbCountInstances) {
+	if (bbCountInstances && !bbCountInstanceTotals) {
 		bbAtomicAdd(&clas->instance_count, -1);
 	}
 
@@ -179,27 +180,66 @@ BBClass **bbObjectRegisteredTypes( int *count ){
 	return reg_base;
 }
 
+typedef struct {
+    BBClass *clas;
+    int count;
+} ClassCount;
+
+static int cmpClassCount(const void *a, const void *b) {
+    const ClassCount *ca = (const ClassCount *)a;
+    const ClassCount *cb = (const ClassCount *)b;
+
+    if (ca->count != cb->count) {
+        return (cb->count - ca->count);
+    }
+
+	return strcmp(ca->clas->debug_scope->name, cb->clas->debug_scope->name);
+}
+
 void bbObjectDumpInstanceCounts(char * buf, int size, int includeZeros) {
-	int i;
-	int count = 0;
-	int offset = 0;
-	BBClass ** classes = bbObjectRegisteredTypes(&count);
-	offset += snprintf(buf, size, "=== Instance count dump (%4d) ===\n", count);
-	if (bbStringClass.instance_count > 0 || includeZeros) {
-		offset += snprintf(buf + offset, size - offset, "%s\t%d\n", bbStringClass.debug_scope->name, bbStringClass.instance_count);
-	}
-	if (bbArrayClass.instance_count > 0 || includeZeros) {
-		offset += snprintf(buf + offset, size - offset, "%s\t%d\n", bbArrayClass.debug_scope->name, bbArrayClass.instance_count);
-	}
-	for (i = 0; i < count; i++) {
-		BBClass * clas = classes[i];
-		if (offset < size && (clas->instance_count > 0 || includeZeros)) {
-			offset += snprintf(buf + offset, size - offset, "%s\t%d\n", clas->debug_scope->name, clas->instance_count);
-		}
-	}
-	if (offset < size) {
-		snprintf(buf + offset, size - offset, "===  End  ===\n");
-	}
+    int i;
+    int count = 0;
+    int offset = 0;
+    BBClass **classes = bbObjectRegisteredTypes(&count);
+
+    // allocate array for all classes plus String/Array
+    ClassCount *list = malloc((count + 2) * sizeof(ClassCount));
+    int n = 0;
+
+    // add bbStringClass if wanted
+    if (bbStringClass.instance_count > 0 || includeZeros) {
+        list[n].clas = &bbStringClass;
+        list[n].count = bbStringClass.instance_count;
+        n++;
+    }
+    // add bbArrayClass if wanted
+    if (bbArrayClass.instance_count > 0 || includeZeros) {
+        list[n].clas = &bbArrayClass;
+        list[n].count = bbArrayClass.instance_count;
+        n++;
+    }
+    // add all other classes
+    for (i = 0; i < count; i++) {
+        if (classes[i]->instance_count > 0 || includeZeros) {
+            list[n].clas = classes[i];
+            list[n].count = classes[i]->instance_count;
+            n++;
+        }
+    }
+
+    qsort(list, n, sizeof(ClassCount), cmpClassCount);
+
+    offset += snprintf(buf + offset, size - offset, "=== Instance count dump (%4d) ===\n", count);
+
+    for (i = 0; i < n && offset < size; i++) {
+        offset += snprintf(buf + offset, size - offset, "%s\t%d\n", list[i].clas->debug_scope->name, list[i].count);
+    }
+
+    if (offset < size) {
+        snprintf(buf + offset, size - offset, "===  End  ===\n");
+    }
+
+    free(list);
 }
 
 void bbObjectRegisterInterface( BBInterface * ifc ){
