@@ -54,7 +54,7 @@ BBArray bbEmptyArray={
 
 //***** Note: Only used by ref counting GC.
 static void bbArrayFree( BBObject *o ){
-	if (bbCountInstances) {
+	if (bbCountInstances && !bbCountInstanceTotals) {
 		bbAtomicAdd((int*)&bbArrayClass.instance_count, -1);
 	}
 }

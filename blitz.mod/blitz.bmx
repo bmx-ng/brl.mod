@@ -822,6 +822,7 @@ Function ObjectIsString:Int(obj:Object)="int bbObjectIsString(BBOBJECT)!"
 
 Function DumpObjectCounts(buffer:Byte Ptr, size:Int, includeZeros:Int)="void bbObjectDumpInstanceCounts(char *, int, int)!"
 Global CountObjectInstances:Int="bbCountInstances"
+Global CountObjectInstanceTotals:Int="bbCountInstanceTotals"
 
 Rem
 bbdoc: Adds a function to the startup queue, optionally with a priority.

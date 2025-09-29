@@ -164,7 +164,7 @@ int bbObjectIsEmptyString(BBObject * o) {
 
 //***** Note: Not called in THREADED mode.
 static void bbStringFree( BBObject *o ){
-	if (bbCountInstances) {
+	if (bbCountInstances && !bbCountInstanceTotals) {
 		bbAtomicAdd((int*)&bbStringClass.instance_count, -1);
 	}
 }
