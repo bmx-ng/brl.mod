@@ -40,6 +40,8 @@ ModuleInfo "History: Fixed NewArray using temp type name"
 
 Import BRL.LinkedList
 Import BRL.Map
+Import BRL.PtrMap
+Import BRL.StringMap
 Import BRL.Threads
 Import "reflection.c"
 
