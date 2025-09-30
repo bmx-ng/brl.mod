@@ -1,7 +1,25 @@
 SuperStrict
 
+Rem
+bbdoc: Data structures/StringMap
+about: A maps data structure with String keys.
+End Rem
+Module BRL.StringMap
+
+ModuleInfo "Version: 1.13"
+ModuleInfo "License: zlib/libpng"
+ModuleInfo "Copyright: 2019-2025 Bruce A Henderson"
+
+ModuleInfo "History: 1.13"
+ModuleInfo "History: Moved generic-based maps to their own modules."
+ModuleInfo "History: 1.12"
+ModuleInfo "History: Refactored tree based maps to use brl.collections."
+
 Import BRL.Collections
 
+Rem
+bbdoc: A Tree map backed map with String keys and Object values.
+End Rem
 Type TStringMap
 	
 	Field _map:TTreeMap<String, Object> = New TTreeMap<String, Object>()

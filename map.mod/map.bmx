@@ -6,12 +6,14 @@ bbdoc: Data structures/Maps
 End Rem
 Module BRL.Map
 
-ModuleInfo "Version: 1.12"
+ModuleInfo "Version: 1.13"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.13"
+ModuleInfo "History: Moved generic-based maps to their own modules."
 ModuleInfo "History: 1.12"
 ModuleInfo "History: Refactored tree based maps to use brl.collections."
 ModuleInfo "History: 1.11"
@@ -37,11 +39,6 @@ ModuleInfo "History: Finally changed to red/back tree!"
 ModuleInfo "History: Added procedural interface"
 ModuleInfo "History: 1.02 Release"
 ModuleInfo "History: Fixed TMap.Remove:TNode not returning node"
-
-Import "intmap.bmx"
-Import "ptrmap.bmx"
-Import "stringmap.bmx"
-Import "objectmap.bmx"
 
 Private
 

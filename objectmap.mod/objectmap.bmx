@@ -1,7 +1,25 @@
 SuperStrict
 
+Rem
+bbdoc: Data structures/ObjectMap
+about: A maps data structure with Object keys.
+End Rem
+Module BRL.ObjectMap
+
+ModuleInfo "Version: 1.13"
+ModuleInfo "License: zlib/libpng"
+ModuleInfo "Copyright: 2019-2025 Bruce A Henderson"
+
+ModuleInfo "History: 1.13"
+ModuleInfo "History: Moved generic-based maps to their own modules."
+ModuleInfo "History: 1.12"
+ModuleInfo "History: Refactored tree based maps to use brl.collections."
+
 Import BRL.Collections
 
+Rem
+bbdoc: A Tree map backed map with Object keys and Object values.
+End Rem
 Type TObjectMap
 
 	Field _map:TTreeMap<Object, Object> = New TTreeMap<Object, Object>()
