@@ -403,6 +403,8 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	BBString **p;
 	
 	bbArgv0 = argv[0];
+
+	bbStringHash(&bbEmptyString); //force hash init
 	
 	//Start up GC and create bbAppFile, bbAppDir and bbLaunchDir
 	
