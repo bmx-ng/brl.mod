@@ -110,7 +110,7 @@ struct BBClass_String bbStringClass={
 
 BBString bbEmptyString={
 	(BBClass*)&bbStringClass, //clas
-	0x1c934c6e, // hash
+	0, 				// hash
 	0				//length
 };
 
