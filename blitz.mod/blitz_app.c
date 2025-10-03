@@ -405,6 +405,7 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 	bbArgv0 = argv[0];
 
 	bbStringHash(&bbEmptyString); //force hash init
+	bbEnumsInit(); // enum init
 	
 	//Start up GC and create bbAppFile, bbAppDir and bbLaunchDir
 	
