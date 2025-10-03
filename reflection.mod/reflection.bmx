@@ -521,7 +521,12 @@ Function TypeIdForTag:TTypeId(ty$)
 			If Not retType Then retType = ObjectTypeId
 			'retType._functionType = Null
 			Return retType.FunctionType(argTypes)
+
+		Case ty.StartsWith("#") ' extern type/interface
+			' TODO: extern type/interface support is to be added 
+			Return Null
 	End Select
+
 	Throw "TypeIdForTag error: ~q" + ty + "~q"
 End Function
 
@@ -4363,6 +4368,9 @@ Type TTypeId Extends TMember
 			p = bbDebugDeclNext(p)
 		Wend
 		_underlyingType = TypeIdForTag(String.FromCString(bbDebugDeclType(p)))
+		'TODO: if enums support more than just primitives, then
+		'      _underlyingType must be checked against Null (unsupported
+		'      tag variant found) 
 		_size = _underlyingType._size
 		_isFlagsEnum = bbDebugDeclIsFlagsEnum(p)
 		
