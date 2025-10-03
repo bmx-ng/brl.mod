@@ -1,11 +1,11 @@
 
 #include "blitz.h"
 
-struct BBString_19{BBClass_String* clas;BBULONG hash;int length;BBChar buf[19];};
+struct BBString_19{BBClass_String* clas;BBUINT hash;int length;BBChar buf[19];};
 // 'Unknown Enum name: '
 static struct BBString_19 _illegal_enum_name={
 	&bbStringClass,
-	0xc1ec5a5e5123e8c,
+	0,
 	19,
 	{85,110,107,110,111,119,110,32,69,110,117,109,32,110,97,109,101
 	,58,32}
@@ -24,6 +24,8 @@ BBArray * bbEnumValues(BBEnum * bbEnum) {
 		case 'l':size=sizeof(BBLONG);break;
 		case 'y':size=sizeof(BBULONG);break;
 		case 't':size=sizeof(BBSIZET);break;
+		case 'v':size=sizeof(BBLONGINT);break;
+		case 'e':size=sizeof(BBULONGINT);break;
 		default:
 			printf( "ERROR! bbEnumValues: unrecognized type tag!\n" );
 			return &bbEmptyArray;
@@ -88,6 +90,8 @@ ENUM_TO_STRING(BBUINT,u)
 ENUM_TO_STRING(BBLONG,l)
 ENUM_TO_STRING(BBULONG,y)
 ENUM_TO_STRING(BBSIZET,t)
+ENUM_TO_STRING(BBLONGINT,v)
+ENUM_TO_STRING(BBULONGINT,e)
 
 #define TRY_ENUM_CONVERT(type,chr)\
 int bbEnumTryConvert_##chr(BBEnum * bbEnum, type ordinalValue, type * ordinalResult) {\
@@ -131,6 +135,8 @@ TRY_ENUM_CONVERT(BBUINT,u)
 TRY_ENUM_CONVERT(BBLONG,l)
 TRY_ENUM_CONVERT(BBULONG,y)
 TRY_ENUM_CONVERT(BBSIZET,t)
+TRY_ENUM_CONVERT(BBLONGINT,v)
+TRY_ENUM_CONVERT(BBULONGINT,e)
 
 #ifndef NDEBUG
 
@@ -150,6 +156,8 @@ ENUM_CAST(BBUINT,u)
 ENUM_CAST(BBLONG,l)
 ENUM_CAST(BBULONG,y)
 ENUM_CAST(BBSIZET,t)
+ENUM_CAST(BBLONGINT,v)
+ENUM_CAST(BBULONGINT,e)
 
 #endif
 
@@ -209,6 +217,8 @@ ENUM_FROM_STRING(BBUINT,u)
 ENUM_FROM_STRING(BBLONG,l)
 ENUM_FROM_STRING(BBULONG,y)
 ENUM_FROM_STRING(BBSIZET,t)
+ENUM_FROM_STRING(BBLONGINT,v)
+ENUM_FROM_STRING(BBULONGINT,e)
 
 struct enum_info_node {
 	struct avl_root link;
@@ -254,4 +264,8 @@ BBEnum * bbEnumGetInfo( char * name ) {
 	}
 	
 	return 0;
+}
+
+void bbEnumsInit() {
+	bbStringHash(&_illegal_enum_name);
 }
