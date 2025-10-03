@@ -427,10 +427,6 @@ int bbStringCompare( BBString *x,BBString *y ){
 	if (x->clas != (BBClass*)&bbStringClass || y->clas != (BBClass*)&bbStringClass) return -1; // only compare strings with strings
 
 	sz=x->length<y->length ? x->length : y->length;
-	if (x->length == y->length && x->hash) {
-		if (!y->hash) bbStringHash(y);
-		if (x->hash == y->hash) return 0;
-	}
 	for( k=0;k<sz;++k ) if( (n=x->buf[k]-y->buf[k]) ) return n;
 	return x->length-y->length;
 }
