@@ -1059,11 +1059,24 @@ BBChar *bbStringToWString( BBString *str ){
 }
 
 BBChar *bbStringToWStringBuffer( BBString *str, BBChar * buf, size_t * length ){
-	size_t sz = str->length + 1 < *length ? str->length + 1 : *length;
-	BBChar * p = buf;
-	memcpy(p,str->buf,sz*sizeof(BBChar));
-	p[sz-1]=0;
-	return p;
+	size_t capacity = *length;
+	if (capacity == 0) {
+		return buf; // nothing to do
+	}
+
+	size_t maxcpy = capacity - 1; // leave space for null terminator
+	size_t n = (size_t)str->length; // max number of characters we can copy
+
+	if (n > maxcpy) {
+		n = maxcpy; // truncate as needed
+	}
+
+	if (n) {
+		memcpy(buf, str->buf, n * sizeof(BBChar));
+	}
+	buf[n] = 0;
+	*length = n;
+	return buf;
 }
 
 unsigned char *bbStringToUTF8String( BBString *str ){
