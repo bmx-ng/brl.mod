@@ -36,6 +36,7 @@ BBClass bbObjectClass={
 	bbObjectToString,
 	bbObjectCompare,
 	bbObjectSendMessage,
+	bbObjectHashCode,
 	0,             //interface
 	0,             //extra
 	0,             //obj_size
