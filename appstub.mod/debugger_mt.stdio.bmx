@@ -171,6 +171,10 @@ Function TypeName:String( tag:String Var )
 		Return "WString"
 	Case "t"
 		Return "Size_T"
+	Case "v"
+		Return "LongInt"
+	Case "e"
+		Return "ULongInt"
 	Case "W"
 		Return "WParam"
 	Case "X"
@@ -382,6 +386,10 @@ Function DebugDeclValue:String( decl:Int Ptr,inst:Byte Ptr )
 		Return String.FromDouble( (Double Ptr p)[0] )
 	Case Asc("t")
 		Return String.FromSizet( (Size_T Ptr p)[0] )
+	Case Asc("v")
+		Return String.FromLongInt( (LongInt Ptr p)[0] )
+	Case Asc("e")
+		Return String.FromULongInt( (ULongInt Ptr p)[0] )
 ?win32
 	Case Asc("W")
 		Return String.FromWParam( (WParam Ptr p)[0] )
@@ -514,6 +522,8 @@ Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
 		Case "Size_T"    dataSize = SizeOf(Size_T Null)
 		Case "Float"     dataSize = SizeOf(Float Null)
 		Case "Double"    dataSize = SizeOf(Double Null)
+		Case "LongInt"   dataSize = SizeOf(LongInt Null)
+		Case "ULongInt"  dataSize = SizeOf(ULongInt Null)
 	? x64
 		Case "Float64"   dataSize = SizeOf(Float64 Null)
 		Case "Float128"  dataSize = SizeOf(Float128 Null)
@@ -555,6 +565,8 @@ Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
 		Case "Size_T"    value = String((Size_T Ptr buffer)[0])
 		Case "Float"     value = String((Float  Ptr buffer)[0])
 		Case "Double"    value = String((Double Ptr buffer)[0])
+		Case "LongInt"   value = String((LongInt Ptr buffer)[0])
+		Case "ULongInt"  value = String((ULongInt Ptr buffer)[0])
 	? Ptr64
 		Case "Float64"   value = String((Float  Ptr buffer)[0]) + "," + ..
 		                         String((Float  Ptr buffer)[1])

@@ -171,7 +171,103 @@ BBInterface* bbObjectImplementedInterface(BBClass* clas, int index) {
 	return clas->itable->ifc_offsets[index].ifc;
 }
 
+void bbFieldSetEnum(void * field, BBDebugScope * enumScope, BBString * value, BBString * noEnum, BBString * invalidEnumType) {
 
+	BBEnum * _enum = bbEnumGetInfo((char *)enumScope->name);
+
+	if (!_enum) {
+		brl_blitz_IllegalArgumentError(noEnum);
+	}
+
+	switch (_enum->type[0]) {
+		case 'b': {
+			*((BBBYTE*)field) = bbEnumFromString_b(_enum, value);
+			break;
+		}
+		case 's': {
+			*((BBSHORT*)field) = bbEnumFromString_s(_enum, value);
+			break;
+		}
+		case 'i': {
+			*((BBINT*)field) = bbEnumFromString_i(_enum, value);
+			break;
+		}
+		case 'u': {
+			*((BBUINT*)field) = bbEnumFromString_u(_enum, value);
+			break;
+		}
+		case 'l': {
+			*((BBLONG*)field) = bbEnumFromString_l(_enum, value);
+			break;
+		}
+		case 'y': {
+			*((BBULONG*)field) = bbEnumFromString_y(_enum, value);
+			break;
+		}
+		case 't': {
+			*((BBSIZET*)field) = bbEnumFromString_t(_enum, value);
+			break;
+		}
+		case 'v': {
+			*((BBLONGINT*)field) = bbEnumFromString_v(_enum, value);
+			break;
+		}
+		case 'e': {
+			*((BBULONGINT*)field) = bbEnumFromString_e(_enum, value);
+			break;
+		}
+		
+		default: {
+			brl_blitz_IllegalArgumentError(invalidEnumType);
+			break;
+		}
+	}
+}
+
+BBString * bbFieldGetEnum(void * value, BBDebugScope * enumScope, BBString * noEnum, BBString * invalidEnumType) {
+
+	BBEnum * _enum = bbEnumGetInfo((char *)enumScope->name);
+
+	if (!_enum) {
+		brl_blitz_IllegalArgumentError(noEnum);
+		return &bbEmptyString;
+	}
+
+	switch (_enum->type[0]) {
+		case 'b': {
+			return bbEnumToString_b(_enum, *((BBBYTE*)value));
+		}
+		case 's': {
+			return bbEnumToString_s(_enum, *((BBSHORT*)value));
+		}
+		case 'i': {
+			return bbEnumToString_i(_enum, *((BBINT*)value));
+		}
+		case 'u': {
+			return bbEnumToString_u(_enum, *((BBUINT*)value));
+		}
+		case 'l': {
+			return bbEnumToString_l(_enum, *((BBLONG*)value));
+		}
+		case 'y': {
+			return bbEnumToString_y(_enum, *((BBULONG*)value));
+		}
+		case 't': {
+			return bbEnumToString_t(_enum, *((BBSIZET*)value));
+		}
+		case 'v': {
+			return bbEnumToString_v(_enum, *((BBLONGINT*)value));
+		}
+		case 'e': {
+			return bbEnumToString_e(_enum, *((BBULONGINT*)value));
+		}
+		default: {
+			brl_blitz_IllegalArgumentError(invalidEnumType);
+			break;
+		}
+	}
+	return &bbEmptyString;
+}
 
 #ifdef __x86_64__
 

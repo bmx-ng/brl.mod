@@ -54,6 +54,7 @@ extern void brl_blitz_ArrayBoundsError();
 extern void brl_blitz_OutOfDataError();
 extern void brl_blitz_RuntimeError( BBString *error );
 extern void brl_blitz_InvalidEnumError();
+extern void brl_blitz_IllegalArgumentError( BBString * message );
 
 // BaH
 struct BBClass_brl_blitz_TBlitzException;

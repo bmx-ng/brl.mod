@@ -104,6 +104,8 @@ BBString * bmx_debugger_DebugEnumDeclValue(BBString * decl_type_tag, void * val)
 		case 'l': return bbEnumToString_l(bbEnum, *((BBLONG*)val));
 		case 'y': return bbEnumToString_y(bbEnum, *((BBULONG*)val));
 		case 't': return bbEnumToString_t(bbEnum, *((BBSIZET*)val));
+		case 'v': return bbEnumToString_v(bbEnum, *((BBLONGINT*)val));
+		case 'e': return bbEnumToString_e(bbEnum, *((BBULONGINT*)val));
 	}
 	
 	return &bbEmptyString;
