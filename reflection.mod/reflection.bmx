@@ -94,6 +94,8 @@ Extern
 	Function bbObjectImplementsInterfaces:Int(class:Byte Ptr)
 	Function bbObjectImplementedCount:Int(class:Byte Ptr)
 	Function bbObjectImplementedInterface:Byte Ptr(class:Byte Ptr, index:Int)
+	Function bbFieldSetEnum(fieldPtr:Byte Ptr, _enum:Byte Ptr, value:String, noEnum:String, invalidEnumType:String)
+	Function bbFieldGetEnum:String(fieldPtr:Byte Ptr, _enum:Byte Ptr, noEnum:String, invalidEnumType:String)
 	
 	Function bbRefClassSuper:Byte Ptr(clas:Byte Ptr)
 	Function bbRefClassDebugScope:Byte Ptr(clas:Byte Ptr)
@@ -1400,6 +1402,17 @@ Type TField Extends TMember
 		If Not _typeId.IsStruct() Then Throw "Field type is not a struct"
 		MemCopy targetPtr, FieldPtr(obj), Size_T _typeId._size
 	EndMethod
+
+	Rem
+	bbdoc: Get enum field value as @String
+	about: Returns the name of the enum value. If the field value does not correspond to any enum value, throws an error.
+	End Rem
+	Method GetEnumAsString:String( obj:Object )
+		If Not _typeId.IsEnum() Then Throw "Field type is not an enum"
+		IF Not _typeId._enum Then Throw "...No enum provided"
+
+		Return bbFieldGetEnum(FieldPtr(obj), _typeId._enum, "No enum provided", "Invalid enum type")
+	End Method
 	
 	Rem
 	bbdoc: Set Field value
@@ -1943,6 +1956,15 @@ Type TField Extends TMember
 		If Not _typeId.IsStruct() Then Throw "Field type is not a struct"
 		MemCopy FieldPtr(obj), structPtr, Size_T _typeId.Size()
 	EndMethod
+
+	Rem
+	bbdoc: Set field value from enum name
+	about: @value must be a valid name for an enum value of the field's enum type.
+	End Rem
+	Method SetEnum(obj:Object, value:String)
+		If Not _typeId.IsEnum() Then Throw "Field type is not an enum"
+		bbFieldSetEnum(FieldPtr(obj), _typeId._enum, value, "No enum provided", "Invalid enum type")
+	End Method
 	
 	Rem
 	bbdoc: Get pointer to the field

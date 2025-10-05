@@ -67,7 +67,7 @@ void bbEnumRegister(BBEnum * bbEnum, BBDebugScope *p);
 BBEnum * bbEnumGetInfo( char * name );
 void bbEnumsInit();
 
-extern void brl_blitz_IllegalArgumentError();
+extern void brl_blitz_IllegalArgumentError(BBString * message);
 
 #ifdef __cplusplus
 }

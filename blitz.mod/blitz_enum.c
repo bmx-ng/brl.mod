@@ -232,7 +232,7 @@ static int enum_info_node_compare(const void *x, const void *y) {
         struct enum_info_node * node_x = (struct enum_info_node *)x;
         struct enum_info_node * node_y = (struct enum_info_node *)y;
 
-        return strcmp(node_x->bbEnum->atype, node_y->bbEnum->atype);
+		return strcmp(node_x->bbEnum->name, node_y->bbEnum->name);
 }
 
 void bbEnumRegister( BBEnum *p, BBDebugScope *s ) {
@@ -251,10 +251,18 @@ void bbEnumRegister( BBEnum *p, BBDebugScope *s ) {
 }
 
 BBEnum * bbEnumGetInfo( char * name ) {
+
+	char * n = name;
+
+	// if name starts with '/', skip it
+	if (n[0] == '/') {
+		n++;
+	}
+
 	// create something to look up
 	struct enum_info_node node;
 	BBEnum bbEnum;
-	bbEnum.atype = name;
+	bbEnum.name = n;
 	node.bbEnum = &bbEnum;
 	
 	struct enum_info_node * found = (struct enum_info_node *)tree_search((struct tree_root_np *)&node, enum_info_node_compare, (struct tree_root_np *)enum_info_root);
