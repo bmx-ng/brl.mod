@@ -2710,8 +2710,11 @@ Type TTypeId Extends TMember
 		Return _modifiers & EModifiers.IsFinal <> Null
 	End Method
 
+	Rem
+	bbdoc: Determine if type is an array type
+	End Rem
 	Method IsArrayType:Int()
-		Return _elementType <> Null And _class = Null And _enum = Null
+		Return _elementType <> Null And _class = bbRefArrayClass
 	End Method
 	
 	Rem
@@ -3187,6 +3190,17 @@ Type TTypeId Extends TMember
 		Local p:Byte Ptr=bbRefArrayElementPtr( _elementType._size,_array,index )
 		Return String(_Get( p,_elementType ))
 	End Method
+
+	Rem
+	bbdoc: Get an array element as enum name @String
+	about: This method should only be called on the type ID corresponding to the type of the array.
+	End Rem
+	Method GetEnumArrayElementAsString:String( _array:Object,index:Int )
+		If Not _elementType Throw "TypeID is not an array type"
+		If Not _elementType.IsEnum() Then Throw "Element type is not an enum type"
+		Local p:Byte Ptr=bbRefArrayElementPtr( _elementType._size,_array,index )
+		Return bbFieldGetEnum(p, _elementType._enum, "No enum provided", "Invalid enum type")
+	End Method
 	
 	Rem
 	bbdoc: Get an array element as @Byte
@@ -3636,6 +3650,16 @@ Type TTypeId Extends TMember
 	End Rem
 	Method SetArrayElement( _array:Object,index:Int,value:ULongInt )
 		SetULongIntArrayElement(_array, index, value)
+	End Method
+
+	Rem
+	bbdoc: Set an enum array element from @String
+	End Rem
+	Method SetEnumArrayElement( _array:Object,index:Int,value:String )
+		If Not _elementType Throw "TypeID is not an array type"
+		If Not _elementType.IsEnum() Then Throw "Element type is not an enum type"
+		Local p:Byte Ptr=bbRefArrayElementPtr( _elementType._size,_array,index )
+		bbFieldSetEnum(p, _elementType._enum, value, "No enum provided", "Invalid enum value")
 	End Method
 	
 	Rem
