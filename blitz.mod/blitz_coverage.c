@@ -36,7 +36,7 @@ void bbCoverageRegisterFile(BBCoverageFileInfo * coverage_files) {
         
         if (coverage_file->line_map == NULL) {
             coverage_file->line_map = hashmapCreate(64, hashmapIntHash, hashmapIntEquals);
-            hashmapPut(BBCoverageLineExecInfoTable, (void*)coverage_file->filename, coverage_file);
+            hashmapPut(BBCoverageLineExecInfoTable, (intptr_t)coverage_file->filename, coverage_file);
         }
         
         if (coverage_file->func_map == NULL) {
@@ -48,7 +48,7 @@ void bbCoverageRegisterFile(BBCoverageFileInfo * coverage_files) {
             info->file = coverage_file->filename;
             info->line = coverage_file->coverage_lines[j];
             info->count = 0;
-            hashmapPut(coverage_file->line_map, (void*)(intptr_t)info->line, info);
+            hashmapPut(coverage_file->line_map, (intptr_t)info->line, info);
         }
 
         for (int j = 0; j < coverage_file->coverage_functions_count; j++) {
@@ -56,13 +56,13 @@ void bbCoverageRegisterFile(BBCoverageFileInfo * coverage_files) {
             info->func = coverage_file->coverage_functions[j].func;
             info->line = coverage_file->coverage_functions[j].line;
             info->count = 0;
-            hashmapPut(coverage_file->func_map, (void*)(intptr_t)info->line, info);
+            hashmapPut(coverage_file->func_map, (intptr_t)info->line, info);
         }
     }
 }
 
 void bbCoverageUpdateLineInfo(const char* file, int line) {
-    BBCoverageFileInfo * coverage_file = (Hashmap*) hashmapGet(BBCoverageLineExecInfoTable, (void*)file);
+    BBCoverageFileInfo * coverage_file = (Hashmap*) hashmapGet(BBCoverageLineExecInfoTable, (intptr_t)file);
     
     if (!coverage_file) {
         // error
@@ -70,21 +70,21 @@ void bbCoverageUpdateLineInfo(const char* file, int line) {
         return;
     }
 
-    BBCoverageLineExecInfo* info = (BBCoverageLineExecInfo*) hashmapGet(coverage_file->line_map, (void*)(intptr_t)line);
+    BBCoverageLineExecInfo* info = (BBCoverageLineExecInfo*) hashmapGet(coverage_file->line_map, (intptr_t)line);
     
     if (!info) {
         info = (BBCoverageLineExecInfo*) malloc(sizeof(BBCoverageLineExecInfo));
         info->file = file;
         info->line = line;
         info->count = 0;
-        hashmapPut(coverage_file->line_map, (void*)(intptr_t)line, info);
+        hashmapPut(coverage_file->line_map, (intptr_t)line, info);
     }
 
     info->count++;
 }
 
 void bbCoverageUpdateFunctionLineInfo(const char* file, const char* func, int line) {
-    BBCoverageFileInfo * coverage_file = (Hashmap*) hashmapGet(BBCoverageLineExecInfoTable, (void*)file);
+    BBCoverageFileInfo * coverage_file = (Hashmap*) hashmapGet(BBCoverageLineExecInfoTable, (intptr_t)file);
     
     if (!coverage_file) {
         // error
@@ -92,7 +92,7 @@ void bbCoverageUpdateFunctionLineInfo(const char* file, const char* func, int li
         return;
     }
 
-    BBCoverageFuncExecInfo* info = (BBCoverageFuncExecInfo*) hashmapGet(coverage_file->func_map, (void*)(intptr_t)line);
+    BBCoverageFuncExecInfo* info = (BBCoverageFuncExecInfo*) hashmapGet(coverage_file->func_map, (intptr_t)line);
     
     if (!info) {
         info = (BBCoverageFuncExecInfo*) malloc(sizeof(BBCoverageFuncExecInfo));
@@ -100,7 +100,7 @@ void bbCoverageUpdateFunctionLineInfo(const char* file, const char* func, int li
         info->func = func;
         info->line = line;
         info->count = 0;
-        hashmapPut(coverage_file->line_map, (void*)(intptr_t)line, info);
+        hashmapPut(coverage_file->line_map, (intptr_t)line, info);
     }
 
     info->count++;
@@ -113,7 +113,7 @@ static int write_line_exec_info(intptr_t key, void* value, void* context) {
     return 1;
 }
 
-static int write_file_exec_info(intptr_t key, void* value, void* context) {
+static bool write_file_exec_info(intptr_t key, void* value, void* context) {
     const char* file = (const char*)key;
     BBCoverageFileInfo* coverage_file = (BBCoverageFileInfo*)value;
     FILE* lcov_file = (FILE*)context;
@@ -122,7 +122,7 @@ static int write_file_exec_info(intptr_t key, void* value, void* context) {
 
     int lines_hit = 0;
     for (int i=0; i < coverage_file->coverage_lines_count; i++) {
-        BBCoverageLineExecInfo* info = (BBCoverageLineExecInfo*) hashmapGet(coverage_file->line_map, (void*)(intptr_t)coverage_file->coverage_lines[i]);
+        BBCoverageLineExecInfo* info = (BBCoverageLineExecInfo*) hashmapGet(coverage_file->line_map, (intptr_t)coverage_file->coverage_lines[i]);
         if (info) {
             if (info->count > 0) {
                 lines_hit++;
@@ -136,7 +136,7 @@ static int write_file_exec_info(intptr_t key, void* value, void* context) {
 
     int functions_hit = 0;
     for (int i=0; i < coverage_file->coverage_functions_count; i++) {
-        BBCoverageFuncExecInfo* info = (BBCoverageFuncExecInfo*) hashmapGet(coverage_file->func_map, (void*)(intptr_t)coverage_file->coverage_functions[i].line);
+        BBCoverageFuncExecInfo* info = (BBCoverageFuncExecInfo*) hashmapGet(coverage_file->func_map, (intptr_t)coverage_file->coverage_functions[i].line);
         if (info) {
             if (info->count > 0) {
                 functions_hit++;
