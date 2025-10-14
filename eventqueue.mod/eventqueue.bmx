@@ -91,6 +91,7 @@ Function PollEvent:Int()
 		EndIf
 	EndIf
 	CurrentEvent=queue[queue_get & QUEUEMASK]
+	queue[queue_get & QUEUEMASK]=Null
 	queue_get:+1
 	Return CurrentEvent.id
 End Function
@@ -110,6 +111,7 @@ Function WaitEvent:Int()
 		WaitSystem
 	Wend
 	CurrentEvent=queue[queue_get & QUEUEMASK]
+	queue[queue_get & QUEUEMASK]=Null
 	queue_get:+1
 	Return CurrentEvent.id
 End Function
@@ -228,3 +230,4 @@ EndRem
 Function EventSourceHandle:Size_T()
 	Return HandleFromObject( CurrentEvent.source )
 End Function
+
