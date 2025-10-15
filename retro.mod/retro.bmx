@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: BASIC/BASIC compatibility
@@ -12,6 +12,8 @@ ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.10"
+ModuleInfo "History: SuperStrict mode"
 ModuleInfo "History: 1.09 Release"
 ModuleInfo "History: Cleaned up Mid$"
 ModuleInfo "History: 1.08 Release"
@@ -32,7 +34,7 @@ If no size if given, #Mid returns the characters in the existing string from
 
 For compatibility with classic BASIC, the @pos parameter is 'one based'.
 End Rem
-Function Mid:String( str:String,pos,size=-1 )
+Function Mid:String( str:String,pos:Int,size:Int=-1 )
 	If pos>Len( str ) Return Null
 	pos:-1
 	If( size<0 ) Return str[pos..]
@@ -50,7 +52,7 @@ The @start parameter allows you to specifying a starting index for the search.
 For compatiblity with classic BASIC, the @start parameter and returned position
 are both 'one based'.
 End Rem
-Function Instr( str:String,sub:String,start=1 )
+Function Instr:Int( str:String,sub:String,start:Int=1 )
 	Return str.Find( sub,start-1 )+1
 End Function
 
@@ -62,7 +64,7 @@ The Left command returns a substring of a String.
 Given an existing String and a @size, Left returns the first @size
 characters from the start of the String in a new String.
 End Rem
-Function Left:String( str:String,n )
+Function Left:String( str:String,n:Int )
 	If n>Len(str) n=Len(str)
 	Return str[..n]
 End Function
@@ -75,7 +77,7 @@ The Right command returns a substring of a String.
 Given an existing String and a @size, Right returns the last @size
 characters from the end of the String.
 End Rem
-Function Right:String( str:String,n )
+Function Right:String( str:String,n:Int )
 	If n>Len(str) n=Len(str)
 	Return str[Len(str)-n..]
 End Function
@@ -84,7 +86,7 @@ Rem
 bbdoc: Left justify string
 returns: A string of length @n, padded with spaces
 endrem
-Function LSet:String( str:String,n )
+Function LSet:String( str:String,n:Int )
 	Return str[..n]
 End Function
 
@@ -92,7 +94,7 @@ Rem
 bbdoc: Right justify string
 returns: A string of length @n, padded with spaces
 endrem
-Function RSet:String( str:String,n )
+Function RSet:String( str:String,n:Int )
 	Return str[Len(str)-n..]
 End Function
 
@@ -134,10 +136,10 @@ Rem
 bbdoc: Convert an integer value to a hexadecimal string
 returns: The hexadecimal string representation of @val
 End Rem
-Function Hex:String( val )
+Function Hex:String( val:Int )
 	Local buf:Short[8]
-	For Local k=7 To 0 Step -1
-		Local n=(val&15)+Asc("0")
+	For Local k:Int=7 To 0 Step -1
+		Local n:Int=(val&15)+Asc("0")
 		If n>Asc("9") n=n+(Asc("A")-Asc("9")-1)
 		buf[k]=n
 		val:Shr 4
@@ -149,9 +151,9 @@ Rem
 bbdoc: Convert an integer value to a binary string
 returns: The binary string representation of @val
 End Rem
-Function Bin:String( val )
+Function Bin:String( val:Int )
 	Local buf:Short[32]
-	For Local k=31 To 0 Step -1
+	For Local k:Int=31 To 0 Step -1
 		buf[k]=(val&1)+Asc("0")
 		val:Shr 1
 	Next
