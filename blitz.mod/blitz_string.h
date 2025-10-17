@@ -95,9 +95,11 @@ struct BBClass_String{
 #endif
 
 	unsigned char* (*bbStringToUTF8StringBuffer)( BBString *str, unsigned char * buf, size_t * length );
+	unsigned char* (*bbStringToUTF8StringLen)( BBString *str, size_t * length );
+
 	BBUINT* (*bbStringToUTF32String)( BBString *str );
 	BBString* (*bbStringFromUTF32String)( const BBUINT *p );
-	BBString* (*bbStringFromUTF32Bytes)( const BBUINT *p, int n );
+	BBString* (*bbStringFromUTF32Bytes)( const BBUINT *p, size_t n );
 	BBChar* (*bbStringToWStringBuffer)( BBString *str, BBChar * buf, size_t * length );
 
 	BBLONGINT (*bbStringToLongInt)( BBString *t );
@@ -187,7 +189,7 @@ int bbStrToFloatEx( BBChar *buf, int length, float * val, int startPos, int endP
 
 BBUINT* bbStringToUTF32String( BBString *str );
 BBString* bbStringFromUTF32String( const BBUINT *p );
-BBString* bbStringFromUTF32Bytes( const BBUINT *p, int n );
+BBString* bbStringFromUTF32Bytes( const BBUINT *p, size_t n );
 
 #ifdef _WIN32
 WPARAM  bbStringToWParam( BBString *str );
@@ -233,6 +235,7 @@ BBULONG bbStringHash( BBString * x );
 #endif
 
 unsigned char *bbStringToUTF8StringBuffer( BBString *str, unsigned char * buf, size_t * length );
+unsigned char *bbStringToUTF8StringLen( BBString *str, size_t * length );
 BBChar *bbStringToWStringBuffer( BBString *str, BBChar * buf, size_t * length );
 
 int bbStringIdentifierEqualsNoCase(BBString *x, BBString *y);

@@ -96,6 +96,7 @@ struct BBClass_String bbStringClass={
 #endif
 
 	bbStringToUTF8StringBuffer,
+	bbStringToUTF8StringLen,
 
 	bbStringToUTF32String,
 	bbStringFromUTF32String,
@@ -120,10 +121,10 @@ static int wstrlen( const BBChar *p ){
 	return t-p;
 }
 
-static int utf32strlen( const BBUINT *p ){
+static size_t utf32strlen( const BBUINT *p ){
 	const BBUINT *t=p;
 	while( *t ) ++t;
-	return t-p;
+	return (size_t)(t-p);
 }
 
 static int charsEqual( unsigned short *a,unsigned short *b,int n ){
@@ -1086,6 +1087,17 @@ unsigned char *bbStringToUTF8String( BBString *str ){
 	return bbStringToUTF8StringBuffer(str, buf, &buflen);
 }
 
+unsigned char *bbStringToUTF8StringLen( BBString *str, size_t * length ){
+	int len=str->length;
+	size_t buflen = len * 4 + 1;
+	unsigned char *buf=(unsigned char*)bbMemAlloc( buflen );
+	bbStringToUTF8StringBuffer(str, buf, &buflen);
+	if (length != NULL) {
+		*length = buflen;
+	}
+	return buf;
+}
+
 unsigned char *bbStringToUTF8StringBuffer( BBString *str, unsigned char * buf, size_t * length ){
 	int i=0,len=str->length;
 	size_t buflen = *length;
@@ -1265,26 +1277,56 @@ char *bbTmpUTF8String( BBString *str ){
 }
 
 BBUINT* bbStringToUTF32String( BBString *str ) {
-	int len=str->length;
-	int n = 0;
-	size_t buflen = len * 4 + 4;
-	BBUINT *buf=(BBUINT*)bbMemAlloc( buflen );
+	if (!str || str == &bbEmptyString) {
+		BBUINT *buf = (BBUINT*)bbMemAlloc(sizeof(BBUINT));
+		*buf = 0;
+		return buf;
+	}
 
-	BBChar *p=str->buf;
+	size_t len=(size_t)str->length;
+
+	size_t cap = len + 1;
+	if (cap > SIZE_MAX / sizeof(BBUINT)) {  // overflow guard
+        return NULL;
+    }
+
+	BBUINT *buf = (BBUINT*)bbMemAlloc(cap * sizeof(BBUINT));
+    if (!buf) {
+		return NULL;
+	}
+
+	const BBChar *p = str->buf;
 	BBUINT *bp = buf;
-	while( *p ) {
-		n++;
-		BBChar c = *p++;
-		if (!((c - 0xd800u) < 2048u)) {
-			*bp++ = c;
-		} else {
-			if (((c & 0xfffffc00) == 0xd800) && n < len && ((*p & 0xfffffc00) == 0xdc00)) {
-				*bp++ = (c << 10) + (*p++) - 0x35fdc00;
-			} else {
-				bbMemFree( buf );
-				bbExThrowCString( "Failed to create UTF32. Invalid surrogate pair." );
-			}
-		}
+	for (size_t i = 0; i < len; ++i) {
+		BBChar c = p[i];
+
+		// Non-surrogate fast path
+        if (c < 0xD800u || c > 0xDFFFu) {
+            *bp++ = (BBUINT)c;
+            continue;
+        }
+
+		// Surrogates
+        if ((c & 0xFC00u) == 0xD800u) { // high surrogate
+            if (i + 1 >= len) {
+                bbMemFree(buf);
+                bbExThrowCString("Failed to create UTF32. Invalid surrogate pair (truncated).");
+            }
+            BBChar c2 = p[i + 1];
+            if ((c2 & 0xFC00u) != 0xDC00u) {
+                bbMemFree(buf);
+                bbExThrowCString("Failed to create UTF32. Invalid surrogate pair.");
+            }
+            // Decode pair
+            BBUINT cp = (((BBUINT)c - 0xD800u) << 10) | ((BBUINT)c2 - 0xDC00u);
+            cp += 0x10000u;
+            *bp++ = cp;
+            ++i; // consumed the low surrogate
+        } else {
+            // Lone low surrogate
+            bbMemFree(buf);
+            bbExThrowCString("Failed to create UTF32. Lone low surrogate.");
+        }
 	}
 	*bp = 0;
 	return buf;
@@ -1294,12 +1336,11 @@ BBString* bbStringFromUTF32String( const BBUINT *p ) {
 	return p ? bbStringFromUTF32Bytes(p, utf32strlen(p)) : &bbEmptyString;
 }
 
-BBString* bbStringFromUTF32Bytes( const BBUINT *p, int n ) {
-	if( !p || n <= 0 ) return &bbEmptyString;
-	
-	int len = n * 2;
-	unsigned short * d=(unsigned short*)malloc( n * sizeof(BBChar) * 2 );
-	unsigned short * q=d;
+BBString* bbStringFromUTF32Bytes( const BBUINT *p, size_t n ) {
+	if( !p || n == 0 ) return &bbEmptyString;
+
+	BBChar * d=(BBChar*)malloc( n * sizeof(BBChar) * 2 );
+	BBChar * q=d;
 
 	BBUINT* bp = p;
 

@@ -29,8 +29,9 @@ Type TStringTest Extends TTest
 		
 		Local buf:UInt Ptr = s.ToUTF32String()
 		For Local i:Int = 0 Until 7
-			assertEquals( bigUnicode[i], buf[i] )
+			assertEquals( bigUnicode[i], buf[i], "UTF32 conversion failed at index " + i)
 		Next
+		MemFree(buf)
 	End Method
 
 	Method testToUTF8StringBuffer() { test }
@@ -158,6 +159,24 @@ Type TStringTest Extends TTest
 
 		assertTrue(obj = obj1, "Already uppercase Cyrillic strings should return the same object")
 
+	End Method
+
+	Method testToUTF8StringWithLength() { test }
+		Local length:Size_T
+		Local buf:Byte Ptr = "Hello World".ToUTF8String(length)
+		assertEquals(11, length)
+		MemFree(buf)
+
+		length = 0
+		buf = CYRILLIC_UPPER.ToUTF8String(length)
+		assertEquals(17, length)
+		MemFree(buf)
+
+		length = 0
+		Local s:String = String.FromUTF32String(bigUnicode)
+		buf = s.ToUTF8String(length)
+		assertEquals(24, length)
+		MemFree(buf)
 	End Method
 
 End Type

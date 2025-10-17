@@ -65,10 +65,11 @@ String^Object{
 	+FromULong:String( ulongValue:ULong )="bbStringFromULong"
 	
 	-ToUTF8StringBuffer:Byte Ptr(buf:Byte Ptr, length:Size_T Var)="bbStringToUTF8StringBuffer"
+	-ToUTF8String:Byte Ptr(length:Size_T Var)="bbStringToUTF8StringLen"
 
 	-ToUTF32String:UInt Ptr()="bbStringToUTF32String"
 	+FromUTF32String:String( utf32String:UInt Ptr )="bbStringFromUTF32String"
-	+FromUTF32Bytes:String( utf32String:UInt Ptr, count )="bbStringFromUTF32Bytes"
+	+FromUTF32Bytes:String( utf32String:UInt Ptr, count:Size_T )="bbStringFromUTF32Bytes"
 
 	-ToWStringBuffer:Short Ptr(buf:Short Ptr, length:Size_T Var)="bbStringToWStringBuffer"
 
