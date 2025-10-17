@@ -1,17 +1,19 @@
 
-Strict
+SuperStrict
 
 Rem
 bbdoc: User input/Polled input
 End Rem
 Module BRL.PolledInput
 
-ModuleInfo "Version: 1.05"
+ModuleInfo "Version: 1.06"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.06"
+ModuleInfo "History: SuperStrict mode."
 ModuleInfo "History: 1.05"
 ModuleInfo "History: Fixed mouse functions not supporting 5 buttons."
 ModuleInfo "History: 1.04"
@@ -27,18 +29,18 @@ Import BRL.System
 
 Private
 
-Global enabled
-Global autoPoll=True
+Global enabled:Int
+Global autoPoll:Int=True
 Global inputSource:Object
-Global suspended,terminate
+Global suspended:Int,terminate:Int
 
-Global keyStates[256],keyHits[256]
-Global charGet,charPut,charQueue[256]
+Global keyStates:Int[256],keyHits:Int[256]
+Global charGet:Int,charPut:Int,charQueue:Int[256]
 
-Global mouseStates[5],mouseHits[5]
-Global mouseLocation[3],lastMouseLocation[3]
+Global mouseStates:Int[5],mouseHits:Int[5]
+Global mouseLocation:Int[3],lastMouseLocation:Int[3]
 
-Function Hook:Object( id,data:Object,context:Object )
+Function Hook:Object( id:Int,data:Object,context:Object )
 
 	Local ev:TEvent=TEvent(data)
 	If Not ev Return data
@@ -119,7 +121,7 @@ Rem
 bbdoc: Get app suspended state
 returns: True if application is currently suspended.
 End Rem
-Function AppSuspended()
+Function AppSuspended:Int()
 	If autoPoll PollSystem
 	Return suspended
 End Function
@@ -128,9 +130,9 @@ Rem
 bbdoc: Return app terminate state
 returns: True if user has requested to terminate application
 End Rem
-Function AppTerminate()
+Function AppTerminate:Int()
 	If autoPoll PollSystem
-	Local n=terminate
+	Local n:Int=terminate
 	terminate=False
 	Return n
 End Function
@@ -144,9 +146,9 @@ call to #KeyHit with the same @key.
 
 See the #{key codes} module for a list of valid key codes.
 End Rem
-Function KeyHit( key )
+Function KeyHit:Int( key:Int )
 	If autoPoll PollSystem
-	Local n=keyHits[key]
+	Local n:Int=keyHits[key]
 	keyHits[key]=0
 	Return n
 End Function
@@ -157,7 +159,7 @@ returns: #True if @key is currently down
 about:
 See the #{key codes} module for a list of valid keycodes.
 End Rem
-Function KeyDown( key )
+Function KeyDown:Int( key:Int )
 	If autoPoll PollSystem
 	Return keyStates[key]
 End Function
@@ -173,10 +175,10 @@ keystrokes into an internal 'character queue'.
 
 If the character queue is empty, 0 is returned.
 End Rem
-Function GetChar()
+Function GetChar:Int()
 	If autoPoll PollSystem
 	If charGet=charPut Return 0
-	Local n=charQueue[charGet & 255]
+	Local n:Int=charQueue[charGet & 255]
 	charGet:+1
 	Return n
 End Function
@@ -192,12 +194,12 @@ Function FlushKeys(resetStates:Int = True)
 	charGet=0
 	charPut=0
 	If resetStates Then
-		For Local i:Int=0 Until keyStates.length
+		For Local i:Int=0 Until keyStates.Length
 			keyStates[i]=0
 			keyHits[i]=0
 		Next
 	Else
-		For Local i:Int=0 Until keyHits.length
+		For Local i:Int=0 Until keyHits.Length
 			keyHits[i]=0
 		Next
 	End If
@@ -209,7 +211,7 @@ returns: Mouse x axis location
 about:
 The returned value is relative to the left of the screen.
 end rem
-Function MouseX()
+Function MouseX:Int()
 	If autoPoll PollSystem
 	Return mouseLocation[0]
 End Function
@@ -220,7 +222,7 @@ returns: Mouse y axis location
 about:
 The returned value is relative to the top of the screen.
 end rem
-Function MouseY()
+Function MouseY:Int()
 	If autoPoll PollSystem
 	Return mouseLocation[1]
 End Function
@@ -232,7 +234,7 @@ about:
 The mouse wheel value increments when the mouse wheel is rolled 'away' from the user, and
 decrements when the mouse wheel is rolled 'towards' the user.
 end rem
-Function MouseZ()
+Function MouseZ:Int()
 	If autoPoll PollSystem
 	Return mouseLocation[2]
 End Function
@@ -241,9 +243,9 @@ Rem
 bbdoc: Get mouse x speed
 returns: Mouse x speed
 End Rem
-Function MouseXSpeed()
+Function MouseXSpeed:Int()
 	If autoPoll PollSystem
-	Local d=mouseLocation[0]-lastMouseLocation[0]
+	Local d:Int=mouseLocation[0]-lastMouseLocation[0]
 	lastMouseLocation[0]=mouseLocation[0]
 	Return d
 EndFunction
@@ -252,9 +254,9 @@ Rem
 bbdoc: Get mouse y speed
 returns: Mouse y speed
 End Rem
-Function MouseYSpeed()
+Function MouseYSpeed:Int()
 	If autoPoll PollSystem
-	Local d=mouseLocation[1]-lastMouseLocation[1]
+	Local d:Int=mouseLocation[1]-lastMouseLocation[1]
 	lastMouseLocation[1]=mouseLocation[1]
 	Return d
 EndFunction
@@ -263,9 +265,9 @@ Rem
 bbdoc: Get mouse z speed
 returns: Mouse z speed
 End Rem
-Function MouseZSpeed()
+Function MouseZSpeed:Int()
 	If autoPoll PollSystem
-	Local d=mouseLocation[2]-lastMouseLocation[2]
+	Local d:Int=mouseLocation[2]-lastMouseLocation[2]
 	lastMouseLocation[2]=mouseLocation[2]
 	Return d
 EndFunction
@@ -277,7 +279,7 @@ about:
 End Rem
 Function FlushMouse()
 	PollSystem
-	For Local i:Int=0 Until mouseStates.length
+	For Local i:Int=0 Until mouseStates.Length
 		mouseStates[i]=0
 		mouseHits[i]=0
 	Next
@@ -294,9 +296,9 @@ last call to #MouseHit with the same @button.
 @button should be 1 for the left mouse button, 2 for the right mouse button or 3 for the
 middle mouse button. Two further buttons, 4 and 5, are also available for mice that support them.
 End Rem
-Function MouseHit( button )
+Function MouseHit:Int( button:Int )
 	If autoPoll PollSystem
-	Local n=mouseHits[button-1]
+	Local n:Int=mouseHits[button-1]
 	mouseHits[button-1]=0
 	Return n
 End Function
@@ -308,7 +310,7 @@ about:
 @button should be 1 for the left mouse button, 2 for the right mouse button or 3 for the
 middle mouse button. Two further buttons, 4 and 5, are also available for mice that support them.
 End Rem
-Function MouseDown( button )
+Function MouseDown:Int( button:Int )
 	If autoPoll PollSystem
 	Return mouseStates[button-1]
 End Function
@@ -322,11 +324,11 @@ key is then returned to the application.
 
 See the #{key codes} module for a list of valid keycodes.
 End Rem
-Function WaitKey()
+Function WaitKey:Int()
 	FlushKeys
 	Repeat
 		WaitSystem
-		For Local n:Int = 1 To keyStates.length - 1
+		For Local n:Int = 1 To keyStates.Length - 1
 			If KeyHit(n) Return n
 		Next
 	Forever
@@ -339,11 +341,11 @@ about:
 #WaitChar suspends program execution until a character is available from #GetChar. This
 character is then returned to the application.
 End Rem
-Function WaitChar()
+Function WaitChar:Int()
 	FlushKeys
 	Repeat
 		WaitSystem
-		Local n=GetChar()
+		Local n:Int=GetChar()
 		If n Return n
 	Forever
 End Function
@@ -357,11 +359,11 @@ about:
 #WaitMouse returns 1 if the left mouse button was clicked, 2 if the right mouse button was
 clicked or 3 if the middle mouse button was clicked. Further buttons (>3) are also checked for mice that support them. 
 End Rem
-Function WaitMouse()
+Function WaitMouse:Int()
 	FlushMouse
 	Repeat
 		WaitSystem
-		For Local n:Int=1 To mouseHits.length
+		For Local n:Int=1 To mouseHits.Length
 			If MouseHit(n) Return n
 		Next
 	Forever
