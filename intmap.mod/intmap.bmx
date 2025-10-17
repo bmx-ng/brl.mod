@@ -48,6 +48,10 @@ Type TIntMap
 		Return Null
 	End Method
 
+	Method ValueForKey:Int( key:Int, value:Object Var )
+		Return _map.TryGetValue( key, value )
+	End Method
+
 	Method Remove:Int( key:Int )
 		Return _map.Remove(key)
 	End Method

@@ -48,6 +48,10 @@ Type TPtrMap
 		Return Null
 	End Method
 
+	Method ValueForKey:Int( key:Byte Ptr, value:Object Var )
+		Return _map.TryGetValue( key, value )
+	End Method
+
 	Method Remove:Int( key:Byte Ptr )
 		Return _map.Remove(key)
 	End Method

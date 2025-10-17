@@ -262,6 +262,19 @@ Type TMap
 		Local node:TNode=_FindNode( key )
 		If node<>nil Return node._value
 	End Method
+
+	Rem
+	bbdoc: Finds a value given a @key, returning it via an output parameter.
+	returns: #True if @key was found, otherwise #False.
+	End Rem
+	Method ValueForKey:Int( key:Object, value:Object var )
+		Local node:TNode=_FindNode( key )
+		If node<>nil
+			value=node._value
+			Return True
+		EndIf
+		Return False
+	End Method
 	
 	Rem
 	bbdoc: Remove a key/value pair from the map.

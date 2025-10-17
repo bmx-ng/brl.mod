@@ -48,6 +48,10 @@ Type TStringMap
 		Return Null
 	End Method
 
+	Method ValueForKey:Int( key:String, value:Object Var )
+		Return _map.TryGetValue( key, value )
+	End Method
+
 	Method Remove:Int( key:String )
 		Return _map.Remove(key)
 	End Method
