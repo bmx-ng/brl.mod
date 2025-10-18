@@ -22,13 +22,23 @@ ModuleInfo "History: Changed Assert to Throw. One can at least catch a Throw."
 
 Import BRL.Max2D
 Import BRL.DXGraphics
+Import BRL.Threads
+Import "RenderImageManager.cpp"
 
-'Import BRL.D3D7Max2D
-
+Extern
+	Function RenderImageManager_AddRenderImage(o:Object)
+	Function RenderImageManager_RemoveRenderImage(o:Object)
+	Function RenderImageManager_ResetIterator()
+	Function RenderImageManager_GetNextValue:Int(o:Object Ptr)
+End Extern
 
 Const LOG_ERRS:Int=True'False
 
 Private
+
+' Set this to true for some debug information relating to render image management during device loss/reset
+' - also uncomment the #define OUTPUT_DEBUG_INFO in the RenderImageManager.cpp file
+Const OutputRenderImageListDebugInfo:Int = False
 
 Global _gw:Int,_gh:Int,_gd:Int,_gr:Int,_gf:Long,_gx:Int,_gy:Int
 Global _color:Int
@@ -50,7 +60,10 @@ Global _max2dGraphics:TMax2dGraphics
 
 Global _BackbufferRenderImageFrame:TD3D9RenderImageFrame
 Global _CurrentRenderImageFrame:TD3D9RenderImageFrame
+Global _CurrentRenderImageContainer:Object
+Global _CanUpdateRenderImages:Int = False
 Global _D3D9Scissor_BMaxViewport:Rect = New Rect
+Global _Lock:TMutex = CreateMutex()
 
 Function Pow2Size:Int( n:Int )
 	Local t:Int=1
@@ -119,7 +132,7 @@ Type TD3D9ImageFrame Extends TImageFrame
 		If _d3dDev.CreateTexture( pow2width,pow2height,levels,usage,format,pool,_texture,Null )<0
 			d3derr "Unable to create texture~n"
 			_texture = Null
-			Return null
+			Return Null
 		EndIf
 		
 		_d3d9Graphics.AutoRelease _texture
@@ -190,13 +203,13 @@ Type TD3D9ImageFrame Extends TImageFrame
 		
 		Return Self
 	End Method
-	
+
 	Method Draw( x0:Float,y0:Float,x1:Float,y1:Float,tx:Float,ty:Float,sx:Float,sy:Float,sw:Float,sh:Float ) Override
 		Local u0:Float = sx * _uscale
 		Local v0:Float = sy * _vscale
 		Local u1:Float = (sx + sw) * _uscale
 		Local v1:Float = (sy + sh) * _vscale
-	
+
 		_fverts[0] = x0 * _ix + y0 * _iy + tx
 		_fverts[1] = x0 * _jx + y0 * _jy + ty
 		_iverts[3] = _color
@@ -240,22 +253,30 @@ Type TD3D9ImageFrame Extends TImageFrame
 	
 	Field _texture:IDirect3DTexture9, _seq:Int
 	Field _magfilter:Int, _minfilter:Int, _mipfilter:Int, _uscale:Float, _vscale:Float
-	Field _fverts:Float[24], _iverts:Int Ptr=Int Ptr( Varptr _fverts[0] )
+	Field _fverts:Float[24], _iverts:Int Ptr = Int Ptr( Varptr _fverts[0] )
 End Type
 
 Type TD3D9RenderImageFrame Extends TD3D9ImageFrame
 	Field _surface:IDirect3DSurface9
+	Field _offscreenSurface:IDirect3DSurface9
 	Field _stagingPixmap:TPixmap
 	Field _width:UInt, _height:UInt
 
 	Method Delete()
+		LockMutex(_Lock)
 		ReleaseNow()
+		RenderImageManager_RemoveRenderImage(Self)
+		UnlockMutex(_Lock)
 	End Method
 	
 	Method ReleaseNow()
 		If _surface
 			_surface.Release_
 			_surface = Null
+		EndIf
+		If _offscreenSurface
+			_offscreenSurface.Release_
+			_offscreenSurface = Null
 		EndIf
 		If _texture
 			_texture.Release_
@@ -314,6 +335,61 @@ Type TD3D9RenderImageFrame Extends TD3D9ImageFrame
 	End Method
 
 Private
+	Method PastePixmap(pixmap:TPixmap, x:Int, y:Int)
+		' nothing to do if the area is outside of the valid area
+		If x + pixmap.width < 0 Or y + pixmap.height < 0 Or x >= Self._width Or y >= Self._height
+			Return
+		EndIf
+
+		' create (cpu ram) offscreen surface if not done yet
+		If Not Self._offscreenSurface
+			If _d3dDev.CreateOffscreenPlainSurface(Self._width, Self._height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, Self._offscreenSurface, Null) < 0
+				d3derr "CreateOffscreenPlainSurface failed~n"
+				Return
+			EndIf
+		EndIf
+        
+        ' the _surface will be null during a device lost state
+        ' - the data will have been persisted before entering the device loss state
+        ' - which releases the surface - no surface here means the data is persisted
+        ' - in the pixmap
+        If Not Self._surface 
+			Return
+		EndIf
+
+		' copy renderimage data into offscreen surface
+		If _d3dDev.GetRenderTargetData(Self._surface, Self._offscreenSurface) < 0
+			d3derr "GetRenderTargetData failed~n"
+			Return
+		EndIf
+
+		' limit pixmap / surface rect size
+		Local lockedWidth:Int = Min(pixmap.width, Self._width - x)
+		Local lockedHeight:Int = Min(pixmap.height, Self._height - y)
+
+		' lock (lockable) offscreen surface
+		Local rect:Int[] = [x, y, x + lockedWidth, y + lockedHeight]
+		Local lockedRect:D3DLOCKED_RECT = New D3DLOCKED_RECT
+		If  Self._offscreenSurface.LockRect(lockedRect,rect, 0) < 0 Then
+			d3derr "Unable to lock offscreen surface~n"
+			Return
+		EndIf
+
+		' paste pixmap into locked offscreen surface rect
+		Local dstPixmap:TPixmap = CreateStaticPixmap(lockedRect.pBits, lockedWidth, lockedHeight, lockedRect.Pitch, PF_BGRA8888)
+		dstPixmap.Paste(pixmap.Window(0,0, lockedWidth, lockedHeight), 0, 0)
+
+		' unlock offscreen surface again
+		 Self._offscreenSurface.UnlockRect()
+
+		' update content of the renderimage
+		If _d3ddev.UpdateSurface(Self._offscreenSurface, Null, Self._surface, Null)
+			Throw "Failed to copy the replacement surface texture data to the render target"
+			Return
+		EndIf
+	End Method
+
+
 	Method LoadFromPixmap(pixmap:TPixmap)
 		If _d3ddev.CreateTexture(_width, _height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, _texture, Null) < 0
 			Throw "Failed to create render target"
@@ -358,7 +434,7 @@ Private
 		replacementSurface.Release_()
 	End Method
 	
-	Method RenderTargetToPixmap:TPixmap()	
+	Method RenderTargetToPixmap:TPixmap()
 		' use a staging surface to get the texture contents
 		Local StagingSurface:IDirect3DSurface9
 		If _d3ddev.CreateOffscreenPlainSurface(_width, _height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, StagingSurface, Null) < 0
@@ -398,6 +474,7 @@ Private
 	End Method
 EndType
 
+
 Type TD3D9Max2DDriver Extends TMax2dDriver
 
 	Method ToString:String() Override
@@ -412,7 +489,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		If Not D3D9GraphicsDriver() Return Null
 
 		Local d3d:IDirect3D9 = D3D9GraphicsDriver().GetDirect3D()
-		
+
 		If d3d.CheckDeviceFormat( D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,D3DFMT_X8R8G8B8,0,D3DRTYPE_TEXTURE,D3DFMT_A8R8G8B8 ) < 0
 			Return Null
 		EndIf
@@ -482,8 +559,7 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 	End Method
 	
 	Method ResetDevice()
-		_d3d9graphics.ValidateSize
-		_d3d9graphics.GetSettings _gw,_gh,_gd,_gr,_gf,_gx,_gy
+		_d3d9graphics.GetSettings(_gw,_gh,_gd,_gr,_gf,_gx,_gy)
 	
 		Local viewport:D3DVIEWPORT9
 		viewport.X = 0
@@ -710,36 +786,48 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		DisableTex
 		_d3dDev.DrawPrimitiveUP D3DPT_TRIANGLEFAN,segs-2,fverts,24
 	End Method
-		
-	'GetDC/BitBlt MUCH faster than locking backbuffer!	
-	Method DrawPixmap( pixmap:TPixmap,x:Int,y:Int ) Override
-		Local width:Int=pixmap.width,height:Int=pixmap.height
-	
-		Local dstsurf:IDirect3DSurface9' = New IDirect3DSurface9
-		If _d3dDev.GetRenderTarget( 0,dstsurf )<0
-			d3derr "GetRenderTarget failed~n"
+
+			
+	Method DrawPixmap(pixmap:TPixmap, x:Int, y:Int) Override
+		If _CurrentRenderImageFrame <> _BackBufferRenderImageFrame
+			_CurrentRenderImageFrame.PastePixmap(pixmap, x, y)
+		Else
+			DrawPixmapToBackBuffer(pixmap, x, y)
+		EndIf
+	End Method
+
+
+	Method DrawPixmapToBackBuffer(pixmap:TPixmap, x:Int, y:Int)
+		' nothing to do if the area is outside of the valid area
+		If x + pixmap.width < 0 Or y + pixmap.height < 0 Or x >= _gw Or y >= _gh
 			Return
 		EndIf
-		
-		Local desc:D3DSURFACE_DESC
-		If dstsurf.GetDesc( desc )<0
-			d3derr "GetDesc failed~n"
+
+		Local dstsurf:IDirect3DSurface9
+		If _d3dDev.GetBackBuffer(0, 0, 0, Varptr dstsurf) < 0
+			d3derr "GetBackBuffer failed~n"
+			Return
 		EndIf
-		
-		Local rect:Int[]=[x,y,x+width,y+height]
-		Local lockedrect:D3DLOCKED_RECT=New D3DLOCKED_RECT
+
+		' limit pixmap / surface rect size
+		Local lockedWidth:Int = Min(pixmap.width, _gw - x)
+		Local lockedHeight:Int = Min(pixmap.height, _gh - y)
+
+		' lock (lockable) offscreen surface
+		Local rect:Int[] = [x, y, x + lockedWidth, y + lockedHeight]
+		Local lockedRect:D3DLOCKED_RECT = New D3DLOCKED_RECT
 		If dstsurf.LockRect( lockedrect,rect,0 )<0
 			d3derr "Unable to lock render target surface~n"
 			dstsurf.Release_
 			Return
 		EndIf
+
+		' paste pixmap into locked offscreen surface rect
+		Local dstPixmap:TPixmap = CreateStaticPixmap(lockedRect.pBits, lockedWidth, lockedHeight, lockedRect.Pitch, PF_BGRA8888)
+		dstPixmap.Paste(pixmap.Window(0,0, lockedWidth, lockedHeight), 0, 0)
 		
-		Local dstpixmap:TPixmap=CreateStaticPixmap( lockedrect.pBits,width,height,lockedrect.Pitch,PF_BGRA8888 );
-		
-		dstpixmap.Paste pixmap,0,0
-		
-		dstsurf.UnlockRect
-		dstsurf.Release_
+		dstsurf.UnlockRect()
+		dstsurf.Release_()
 	End Method
 
 	'GetDC/BitBlt MUCH faster than locking backbuffer!	
@@ -814,69 +902,130 @@ Type TD3D9Max2DDriver Extends TMax2dDriver
 		BackBufferRenderImageFrame._height = _gh
 		_d3dDev.GetBackBuffer(0, 0, 0, Varptr BackBufferRenderImageFrame._surface)
 	
-		' cache it
+		' if the current target is the old back buffer then reset it to the new one.
+		'   this covers initial startup when both are set to null
+		'   and when recovering from a device loss/reset
+		If _CurrentRenderImageFrame = _BackBufferRenderImageFrame
+			_CurrentRenderImageFrame = BackBufferRenderImageFrame
+		EndIf
+
 		_BackBufferRenderImageFrame = BackBufferRenderImageFrame
-		_CurrentRenderImageFrame = _BackBufferRenderImageFrame
-		
+		_CurrentRenderImageContainer = Null
+?debug
+		If OutputRenderImageListDebugInfo WriteStdout("Adding back buffer render image instance~n")
+?
 		AddToRenderImageList(BackBufferRenderImageFrame)
-	EndMethod
-	
+	End Method
+
 	Method AddToRenderImageList(RenderImage:TD3D9RenderImageFrame)
-		_RenderImageList.AddLast(RenderImage)
-	EndMethod
+		LockMutex(_Lock)
+		RenderImageManager_AddRenderImage(RenderImage)
+		UnlockMutex(_Lock)
+	End Method
 	
 	Method RemoveFromRenderImageList(RenderImage:TD3D9RenderImageFrame)
-		If(_RenderImageList.Contains(RenderImage))
-			_RenderImageList.Remove(RenderImage)
+		LockMutex(_Lock)
+		RenderImageManager_RemoveRenderImage(RenderImage)
+		UnlockMutex(_Lock)
+	End Method
+	
+
+	Method CanUpdateRenderImages:Int() Override
+		If CurrentThread() <> MainThread() 
+			Return False
 		EndIf
-	EndMethod
+
+		' as it can only be read from the main thread (which is the one
+		' which updates this variable) this is thread-safe.
+		Return _CanUpdateRenderImages
+	End Method
+
 
 	Method CreateRenderImageFrame:TImageFrame(width:UInt, height:UInt, flags:Int) Override
 		Local RenderImage:TD3D9RenderImageFrame = TD3D9RenderImageFrame.Create(width, height, flags)
 		AddToRenderImageList(RenderImage)
 		Return RenderImage
-	EndMethod
+	End Method
 	
-	Method SetRenderImageFrame(RenderImageFrame:TImageFrame) Override
+	Method SetRenderImageFrame:Int(RenderImageFrame:TImageFrame) Override
 		If RenderImageFrame = _CurrentRenderImageFrame
-			Return
+			Return True
+		ElseIf renderImageFrame = Null
+			renderImageFrame = _BackBufferRenderImageFrame
 		EndIf
 
 		Local D3D9RenderImageFrame:TD3D9RenderImageFrame = TD3D9RenderImageFrame(RenderImageFrame)
-		_d3dDev.SetRenderTarget(0, D3D9RenderImageFrame._surface)
+		If _d3dDev.SetRenderTarget(0, D3D9RenderImageFrame._surface) < 0
+			Return False
+		EndIf
+
 		_CurrentRenderImageFrame = D3D9RenderImageFrame
+		'unset render image container (re-assign in SetRenderImage if called from there!)
+		_CurrentRenderImageContainer = Null
 		
 		Local vp:Rect = _D3D9Scissor_BMaxViewport
 		SetScissor(vp.x, vp.y, vp.width, vp.height)
 		SetMatrixAndViewportToCurrentRenderImage()
-	EndMethod
+		
+		Return True
+	End Method
+
+	Method GetRenderImageFrame:TImageFrame() Override
+		' Return Null if currently rendering to the backbuffer
+		If _BackBufferRenderImageFrame = _CurrentRenderImageFrame
+			Return Null
+		Else
+			Return _CurrentRenderImageFrame
+		EndIf
+	End Method
 	
-	Method SetBackbuffer()
-		SetRenderImageFrame(_BackBufferRenderImageFrame)
+	Method SetRenderImageContainer(renderImageContainer:Object) Override
+		_CurrentRenderImageContainer = renderImageContainer
+	EndMethod
+
+	Method GetRenderImageContainer:Object() Override
+		Return _CurrentRenderImageContainer
 	EndMethod
 	
 	Function OnDeviceLost(obj:Object)
-		Local Driver:TD3D9Max2DDriver = TD3D9Max2DDriver(obj)
-		Local RenderImageList:TList = Driver._RenderImageList
-		
-		For Local RenderImage:TD3D9RenderImageFrame = EachIn RenderImageList
+		'only "flip" from main threads will lead to the callback execution
+		'so it is save to manipulate it unmutexed
+		_CanUpdateRenderImages = False
+
+		LockMutex(_Lock)
+		RenderImageManager_ResetIterator()
+		Local RenderImage:TD3D9RenderImageFrame
+		While RenderImageManager_GetNextValue(Varptr RenderImage)
 			RenderImage.OnDeviceLost()
-		Next
-		Driver.RemoveFromRenderImageList(_BackBufferRenderImageFrame)
-	EndFunction
+		Wend
+		UnlockMutex(_Lock)
+	End Function
 	
 	Function OnDeviceReset(obj:Object)
-		Local Driver:TD3D9Max2DDriver = TD3D9Max2DDriver(obj)
-		Local RenderImageList:TList = Driver._RenderImageList
+		Local driver:TD3D9Max2DDriver = TD3D9Max2DDriver(obj)
 
-		For Local RenderImage:TD3D9RenderImageFrame = EachIn RenderImageList
-			RenderImage.OnDeviceReset()
-		Next
-	EndFunction
+		LockMutex(_Lock)
+		RenderImageManager_ResetIterator()
+		Local RenderImage:TD3D9RenderImageFrame
+		While RenderImageManager_GetNextValue(Varptr RenderImage)
+			If RenderImage = _backbufferrenderimageframe
+?debug
+				If OutputRenderImageListDebugInfo WriteStdout "Removing back buffer render image~n"
+?
+				RenderImageManager_RemoveRenderImage(RenderImage)
+			Else
+				RenderImage.OnDeviceReset()
+			EndIf
+		Wend
+		UnlockMutex(_Lock)
+		
+		'only "flip" from main threads will lead to the callback execution
+		'so it is save to manipulate it unmutexed
+		_CanUpdateRenderImages = True
+	End Function
+
 		
 Private
-	Field _RenderImageList:TList = New TList
-	
 	Method SetMatrixAndViewportToCurrentRenderImage()
 		Local width:Float = _CurrentRenderImageFrame._width
 		Local height:Float = _CurrentRenderImageFrame._height
