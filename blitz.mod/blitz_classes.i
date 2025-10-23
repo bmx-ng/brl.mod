@@ -87,6 +87,8 @@ String^Object{
 	-ToSizeTEx:Int( val:Size_T Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToSizeTEx"
 	-ToLongIntEx:Int( val:LongInt Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToLongIntEx"
 	-ToULongIntEx:Int( val:ULongInt Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToULongIntEx"
+
+	+FromBytesAsHex:String( buf:Byte Ptr, length:Int, upperCase:Int=1 )="bbStringFromBytesAsHex"
 }AF="bbStringClass"
 
 ___Array^Object{

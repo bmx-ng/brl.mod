@@ -1081,3 +1081,27 @@ Type TStringToNumStrToNumTest Extends TTest
 	End Method
 
 End Type
+
+Type TStringFromBytesAsHexTest Extends TTest
+
+	Method testSimpleHex() { test }
+		' Byte array: [0xDE, 0xAD, 0xBE, 0xEF]
+		Local data:Byte[] = [$DE, $AD, $BE, $EF]
+		Local text:String = String.FromBytesAsHex(data, data.Length)
+		assertEquals("DEADBEEF", text)
+	End Method
+
+	Method testSimpleHexLower() { test }
+		' Byte array: [0xDE, 0xAD, 0xBE, 0xEF]
+		Local data:Byte[] = [$DE, $AD, $BE, $EF]
+		Local text:String = String.FromBytesAsHex(data, data.Length, False)
+		assertEquals("deadbeef", text)
+	End Method
+
+	Method testEmptyArray() { test }
+		Local data:Byte[] = []
+		Local text:String = String.FromBytesAsHex(data, data.Length)
+		assertEquals("", text)
+	End Method
+	
+End Type

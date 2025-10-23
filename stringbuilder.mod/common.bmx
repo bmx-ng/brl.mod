@@ -95,6 +95,7 @@ Extern
 	Function bmx_stringbuilder_tosizet:Size_T(buffer:Byte Ptr)
 	Function bmx_stringbuilder_tofloat:Float(buffer:Byte Ptr)
 	Function bmx_stringbuilder_todouble:Double(buffer:Byte Ptr)
+	Function bmx_stringbuilder_append_as_hex(buffer:Byte Ptr, bytes:Byte Ptr, length:Int, upperCase:Int)
 
 	Function bmx_stringbuilder_splitbuffer_length:Int(splitPtr:Byte Ptr)
 	Function bmx_stringbuilder_splitbuffer_text:String(splitPtr:Byte Ptr, index:Int)

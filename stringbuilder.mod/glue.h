@@ -114,6 +114,7 @@ BBULONGINT bmx_stringbuilder_toulongint(struct MaxStringBuilder * buf);
 BBSIZET bmx_stringbuilder_tosizet(struct MaxStringBuilder * buf);
 BBFLOAT bmx_stringbuilder_tofloat(struct MaxStringBuilder * buf);
 BBDOUBLE bmx_stringbuilder_todouble(struct MaxStringBuilder * buf);
+void bmx_stringbuilder_append_as_hex(struct MaxStringBuilder * buf, const char * bytes, int length, int upperCase);
 
 /* ----------------------------------------------------- */
 

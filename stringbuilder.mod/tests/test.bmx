@@ -187,6 +187,23 @@ Type TStringBuilderTest Extends TTest
 		assertTrue( sb.StartsWith("World", 6) )
 	End Method
 
+	Method testAppendAsHex() { test }
+		Local bytes:Byte[] = [0, 15, 16, 255, 128, 64]
+
+		sb.AppendAsHex( bytes, bytes.Length ) ' default upperCase=True
+		assertEquals("000F10FF8040", sb.ToString())
+
+		sb.SetLength(0)
+
+		sb.AppendAsHex( bytes, bytes.Length, True )
+		assertEquals("000F10FF8040", sb.ToString())
+
+		sb.SetLength(0)
+
+		sb.AppendAsHex( bytes, bytes.Length, False )
+		assertEquals("000f10ff8040", sb.ToString())
+	End Method
+
 End Type
 
 Type TSplitBufferTest Extends TTest

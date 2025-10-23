@@ -116,6 +116,8 @@ struct BBClass_String{
 	int (*bbStringToSizeTEx)( BBString *str, BBSIZET *val, int start, int end, BBULONG format, int base );
 	int (*bbStringToLongIntEx)( BBString *str, BBLONGINT *val, int start, int end, BBULONG format, int base );
 	int (*bbStringToULongIntEx)( BBString *str, BBULONGINT *val, int start, int end, BBULONG format, int base );
+
+	BBString* (*bbStringFromBytesAsHex)( const unsigned char *p, int n, int uppercase );
 };
 
 extern	struct BBClass_String bbStringClass;
@@ -240,6 +242,8 @@ BBChar *bbStringToWStringBuffer( BBString *str, BBChar * buf, size_t * length );
 
 int bbStringIdentifierEqualsNoCase(BBString *x, BBString *y);
 int bbStringIdentifierEqualsNoCaseChars(BBString *x, BBChar * y, int ylen);
+
+BBString *bbStringFromBytesAsHex( const unsigned char * bytes, int length, int upperCase );
 
 #ifdef __cplusplus
 }

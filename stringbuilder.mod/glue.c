@@ -1079,6 +1079,30 @@ BBDOUBLE bmx_stringbuilder_todouble(struct MaxStringBuilder * buf) {
 	return bbStrToDouble(buf->buffer, buf->count, NULL);
 }
 
+void bmx_stringbuilder_append_as_hex(struct MaxStringBuilder * buf, const char * bytes, int length, int upperCase) {
+	static const char hexDigitsLower[] = "0123456789abcdef";
+	static const char hexDigitsUpper[] = "0123456789ABCDEF";
+	
+	const char * hexDigits = upperCase ? hexDigitsUpper : hexDigitsLower;
+	
+	if (length > 0) {
+		int count = length * 2;
+		
+		bmx_stringbuilder_resize(buf, buf->count + count);
+		
+		const unsigned char * p = (const unsigned char *)bytes;
+		BBChar * b = buf->buffer + buf->count;
+		while (length--) {
+			unsigned char byte = *p++;
+			*b++ = hexDigits[(byte >> 4) & 0x0f];
+			*b++ = hexDigits[byte & 0x0f];
+		}
+		
+		buf->count += count;
+		buf->hash = 0;
+	}
+}
+
 /* ----------------------------------------------------- */
 
 int bmx_stringbuilder_splitbuffer_length(struct MaxSplitBuffer * buf) {

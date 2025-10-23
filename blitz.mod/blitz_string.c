@@ -1402,3 +1402,26 @@ int bbStringIdentifierEqualsNoCaseChars(BBString *x, BBChar * y, int ylen) {
     }
     return 1;
 }
+
+BBString * bbStringFromBytesAsHex( const unsigned char * bytes, int length, int upperCase ) {
+
+	static const char hexDigitsLower[] = "0123456789abcdef";
+	static const char hexDigitsUpper[] = "0123456789ABCDEF";
+
+	if (length <= 0 || bytes == NULL) {
+		return &bbEmptyString;
+	}
+
+	const char * hexDigits = upperCase ? hexDigitsUpper : hexDigitsLower;
+
+	BBString * str = bbStringNew(length * 2);
+	BBChar * buf = str->buf;
+
+	for (int i = 0; i < length; ++i) {
+		unsigned char byte = bytes[i];
+		buf[i * 2]     = (BBChar)hexDigits[(byte >> 4) & 0x0F];
+		buf[i * 2 + 1] = (BBChar)hexDigits[byte & 0x0F];
+	}
+
+	return str;
+}
