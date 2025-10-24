@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.21"
+ModuleInfo "Version: 1.22"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2018-2025 Bruce A Henderson"
 
+ModuleInfo "History: 1.22"
+ModuleInfo "History: Added AppendAsHex() method."
 ModuleInfo "History: 1.21"
 ModuleInfo "History: Changed Hash() to HashCode() to match new Object method."
 ModuleInfo "History: 1.20"
@@ -441,6 +443,11 @@ Public
 	End Rem
 	Method AppendUTF32Bytes:TStringBuilder(chars:UInt Ptr, length:Int)
 		bmx_stringbuilder_append_utf32bytes(buffer, chars, length)
+		Return Self
+	End Method
+
+	Method AppendAsHex:TStringBuilder(bytes:Byte Ptr, length:Int, upperCase:Int = 1)
+		bmx_stringbuilder_append_as_hex(buffer, bytes, length, upperCase)
 		Return Self
 	End Method
 
