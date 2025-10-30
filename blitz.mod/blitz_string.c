@@ -245,15 +245,23 @@ BBString *bbStringFromULongInt( BBULONGINT n ){
 	return bbStringFromBytes( (unsigned char*)buf,strlen(buf) );
 }
 
-BBString *bbStringFromFloat( float n ){
+BBString *bbStringFromFloat( float n, int fixed ){
 	char buf[64];
-	sprintf( buf,"%#.9g",n );
+	if( fixed ) {
+		sprintf( buf,"%.9f",n );
+	} else {
+		sprintf( buf,"%#.9g",n );
+	}
 	return bbStringFromCString(buf);
 }
 
-BBString *bbStringFromDouble( double n ){
+BBString *bbStringFromDouble( double n, int fixed ){
 	char buf[64];
-	sprintf( buf,"%#.17lg",n );
+	if( fixed ) {
+		sprintf( buf,"%.17f",n );
+	} else {
+		sprintf( buf,"%#.17g",n );
+	}
 	return bbStringFromCString(buf);
 }
 

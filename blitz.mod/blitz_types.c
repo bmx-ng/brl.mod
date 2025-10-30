@@ -136,8 +136,8 @@ BBSTRING bbConvertToString( struct bbDataDef * data ){
 	case 'z':return bbStringFromSizet( data->z );
 	case 'v':return bbStringFromLongInt( data->v );
 	case 'e':return bbStringFromULongInt( data->e );
-	case 'f':return bbStringFromFloat( data->f );
-	case 'd':return bbStringFromFloat( data->d );
+	case 'f':return bbStringFromFloat( data->f, 0 );
+	case 'd':return bbStringFromFloat( data->d, 0 );
 	case '$':return data->t;
 	}
 	return &bbEmptyString;
