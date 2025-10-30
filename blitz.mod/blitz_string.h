@@ -60,8 +60,8 @@ struct BBClass_String{
 
 	BBString* (*bbStringFromInt)( int n );
 	BBString* (*bbStringFromLong)( BBInt64 n );
-	BBString* (*bbStringFromFloat)( float n );
-	BBString* (*bbStringFromDouble)( double n );
+	BBString* (*bbStringFromFloat)( float n, int fixed );
+	BBString* (*bbStringFromDouble)( double n, int fixed );
 	BBString* (*bbStringFromCString)( const char *p );
 	BBString* (*bbStringFromWString)( const BBChar *p );
 
@@ -131,8 +131,8 @@ BBString* bbStringFromUInt( unsigned int n );
 BBString*	bbStringFromLong( BBInt64 n );
 BBString*	bbStringFromULong( BBUInt64 n );
 BBString*	bbStringFromSizet( BBSIZET n );
-BBString*bbStringFromFloat( float n );
-BBString*	bbStringFromDouble( double n );
+BBString*bbStringFromFloat( float n, int fixed );
+BBString*	bbStringFromDouble( double n, int fixed );
 BBString*	bbStringFromBytes( const unsigned char *p,int n );
 BBString*	bbStringFromShorts( const unsigned short *p,int n );
 BBString*	bbStringFromInts( const int *p,int n );

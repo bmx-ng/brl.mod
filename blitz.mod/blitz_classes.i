@@ -37,8 +37,8 @@ String^Object{
 
 	+FromInt:String( intValue:Int)="bbStringFromInt"
 	+FromLong:String( longValue:Long )="bbStringFromLong"
-	+FromFloat:String( floatValue:Float )="bbStringFromFloat"
-	+FromDouble:String( doubleValue:Double )="bbStringFromDouble"
+	+FromFloat:String( floatValue:Float, fixed:Int=0 )="bbStringFromFloat"
+	+FromDouble:String( doubleValue:Double, fixed:Int=0 )="bbStringFromDouble"
 	+FromCString:String( cString:Byte Ptr )="bbStringFromCString"
 	+FromWString:String( wString:Short ptr )="bbStringFromWString"
 	
