@@ -400,67 +400,118 @@ Private
 		End If
 	End Method
 
-	Method RepairRemove(node:TMapNode<K,V>, parent:TMapNode<K,V> )
-	
-		While node <> root And node.colour=1
-			If node=parent.leftNode
-			
-				Local sib:TMapNode<K,V> = parent.rightNode
+	Method RepairRemove(node:TMapNode<K,V>, parent:TMapNode<K,V>)
 
-				If sib.colour=0
-					sib.colour=1
-					parent.colour=0
+		Function IsBlack:Int(n:TMapNode<K,V>) Inline
+			' Null is black in RB-trees
+			Return n = Null Or n.colour = 1
+		End Function
+
+		Function IsRed:Int(n:TMapNode<K,V>) Inline
+			Return n <> Null And n.colour = 0
+		End Function
+
+		While node <> root And (node = Null Or node.colour = 1)
+			Local leftBranch:Int = (parent <> Null And node = parent.leftNode)
+			Local sib:TMapNode<K,V> = Null
+			If leftBranch Then
+				If parent <> Null Then
+					sib = parent.rightNode
+				End If
+			Else
+				If parent <> Null Then
+					sib = parent.leftNode
+				End If
+			End If
+
+			' red sibling
+			If IsRed(sib) Then
+				sib.colour = 1
+				parent.colour = 0
+				If leftBranch Then
 					RotateLeft parent
-					sib=parent.rightNode
-				EndIf
-				
-				If sib.leftNode.colour=1 And sib.rightNode.colour=1
-					sib.colour=0
-					node=parent
-					parent=parent.parent
+					If parent <> Null Then
+						sib = parent.rightNode
+					End If
 				Else
-					If sib.rightNode.colour=1
-						sib.leftNode.colour=1
-						sib.colour=0
-						RotateRight sib
-						sib=parent.rightNode
-					EndIf
-					sib.colour=parent.colour
-					parent.colour=1
-					sib.rightNode.colour=1
+					RotateRight parent
+					If parent <> Null Then
+						sib = parent.leftNode
+					End If
+				End If
+			End If
+
+			' Now sibling is black
+			Local sibLeft:TMapNode<K,V> = Null
+			Local sibRight:TMapNode<K,V> = Null
+			If sib <> Null Then
+				sibLeft = sib.leftNode
+				sibRight = sib.rightNode
+			End If
+
+			If (leftBranch And IsBlack(sibLeft) And IsBlack(sibRight)) Or (Not leftBranch And IsBlack(sibRight) And IsBlack(sibLeft)) Then
+				If sib <> Null Then
+					sib.colour = 0
+				End If
+				node = parent
+				If parent <> Null Then
+					parent = parent.parent
+				End If
+			Else
+				If leftBranch Then
+					If IsBlack(sibRight) Then
+						If sibLeft <> Null Then
+							sibLeft.colour = 1
+						End If
+						If sib <> Null Then
+							sib.colour = 0
+						End If
+						If sib <> Null Then
+							RotateRight sib
+						End If
+						If parent <> Null Then
+							sib = parent.rightNode
+						End If
+					End If
+					If sib <> Null Then
+						sib.colour = parent.colour
+					End If
+					parent.colour = 1
+					If sib <> Null And sib.rightNode <> Null Then
+						sib.rightNode.colour = 1
+					End If
 					RotateLeft parent
-					node=root
-				EndIf
-			Else	
-				Local sib:TMapNode<K,V> = parent.leftNode
-				
-				If sib.colour=0
-					sib.colour=1
-					parent.colour=0
-					RotateRight parent
-					sib=parent.leftNode
-				EndIf
-				
-				If sib.rightNode.colour=1 And sib.leftNode.colour=1
-					sib.colour=0
-					node=parent
-					parent=parent.parent
 				Else
-					If sib.leftNode.colour=1
-						sib.rightNode.colour=1
-						sib.colour=0
-						RotateLeft sib
-						sib=parent.leftNode
-					EndIf
-					sib.colour=parent.colour
-					parent.colour=1
-					sib.leftNode.colour=1
+					If IsBlack(sibLeft) Then
+						If sibRight <> Null Then
+							sibRight.colour = 1
+						End If
+						If sib <> Null Then
+							sib.colour = 0
+						End If
+						If sib <> Null Then
+							RotateLeft sib
+						End If
+						If parent <> Null Then
+							sib = parent.leftNode
+						End If
+					End If
+					If sib <> Null Then
+						sib.colour = parent.colour
+					End If
+					parent.colour = 1
+					If sib <> Null And sib.leftNode <> Null Then
+						sib.leftNode.colour = 1
+					End If
 					RotateRight parent
-					node=root
-				EndIf
-			EndIf
+				End If
+				node = root
+			End If
 		Wend
-		node.colour=1
+
+		If node <> Null Then
+			node.colour = 1
+		End If
 	End Method
 
 Public
@@ -473,7 +524,7 @@ Rem
 bbdoc: A #TTreeMap node representing a key/value pair.
 End Rem
 Type TMapNode<K, V>
-Private
+
 	Field parent:TMapNode
 	Field leftNode:TMapNode
 	Field rightNode:TMapNode
