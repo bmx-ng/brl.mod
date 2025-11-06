@@ -414,6 +414,14 @@ Type TSet<T> Implements ISet<T>
 		Return arr
 	End Method
 
+	Rem
+	bbdoc: Creates a new #TSet from an array.
+	returns: A new #TSet containing the elements from @array.
+	End Rem
+	Function FromArray:TSet<T>(array:T[], comparator:IComparator<T> = Null)
+		Return New TSet<T>(array, comparator)
+	End Function
+
 Private
 	Method RotateLeft( node:TSetNode<T> )
 		Local child:TSetNode<T>=node.rightNode
