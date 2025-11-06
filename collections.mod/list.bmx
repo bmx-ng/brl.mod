@@ -288,6 +288,18 @@ Public
 
 		Return element
 	End Method
+
+	Method RemoveLast:T()
+		If size = 0 Then
+			Throw New TIndexOutOfBoundsException
+		End If
+		
+		size :- 1
+		Local element:T = data[size]
+		data[size] = Null
+		
+		Return element
+	End Method
 	
 	Rem
 	bbdoc: Sorts the elements in the entire #TArrayList using the specified comparator, or the default if #Null.
