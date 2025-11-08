@@ -392,12 +392,10 @@ Type TArrayListIterator<T> Implements IIterator<T>
 	Private
 	Field list:TArrayList<T>
 	Field index:Int = -1
-	
+	Public
 	Method New(list:TArrayList<T>)
 		Self.list = list
 	End Method
-	
-	Public
 
 	Method Current:T() Override
 		Return list[index]
@@ -405,6 +403,6 @@ Type TArrayListIterator<T> Implements IIterator<T>
 	
 	Method MoveNext:Int() Override
 		index :+ 1
-		Return index < list.size
+		Return index < list.Count()
 	End Method
 End Type
