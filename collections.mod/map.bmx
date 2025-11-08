@@ -577,14 +577,12 @@ End Type
 Type TMapIterator<K,V> Implements IIterator<TMapNode<K,V>> 
 	Private
 	Field initial:TMapNode<K,V>
-	
-	Method New(initial:TMapNode<K,V>)
-		Self.initial = initial
-	End Method
-	
 	Field node:TMapNode<K,V>
 
 	Public
+	Method New(initial:TMapNode<K,V>)
+		Self.initial = initial
+	End Method
 
 	Method Current:TMapNode<K,V>()
 		Return node
