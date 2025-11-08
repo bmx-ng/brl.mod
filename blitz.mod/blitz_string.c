@@ -1433,3 +1433,36 @@ BBString * bbStringFromBytesAsHex( const unsigned char * bytes, int length, int 
 
 	return str;
 }
+
+static inline unsigned short bbFoldChar(unsigned short c) {
+    // ASCII
+    if (c <= 0x7A) {
+        if (c >= 'A' && c <= 'Z') {
+			return (unsigned short)(c | 32);
+		}
+        return c;
+    }
+    return bbFoldCharLUT(c);
+}
+
+int bbStringCompareCase( BBString *x,BBString *y, int caseSensitive ) {
+	if (caseSensitive != 0) {
+		return bbStringCompare(x, y);
+	}
+
+	const int nx = x->length;
+    const int ny = y->length;
+    const BBChar *sx = x->buf;
+    const BBChar *sy = y->buf;
+
+    int n = nx < ny ? nx : ny;
+    for (int i = 0; i < n; ++i) {
+        unsigned short cx = bbFoldChar((unsigned short)sx[i]);
+        unsigned short cy = bbFoldChar((unsigned short)sy[i]);
+        if (cx != cy) {
+            return (int)cx - (int)cy;
+        }
+    }
+	// shorter string is less
+    return nx - ny;
+}

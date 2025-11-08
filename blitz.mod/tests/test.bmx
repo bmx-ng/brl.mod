@@ -1105,3 +1105,148 @@ Type TStringFromBytesAsHexTest Extends TTest
 	End Method
 	
 End Type
+
+Type TStringCompareCaseTest Extends TTest
+
+	' Helper: normalize compare to -1, 0, 1 for easier assertions
+	Method Sign:Int(x:Int)
+		If x < 0 Then Return -1
+		If x > 0 Then Return  1
+		Return 0
+	End Method
+
+	' ---------- Basic sanity: empty & identical ----------
+	Method testEmptyAndIdentical() { test }
+		assertEquals(0, "".Compare("", True),   "Empty vs empty, sensitive")
+		assertEquals(0, "".Compare("", False), "Empty vs empty, insensitive")
+
+		assertEquals(0, "abc".Compare("abc", True),   "Identical ASCII, sensitive")
+		assertEquals(0, "abc".Compare("abc", False), "Identical ASCII, insensitive")
+	End Method
+
+	' ---------- ASCII: equality & ordering ----------
+	Method testAsciiEqualityAndOrdering() { test }
+		' Equality under CI (case-insensitive)
+		assertEquals(0, "abc".Compare("ABC", False), "ASCII equals under CI")
+		assertEquals(0, "FoObAr".Compare("foobar", False), "Mixed case equals under CI")
+
+		' Ordering under CS (case-sensitive) mirrors ordinal
+		assertEquals(-1, Sign("A".Compare("B", True)), "CS ordering A<B")
+		assertEquals( 1, Sign("B".Compare("A", True)), "CS ordering B>A")
+
+		' Ordering under CI should compare folded units: "a" < "b"
+		assertEquals(-1, Sign("A".Compare("b", False)), "CI ordering a<b")
+		assertEquals( 1, Sign("C".Compare("b", False)), "CI ordering c>b")
+
+		' Prefix behavior: shorter wins when common prefix matches
+		assertEquals(-1, Sign("foo".Compare("foobar", False)), "CI prefix shorter<longer")
+		assertEquals( 1, Sign("foobar".Compare("foo", False)), "CI prefix longer>shorter")
+	End Method
+
+	' ---------- Digits & punctuation unaffected ----------
+	Method testNonLetters() { test }
+		assertEquals(0, "123-456".Compare("123-456", False), "Digits/punct equal")
+		assertFalse("123-456".Compare("123_456", False) = 0, "Dash vs underscore differ")
+	End Method
+
+	' ---------- Latin-1 & extended Latin ----------
+	Method testLatinExtended() { test }
+		' É vs é should be equal under CI
+		Local upper:String = "CAFÉ"       ' U+00C9
+		Local lower:String = "café"       ' U+00E9
+		assertEquals(0, upper.Compare(lower, False), "CAFÉ vs café equal under CI")
+
+		' Composed vs decomposed: é (U+00E9) vs e + ́ (U+0065 U+0301)
+		' Without normalization, these should NOT compare equal.
+		Local composed:String = "café"                     ' ... U+00E9
+		Local decomposed:String = "cafe" + Chr($0301)      ' ... U+0301 combining acute
+		assertFalse(composed.Compare(decomposed, False) = 0, ..
+			"No normalization: composed ≠ decomposed under CI")
+	End Method
+
+	' ---------- German sharp s / eszett ----------
+	Method testGermanEszett() { test }
+		' Simple case folding does NOT equate "ß" to "ss".
+		assertFalse("straße".Compare("strasse", False) = 0, ..
+			"Simple CI: ß ≠ ss (full case folding would be required)")
+		' But “ß” vs “ẞ” (U+1E9E) should be equal under CI.
+		assertEquals(0, "fuß".Compare("FUẞ", False), "ß vs ẞ equals under CI")
+	End Method
+
+	' ---------- Greek sigma (regular vs final) ----------
+	Method testGreekSigma() { test }
+		' Expect Σ/σ/ς to compare equal under CI (simple case folding maps ς→σ).
+		assertEquals(0, "ΣΕΛΑΣ".Compare("σελας", False), "Greek uppercase vs lowercase")
+		assertEquals(0, "ὈΔΥΣΣΕΎΣ".Compare("ὀδυσσεύς", False), "Includes final sigma ς vs σ")
+		' Also check a minimal ς vs σ equivalence
+		assertEquals(0, "ς".Compare("σ", False), "Final sigma equals sigma under CI")
+	End Method
+
+	' ---------- Cyrillic ----------
+	Method testCyrillic() { test }
+		assertEquals(0, "ПрИвЕт".Compare("привет", False), "Cyrillic equals under CI")
+		assertFalse("Привет".Compare("Привед", False) = 0, "Different Cyrillic letters differ")
+	End Method
+
+	' ---------- Turkish dotted/dotless I (locale-insensitive) ----------
+	Method testTurkishI() { test }
+		' In default, locale-neutral simple folding:
+		' "I" (U+0049) lowercases to "i" (U+0069), while "ı" (U+0131) stays dotless.
+		assertFalse("I".Compare("ı", False) = 0, "Turkish I vs dotless ı not equal under default CI")
+		assertEquals(0, "İNAN".Compare("inan", False), "Dotted İ (U+0130) vs 'i' under CI if table lowers U+0130→i")
+	End Method
+
+	' ---------- BMP edges & stability ----------
+	Method testUnicodeMisc() { test }
+		' Characters without case remain identical
+		assertEquals(0, "π≈3.14".Compare("π≈3.14", False), "Symbols unaffected")
+
+		' Different code points remain ordered deterministically under CI
+		assertEquals(-1, Sign("Δ".Compare("Ω", False)), "Greek Delta < Omega under CI")
+
+		' Emojis / surrogate pairs: treated as opaque code units (no folding). Should compare as-is.
+		Local smile:String = "~q😀~q"	' If your source supports it; otherwise comment this out.
+		assertEquals(0, smile.Compare(smile, False), "Emoji compares equal to itself (CI)")
+		assertEquals(0, smile.Compare(smile, True),   "Emoji compares equal to itself (CS)")
+	End Method
+
+	' ---------- Symmetry & antisymmetry properties ----------
+	Method testCompareProperties() { test }
+		Local a:String = "Alpha"
+		Local b:String = "beta"
+
+		Local cs_ab:Int = a.Compare(b, True)
+		Local cs_ba:Int = b.Compare(a, True)
+		assertEquals(-Sign(cs_ba), Sign(cs_ab), "CS antisymmetry: sign(a,b) = -sign(b,a)")
+
+		Local ci_ab:Int = a.Compare(b, False)
+		Local ci_ba:Int = b.Compare(a, False)
+		assertEquals(-Sign(ci_ba), Sign(ci_ab), "CI antisymmetry: sign(a,b) = -sign(b,a)")
+
+		' Consistency with equals (CI)
+		assertEquals(0, "FOO".Compare("foo", False), "Consistency: CI equal")
+		assertFalse("FOO".Compare("bar", False) = 0, "Consistency: CI not equal")
+	End Method
+
+	' ---------- Long strings hot path (ASCII fast path coverage) ----------
+	Method testLongAsciiPerformancePattern() { test }
+		' Not a perf test per se, but hits the ASCII fast path heavily.
+		Local s1:String = "TheQuickBrownFoxJumpsOverTheLazyDog"
+		Local s2:String = "thequickbrownfoxjumpsoverthelazydog"
+		assertEquals(0, s1.Compare(s2, False), "Pangram equals under CI")
+		' Verify ordering changes with a terminal char
+		assertEquals(1, Sign((s1 + "z").Compare(s2 + "y", False)), "Ordering with suffixes under CI")
+	End Method
+
+	Method testSimpleFoldOverrides() { test }
+		assertEquals(0, "ΟΣ".Compare("ος", False), "Sigma family equal under CI")
+		assertEquals(0, "Σ".Compare("ς", False), "Σ vs ς equal under CI")
+		assertEquals(0, "FUẞ".Compare("fuß", False), "ẞ -> ß simple fold")
+		assertEquals(0, "ſ".Compare("s", False), "long s ſ -> s")
+		assertEquals(0, "µ".Compare("μ", False), "micro sign µ -> μ")
+		assertEquals(0, "Ω".Compare("ω", False), "ohm sign Ω -> ω")
+		assertEquals(0, "K".Compare("k", False), "kelvin sign K -> k")
+		assertEquals(0, "Å".Compare("å", False), "angstrom sign Å -> å")
+		assertEquals(0, "ι".Compare("ι", False), "1FBE -> ι")
+	End Method
+End Type

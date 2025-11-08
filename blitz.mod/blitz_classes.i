@@ -89,6 +89,7 @@ String^Object{
 	-ToULongIntEx:Int( val:ULongInt Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToULongIntEx"
 
 	+FromBytesAsHex:String( buf:Byte Ptr, length:Int, upperCase:Int=1 )="bbStringFromBytesAsHex"
+	-Compare:Int(otherString:String, caseSensitive:Int)="bbStringCompareCase"
 }AF="bbStringClass"
 
 ___Array^Object{
