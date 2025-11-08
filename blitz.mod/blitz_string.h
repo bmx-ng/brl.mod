@@ -118,6 +118,7 @@ struct BBClass_String{
 	int (*bbStringToULongIntEx)( BBString *str, BBULONGINT *val, int start, int end, BBULONG format, int base );
 
 	BBString* (*bbStringFromBytesAsHex)( const unsigned char *p, int n, int uppercase );
+	int (*bbStringCompareCase)( BBString *x,BBString *y, int caseSensitive );
 };
 
 extern	struct BBClass_String bbStringClass;
@@ -150,6 +151,7 @@ int		bbStringCompare( BBString *x,BBString *y );
 int		bbStringStartsWith( BBString *x,BBString *y );
 int		bbStringEndsWith( BBString *x,BBString *y );
 int		bbStringContains( BBString *x,BBString *y );
+int		bbStringCompareCase( BBString *x,BBString *y, int caseSensitive );
 
 BBString*bbStringConcat( BBString *x,BBString *y );
 
