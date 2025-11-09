@@ -6,10 +6,13 @@ about: A maps data structure with String keys.
 End Rem
 Module BRL.StringMap
 
-ModuleInfo "Version: 1.13"
+ModuleInfo "Version: 1.14"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2019-2025 Bruce A Henderson"
 
+ModuleInfo "History: 1.14"
+ModuleInfo "History: Now backed by TTreeMap."
+ModuleInfo "History: Added option to use case insensitive keys."
 ModuleInfo "History: 1.13"
 ModuleInfo "History: Moved generic-based maps to their own modules."
 ModuleInfo "History: 1.12"
@@ -22,7 +25,29 @@ bbdoc: A Tree map backed map with String keys and Object values.
 End Rem
 Type TStringMap
 	
-	Field _map:TTreeMap<String, Object> = New TTreeMap<String, Object>()
+	Field _map:TTreeMap<String, Object>
+	Field _caseSensitive:Int = True
+
+	Rem
+	bbdoc: Creates a new TStringMap.
+	about: By default, the map is case-sensitive.
+	End Rem
+	Method New()
+		_map = New TTreeMap<String, Object>
+	End Method
+
+	Rem
+	bbdoc: Creates a new TStringMap.
+	about: If caseSensitive is #False, the map will be case-insensitive.
+	End Rem
+	Method New(caseSensitive:Int)
+		_caseSensitive = caseSensitive
+		If Not _caseSensitive Then
+			_map = New TTreeMap<String, Object>( New TStringCaseInsensitiveComparator )
+		Else
+			_map = New TTreeMap<String, Object>
+		End If
+	End Method
 
 	Method Clear()
 		_map.Clear()
@@ -73,7 +98,7 @@ Type TStringMap
 	End Method
 
 	Method Copy:TStringMap()
-		Local newMap:TStringMap = New TStringMap
+		Local newMap:TStringMap = New TStringMap(_caseSensitive)
 		Local iter:TMapIterator<String,Object> = TMapIterator<String,Object>(_map.GetIterator())
 		While iter.MoveNext()
 			Local n:TMapNode<String,Object> = iter.Current()
@@ -162,4 +187,10 @@ Type TStringMapEnumerator
 		Return _enumerator
 	End Method
 	Field _enumerator:TStringNodeEnumerator
+End Type
+
+Type TStringCaseInsensitiveComparator Implements IComparator<String>
+	Method Compare:Int(a:String, b:String)
+		Return a.Compare(b, False)
+	End Method
 End Type
