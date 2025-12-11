@@ -31,6 +31,7 @@ BBClass_Array bbArrayClass={
 	bbObjectCompare,
 	bbObjectSendMessage,
 	bbObjectHashCode,
+	bbObjectEquals,
 	0,          //interface
 	0,          //extra
 	0,          //obj_size

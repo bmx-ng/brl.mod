@@ -98,6 +98,7 @@ struct BBClass_Array{
 	int		(*Compare)( BBObject *x,BBObject *y );
 	BBObject*	(*SendMessage)( BBObject * o, BBObject *m,BBObject *s );
     unsigned int (*HashCode)( BBObject *o );
+    int 		(*Equals)( BBObject *x,BBObject *y );
 
 	BBINTERFACETABLE itable;
 	void*   extra;

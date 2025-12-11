@@ -28,6 +28,7 @@ struct BBClass{
 	int		(*Compare)( BBObject *x,BBObject *y );
 	BBObject*	(*SendMessage)( BBObject * o, BBObject *m,BBObject *s );
 	unsigned int (*HashCode)( BBObject *o );
+	int 		(*Equals)( BBObject *x,BBObject *y );
 
 	BBINTERFACETABLE itable;
 	void*   extra;
@@ -77,6 +78,7 @@ int		bbObjectCompare( BBObject *x,BBObject *y );
 BBObject*	bbObjectSendMessage( BBObject * o, BBObject *m,BBObject *s );
 void		bbObjectReserved();
 BBUINT		bbObjectHashCode( BBObject *o );
+int		bbObjectEquals( BBObject *x,BBObject *y );
 
 BBObject*	bbObjectDowncast( BBObject *o,BBClass *t );
 BBObject*	bbObjectStringcast( BBObject *o );

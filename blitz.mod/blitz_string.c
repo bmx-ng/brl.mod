@@ -38,6 +38,7 @@ struct BBClass_String bbStringClass={
 	(int(*)(BBObject*,BBObject*))bbStringCompare,
 	bbObjectSendMessage,
 	(unsigned int(*)(BBObject*))bbStringHash,
+	(int(*)(BBObject*,BBObject*))bbStringEquals,
 	0,              //interface
 	0,              //extra
 	0,
@@ -1465,4 +1466,45 @@ int bbStringCompareCase( BBString *x,BBString *y, int caseSensitive ) {
     }
 	// shorter string is less
     return nx - ny;
+}
+
+int bbStringEqualsCase( BBString *x,BBString *y, int caseSensitive ) {
+	if (caseSensitive != 0) {
+		return bbStringEquals(x, y);
+	}
+
+	const int n = x->length;
+	if (n != y->length) {
+		return 0;
+	}
+
+	const BBChar *sx = x->buf;
+	const BBChar *sy = y->buf;
+
+	for (int i = 0; i < n; ++i) {
+		unsigned short cx = bbFoldChar((unsigned short)sx[i]);
+		unsigned short cy = bbFoldChar((unsigned short)sy[i]);
+		if (cx != cy) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+BBUINT bbStringHashCase( BBString *str, int caseSensitive ) {
+	if (caseSensitive != 0 || str->length == 0) {
+		return bbStringHash(str);
+	}
+
+	XXH3_state_t state;
+	XXH3_64bits_reset(&state);
+
+	const BBChar *s = str->buf;
+
+	for (int i = 0; i < str->length; ++i) {
+		unsigned short c = bbFoldChar((unsigned short)s[i]);
+		XXH3_64bits_update(&state, &c, sizeof(c));
+	}
+
+	return (BBUINT)XXH3_64bits_digest(&state);
 }

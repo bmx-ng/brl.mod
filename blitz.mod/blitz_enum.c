@@ -171,13 +171,13 @@ type bbEnumFromString_##chr(BBEnum* bbEnum, BBString* name) {\
                 return *value;\
             }\
         }\
-        brl_blitz_IllegalArgumentError(bbStringConcat(&_illegal_enum_name, name));\
+        brl_blitz_IllegalArgumentError(bbStringConcat((BBString *)&_illegal_enum_name, name));\
         return 0;\
     }\
     const BBChar* buf = name->buf;\
     const int n = name->length;\
     if (n == 0) {\
-        brl_blitz_IllegalArgumentError(bbStringConcat(&_illegal_enum_name, name));\
+        brl_blitz_IllegalArgumentError(bbStringConcat((BBString *)&_illegal_enum_name, name));\
         return 0;\
     }\
     type result = 0;\
@@ -189,7 +189,7 @@ type bbEnumFromString_##chr(BBEnum* bbEnum, BBString* name) {\
         if (at_end || is_delim) {\
             const int seg_len = i - seg_start;\
             if (seg_len <= 0) {\
-                brl_blitz_IllegalArgumentError(bbStringConcat(&_illegal_enum_name, name));\
+                brl_blitz_IllegalArgumentError(bbStringConcat((BBString *)&_illegal_enum_name, name));\
                 return 0;\
             }\
             int matched = 0;\
@@ -201,7 +201,7 @@ type bbEnumFromString_##chr(BBEnum* bbEnum, BBString* name) {\
                 }\
             }\
             if (!matched) {\
-                brl_blitz_IllegalArgumentError(bbStringConcat(&_illegal_enum_name, name));\
+                brl_blitz_IllegalArgumentError(bbStringConcat((BBString *)&_illegal_enum_name, name));\
                 return 0;\
             }\
             seg_start = i + 1;\

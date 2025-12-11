@@ -113,7 +113,7 @@ static int write_line_exec_info(intptr_t key, void* value, void* context) {
     return 1;
 }
 
-static bool write_file_exec_info(intptr_t key, void* value, void* context) {
+static int write_file_exec_info(intptr_t key, void* value, void* context) {
     const char* file = (const char*)key;
     BBCoverageFileInfo* coverage_file = (BBCoverageFileInfo*)value;
     FILE* lcov_file = (FILE*)context;

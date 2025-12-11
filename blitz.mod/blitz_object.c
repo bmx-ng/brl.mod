@@ -37,6 +37,7 @@ BBClass bbObjectClass={
 	bbObjectCompare,
 	bbObjectSendMessage,
 	bbObjectHashCode,
+	bbObjectEquals,
 	0,             //interface
 	0,             //extra
 	0,             //obj_size
@@ -100,6 +101,10 @@ BBString *bbObjectToString( BBObject *o ){
 
 int bbObjectCompare( BBObject *x,BBObject *y ){
 	return (char*)x-(char*)y;
+}
+
+int bbObjectEquals( BBObject *x,BBObject *y ){
+	return x == y;
 }
 
 BBObject *bbObjectSendMessage( BBObject * o, BBObject *m,BBObject *s ){

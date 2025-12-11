@@ -1250,3 +1250,284 @@ Type TStringCompareCaseTest Extends TTest
 		assertEquals(0, "ι".Compare("ι", False), "1FBE -> ι")
 	End Method
 End Type
+
+' testing enum Default_HashCode stability and correctness
+
+Enum EByte:Byte
+    B0
+    B1
+End Enum
+
+Enum EShort:Short
+    S0
+    S1
+End Enum
+
+' Default underlying type: Int
+Enum EInt
+    I0
+    I1
+End Enum
+
+Enum EUInt:UInt
+    U0
+    U1
+End Enum
+
+Enum ELong:Long
+    L0
+    L1
+End Enum
+
+Enum EULong:ULong
+    UL0
+    UL1
+End Enum
+
+Enum ELongInt:LongInt
+    LI0
+    LI1
+End Enum
+
+Enum EULongInt:ULongInt
+    ULI0
+    ULI1
+End Enum
+
+Enum ESizeT:Size_T
+    SZ0
+    SZ1
+End Enum
+
+' Bit flags enum (default underlying Int)
+Enum EBits Flags
+    First
+    Second
+    Third
+End Enum
+
+Type TEnumHashCodeTests Extends TTest
+
+    ' --------------------------------------------------------------
+    ' Byte
+    ' --------------------------------------------------------------
+    Method Test_EnumByte_Hash_StableAndMatchesOrdinal() { test }
+        For Local v:EByte = EachIn EByte.Values()
+            Local h1:UInt = Default_HashCode(v)
+            Local h2:UInt = Default_HashCode(v)
+            AssertEquals(h1, h2, "EByte hash must be stable for value " + v.ToString())
+
+            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            AssertEquals(ordHash, h1, "EByte hash must match hash of Ordinal() for " + v.ToString())
+        Next
+    End Method
+
+    Method Test_EnumByte_DifferentValuesDifferentHashes() { test }
+        Local h0:UInt = Default_HashCode(EByte.B0)
+        Local h1:UInt = Default_HashCode(EByte.B1)
+        AssertTrue(h0 <> h1, "Different EByte values should normally have different hashes")
+    End Method
+
+
+    ' --------------------------------------------------------------
+    ' Short
+    ' --------------------------------------------------------------
+    Method Test_EnumShort_Hash_StableAndMatchesOrdinal() { test }
+        For Local v:EShort = EachIn EShort.Values()
+            Local h1:UInt = Default_HashCode(v)
+            Local h2:UInt = Default_HashCode(v)
+            AssertEquals(h1, h2, "EShort hash must be stable for value " + v.ToString())
+
+            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            AssertEquals(ordHash, h1, "EShort hash must match hash of Ordinal() for " + v.ToString())
+        Next
+    End Method
+
+    Method Test_EnumShort_DifferentValuesDifferentHashes() { test }
+        Local h0:UInt = Default_HashCode(EShort.S0)
+        Local h1:UInt = Default_HashCode(EShort.S1)
+        AssertTrue(h0 <> h1, "Different EShort values should normally have different hashes")
+    End Method
+
+
+    ' --------------------------------------------------------------
+    ' Int (default)
+    ' --------------------------------------------------------------
+    Method Test_EnumInt_Hash_StableAndMatchesOrdinal() { test }
+        For Local v:EInt = EachIn EInt.Values()
+            Local h1:UInt = Default_HashCode(v)
+            Local h2:UInt = Default_HashCode(v)
+            AssertEquals(h1, h2, "EInt hash must be stable for value " + v.ToString())
+
+            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            AssertEquals(ordHash, h1, "EInt hash must match hash of Ordinal() for " + v.ToString())
+        Next
+    End Method
+
+    Method Test_EnumInt_DifferentValuesDifferentHashes() { test }
+        Local h0:UInt = Default_HashCode(EInt.I0)
+        Local h1:UInt = Default_HashCode(EInt.I1)
+        AssertTrue(h0 <> h1, "Different EInt values should normally have different hashes")
+    End Method
+
+
+    ' --------------------------------------------------------------
+    ' UInt
+    ' --------------------------------------------------------------
+    Method Test_EnumUInt_Hash_StableAndMatchesOrdinal() { test }
+        For Local v:EUInt = EachIn EUInt.Values()
+            Local h1:UInt = Default_HashCode(v)
+            Local h2:UInt = Default_HashCode(v)
+            AssertEquals(h1, h2, "EUInt hash must be stable for value " + v.ToString())
+
+            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            AssertEquals(ordHash, h1, "EUInt hash must match hash of Ordinal() for " + v.ToString())
+        Next
+    End Method
+
+    Method Test_EnumUInt_DifferentValuesDifferentHashes() { test }
+        Local h0:UInt = Default_HashCode(EUInt.U0)
+        Local h1:UInt = Default_HashCode(EUInt.U1)
+        AssertTrue(h0 <> h1, "Different EUInt values should normally have different hashes")
+    End Method
+
+
+    ' --------------------------------------------------------------
+    ' Long
+    ' --------------------------------------------------------------
+    Method Test_EnumLong_Hash_StableAndMatchesOrdinal() { test }
+        For Local v:ELong = EachIn ELong.Values()
+            Local h1:UInt = Default_HashCode(v)
+            Local h2:UInt = Default_HashCode(v)
+            AssertEquals(h1, h2, "ELong hash must be stable for value " + v.ToString())
+
+            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            AssertEquals(ordHash, h1, "ELong hash must match hash of Ordinal() for " + v.ToString())
+        Next
+    End Method
+
+    Method Test_EnumLong_DifferentValuesDifferentHashes() { test }
+        Local h0:UInt = Default_HashCode(ELong.L0)
+        Local h1:UInt = Default_HashCode(ELong.L1)
+        AssertTrue(h0 <> h1, "Different ELong values should normally have different hashes")
+    End Method
+
+
+    ' --------------------------------------------------------------
+    ' ULong
+    ' --------------------------------------------------------------
+    Method Test_EnumULong_Hash_StableAndMatchesOrdinal() { test }
+        For Local v:EULong = EachIn EULong.Values()
+            Local h1:UInt = Default_HashCode(v)
+            Local h2:UInt = Default_HashCode(v)
+            AssertEquals(h1, h2, "EULong hash must be stable for value " + v.ToString())
+
+            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            AssertEquals(ordHash, h1, "EULong hash must match hash of Ordinal() for " + v.ToString())
+        Next
+    End Method
+
+    Method Test_EnumULong_DifferentValuesDifferentHashes() { test }
+        Local h0:UInt = Default_HashCode(EULong.UL0)
+        Local h1:UInt = Default_HashCode(EULong.UL1)
+        AssertTrue(h0 <> h1, "Different EULong values should normally have different hashes")
+    End Method
+
+
+    ' --------------------------------------------------------------
+    ' LongInt
+    ' --------------------------------------------------------------
+    Method Test_EnumLongInt_Hash_StableAndMatchesOrdinal() { test }
+        For Local v:ELongInt = EachIn ELongInt.Values()
+            Local h1:UInt = Default_HashCode(v)
+            Local h2:UInt = Default_HashCode(v)
+            AssertEquals(h1, h2, "ELongInt hash must be stable for value " + v.ToString())
+
+            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            AssertEquals(ordHash, h1, "ELongInt hash must match hash of Ordinal() for " + v.ToString())
+        Next
+    End Method
+
+    Method Test_EnumLongInt_DifferentValuesDifferentHashes() { test }
+        Local h0:UInt = Default_HashCode(ELongInt.LI0)
+        Local h1:UInt = Default_HashCode(ELongInt.LI1)
+        AssertTrue(h0 <> h1, "Different ELongInt values should normally have different hashes")
+    End Method
+
+
+    ' --------------------------------------------------------------
+    ' ULongInt
+    ' --------------------------------------------------------------
+    Method Test_EnumULongInt_Hash_StableAndMatchesOrdinal() { test }
+        For Local v:EULongInt = EachIn EULongInt.Values()
+            Local h1:UInt = Default_HashCode(v)
+            Local h2:UInt = Default_HashCode(v)
+            AssertEquals(h1, h2, "EULongInt hash must be stable for value " + v.ToString())
+
+            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            AssertEquals(ordHash, h1, "EULongInt hash must match hash of Ordinal() for " + v.ToString())
+        Next
+    End Method
+
+    Method Test_EnumULongInt_DifferentValuesDifferentHashes() { test }
+        Local h0:UInt = Default_HashCode(EULongInt.ULI0)
+        Local h1:UInt = Default_HashCode(EULongInt.ULI1)
+        AssertTrue(h0 <> h1, "Different EULongInt values should normally have different hashes")
+    End Method
+
+
+    ' --------------------------------------------------------------
+    ' Size_T
+    ' --------------------------------------------------------------
+    Method Test_EnumSizeT_Hash_StableAndMatchesOrdinal() { test }
+        For Local v:ESizeT = EachIn ESizeT.Values()
+            Local h1:UInt = Default_HashCode(v)
+            Local h2:UInt = Default_HashCode(v)
+            AssertEquals(h1, h2, "ESizeT hash must be stable for value " + v.ToString())
+
+            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            AssertEquals(ordHash, h1, "ESizeT hash must match hash of Ordinal() for " + v.ToString())
+        Next
+    End Method
+
+    Method Test_EnumSizeT_DifferentValuesDifferentHashes() { test }
+        Local h0:UInt = Default_HashCode(ESizeT.SZ0)
+        Local h1:UInt = Default_HashCode(ESizeT.SZ1)
+        AssertTrue(h0 <> h1, "Different ESizeT values should normally have different hashes")
+    End Method
+
+
+    ' --------------------------------------------------------------
+    ' Flags enum (uses default Int)
+    ' --------------------------------------------------------------
+    Method Test_FlagsEnum_Hash_StableAndMatchesOrdinal() { test }
+        ' Single flag
+        Local single:EBits = EBits.Second
+        Local sh1:UInt = Default_HashCode(single)
+        Local sh2:UInt = Default_HashCode(single)
+        AssertEquals(sh1, sh2, "EBits single flag hash must be stable")
+
+        Local singleOrdHash:UInt = Default_HashCode(single.Ordinal())
+        AssertEquals(singleOrdHash, sh1, "EBits single flag hash must match Ordinal() hash")
+
+        ' Combination
+        Local combo:EBits = EBits.First | EBits.Third
+        Local ch1:UInt = Default_HashCode(combo)
+        Local ch2:UInt = Default_HashCode(combo)
+        AssertEquals(ch1, ch2, "EBits combined flags hash must be stable")
+
+        Local comboOrdHash:UInt = Default_HashCode(combo.Ordinal())
+        AssertEquals(comboOrdHash, ch1, "EBits combined flags hash must match Ordinal() hash")
+    End Method
+
+    Method Test_FlagsEnum_DifferentCombinationsDifferentHashes() { test }
+        Local first:EBits    = EBits.First
+        Local combo:EBits    = EBits.First | EBits.Third
+
+        Local firstHash:UInt = Default_HashCode(first)
+        Local comboHash:UInt = Default_HashCode(combo)
+
+        AssertTrue(firstHash <> comboHash, "Different EBits flag combinations should normally have different hashes")
+    End Method
+
+End Type

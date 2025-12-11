@@ -21,7 +21,7 @@
 #ifndef __HASHMAP_H
 #define __HASHMAP_H
 
-#include <stdbool.h>
+//#include <stdbool.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
@@ -98,7 +98,7 @@ size_t hashmapSize(Hashmap* map);
  * the callback returns false.
  */
 void hashmapForEach(Hashmap* map, 
-        bool (*callback)(intptr_t key, void* value, void* context),
+        int (*callback)(intptr_t key, void* value, void* context),
         void* context);
 
 /**
