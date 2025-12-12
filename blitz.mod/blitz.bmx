@@ -194,6 +194,8 @@ Import "tree/tree.c"
 Include "builtin.bmx"
 Include "iterator.bmx"
 Include "comparator.bmx"
+Include "hash.bmx"
+Include "equal.bmx"
 
 Extern
 Global OnDebugStop()="bbOnDebugStop"
@@ -292,6 +294,16 @@ Type TIllegalArgumentException Extends TRuntimeException
 	End Method
 End Type
 
+Rem
+bbdoc: Unsupported operation exception
+about: Thrown when an unsupported operation is attempted.
+End Rem
+Type TUnsupportedOperationException Extends TBlitzException
+	Method ToString:String() Override
+		Return "Unsupported operation"
+	End Method
+End Type
+
 Function NullObjectError()
 	Throw New TNullObjectException
 End Function
@@ -330,6 +342,14 @@ about: Throws a #TIllegalArgumentException.
 End Rem
 Function IllegalArgumentError( message:String )
 	Throw New TIllegalArgumentException( message )
+End Function
+
+Rem
+bbdoc: Generates an unsupported operation error
+about: Throws a #TUnsupportedOperationException.
+End Rem
+Function UnsupportedOperationError()
+	Throw New TUnsupportedOperationException()
 End Function
 
 Rem

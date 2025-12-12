@@ -223,6 +223,8 @@ BBULONG bbULongAbs( BBULONG x );
 #endif
 
 BBLONG bbLongPow(BBLONG base, BBBYTE exp);
+BBINT bbFloatToTntBits(BBFLOAT x);
+BBLONG bbDoubleToLongBits(BBDOUBLE x);
 
 #ifdef __cplusplus
 }

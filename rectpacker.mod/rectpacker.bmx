@@ -36,7 +36,7 @@ ModuleInfo "History: 1.00 Initial Release"
 
 ModuleInfo "CPP_OPTS: -std=c++11"
 
-Import BRL.Collections
+Import Collections.ArrayList
 
 Import "source.bmx"
 

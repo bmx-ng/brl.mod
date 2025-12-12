@@ -8,15 +8,24 @@ void bbCAssertEx(){
 static void debugNop(){
 }
 
+static void debugStrNop(BBString *){
+}
+
+static void debugStmNop(BBDebugStm *){
+}
+
+static void debugScpNop(BBDebugScope *){
+}
+
 static void debugUnhandledEx( BBObject *ex ){
 	bbWriteStderr( ex->clas->ToString( ex ) );
 	exit(-1);
 }
 
 void (*bbOnDebugStop)()=debugNop;
-void (*bbOnDebugLog)( BBString *str )=debugNop;
-void (*bbOnDebugEnterStm)( BBDebugStm *stm )=debugNop;
-void (*bbOnDebugEnterScope)( BBDebugScope *scope )=debugNop;
+void (*bbOnDebugLog)( BBString *str )=debugStrNop;
+void (*bbOnDebugEnterStm)( BBDebugStm *stm )=debugStmNop;
+void (*bbOnDebugEnterScope)( BBDebugScope *scope )=debugScpNop;
 void (*bbOnDebugLeaveScope)()=debugNop;
 void (*bbOnDebugPushExState)()=debugNop;
 void (*bbOnDebugPopExState)()=debugNop;

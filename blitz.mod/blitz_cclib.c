@@ -47,6 +47,8 @@ extern BBUINT bbUIntAbs( BBUINT x );
 extern BBULONG bbULongSgn( BBULONG x );
 extern BBULONG bbULongAbs( BBULONG x );
 
+extern BBINT bbFloatToTntBits(BBFLOAT x);
+extern BBLONG bbDoubleToLongBits(BBDOUBLE x);
 
 #else
 
@@ -243,4 +245,24 @@ BBLONG bbLongPow(BBLONG base, BBBYTE exp) {
     default:
         return result;
     }
+}
+
+BBINT bbFloatToIntBits(BBFLOAT x) {
+	union {
+		BBFLOAT f;
+		BBINT i;
+	} u;
+
+	u.f = x;
+	return u.i;
+}
+
+BBLONG bbDoubleToLongBits(BBDOUBLE x) {
+	union {
+		BBDOUBLE d;
+		BBLONG l;
+	} u;
+
+	u.d = x;
+	return u.l;
 }

@@ -36,6 +36,7 @@ struct BBClass_String{
 	int		(*Compare)( BBObject *x,BBObject *y );
 	BBObject*	(*SendMessage)( BBObject * o, BBObject *m,BBObject *s );
 	unsigned int (*HashCode)( BBObject *o );
+	int 		(*Equals)( BBObject *x,BBObject *y );
 
 	BBINTERFACETABLE itable;
 	void*   extra;
@@ -119,6 +120,7 @@ struct BBClass_String{
 
 	BBString* (*bbStringFromBytesAsHex)( const unsigned char *p, int n, int uppercase );
 	int (*bbStringCompareCase)( BBString *x,BBString *y, int caseSensitive );
+	BBUINT (*bbStringHashCase)( BBString *str, int caseSensitive );
 };
 
 extern	struct BBClass_String bbStringClass;
@@ -152,6 +154,8 @@ int		bbStringStartsWith( BBString *x,BBString *y );
 int		bbStringEndsWith( BBString *x,BBString *y );
 int		bbStringContains( BBString *x,BBString *y );
 int		bbStringCompareCase( BBString *x,BBString *y, int caseSensitive );
+int		bbStringEqualsCase( BBString *x,BBString *y, int caseSensitive );
+BBUINT bbStringHashCase( BBString *str, int caseSensitive );
 
 BBString*bbStringConcat( BBString *x,BBString *y );
 

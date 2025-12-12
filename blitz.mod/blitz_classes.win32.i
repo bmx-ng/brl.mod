@@ -8,7 +8,8 @@ Object^Null{
 	-Compare:Int( otherObject:Object )="bbObjectCompare"
 	-SendMessage:Object( message:Object,source:object )="bbObjectSendMessage"
 	-HashCode:UInt()="bbObjectHashCode"
-	
+	-Equals:Int( otherObject:Object )="bbObjectEquals"
+
 }="bbObjectClass"
 
 String^Object{
@@ -18,6 +19,7 @@ String^Object{
 	-ToString:String()="bbStringToString"
 	-Compare:Int(otherString:String)="bbStringCompare"
 	-HashCode:UInt()="bbStringHash"
+	-Equals:Int(otherString:String)="bbStringEquals"
 	
 	-Find:Int( subString:String,startIndex=0 )="bbStringFind"
 	-FindLast:Int( subString:String,startIndex=0 )="bbStringFindLast"
@@ -95,6 +97,8 @@ String^Object{
 
 	+FromBytesAsHex:String( buf:Byte Ptr, length:Int, upperCase:Int=1 )="bbStringFromBytesAsHex"
 	-Compare:Int(otherString:String, caseSensitive:Int)="bbStringCompareCase"
+	-HashCode:UInt( caseSensitive:Int )="bbStringHashCase"
+	-Equals:Int(otherString:String, caseSensitive:Int)="bbStringEqualsCase"
 }AF="bbStringClass"
 
 ___Array^Object{

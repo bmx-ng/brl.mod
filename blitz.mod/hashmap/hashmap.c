@@ -21,7 +21,7 @@
 // #include "threads.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
+//#include <stdbool.h>
 #include <sys/types.h>
 #include <stdint.h>
 
@@ -37,7 +37,7 @@ struct Hashmap {
     Entry** buckets;
     size_t bucketCount;
     int (*hash)(intptr_t key);
-    bool (*equals)(intptr_t keyA, intptr_t keyB);
+    int (*equals)(intptr_t keyA, intptr_t keyB);
     bb_mutex_t lock; 
     size_t size;
 };
@@ -193,7 +193,7 @@ void* hashmapPut(Hashmap* map, intptr_t key, void* value) {
     size_t index = calculateIndex(map->bucketCount, hash);
 
     Entry** p = &(map->buckets[index]);
-    while (true) {
+    while (1) {
         Entry* current = *p;
 
         // Add a new entry.
@@ -256,7 +256,7 @@ void* hashmapMemoize(Hashmap* map, intptr_t key,
     size_t index = calculateIndex(map->bucketCount, hash);
 
     Entry** p = &(map->buckets[index]);
-    while (true) {
+    while (1) {
         Entry* current = *p;
 
         // Add a new entry.
@@ -306,7 +306,7 @@ void* hashmapRemove(Hashmap* map, intptr_t key) {
 }
 
 void hashmapForEach(Hashmap* map, 
-        bool (*callback)(intptr_t key, void* value, void* context),
+        int (*callback)(intptr_t key, void* value, void* context),
         void* context) {
     size_t i;
     for (i = 0; i < map->bucketCount; i++) {
