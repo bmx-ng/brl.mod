@@ -8,13 +8,13 @@ void bbCAssertEx(){
 static void debugNop(){
 }
 
-static void debugStrNop(BBString *){
+static void debugStrNop(BBString * o){
 }
 
-static void debugStmNop(BBDebugStm *){
+static void debugStmNop(BBDebugStm * o){
 }
 
-static void debugScpNop(BBDebugScope *){
+static void debugScpNop(BBDebugScope * o){
 }
 
 static void debugUnhandledEx( BBObject *ex ){
