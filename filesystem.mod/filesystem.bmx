@@ -6,12 +6,14 @@ bbdoc: System/File system
 End Rem
 Module BRL.FileSystem
 
-ModuleInfo "Version: 1.13"
+ModuleInfo "Version: 1.14"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.14"
+ModuleInfo "History: Fixed file tree walking. Added unit tests."
 ModuleInfo "History: 1.13"
 ModuleInfo "History: Added SetFileTime"
 ModuleInfo "History: Added MaxIO file tree walking"
@@ -692,7 +694,7 @@ Struct SFileAttributes
 ?win32
 		Return String.FromWString(name)
 ?not win32
-		Return String.FromUTF8String(name)
+		Return String.FromUTF8String(Byte Ptr(name))
 ?
 	End Method
 
@@ -740,41 +742,91 @@ Function FSWalkFileTree:Int(dir:string, fileWalker:IFileWalker, options:EFileWal
 
 	Local res:EFileWalkResult = fileWalker.WalkFile(attributes)
 
-	If res = EFileWalkResult.Terminate Then
-		Return 1
+	Select res
+		Case EFileWalkResult.Terminate
+			Return 1
+
+		Case EFileWalkResult.SkipSubtree
+			' Skip this directory's contents entirely
+			Return 0
+
+		Case EFileWalkResult.SkipSiblings
+			' At the top-level call this is equivalent to "stop now"
+			' For recursion, parent loop will interpret return 2 as "stop siblings"
+			Return 2
+	End Select
+
+	' If maxDepth is set, do not traverse children deeper than maxDepth
+	If maxDepth And depth >= maxDepth Then
+		Return 0
 	End If
 
 	Local d:Byte Ptr = ReadDir(dir)
 
-	If d Then
-		Local f:String = NextFile(d)
-
-		While f
-			Local path:String = dir + "/" + f
-
-			If ApplyAttributes(path, depth + 1, VarPtr attributes) Then
-				If attributes.fileType = FILETYPE_DIR Then
-					Local ret:Int = FSWalkFileTree(path, fileWalker, options, depth + 1, maxDepth)
-					If ret Then
-						CloseDir(d)
-						Return ret
-					End If
-				Else
-					res = fileWalker.WalkFile(attributes)
-
-					If res = EFileWalkResult.Terminate Then
-						CloseDir(d)
-						Return 1
-					End If
-				End If
-			End IF
-
-			f = NextFile(d)
-		Wend
-
-		CloseDir(d)
+	If Not d Then
+		Return 0
 	End If
 
+	While True
+		Local f:String = NextFile(d)
+
+		If Not f Then
+			Exit
+		End If
+
+		If f = "." Or f = ".." Then
+			Continue
+		End If
+
+		Local path:String = dir + "/" + f
+
+		' Compute attributes for this child
+		If Not ApplyAttributes(path, depth + 1, VarPtr attributes) Then
+			Continue
+		End If
+
+		' Visit child
+		res = fileWalker.WalkFile(attributes)
+
+		Select res
+			Case EFileWalkResult.Terminate
+				CloseDir(d)
+				Return 1
+
+			Case EFileWalkResult.SkipSiblings
+				CloseDir(d)
+				Return 0  ' stop processing more children in this directory
+
+			Case EFileWalkResult.SkipSubtree
+				' If this child is a directory, do not recurse into it.
+				' Otherwise, nothing special.
+				Continue
+		End Select
+
+		' Recurse into directories (if allowed by depth)
+		If attributes.fileType = FILETYPE_DIR Then
+			If maxDepth And (depth + 1) >= maxDepth Then
+				' Child dir exists, but we are not allowed to traverse into its children
+				Continue
+			End If
+
+			Local ret:Int = FSWalkFileTree(path, fileWalker, options, depth + 1, maxDepth)
+
+			If ret = 1 Then
+				CloseDir(d)
+				Return 1
+			End If
+
+			' If child recursion signalled "stop siblings", stop siblings here too
+			If ret = 2 Then
+				CloseDir(d)
+				Return 0
+			End If
+		End If
+	Wend
+
+	CloseDir(d)
+	Return 0
 End Function
 
 Function ApplyAttributes:Int(path:String, depth:Int, attributes:SFileAttributes Ptr)
