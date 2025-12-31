@@ -50,13 +50,14 @@ Type MaxIO
 	bbdoc: Initialises the abstraction layer.
 	about: This must be called before any other #MaxIO functions.
 	End Rem
-	Function Init()
+	Function Init:Int()
 		If Not ioInitialized Then
 			If Not bmx_PHYSFS_init() Then
 				Throw bmx_PHYSFS_getLastError()
 			End If
 		End If
 		ioInitialized = True
+		Return True
 	End Function
 
 	Rem

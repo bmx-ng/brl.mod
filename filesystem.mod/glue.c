@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2022 Bruce A Henderson
+ Copyright (c) 2022-2025 Bruce A Henderson
 
  This software is provided 'as-is', without any express or implied
  warranty. In no event will the authors be held liable for any damages
@@ -77,10 +77,13 @@ int bmx_filesystem_walkfilerecurse(BBObject * walker, BBChar * dir, int depth, i
         BBChar fullpath[8192];
         _snwprintf(fullpath, 8192, L"%s/%s", dir, data.cFileName);
 
+        memset(&attributes, 0, sizeof(attributes));
+
         memcpy(attributes.name, fullpath, 8192 * 2);
+        attributes.depth = (short)(depth + 1);
         attributes.size = data.nFileSizeLow + (BBUInt64)data.nFileSizeHigh * 0xFFFFFFFFULL;
-        attributes.creationTime = (int)((((BBInt64)(data.ftCreationTime.dwHighDateTime)<<32) | (BBInt64)(data.ftCreationTime.dwLowDateTime)) / WINDOWS_TICK - SEC_TO_UNIX_EPOCH) / 1000;
-        attributes.modifiedTime = (int)((((BBInt64)(data.ftLastWriteTime.dwHighDateTime)<<32) | (BBInt64)(data.ftLastWriteTime.dwLowDateTime)) / WINDOWS_TICK - SEC_TO_UNIX_EPOCH) / 1000;
+        attributes.creationTime = (int)((((BBInt64)(data.ftCreationTime.dwHighDateTime)<<32) | (BBInt64)(data.ftCreationTime.dwLowDateTime)) / WINDOWS_TICK - SEC_TO_UNIX_EPOCH);
+        attributes.modifiedTime = (int)((((BBInt64)(data.ftLastWriteTime.dwHighDateTime)<<32) | (BBInt64)(data.ftLastWriteTime.dwLowDateTime)) / WINDOWS_TICK - SEC_TO_UNIX_EPOCH);
 
         if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
             attributes.fileType = FILETYPE_DIR;
@@ -96,10 +99,23 @@ int bmx_filesystem_walkfilerecurse(BBObject * walker, BBChar * dir, int depth, i
             break;
         }
 
+        if (res == WALKRESULT_SKIP_SIBLINGS) {
+            /* stop iterating this directory */
+            break;
+        }
+
         if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            if (maxDepth && maxDepth < depth + 1) {
+
+            if (res == WALKRESULT_SKIP_SUBTREE) {
+                /* do not descend */
                 continue;
             }
+            
+            /* maxDepth: don't descend further once child dir is at maxDepth */
+            if (maxDepth && (depth + 1) >= maxDepth) {
+                continue;
+            }
+
 
             if (options != FOLLOW_LINKS && (data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
                 continue;
@@ -148,9 +164,40 @@ extern int brl_filesystem__walkFile(BBObject * fileWalker, struct SFileAttribute
 
 typedef int (*WalkFile)(BBObject * walker, struct SFileAttributes * attributes);
 
+static int get_parent_dir_from_ent(const FTSENT *e, char *out, size_t outsz) {
+    if (!e || !e->fts_path || outsz == 0) return 0;
+
+    size_t pathlen = (size_t)e->fts_pathlen;
+    size_t namelen = (size_t)e->fts_namelen;
+
+    if (pathlen == 0 || pathlen >= outsz) {
+        /* If the fts path is too long for our buffer, truncate safely.
+            (You may prefer to treat as failure instead.) */
+        pathlen = outsz - 1;
+    }
+
+    /* parent prefix includes trailing slash */
+    if (pathlen <= namelen) {
+        out[0] = 0;
+        return 0;
+    }
+
+    size_t parentLen = pathlen - namelen;
+
+    /* Trim trailing slashes (keep "/" as-is) */
+    while (parentLen > 1 && e->fts_path[parentLen - 1] == '/') {
+        parentLen--;
+    }
+
+    if (parentLen >= outsz) parentLen = outsz - 1;
+
+    memcpy(out, e->fts_path, parentLen);
+    out[parentLen] = 0;
+    return 1;
+}
+
 int bmx_filesystem_walkfiletree(BBString * path, WalkFile walkFile, BBObject * walker, int options, int maxDepth) {
-    FTSENT * child = NULL;
-    FTSENT * parent = NULL;
+    FTSENT * ent = NULL;
 
     char * p = (char*)bbStringToUTF8String(path);
 
@@ -163,63 +210,117 @@ int bmx_filesystem_walkfiletree(BBString * path, WalkFile walkFile, BBObject * w
     int opts = FTS_NOCHDIR;
 
     if (options == FOLLOW_LINKS) {
-        opts += FTS_COMFOLLOW | FTS_LOGICAL;
+        opts |= FTS_COMFOLLOW | FTS_LOGICAL;
+    } else {
+        opts |= FTS_PHYSICAL;
     }
 
     FTS * fts = fts_open(paths, opts, NULL);
 
-    if (fts != NULL) {
-        while( (parent = fts_read(fts)) != NULL) {
-            int res = 0;
+    if (fts == NULL) {
+        return 0;
+    }
 
-            child = fts_children(fts,0);
+    char skipSiblingsParentPath[8192];
+    skipSiblingsParentPath[0] = 0;
+    int skipSiblingsLevel = -1;
 
-            while (child != NULL) {
+    while( (ent = fts_read(fts)) != NULL) {
 
-                if (maxDepth && maxDepth < child->fts_level) {
-                    break;
-                }
-
-                attributes = emptyAttributes;
-
-                snprintf(attributes.name, 8192, "%s%s", child->fts_path, child->fts_name);
-                if (child->fts_statp != NULL) {
-                    attributes.creationTime = child->fts_statp->st_ctime;
-                    attributes.modifiedTime = child->fts_statp->st_mtime;
-                }
-
-                switch (child->fts_info) {
-                    case FTS_D:
-                        attributes.fileType = FILETYPE_DIR;
-                        break;
-                    case FTS_F:
-                        attributes.fileType = FILETYPE_FILE;
-                        if (child->fts_statp != NULL) {
-                            attributes.size = child->fts_statp->st_size;
-                        }
-                        break;
-                    case FTS_SL:
-                    case FTS_SLNONE:
-                        attributes.fileType = FILETYPE_SYM;
-                        break;
-                }
-
-                res = brl_filesystem__walkFile(walker, &attributes);
-
-                if (res == WALKRESULT_TERMINATE) {
-                    break;
-                }
-
-                child = child->fts_link;
-            }
-
-            if (res == WALKRESULT_TERMINATE) {
-                break;
-             }
+        /* Skip post-order directory visits */
+        if (ent->fts_info == FTS_DP) {
+            continue;
         }
 
-        fts_close(fts);
+        /* If we are skipping siblings, skip any entries that are siblings at the same level
+        under the same parent directory. */
+        if (skipSiblingsLevel >= 0) {
+
+            /* Once we move above that level, we're no longer in that directory. */
+            if (ent->fts_level < skipSiblingsLevel) {
+                skipSiblingsLevel = -1;
+                skipSiblingsParentPath[0] = 0;
+            } else if (ent->fts_level == skipSiblingsLevel) {
+                 char parentPath[8192];
+                parentPath[0] = 0;
+
+                get_parent_dir_from_ent(ent, parentPath, sizeof(parentPath));
+
+                if (skipSiblingsParentPath[0] && parentPath[0] &&
+                    strcmp(parentPath, skipSiblingsParentPath) == 0) {
+
+                    /* Skip this sibling (and prevent descending into it if it's a directory). */
+                    if (ent->fts_info == FTS_D) {
+                        fts_set(fts, ent, FTS_SKIP);
+                    }
+                    continue;
+                }
+            }
+        }
+
+        /* Enforce maxDepth: if we're at/over depth on a directory, skip descending */
+        if (maxDepth && ent->fts_level > maxDepth) {
+            if (ent->fts_info == FTS_D) {
+                fts_set(fts, ent, FTS_SKIP);
+            }
+            continue;
+        }
+
+        memset(&attributes, 0, sizeof(attributes));
+
+        snprintf(attributes.name, 8192, "%s", ent->fts_path);
+        attributes.depth = (short)ent->fts_level;
+
+        if (ent->fts_statp != NULL) {
+            attributes.creationTime = (int)ent->fts_statp->st_ctime;
+            attributes.modifiedTime = (int)ent->fts_statp->st_mtime;
+        }
+
+        switch (ent->fts_info) {
+            case FTS_D:
+                attributes.fileType = FILETYPE_DIR;
+                break;
+            case FTS_F:
+                attributes.fileType = FILETYPE_FILE;
+                if (ent->fts_statp != NULL) {
+                    attributes.size = (BBUInt64)ent->fts_statp->st_size;
+                }
+                break;
+            case FTS_SL:
+            case FTS_SLNONE:
+                attributes.fileType = FILETYPE_SYM;
+                break;
+            default:
+                break;
+        }
+
+        int res = brl_filesystem__walkFile(walker, &attributes);
+
+        if (res == WALKRESULT_TERMINATE) {
+            break;
+        }
+
+        if (res == WALKRESULT_SKIP_SUBTREE) {
+            if (ent->fts_info == FTS_D) {
+                fts_set(fts, ent, FTS_SKIP);
+            }
+            continue;
+        }
+
+        if (res == WALKRESULT_SKIP_SIBLINGS) {
+            skipSiblingsLevel = ent->fts_level;
+
+            /* Record the *containing directory* of this entry, based on its full path. */
+            if (!get_parent_dir_from_ent(ent, skipSiblingsParentPath, sizeof(skipSiblingsParentPath))) {
+                skipSiblingsParentPath[0] = 0;
+            }
+
+            continue;
+        }        
     }
+
+    fts_close(fts);
+    
     return 0;
 }
 
