@@ -1435,7 +1435,7 @@ BBString * bbStringFromBytesAsHex( const unsigned char * bytes, int length, int 
 	return str;
 }
 
-static inline unsigned short bbFoldChar(unsigned short c) {
+unsigned short bbFoldChar(unsigned short c) {
     // ASCII
     if (c <= 0x7A) {
         if (c >= 'A' && c <= 'Z') {

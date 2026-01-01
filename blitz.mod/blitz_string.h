@@ -250,6 +250,7 @@ int bbStringIdentifierEqualsNoCase(BBString *x, BBString *y);
 int bbStringIdentifierEqualsNoCaseChars(BBString *x, BBChar * y, int ylen);
 
 BBString *bbStringFromBytesAsHex( const unsigned char * bytes, int length, int upperCase );
+unsigned short bbFoldChar(unsigned short c);
 
 #ifdef __cplusplus
 }
