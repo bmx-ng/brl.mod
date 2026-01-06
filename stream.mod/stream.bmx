@@ -6,12 +6,14 @@ bbdoc: Streams/Streams
 End Rem
 Module BRL.Stream
 
-ModuleInfo "Version: 1.11"
+ModuleInfo "Version: 1.12"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.12"
+ModuleInfo "History: Streams can now be automatically closed when used within a Using..Do block."
 ModuleInfo "History: 1.11"
 ModuleInfo "History: Streams can now be opened for appending with the new WRITE_MODE_APPEND write mode."
 ModuleInfo "History: 1.10"
@@ -78,7 +80,7 @@ at least these methods.
 
 You should also make sure your stream can handle multiple calls to the Close method.
 End Rem
-Type TIO
+Type TIO Implements ICloseable
 	Rem
 	bbdoc: Get stream end of file status
 	returns: True for end of file reached, otherwise False
