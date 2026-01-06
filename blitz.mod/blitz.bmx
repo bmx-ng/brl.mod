@@ -866,6 +866,22 @@ Interface IDisposable
 
 End Interface
 
+Rem
+bbdoc: An object that can be closed to release resources.
+about: The #Close method of an ICloseable object is automatically called when exiting a #Using block where the object has
+been declared in the #Using statement.
+End Rem
+Interface ICloseable
+
+	Rem
+	bbdoc: Closes the resource, releasing any associated resources.
+	about: This method is invoked automatically when exiting a #Using block where the object has
+	been declared in the #Using statement.
+	End Rem
+	Method Close()
+
+End Interface
+
 'BlitzMax keyword definitions
 
 Rem
