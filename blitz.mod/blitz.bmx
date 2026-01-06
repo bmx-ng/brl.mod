@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.26"
+ModuleInfo "Version: 1.27"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 '
+ModuleInfo "History: 1.27"
+ModuleInfo "History: Added ICloseable interface for Using statement support"
 ModuleInfo "History: 1.26"
 ModuleInfo "History: Added extended string to number conversion methods"
 ModuleInfo "History: 1.25"
@@ -853,18 +855,6 @@ End Rem
 Function AtStart:Int(func(), priority:Int = 0)="bbAtstart"
 
 End Extern
-
-Rem
-bbdoc: Provides a mechanism for releasing resources.
-End Rem
-Interface IDisposable
-
-	Rem
-	bbdoc: Performs application-defined tasks associated with freeing, releasing, or resetting resources.
-	End Rem
-	Method Dispose()
-
-End Interface
 
 Rem
 bbdoc: An object that can be closed to release resources.
