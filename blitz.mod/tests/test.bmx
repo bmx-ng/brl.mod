@@ -1251,7 +1251,7 @@ Type TStringCompareCaseTest Extends TTest
 	End Method
 End Type
 
-' testing enum Default_HashCode stability and correctness
+' testing enum DefaultComparator_HashCode stability and correctness
 
 Enum EByte:Byte
     B0
@@ -1313,18 +1313,18 @@ Type TEnumHashCodeTests Extends TTest
     ' --------------------------------------------------------------
     Method Test_EnumByte_Hash_StableAndMatchesOrdinal() { test }
         For Local v:EByte = EachIn EByte.Values()
-            Local h1:UInt = Default_HashCode(v)
-            Local h2:UInt = Default_HashCode(v)
+            Local h1:UInt = DefaultComparator_HashCode(v)
+            Local h2:UInt = DefaultComparator_HashCode(v)
             AssertEquals(h1, h2, "EByte hash must be stable for value " + v.ToString())
 
-            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            Local ordHash:UInt = DefaultComparator_HashCode(v.Ordinal())
             AssertEquals(ordHash, h1, "EByte hash must match hash of Ordinal() for " + v.ToString())
         Next
     End Method
 
     Method Test_EnumByte_DifferentValuesDifferentHashes() { test }
-        Local h0:UInt = Default_HashCode(EByte.B0)
-        Local h1:UInt = Default_HashCode(EByte.B1)
+        Local h0:UInt = DefaultComparator_HashCode(EByte.B0)
+        Local h1:UInt = DefaultComparator_HashCode(EByte.B1)
         AssertTrue(h0 <> h1, "Different EByte values should normally have different hashes")
     End Method
 
@@ -1334,18 +1334,18 @@ Type TEnumHashCodeTests Extends TTest
     ' --------------------------------------------------------------
     Method Test_EnumShort_Hash_StableAndMatchesOrdinal() { test }
         For Local v:EShort = EachIn EShort.Values()
-            Local h1:UInt = Default_HashCode(v)
-            Local h2:UInt = Default_HashCode(v)
+            Local h1:UInt = DefaultComparator_HashCode(v)
+            Local h2:UInt = DefaultComparator_HashCode(v)
             AssertEquals(h1, h2, "EShort hash must be stable for value " + v.ToString())
 
-            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            Local ordHash:UInt = DefaultComparator_HashCode(v.Ordinal())
             AssertEquals(ordHash, h1, "EShort hash must match hash of Ordinal() for " + v.ToString())
         Next
     End Method
 
     Method Test_EnumShort_DifferentValuesDifferentHashes() { test }
-        Local h0:UInt = Default_HashCode(EShort.S0)
-        Local h1:UInt = Default_HashCode(EShort.S1)
+        Local h0:UInt = DefaultComparator_HashCode(EShort.S0)
+        Local h1:UInt = DefaultComparator_HashCode(EShort.S1)
         AssertTrue(h0 <> h1, "Different EShort values should normally have different hashes")
     End Method
 
@@ -1355,18 +1355,18 @@ Type TEnumHashCodeTests Extends TTest
     ' --------------------------------------------------------------
     Method Test_EnumInt_Hash_StableAndMatchesOrdinal() { test }
         For Local v:EInt = EachIn EInt.Values()
-            Local h1:UInt = Default_HashCode(v)
-            Local h2:UInt = Default_HashCode(v)
+            Local h1:UInt = DefaultComparator_HashCode(v)
+            Local h2:UInt = DefaultComparator_HashCode(v)
             AssertEquals(h1, h2, "EInt hash must be stable for value " + v.ToString())
 
-            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            Local ordHash:UInt = DefaultComparator_HashCode(v.Ordinal())
             AssertEquals(ordHash, h1, "EInt hash must match hash of Ordinal() for " + v.ToString())
         Next
     End Method
 
     Method Test_EnumInt_DifferentValuesDifferentHashes() { test }
-        Local h0:UInt = Default_HashCode(EInt.I0)
-        Local h1:UInt = Default_HashCode(EInt.I1)
+        Local h0:UInt = DefaultComparator_HashCode(EInt.I0)
+        Local h1:UInt = DefaultComparator_HashCode(EInt.I1)
         AssertTrue(h0 <> h1, "Different EInt values should normally have different hashes")
     End Method
 
@@ -1376,18 +1376,18 @@ Type TEnumHashCodeTests Extends TTest
     ' --------------------------------------------------------------
     Method Test_EnumUInt_Hash_StableAndMatchesOrdinal() { test }
         For Local v:EUInt = EachIn EUInt.Values()
-            Local h1:UInt = Default_HashCode(v)
-            Local h2:UInt = Default_HashCode(v)
+            Local h1:UInt = DefaultComparator_HashCode(v)
+            Local h2:UInt = DefaultComparator_HashCode(v)
             AssertEquals(h1, h2, "EUInt hash must be stable for value " + v.ToString())
 
-            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            Local ordHash:UInt = DefaultComparator_HashCode(v.Ordinal())
             AssertEquals(ordHash, h1, "EUInt hash must match hash of Ordinal() for " + v.ToString())
         Next
     End Method
 
     Method Test_EnumUInt_DifferentValuesDifferentHashes() { test }
-        Local h0:UInt = Default_HashCode(EUInt.U0)
-        Local h1:UInt = Default_HashCode(EUInt.U1)
+        Local h0:UInt = DefaultComparator_HashCode(EUInt.U0)
+        Local h1:UInt = DefaultComparator_HashCode(EUInt.U1)
         AssertTrue(h0 <> h1, "Different EUInt values should normally have different hashes")
     End Method
 
@@ -1397,18 +1397,18 @@ Type TEnumHashCodeTests Extends TTest
     ' --------------------------------------------------------------
     Method Test_EnumLong_Hash_StableAndMatchesOrdinal() { test }
         For Local v:ELong = EachIn ELong.Values()
-            Local h1:UInt = Default_HashCode(v)
-            Local h2:UInt = Default_HashCode(v)
+            Local h1:UInt = DefaultComparator_HashCode(v)
+            Local h2:UInt = DefaultComparator_HashCode(v)
             AssertEquals(h1, h2, "ELong hash must be stable for value " + v.ToString())
 
-            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            Local ordHash:UInt = DefaultComparator_HashCode(v.Ordinal())
             AssertEquals(ordHash, h1, "ELong hash must match hash of Ordinal() for " + v.ToString())
         Next
     End Method
 
     Method Test_EnumLong_DifferentValuesDifferentHashes() { test }
-        Local h0:UInt = Default_HashCode(ELong.L0)
-        Local h1:UInt = Default_HashCode(ELong.L1)
+        Local h0:UInt = DefaultComparator_HashCode(ELong.L0)
+        Local h1:UInt = DefaultComparator_HashCode(ELong.L1)
         AssertTrue(h0 <> h1, "Different ELong values should normally have different hashes")
     End Method
 
@@ -1418,18 +1418,18 @@ Type TEnumHashCodeTests Extends TTest
     ' --------------------------------------------------------------
     Method Test_EnumULong_Hash_StableAndMatchesOrdinal() { test }
         For Local v:EULong = EachIn EULong.Values()
-            Local h1:UInt = Default_HashCode(v)
-            Local h2:UInt = Default_HashCode(v)
+            Local h1:UInt = DefaultComparator_HashCode(v)
+            Local h2:UInt = DefaultComparator_HashCode(v)
             AssertEquals(h1, h2, "EULong hash must be stable for value " + v.ToString())
 
-            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            Local ordHash:UInt = DefaultComparator_HashCode(v.Ordinal())
             AssertEquals(ordHash, h1, "EULong hash must match hash of Ordinal() for " + v.ToString())
         Next
     End Method
 
     Method Test_EnumULong_DifferentValuesDifferentHashes() { test }
-        Local h0:UInt = Default_HashCode(EULong.UL0)
-        Local h1:UInt = Default_HashCode(EULong.UL1)
+        Local h0:UInt = DefaultComparator_HashCode(EULong.UL0)
+        Local h1:UInt = DefaultComparator_HashCode(EULong.UL1)
         AssertTrue(h0 <> h1, "Different EULong values should normally have different hashes")
     End Method
 
@@ -1439,18 +1439,18 @@ Type TEnumHashCodeTests Extends TTest
     ' --------------------------------------------------------------
     Method Test_EnumLongInt_Hash_StableAndMatchesOrdinal() { test }
         For Local v:ELongInt = EachIn ELongInt.Values()
-            Local h1:UInt = Default_HashCode(v)
-            Local h2:UInt = Default_HashCode(v)
+            Local h1:UInt = DefaultComparator_HashCode(v)
+            Local h2:UInt = DefaultComparator_HashCode(v)
             AssertEquals(h1, h2, "ELongInt hash must be stable for value " + v.ToString())
 
-            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            Local ordHash:UInt = DefaultComparator_HashCode(v.Ordinal())
             AssertEquals(ordHash, h1, "ELongInt hash must match hash of Ordinal() for " + v.ToString())
         Next
     End Method
 
     Method Test_EnumLongInt_DifferentValuesDifferentHashes() { test }
-        Local h0:UInt = Default_HashCode(ELongInt.LI0)
-        Local h1:UInt = Default_HashCode(ELongInt.LI1)
+        Local h0:UInt = DefaultComparator_HashCode(ELongInt.LI0)
+        Local h1:UInt = DefaultComparator_HashCode(ELongInt.LI1)
         AssertTrue(h0 <> h1, "Different ELongInt values should normally have different hashes")
     End Method
 
@@ -1460,18 +1460,18 @@ Type TEnumHashCodeTests Extends TTest
     ' --------------------------------------------------------------
     Method Test_EnumULongInt_Hash_StableAndMatchesOrdinal() { test }
         For Local v:EULongInt = EachIn EULongInt.Values()
-            Local h1:UInt = Default_HashCode(v)
-            Local h2:UInt = Default_HashCode(v)
+            Local h1:UInt = DefaultComparator_HashCode(v)
+            Local h2:UInt = DefaultComparator_HashCode(v)
             AssertEquals(h1, h2, "EULongInt hash must be stable for value " + v.ToString())
 
-            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            Local ordHash:UInt = DefaultComparator_HashCode(v.Ordinal())
             AssertEquals(ordHash, h1, "EULongInt hash must match hash of Ordinal() for " + v.ToString())
         Next
     End Method
 
     Method Test_EnumULongInt_DifferentValuesDifferentHashes() { test }
-        Local h0:UInt = Default_HashCode(EULongInt.ULI0)
-        Local h1:UInt = Default_HashCode(EULongInt.ULI1)
+        Local h0:UInt = DefaultComparator_HashCode(EULongInt.ULI0)
+        Local h1:UInt = DefaultComparator_HashCode(EULongInt.ULI1)
         AssertTrue(h0 <> h1, "Different EULongInt values should normally have different hashes")
     End Method
 
@@ -1481,18 +1481,18 @@ Type TEnumHashCodeTests Extends TTest
     ' --------------------------------------------------------------
     Method Test_EnumSizeT_Hash_StableAndMatchesOrdinal() { test }
         For Local v:ESizeT = EachIn ESizeT.Values()
-            Local h1:UInt = Default_HashCode(v)
-            Local h2:UInt = Default_HashCode(v)
+            Local h1:UInt = DefaultComparator_HashCode(v)
+            Local h2:UInt = DefaultComparator_HashCode(v)
             AssertEquals(h1, h2, "ESizeT hash must be stable for value " + v.ToString())
 
-            Local ordHash:UInt = Default_HashCode(v.Ordinal())
+            Local ordHash:UInt = DefaultComparator_HashCode(v.Ordinal())
             AssertEquals(ordHash, h1, "ESizeT hash must match hash of Ordinal() for " + v.ToString())
         Next
     End Method
 
     Method Test_EnumSizeT_DifferentValuesDifferentHashes() { test }
-        Local h0:UInt = Default_HashCode(ESizeT.SZ0)
-        Local h1:UInt = Default_HashCode(ESizeT.SZ1)
+        Local h0:UInt = DefaultComparator_HashCode(ESizeT.SZ0)
+        Local h1:UInt = DefaultComparator_HashCode(ESizeT.SZ1)
         AssertTrue(h0 <> h1, "Different ESizeT values should normally have different hashes")
     End Method
 
@@ -1503,20 +1503,20 @@ Type TEnumHashCodeTests Extends TTest
     Method Test_FlagsEnum_Hash_StableAndMatchesOrdinal() { test }
         ' Single flag
         Local single:EBits = EBits.Second
-        Local sh1:UInt = Default_HashCode(single)
-        Local sh2:UInt = Default_HashCode(single)
+        Local sh1:UInt = DefaultComparator_HashCode(single)
+        Local sh2:UInt = DefaultComparator_HashCode(single)
         AssertEquals(sh1, sh2, "EBits single flag hash must be stable")
 
-        Local singleOrdHash:UInt = Default_HashCode(single.Ordinal())
+        Local singleOrdHash:UInt = DefaultComparator_HashCode(single.Ordinal())
         AssertEquals(singleOrdHash, sh1, "EBits single flag hash must match Ordinal() hash")
 
         ' Combination
         Local combo:EBits = EBits.First | EBits.Third
-        Local ch1:UInt = Default_HashCode(combo)
-        Local ch2:UInt = Default_HashCode(combo)
+        Local ch1:UInt = DefaultComparator_HashCode(combo)
+        Local ch2:UInt = DefaultComparator_HashCode(combo)
         AssertEquals(ch1, ch2, "EBits combined flags hash must be stable")
 
-        Local comboOrdHash:UInt = Default_HashCode(combo.Ordinal())
+        Local comboOrdHash:UInt = DefaultComparator_HashCode(combo.Ordinal())
         AssertEquals(comboOrdHash, ch1, "EBits combined flags hash must match Ordinal() hash")
     End Method
 
@@ -1524,10 +1524,369 @@ Type TEnumHashCodeTests Extends TTest
         Local first:EBits    = EBits.First
         Local combo:EBits    = EBits.First | EBits.Third
 
-        Local firstHash:UInt = Default_HashCode(first)
-        Local comboHash:UInt = Default_HashCode(combo)
+        Local firstHash:UInt = DefaultComparator_HashCode(first)
+        Local comboHash:UInt = DefaultComparator_HashCode(combo)
 
         AssertTrue(firstHash <> comboHash, "Different EBits flag combinations should normally have different hashes")
     End Method
 
 End Type
+
+Type TUsingCloseableTests Extends TTest
+
+	Method Setup() { before }
+		TCloseLog.Reset()
+	End Method
+
+	Method TearDown() { after }
+		' no-op
+	End Method
+
+	' --- Basic close behavior ---
+
+	Method UsingClosesOnNormalExit_Single() { test }
+		Using
+			Local a:TCloseableBase = New TCloseableBase("A")
+		Do
+			TCloseLog.Add("body")
+		End Using
+
+		AssertEquals("body|close:A", TCloseLog.log, "Expected Close to run after body on normal exit.")
+	End Method
+
+	Method UsingClosesOnReturn_Single() { test }
+		Using
+			Local a:TCloseableBase = New TCloseableBase("A")
+		Do
+			TCloseLog.Add("body")
+			Return
+		End Using
+
+		' If Using desugars to Try/Finally, close should still run.
+		AssertEquals("body|close:A", TCloseLog.log, "Expected Close to run even when returning from Using block.")
+	End Method
+
+	Method UsingClosesMultipleInReverseOrder() { test }
+		Using
+			Local a:TCloseableBase = New TCloseableBase("A")
+			Local b:TCloseableBase = New TCloseableBase("B")
+			Local c:TCloseableBase = New TCloseableBase("C")
+		Do
+			TCloseLog.Add("body")
+		End Using
+
+		AssertEquals("body|close:C|close:B|close:A", TCloseLog.log, "Expected Close in reverse declaration order.")
+	End Method
+
+	Method UsingClosesMultipleOnReturnInReverseOrder() { test }
+		Using
+			Local a:TCloseableBase = New TCloseableBase("A")
+			Local b:TCloseableBase = New TCloseableBase("B")
+		Do
+			TCloseLog.Add("body")
+			Return
+		End Using
+
+		AssertEquals("body|close:B|close:A", TCloseLog.log, "Expected Close in reverse order even on Return.")
+	End Method
+
+	' --- Close exceptions swallowed ---
+
+	Method CloseExceptionIsSwallowed_Single() { test }
+		Using
+			Local a:TCloseableBase = New TCloseableBase("A", True)
+		Do
+			TCloseLog.Add("body")
+		End Using
+
+		' If Close throws but is swallowed, test completes and log contains close.
+		AssertEquals("body|close:A", TCloseLog.log, "Expected Close exception swallowed and Close still logged.")
+	End Method
+
+	Method CloseExceptionsDoNotStopOtherCloses() { test }
+		Using
+			Local a:TCloseableBase = New TCloseableBase("A", True)
+			Local b:TCloseableBase = New TCloseableBase("B", True)
+			Local c:TCloseableBase = New TCloseableBase("C", False)
+		Do
+			TCloseLog.Add("body")
+		End Using
+
+		' All closes should have been attempted in reverse order, regardless of exceptions.
+		AssertEquals("body|close:C|close:B|close:A", TCloseLog.log, "Expected all Close calls attempted even when some throw.")
+	End Method
+
+	Method BodyExceptionPropagates_CloseExceptionsSwallowed() { test }
+		Local caught:Int = False
+
+		Try
+			Using
+				Local a:TCloseableBase = New TCloseableBase("A", True)
+				Local b:TCloseableBase = New TCloseableBase("B", True)
+			Do
+				TCloseLog.Add("body")
+				Throw "BodyBoom"
+			End Using
+		Catch e:Object
+			caught = True
+			TCloseLog.Add("caught")
+		End Try
+
+		AssertTrue(caught, "Expected body exception to propagate out of Using (and be catchable).")
+		AssertEquals("body|close:B|close:A|caught", TCloseLog.log, "Expected closes attempted, close exceptions swallowed, body exception preserved.")
+	End Method
+
+	' --- Throwing from body / try integration ---
+
+	Method UsingClosesOnBodyThrow_MultipleReverseOrder() { test }
+		Local caught:Int = False
+
+		Try
+			ThrowInsideUsing("X:", False, False)
+		Catch e:Object
+			caught = True
+			TCloseLog.Add("caught:X")
+		End Try
+
+		AssertTrue(caught, "Expected exception thrown in body to be caught outside.")
+		AssertEquals("body:X:|close:X:B|close:X:A|caught:X", TCloseLog.log, "Expected close in reverse order after body throw.")
+	End Method
+
+	Method UsingInsideTryCatch_BodyThrows_ClosesBeforeCatch() { test }
+		UsingInsideTryCatch("T1:", True)
+
+		' Expect: body then closes then catch marker.
+		AssertEquals("body:T1:|close:T1:B|close:T1:A|caught:T1:", TCloseLog.log, "Expected Using closes run before outer Catch executes.")
+	End Method
+
+	Method TryCatchInsideUsing_InnerThrowHandled_StillCloses() { test }
+		TryCatchInsideUsing("T2:", True)
+
+		AssertEquals("body:T2:|innercatch:T2:|close:T2:B|close:T2:A", TCloseLog.log, "Expected inner exception handled, then closes run.")
+	End Method
+
+	Method TryCatchInsideUsing_NoInnerThrow_StillCloses() { test }
+		TryCatchInsideUsing("T3:", False)
+
+		AssertEquals("body:T3:|innertry:ok:T3:|close:T3:B|close:T3:A", TCloseLog.log, "Expected normal inner try path, then closes run.")
+	End Method
+
+	' --- Nested Using ---
+
+	Method NestedUsing_ClosesInnerBeforeOuter() { test }
+		NestedUsing("N1:", False, False)
+
+		AssertEquals("body:outer:N1:|body:inner:N1:|close:N1:Inner|close:N1:Outer", TCloseLog.log, "Expected inner Close before outer Close.")
+	End Method
+
+	Method NestedUsing_InnerCloseThrows_OuterStillCloses() { test }
+		NestedUsing("N2:", False, True)
+
+		AssertEquals("body:outer:N2:|body:inner:N2:|close:N2:Inner|close:N2:Outer", TCloseLog.log, "Expected inner Close exception swallowed; outer still closes.")
+	End Method
+
+	Method NestedUsing_OuterCloseThrows_DoesNotAffectInnerClose() { test }
+		NestedUsing("N3:", True, False)
+
+		AssertEquals("body:outer:N3:|body:inner:N3:|close:N3:Inner|close:N3:Outer", TCloseLog.log, "Expected inner closes first; outer Close exception swallowed.")
+	End Method
+
+	Method NestedUsing_BodyReturn_StillClosesAll() { test }
+		Using
+			Local outer:TCloseableBase = New TCloseableBase("Outer")
+		Do
+			TCloseLog.Add("body:outer")
+			Using
+				Local inner:TCloseableBase = New TCloseableBase("Inner")
+			Do
+				TCloseLog.Add("body:inner")
+				Return
+			End Using
+			' unreachable
+		End Using
+
+		AssertEquals("body:outer|body:inner|close:Inner|close:Outer", TCloseLog.log, "Expected Return inside inner Using still closes inner+outer.")
+	End Method
+
+	' --- Using in Finally ---
+
+	Method UsingInFinally_NoThrowInTry() { test }
+		UsingInFinally("F1:", False)
+
+		AssertEquals("try:F1:|finallybody:F1:|close:F1:B|close:F1:A", TCloseLog.log, "Expected Using inside Finally runs and closes normally.")
+	End Method
+
+	Method UsingInFinally_TryThrows_FinallyRunsAndCloses() { test }
+		Local caught:Int = False
+
+		Try
+			UsingInFinally("F2:", True)
+		Catch e:Object
+			caught = True
+			TCloseLog.Add("caught:F2")
+		End Try
+
+		AssertTrue(caught, "Expected outer try to catch exception thrown before Finally.")
+		AssertEquals("try:F2:|finallybody:F2:|close:F2:B|close:F2:A|caught:F2", TCloseLog.log, "Expected Finally runs Using+closes even when Try throws.")
+	End Method
+
+	' --- Functions/methods integration ---
+
+	Method UsingInsideFunction_Returns_ClosesAll() { test }
+		ReturnInsideUsing("R1:", False, False)
+		AssertEquals("body:R1:|close:R1:B|close:R1:A", TCloseLog.log, "Expected closes on return inside function helper.")
+	End Method
+
+	Method UsingInsideFunction_Returns_CloseThrows_Swallowed() { test }
+		ReturnInsideUsing("R2:", True, True)
+		AssertEquals("body:R2:|close:R2:B|close:R2:A", TCloseLog.log, "Expected close exceptions swallowed on return path.")
+	End Method
+
+	Method UsingInsideFunction_BodyThrows_CloseThrows_BodyPropagates() { test }
+		Local caught:Int = False
+		Try
+			ThrowInsideUsing("E1:", True, True)
+		Catch e:Object
+			caught = True
+			TCloseLog.Add("caught:E1")
+		End Try
+
+		AssertTrue(caught, "Expected body exception from helper to propagate.")
+		AssertEquals("body:E1:|close:E1:B|close:E1:A|caught:E1", TCloseLog.log, "Expected close exceptions swallowed, body exception preserved.")
+	End Method
+
+	' --- Null resource edge case: ensure no close attempt on null ---
+	Method Using_NullResource_NoCloseAttempt() { test }
+		Using
+			Local a:TCloseableBase = Null
+		Do
+			TCloseLog.Add("body")
+		End Using
+
+		AssertEquals("body", TCloseLog.log, "Expected no close attempt when resource is Null.")
+	End Method
+
+End Type
+
+Type TCloseLog
+	Global log:String
+
+	Function Reset()
+		log = ""
+	End Function
+
+	Function Add(msg:String)
+		If log <> "" Then log :+ "|"
+		log :+ msg
+	End Function
+End Type
+
+Type TCloseableBase Implements ICloseable
+	Field name:String
+	Field throwOnClose:Int
+
+	Method New(name:String, throwOnClose:Int = False)
+		Self.name = name
+		Self.throwOnClose = throwOnClose
+	End Method
+
+	Method Close()
+		TCloseLog.Add("close:" + name)
+		If throwOnClose Then Throw "Close failed: " + name
+	End Method
+End Type
+
+Type TCloseableWithBodyThrow
+	' Not closeable; used to model body exceptions only
+	Field name:String
+	Method New(name:String)
+		Self.name = name
+	End Method
+End Type
+
+' Helper: throws in body after optionally doing something
+Function ThrowInBody(msg:String)
+	Throw msg
+End Function
+
+' Helper: returns from inside using
+Function ReturnInsideUsing(logPrefix:String, aThrowOnClose:Int = False, bThrowOnClose:Int = False)
+	Using
+		Local a:TCloseableBase = New TCloseableBase(logPrefix + "A", aThrowOnClose)
+		Local b:TCloseableBase = New TCloseableBase(logPrefix + "B", bThrowOnClose)
+	Do
+		TCloseLog.Add("body:" + logPrefix)
+		Return
+	End Using
+End Function
+
+' Helper: body throws, closes still run; caller catches
+Function ThrowInsideUsing(logPrefix:String, aThrowOnClose:Int = False, bThrowOnClose:Int = False)
+	Using
+		Local a:TCloseableBase = New TCloseableBase(logPrefix + "A", aThrowOnClose)
+		Local b:TCloseableBase = New TCloseableBase(logPrefix + "B", bThrowOnClose)
+	Do
+		TCloseLog.Add("body:" + logPrefix)
+		Throw "Body failed: " + logPrefix
+	End Using
+End Function
+
+' Helper: nested Using
+Function NestedUsing(logPrefix:String, outerThrowOnClose:Int = False, innerThrowOnClose:Int = False)
+	Using
+		Local outer:TCloseableBase = New TCloseableBase(logPrefix + "Outer", outerThrowOnClose)
+	Do
+		TCloseLog.Add("body:outer:" + logPrefix)
+		Using
+			Local inner:TCloseableBase = New TCloseableBase(logPrefix + "Inner", innerThrowOnClose)
+		Do
+			TCloseLog.Add("body:inner:" + logPrefix)
+		End Using
+	End Using
+End Function
+
+' Helper: Using inside Try/Catch
+Function UsingInsideTryCatch(logPrefix:String, throwInUsingBody:Int)
+	Try
+		Using
+			Local a:TCloseableBase = New TCloseableBase(logPrefix + "A")
+			Local b:TCloseableBase = New TCloseableBase(logPrefix + "B")
+		Do
+			TCloseLog.Add("body:" + logPrefix)
+			If throwInUsingBody Then Throw "Body failed: " + logPrefix
+		End Using
+	Catch e:Object
+		TCloseLog.Add("caught:" + logPrefix)
+	End Try
+End Function
+
+' Helper: Try/Catch inside Using body
+Function TryCatchInsideUsing(logPrefix:String, throwInsideTry:Int)
+	Using
+		Local a:TCloseableBase = New TCloseableBase(logPrefix + "A")
+		Local b:TCloseableBase = New TCloseableBase(logPrefix + "B")
+	Do
+		TCloseLog.Add("body:" + logPrefix)
+		Try
+			If throwInsideTry Then Throw "Inner try failed: " + logPrefix
+			TCloseLog.Add("innertry:ok:" + logPrefix)
+		Catch e:Object
+			TCloseLog.Add("innercatch:" + logPrefix)
+		End Try
+	End Using
+End Function
+
+' Helper: Using in Finally
+Function UsingInFinally(logPrefix:String, throwInTry:Int)
+	Try
+		TCloseLog.Add("try:" + logPrefix)
+		If throwInTry Then Throw "Try failed: " + logPrefix
+	Finally
+		Using
+			Local a:TCloseableBase = New TCloseableBase(logPrefix + "A")
+			Local b:TCloseableBase = New TCloseableBase(logPrefix + "B")
+		Do
+			TCloseLog.Add("finallybody:" + logPrefix)
+		End Using
+	End Try
+End Function
