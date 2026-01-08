@@ -315,6 +315,108 @@ Type TGlobTest Extends TTest
 		Local r:String[] = Glob("\{a,b\}.txt", EGlobOptions.None, root)
 		AssertEquals(0, r.Length, "Expected no matches for literal {a,b}.txt")
 	End Method
+
+	Method GlobIterMatchesGlob_AsSet() { test }
+		Local pat:String = "sub/**/*.txt"
+		Local flags:EGlobOptions = EGlobOptions.GlobStar
+
+		Local eager:String[] = Glob(pat, flags, root)
+
+		Local it:TGlobIter = GlobIter(pat, flags, root)
+		Local lazy:String[] = _CollectIter(it)
+
+		eager.Sort()
+		lazy.Sort()
+
+		AssertEquals(eager.Length, lazy.Length, "Iterator and Glob should return same number of matches")
+		For Local i:Int = 0 Until eager.Length
+			AssertEquals(eager[i], lazy[i], "Mismatch at index " + i)
+		Next
+	End Method
+
+	Method GlobIterCanStopEarly() { test }
+		Local n:Int = 0
+
+		Using
+			Local it:TGlobIter = GlobIter("sub/**/*.txt", EGlobOptions.GlobStar, root)
+		Do
+			While it.MoveNext()
+				n :+ 1
+				Exit  ' stop immediately
+			Wend
+		End Using
+
+		AssertEquals(1, n, "Expected to read exactly one item then stop")
+
+		' Ensure subsequent glob still works (dir handles were closed / not leaked)
+		Local r:String[] = Glob("sub/**/*.txt", EGlobOptions.GlobStar, root)
+		AssertTrue(r.Length >= 2, "Expected subsequent Glob to still work after early stop")
+	End Method
+
+	Method GlobIterEarlyExitStressDoesNotLeak() { test }
+		For Local i:Int = 0 Until 5000
+			Using
+				Local it:TGlobIter = GlobIter("sub/**/*.txt", EGlobOptions.GlobStar, root)
+			Do
+				' consume only one result, then exit
+				If it.MoveNext() Then
+					' no-op
+				End If
+			End Using
+		Next
+
+		AssertTrue(True, "Completed stress loop without leaking handles")
+	End Method
+
+	Method GlobIterCloseIsIdempotent() { test }
+		Local it:TGlobIter = GlobIter("sub/**/*.txt", EGlobOptions.GlobStar, root)
+
+		' Force it to open some dirs
+		it.MoveNext()
+
+		it.Close()
+		it.Close() ' should not crash
+
+		AssertTrue(True, "Close() is idempotent")
+	End Method
+
+	Method GlobIterBraceExpansionWorks() { test }
+		Using
+			Local it:TGlobIter = GlobIter("sub/{c.txt,deeper/d.txt}", EGlobOptions.None, root)
+		Do
+			Local r:String[] = _CollectIter(it)
+
+			AssertTrue(_Contains(r, "sub/c.txt"), "Expected iterator to yield sub/c.txt via brace expansion")
+			AssertTrue(_Contains(r, "sub/deeper/d.txt"), "Expected iterator to yield sub/deeper/d.txt via brace expansion")
+		End Using
+	End Method
+
+	Method GlobIterRootedYieldsAbsolute() { test }
+		Local absRoot:String = RealPath(root)
+		Local sawAny:Int = False
+		Using
+			Local it:TGlobIter = GlobIter(absRoot + "/*.txt", EGlobOptions.None, "")
+		Do
+			For Local s:String = EachIn it
+				AssertTrue(s.StartsWith(absRoot + "/"), "Expected absolute result from rooted iterator: " + s)
+				sawAny = True
+				Exit
+			Next
+		End Using
+
+		AssertTrue(sawAny, "Expected at least one rooted iterator result")
+	End Method
+
+	Method GlobIterOnlyDirAndMarkHonored() { test }
+		Using
+			Local it:TGlobIter = GlobIter("*", EGlobOptions.OnlyDir | EGlobOptions.Mark | EGlobOptions.Period, root)
+		Do
+			While it.MoveNext()
+				Local s:String = it.Current()
+				AssertTrue(s.EndsWith("/"), "Expected Mark to append / for directories: " + s)
+			Wend
+		End Using
+	End Method
 End Type
 
 
@@ -432,6 +534,17 @@ Type TVirtualGlobTest Extends TTest
 		AssertTrue(seen1 And seen2, "Expected rooted /sub/**/*.txt to return rooted matches in virtual mode")
 	End Method
 
+	Method GlobIterEarlyExitStressDoesNotLeak_Virtual() { test }
+		For Local i:Int = 0 Until 500
+			Using
+				Local it:TGlobIter = GlobIter("sub/**/*.txt", EGlobOptions.GlobStar, "/")
+			Do
+				it.MoveNext()
+			End Using
+		Next
+		AssertTrue(True, "Completed virtual stress loop without leaking handles")
+	End Method
+
 	Method DotDirectory_Virtual() { test }
 		Local r:String[] = Glob("*", EGlobOptions.None, "/")
 		For Local s:String = EachIn r
@@ -486,4 +599,26 @@ End Function
 
 Function _EnsureDir:Int(path:String)
 	Return CreateDir(path, True)
+End Function
+
+Function _CollectIter:String[](it:IIterator<String>)
+	Local lst:TList = New TList
+	While it.MoveNext()
+		lst.AddLast(it.Current())
+	Wend
+
+	Local out:String[] = New String[lst.Count()]
+	Local i:Int = 0
+	For Local s:String = EachIn lst
+		out[i] = s
+		i :+ 1
+	Next
+	Return out
+End Function
+
+Function _Contains:Int(arr:String[], value:String)
+	For Local s:String = EachIn arr
+		If s = value Then Return True
+	Next
+	Return False
 End Function

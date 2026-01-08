@@ -76,11 +76,10 @@ End Function
 
 Public
 
-
 Rem
 bbdoc: Performs file globbing.
 about:
-Expands a glob @pattern into a list of matching files and/or directories.
+Expands a glob @pattern into an array of matching files and/or directories.
 
 The glob pattern supports the following constructs:
 
@@ -104,6 +103,10 @@ Brace expressions may be nested. Expansion is purely textual and occurs before a
 Only brace expressions containing at least one top-level comma are expanded.
 Malformed or unterminated brace expressions are treated as literal text.
 
+Note that `**/pattern` matches only files below the starting directory.
+To include files in the starting directory, combine with pattern using brace expansion.
+For example, `{pattern,**/pattern}`.
+
 Backslash-escaped braces (`\{` and `\}`) are treated literally unless #EGlobOptions.NoEscape is specified.
 
 If @pattern is not rooted, globbing begins relative to @baseDir if supplied,
@@ -121,30 +124,24 @@ See #EGlobOptions for details.
 The globbing implementation works consistently for both the native filesystem
 and the virtual filesystem when #BRL.Io / #MaxIO is enabled.
 End Rem
-
 Function Glob:String[](pattern:String, flags:EGlobOptions = EGlobOptions.None, baseDir:String = "")
-	' Normalize pattern in a glob-safe way (preserves escapes)
-	pattern = _FixGlobPattern(pattern, flags)
+	Local lst:TList = New TList
 
-	Local pats:String[] = _ExpandBraces(pattern, flags)
+	Using
+		Local it:TGlobIter = GlobIter(pattern, flags, baseDir)
+	Do
+		While it.MoveNext()
+			lst.AddLast(it.Current())
+		Wend
+	End Using
 
-	Local merged:TList = New TList
-	For Local p:String = EachIn pats
-		Local r:String[] = _GlobOne(p, flags, baseDir)
-		For Local s:String = EachIn r
-			merged.AddLast(s)
-		Next
-	Next
-
-	' Convert to array
-	Local out:String[] = New String[merged.Count()]
+	Local out:String[] = New String[lst.Count()]
 	Local i:Int = 0
-	For Local s:String = EachIn merged
+	For Local s:String = EachIn lst
 		out[i] = s
 		i :+ 1
 	Next
 
-	' Final sort/unique happens once across all expansions
 	If (flags & EGlobOptions.NoSort) <> EGlobOptions.NoSort Then
 		_SortStrings(out)
 		out = _UniqueSorted(out)
@@ -171,6 +168,10 @@ against `"sub/a.txt"` or `"sub/b.txt"`.
 Only well-formed brace expressions containing at least one top-level comma are
 expanded. Escaped or malformed brace expressions are treated as literal text.
 
+Note that `**/pattern` matches only files below the starting directory.
+To include files in the starting directory, combine with pattern using brace expansion.
+For example, `{pattern,**/pattern}`.
+
 If @pattern does not contain any path separators (`/`), it is matched only against
 the final path segment of @path (the file or directory name).
 
@@ -192,9 +193,79 @@ Function MatchGlob:Int(pattern:String, path:String, flags:EGlobOptions = EGlobOp
 
 	Local pats:String[] = _ExpandBraces(pattern, flags)
 	For Local p:String = EachIn pats
-		If _MatchGlobOne(p, path, flags) Then Return True
+		If _MatchGlobOne(p, path, flags) Then
+			Return True
+		End If
 	Next
 	Return False
+End Function
+
+Rem
+bbdoc: Performs file globbing.
+about:
+Expands a glob @pattern into an iterator of matching files and/or directories.
+
+The glob pattern supports the following constructs:
+
+* `*` matches zero or more characters within a single path segment.
+* `?` matches exactly one character within a single path segment.
+* Character classes such as `[abc]`, `[a-z]`, and negated classes `[!abc]` or `[^abc]`.
+* Backslash escaping of metacharacters (unless the #EGlobOptions.NoEscape flag is set).
+* The `**` globstar operator (when #EGlobOptions.GlobStar is enabled) to match zero or more directory levels.
+
+By default, wildcard patterns do not match entries whose names begin with `.`.
+This behavior can be changed by enabling the #EGlobOptions.Period flag.
+
+Brace expansion using curly braces is supported.
+
+A pattern of the form `{a,b}` is expanded into multiple patterns before globbing is performed. For example:
+
+* `"src/{core,ui}/*.bmx"` expands to `"src/core/*.bmx"` and `"src/ui/*.bmx"`.
+
+Brace expressions may be nested. Expansion is purely textual and occurs before any wildcard matching.
+
+Only brace expressions containing at least one top-level comma are expanded.
+Malformed or unterminated brace expressions are treated as literal text.
+
+Note that `**/pattern` matches only files below the starting directory.
+To include files in the starting directory, combine with pattern using brace expansion.
+For example, `{pattern,**/pattern}`.
+
+Backslash-escaped braces (`\{` and `\}`) are treated literally unless #EGlobOptions.NoEscape is specified.
+
+If @pattern is not rooted, globbing begins relative to @baseDir if supplied,
+or the current directory as returned by #CurrentDir.
+If @pattern is rooted, @baseDir is ignored and matching begins at the root.
+
+The returned paths are:
+
+* Rooted paths if @pattern is rooted.
+* Paths relative to @baseDir (or the current directory) if @pattern is not rooted.
+
+The @flags parameter controls additional matching behavior and result filtering.
+See #EGlobOptions for details.
+
+The globbing implementation works consistently for both the native filesystem
+and the virtual filesystem when #BRL.Io / #MaxIO is enabled.
+
+The returned iterator should be closed if not fully consumed, to release any held resources.
+This can be done manually by calling #Close(), or automatically via a #Using block.
+For example:
+```blitzmax
+Using
+	Local it:TGlobIter = GlobIter("src/**/*.bmx", EGlobOptions.GlobStar, "base/dir")
+Do
+	For Local s:String = EachIn it
+		If s = "src/some/specific/file.bmx" Then
+			Print "Found it!"
+			Exit
+		End If
+	Next
+End Using
+```
+End Rem
+Function GlobIter:TGlobIter(pattern:String, flags:EGlobOptions = EGlobOptions.None, baseDir:String = "")
+	Return TGlobIter.Create(pattern, flags, baseDir)
 End Function
 
 Extern
@@ -469,7 +540,9 @@ Function _MatchClass:Int(pat:String, start:Int, ch:Int, flags:EGlobOptions, next
 			nch = _Fold(nch)
 		End If
 
-		If cc = nch Then matched = True
+		If cc = nch Then
+			matched = True
+		End If
 
 		prev = c
 		havePrev = True
@@ -601,93 +674,6 @@ Function _UniqueSorted:String[](arr:String[])
 	Return out[..n]
 End Function
 
-Function _ExpandGlob(results:TList, base:String, segs:String[], idx:Int, flags:EGlobOptions)
-	If idx = segs.Length Then
-		If _EmitOk(base, flags) Then
-			results.AddLast(_MaybeMark(base, flags))
-		End If
-		Return
-	End If
-
-	Local seg:String = segs[idx]
-
-	' Globstar
-	If seg = "**" And (flags & EGlobOptions.GlobStar) = EGlobOptions.GlobStar Then
-		' Option: match zero segments
-		_ExpandGlob(results, base, segs, idx + 1, flags)
-
-		' Option: match one+ directories
-		If FileType(base) <> FILETYPE_DIR Then
-			Return
-		End If
-
-		Local d:Byte Ptr = ReadDir(base)
-		If Not d Then
-			Return
-		End If
-
-		While True
-			Local f:String = NextFile(d)
-			If Not f Exit
-			If f = "." Or f = ".." Then
-				Continue
-			End If
-
-			Local p:String = _JoinPath(base, f)
-			If FileType(p) = FILETYPE_DIR Then
-				_ExpandGlob(results, p, segs, idx, flags)
-			End If
-		Wend
-		CloseDir(d)
-		Return
-	End If
-
-	' Fast path: no metas in this segment
-	If Not _IsMetaSegment(seg, flags) Then
-		Local litSeg:String = _UnescapeGlobLiteral(seg, flags)
-		Local nextPath:String = _JoinPath(base, litSeg)
-		If idx < segs.Length - 1 Then
-			If FileType(nextPath) = FILETYPE_DIR Then
-				_ExpandGlob(results, nextPath, segs, idx + 1, flags)
-			End If
-		Else
-			_ExpandGlob(results, nextPath, segs, idx + 1, flags)
-		End If
-		Return
-	End If
-
-	' Meta segment: enumerate
-	If FileType(base) <> FILETYPE_DIR Then
-		Return
-	End If
-
-	Local dir:Byte Ptr = ReadDir(base)
-	If Not dir Then
-		Return
-	End If
-
-	While True
-		Local name:String = NextFile(dir)
-		If Not name Exit
-		If name = "." Or name = ".." Then
-			Continue
-		End If
-
-		If _MatchSegment(seg, name, flags) Then
-			Local p:String = _JoinPath(base, name)
-			If idx < segs.Length - 1 Then
-				If FileType(p) = FILETYPE_DIR Then
-					_ExpandGlob(results, p, segs, idx + 1, flags)
-				End If
-			Else
-				_ExpandGlob(results, p, segs, idx + 1, flags)
-			End If
-		End If
-	Wend
-
-	CloseDir(dir)
-End Function
-
 Function _FixGlobPattern:String(pat:String, flags:EGlobOptions)
 	' Normalize separators to "/", but preserve backslash escapes
 	' when NoEscape is NOT set and the next char is a glob meta or backslash.
@@ -810,7 +796,9 @@ Function _ExpandBracesToList(results:TList, pat:String, flags:EGlobOptions, coun
 		_ExpandBracesToList(suffixExp, suffix, flags, tmpCount)
 
 		For Local s:String = EachIn suffixExp
-			If count >= _GLOB_BRACE_EXPAND_LIMIT Then Exit
+			If count >= _GLOB_BRACE_EXPAND_LIMIT Then
+				Exit
+			End If
 			results.AddLast(prefix + "{" + inner + "}" + s)
 			count :+ 1
 		Next
@@ -820,7 +808,9 @@ Function _ExpandBracesToList(results:TList, pat:String, flags:EGlobOptions, coun
 	' Expand
 	Local opts:String[] = _SplitTopLevelCommas(inner, flags)
 	For Local opt:String = EachIn opts
-		If count >= _GLOB_BRACE_EXPAND_LIMIT Then Exit
+		If count >= _GLOB_BRACE_EXPAND_LIMIT Then
+			Exit
+		End If
 		_ExpandBracesToList(results, prefix + opt + suffix, flags, count)
 	Next
 End Function
@@ -848,7 +838,9 @@ Function _SplitTopLevelCommas:String[](inner:String, flags:EGlobOptions)
 		If c = Asc("{") Then
 			depth :+ 1
 		ElseIf c = Asc("}") Then
-			If depth > 0 Then depth :- 1
+			If depth > 0 Then
+				depth :- 1
+			End If
 		ElseIf c = Asc(",") And depth = 0 Then
 			parts.AddLast(inner[start..i])
 			start = i + 1
@@ -881,7 +873,9 @@ Function _BraceHasTopLevelComma:Int(inner:String, flags:EGlobOptions)
 		If c = Asc("{") Then
 			depth :+ 1
 		ElseIf c = Asc("}") Then
-			If depth > 0 Then depth :- 1
+			If depth > 0 Then
+				depth :- 1
+			End If
 		ElseIf c = Asc(",") And depth = 0 Then
 			Return True
 		End If
@@ -893,8 +887,12 @@ End Function
 
 Function _IsEscaped:Int(s:String, i:Int, flags:EGlobOptions)
 	' True if s[i] is escaped by a preceding backslash (when escaping is enabled)
-	If (flags & EGlobOptions.NoEscape) = EGlobOptions.NoEscape Then Return False
-	If i <= 0 Then Return False
+	If (flags & EGlobOptions.NoEscape) = EGlobOptions.NoEscape Then
+		Return False
+	End If
+	If i <= 0 Then
+		Return False
+	End If
 	Return s[i - 1] = Asc("\")
 End Function
 
@@ -921,7 +919,9 @@ Function _FindFirstBrace:Int(pat:String, flags:EGlobOptions, openIndex:Int Var, 
 		i :+ 1
 	Wend
 
-	If openIndex = -1 Then Return False
+	If openIndex = -1 Then
+		Return False
+	End If
 
 	' Find matching close brace
 	Local depth:Int = 0
@@ -951,102 +951,6 @@ Function _FindFirstBrace:Int(pat:String, flags:EGlobOptions, openIndex:Int Var, 
 	openIndex = -1
 	closeIndex = -1
 	Return False
-End Function
-
-Function _GlobOne:String[](pattern:String, flags:EGlobOptions = EGlobOptions.None, baseDir:String = "")
-	pattern = _FixGlobPattern(pattern, flags)
-
-	Local start:String
-	Local root:String = ""
-	Local rooted:Int = False
-
-	If MaxIO.ioInitialized Then
-		rooted = pattern.StartsWith("/")
-		If rooted Then
-			root = "/"
-		End If
-	Else
-		root = _RootPath(pattern)
-		rooted = (root <> "")
-	End If
-
-	Local remainder:String = pattern
-
-	If rooted Then
-		start = root
-		remainder = pattern[root.Length..]
-	Else
-		If baseDir <> "" Then
-			start = baseDir
-			FixPath start, True
-		Else
-			start = CurrentDir()
-		End If
-	End If
-
-	' Normalize start: do not strip slash for roots
-	FixPath start, True
-	If Not _IsRootPath(start) Then
-		start = StripSlash(start)
-	End If
-
-	' If pattern is rooted, ensure start is exactly the root path (already has trailing slash sometimes)
-	If rooted Then
-		start = root
-		FixPath start, True
-		If Not _IsRootPath(start) Then
-			start = StripSlash(start)
-		End If
-	End If
-
-	' Split into segments (ignore empty)
-	Local segs:String[] = _SplitSegments(remainder)
-
-	Local results:TList = New TList
-
-	' Special case: pattern with no segments => match start itself
-	If segs.Length = 0 Then
-		If _EmitOk(start, flags) Then
-			results.AddLast(_MaybeMark(start, flags))
-		End If
-	Else
-		_ExpandGlob(results, start, segs, 0, flags)
-	End If
-
-	' Convert to array
-	Local out:String[] = New String[results.Count()]
-	Local i:Int = 0
-	For Local s:String = EachIn results
-		out[i] = s
-		i :+ 1
-	Next
-
-	' ' Sorting + uniq
-	' If (flags & EGlobOptions.NoSort) <> EGlobOptions.NoSort Then
-	' 	_SortStrings(out)
-	' 	out = _UniqueSorted(out)
-	' End If
-
-	' If not rooted, return paths relative to start (baseDir or CurrentDir)
-	If Not rooted Then
-		For i = 0 Until out.Length
-			Local raw:String = out[i]
-			' preserve Mark suffix if present
-			Local marked:Int = raw.EndsWith("/")
-			Local p:String = raw
-			If marked Then
-				p = raw[..raw.Length - 1]
-			End If
-
-			Local rel:String = _StripPrefix(p, start)
-			If marked And rel <> "" And Not rel.EndsWith("/") Then
-				rel :+ "/"
-			End If
-			out[i] = rel
-		Next
-	End If
-
-	Return out
 End Function
 
 Function _MatchGlobOne:Int(pattern:String, path:String, flags:EGlobOptions = EGlobOptions.None)
@@ -1111,3 +1015,392 @@ Function _MatchGlobOne:Int(pattern:String, path:String, flags:EGlobOptions = EGl
 
 	Return False
 End Function
+
+Enum EGlobFrameMode
+	LiteralStep
+	EnumerateMeta
+	EnumerateGlobStarDirs
+End Enum
+
+Type TGlobFrame
+	Field base:String
+	Field idx:Int
+	Field mode:EGlobFrameMode
+
+	' For directory enumeration
+	Field dir:Byte Ptr
+	Field seg:String
+
+	' For globstar
+	Field globZeroDone:Int
+End Type
+
+Type TGlobOneIter Implements IIterator<String>, ICloseable
+
+	Field flags:EGlobOptions
+	Field segs:String[]
+	Field rooted:Int
+	Field start:String   ' base root dir for traversal
+	Field _current:String
+	Field _closed:Int
+
+	' Stack for DFS
+	Field stack:TList
+
+	' For making results relative when not rooted
+	Field relBase:String
+
+	Method Current:String() Override
+		Return _current
+	End Method
+
+	Method Close() Override
+		If _closed Then
+			Return
+		End If
+		_closed = True
+
+		' Detach stack reference first to reduce risk if finalizers run
+		Local st:TList = stack
+		stack = Null
+
+		If Not st Then
+			Return
+		End If
+
+		While st.Count() > 0
+			Local f:TGlobFrame = TGlobFrame(st.RemoveLast())
+			If f And f.dir Then
+				CloseDir(f.dir)
+				f.dir = Null
+			End If
+		Wend
+	End Method
+
+	Method Delete()
+		Close()
+	End Method
+
+	Function Create:TGlobOneIter(pattern:String, flags:EGlobOptions, baseDir:String)
+		Local iterator:TGlobOneIter = New TGlobOneIter
+		iterator.flags = flags
+
+		pattern = _FixGlobPattern(pattern, flags)
+
+		Local root:String = ""
+		iterator.rooted = False
+
+		If MaxIO.ioInitialized Then
+			iterator.rooted = pattern.StartsWith("/")
+			If iterator.rooted Then
+				root = "/"
+			End If
+		Else
+			root = _RootPath(pattern)
+			iterator.rooted = (root <> "")
+		End If
+
+		Local remainder:String = pattern
+		If iterator.rooted Then
+			remainder = pattern[root.Length..]
+		End If
+
+		If iterator.rooted Then
+			iterator.start = root
+		Else
+			If baseDir <> "" Then
+				iterator.start = baseDir
+				FixPath iterator.start, True
+			Else
+				iterator.start = CurrentDir()
+			End If
+		End If
+
+		FixPath iterator.start, True
+		If Not _IsRootPath(iterator.start) Then
+			iterator.start = StripSlash(iterator.start)
+		End If
+
+		' Split into segments
+		iterator.segs = _SplitSegments(remainder)
+
+		' Base for relativizing outputs
+		iterator.relBase = iterator.start
+
+		iterator.stack = New TList
+
+		' Seed the stack with the first “call”
+		Local frame:TGlobFrame = New TGlobFrame
+		frame.base = iterator.start
+		frame.idx = 0
+		frame.mode = EGlobFrameMode.LiteralStep  ' a “dispatch” mode
+		iterator.stack.AddLast(frame)
+		Return iterator
+	End Function
+
+	Method MoveNext:Int() Override
+		_current = Null
+
+		While stack And stack.Count() > 0
+			Local frame:TGlobFrame = TGlobFrame(stack.Last())
+
+			' When idx == segs.Length, we are at the “emit check”
+			If frame.idx = segs.Length Then
+				stack.RemoveLast()
+
+				If _EmitOk(frame.base, flags) Then
+					Local out:String = _MaybeMark(frame.base, flags)
+
+					' Relativize if needed
+					If Not rooted Then
+						Local marked:Int = out.EndsWith("/")
+						Local p:String = out
+						If marked Then
+							p = out[..out.Length - 1]
+						End If
+
+						Local rel:String = _StripPrefix(p, relBase)
+						If marked And rel <> "" And Not rel.EndsWith("/") Then
+							rel :+ "/"
+						End If
+						out = rel
+					End If
+
+					_current = out
+					Return True
+				End If
+
+				Continue
+			End If
+
+			' Dispatch based on segment type
+			Local seg:String = segs[frame.idx]
+
+			' -------- GlobStar --------
+			If seg = "**" And (flags & EGlobOptions.GlobStar) = EGlobOptions.GlobStar Then
+
+				' Convert this frame into a globstar enumerator frame if not already
+				If frame.mode <> EGlobFrameMode.EnumerateGlobStarDirs Then
+					frame.mode = EGlobFrameMode.EnumerateGlobStarDirs
+					frame.globZeroDone = False
+					frame.seg = seg
+					frame.dir = Null
+				End If
+
+				' First: zero-segments branch once
+				If Not frame.globZeroDone Then
+					frame.globZeroDone = True
+
+					Local zeroFrame:TGlobFrame = New TGlobFrame
+					zeroFrame.base = frame.base
+					zeroFrame.idx = frame.idx + 1
+					zeroFrame.mode = EGlobFrameMode.LiteralStep
+					stack.AddLast(zeroFrame)
+					Continue
+				End If
+
+				' Then: enumerate subdirectories and recurse with same idx
+				If FileType(frame.base) <> FILETYPE_DIR Then
+					stack.RemoveLast()
+					Continue
+				End If
+
+				If Not frame.dir Then
+					frame.dir = ReadDir(frame.base)
+					If Not frame.dir Then
+						stack.RemoveLast()
+						Continue
+					End If
+				End If
+
+				While True
+					Local name:String = NextFile(frame.dir)
+					If Not name Then
+						CloseDir(frame.dir)
+						frame.dir = Null
+						stack.RemoveLast()
+						Exit
+					End If
+					If name = "." Or name = ".." Then
+						Continue
+					End If
+
+					Local p:String = _JoinPath(frame.base, name)
+					If FileType(p) = FILETYPE_DIR Then
+						Local nextFrame:TGlobFrame = New TGlobFrame
+						nextFrame.base = p
+						nextFrame.idx = frame.idx        ' stay on **
+						nextFrame.mode = EGlobFrameMode.LiteralStep
+						stack.AddLast(nextFrame)
+						Exit
+					End If
+				Wend
+
+				Continue
+			End If
+
+			' -------- Fast literal segment --------
+			If Not _IsMetaSegment(seg, flags) Then
+				' Pop this frame and push the next “call”
+				stack.RemoveLast()
+
+				Local litSeg:String = _UnescapeGlobLiteral(seg, flags)
+				Local nextPath:String = _JoinPath(frame.base, litSeg)
+
+				' If there are more segments, only descend if it’s a directory
+				If frame.idx < segs.Length - 1 Then
+					If FileType(nextPath) = FILETYPE_DIR Then
+						Local nextFrame:TGlobFrame = New TGlobFrame
+						nextFrame.base = nextPath
+						nextFrame.idx = frame.idx + 1
+						nextFrame.mode = EGlobFrameMode.LiteralStep
+						stack.AddLast(nextFrame)
+					End If
+				Else
+					' last segment: push emit check
+					Local nextFrame:TGlobFrame = New TGlobFrame
+					nextFrame.base = nextPath
+					nextFrame.idx = frame.idx + 1
+					nextFrame.mode = EGlobFrameMode.LiteralStep
+					stack.AddLast(nextFrame)
+				End If
+
+				Continue
+			End If
+
+			' -------- Meta segment enumeration --------
+			If frame.mode <> EGlobFrameMode.EnumerateMeta Then
+				frame.mode = EGlobFrameMode.EnumerateMeta
+				frame.seg = seg
+				frame.dir = Null
+			End If
+
+			If FileType(frame.base) <> FILETYPE_DIR Then
+				' Cannot enumerate
+				stack.RemoveLast()
+				Continue
+			End If
+
+			If Not frame.dir Then
+				frame.dir = ReadDir(frame.base)
+				If Not frame.dir Then
+					stack.RemoveLast()
+					Continue
+				End If
+			End If
+
+			' Enumerate until we can push a matching child frame, or the dir ends
+			While True
+				Local name:String = NextFile(frame.dir)
+				If Not name Then
+					CloseDir(frame.dir)
+					frame.dir = Null
+					stack.RemoveLast()
+					Exit
+				End If
+
+				If name = "." Or name = ".." Then
+					Continue
+				End If
+
+				If _MatchSegment(frame.seg, name, flags) Then
+					Local p:String = _JoinPath(frame.base, name)
+
+					' If more segments remain, only descend if dir
+					If frame.idx < segs.Length - 1 Then
+						If FileType(p) = FILETYPE_DIR Then
+							Local nextFrame:TGlobFrame = New TGlobFrame
+							nextFrame.base = p
+							nextFrame.idx = frame.idx + 1
+							nextFrame.mode = EGlobFrameMode.LiteralStep
+							stack.AddLast(nextFrame)
+							Exit
+						End If
+					Else
+						' last segment: push emit check frame
+						Local nextFrame:TGlobFrame = New TGlobFrame
+						nextFrame.base = p
+						nextFrame.idx = frame.idx + 1
+						nextFrame.mode = EGlobFrameMode.LiteralStep
+						stack.AddLast(nextFrame)
+						Exit
+					End If
+				End If
+			Wend
+
+		Wend
+
+		Return False
+	End Method
+
+End Type
+
+Public
+
+Rem
+bbdoc: An iterator that yields all paths matching the given glob pattern.
+End Rem
+Type TGlobIter Implements IIterator<String>, ICloseable
+	Field flags:EGlobOptions
+	Field baseDir:String
+	Field pats:String[]
+	Field patIndex:Int
+	Field inner:TGlobOneIter
+	Field _current:String
+	Field _closed:Int
+
+	Method Current:String() Override
+		Return _current
+	End Method
+
+	Method Close() Override
+		If _closed Then
+			Return
+		End If
+		_closed = True
+
+		If inner Then
+			inner.Close()
+			inner = Null
+		End If
+	End Method
+
+	Method Delete()
+		Close()
+	End Method
+
+	Function Create:TGlobIter(pattern:String, flags:EGlobOptions, baseDir:String)
+		Local it:TGlobIter = New TGlobIter
+		it.flags = flags
+		it.baseDir = baseDir
+
+		pattern = _FixGlobPattern(pattern, flags)
+		it.pats = _ExpandBraces(pattern, flags)
+		it.patIndex = 0
+		it.inner = Null
+
+		Return it
+	End Function
+
+	Method MoveNext:Int() Override
+		_current = Null
+
+		While True
+			If inner = Null Then
+				If patIndex >= pats.Length Then
+					Return False
+				End If
+				inner = TGlobOneIter.Create(pats[patIndex], flags, baseDir)
+				patIndex :+ 1
+			End If
+
+			If inner.MoveNext() Then
+				_current = inner.Current()
+				Return True
+			End If
+
+			inner.Close()
+			inner = Null
+		Wend
+	End Method
+End Type
