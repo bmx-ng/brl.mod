@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local a:String = Input("What is your favorite color?")
 a=Lower(a)	'make sure the answer is lower case
 

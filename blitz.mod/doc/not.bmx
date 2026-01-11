@@ -4,5 +4,8 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Print Not 0			'prints 1 (TRUE)
 Print Not 20		'prints 0 (FALSE)

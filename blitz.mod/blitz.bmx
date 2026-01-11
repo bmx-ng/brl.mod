@@ -875,50 +875,23 @@ End Interface
 'BlitzMax keyword definitions
 
 Rem
-bbdoc: Set Strict mode (default in BlitzMax-NG)
-about:
-See the <a href="../../../../doc/bmxlang/compatibility.html">BlitzMax Language Reference</a> for more information on Strict mode programming.
-keyword: "Strict"
+bbdoc: Denote a class, function or method as abstract
+keyword: "Abstract"
 End Rem
 
 Rem
-bbdoc: Set SuperStrict mode
-keyword: "SuperStrict"
+bbdoc: Conditional 'And' binary operator
+keyword: "And"
 End Rem
 
 Rem
-bbdoc: End program execution
-keyword: "End"
+bbdoc: Get character value of the first character of a string
+keyword: "Asc"
 End Rem
 
 Rem
-bbdoc: Begin a remark block
-keyword: "Rem"
-End Rem
-
-Rem
-bbdoc: End a remark block
-keyword: "EndRem"
-End Rem
-
-Rem
-bbdoc: Constant integer of value 1
-keyword: "True"
-End Rem
-
-Rem
-bbdoc: Constant integer of value 0
-keyword: "False"
-End Rem
-
-Rem
-bbdoc: Constant pi value: 3.1415926535897932384626433832795
-keyword: "Pi"
-End Rem
-
-Rem
-bbdoc: Get Null value (default value for types)
-keyword: "Null"
+bbdoc: Throw a RuntimeError if a condition is false
+keyword: "Assert"
 End Rem
 
 Rem
@@ -927,73 +900,48 @@ keyword: "Byte"
 End Rem
 
 Rem
-bbdoc: Unsigned 16 bit integer type
-keyword: "Short"
+bbdoc: Conditional code inside a Select block
+keyword: "Case"
 End Rem
 
 Rem
-bbdoc: Signed 32 bit integer type
-keyword: "Int"
+bbdoc: Catch an exception object in a Try block
+keyword: "Catch"
 End Rem
 
 Rem
-bbdoc: Unsigned 32 bit integer type
-keyword: "UInt"
+bbdoc: Create a string of length 1 with a character code
+keyword: "Chr"
 End Rem
 
 Rem
-bbdoc: Signed 64 bit integer type
-keyword: "Long"
+bbdoc: Declare a constant
+keyword: "Const"
 End Rem
 
 Rem
-bbdoc: Unsigned 64 bit integer type
-keyword: "ULong"
+bbdoc: Continue execution of enclosing loop
+keyword: "Continue"
 End Rem
 
 Rem
-bbdoc: Unsigned 32/64 bit integer type
-keyword: "Size_T"
+bbdoc: Default code inside a Select block
+keyword: "Default"
 End Rem
 
 Rem
-bbdoc: Signed 32/64 bit LPARAM WinAPI type
-keyword: "LParam"
-about: Only available on Windows.
+bbdoc: Define classic BASIC style data
+keyword: "DefData"
 End Rem
 
 Rem
-bbdoc: Unsigned 32/64 bit WPARAM WinAPI type
-keyword: "WParam"
-about: Only available on Windows.
-End Rem
-
-Rem
-bbdoc: 32 bit floating point type
-keyword: "Float"
+bbdoc: Specify a custom finalizer
+keyword: "Delete"
 End Rem
 
 Rem
 bbdoc: 64 bit floating point type
 keyword: "Double"
-End Rem
-
-Rem
-bbdoc: 128 bit integer intrinsic type
-about: Only available on x64.
-keyword: "Int128"
-End Rem
-
-Rem
-bbdoc: 64 bit floating point intrinsic type
-about: Only available on x64.
-keyword: "Float64"
-End Rem
-
-Rem
-bbdoc: 128 bit floating point intrinsic type
-about: Only available on x64.
-keyword: "Float128"
 End Rem
 
 Rem
@@ -1003,43 +951,8 @@ keyword: "Double128"
 End Rem
 
 Rem
-bbdoc: Signed 32/64 bit integer type depending on platform
-keyword: "LongInt"
-EndRem
-
-Rem
-bbdoc: Unsigned 32/64 bit integer type depending on platform
-keyword: "ULongInt"
-EndRem
-
-Rem
-bbdoc: String type
-keyword: "String"
-End Rem
-
-Rem
-bbdoc: Object type
-keyword: "Object"
-End Rem
-
-Rem
-bbdoc: Composite type specifier for 'by reference' types
-keyword: "Var"
-End Rem
-
-Rem
-bbdoc: Composite type specifier for pointer types
-keyword: "Ptr"
-End Rem
-
-Rem
-bbdoc: Begin a conditional block.
-keyword: "If"
-End Rem
-
-Rem
-bbdoc: Optional separator between the condition and associated code in an If statement.
-keyword: "Then"
+bbdoc: Iterate through an array or collection
+keyword: "EachIn"
 End Rem
 
 Rem
@@ -1053,179 +966,8 @@ keyword: "ElseIf"
 End Rem
 
 Rem
-bbdoc: Marks the End of an If-Then construct.
-keyword: "EndIf"
-End Rem
-
-Rem
-bbdoc: Marks the start of a loop that uses an iterator to execute a section of code repeatedly.
-keyword: "For"
-End Rem
-
-Rem
-bbdoc: Followed by a constant which is used to calculate when to exit a For..Next loop.
-keyword: "To"
-End Rem
-
-Rem
-bbdoc: Specifies an optional constant that is used to increment the For iterator.
-keyword: "Step"
-End Rem
-
-Rem
-bbdoc: End a For block
-keyword: "Next"
-End Rem
-
-Rem
-bbdoc: Iterate through an array or collection
-keyword: "EachIn"
-End Rem
-
-Rem
-bbdoc: Execute a block of code while a condition is true
-keyword: "While"
-End Rem
-
-Rem
-bbdoc: End a While block
-keyword: "Wend"
-End Rem
-
-Rem
-bbdoc: End a While block
-keyword: "EndWhile"
-End Rem
-
-Rem
-bbdoc: Execute a block of code until a termination condition is met, or forever
-keyword: "Repeat"
-End Rem
-
-Rem
-bbdoc: Conditionally continue a Repeat block
-keyword: "Until"
-End Rem
-
-Rem
-bbdoc: Continue a Repeat block forever
-keyword: "Forever"
-End Rem
-
-Rem
-bbdoc: Begin a Select block
-keyword: "Select"
-End Rem
-
-Rem
-bbdoc: End a Select block
-keyword: "EndSelect"
-End Rem
-
-Rem
-bbdoc: Conditional code inside a Select block
-keyword: "Case"
-End Rem
-
-Rem
-bbdoc: Default code inside a Select block
-keyword: "Default"
-End Rem
-
-Rem
-bbdoc: Exit enclosing loop
-keyword: "Exit"
-End Rem
-
-Rem
-bbdoc: Continue execution of enclosing loop
-keyword: "Continue"
-End Rem
-
-Rem
-bbdoc: Declare a constant
-keyword: "Const"
-End Rem
-
-Rem
-bbdoc: Declare a local variable
-keyword: "Local"
-End Rem
-
-Rem
-bbdoc: Declare a global variable
-keyword: "Global"
-End Rem
-
-Rem
-bbdoc: Declare a threaded global variable
-about: Each thread will have its own copy of the variable - any changes to the variable will be visible only within the thread the change was made.
-keyword: "ThreadedGlobal"
-End Rem
-
-Rem
-bbdoc: Declare a field variable
-keyword: "Field"
-End Rem
-
-Rem
-bbdoc: Begin a function declaration
-keyword: "Function"
-End Rem
-
-Rem
-bbdoc: End a function declaration
-keyword: "EndFunction"
-End Rem
-
-Rem
-bbdoc: Begin a method declaration
-keyword: "Method"
-End Rem
-
-Rem
-bbdoc: End a method declaration
-keyword: "EndMethod"
-End Rem
-
-Rem
-bbdoc: Return from a method or function
-keyword: "Return"
-End Rem
-
-Rem
-bbdoc: Begin a user defined class declaration
-keyword: "Type"
-End Rem
-
-Rem
-bbdoc: End a user defined class declaration
-keyword: "EndType"
-End Rem
-
-Rem
-bbdoc: Begin a user defined interface declaration
-keyword: "Interface"
-End Rem
-
-Rem
-bbdoc: End a user defined interface declaration
-keyword: "EndInterface"
-End Rem
-
-Rem
-bbdoc: Begin a user defined structure declaration
-keyword: "Struct"
-End Rem
-
-Rem
-bbdoc: End a user defined structure declaration
-keyword: "EndStruct"
-End Rem
-
-Rem
-bbdoc: Begin an enumeration declaration
-keyword: "Enum"
+bbdoc: End program execution
+keyword: "End"
 End Rem
 
 Rem
@@ -1234,28 +976,68 @@ keyword: "EndEnum"
 End Rem
 
 Rem
-bbdoc: Specify supertype(s) of a user defined type
-keyword: "Extends"
+bbdoc: End an Extern section
+keyword: "EndExtern"
 End Rem
 
 Rem
-bbdoc: Specify implemented interface(s) of a user defined type
-keyword: "Implements"
+bbdoc: End a function declaration
+keyword: "EndFunction"
 End Rem
 
 Rem
-bbdoc: Denote a class, function or method as abstract
-keyword: "Abstract"
+bbdoc: Marks the End of an If-Then construct.
+keyword: "EndIf"
 End Rem
 
 Rem
-bbdoc: Denote a class, function or method as final
-keyword: "Final"
+bbdoc: End a user defined interface declaration
+keyword: "EndInterface"
 End Rem
 
 Rem
-bbdoc: Denote a field as read only, where the value may only be set in its declaration or in the type constructor
-keyword: "ReadOnly"
+bbdoc: End a method declaration
+keyword: "EndMethod"
+End Rem
+
+Rem
+bbdoc: End a remark block
+keyword: "EndRem"
+End Rem
+
+Rem
+bbdoc: End a Select block
+keyword: "EndSelect"
+End Rem
+
+Rem
+bbdoc: End a user defined structure declaration
+keyword: "EndStruct"
+End Rem
+
+Rem
+bbdoc: End declaration of a Try block
+keyword: "EndTry"
+End Rem
+
+Rem
+bbdoc: End a user defined class declaration
+keyword: "EndType"
+End Rem
+
+Rem
+bbdoc: End a While block
+keyword: "EndWhile"
+End Rem
+
+Rem
+bbdoc: Begin an enumeration declaration
+keyword: "Enum"
+End Rem
+
+Rem
+bbdoc: Exit enclosing loop
+keyword: "Exit"
 End Rem
 
 Rem
@@ -1264,54 +1046,8 @@ keyword: "Export"
 End Rem
 
 Rem
-bbdoc: Indicates that a method declaration is intended to override a method declaration in a supertype.
-about: Use of #Override on a method that does not override a method will result in a compilation error.
-keyword: "Override"
-End Rem
-
-Rem
-bbdoc: Specify constraints on the types that can be used as arguments for a type parameter defined in a generic declaration
-keyword: "Where"
-End Rem
-
-Rem
-bbdoc: Create an instance of a user defined type, or specify a custom constructor
-keyword: "New"
-End Rem
-
-Rem
-bbdoc: Specify a custom finalizer
-keyword: "Delete"
-End Rem
-
-Rem
-bbdoc: Reference to this method's type instance
-keyword: "Self"
-End Rem
-
-Rem
-bbdoc: Reference to the super type instance
-keyword: "Super"
-End Rem
-
-Rem
-bbdoc: Release an integer object handle
-keyword: "Release"
-End Rem
-
-Rem
-bbdoc: Make types, constants, global variables, functions or type members accessible from outside the current source file (default)
-keyword: "Public"
-End Rem
-
-Rem
-bbdoc: Make types, constants, global variables, functions or type members only accessible from within the current source file.
-keyword: "Private"
-End Rem
-
-Rem
-bbdoc: Make type members only accessible from within the current source file and within subtypes.
-keyword: "Protected"
+bbdoc: Specify supertype(s) of a user defined type
+keyword: "Extends"
 End Rem
 
 Rem
@@ -1320,8 +1056,162 @@ keyword: "Extern"
 End Rem
 
 Rem
-bbdoc: End an Extern section
-keyword: "EndExtern"
+bbdoc: Constant integer of value 0
+keyword: "False"
+End Rem
+
+Rem
+bbdoc: Declare a field variable
+keyword: "Field"
+End Rem
+
+Rem
+bbdoc: Returns the offset in bytes for a field of the specified #Type or #Struct.
+keyword: "FieldOffset"
+End Rem
+
+Rem
+bbdoc: Denote a class, function or method as final
+keyword: "Final"
+End Rem
+
+Rem
+bbdoc: Execute a block of code upon exiting a Try or Catch block
+keyword: "Finally"
+End Rem
+
+Rem
+bbdoc: 32 bit floating point type
+keyword: "Float"
+End Rem
+
+Rem
+bbdoc: 128 bit floating point intrinsic type
+about: Only available on x64.
+keyword: "Float128"
+End Rem
+
+Rem
+bbdoc: 64 bit floating point intrinsic type
+about: Only available on x64.
+keyword: "Float64"
+End Rem
+
+Rem
+bbdoc: Marks the start of a loop that uses an iterator to execute a section of code repeatedly.
+keyword: "For"
+End Rem
+
+Rem
+bbdoc: Continue a Repeat block forever
+keyword: "Forever"
+End Rem
+
+Rem
+bbdoc: Framework builds the BlitzMax application with only the module(s) specified rather than the standard set of modules.
+keyword: "Framework"
+End Rem
+
+Rem
+bbdoc: Begin a function declaration
+keyword: "Function"
+End Rem
+
+Rem
+bbdoc: Declare a global variable
+keyword: "Global"
+End Rem
+
+Rem
+bbdoc: Begin a conditional block.
+keyword: "If"
+End Rem
+
+Rem
+bbdoc: Specify implemented interface(s) of a user defined type
+keyword: "Implements"
+End Rem
+
+Rem
+bbdoc: Import declarations from a module or source file
+keyword: "Import"
+End Rem
+
+Rem
+bbdoc: Embed a data file
+keyword: "Incbin"
+End Rem
+
+Rem
+bbdoc: Get length of embedded data file
+keyword: "IncbinLen"
+End Rem
+
+Rem
+bbdoc: Get start address of embedded data file
+keyword: "IncbinPtr"
+End Rem
+
+Rem
+bbdoc: Include effectively 'inserts' the specified file into the file being compiled.
+keyword: "Include"
+End Rem
+
+Rem
+bbdoc: Marks a global function as inline which replaces the function call with the actual code of the function for less overhead.
+keyword: "Inline"
+End Rem
+
+Rem
+bbdoc: Signed 32 bit integer type
+keyword: "Int"
+End Rem
+
+Rem
+bbdoc: 128 bit integer intrinsic type
+about: Only available on x64.
+keyword: "Int128"
+End Rem
+
+Rem
+bbdoc: Begin a user defined interface declaration
+keyword: "Interface"
+End Rem
+
+Rem
+bbdoc: Number of characters in a string or elements in an array
+keyword: "Len"
+End Rem
+
+Rem
+bbdoc: Declare a local variable
+keyword: "Local"
+End Rem
+
+Rem
+bbdoc: Signed 64 bit integer type
+keyword: "Long"
+End Rem
+
+Rem
+bbdoc: Signed 32/64 bit integer type depending on platform
+keyword: "LongInt"
+EndRem
+
+Rem
+bbdoc: Signed 32/64 bit LPARAM WinAPI type
+keyword: "LParam"
+about: Only available on Windows.
+End Rem
+
+Rem
+bbdoc: Begin a method declaration
+keyword: "Method"
+End Rem
+
+Rem
+bbdoc: Numeric 'modulus' or 'remainder' binary operator
+keyword: "Mod"
 End Rem
 
 Rem
@@ -1337,93 +1227,13 @@ keyword: "ModuleInfo"
 End Rem
 
 Rem
-bbdoc: Embed a data file
-keyword: "Incbin"
+bbdoc: Create an instance of a user defined type, or specify a custom constructor
+keyword: "New"
 End Rem
 
 Rem
-bbdoc: Get start address of embedded data file
-keyword: "IncbinPtr"
-End Rem
-
-Rem
-bbdoc: Get length of embedded data file
-keyword: "IncbinLen"
-End Rem
-
-Rem
-bbdoc: Include effectively 'inserts' the specified file into the file being compiled.
-keyword: "Include"
-End Rem
-
-Rem
-bbdoc: Framework builds the BlitzMax application with only the module(s) specified rather than the standard set of modules.
-keyword: "Framework"
-End Rem
-
-Rem
-bbdoc: Import declarations from a module or source file
-keyword: "Import"
-End Rem
-
-Rem
-bbdoc: Throw a RuntimeError if a condition is false
-keyword: "Assert"
-End Rem
-
-Rem
-bbdoc: Transfer program flow to specified label
-keyword: "Goto"
-End Rem
-
-Rem
-bbdoc: Begin declaration of a Try block
-keyword: "Try"
-End Rem
-
-Rem
-bbdoc: Catch an exception object in a Try block
-keyword: "Catch"
-End Rem
-
-Rem
-bbdoc: Execute a block of code upon exiting a Try or Catch block
-keyword: "Finally"
-End Rem
-
-Rem
-bbdoc: End declaration of a Try block
-keyword: "EndTry"
-End Rem
-
-Rem
-bbdoc: Throw an exception object to the enclosing Try block
-keyword: "Throw"
-End Rem
-
-Rem
-bbdoc: Define classic BASIC style data
-keyword: "DefData"
-End Rem
-
-Rem
-bbdoc: Read classic BASIC style data
-keyword: "ReadData"
-End Rem
-
-Rem
-bbdoc: Restore classic BASIC style data
-keyword: "RestoreData"
-End Rem
-
-Rem
-bbdoc: Conditional 'And' binary operator
-keyword: "And"
-End Rem
-
-Rem
-bbdoc: Conditional 'Or' binary operator
-keyword: "Or"
+bbdoc: End a For block
+keyword: "Next"
 End Rem
 
 Rem
@@ -1432,13 +1242,84 @@ keyword: "Not"
 End Rem
 
 Rem
-bbdoc: Bitwise 'Shift left' binary operator
-keyword: "Shl"
+bbdoc: Get Null value (default value for types)
+keyword: "Null"
 End Rem
 
 Rem
-bbdoc: Bitwise 'Shift right' binary operator
-keyword: "Shr"
+bbdoc: Object type
+keyword: "Object"
+End Rem
+
+Rem
+bbdoc: Conditional 'Or' binary operator
+keyword: "Or"
+End Rem
+
+Rem
+bbdoc: Indicates that a method declaration is intended to override a method declaration in a supertype.
+about: Use of #Override on a method that does not override a method will result in a compilation error.
+keyword: "Override"
+End Rem
+
+Rem
+bbdoc: Constant pi value: 3.1415926535897932384626433832795
+keyword: "Pi"
+End Rem
+
+Rem
+bbdoc: Make types, constants, global variables, functions or type members only accessible from within the current source file.
+keyword: "Private"
+End Rem
+
+Rem
+bbdoc: Make type members only accessible from within the current source file and within subtypes.
+keyword: "Protected"
+End Rem
+
+Rem
+bbdoc: Composite type specifier for pointer types
+keyword: "Ptr"
+End Rem
+
+Rem
+bbdoc: Make types, constants, global variables, functions or type members accessible from outside the current source file (default)
+keyword: "Public"
+End Rem
+
+Rem
+bbdoc: Read classic BASIC style data
+keyword: "ReadData"
+End Rem
+
+Rem
+bbdoc: Denote a field as read only, where the value may only be set in its declaration or in the type constructor
+keyword: "ReadOnly"
+End Rem
+
+Rem
+bbdoc: Release an integer object handle
+keyword: "Release"
+End Rem
+
+Rem
+bbdoc: Begin a remark block
+keyword: "Rem"
+End Rem
+
+Rem
+bbdoc: Execute a block of code until a termination condition is met, or forever
+keyword: "Repeat"
+End Rem
+
+Rem
+bbdoc: Restore classic BASIC style data
+keyword: "RestoreData"
+End Rem
+
+Rem
+bbdoc: Return from a method or function
+keyword: "Return"
 End Rem
 
 Rem
@@ -1447,33 +1328,38 @@ keyword: "Sar"
 End Rem
 
 Rem
-bbdoc: Number of characters in a string or elements in an array
-keyword: "Len"
+bbdoc: Begin a Select block
+keyword: "Select"
 End Rem
 
 Rem
-bbdoc: Numeric 'modulus' or 'remainder' binary operator
-keyword: "Mod"
+bbdoc: Reference to this method's type instance
+keyword: "Self"
 End Rem
 
 Rem
-bbdoc: Find the address of a variable
-keyword: "Varptr"
+bbdoc: Bitwise 'Shift left' binary operator
+keyword: "Shl"
+End Rem
+
+Rem
+bbdoc: Unsigned 16 bit integer type
+keyword: "Short"
+End Rem
+
+Rem
+bbdoc: Bitwise 'Shift right' binary operator
+keyword: "Shr"
+End Rem
+
+Rem
+bbdoc: Unsigned 32/64 bit integer type
+keyword: "Size_T"
 End Rem
 
 Rem
 bbdoc: Size, in bytes, occupied by a variable, string, array or object
 keyword: "SizeOf"
-End Rem
-
-Rem
-bbdoc: Get character value of the first character of a string
-keyword: "Asc"
-End Rem
-
-Rem
-bbdoc: Create a string of length 1 with a character code
-keyword: "Chr"
 End Rem
 
 Rem
@@ -1484,16 +1370,130 @@ It should not be freed, or returned from the function.
 End Rem
 
 Rem
-bbdoc: Returns the offset in bytes for a field of the specified #Type or #Struct.
-keyword: "FieldOffset"
-End Rem
-
-Rem
 bbdoc: Denotes an array as a static array, with its content allocated on the stack.
 keyword: "StaticArray"
 End Rem
 
 Rem
-bbdoc: Marks a global function as inline which replaces the function call with the acual code of the function for less overhead.
-keyword: "Inline"
+bbdoc: Specifies an optional constant that is used to increment the For iterator.
+keyword: "Step"
+End Rem
+
+Rem
+bbdoc: Set Strict mode (default in BlitzMax-NG)
+about:
+See the <a href="../../../../doc/bmxlang/compatibility.html">BlitzMax Language Reference</a> for more information on Strict mode programming.
+keyword: "Strict"
+End Rem
+
+Rem
+bbdoc: String type
+keyword: "String"
+End Rem
+
+Rem
+bbdoc: Begin a user defined structure declaration
+keyword: "Struct"
+End Rem
+
+Rem
+bbdoc: Reference to the super type instance
+keyword: "Super"
+End Rem
+
+Rem
+bbdoc: Set SuperStrict mode
+keyword: "SuperStrict"
+End Rem
+
+Rem
+bbdoc: Optional separator between the condition and associated code in an If statement.
+keyword: "Then"
+End Rem
+
+Rem
+bbdoc: Declare a threaded global variable
+about: Each thread will have its own copy of the variable - any changes to the variable will be visible only within the thread the change was made.
+keyword: "ThreadedGlobal"
+End Rem
+
+Rem
+bbdoc: Throw an exception object to the enclosing Try block
+keyword: "Throw"
+End Rem
+
+Rem
+bbdoc: Followed by a constant which is used to calculate when to exit a For..Next loop.
+keyword: "To"
+End Rem
+
+Rem
+bbdoc: Constant integer of value 1
+keyword: "True"
+End Rem
+
+Rem
+bbdoc: Begin declaration of a Try block
+keyword: "Try"
+End Rem
+
+Rem
+bbdoc: Begin a user defined class declaration
+keyword: "Type"
+End Rem
+
+Rem
+bbdoc: Unsigned 32 bit integer type
+keyword: "UInt"
+End Rem
+
+Rem
+bbdoc: Unsigned 64 bit integer type
+keyword: "ULong"
+End Rem
+
+Rem
+bbdoc: Unsigned 32/64 bit integer type depending on platform
+keyword: "ULongInt"
+EndRem
+
+Rem
+bbdoc: Conditionally continue a Repeat block
+keyword: "Until"
+End Rem
+
+Rem
+bbdoc: Use a resource that implements the #ICloseable interface
+keyword: "Using"
+End Rem
+
+Rem
+bbdoc: Composite type specifier for 'by reference' types
+keyword: "Var"
+End Rem
+
+Rem
+bbdoc: Find the address of a variable
+keyword: "Varptr"
+End Rem
+
+Rem
+bbdoc: End a While block
+keyword: "Wend"
+End Rem
+
+Rem
+bbdoc: Specify constraints on the types that can be used as arguments for a type parameter defined in a generic declaration
+keyword: "Where"
+End Rem
+
+Rem
+bbdoc: Execute a block of code while a condition is true
+keyword: "While"
+End Rem
+
+Rem
+bbdoc: Unsigned 32/64 bit WPARAM WinAPI type
+keyword: "WParam"
+about: Only available on Windows.
 End Rem

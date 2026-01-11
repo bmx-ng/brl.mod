@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Extern 
 	Function puts( str$z )
 	Function my_puts( str$z )="puts"

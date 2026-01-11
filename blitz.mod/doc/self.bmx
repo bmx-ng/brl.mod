@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Type MyClass
 	Global count:Int
 	Field id:Int

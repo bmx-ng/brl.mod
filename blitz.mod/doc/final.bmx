@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Type T1
 	Method ToString:String() Final
 		Return "T1"

@@ -7,6 +7,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Incbin "stars.png"
 
 Local stars:TImage = LoadImage( "incbin::stars.png" )

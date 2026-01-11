@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local b:Int = -1
 For Local i:Int = 1 To 32
 	Print Bin(b)

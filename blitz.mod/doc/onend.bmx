@@ -2,6 +2,9 @@
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Function cleanup()
 	Print "cleaning up"
 End Function

@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Type TShape
 	Field xpos:Int,ypos:Int
 	Method Draw() Abstract

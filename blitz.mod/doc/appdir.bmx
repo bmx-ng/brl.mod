@@ -3,6 +3,9 @@
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Print "Application Directory="+AppDir
 
 Local file:String = RequestFile("Select File to Open","",False,AppDir)

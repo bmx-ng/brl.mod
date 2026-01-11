@@ -5,6 +5,9 @@
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local a:Int=Int( Input("Enter a number between 1 and 5 ") )
 
 Select a

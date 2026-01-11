@@ -6,6 +6,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local c:Int[]=[1,2,3,4]
 Local p:Int Ptr
 

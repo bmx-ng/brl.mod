@@ -5,6 +5,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local a:Int[]
 Local b:Float[]
 Local c:Int[][]

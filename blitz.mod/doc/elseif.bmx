@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local age:Int = Int( Input("How old Are You?") )
 
 If age<13

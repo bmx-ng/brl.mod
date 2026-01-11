@@ -6,6 +6,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 For Local i:Int = 1 To 12
 	Print "5*"+i+"="+5*i
 Next

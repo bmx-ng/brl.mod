@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 For Local f:Float = -1 To 1 Step 0.125
 	Print "Abs "+f+"="+Abs f
 Next 

@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 For Local i:Int = 1 To 20
 	If i Mod 2 Continue
 	Print i

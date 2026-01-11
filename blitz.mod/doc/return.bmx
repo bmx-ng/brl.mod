@@ -5,6 +5,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Function CrossProduct:Float(x0:Float,y0:Float,z0:Float,x1:Float,y1:Float,z1:Float)
 	Return x0*x1+y0*y1+z0*z1
 End Function

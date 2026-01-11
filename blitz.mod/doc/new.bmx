@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Type MyType
 	Field a:Int,b:Int,c:Int
 End Type

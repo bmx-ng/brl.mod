@@ -1,5 +1,8 @@
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local i:Int=0
 
 While i < 5

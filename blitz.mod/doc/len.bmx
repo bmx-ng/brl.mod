@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local a:String = "BlitzMax Rocks"
 Print Len a	'prints 14
 

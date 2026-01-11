@@ -3,6 +3,9 @@
 '
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Graphics 640,480
 Local a:Int
 
