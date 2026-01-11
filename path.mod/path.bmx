@@ -227,8 +227,34 @@ Public
 	about: If the provided path is rooted, it replaces the current path.
 	Otherwise, it appends the provided path to the current path.
 	End Rem
+	Method Join:TPath(other:TPath)
+		If other = Null Then
+			Return Self
+		End If
+		' If rooted, return other as-is
+		If _RootPath(other._path) <> "" Then
+			Return other
+		End If
+		' Else append
+		Return Self.Join(other._path)
+	End Method
+
+	Rem
+	bbdoc: Joins the current path with another #TPath.
+	about: If the provided path is rooted, it replaces the current path.
+	Otherwise, it appends the provided path to the current path.
+	End Rem
 	Method Child:TPath(name:String)
 		Return Join(name)
+	End Method
+
+	Rem
+	bbdoc: Joins the current path with another #TPath.
+	about: If the provided path is rooted, it replaces the current path.
+	Otherwise, it appends the provided path to the current path.
+	End Rem
+	Method Child:TPath(other:TPath)
+		Return Join(other)
 	End Method
 
 	Rem
@@ -257,6 +283,11 @@ Public
 		Return Self.Join(part)
 	End Method
 
+	Rem
+	bbdoc: Returns a #TPath representing the relative path from this path to another path.
+	about: For example, if this path is "/a/b/c" and the other path is "/a/d/e",
+	this method would return a #TPath representing "../../d/e".
+	End Rem
 	Method Relativize:TPath(other:TPath)
 		If other = Null Then
 			Throw "TPath.Relativize: other is Null"
@@ -412,7 +443,12 @@ Public
 	End Method
 
 	Rem
-	bbdoc: Opens the path as a stream. By default, the stream is opened for both reading and writing.
+	bbdoc: Opens the path as a stream.
+	about: By default, the stream is opened for both reading and writing.
+	The @readable and @writeable parameters can be used to control the access mode.
+	Note that if both are set to #True, the file should already exist.
+
+	The stream must be closed after use to ensure data is flushed to disk and to avoid resource leaks.
 	End Rem
 	Method Open:TStream(readable:Int = True, writeable:Int = True)
 		Return OpenFile(_path, readable, writeable)
@@ -420,6 +456,7 @@ Public
 
 	Rem
 	bbdoc: Opens the path for reading as a stream.
+	about: The stream must be closed after use to avoid resource leaks.
 	End Rem
 	Method Read:TStream()
 		Return ReadFile(_path)
@@ -428,7 +465,8 @@ Public
 	Rem
 	bbdoc: Opens the path for writing as a stream.
 	about: If the file does not exist, it will be created. If it does exist, it will be truncated.
-	The stream should be closed after use to ensure data is flushed to disk.
+
+	The stream must be closed after use to ensure data is flushed to disk and to avoid resource leaks.
 	End Rem
 	Method Write:TStream()
 		Return WriteFile(_path)
@@ -616,19 +654,6 @@ Public
 
 	The returned iterator should be closed if not fully consumed, to release any held resources.
 	This can be done manually by calling #Close(), or automatically via a #Using block.
-	For example:
-	```blitzmax
-	Using
-		Local it:TGlobIter = GlobIter("src/**/*.bmx", EGlobOptions.GlobStar, "base/dir")
-	Do
-		For Local s:String = EachIn it
-			If s = "src/some/specific/file.bmx" Then
-				Print "Found it!"
-				Exit
-			End If
-		Next
-	End Using
-	```
 	End Rem
 	Method GlobIter:TPathIterator(pattern:String, flags:EGlobOptions = EGlobOptions.None)
 		Local inner:IIterator<String> = Brl.Glob.GlobIter(pattern, flags, _path)
@@ -795,6 +820,9 @@ Type TPathIterator Implements IIterator<TPath>, ICloseable
 
 End Type
 
+Rem
+bbdoc: Interface for receiving callbacks during a file tree walk.
+End Rem
 Interface IPathWalker
 	Rem
 	bbdoc: Called once for each file/folder traversed.
