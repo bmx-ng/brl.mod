@@ -5,6 +5,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 ' the following illustrates parsing function parameters by reference
 
 Function ReturnMultiplevalues(a:Int Var,b:Int Var,c:Int Var)

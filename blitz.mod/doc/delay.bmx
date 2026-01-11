@@ -1,5 +1,8 @@
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Print "This is a test line."
 
 Delay 3000

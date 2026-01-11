@@ -2,6 +2,9 @@
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 AppTitle = "Just a TITLE"
 Graphics 400, 400
 

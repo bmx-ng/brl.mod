@@ -9,6 +9,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Print "This program has no useful function"
 
 Rem

@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local a:Int
 
 ' the following values all print 0 as BlitzMax "rounds to zero"

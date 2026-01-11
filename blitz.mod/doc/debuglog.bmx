@@ -3,4 +3,7 @@
 '
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 DebugLog "My debug text"

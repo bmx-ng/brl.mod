@@ -4,4 +4,7 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 If 3<5 Then Print "3<5"

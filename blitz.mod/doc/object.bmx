@@ -9,6 +9,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Function IsImage(obj:Object)
 	If TImage(obj) Return True
 	Return False

@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Print Sgn 50	'1
 Print Sgn 0		'0
 Print Sgn -50	'-1

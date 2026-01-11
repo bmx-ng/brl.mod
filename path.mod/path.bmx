@@ -650,7 +650,7 @@ Public
 	See #EGlobOptions for details.
 
 	The globbing implementation works consistently for both the native filesystem
-	and the virtual filesystem when #BRL.Io / #MaxIO is enabled.
+	and the virtual filesystem when #MaxIO is enabled.
 
 	The returned iterator should be closed if not fully consumed, to release any held resources.
 	This can be done manually by calling #Close(), or automatically via a #Using block.

@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Const MAXLONG:Long=$7fffffffffffffff:Long
 Const MINLONG:Long=$8000000000000000:Long
 

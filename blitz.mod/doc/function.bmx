@@ -7,6 +7,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Function NextArg(a:String)
 	Local p:Int
 	p=Instr(a,",")

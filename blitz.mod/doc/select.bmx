@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local a:Int = Int( Input("Enter Your Country Code ") )
 
 Select a

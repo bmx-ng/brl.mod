@@ -8,6 +8,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Type TVector
 	Field x:Int,y:Int,z:Int
 End Type

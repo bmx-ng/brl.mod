@@ -2,6 +2,9 @@
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local name:String, age:Int, skill:Int
 
 For Local i:Int = 1 To 5

@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Public
 
 Global Score:Int,Lives:Int,Health:Int

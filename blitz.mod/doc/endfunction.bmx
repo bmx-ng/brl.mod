@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Function RandomName:String()
 	Local a:String[]=["Bob","Joe","Bill"]
 	Return a[Rnd(Len a)]

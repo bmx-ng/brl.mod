@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Incbin "incbinptr.bmx"
 
 Local p:Byte Ptr = IncbinPtr("incbinptr.bmx")

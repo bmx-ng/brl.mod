@@ -4,5 +4,8 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Print Min(10,20)	'10
 Print Min(20,10)	'10

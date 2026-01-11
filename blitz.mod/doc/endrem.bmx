@@ -5,5 +5,8 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Print "goodbye"
  

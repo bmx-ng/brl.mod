@@ -5,6 +5,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Module PUB.Sequencer
 
 ModuleInfo "Framework: Audio Sequencer for use with FreeAudio"

@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local a:Int[]=[0,5,12,13,20]
 
 For Local b:Int = EachIn a

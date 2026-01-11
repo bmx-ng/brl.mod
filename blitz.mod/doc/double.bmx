@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local speedoflight:Double
 Local distance:Double
 Local seconds:Double

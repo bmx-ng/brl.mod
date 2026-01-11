@@ -4,6 +4,9 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local i:Int = 3
 
 If i<5 Print "i<5" Else Print "i>=5"	' single line If Else

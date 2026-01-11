@@ -3,6 +3,9 @@ EndSelect marks the end of a Select block.
 End Rem
 
 SuperStrict
+
+Framework BRL.StandardIO
+
 SeedRnd MilliSecs()
 
 Local a:Int = Rand(5)

@@ -4,4 +4,7 @@ End Rem
 
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Print "Pi="+Pi

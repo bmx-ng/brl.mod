@@ -1,5 +1,8 @@
 SuperStrict
 
+Framework BRL.StandardIO
+
+
 Local start:Int = MilliSecs()
 
 Input("Type Anything >")
