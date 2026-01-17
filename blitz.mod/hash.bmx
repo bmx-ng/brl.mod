@@ -68,9 +68,9 @@ End Function
 
 Function DefaultComparator_HashCode:UInt(value:Byte Ptr) Inline
 ?ptr32
-	Return (UInt Ptr(value))[0]
+	Return UInt(value)
 ?ptr64
-	Local v:ULong = (ULong Ptr(value))[0]
+	Local v:ULong = ULong(value)
 	Return UInt(v ~ (v Shr 32))
 ?
 End Function

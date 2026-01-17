@@ -1464,6 +1464,7 @@ End Rem
 
 Rem
 bbdoc: Use a resource that implements the #ICloseable interface
+about: The #Close method of an #ICloseable object is automatically called when exiting the #Using block.
 keyword: "Using"
 End Rem
 
