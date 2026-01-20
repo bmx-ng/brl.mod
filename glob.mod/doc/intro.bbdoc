@@ -1,0 +1,346 @@
+# File Globbing in BlitzMax
+
+File globbing is a powerful pattern-matching mechanism used to select files and directories
+based on wildcard expressions. BlitzMax provides comprehensive glob support via the
+#BRL.Glob module, and with integration into higher-level APIs such as
+#TPath.
+
+This document describes the supported glob patterns, options, and usage conventions.
+
+---
+
+## What Is a Glob?
+
+A *glob* is a string pattern that matches file system paths. Instead of specifying an exact
+file name, you describe a *set* of possible matches using wildcard characters.
+
+For example:
+
+* `*.txt` matches all text files in a directory
+* `src/**/*.bmx` matches all `.bmx` files anywhere under `src`
+
+---
+
+## Basic Wildcards
+
+### `*` — Match Any Characters (Single Segment)
+
+The asterisk (`*`) matches zero or more characters **within a single path segment**.
+
+Examples:
+
+* `*.bmx` → matches `main.bmx`, `test.bmx`
+* `file*` → matches `file`, `file1`, `filename`
+
+It does **not** cross directory boundaries:
+
+* `*/*.bmx` matches `src/main.bmx`
+* It does **not** match `src/utils/main.bmx`
+
+---
+
+### `?` — Match One Character
+
+The question mark (`?`) matches exactly one character within a path segment.
+
+Examples:
+
+* `file?.txt` → matches `file1.txt`, `fileA.txt`
+* Does **not** match `file10.txt`
+
+---
+
+## Character Classes
+
+Character classes match one character from a defined set.
+
+### `[abc]`
+
+Matches one of the listed characters.
+
+* `file[ab].txt` → matches `filea.txt`, `fileb.txt`
+
+### `[a-z]`
+
+Matches a character in a range.
+
+* `[0-9].txt` → matches `1.txt`, `9.txt`
+
+### Negated Classes
+
+Negation can be written as either `!` or `^`.
+
+* `[!a-z]`
+* `[^a-z]`
+
+These match any character *not* in the range.
+
+---
+
+## Path Separators
+
+Glob patterns use `/` as the path separator, regardless of platform.
+
+This ensures consistent behavior across:
+
+* Windows
+* macOS
+* Linux
+* Virtual filesystems ( #BRL.Io / #MaxIO )
+
+---
+
+## Globstar: `**`
+
+When the `EGlobOptions.GlobStar` flag is enabled, the special segment `**` matches **zero or more directory levels**.
+
+Examples:
+
+* `**/*.bmx` → all `.bmx` files recursively
+* `src/**/test*.bmx` → matches tests at any depth under `src`
+
+Important note:
+
+* `**/*.txt` does **not** match files in the starting directory
+* To include them, use brace expansion:
+  `{*.txt,**/*.txt}`
+
+---
+
+## Dotfiles and the `Period` Flag
+
+By default, wildcard patterns do **not** match entries whose names begin with `.`.
+
+For example:
+
+* `*` does **not** match `.gitignore`
+
+To include dotfiles, enable:
+  #EGlobOptions.Period
+
+---
+
+## Case Sensitivity
+
+Matching is case-sensitive by default.
+
+To enable case-insensitive matching, use:
+   #EGlobOptions.CaseFold
+
+This affects:
+
+* `*`
+* `?`
+* character classes
+
+---
+
+## Escaping Metacharacters
+
+By default, metacharacters can be escaped using backslash (`\`):
+
+* `\*` matches a literal `*`
+* `\[` matches a literal `[`
+* `\{` matches a literal `{`
+
+To disable escaping entirely, use:
+   #EGlobOptions.NoEscape
+
+---
+
+## Brace Expansion `{a,b}`
+
+Brace expansion allows you to expand a pattern into multiple alternatives *before*
+globbing occurs.
+
+Example:
+
+* `{a,b}.txt` expands to:
+  * `a.txt`
+  * `b.txt`
+
+More complex examples:
+
+* `src/{core,ui}/*.bmx`
+* `{*.txt,**/*.txt}`
+
+### Nested Braces
+
+Brace expressions may be nested:
+
+* `{a,{b,c}}.txt`
+
+### Expansion Rules
+
+* Expansion is purely textual
+* Only braces containing a **top-level comma** are expanded
+* Unterminated or malformed braces are treated as literal text
+* Escaped braces (`\{`, `\}`) are not expanded
+
+---
+
+## Rooted vs Relative Patterns
+
+### Rooted Patterns
+
+Patterns starting with a root (`/` or drive root on Windows) are treated as absolute.
+
+* Base directory is ignored
+* Results are absolute paths
+
+### Relative Patterns
+
+If a pattern is not rooted:
+
+* Matching starts from `baseDir` if supplied
+* Otherwise, from the current directory
+
+Results are returned as **relative paths**.
+
+---
+
+## Filtering Flags
+
+Additional flags allow result filtering:
+
+* `OnlyDir` → return directories only
+* `NoDir` → exclude directories
+* `Mark` → append `/` to directory matches
+* `NoSort` → preserve filesystem order
+
+---
+
+## APIs
+
+### Eager Globbing
+
+#Glob returns all matches as an array.
+
+### Lazy Globbing (Iterators)
+
+#GlobIter returns an iterator that yields matches on demand.
+
+Iterators should be closed if not fully consumed.
+Use a #Using block to ensure cleanup:
+
+```blitzmax
+Using
+    Local it:TGlobIter = GlobIter("**/*.bmx", EGlobOptions.GlobStar)
+Do
+    For Local s:String = EachIn it
+        Print s
+    Next
+End Using
+```
+
+## Matching Paths Without Filesystem Access (MatchGlob)
+
+#MatchGlob compares a glob pattern against a single path as a string, without accessing the filesystem.
+
+This function returns #True if @path matches the glob @pattern according to the same
+matching rules used by #Glob, and #False otherwise.
+
+Unlike #Glob and #GlobIter, #MatchGlob:
+
+* Does not read directories
+* Does not require the path to exist
+* Performs no filesystem I/O
+
+It is purely a pattern-matching operation.
+
+---
+
+### What is MatchGlob used for?
+
+#MatchGlob is useful when you already have a path (or a list of paths) and want to filter them using glob syntax.
+
+Common use cases include:
+
+* Filtering results from WalkFileTree
+* Matching paths obtained from another source (archives, manifests, logs)
+* Applying glob rules to virtual or conceptual paths
+* Implementing ignore/include filters (similar to .gitignore)
+
+---
+
+### Path-aware matching
+
+#MatchGlob is path-aware and understands directory separators.
+
+If @pattern contains no path separators (/), it is matched only against the
+final path segment (the file or directory name).
+
+Example:
+```blitzmax
+MatchGlob("*.txt", "/data/files/readme.txt") ' True
+```
+
+If @pattern contains path separators, it is matched against the trailing
+segments of @path.
+
+Example:
+```blitzmax
+MatchGlob("sub/*.txt", "/root/sub/file.txt") ' True
+```
+
+This allows relative patterns to match absolute paths naturally.
+
+---
+
+### Rooted patterns
+
+If @pattern is rooted (for example, starts with / on Linux/macOS),
+then @path must also be rooted at the same location for a match to succeed.
+
+Rooted and non-rooted paths cannot be mixed.
+
+---
+
+Supported syntax
+#MatchGlob supports the same pattern features as filesystem globbing:
+
+* `*` and `?` wildcards
+* Character classes (`[a-z]`, `[!abc]`)
+* Brace expansion (`{a,b}`)
+* Backslash escaping (unless `NoEscape` is set)
+* Globstar (`**`) when EGlobOptions.GlobStar is enabled
+* Case folding via EGlobOptions.CaseFold
+* Dotfile matching via EGlobOptions.Period
+
+Example:
+```blitzmax
+Local path:String = "/src/core/main.bmx"
+
+If MatchGlob("src/**/main.bmx", path, EGlobOptions.GlobStar) Then
+    Print "Matched!"
+End If
+```
+
+---
+
+### Notes
+
+* #MatchGlob does not check whether the path exists
+* Directory vs file type is not considered
+* Trailing slashes are matched literally
+
+If you need filesystem-aware matching (for example, checking whether a matched path
+is a directory), use #Glob, #GlobIter, or #TPath based APIs instead.
+
+## Virtual Filesystem Support
+
+All glob functionality works identically when #BRL.Io / #MaxIO is enabled.
+
+This allows globbing over:
+
+* Mounted archives
+* Virtual directories
+* Packaged game assets
+
+---
+
+## Performance Notes
+
+* Prefer iterators for large directory trees
+* Avoid unnecessary ** at high directory levels
+* Combine patterns with brace expansion instead of multiple glob calls

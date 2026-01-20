@@ -306,6 +306,16 @@ Type TUnsupportedOperationException Extends TBlitzException
 	End Method
 End Type
 
+Rem
+bbdoc: Invalid operation exception
+about: Thrown when a method or function was called at a time when the object is not in a valid state for the operation.
+End Rem
+Type TInvalidOperationException Extends TRuntimeException
+	Method New(error:String)
+		Self.error = error
+	End Method
+End Type
+
 Function NullObjectError()
 	Throw New TNullObjectException
 End Function
@@ -355,9 +365,17 @@ Function UnsupportedOperationError()
 End Function
 
 Rem
+bbdoc: Generates an invalid operation error
+about: Throws a #TInvalidOperationException.
+End Rem
+Function InvalidOperationError( message:String )
+	Throw New TInvalidOperationException( message )
+End Function
+
+Rem
 bbdoc: Stop program execution and enter debugger
 about: If there is no debugger present, this command is ignored.
-end rem
+End Rem
 Function DebugStop()
 	OnDebugStop
 End Function
@@ -365,7 +383,7 @@ End Function
 Rem
 bbdoc: Write a string to debug log
 about: If there is no debugger present, this command is ignored.
-end rem
+End Rem
 Function DebugLog( message:String )
 	OnDebugLog message
 End Function
