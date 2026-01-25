@@ -6,12 +6,14 @@ bbdoc: BASIC/Reflection
 End Rem
 Module BRL.Reflection
 
-ModuleInfo "Version: 1.11"
+ModuleInfo "Version: 1.12"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.12"
+ModuleInfo "History: Metadata keys are now case-insensitive."
 ModuleInfo "History: 1.11"
 ModuleInfo "History: Fixed longstanding issues and added support for more recent language features (structs, enums, overloading, ...)"
 ModuleInfo "History: 1.10"
@@ -590,7 +592,7 @@ Function ExtractMetaMap:TStringMap( meta:String )
 		Return Null
 	End If
 
-	Local map:TStringMap = New TStringMap
+	Local map:TStringMap = New TStringMap(False)
 
 	Local key:String
 	Local value:String
