@@ -214,13 +214,13 @@ void bbObjectDumpInstanceCounts(char * buf, int size, int includeZeros) {
 
     // add bbStringClass if wanted
     if (bbStringClass.instance_count > 0 || includeZeros) {
-        list[n].clas = &bbStringClass;
+        list[n].clas = (BBClass*)&bbStringClass;
         list[n].count = bbStringClass.instance_count;
         n++;
     }
     // add bbArrayClass if wanted
     if (bbArrayClass.instance_count > 0 || includeZeros) {
-        list[n].clas = &bbArrayClass;
+        list[n].clas = (BBClass*)&bbArrayClass;
         list[n].count = bbArrayClass.instance_count;
         n++;
     }

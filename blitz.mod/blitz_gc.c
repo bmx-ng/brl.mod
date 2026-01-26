@@ -46,7 +46,7 @@ static bb_mutex_t *bb_create_mutex(){
 	return 0;
 }
 
-void bbGCStartup( void *spTop ){
+void bbGCStartup(){
 /*	GC_set_no_dls(1);
 	GC_clear_roots();
 #ifdef _WIN32

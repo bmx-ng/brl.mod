@@ -275,5 +275,5 @@ BBEnum * bbEnumGetInfo( char * name ) {
 }
 
 void bbEnumsInit() {
-	bbStringHash(&_illegal_enum_name);
+	bbStringHash((BBString*)&_illegal_enum_name);
 }
