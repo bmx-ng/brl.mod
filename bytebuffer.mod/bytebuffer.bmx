@@ -1,4 +1,4 @@
-' Copyright (c) 2024 Bruce A Henderson
+' Copyright (c) 2024-2026 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,10 +23,14 @@ bbdoc: Byte Buffer
 End Rem
 Module BRL.ByteBuffer
 
-ModuleInfo "Version: 1.02"
+ModuleInfo "Version: 1.03"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2024 Bruce A Henderson"
+ModuleInfo "Copyright: 2024-2026 Bruce A Henderson"
 
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Added more slicing options."
+ModuleInfo "History: Added AsReadOnly()."
+ModuleInfo "History: Fixed various slice related issues."
 ModuleInfo "History: 1.02"
 ModuleInfo "History: Added Slice() and Compact() methods"
 ModuleInfo "History: 1.01"
@@ -349,6 +353,18 @@ Type TByteBuffer Extends TBuffer
 	Method Slice:TByteBuffer(length:Int) Abstract
 
 	Rem
+	bbdoc: Returns a sliced #TByteBuffer that shares its content with this one, starting at the specified @start position.
+	about: The new buffer's position, limit, and mark are independent of this buffer.
+	End Rem
+	Method Slice:TByteBuffer(start:Int, length:Int) Abstract
+
+	Rem
+	bbdoc: Returns a sliced #TByteBuffer that shares its content with this one, starting at the specified @start position.
+	about: The new buffer's position, limit, and mark are independent of this buffer.
+	End Rem
+	Method SliceFrom:TByteBuffer(start:Int) Abstract
+
+	Rem
 	bbdoc: Creates a duplicate #TByteBuffer that shares its content with this one.
 	End Rem
 	Method Duplicate:TByteBuffer() Abstract
@@ -357,6 +373,13 @@ Type TByteBuffer Extends TBuffer
 	bbdoc: Compacts this #TByteBuffer.
 	End Rem
 	Method Compact:TByteBuffer() Abstract
+
+	Rem
+	bbdoc: Returns a read-only view of this buffer.
+	about: The returned buffer shares content with this buffer but does not allow modification.
+	The position, limit, mark, and byte order are preserved.
+	End Rem
+	Method AsReadOnly:TByteBuffer() Abstract
 
 	Method BytePtr:Byte Ptr() Abstract
 	Method Offset:Int() Abstract
@@ -372,20 +395,24 @@ Type TBytePtrBuffer Extends TByteBuffer
 	Field _data:Byte Ptr
 	Field _offset:Int
 
-	Method New(data:Byte Ptr, size:Int, offset:Int = 0, isReadOnly:Int = False)
+	Method New(data:Byte Ptr, size:Int, offset:Int = 0, isReadOnly:Int = False, order:EByteOrder = EByteOrder.BigEndian)
 		Super.New(size)
 		Self._data = data
 		Self._offset = offset
 		Self._readOnly = isReadOnly
+		Self._order = order
 	End Method
-	
+
 	Method Get:Byte() Override
-		If _position = _limit Then
+		Local newPosition:Int = _position + 1
+
+		If newPosition > _limit Then
 			Throw New TBufferUnderflowException
 		End If
 		
-		Local result:Byte = _data[_position]
-		_position :+ 1
+		Local pos:Int = _position + _offset
+		Local result:Byte = _data[pos]
+		_position = newPosition
 		Return result
 	End Method
 	
@@ -524,7 +551,8 @@ Type TBytePtrBuffer Extends TByteBuffer
 			Throw New TBufferOverflowException
 		End If
 		
-		_data[_position] = value
+		Local pos:Int = _offset + _position
+		_data[pos] = value
 		_position :+ 1
 		Return Self
 	End Method
@@ -718,15 +746,31 @@ Type TBytePtrBuffer Extends TByteBuffer
 	End Method
 
 	Method Slice:TByteBuffer() Override
-		Return New TBytePtrBuffer(_data, remaining(), _offset + _position, _readOnly)
+		Return New TBytePtrBuffer(_data, remaining(), _offset + _position, _readOnly, _order)
 	End Method
 
 	Method Slice:TByteBuffer(length:Int) Override
-		If length > remaining() Then
+		If length < 0 Or length > remaining() Then
 			Throw New TBufferOverflowException
 		End If
 
-		Return New TBytePtrBuffer(_data, length, _offset + _position, _readOnly)
+		Return New TBytePtrBuffer(_data, length, _offset + _position, _readOnly, _order)
+	End Method
+
+	Method Slice:TByteBuffer(start:Int, length:Int) Override
+		If start < 0 Or length < 0 Or start + length > remaining() Then
+			Throw New TBufferOverflowException
+		End If
+
+		Return New TBytePtrBuffer(_data, length, _offset + _position + start, _readOnly, _order)
+	End Method
+
+	Method SliceFrom:TByteBuffer(start:Int) Override
+		If start < 0 Or start > remaining() Then
+			Throw New TBufferOverflowException
+		End If
+
+		Return New TBytePtrBuffer(_data, remaining() - start, _offset + _position + start, _readOnly, _order)
 	End Method
 
 	Method Duplicate:TByteBuffer() Override
@@ -747,6 +791,12 @@ Type TBytePtrBuffer Extends TByteBuffer
 		Return Self
 	End Method
 
+	Method AsReadOnly:TByteBuffer() Override
+		Local ro:TBytePtrBuffer = Copy(Self, _mark, True)
+		ro._order = _order
+		Return ro
+	End Method
+
 	Method BytePtr:Byte Ptr()
 		If _readOnly Then
             Throw New TReadOnlyBufferException()
@@ -761,7 +811,7 @@ Type TBytePtrBuffer Extends TByteBuffer
 
 Private
 	Function Copy:TBytePtrBuffer(buffer:TBytePtrBuffer, mark:Int, isReadOnly:Int)
-		Local bufCopy:TBytePtrBuffer = New TBytePtrBuffer(buffer._data, buffer._size, buffer._offset, isReadOnly)
+		Local bufCopy:TBytePtrBuffer = New TBytePtrBuffer(buffer._data, buffer._size, buffer._offset, isReadOnly, buffer._order)
 		bufCopy._limit = buffer._limit
 		bufCopy._position = buffer.Position()
 		bufCopy._mark = mark
@@ -776,24 +826,26 @@ Type TByteArrayBuffer Extends TBytePtrBuffer
 
 	Field _array:Byte[]
 
-	Method New(data:Byte[])
+	Method New(data:Byte[], isReadOnly:Int = False, order:EByteOrder = EByteOrder.BigEndian)
 		Super.New(data, data.length)
 		Self._array = data
+		Self._readOnly = isReadOnly
+		Self._order = order
 	End Method
 Private
-	Method New(data:Byte[], size:Int, offset:Int, isReadOnly:Int)
+	Method New(data:Byte[], size:Int, offset:Int, isReadOnly:Int, order:EByteOrder = EByteOrder.BigEndian)
 		Super.New(data, size)
 		Self._array = data
 		Self._offset = offset
 		Self._readOnly = isReadOnly
-
+		Self._order = order
 		If offset + size > data.length Then
 			Throw New TArrayBoundsException
 		End If
 	End Method
 
 	Function Copy:TByteArrayBuffer(buffer:TByteArrayBuffer, mark:Int, isReadOnly:Int)
-		Local bufCopy:TByteArrayBuffer = New TByteArrayBuffer(buffer._array, buffer._size, buffer._offset, isReadOnly)
+		Local bufCopy:TByteArrayBuffer = New TByteArrayBuffer(buffer._array, buffer._size, buffer._offset, isReadOnly, buffer._order)
 		bufCopy._limit = buffer._limit
 		bufCopy._position = buffer.Position()
 		bufCopy._mark = mark
@@ -802,18 +854,38 @@ Private
 
 Public
 	Method Slice:TByteBuffer() Override
-		Return New TByteArrayBuffer(_array, remaining(), _offset + _position, _readOnly)
+		Return New TByteArrayBuffer(_array, remaining(), _offset + _position, _readOnly, _order)
 	End Method
 
 	Method Slice:TByteBuffer(length:Int) Override
-		If length > remaining() Then
+		If length < 0 Or length > remaining() Then
 			Throw New TBufferOverflowException
 		End If
-		Return New TByteArrayBuffer(_array, length, _offset + _position, _readOnly)
+		Return New TByteArrayBuffer(_array, length, _offset + _position, _readOnly, _order)
+	End Method
+
+	Method Slice:TByteBuffer(start:Int, length:Int) Override
+		If start < 0 Or length < 0 Or start + length > remaining() Then
+			Throw New TBufferOverflowException
+		End If
+		Return New TByteArrayBuffer(_array, length, _offset + _position + start, _readOnly, _order)
+	End Method
+
+	Method SliceFrom:TByteBuffer(start:Int) Override
+		If start < 0 Or start > remaining() Then
+			Throw New TBufferOverflowException
+		End If
+		Return New TByteArrayBuffer(_array, remaining() - start, _offset + _position + start, _readOnly, _order)
 	End Method
 
 	Method Duplicate:TByteBuffer() Override
 		Return Copy(Self, _mark, _readOnly)
+	End Method
+
+	Method AsReadOnly:TByteBuffer() Override
+		Local ro:TByteArrayBuffer = Copy(Self, _mark, True)
+		ro._order = _order
+		Return ro
 	End Method
 
 	Method BytePtr:Byte Ptr()
