@@ -644,6 +644,20 @@ End Function
 
 Rem
 bbdoc: Walks a file tree.
+about:
+Traverses the file tree starting at @path, calling the #IFileWalker interface
+for each file and directory found.
+
+The @options parameter can be used to modify the behaviour of the file tree
+walker. See #EFileWalkOption for available options.
+
+The @maxDepth parameter can be used to limit how deep into the file tree
+the walker will traverse. A @maxDepth of 0 (the default) means there is
+no limit to the depth of traversal.
+
+The #IFileWalker interface's #WalkFile method is called for each file and
+directory found, and should return one of the #EFileWalkResult values to control
+the traversal.
 End Rem
 Function WalkFileTree:Int(path:String, fileWalker:IFileWalker, options:EFileWalkOption = EFileWalkOption.None, maxDepth:Int = 0)
 	FixPath(path)
@@ -658,11 +672,11 @@ End Function
 
 Rem
 bbdoc: An interface for file tree traversal.
-End rem
+End Rem
 Interface IFileWalker
 	Rem
 	bbdoc: Called once for each file/folder traversed.
-	about: Return EFileWalkResult.OK to continue the tree traversal, or EFileWalkResult.Terminate to exit early.
+	about: Return #EFileWalkResult.OK to continue the tree traversal, or #EFileWalkResult.Terminate to exit early.
 
 	The contents of @attributes is only valid for the duration of the call.
 	End Rem
@@ -671,7 +685,7 @@ End Interface
 
 Rem
 bbdoc: File attributes
-End rem
+End Rem
 Struct SFileAttributes
 ?win32
 	Field StaticArray name:Short[8192]
@@ -689,7 +703,7 @@ Struct SFileAttributes
 
 	Rem
 	bbdoc: Returns the name of the file/directory.
-	End rem
+	End Rem
 	Method GetName:String()
 ?win32
 		Return String.FromWString(name)
@@ -698,31 +712,91 @@ Struct SFileAttributes
 ?
 	End Method
 
+	Rem
+	bbdoc: Checks if the file is a regular file.
+	returns: #True if the file is a regular file
+	End Rem
 	Method IsRegularFile:Int()
 		Return fileType = FILETYPE_FILE
 	End Method
 
+	Rem
+	bbdoc: Checks if the file is a directory.
+	returns: #True if the file is a directory
+	End Rem
 	Method IsDirectory:Int()
 		Return fileType = FILETYPE_DIR
 	End Method
 
+	Rem
+	bbdoc: Checks if the file is a symbolic link.
+	returns: #True if the file is a symbolic link
+	End Rem
 	Method IsSymbolicLink:Int()
 		Return fileType = FILETYPE_SYM
+	End Method
+
+	Rem
+	bbdoc: Gets the size of the file in bytes.
+	returns: The size of the file in bytes
+	End Rem
+	Method GetSize:ULong()
+		Return size
+	End Method
+
+	Rem
+	bbdoc: Gets the depth of the file in the tree.
+	returns: The depth of the file in the tree
+	End Rem
+	Method GetDepth:Int()
+		Return depth
+	End Method
+
+	Rem
+	bbdoc: Gets the creation time of the file, in seconds since epoch.
+	returns: The creation time of the file
+	End Rem
+	Method GetCreationTime:Int()
+		Return creationTime
+	End Method
+
+	Rem
+	bbdoc: Gets the modified time of the file, in seconds since epoch.
+	returns: The modified time of the file
+	End Rem
+	Method GetModifiedTime:Int()
+		Return modifiedTime
 	End Method
 
 End Struct
 
 Rem
-bbdoc: 
-End rem
+bbdoc: File walk options
+about:
+
+| Option | Description |
+|--------|-------------|
+| None | No special options. |
+| FollowLinks | Follow symbolic links when traversing the file tree. |
+
+End Rem
 Enum EFileWalkOption
 	None
 	FollowLinks
 End Enum
 
 Rem
-bbdoc: 
-End rem
+bbdoc: File walk result codes returned by the #IFileWalker
+about:
+
+| Result | Description |
+|--------|-------------|
+| OK | Continue the file tree traversal. |
+| Terminate | Stop the file tree traversal immediately. |
+| SkipSubtree | If the current file is a directory, do not traverse its children. |
+| SkipSiblings | Do not traverse any more files in the current directory. |
+
+End Rem
 Enum EFileWalkResult
 	OK
 	Terminate
