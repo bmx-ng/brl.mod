@@ -13,7 +13,63 @@ File properties can be examined with the #FileType, #FileTime, #FileSize and #Fi
 
 Files and directories (folders) can be created and deleted with the #CreateFile, #CreateDir
 #DeleteFile and #DeleteDir commands.
-
 Finally, the FileSystem module contains various utility functions for handling file paths
 in a system independent manner. These commands include #RealPath, #StripDir, #StripExt,
 #StripAll, #ExtractDir and #ExtractExt.
+
+## File Walking
+
+The filesystem module also provides a file walking API for recursively traversing
+directory trees.
+
+File walking is performed using the #WalkFileTree function, which starts at a given
+path and visits each file and directory in turn. Instead of returning results directly,
+#WalkFileTree calls back into a user-supplied object that implements the #IFileWalker
+interface.
+
+To use file walking, create a type that implements #IFileWalker and provide an
+implementation of the #WalkFile method. This method is called once for every file
+and directory encountered during the walk and is passed an #SFileAttributes structure
+containing information about the current entry.
+
+The #SFileAttributes structure provides access to the file or directory name, size,
+timestamps, type information (regular file, directory or symbolic link), and the
+current depth within the directory tree.
+
+The return value of #WalkFile controls how the traversal proceeds. Returning
+#EFileWalkResult.OK continues normally. Returning #EFileWalkResult.SkipSubtree
+skips descending into the current directory, while #EFileWalkResult.SkipSiblings
+skips remaining entries at the current level. Returning
+#EFileWalkResult.Terminate immediately stops the walk.
+
+Traversal behavior can be configured using the #EFileWalkOption flags passed to
+#WalkFileTree. For example, the #EFileWalkOption.FollowLinks option enables traversal
+of symbolic links. The maximum recursion depth can also be limited.
+
+### Example
+
+The following example shows a simple file walker that prints the name of each
+file and directory encountered:
+
+```blitzmax
+Type TPrintWalker Implements IFileWalker
+
+    Method WalkFile:EFileWalkResult(attributes:SFileAttributes Var)
+        Print attributes.GetName()
+        Return EFileWalkResult.OK
+    End Method
+
+End Type
+
+Local walker:IFileWalker = New TPrintWalker
+WalkFileTree(“mydirectory”, walker)
+```
+
+More complex walkers can use the information in #SFileAttributes to filter files,
+collect statistics, or selectively control traversal.
+
+### Related APIs
+
+File walking is intended for recursive and event-driven traversal of directory trees.
+For non-recursive directory access, the #ReadDir, #NextFile and #CloseDir commands,
+or the #LoadDir function, may be more appropriate.

@@ -3,12 +3,12 @@ BRL.Path provides an object-oriented, cross-platform way to represent and work w
 At its core is the #TPath type, which wraps a normalized path string and provides convenient operations for:
 
 * Joining and transforming paths (including the / operator).
-* Resolving and relativizing paths (#Resolve and #Relativize).
-* Querying the filesystem (#Exists, #IsFile, #IsDir, #Size, timestamps, etc).
+* Resolving and relativizing paths ( #Resolve and #Relativize).
+* Querying the filesystem ( #Exists, #IsFile, #IsDir, #Size, timestamps, etc).
 * Creating, deleting, renaming and copying files/directories.
-* Iterating directory contents (#IterDir / #List).
-* Globbing and pattern matching (#Glob, #GlobIter, #MatchGlob).
-* Walking a directory tree (#Walk).
+* Iterating directory contents ( #IterDir / #List).
+* Globbing and pattern matching ( #Glob, #GlobIter, #MatchGlob).
+* Walking a directory tree ( #Walk).
 
 The module is designed to behave consistently whether using the native filesystem or the virtual filesystem when #BRL.Io / MaxIO is enabled.
 
