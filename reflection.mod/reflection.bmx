@@ -54,10 +54,10 @@ Private
 Extern
 	Function bbObjectDowncast:Object(o:Object, t:Byte Ptr) = "BBObject* bbObjectDowncast(BBObject*, BBClass*)!"
 	Function bbInterfaceDowncast:Object(o:Object, ifc:Byte Ptr) = "BBObject* bbInterfaceDowncast(BBOBJECT , BBINTERFACE)!"
-	Function bbObjectRegisteredTypes:Byte Ptr Ptr(count:Int Var) = "BBClass** bbObjectRegisteredTypes(int*)!"
-	Function bbObjectRegisteredInterfaces:Byte Ptr Ptr(count:Int Var) = "BBInterface** bbObjectRegisteredInterfaces(int*)!"
-	Function bbObjectRegisteredStructs:Byte Ptr Ptr(count:Int Var) = "BBDebugScope** bbObjectRegisteredStructs(int*)!"
-	Function bbObjectRegisteredEnums:Byte Ptr Ptr(count:Int Var) = "BBDebugScope** bbObjectRegisteredEnums(int*)!"
+	Function bbObjectRegisteredTypes:Byte Ptr Ptr(count:Int Var) = "BBBYTE** _bbObjectRegisteredTypes(int*)"
+	Function bbObjectRegisteredInterfaces:Byte Ptr Ptr(count:Int Var) = "BBBYTE** _bbObjectRegisteredInterfaces(int*)"
+	Function bbObjectRegisteredStructs:Byte Ptr Ptr(count:Int Var) = "BBBYTE** _bbObjectRegisteredStructs(int*)"
+	Function bbObjectRegisteredEnums:Byte Ptr Ptr(count:Int Var) = "BBBYTE** _bbObjectRegisteredEnums(int*)"
 	Global bbRefArrayClass:Byte Ptr
 	Global bbRefStringClass:Byte Ptr
 	Global bbRefObjectClass:Byte Ptr
