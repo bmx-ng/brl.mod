@@ -269,6 +269,22 @@ BBString * bbFieldGetEnum(void * value, BBDebugScope * enumScope, BBString * noE
 	return &bbEmptyString;
 }
 
+BBBYTE** _bbObjectRegisteredTypes( int *count ) {
+	return (BBBYTE**)bbObjectRegisteredTypes( count );
+}
+
+BBBYTE** _bbObjectRegisteredInterfaces( int *count ) {
+	return (BBBYTE**)bbObjectRegisteredInterfaces( count );
+}
+
+BBBYTE** _bbObjectRegisteredStructs( int *count ) {
+	return (BBBYTE**)bbObjectRegisteredStructs( count );
+}
+
+BBBYTE** _bbObjectRegisteredEnums( int *count ) {
+	return (BBBYTE**)bbObjectRegisteredEnums( count );
+}
+
 #ifdef __x86_64__
 
 static BBDebugScope debugScopeInt128 = {
