@@ -49,6 +49,7 @@ Private
 Global _driver:TGLMax2DDriver
 Global _BackbufferRenderImageFrame:TGLRenderImageFrame
 Global _CurrentRenderImageFrame:TGLRenderImageFrame
+Global _CurrentRenderImageContainer:TRenderImage
 Global _GLScissor_BMaxViewport:Rect = New Rect
 
 'Naughty!
@@ -384,10 +385,10 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 	Field width:Int
 	Field height:Int
 	
-	Method Draw( x0#,y0#,x1#,y1#,tx#,ty#,sx#,sy#,sw#,sh# ) Override
+	Method Draw( x0:Float, y0:Float, x1:Float, y1:Float, tx:Float, ty:Float, sx:Float, sy:Float, sw:Float, sh:Float ) Override
 		Assert seq=GraphicsSeq Else "Image does not exist"
 
-		' Note for a TGLRenderImage the V texture coordinate is flipped compared to the regular TImageFrame.Draw method
+		' Note for a TGLRenderImageFrame the V texture coordinate is flipped compared to the regular TImageFrame.Draw method
 		Local u0:Float = sx * uscale
 		Local v0:Float = (sy + sh) * vscale
 		Local u1:Float = (sx + sw) * uscale
@@ -404,7 +405,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		glTexCoord2f u0,v1
 		glVertex2f x0*ix+y1*iy+tx,x0*jx+y1*jy+ty
 		glEnd
-	EndMethod
+	End Method
 	
 	Function Create:TGLRenderImageFrame(width:UInt, height:UInt, flags:Int)
 		' Need this to enable frame buffer objects - glGenFramebuffers
@@ -440,7 +441,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		Local RenderTarget:TGLRenderImageFrame = New TGLRenderImageFrame
 		RenderTarget.name = TextureName
 		RenderTarget.FBO = FrameBufferObject
-		
+
 		RenderTarget.width = width
 		RenderTarget.height = height
 		RenderTarget.uscale = 1.0 / width
@@ -453,7 +454,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		EndIf
 		
 		Return RenderTarget
-	EndFunction
+	End Function
 	
 Private
 	Method Delete()
@@ -466,7 +467,7 @@ Private
 	End Method
 
 	Method New()
-	EndMethod
+	End Method
 EndType
 
 Type TGLMax2DDriver Extends TMax2DDriver
@@ -480,7 +481,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	Method GraphicsModes:TGraphicsMode[]() Override
 		Return GLGraphicsDriver().GraphicsModes()
 	End Method
-	
+
 	Method AttachGraphics:TMax2DGraphics( widget:Byte Ptr,flags:Long ) Override
 		Local g:TGLGraphics = GLGraphicsDriver().AttachGraphics( widget,flags )
 		If g Return TMax2DGraphics.Create( g,Self )
@@ -524,7 +525,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glLoadIdentity
 		glViewport 0,0,gw,gh
 
-		' Need this to enable "glBlendFuncSeparate" (required for
+		' Need glew to enable "glBlendFuncSeparate" (required for
 		' alpha blending on non-opaque backgrounds like render images)
 		If Not glewIsInit
 			GlewInit()
@@ -539,6 +540,7 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		' cache it
 		_BackBufferRenderImageFrame = BackBufferRenderImageFrame
 		_CurrentRenderImageFrame = _BackBufferRenderImageFrame
+		_CurrentRenderImageContainer = Null
 	End Method
 	
 	Method Flip:Int( sync:Int ) Override
@@ -741,28 +743,50 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glOrtho( 0, width, height, 0, -1, 1 )
 		glMatrixMode( GL_MODELVIEW )
 	End Method
-
+	
+	Method CanUpdateRenderImages:Int() Override
+		Return True
+	End Method
+	
 	Method CreateRenderImageFrame:TImageFrame(width:UInt, height:UInt, flags:Int) Override
 		Return TGLRenderImageFrame.Create(width, height, flags)
-	EndMethod
+	End Method
 	
-	Method SetRenderImageFrame(RenderImageFrame:TImageFrame) Override
+	Method SetRenderImageFrame:Int(RenderImageFrame:TImageFrame) Override
 		If RenderImageFrame = _CurrentRenderImageFrame
-			Return
+			Return True
+		ElseIf renderImageFrame = Null
+			renderImageFrame = _BackBufferRenderImageFrame
 		EndIf
-		
+
 		glBindFrameBuffer(GL_FRAMEBUFFER, TGLRenderImageFrame(RenderImageFrame).FBO)
 		_CurrentRenderImageFrame = TGLRenderImageFrame(RenderImageFrame)
-		
+		'unset render image container (re-assign in SetRenderImage if called from there!)
+		_CurrentRenderImageContainer = Null
+
 		Local vp:Rect = _GLScissor_BMaxViewport
 		SetScissor(vp.x, vp.y, vp.width, vp.height)
 		SetMatrixAndViewportToCurrentRenderImage()
-	EndMethod
-	
-	Method SetBackbuffer()
-		SetRenderImageFrame(_BackBufferRenderImageFrame)
-	EndMethod
-	
+		Return True
+	End Method
+
+	Method GetRenderImageFrame:TImageFrame() Override
+		' Return Null if currently rendering to the backbuffer
+		If _BackBufferRenderImageFrame = _CurrentRenderImageFrame
+			Return Null
+		Else
+			Return _CurrentRenderImageFrame
+		EndIf
+	End Method
+
+	Method SetRenderImageContainer(renderImageContainer:Object) Override
+		_CurrentRenderImageContainer = TRenderImage(renderImageContainer)
+	End Method
+
+	Method GetRenderImageContainer:Object() Override
+		Return _CurrentRenderImageContainer
+	End Method
+
 Private
 	Method SetMatrixAndViewportToCurrentRenderImage()
 		glMatrixMode(GL_PROJECTION)
@@ -771,7 +795,7 @@ Private
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
 		glViewport(0, 0, _CurrentRenderImageFrame.width, _CurrentRenderImageFrame.height)
-	EndMethod
+	End Method
 
 	Method SetScissor(x:Int, y:Int, w:Int, h:Int)
 		Local ri:TImageFrame = _CurrentRenderImageFrame
@@ -781,7 +805,7 @@ Private
 			glEnable(GL_SCISSOR_TEST)
 			glScissor(x, _CurrentRenderImageFrame.height - y - h, w, h)
 		EndIf
-	EndMethod
+	End Method
 End Type
 
 Rem
