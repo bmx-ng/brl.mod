@@ -1503,20 +1503,106 @@ int bbStringEqualsCase( BBString *x,BBString *y, int caseSensitive ) {
 	return 1;
 }
 
+static inline unsigned short fold_ascii(unsigned short c) {
+    if (c >= 'A' && c <= 'Z') {
+		return (unsigned short)(c | 32);
+	}
+    return c;
+}
+
+static inline unsigned short fold16(unsigned short c) {
+    // ASCII fast path
+    if (c <= 0x7F) {
+		return fold_ascii(c);
+	}
+    return bbFoldCharLUT(c);
+}
+
 BBUINT bbStringHashCase( BBString *str, int caseSensitive ) {
-	if (caseSensitive != 0 || str->length == 0) {
+    int n = str->length;
+
+	if (caseSensitive != 0 || n == 0) {
 		return bbStringHash(str);
 	}
+	
+    const BBChar *s = str->buf;
 
-	XXH3_state_t state;
-	XXH3_64bits_reset(&state);
+    // Use stack buffer for small strings
+	if (n <= 512) {
+		unsigned short tmp[512];
 
-	const BBChar *s = str->buf;
+		int i = 0;
 
-	for (int i = 0; i < str->length; ++i) {
-		unsigned short c = bbFoldChar((unsigned short)s[i]);
-		XXH3_64bits_update(&state, &c, sizeof(c));
+		// Unroll by 8, ASCII-first. Bail out if any non-ASCII is seen.
+		for (; i + 8 <= n; i += 8) {
+			unsigned short c0 = (unsigned short)s[i + 0];
+			unsigned short c1 = (unsigned short)s[i + 1];
+			unsigned short c2 = (unsigned short)s[i + 2];
+			unsigned short c3 = (unsigned short)s[i + 3];
+			unsigned short c4 = (unsigned short)s[i + 4];
+			unsigned short c5 = (unsigned short)s[i + 5];
+			unsigned short c6 = (unsigned short)s[i + 6];
+			unsigned short c7 = (unsigned short)s[i + 7];
+
+			// Single ASCII test for the whole block
+			if ((c0 | c1 | c2 | c3 | c4 | c5 | c6 | c7) > 0x7F) {
+				break;
+			}
+
+			tmp[i + 0] = fold_ascii(c0);
+			tmp[i + 1] = fold_ascii(c1);
+			tmp[i + 2] = fold_ascii(c2);
+			tmp[i + 3] = fold_ascii(c3);
+			tmp[i + 4] = fold_ascii(c4);
+			tmp[i + 5] = fold_ascii(c5);
+			tmp[i + 6] = fold_ascii(c6);
+			tmp[i + 7] = fold_ascii(c7);
+		}
+
+		// Finish remaining chars in ASCII mode until we hit a non-ASCII (or end)
+		for (; i < n; ++i) {
+			unsigned short c = (unsigned short)s[i];
+			if (c > 0x7F) {
+				break;
+			}
+			tmp[i] = fold_ascii(c);
+		}
+
+		if (i == n) {
+			// All ASCII
+			return (BBUINT)XXH3_64bits(tmp, (size_t)n * sizeof(tmp[0]));
+		}
+
+		// Rare path: non-ASCII encountered
+		for (; i < n; ++i) {
+			tmp[i] = fold16((unsigned short)s[i]);
+		}
+
+		return (BBUINT)XXH3_64bits(tmp, (size_t)n * sizeof(tmp[0]));
+	} else {
+		// Chunk processing for large strings
+		const int CHUNK = 512;
+		unsigned short buf[CHUNK];
+
+		XXH3_state_t state;
+		XXH3_64bits_reset(&state);
+
+		int i = 0;
+		while (i < n) {
+			int m = n - i;
+			if (m > CHUNK) {
+				m = CHUNK;
+			}
+
+			for (int j = 0; j < m; ++j) {
+				unsigned short c = (unsigned short)s[i + j];
+				buf[j] = fold16(c);
+			}
+
+			XXH3_64bits_update(&state, buf, (size_t)m * sizeof(buf[0]));
+			i += m;
+		}
+
+		return (BBUINT)XXH3_64bits_digest(&state);
 	}
-
-	return (BBUINT)XXH3_64bits_digest(&state);
 }
