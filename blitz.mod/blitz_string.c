@@ -1458,8 +1458,14 @@ int bbStringCompareCase( BBString *x,BBString *y, int caseSensitive ) {
 
     int n = nx < ny ? nx : ny;
     for (int i = 0; i < n; ++i) {
-        unsigned short cx = bbFoldChar((unsigned short)sx[i]);
-        unsigned short cy = bbFoldChar((unsigned short)sy[i]);
+        unsigned short ax = (unsigned short)sx[i];
+        unsigned short ay = (unsigned short)sy[i];
+
+		if (ax == ay) {
+			continue;
+		}
+        unsigned short cx = bbFoldChar(ax);
+        unsigned short cy = bbFoldChar(ay);
         if (cx != cy) {
             return (int)cx - (int)cy;
         }
@@ -1482,8 +1488,14 @@ int bbStringEqualsCase( BBString *x,BBString *y, int caseSensitive ) {
 	const BBChar *sy = y->buf;
 
 	for (int i = 0; i < n; ++i) {
-		unsigned short cx = bbFoldChar((unsigned short)sx[i]);
-		unsigned short cy = bbFoldChar((unsigned short)sy[i]);
+		unsigned short ax = (unsigned short)sx[i];
+        unsigned short ay = (unsigned short)sy[i];
+
+		if (ax == ay) {
+			continue;
+		}
+		unsigned short cx = bbFoldChar(ax);
+		unsigned short cy = bbFoldChar(ay);
 		if (cx != cy) {
 			return 0;
 		}
