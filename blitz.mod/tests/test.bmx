@@ -314,38 +314,753 @@ End Type
 
 Type TStringToIntExTest Extends TTest
 
-	Method testToIntEx() { test }
-		Local val:Int
-		Local s:String = "123456"
-		assertEquals(6, s.ToIntEx(val))
-		assertEquals(123456, val)
+	' Helper: expect success
+	Method assertParse(expectedPos:Int, expectedVal:Int, s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+		Local v:Int = -123456789 ' sentinel
+		Local p:Int = s.ToIntEx(v, startPos, endPos, format, base)
+		assertEquals(expectedPos, p)
+		assertEquals(expectedVal, v)
 	End Method
 
-	Method testToIntExMulti() { test }
-		Local val:Int
-		Local s:String = "1,2,3,4,5,6,7,8,9,10"
-
-		Local start:Int = 0
-		For Local i:Int = 0 Until 10
-			start = s.ToIntEx(val, start) + 1
-
-			assertFalse(start = 1)
-			assertEquals(i + 1, val)
-		Next
+	' Helper: expect failure; optionally assert val unchanged
+	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+		Local v:Int = 42
+		Local p:Int = s.ToIntEx(v, startPos, endPos, format, base)
+		assertEquals(0, p, "Expected failure but got position " + p)
+		assertEquals(42, v) ' val should remain unchanged on failure
 	End Method
 
-	Method testLeadingWhitespace() { test }
-		Local val:Int
-		Local s:String = "  ~t123456"
-		assertEquals(9, s.ToIntEx(val,,,CHARSFORMAT_SKIPWHITESPACE))
-		assertEquals(123456, val)
+	' -------------------------
+	' Basic parsing + offsets
+	' -------------------------
+	Method testBasicSuccess() { test }
+		assertParse(3, 123, "123")
+		assertParse(2, 12, "12abc") ' partial parse
+		assertParse(5, 123, "xx123yy", 2) ' startPos
 	End Method
 
-	Method testHex() { test }
-		Local val:Int
-		Local s:String = "abc001"
-		assertEquals(6, s.ToIntEx(val,,,,16))
-		assertEquals(11255809, val)
+	Method testEmptyAndGarbage() { test }
+		assertFail("")
+		assertFail(" ")
+		assertFail("~t~n")
+		assertFail("abc")
+		assertFail(" abc ")
+	End Method
+
+	' -------------------------
+	' Whitespace handling
+	' -------------------------
+	Method testSkipWhitespace() { test }
+		assertFail("  ~t123") ' no flag
+		assertParse(6, 123, "  ~t123", 0, -1, CHARSFORMAT_SKIPWHITESPACE) ' 2 spaces + tab + 3 digits = pos 6
+	End Method
+
+	' -------------------------
+	' Sign handling
+	' -------------------------
+	Method testLeadingPlus() { test }
+		assertFail("+123")
+		assertParse(4, 123, "+123", 0, -1, CHARSFORMAT_ALLOWLEADINGPLUS | CHARSFORMAT_GENERAL)
+
+		assertFail("+")      ' sign only
+		assertFail("-")      ' sign only
+		assertParse(4, -123, "-123") ' minus should normally work
+	End Method
+
+	' -------------------------
+	' endPos windowing
+	' -------------------------
+	Method testEndPosWindow() { test }
+		assertParse(3, 123, "12345", 0, 3) ' only "123"
+		assertParse(1, 1, "12", 0, 1)
+
+		assertFail("123", 0, 0) ' no room
+		assertFail("123", 2, 1) ' endPos < startPos
+		assertFail("123", 99, -1) ' startPos beyond length
+	End Method
+
+	' -------------------------
+	' Base parsing
+	' -------------------------
+	Method testBases() { test }
+		assertParse(4, 11, "1011", 0, -1, CHARSFORMAT_GENERAL, 2)
+		assertParse(2, 15, "17",   0, -1, CHARSFORMAT_GENERAL, 8)
+		assertParse(6, 11255809, "abc001", 0, -1, CHARSFORMAT_GENERAL, 16)
+
+		' invalid digit stops parse but succeeds if at least one digit
+		assertParse(2, 12, "12x",  0, -1, CHARSFORMAT_GENERAL, 10)
+		assertParse(2, 2,  "102",  0, -1, CHARSFORMAT_GENERAL, 2)
+
+		' no digits => fail
+		assertFail("x12", 0, -1, CHARSFORMAT_GENERAL, 10)
+	End Method
+
+	' -------------------------
+	' Overflow / underflow
+	' -------------------------
+	Method testOverflow() { test }
+		assertFail("999999999999999999999999999999")
+		assertFail("-999999999999999999999999999999")
+	End Method
+
+	' -------------------------
+	' Fixed / Scientific / Fortran
+	' -------------------------
+	Method testFixedAndScientific() { test }
+
+		' If ToIntEx accepts float syntax only when integral:
+		assertParse(1, 1, "1.0", 0, -1, CHARSFORMAT_FIXED)
+		assertParse(1, 1, "1.2", 0, -1, CHARSFORMAT_FIXED)
+
+		assertParse(1, 1, "1e3", 0, -1, CHARSFORMAT_SCIENTIFIC)
+		assertParse(1, 1, "1e-1", 0, -1, CHARSFORMAT_SCIENTIFIC)
+
+		' Fortran-style exponent (D)
+		assertParse(1, 1, "1D3", 0, -1, CHARSFORMAT_FORTRAN)
+	End Method
+
+	' -------------------------
+	' JSON format
+	' -------------------------
+	Method testJsonFormat() { test }
+		' JSON disallows leading whitespace
+		assertFail(" 1", 0, -1, CHARSFORMAT_JSON)
+
+		' JSON disallows leading plus
+		assertFail("+1", 0, -1, CHARSFORMAT_JSON)
+
+		' JSON disallows leading zeros except "0"
+		assertParse(1, 0, "0", 0, -1, CHARSFORMAT_JSON)
+	End Method
+
+End Type
+
+Type TStringToLongExTest Extends TTest
+
+	' Helper: expect success
+	Method assertParse(expectedPos:Long, expectedVal:Long, s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+		Local v:Long = -123456789 ' sentinel
+		Local p:Int = s.ToLongEx(v, startPos, endPos, format, base)
+		assertEquals(expectedPos, p)
+		assertEquals(expectedVal, v)
+	End Method
+
+	' Helper: expect failure; optionally assert val unchanged
+	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+		Local v:Long = 42
+		Local p:Int = s.ToLongEx(v, startPos, endPos, format, base)
+		assertEquals(0, p, "Expected failure but got position " + p)
+		assertEquals(42, v) ' val should remain unchanged on failure
+	End Method
+
+	' -------------------------
+	' Basic parsing + offsets
+	' -------------------------
+	Method testBasicSuccess() { test }
+		assertParse(3, 123, "123")
+		assertParse(2, 12, "12abc") ' partial parse
+		assertParse(5, 123, "xx123yy", 2) ' startPos
+	End Method
+
+	Method testEmptyAndGarbage() { test }
+		assertFail("")
+		assertFail(" ")
+		assertFail("~t~n")
+		assertFail("abc")
+		assertFail(" abc ")
+	End Method
+
+	' -------------------------
+	' Whitespace handling
+	' -------------------------
+	Method testSkipWhitespace() { test }
+		assertFail("  ~t123") ' no flag
+		assertParse(6, 123, "  ~t123", 0, -1, CHARSFORMAT_SKIPWHITESPACE) ' 2 spaces + tab + 3 digits = pos 6
+	End Method
+
+	' -------------------------
+	' Sign handling
+	' -------------------------
+	Method testLeadingPlus() { test }
+		assertFail("+123")
+		assertParse(4, 123, "+123", 0, -1, CHARSFORMAT_ALLOWLEADINGPLUS | CHARSFORMAT_GENERAL)
+
+		assertFail("+")      ' sign only
+		assertFail("-")      ' sign only
+		assertParse(4, -123, "-123") ' minus should normally work
+	End Method
+
+	' -------------------------
+	' endPos windowing
+	' -------------------------
+	Method testEndPosWindow() { test }
+		assertParse(3, 123, "12345", 0, 3) ' only "123"
+		assertParse(1, 1, "12", 0, 1)
+
+		assertFail("123", 0, 0) ' no room
+		assertFail("123", 2, 1) ' endPos < startPos
+		assertFail("123", 99, -1) ' startPos beyond length
+	End Method
+
+	' -------------------------
+	' Base parsing
+	' -------------------------
+	Method testBases() { test }
+		assertParse(4, 11, "1011", 0, -1, CHARSFORMAT_GENERAL, 2)
+		assertParse(2, 15, "17",   0, -1, CHARSFORMAT_GENERAL, 8)
+		assertParse(6, 11255809, "abc001", 0, -1, CHARSFORMAT_GENERAL, 16)
+
+		' invalid digit stops parse but succeeds if at least one digit
+		assertParse(2, 12, "12x",  0, -1, CHARSFORMAT_GENERAL, 10)
+		assertParse(2, 2,  "102",  0, -1, CHARSFORMAT_GENERAL, 2)
+
+		' no digits => fail
+		assertFail("x12", 0, -1, CHARSFORMAT_GENERAL, 10)
+	End Method
+
+	' -------------------------
+	' Overflow / underflow
+	' -------------------------
+	Method testOverflow() { test }
+		assertFail("999999999999999999999999999999")
+		assertFail("-999999999999999999999999999999")
+	End Method
+
+	' -------------------------
+	' Fixed / Scientific / Fortran
+	' -------------------------
+	Method testFixedAndScientific() { test }
+
+		' If ToIntEx accepts float syntax only when integral:
+		assertParse(1, 1, "1.0", 0, -1, CHARSFORMAT_FIXED)
+		assertParse(1, 1, "1.2", 0, -1, CHARSFORMAT_FIXED)
+
+		assertParse(1, 1, "1e3", 0, -1, CHARSFORMAT_SCIENTIFIC)
+		assertParse(1, 1, "1e-1", 0, -1, CHARSFORMAT_SCIENTIFIC)
+
+		' Fortran-style exponent (D)
+		assertParse(1, 1, "1D3", 0, -1, CHARSFORMAT_FORTRAN)
+	End Method
+
+	' -------------------------
+	' JSON format
+	' -------------------------
+	Method testJsonFormat() { test }
+		' JSON disallows leading whitespace
+		assertFail(" 1", 0, -1, CHARSFORMAT_JSON)
+
+		' JSON disallows leading plus
+		assertFail("+1", 0, -1, CHARSFORMAT_JSON)
+
+		' JSON disallows leading zeros except "0"
+		assertParse(1, 0, "0", 0, -1, CHARSFORMAT_JSON)
+	End Method
+
+End Type
+
+Type TStringToLongIntExTest Extends TTest
+
+	' Helper: expect success
+	Method assertParse(expectedPos:LongInt, expectedVal:LongInt, s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+		Local v:LongInt = -123456789 ' sentinel
+		Local p:Int = s.ToLongIntEx(v, startPos, endPos, format, base)
+		assertEquals(expectedPos, p)
+		assertEquals(expectedVal, v)
+	End Method
+
+	' Helper: expect failure; optionally assert val unchanged
+	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+		Local v:LongInt = 42
+		Local p:Int = s.ToLongIntEx(v, startPos, endPos, format, base)
+		assertEquals(0, p, "Expected failure but got position " + p)
+		assertEquals(42, v) ' val should remain unchanged on failure
+	End Method
+
+	' -------------------------
+	' Basic parsing + offsets
+	' -------------------------
+	Method testBasicSuccess() { test }
+		assertParse(3, 123, "123")
+		assertParse(2, 12, "12abc") ' partial parse
+		assertParse(5, 123, "xx123yy", 2) ' startPos
+	End Method
+
+	Method testEmptyAndGarbage() { test }
+		assertFail("")
+		assertFail(" ")
+		assertFail("~t~n")
+		assertFail("abc")
+		assertFail(" abc ")
+	End Method
+
+	' -------------------------
+	' Whitespace handling
+	' -------------------------
+	Method testSkipWhitespace() { test }
+		assertFail("  ~t123") ' no flag
+		assertParse(6, 123, "  ~t123", 0, -1, CHARSFORMAT_SKIPWHITESPACE) ' 2 spaces + tab + 3 digits = pos 6
+	End Method
+
+	' -------------------------
+	' Sign handling
+	' -------------------------
+	Method testLeadingPlus() { test }
+		assertFail("+123")
+		assertParse(4, 123, "+123", 0, -1, CHARSFORMAT_ALLOWLEADINGPLUS | CHARSFORMAT_GENERAL)
+
+		assertFail("+")      ' sign only
+		assertFail("-")      ' sign only
+		assertParse(4, -123, "-123") ' minus should normally work
+	End Method
+
+	' -------------------------
+	' endPos windowing
+	' -------------------------
+	Method testEndPosWindow() { test }
+		assertParse(3, 123, "12345", 0, 3) ' only "123"
+		assertParse(1, 1, "12", 0, 1)
+
+		assertFail("123", 0, 0) ' no room
+		assertFail("123", 2, 1) ' endPos < startPos
+		assertFail("123", 99, -1) ' startPos beyond length
+	End Method
+
+	' -------------------------
+	' Base parsing
+	' -------------------------
+	Method testBases() { test }
+		assertParse(4, 11, "1011", 0, -1, CHARSFORMAT_GENERAL, 2)
+		assertParse(2, 15, "17",   0, -1, CHARSFORMAT_GENERAL, 8)
+		assertParse(6, 11255809, "abc001", 0, -1, CHARSFORMAT_GENERAL, 16)
+
+		' invalid digit stops parse but succeeds if at least one digit
+		assertParse(2, 12, "12x",  0, -1, CHARSFORMAT_GENERAL, 10)
+		assertParse(2, 2,  "102",  0, -1, CHARSFORMAT_GENERAL, 2)
+
+		' no digits => fail
+		assertFail("x12", 0, -1, CHARSFORMAT_GENERAL, 10)
+	End Method
+
+	' -------------------------
+	' Overflow / underflow
+	' -------------------------
+	Method testOverflow() { test }
+		assertFail("999999999999999999999999999999")
+		assertFail("-999999999999999999999999999999")
+	End Method
+
+	' -------------------------
+	' Fixed / Scientific / Fortran
+	' -------------------------
+	Method testFixedAndScientific() { test }
+
+		' If ToIntEx accepts float syntax only when integral:
+		assertParse(1, 1, "1.0", 0, -1, CHARSFORMAT_FIXED)
+		assertParse(1, 1, "1.2", 0, -1, CHARSFORMAT_FIXED)
+
+		assertParse(1, 1, "1e3", 0, -1, CHARSFORMAT_SCIENTIFIC)
+		assertParse(1, 1, "1e-1", 0, -1, CHARSFORMAT_SCIENTIFIC)
+
+		' Fortran-style exponent (D)
+		assertParse(1, 1, "1D3", 0, -1, CHARSFORMAT_FORTRAN)
+	End Method
+
+	' -------------------------
+	' JSON format
+	' -------------------------
+	Method testJsonFormat() { test }
+		' JSON disallows leading whitespace
+		assertFail(" 1", 0, -1, CHARSFORMAT_JSON)
+
+		' JSON disallows leading plus
+		assertFail("+1", 0, -1, CHARSFORMAT_JSON)
+
+		' JSON disallows leading zeros except "0"
+		assertParse(1, 0, "0", 0, -1, CHARSFORMAT_JSON)
+	End Method
+
+End Type
+
+Type TStringToUIntExTest Extends TTest
+
+	' Helper: expect success
+	Method assertParse(expectedPos:Int, expectedVal:UInt, s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+		Local v:UInt = 987654321:UInt ' sentinel
+		Local p:Int = s.ToUIntEx(v, startPos, endPos, format, base)
+		assertEquals(expectedPos, p)
+		assertEquals(expectedVal, v)
+	End Method
+
+	' Helper: expect failure; assert val unchanged
+	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+		Local v:UInt = 42:UInt
+		Local p:Int = s.ToUIntEx(v, startPos, endPos, format, base)
+		assertEquals(0, p)
+		assertEquals(42:UInt, v)
+	End Method
+
+	' -------------------------
+	' Basic parsing + offsets
+	' -------------------------
+	Method testBasicSuccess() { test }
+		assertParse(3, 123:UInt, "123")
+		assertParse(2, 12:UInt, "12abc") ' partial parse
+		assertParse(5, 123:UInt, "xx123yy", 2) ' startPos
+	End Method
+
+	Method testEmptyAndGarbage() { test }
+		assertFail("")
+		assertFail(" ")
+		assertFail("~t~n")
+		assertFail("abc")
+		assertFail(" abc ")
+	End Method
+
+	' -------------------------
+	' Whitespace handling
+	' -------------------------
+	Method testSkipWhitespace() { test }
+		assertFail("  ~t123") ' no flag
+		assertParse(6, 123:UInt, "  ~t123", 0, -1, CHARSFORMAT_SKIPWHITESPACE)
+	End Method
+
+	' -------------------------
+	' Sign handling (unsigned-specific)
+	' -------------------------
+	Method testLeadingPlusAndMinus() { test }
+		' plus only if allowed
+		assertFail("+123")
+		assertParse(4, 123:UInt, "+123", 0, -1, CHARSFORMAT_ALLOWLEADINGPLUS | CHARSFORMAT_GENERAL)
+
+		' minus should always fail for UInt
+		assertFail("-0")
+		assertFail("-1")
+		assertFail("-123")
+
+		' sign only
+		assertFail("+")
+		assertFail("-")
+	End Method
+
+	' -------------------------
+	' endPos windowing
+	' -------------------------
+	Method testEndPosWindow() { test }
+		assertParse(3, 123:UInt, "12345", 0, 3)
+		assertParse(1, 1:UInt, "12", 0, 1)
+
+		assertFail("123", 0, 0)
+		assertFail("123", 2, 1)
+		assertFail("123", 99, -1)
+	End Method
+
+	' -------------------------
+	' Base parsing
+	' -------------------------
+	Method testBases() { test }
+		assertParse(4, 11:UInt, "1011", 0, -1, CHARSFORMAT_GENERAL, 2)
+		assertParse(2, 15:UInt, "17",   0, -1, CHARSFORMAT_GENERAL, 8)
+		assertParse(6, 11255809:UInt, "abc001", 0, -1, CHARSFORMAT_GENERAL, 16)
+
+		' invalid digit stops parse but succeeds if at least one digit
+		assertParse(2, 12:UInt, "12x", 0, -1, CHARSFORMAT_GENERAL, 10)
+		assertParse(2, 2:UInt,  "102", 0, -1, CHARSFORMAT_GENERAL, 2)
+
+		' no digits => fail
+		assertFail("x12", 0, -1, CHARSFORMAT_GENERAL, 10)
+	End Method
+
+	' -------------------------
+	' Overflow (unsigned)
+	' -------------------------
+	Method testOverflow() { test }
+		' Definitely too big for 32-bit and 64-bit UInt
+		assertFail("999999999999999999999999999999")
+		assertFail("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 0, -1, CHARSFORMAT_GENERAL, 16)
+	End Method
+
+	' -------------------------
+	' Fixed / Scientific / Fortran (tokenizer-style behavior)
+	' -------------------------
+	Method testFixedAndScientific() { test }
+
+		assertParse(1, 1:UInt, "1.0", 0, -1, CHARSFORMAT_FIXED)
+		assertParse(1, 1:UInt, "1e3", 0, -1, CHARSFORMAT_SCIENTIFIC)
+		assertParse(1, 1:UInt, "1D3", 0, -1, CHARSFORMAT_FORTRAN)
+
+		' No digits at start => fail
+		assertFail(".5", 0, -1, CHARSFORMAT_FIXED)
+	End Method
+
+	' -------------------------
+	' JSON format (basic invariants)
+	' -------------------------
+	Method testJsonFormat() { test }
+		' JSON disallows leading whitespace and leading plus
+		assertFail(" 1", 0, -1, CHARSFORMAT_JSON)
+		assertFail("+1", 0, -1, CHARSFORMAT_JSON)
+
+		' ' JSON leading zero rule
+		assertParse(1, 0:UInt, "0", 0, -1, CHARSFORMAT_JSON)
+
+		' Unsigned: negative must fail regardless
+		assertFail("-1", 0, -1, CHARSFORMAT_JSON)
+	End Method
+
+End Type
+
+Type TStringToULongExTest Extends TTest
+
+	' Helper: expect success
+	Method assertParse(expectedPos:Int, expectedVal:ULong, s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+		Local v:ULong = 987654321:ULong ' sentinel
+		Local p:Int = s.ToULongEx(v, startPos, endPos, format, base)
+		assertEquals(expectedPos, p)
+		assertEquals(expectedVal, v)
+	End Method
+
+	' Helper: expect failure; assert val unchanged
+	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+		Local v:ULong = 42:ULong
+		Local p:Int = s.ToULongEx(v, startPos, endPos, format, base)
+		assertEquals(0, p)
+		assertEquals(42:ULong, v)
+	End Method
+
+	' -------------------------
+	' Basic parsing + offsets
+	' -------------------------
+	Method testBasicSuccess() { test }
+		assertParse(3, 123:ULong, "123")
+		assertParse(2, 12:ULong, "12abc") ' partial parse
+		assertParse(5, 123:ULong, "xx123yy", 2) ' startPos
+	End Method
+
+	Method testEmptyAndGarbage() { test }
+		assertFail("")
+		assertFail(" ")
+		assertFail("~t~n")
+		assertFail("abc")
+		assertFail(" abc ")
+	End Method
+
+	' -------------------------
+	' Whitespace handling
+	' -------------------------
+	Method testSkipWhitespace() { test }
+		assertFail("  ~t123") ' no flag
+		assertParse(6, 123:ULong, "  ~t123", 0, -1, CHARSFORMAT_SKIPWHITESPACE)
+	End Method
+
+	' -------------------------
+	' Sign handling (unsigned-specific)
+	' -------------------------
+	Method testLeadingPlusAndMinus() { test }
+		' plus only if allowed
+		assertFail("+123")
+		assertParse(4, 123:ULong, "+123", 0, -1, CHARSFORMAT_ALLOWLEADINGPLUS | CHARSFORMAT_GENERAL)
+
+		' minus should always fail for UInt
+		assertFail("-0")
+		assertFail("-1")
+		assertFail("-123")
+
+		' sign only
+		assertFail("+")
+		assertFail("-")
+	End Method
+
+	' -------------------------
+	' endPos windowing
+	' -------------------------
+	Method testEndPosWindow() { test }
+		assertParse(3, 123:ULong, "12345", 0, 3)
+		assertParse(1, 1:ULong, "12", 0, 1)
+
+		assertFail("123", 0, 0)
+		assertFail("123", 2, 1)
+		assertFail("123", 99, -1)
+	End Method
+
+	' -------------------------
+	' Base parsing
+	' -------------------------
+	Method testBases() { test }
+		assertParse(4, 11:ULong, "1011", 0, -1, CHARSFORMAT_GENERAL, 2)
+		assertParse(2, 15:ULong, "17",   0, -1, CHARSFORMAT_GENERAL, 8)
+		assertParse(6, 11255809:ULong, "abc001", 0, -1, CHARSFORMAT_GENERAL, 16)
+
+		' invalid digit stops parse but succeeds if at least one digit
+		assertParse(2, 12:ULong, "12x", 0, -1, CHARSFORMAT_GENERAL, 10)
+		assertParse(2, 2:ULong,  "102", 0, -1, CHARSFORMAT_GENERAL, 2)
+
+		' no digits => fail
+		assertFail("x12", 0, -1, CHARSFORMAT_GENERAL, 10)
+	End Method
+
+	' -------------------------
+	' Overflow (unsigned)
+	' -------------------------
+	Method testOverflow() { test }
+		' Definitely too big for 32-bit and 64-bit UInt
+		assertFail("999999999999999999999999999999")
+		assertFail("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 0, -1, CHARSFORMAT_GENERAL, 16)
+	End Method
+
+	' -------------------------
+	' Fixed / Scientific / Fortran (tokenizer-style behavior)
+	' -------------------------
+	Method testFixedAndScientific() { test }
+
+		assertParse(1, 1:ULong, "1.0", 0, -1, CHARSFORMAT_FIXED)
+		assertParse(1, 1:ULong, "1e3", 0, -1, CHARSFORMAT_SCIENTIFIC)
+		assertParse(1, 1:ULong, "1D3", 0, -1, CHARSFORMAT_FORTRAN)
+
+		' No digits at start => fail
+		assertFail(".5", 0, -1, CHARSFORMAT_FIXED)
+	End Method
+
+	' -------------------------
+	' JSON format (basic invariants)
+	' -------------------------
+	Method testJsonFormat() { test }
+		' JSON disallows leading whitespace and leading plus
+		assertFail(" 1", 0, -1, CHARSFORMAT_JSON)
+		assertFail("+1", 0, -1, CHARSFORMAT_JSON)
+
+		' ' JSON leading zero rule
+		assertParse(1, 0:ULong, "0", 0, -1, CHARSFORMAT_JSON)
+
+		' Unsigned: negative must fail regardless
+		assertFail("-1", 0, -1, CHARSFORMAT_JSON)
+	End Method
+
+End Type
+
+Type TStringToULongIntExTest Extends TTest
+
+	' Helper: expect success
+	Method assertParse(expectedPos:Int, expectedVal:ULongInt, s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+		Local v:ULongInt = 987654321:ULongInt ' sentinel
+		Local p:Int = s.ToULongIntEx(v, startPos, endPos, format, base)
+		assertEquals(expectedPos, p)
+		assertEquals(expectedVal, v)
+	End Method
+
+	' Helper: expect failure; assert val unchanged
+	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+		Local v:ULongInt = 42:ULongInt
+		Local p:Int = s.ToULongIntEx(v, startPos, endPos, format, base)
+		assertEquals(0, p)
+		assertEquals(42:ULongInt, v)
+	End Method
+
+	' -------------------------
+	' Basic parsing + offsets
+	' -------------------------
+	Method testBasicSuccess() { test }
+		assertParse(3, 123:ULongInt, "123")
+		assertParse(2, 12:ULongInt, "12abc") ' partial parse
+		assertParse(5, 123:ULongInt, "xx123yy", 2) ' startPos
+	End Method
+
+	Method testEmptyAndGarbage() { test }
+		assertFail("")
+		assertFail(" ")
+		assertFail("~t~n")
+		assertFail("abc")
+		assertFail(" abc ")
+	End Method
+
+	' -------------------------
+	' Whitespace handling
+	' -------------------------
+	Method testSkipWhitespace() { test }
+		assertFail("  ~t123") ' no flag
+		assertParse(6, 123:ULongInt, "  ~t123", 0, -1, CHARSFORMAT_SKIPWHITESPACE)
+	End Method
+
+	' -------------------------
+	' Sign handling (unsigned-specific)
+	' -------------------------
+	Method testLeadingPlusAndMinus() { test }
+		' plus only if allowed
+		assertFail("+123")
+		assertParse(4, 123:ULongInt, "+123", 0, -1, CHARSFORMAT_ALLOWLEADINGPLUS | CHARSFORMAT_GENERAL)
+
+		' minus should always fail for UInt
+		assertFail("-0")
+		assertFail("-1")
+		assertFail("-123")
+
+		' sign only
+		assertFail("+")
+		assertFail("-")
+	End Method
+
+	' -------------------------
+	' endPos windowing
+	' -------------------------
+	Method testEndPosWindow() { test }
+		assertParse(3, 123:ULongInt, "12345", 0, 3)
+		assertParse(1, 1:ULongInt, "12", 0, 1)
+
+		assertFail("123", 0, 0)
+		assertFail("123", 2, 1)
+		assertFail("123", 99, -1)
+	End Method
+
+	' -------------------------
+	' Base parsing
+	' -------------------------
+	Method testBases() { test }
+		assertParse(4, 11:ULongInt, "1011", 0, -1, CHARSFORMAT_GENERAL, 2)
+		assertParse(2, 15:ULongInt, "17",   0, -1, CHARSFORMAT_GENERAL, 8)
+		assertParse(6, 11255809:ULongInt, "abc001", 0, -1, CHARSFORMAT_GENERAL, 16)
+
+		' invalid digit stops parse but succeeds if at least one digit
+		assertParse(2, 12:ULongInt, "12x", 0, -1, CHARSFORMAT_GENERAL, 10)
+		assertParse(2, 2:ULongInt,  "102", 0, -1, CHARSFORMAT_GENERAL, 2)
+
+		' no digits => fail
+		assertFail("x12", 0, -1, CHARSFORMAT_GENERAL, 10)
+	End Method
+
+	' -------------------------
+	' Overflow (unsigned)
+	' -------------------------
+	Method testOverflow() { test }
+		' Definitely too big for 32-bit and 64-bit UInt
+		assertFail("999999999999999999999999999999")
+		assertFail("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 0, -1, CHARSFORMAT_GENERAL, 16)
+	End Method
+
+	' -------------------------
+	' Fixed / Scientific / Fortran (tokenizer-style behavior)
+	' -------------------------
+	Method testFixedAndScientific() { test }
+
+		assertParse(1, 1:ULongInt, "1.0", 0, -1, CHARSFORMAT_FIXED)
+		assertParse(1, 1:ULongInt, "1e3", 0, -1, CHARSFORMAT_SCIENTIFIC)
+		assertParse(1, 1:ULongInt, "1D3", 0, -1, CHARSFORMAT_FORTRAN)
+
+		' No digits at start => fail
+		assertFail(".5", 0, -1, CHARSFORMAT_FIXED)
+	End Method
+
+	' -------------------------
+	' JSON format (basic invariants)
+	' -------------------------
+	Method testJsonFormat() { test }
+		' JSON disallows leading whitespace and leading plus
+		assertFail(" 1", 0, -1, CHARSFORMAT_JSON)
+		assertFail("+1", 0, -1, CHARSFORMAT_JSON)
+
+		' ' JSON leading zero rule
+		assertParse(1, 0:ULongInt, "0", 0, -1, CHARSFORMAT_JSON)
+
+		' Unsigned: negative must fail regardless
+		assertFail("-1", 0, -1, CHARSFORMAT_JSON)
 	End Method
 
 End Type
