@@ -40,8 +40,10 @@ int bbStrToDoubleEx( BBChar *buf, int length, double * val, int startPos, int en
     if (endPos == -1) {
         endPos = length;
     }
+    if (startPos >= endPos) {
+        return 0;
+    }
     const char16_t * start = (char16_t*)buf;
-    const char16_t * end = start + length;
     const char16_t * p = start + startPos;
     const char16_t * e = start + endPos;
     const char16_t sepChar = sep->length > 0 ? sep->buf[0] : '.';
@@ -50,6 +52,9 @@ int bbStrToDoubleEx( BBChar *buf, int length, double * val, int startPos, int en
     if ( sepChar != 0 && sepChar != '.' ) {
         fast_float::parse_options_t<char16_t> options{static_cast<fast_float::chars_format>(format), sepChar};
         fast_float::from_chars_result_t<char16_t> res = fast_float::from_chars_advanced(p, e, result, options);
+        if (res.ec != std::errc()) {
+            return 0;
+        }
         if (res.ptr != nullptr) {
             *val = result;
             return res.ptr - start;
@@ -57,6 +62,9 @@ int bbStrToDoubleEx( BBChar *buf, int length, double * val, int startPos, int en
     }
     else {
         fast_float::from_chars_result_t<char16_t> res = fast_float::from_chars(p, e, result, static_cast<fast_float::chars_format>(format));
+        if (res.ec != std::errc()) {
+            return 0;
+        }
         if (res.ptr != nullptr) {
             *val = result;
             return res.ptr - start;
@@ -79,8 +87,10 @@ int bbStrToFloatEx( BBChar *buf, int length, float * val, int startPos, int endP
     if (endPos == -1) {
         endPos = length;
     }
+    if (startPos >= endPos) {
+        return 0;
+    }
     const char16_t * start = (char16_t*)buf;
-    const char16_t * end = start + length;
     const char16_t * p = start + startPos;
     const char16_t * e = start + endPos;
     const char16_t sepChar = sep->length > 0 ? sep->buf[0] : '.';
@@ -89,6 +99,9 @@ int bbStrToFloatEx( BBChar *buf, int length, float * val, int startPos, int endP
     if ( sepChar != 0 && sepChar != '.' ) {
         fast_float::parse_options_t<char16_t> options{static_cast<fast_float::chars_format>(format), sepChar};
         fast_float::from_chars_result_t<char16_t> res = fast_float::from_chars_advanced(p, e, result, options);
+        if (res.ec != std::errc()) {
+            return 0;
+        }
         if (res.ptr != nullptr) {
             *val = result;
             return res.ptr - start;
@@ -96,6 +109,9 @@ int bbStrToFloatEx( BBChar *buf, int length, float * val, int startPos, int endP
     }
     else {
         fast_float::from_chars_result_t<char16_t> res = fast_float::from_chars(p, e, result, static_cast<fast_float::chars_format>(format));
+        if (res.ec != std::errc()) {
+            return 0;
+        }
         if (res.ptr != nullptr) {
             *val = result;
             return res.ptr - start;
@@ -114,14 +130,19 @@ int bbStringToIntEx( BBString *str, int * val, int startPos, int endPos, BBULONG
     if (endPos == -1) {
         endPos = str->length;
     }
+    if (startPos >= endPos) {
+        return 0;
+    }
     const char16_t * start = (char16_t*)str->buf;
-    const char16_t * end = start + str->length;
     const char16_t * p = start + startPos;
     const char16_t * e = start + endPos;
     int result;
 
     fast_float::parse_options_t<char16_t> options{static_cast<fast_float::chars_format>(format), '.', base};
     fast_float::from_chars_result_t<char16_t> res = fast_float::from_chars_advanced(p, e, result, options);
+    if (res.ec != std::errc()) {
+        return 0;
+    }
     if (res.ptr != nullptr) {
         *val = result;
         return res.ptr - start;
@@ -139,14 +160,19 @@ int bbStringToUIntEx( BBString *str, unsigned int * val, int startPos, int endPo
     if (endPos == -1) {
         endPos = str->length;
     }
+    if (startPos >= endPos) {
+        return 0;
+    }
     const char16_t * start = (char16_t*)str->buf;
-    const char16_t * end = start + str->length;
     const char16_t * p = start + startPos;
     const char16_t * e = start + endPos;
     unsigned int result;
 
     fast_float::parse_options_t<char16_t> options{static_cast<fast_float::chars_format>(format), '.', base};
     fast_float::from_chars_result_t<char16_t> res = fast_float::from_chars_advanced(p, e, result, options);
+    if (res.ec != std::errc()) {
+        return 0;
+    }
     if (res.ptr != nullptr) {
         *val = result;
         return res.ptr - start;
@@ -164,14 +190,19 @@ int bbStringToLongEx( BBString *str, BBInt64 * val, int startPos, int endPos, BB
     if (endPos == -1) {
         endPos = str->length;
     }
+    if (startPos >= endPos) {
+        return 0;
+    }
     const char16_t * start = (char16_t*)str->buf;
-    const char16_t * end = start + str->length;
     const char16_t * p = start + startPos;
     const char16_t * e = start + endPos;
     BBInt64 result;
 
     fast_float::parse_options_t<char16_t> options{static_cast<fast_float::chars_format>(format), '.', base};
     fast_float::from_chars_result_t<char16_t> res = fast_float::from_chars_advanced(p, e, result, options);
+    if (res.ec != std::errc()) {
+        return 0;
+    }
     if (res.ptr != nullptr) {
         *val = result;
         return res.ptr - start;
@@ -189,14 +220,19 @@ int bbStringToULongEx( BBString *str, BBUInt64 * val, int startPos, int endPos, 
     if (endPos == -1) {
         endPos = str->length;
     }
+    if (startPos >= endPos) {
+        return 0;
+    }
     const char16_t * start = (char16_t*)str->buf;
-    const char16_t * end = start + str->length;
     const char16_t * p = start + startPos;
     const char16_t * e = start + endPos;
     BBUInt64 result;
 
     fast_float::parse_options_t<char16_t> options{static_cast<fast_float::chars_format>(format), '.', base};
     fast_float::from_chars_result_t<char16_t> res = fast_float::from_chars_advanced(p, e, result, options);
+    if (res.ec != std::errc()) {
+        return 0;
+    }
     if (res.ptr != nullptr) {
         *val = result;
         return res.ptr - start;
@@ -214,14 +250,19 @@ int bbStringToSizeTEx( BBString *str, BBSIZET * val, int startPos, int endPos, B
     if (endPos == -1) {
         endPos = str->length;
     }
+    if (startPos >= endPos) {
+        return 0;
+    }
     const char16_t * start = (char16_t*)str->buf;
-    const char16_t * end = start + str->length;
     const char16_t * p = start + startPos;
     const char16_t * e = start + endPos;
     BBSIZET result;
 
     fast_float::parse_options_t<char16_t> options{static_cast<fast_float::chars_format>(format), '.', base};
     fast_float::from_chars_result_t<char16_t> res = fast_float::from_chars_advanced(p, e, result, options);
+    if (res.ec != std::errc()) {
+        return 0;
+    }
     if (res.ptr != nullptr) {
         *val = result;
         return res.ptr - start;
@@ -239,14 +280,19 @@ int bbStringToLongIntEx( BBString *str, BBLONGINT * val, int startPos, int endPo
     if (endPos == -1) {
         endPos = str->length;
     }
+    if (startPos >= endPos) {
+        return 0;
+    }
     const char16_t * start = (char16_t*)str->buf;
-    const char16_t * end = start + str->length;
     const char16_t * p = start + startPos;
     const char16_t * e = start + endPos;
     BBLONGINT result;
 
     fast_float::parse_options_t<char16_t> options{static_cast<fast_float::chars_format>(format), '.', base};
     fast_float::from_chars_result_t<char16_t> res = fast_float::from_chars_advanced(p, e, result, options);
+    if (res.ec != std::errc()) {
+        return 0;
+    }
     if (res.ptr != nullptr) {
         *val = result;
         return res.ptr - start;
@@ -264,14 +310,19 @@ int bbStringToULongIntEx( BBString *str, BBULONGINT * val, int startPos, int end
     if (endPos == -1) {
         endPos = str->length;
     }
+    if (startPos >= endPos) {
+        return 0;
+    }
     const char16_t * start = (char16_t*)str->buf;
-    const char16_t * end = start + str->length;
     const char16_t * p = start + startPos;
     const char16_t * e = start + endPos;
     BBULONGINT result;
 
     fast_float::parse_options_t<char16_t> options{static_cast<fast_float::chars_format>(format), '.', base};
     fast_float::from_chars_result_t<char16_t> res = fast_float::from_chars_advanced(p, e, result, options);
+    if (res.ec != std::errc()) {
+        return 0;
+    }
     if (res.ptr != nullptr) {
         *val = result;
         return res.ptr - start;
