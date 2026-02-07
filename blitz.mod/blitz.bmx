@@ -8,18 +8,20 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.27"
+ModuleInfo "Version: 1.28"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 '
+ModuleInfo "History: 1.28"
+ModuleInfo "History: Updated to fast_float 8.2.3"
 ModuleInfo "History: 1.27"
 ModuleInfo "History: Added ICloseable interface for Using statement support"
 ModuleInfo "History: 1.26"
 ModuleInfo "History: Added extended string to number conversion methods"
 ModuleInfo "History: 1.25"
-ModuleInfo "History: Added suport for risc-v"
+ModuleInfo "History: Added support for risc-v"
 ModuleInfo "History: 1.24"
 ModuleInfo "History: Update to bdwgc 8.3.0.04d7f70"
 ModuleInfo "History: 1.23"
