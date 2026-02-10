@@ -1741,7 +1741,7 @@ Type TStringToNumStrToNumTest Extends TTest
 		Next
 	End Method
 
-		Method test_ToULong_All() { test }
+	Method test_ToULong_All() { test }
 		Local decMax:String = "18446744073709551615"      ' 2^64 - 1
 		Local decOvf:String = "18446744073709551616"      ' 2^64
 
@@ -1820,6 +1820,805 @@ Type TStringFromBytesAsHexTest Extends TTest
 	End Method
 	
 End Type
+
+Type TStringJoinIntsTest Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:Int[] = New Int[0]
+		AssertEquals("", ",".Join(a), "Join of empty array should be empty string")
+	End Method
+
+	Method Test_SingleElement_NoSeparator() { test }
+		Local a:Int[] = [ 42 ]
+		AssertEquals("42", ",".Join(a), "Join of single element should not add separator")
+	End Method
+
+	Method Test_MultipleElements_Commas() { test }
+		Local a:Int[] = [ 1, 2, 3 ]
+		AssertEquals("1,2,3", ",".Join(a), "Basic join with comma separator")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local a:Int[] = [ 1, 2, 3 ]
+		AssertEquals("1::2::3", "::".Join(a), "Join should use the current string as separator")
+	End Method
+
+	Method Test_NegativesAndZero() { test }
+		Local a:Int[] = [ -1, 0, 2, -300 ]
+		AssertEquals("-1,0,2,-300", ",".Join(a), "Join should handle negatives and zero correctly")
+	End Method
+
+	Method Test_IntMinMax() { test }
+		' BlitzMax Int is 32-bit signed (-2^31..2^31-1)
+		Local minVal:Int = $80000000 ' -2147483648
+		Local maxVal:Int = $7FFFFFFF '  2147483647
+
+		Local a:Int[] = [ minVal, maxVal ]
+		AssertEquals("-2147483648,2147483647", ",".Join(a), "Join should correctly format Int min/max values")
+	End Method
+
+	Method Test_DigitLengthCoverage_Sweep() { test }
+		' Exercise various digit lengths and sign without iterating the full 32-bit range.
+		' Includes boundaries around powers of 10.
+		Local a:Int[] = [ ..
+			0, 1, 9, 10, 11, ..
+			99, 100, 101, ..
+			999, 1000, 1001, ..
+			9999, 10000, 10001, ..
+			99999, 100000, 100001, ..
+			999999, 1000000, 1000001, ..
+			9999999, 10000000, 10000001, ..
+			99999999, 100000000, 100000001, ..
+			999999999, 1000000000, 1000000001, ..
+			-1, -9, -10, -99, -100, -1000, -1000000 ..
+		]
+
+		Local expected:String = ..
+			"0|1|9|10|11|" + ..
+			"99|100|101|" + ..
+			"999|1000|1001|" + ..
+			"9999|10000|10001|" + ..
+			"99999|100000|100001|" + ..
+			"999999|1000000|1000001|" + ..
+			"9999999|10000000|10000001|" + ..
+			"99999999|100000000|100000001|" + ..
+			"999999999|1000000000|1000000001|" + ..
+			"-1|-9|-10|-99|-100|-1000|-1000000"
+
+		AssertEquals(expected, "|".Join(a), "Join should handle varied digit lengths and negatives consistently")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:Int[] = [ 1, 2, 3 ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator")
+	End Method
+
+End Type
+
+Type TStringJoinLongsTest Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:Long[] = New Long[0]
+		AssertEquals("", ",".Join(a), "Join of empty Long array should be empty string")
+	End Method
+
+	Method Test_SingleElement_NoSeparator() { test }
+		Local a:Long[] = [ 42:Long ]
+		AssertEquals("42", ",".Join(a), "Join of single Long element should not add separator")
+	End Method
+
+	Method Test_MultipleElements_Commas() { test }
+		Local a:Long[] = [ 1:Long, 2:Long, 3:Long ]
+		AssertEquals("1,2,3", ",".Join(a), "Basic Long join with comma separator")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local a:Long[] = [ 1:Long, 2:Long, 3:Long ]
+		AssertEquals("1::2::3", "::".Join(a), "Join should use the current string as separator (Long)")
+	End Method
+
+	Method Test_NegativesAndZero() { test }
+		Local a:Long[] = [ -1:Long, 0:Long, 2:Long, -300:Long ]
+		AssertEquals("-1,0,2,-300", ",".Join(a), "Join should handle Long negatives and zero correctly")
+	End Method
+
+	Method Test_LongMinMax() { test }
+		' Long in BlitzMax is 64-bit (-2^63..2^63-1)
+		Local minVal:Long = $8000000000000000:Long ' -9223372036854775808
+		Local maxVal:Long = $7FFFFFFFFFFFFFFF:Long '  9223372036854775807
+
+		Local a:Long[] = [ minVal, maxVal ]
+		AssertEquals("-9223372036854775808,9223372036854775807", ",".Join(a), "Join should correctly format Long min/max values")
+	End Method
+
+	Method Test_DigitLengthCoverage_Sweep() { test }
+		' Exercise various digit lengths (1..19 digits for positive) plus sign.
+		' Includes boundaries around powers of 10 and some > 32-bit values.
+		Local a:Long[] = [ ..
+			0:Long, 1:Long, 9:Long, 10:Long, 11:Long, ..
+			99:Long, 100:Long, 101:Long, ..
+			999:Long, 1000:Long, 1001:Long, ..
+			9999:Long, 10000:Long, 10001:Long, ..
+			99999:Long, 100000:Long, 100001:Long, ..
+			999999:Long, 1000000:Long, 1000001:Long, ..
+			9999999:Long, 10000000:Long, 10000001:Long, ..
+			99999999:Long, 100000000:Long, 100000001:Long, ..
+			999999999:Long, 1000000000:Long, 1000000001:Long, ..
+			9999999999:Long, 10000000000:Long, 10000000001:Long, ..
+			99999999999:Long, 100000000000:Long, 100000000001:Long, ..
+			999999999999:Long, 1000000000000:Long, 1000000000001:Long, ..
+			9999999999999:Long, 10000000000000:Long, 10000000000001:Long, ..
+			99999999999999:Long, 100000000000000:Long, 100000000000001:Long, ..
+			999999999999999:Long, 1000000000000000:Long, 1000000000000001:Long, ..
+			9999999999999999:Long, 10000000000000000:Long, 10000000000000001:Long, ..
+			99999999999999999:Long, 100000000000000000:Long, 100000000000000001:Long, ..
+			999999999999999999:Long, 1000000000000000000:Long, 1000000000000000001:Long, ..
+			-1:Long, -9:Long, -10:Long, -99:Long, -100:Long, -1000:Long, -1000000:Long, -10000000000:Long ..
+		]
+
+		Local expected:String = ..
+			"0|1|9|10|11|" + ..
+			"99|100|101|" + ..
+			"999|1000|1001|" + ..
+			"9999|10000|10001|" + ..
+			"99999|100000|100001|" + ..
+			"999999|1000000|1000001|" + ..
+			"9999999|10000000|10000001|" + ..
+			"99999999|100000000|100000001|" + ..
+			"999999999|1000000000|1000000001|" + ..
+			"9999999999|10000000000|10000000001|" + ..
+			"99999999999|100000000000|100000000001|" + ..
+			"999999999999|1000000000000|1000000000001|" + ..
+			"9999999999999|10000000000000|10000000000001|" + ..
+			"99999999999999|100000000000000|100000000000001|" + ..
+			"999999999999999|1000000000000000|1000000000000001|" + ..
+			"9999999999999999|10000000000000000|10000000000000001|" + ..
+			"99999999999999999|100000000000000000|100000000000000001|" + ..
+			"999999999999999999|1000000000000000000|1000000000000000001|" + ..
+			"-1|-9|-10|-99|-100|-1000|-1000000|-10000000000"
+
+		AssertEquals(expected, "|".Join(a), "Join should handle varied Long digit lengths and negatives consistently")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:Long[] = [ 1:Long, 2:Long, 3:Long ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (Long)")
+	End Method
+
+End Type
+
+Type TStringJoinBytesTest Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:Byte[] = New Byte[0]
+		AssertEquals("", ",".Join(a), "Join of empty Byte array should be empty string")
+	End Method
+
+	Method Test_SingleElement_NoSeparator() { test }
+		Local a:Byte[] = [ 42:Byte ]
+		AssertEquals("42", ",".Join(a), "Join of single Byte element should not add separator")
+	End Method
+
+	Method Test_MultipleElements_Commas() { test }
+		Local a:Byte[] = [ 1:Byte, 2:Byte, 3:Byte ]
+		AssertEquals("1,2,3", ",".Join(a), "Basic Byte join with comma separator")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local a:Byte[] = [ 1:Byte, 2:Byte, 3:Byte ]
+		AssertEquals("1::2::3", "::".Join(a), "Join should use the current string as separator (Byte)")
+	End Method
+
+	Method Test_ByteMinMaxAndUnsigned() { test }
+		' Byte is unsigned 8-bit (0..255)
+		Local a:Byte[] = [ 0:Byte, 1:Byte, 9:Byte, 10:Byte, 99:Byte, 100:Byte, 254:Byte, 255:Byte ]
+		AssertEquals("0,1,9,10,99,100,254,255", ",".Join(a), "Join should format full unsigned Byte range correctly")
+	End Method
+
+	Method Test_DigitLengthCoverage_Sweep() { test }
+		Local a:Byte[] = [ ..
+			0:Byte, 1:Byte, 9:Byte, 10:Byte, 11:Byte, ..
+			99:Byte, 100:Byte, 101:Byte, ..
+			249:Byte, 250:Byte, 254:Byte, 255:Byte ..
+		]
+
+		Local expected:String = "0|1|9|10|11|99|100|101|249|250|254|255"
+		AssertEquals(expected, "|".Join(a), "Join should handle varied Byte digit lengths consistently")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:Byte[] = [ 1:Byte, 2:Byte, 3:Byte ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (Byte)")
+	End Method
+
+	Method Test_NoNegativeSignAppears() { test }
+		' Ensure we never get a negative sign for unsigned bytes.
+		Local a:Byte[] = [ 0:Byte, 128:Byte, 200:Byte, 255:Byte ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.Contains("-"), "Unsigned Byte join output should not contain '-'")
+	End Method
+
+End Type
+
+Type TStringJoinShortsTest Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:Short[] = New Short[0]
+		AssertEquals("", ",".Join(a), "Join of empty Short array should be empty string")
+	End Method
+
+	Method Test_SingleElement_NoSeparator() { test }
+		Local a:Short[] = [ 42:Short ]
+		AssertEquals("42", ",".Join(a), "Join of single Short element should not add separator")
+	End Method
+
+	Method Test_MultipleElements_Commas() { test }
+		Local a:Short[] = [ 1:Short, 2:Short, 3:Short ]
+		AssertEquals("1,2,3", ",".Join(a), "Basic Short join with comma separator")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local a:Short[] = [ 1:Short, 2:Short, 3:Short ]
+		AssertEquals("1::2::3", "::".Join(a), "Join should use the current string as separator (Short)")
+	End Method
+
+	Method Test_ShortMinMaxAndUnsigned() { test }
+		' Short is unsigned 16-bit (0..65535)
+		Local a:Short[] = [ ..
+			0:Short, 1:Short, 9:Short, 10:Short, 99:Short, 100:Short, ..
+			999:Short, 1000:Short, 9999:Short, 10000:Short, ..
+			32767:Short, 32768:Short, 65534:Short, 65535:Short ..
+		]
+		AssertEquals("0,1,9,10,99,100,999,1000,9999,10000,32767,32768,65534,65535", ",".Join(a), ..
+			"Join should format full unsigned Short range boundaries correctly")
+	End Method
+
+	Method Test_DigitLengthCoverage_Sweep() { test }
+		Local a:Short[] = [ ..
+			0:Short, 1:Short, 9:Short, 10:Short, 11:Short, ..
+			99:Short, 100:Short, 101:Short, ..
+			999:Short, 1000:Short, 1001:Short, ..
+			9999:Short, 10000:Short, 10001:Short, ..
+			65534:Short, 65535:Short ..
+		]
+
+		Local expected:String = ..
+			"0|1|9|10|11|" + ..
+			"99|100|101|" + ..
+			"999|1000|1001|" + ..
+			"9999|10000|10001|" + ..
+			"65534|65535"
+
+		AssertEquals(expected, "|".Join(a), "Join should handle varied Short digit lengths consistently")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:Short[] = [ 1:Short, 2:Short, 3:Short ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (Short)")
+	End Method
+
+	Method Test_NoNegativeSignAppears() { test }
+		' Ensure we never get a negative sign for unsigned shorts.
+		Local a:Short[] = [ 0:Short, 32768:Short, 50000:Short, 65535:Short ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.Contains("-"), "Unsigned Short join output should not contain '-'")
+	End Method
+
+End Type
+
+Type TStringJoinUIntsTest Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:UInt[] = New UInt[0]
+		AssertEquals("", ",".Join(a), "Join of empty UInt array should be empty string")
+	End Method
+
+	Method Test_SingleElement_NoSeparator() { test }
+		Local a:UInt[] = [ 42:UInt ]
+		AssertEquals("42", ",".Join(a), "Join of single UInt element should not add separator")
+	End Method
+
+	Method Test_MultipleElements_Commas() { test }
+		Local a:UInt[] = [ 1:UInt, 2:UInt, 3:UInt ]
+		AssertEquals("1,2,3", ",".Join(a), "Basic UInt join with comma separator")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local a:UInt[] = [ 1:UInt, 2:UInt, 3:UInt ]
+		AssertEquals("1::2::3", "::".Join(a), "Join should use the current string as separator (UInt)")
+	End Method
+
+	Method Test_UIntRangeEdges() { test }
+		' UInt is unsigned 32-bit (0..4294967295)
+		Local a:UInt[] = [ ..
+			0:UInt, 1:UInt, 9:UInt, 10:UInt, 99:UInt, 100:UInt, ..
+			2147483647:UInt, ..
+			2147483648:UInt, ..
+			4000000000:UInt, ..
+			4294967294:UInt, 4294967295:UInt ..
+		]
+
+		Local expected:String = "0,1,9,10,99,100,2147483647,2147483648,4000000000,4294967294,4294967295"
+		AssertEquals(expected, ",".Join(a), "Join should format full UInt range boundaries correctly")
+	End Method
+
+	Method Test_DigitLengthCoverage_Sweep() { test }
+		Local a:UInt[] = [ ..
+			0:UInt, 1:UInt, 9:UInt, 10:UInt, 11:UInt, ..
+			99:UInt, 100:UInt, 101:UInt, ..
+			999:UInt, 1000:UInt, 1001:UInt, ..
+			9999:UInt, 10000:UInt, 10001:UInt, ..
+			99999:UInt, 100000:UInt, 100001:UInt, ..
+			999999:UInt, 1000000:UInt, 1000001:UInt, ..
+			9999999:UInt, 10000000:UInt, 10000001:UInt, ..
+			99999999:UInt, 100000000:UInt, 100000001:UInt, ..
+			999999999:UInt, 1000000000:UInt, 1000000001:UInt, ..
+			4294967295:UInt ..
+		]
+
+		Local expected:String = ..
+			"0|1|9|10|11|" + ..
+			"99|100|101|" + ..
+			"999|1000|1001|" + ..
+			"9999|10000|10001|" + ..
+			"99999|100000|100001|" + ..
+			"999999|1000000|1000001|" + ..
+			"9999999|10000000|10000001|" + ..
+			"99999999|100000000|100000001|" + ..
+			"999999999|1000000000|1000000001|" + ..
+			"4294967295"
+
+		AssertEquals(expected, "|".Join(a), "Join should handle varied UInt digit lengths consistently")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:UInt[] = [ 1:UInt, 2:UInt, 3:UInt ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (UInt)")
+	End Method
+
+	Method Test_NoNegativeSignAppears() { test }
+		Local a:UInt[] = [ 0:UInt, 2147483648:UInt, 4000000000:UInt, 4294967295:UInt ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.Contains("-"), "Unsigned UInt join output should not contain '-'")
+	End Method
+
+End Type
+
+Type TStringJoinULongsTest Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:ULong[] = New ULong[0]
+		AssertEquals("", ",".Join(a), "Join of empty ULong array should be empty string")
+	End Method
+
+	Method Test_SingleElement_NoSeparator() { test }
+		Local a:ULong[] = [ 42:ULong ]
+		AssertEquals("42", ",".Join(a), "Join of single ULong element should not add separator")
+	End Method
+
+	Method Test_MultipleElements_Commas() { test }
+		Local a:ULong[] = [ 1:ULong, 2:ULong, 3:ULong ]
+		AssertEquals("1,2,3", ",".Join(a), "Basic ULong join with comma separator")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local a:ULong[] = [ 1:ULong, 2:ULong, 3:ULong ]
+		AssertEquals("1::2::3", "::".Join(a), "Join should use the current string as separator (ULong)")
+	End Method
+
+	Method Test_ULongRangeEdges() { test }
+		' ULong is unsigned 64-bit (0..18446744073709551615)
+		Local a:ULong[] = [ ..
+			0:ULong, ..
+			1:ULong, ..
+			9:ULong, ..
+			10:ULong, ..
+			99:ULong, ..
+			100:ULong, ..
+			4294967295:ULong, ..
+			4294967296:ULong, ..
+			9223372036854775807:ULong, ..
+			9223372036854775808:ULong, ..
+			18446744073709551614:ULong, ..
+			18446744073709551615:ULong ..
+		]
+
+		Local expected:String = ..
+			"0,1,9,10,99,100," + ..
+			"4294967295,4294967296," + ..
+			"9223372036854775807,9223372036854775808," + ..
+			"18446744073709551614,18446744073709551615"
+
+		AssertEquals(expected, ",".Join(a), "Join should format full ULong range boundaries correctly")
+	End Method
+
+	Method Test_DigitLengthCoverage_Sweep() { test }
+		' Exercise digit-length boundaries up to 20 digits
+		Local a:ULong[] = [ ..
+			0:ULong, 1:ULong, 9:ULong, 10:ULong, 11:ULong, ..
+			99:ULong, 100:ULong, 101:ULong, ..
+			999:ULong, 1000:ULong, 1001:ULong, ..
+			9999:ULong, 10000:ULong, 10001:ULong, ..
+			99999:ULong, 100000:ULong, 100001:ULong, ..
+			999999:ULong, 1000000:ULong, 1000001:ULong, ..
+			9999999:ULong, 10000000:ULong, 10000001:ULong, ..
+			99999999:ULong, 100000000:ULong, 100000001:ULong, ..
+			999999999:ULong, 1000000000:ULong, 1000000001:ULong, ..
+			9999999999:ULong, 10000000000:ULong, 10000000001:ULong, ..
+			99999999999:ULong, 100000000000:ULong, 100000000001:ULong, ..
+			999999999999:ULong, 1000000000000:ULong, 1000000000001:ULong, ..
+			9999999999999:ULong, 10000000000000:ULong, 10000000000001:ULong, ..
+			99999999999999:ULong, 100000000000000:ULong, 100000000000001:ULong, ..
+			999999999999999:ULong, 1000000000000000:ULong, 1000000000000001:ULong, ..
+			9999999999999999:ULong, 10000000000000000:ULong, 10000000000000001:ULong, ..
+			99999999999999999:ULong, 100000000000000000:ULong, 100000000000000001:ULong, ..
+			999999999999999999:ULong, 1000000000000000000:ULong, 1000000000000000001:ULong, ..
+			18446744073709551615:ULong ..
+		]
+
+		Local expected:String = ..
+			"0|1|9|10|11|" + ..
+			"99|100|101|" + ..
+			"999|1000|1001|" + ..
+			"9999|10000|10001|" + ..
+			"99999|100000|100001|" + ..
+			"999999|1000000|1000001|" + ..
+			"9999999|10000000|10000001|" + ..
+			"99999999|100000000|100000001|" + ..
+			"999999999|1000000000|1000000001|" + ..
+			"9999999999|10000000000|10000000001|" + ..
+			"99999999999|100000000000|100000000001|" + ..
+			"999999999999|1000000000000|1000000000001|" + ..
+			"9999999999999|10000000000000|10000000000001|" + ..
+			"99999999999999|100000000000000|100000000000001|" + ..
+			"999999999999999|1000000000000000|1000000000000001|" + ..
+			"9999999999999999|10000000000000000|10000000000000001|" + ..
+			"99999999999999999|100000000000000000|100000000000000001|" + ..
+			"999999999999999999|1000000000000000000|1000000000000000001|" + ..
+			"18446744073709551615"
+
+		AssertEquals(expected, "|".Join(a), "Join should handle varied ULong digit lengths consistently")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:ULong[] = [ 1:ULong, 2:ULong, 3:ULong ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (ULong)")
+	End Method
+
+	Method Test_NoNegativeSignAppears() { test }
+		' Ensure we never get a negative sign for unsigned longs.
+		Local a:ULong[] = [ 0:ULong, 9223372036854775808:ULong, 18446744073709551615:ULong ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.Contains("-"), "Unsigned ULong join output should not contain '-'")
+	End Method
+
+End Type
+
+?ptr32
+
+Type TStringJoinSizeTs32Test Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:Size_T[] = New Size_T[0]
+		AssertEquals("", ",".Join(a), "Join of empty Size_T array should be empty string (ptr32)")
+	End Method
+
+	Method Test_SingleElement_NoSeparator() { test }
+		Local a:Size_T[] = [ 42:Size_T ]
+		AssertEquals("42", ",".Join(a), "Join of single Size_T element should not add separator (ptr32)")
+	End Method
+
+	Method Test_MultipleElements_Commas() { test }
+		Local a:Size_T[] = [ 1:Size_T, 2:Size_T, 3:Size_T ]
+		AssertEquals("1,2,3", ",".Join(a), "Basic Size_T join with comma separator (ptr32)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local a:Size_T[] = [ 1:Size_T, 2:Size_T, 3:Size_T ]
+		AssertEquals("1::2::3", "::".Join(a), "Join should use the current string as separator (Size_T ptr32)")
+	End Method
+
+	Method Test_SizeTRangeEdges_32bit() { test }
+		' Size_T is unsigned 32-bit on ptr32
+		Local a:Size_T[] = [ ..
+			0:Size_T, 1:Size_T, 9:Size_T, 10:Size_T, 99:Size_T, 100:Size_T, ..
+			2147483647:Size_T, ..
+			2147483648:Size_T, ..
+			4000000000:Size_T, ..
+			4294967294:Size_T, 4294967295:Size_T ..
+		]
+
+		Local expected:String = "0,1,9,10,99,100,2147483647,2147483648,4000000000,4294967294,4294967295"
+		AssertEquals(expected, ",".Join(a), "Join should format Size_T 32-bit range boundaries correctly")
+	End Method
+
+	Method Test_NoNegativeSignAppears() { test }
+		Local a:Size_T[] = [ 0:Size_T, 2147483648:Size_T, 4294967295:Size_T ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.Contains("-"), "Unsigned Size_T join output should not contain '-' (ptr32)")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:Size_T[] = [ 1:Size_T, 2:Size_T, 3:Size_T ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (Size_T ptr32)")
+	End Method
+
+End Type
+
+?ptr64
+
+Type TStringJoinSizeTs64Test Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:Size_T[] = New Size_T[0]
+		AssertEquals("", ",".Join(a), "Join of empty Size_T array should be empty string (ptr64)")
+	End Method
+
+	Method Test_SingleElement_NoSeparator() { test }
+		Local a:Size_T[] = [ 42:Size_T ]
+		AssertEquals("42", ",".Join(a), "Join of single Size_T element should not add separator (ptr64)")
+	End Method
+
+	Method Test_MultipleElements_Commas() { test }
+		Local a:Size_T[] = [ 1:Size_T, 2:Size_T, 3:Size_T ]
+		AssertEquals("1,2,3", ",".Join(a), "Basic Size_T join with comma separator (ptr64)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local a:Size_T[] = [ 1:Size_T, 2:Size_T, 3:Size_T ]
+		AssertEquals("1::2::3", "::".Join(a), "Join should use the current string as separator (Size_T ptr64)")
+	End Method
+
+	Method Test_SizeTRangeEdges_64bit() { test }
+		' Size_T is unsigned 64-bit on ptr64
+		Local a:Size_T[] = [ ..
+			0:Size_T, 1:Size_T, 9:Size_T, 10:Size_T, 99:Size_T, 100:Size_T, ..
+			4294967295:Size_T, ..
+			4294967296:Size_T, ..
+			9223372036854775807:Size_T, ..
+			9223372036854775808:Size_T, ..
+			18446744073709551614:Size_T, ..
+			18446744073709551615:Size_T ..
+		]
+
+		Local expected:String = ..
+			"0,1,9,10,99,100," + ..
+			"4294967295,4294967296," + ..
+			"9223372036854775807,9223372036854775808," + ..
+			"18446744073709551614,18446744073709551615"
+
+		AssertEquals(expected, ",".Join(a), "Join should format Size_T 64-bit range boundaries correctly")
+	End Method
+
+	Method Test_NoNegativeSignAppears() { test }
+		Local a:Size_T[] = [ 0:Size_T, 9223372036854775808:Size_T, 18446744073709551615:Size_T ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.Contains("-"), "Unsigned Size_T join output should not contain '-' (ptr64)")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:Size_T[] = [ 1:Size_T, 2:Size_T, 3:Size_T ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (Size_T ptr64)")
+	End Method
+
+End Type
+
+?
+
+?longint4
+
+Type TStringJoinLongInts32Test Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:LongInt[] = New LongInt[0]
+		AssertEquals("", ",".Join(a), "Join of empty LongInt array should be empty string (longint4)")
+	End Method
+
+	Method Test_SingleElement_NoSeparator() { test }
+		Local a:LongInt[] = [ 42:LongInt ]
+		AssertEquals("42", ",".Join(a), "Join of single LongInt element should not add separator (longint4)")
+	End Method
+
+	Method Test_MultipleElements_Commas() { test }
+		Local a:LongInt[] = [ 1:LongInt, 2:LongInt, 3:LongInt ]
+		AssertEquals("1,2,3", ",".Join(a), "Basic LongInt join with comma separator (longint4)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local a:LongInt[] = [ 1:LongInt, 2:LongInt, 3:LongInt ]
+		AssertEquals("1::2::3", "::".Join(a), "Join should use the current string as separator (LongInt longint4)")
+	End Method
+
+	Method Test_NegativesAndZero() { test }
+		Local a:LongInt[] = [ -1:LongInt, 0:LongInt, 2:LongInt, -300:LongInt ]
+		AssertEquals("-1,0,2,-300", ",".Join(a), "Join should handle LongInt negatives and zero correctly (longint4)")
+	End Method
+
+	Method Test_LongIntMinMax_32bit() { test }
+		' longint4 => LongInt is 32-bit signed
+		Local minVal:LongInt = $80000000:LongInt ' -2147483648
+		Local maxVal:LongInt = $7FFFFFFF:LongInt '  2147483647
+
+		Local a:LongInt[] = [ minVal, maxVal ]
+		AssertEquals("-2147483648,2147483647", ",".Join(a), "Join should correctly format LongInt min/max (32-bit)")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:LongInt[] = [ 1:LongInt, 2:LongInt, 3:LongInt ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (LongInt longint4)")
+	End Method
+
+End Type
+
+?longint8
+
+?ulongint4
+
+Type TStringJoinULongInts32Test Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:ULongInt[] = New ULongInt[0]
+		AssertEquals("", ",".Join(a), "Join of empty ULongInt array should be empty string (ulongint4)")
+	End Method
+
+	Method Test_SingleElement_NoSeparator() { test }
+		Local a:ULongInt[] = [ 42:ULongInt ]
+		AssertEquals("42", ",".Join(a), "Join of single ULongInt element should not add separator (ulongint4)")
+	End Method
+
+	Method Test_MultipleElements_Commas() { test }
+		Local a:ULongInt[] = [ 1:ULongInt, 2:ULongInt, 3:ULongInt ]
+		AssertEquals("1,2,3", ",".Join(a), "Basic ULongInt join with comma separator (ulongint4)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local a:ULongInt[] = [ 1:ULongInt, 2:ULongInt, 3:ULongInt ]
+		AssertEquals("1::2::3", "::".Join(a), "Join should use the current string as separator (ULongInt ulongint4)")
+	End Method
+
+	Method Test_ULongIntRangeEdges_32bit() { test }
+		' ulongint4 => ULongInt is unsigned 32-bit (0..4294967295)
+		Local a:ULongInt[] = [ _
+			0:ULongInt, 1:ULongInt, 9:ULongInt, 10:ULongInt, 99:ULongInt, 100:ULongInt, _
+			2147483647:ULongInt, _
+			2147483648:ULongInt, _
+			4000000000:ULongInt, _
+			4294967294:ULongInt, 4294967295:ULongInt _
+		]
+
+		Local expected:String = "0,1,9,10,99,100,2147483647,2147483648,4000000000,4294967294,4294967295"
+		AssertEquals(expected, ",".Join(a), "Join should format ULongInt 32-bit range boundaries correctly")
+	End Method
+
+	Method Test_NoNegativeSignAppears() { test }
+		Local a:ULongInt[] = [ 0:ULongInt, 2147483648:ULongInt, 4294967295:ULongInt ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.Contains("-"), "Unsigned ULongInt join output should not contain '-' (ulongint4)")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:ULongInt[] = [ 1:ULongInt, 2:ULongInt, 3:ULongInt ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (ULongInt ulongint4)")
+	End Method
+
+End Type
+
+?ulongint8
+
+Type TStringJoinULongInts64Test Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:ULongInt[] = New ULongInt[0]
+		AssertEquals("", ",".Join(a), "Join of empty ULongInt array should be empty string (ulongint8)")
+	End Method
+
+	Method Test_SingleElement_NoSeparator() { test }
+		Local a:ULongInt[] = [ 42:ULongInt ]
+		AssertEquals("42", ",".Join(a), "Join of single ULongInt element should not add separator (ulongint8)")
+	End Method
+
+	Method Test_MultipleElements_Commas() { test }
+		Local a:ULongInt[] = [ 1:ULongInt, 2:ULongInt, 3:ULongInt ]
+		AssertEquals("1,2,3", ",".Join(a), "Basic ULongInt join with comma separator (ulongint8)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local a:ULongInt[] = [ 1:ULongInt, 2:ULongInt, 3:ULongInt ]
+		AssertEquals("1::2::3", "::".Join(a), "Join should use the current string as separator (ULongInt ulongint8)")
+	End Method
+
+	Method Test_ULongIntRangeEdges_64bit() { test }
+		' ulongint8 => ULongInt is unsigned 64-bit (0..18446744073709551615)
+		Local a:ULongInt[] = [ ..
+			0:ULongInt, 1:ULongInt, 9:ULongInt, 10:ULongInt, 99:ULongInt, 100:ULongInt, ..
+			4294967295:ULongInt, ..
+			4294967296:ULongInt, ..
+			9223372036854775807:ULongInt, ..
+			9223372036854775808:ULongInt, ..
+			18446744073709551614:ULongInt, ..
+			18446744073709551615:ULongInt ..
+		]
+
+		Local expected:String = ..
+			"0,1,9,10,99,100," + ..
+			"4294967295,4294967296," + ..
+			"9223372036854775807,9223372036854775808," + ..
+			"18446744073709551614,18446744073709551615"
+
+		AssertEquals(expected, ",".Join(a), "Join should format ULongInt 64-bit range boundaries correctly")
+	End Method
+
+	Method Test_NoNegativeSignAppears() { test }
+		Local a:ULongInt[] = [ 0:ULongInt, 9223372036854775808:ULongInt, 18446744073709551615:ULongInt ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.Contains("-"), "Unsigned ULongInt join output should not contain '-' (ulongint8)")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:ULongInt[] = [ 1:ULongInt, 2:ULongInt, 3:ULongInt ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (ULongInt ulongint8)")
+	End Method
+
+End Type
+
+?
+
+Type TStringJoinLongInts64Test Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:LongInt[] = New LongInt[0]
+		AssertEquals("", ",".Join(a), "Join of empty LongInt array should be empty string (longint8)")
+	End Method
+
+	Method Test_SingleElement_NoSeparator() { test }
+		Local a:LongInt[] = [ 42:LongInt ]
+		AssertEquals("42", ",".Join(a), "Join of single LongInt element should not add separator (longint8)")
+	End Method
+
+	Method Test_MultipleElements_Commas() { test }
+		Local a:LongInt[] = [ 1:LongInt, 2:LongInt, 3:LongInt ]
+		AssertEquals("1,2,3", ",".Join(a), "Basic LongInt join with comma separator (longint8)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local a:LongInt[] = [ 1:LongInt, 2:LongInt, 3:LongInt ]
+		AssertEquals("1::2::3", "::".Join(a), "Join should use the current string as separator (LongInt longint8)")
+	End Method
+
+	Method Test_NegativesAndZero() { test }
+		Local a:LongInt[] = [ -1:LongInt, 0:LongInt, 2:LongInt, -300:LongInt ]
+		AssertEquals("-1,0,2,-300", ",".Join(a), "Join should handle LongInt negatives and zero correctly (longint8)")
+	End Method
+
+	Method Test_LongIntMinMax_64bit() { test }
+		' longint8 => LongInt is 64-bit signed
+		Local minVal:LongInt = $8000000000000000:LongInt ' -9223372036854775808
+		Local maxVal:LongInt = $7FFFFFFFFFFFFFFF:LongInt '  9223372036854775807
+
+		Local a:LongInt[] = [ minVal, maxVal ]
+		AssertEquals("-9223372036854775808,9223372036854775807", ",".Join(a), "Join should correctly format LongInt min/max (64-bit)")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:LongInt[] = [ 1:LongInt, 2:LongInt, 3:LongInt ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (LongInt longint8)")
+	End Method
+
+End Type
+
+?
 
 Type TStringCompareCaseTest Extends TTest
 

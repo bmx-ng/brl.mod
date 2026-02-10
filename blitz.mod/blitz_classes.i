@@ -94,6 +94,17 @@ String^Object{
 	-Compare:Int(otherString:String, caseSensitive:Int)="bbStringCompareCase"
 	-HashCode:UInt( caseSensitive:Int )="bbStringHashCase"
 	-Equals:Int(otherString:String, caseSensitive:Int)="bbStringEqualsCase"
+
+	-Join:String( bits:Int[] )="bbStringJoinInts"
+	-Join:String( bits:Long[] )="bbStringJoinLongs"
+	-Join:String( bits:LongInt[] )="bbStringJoinLongInts"
+
+	-Join:String( bits:Byte[] )="bbStringJoinBytes"
+	-Join:String( bits:Short[] )="bbStringJoinShorts"
+	-Join:String( bits:UInt[] )="bbStringJoinUInts"
+	-Join:String( bits:ULong[] )="bbStringJoinULongs"
+	-Join:String( bits:Size_T[] )="bbStringJoinSizets"
+	-Join:String( bits:ULongInt[] )="bbStringJoinULongInts"
 }AF="bbStringClass"
 
 ___Array^Object{
