@@ -1606,3 +1606,186 @@ BBUINT bbStringHashCase( BBString *str, int caseSensitive ) {
 		return (BBUINT)XXH3_64bits_digest(&state);
 	}
 }
+
+static inline int u32_dec_len(uint32_t x){
+    if (x >= 1000000000u) return 10;
+    if (x >= 100000000u)  return 9;
+    if (x >= 10000000u)   return 8;
+    if (x >= 1000000u)    return 7;
+    if (x >= 100000u)     return 6;
+    if (x >= 10000u)      return 5;
+    if (x >= 1000u)       return 4;
+    if (x >= 100u)        return 3;
+    if (x >= 10u)         return 2;
+    return 1;
+}
+
+static inline int u64_dec_len( uint64_t x ){
+    if( x <= 0xFFFFFFFFull ){
+        return u32_dec_len((uint32_t)x);
+    }
+    if( x >= 10000000000000000000ull ) return 20;
+    if( x >= 1000000000000000000ull )  return 19;
+    if( x >= 100000000000000000ull )   return 18;
+    if( x >= 10000000000000000ull )    return 17;
+    if( x >= 1000000000000000ull )     return 16;
+    if( x >= 100000000000000ull )      return 15;
+    if( x >= 10000000000000ull )       return 14;
+    if( x >= 1000000000000ull )        return 13;
+    if( x >= 100000000000ull )         return 12;
+    if( x >= 10000000000ull )          return 11;
+    return 10;
+}
+
+static const char DIGIT_TABLE[200] =
+    "00010203040506070809"
+    "10111213141516171819"
+    "20212223242526272829"
+    "30313233343536373839"
+    "40414243444546474849"
+    "50515253545556575859"
+    "60616263646566676869"
+    "70717273747576777879"
+    "80818283848586878889"
+    "90919293949596979899";
+
+static inline BBChar* write_u32_dec_backwards(BBChar *end, uint32_t x){
+    // writes digits into [..end) backwards and returns new start pointer
+    while (x >= 100){
+        uint32_t q = x / 100;
+        uint32_t r = x - q * 100;
+        end -= 2;
+        end[0] = (BBChar)DIGIT_TABLE[r*2 + 0];
+        end[1] = (BBChar)DIGIT_TABLE[r*2 + 1];
+        x = q;
+    }
+    if (x < 10){
+        *--end = (BBChar)('0' + x);
+    }else{
+        end -= 2;
+        end[0] = (BBChar)DIGIT_TABLE[x*2 + 0];
+        end[1] = (BBChar)DIGIT_TABLE[x*2 + 1];
+    }
+    return end;
+}
+
+static inline BBChar* write_u64_dec_backwards( BBChar *end, uint64_t x ){
+    if( x <= 0xFFFFFFFFull ){
+        return write_u32_dec_backwards(end, (uint32_t)x);
+    }
+    while( x >= 100ull ){
+        uint64_t q = x / 100ull;
+        uint64_t r = x - q * 100ull;
+        end -= 2;
+        end[0] = (BBChar)DIGIT_TABLE[r*2 + 0];
+        end[1] = (BBChar)DIGIT_TABLE[r*2 + 1];
+        x = q;
+    }
+    if( x < 10ull ){
+        *--end = (BBChar)('0' + (int)x);
+    }else{
+        end -= 2;
+        end[0] = (BBChar)DIGIT_TABLE[x*2 + 0];
+        end[1] = (BBChar)DIGIT_TABLE[x*2 + 1];
+    }
+    return end;
+}
+
+#define BB_DEFINE_JOIN_SIGNED(NAME, ELEM_T, MAG_U_T, WIDE_S_T, DEC_LEN_FN, WRITE_BACK_FN) \
+BBString *NAME( BBString *sep, BBArray *bits ){ \
+    int i, sz = 0; \
+    int n_bits = bits->scales[0]; \
+    ELEM_T *p; \
+    BBString *str; \
+    BBChar *t; \
+    if( bits==&bbEmptyArray || n_bits==0 ) return &bbEmptyString; \
+    p = (ELEM_T*)BBARRAYDATA( bits, 1 ); \
+    for( i=0; i<n_bits; ++i ){ \
+        ELEM_T v = p[i]; \
+        if( v==0 ){ sz += 1; continue; } \
+        if( v < 0 ){ sz += 1; /* '-' */ \
+            MAG_U_T mag = (MAG_U_T)(-(WIDE_S_T)v); \
+            sz += DEC_LEN_FN( mag ); \
+        }else{ \
+            MAG_U_T mag = (MAG_U_T)v; \
+            sz += DEC_LEN_FN( mag ); \
+        } \
+    } \
+    sz += (n_bits-1) * sep->length; \
+    str = bbStringNew( sz ); \
+    t = str->buf; \
+    p = (ELEM_T*)BBARRAYDATA( bits, 1 ); \
+    for( i=0; i<n_bits; ++i ){ \
+        ELEM_T v = p[i]; \
+        if( i ){ memcpy( t, sep->buf, sep->length * sizeof(BBChar) ); t += sep->length; } \
+        if( v==0 ){ *t++ = (BBChar)'0'; continue; } \
+        MAG_U_T mag; \
+        if( v < 0 ){ *t++ = (BBChar)'-'; mag = (MAG_U_T)(-(WIDE_S_T)v); } \
+        else{ mag = (MAG_U_T)v; } \
+        int dlen = DEC_LEN_FN( mag ); \
+        BBChar *end = t + dlen; \
+        (void)WRITE_BACK_FN( end, mag ); \
+        t = end; \
+    } \
+    return str; \
+}
+
+BB_DEFINE_JOIN_SIGNED(bbStringJoinInts,  BBINT,  uint32_t, int64_t,  u32_dec_len, write_u32_dec_backwards)
+BB_DEFINE_JOIN_SIGNED(bbStringJoinLongs, BBLONG, uint64_t, int64_t,  u64_dec_len, write_u64_dec_backwards)
+
+BBString *bbStringJoinLongInts( BBString *sep, BBArray *bits ){
+    if( sizeof(BBLONGINT) == 8 ){
+        return bbStringJoinLongs(sep, bits);
+    }else{
+        return bbStringJoinInts(sep, bits);
+    }
+}
+
+#define BB_DEFINE_JOIN_UNSIGNED(NAME, ELEM_T, MAG_U_T, DEC_LEN_FN, WRITE_BACK_FN) \
+BBString *NAME( BBString *sep, BBArray *bits ){ \
+    int i, sz = 0; \
+    int n_bits = bits->scales[0]; \
+    ELEM_T *p; \
+    BBString *str; \
+    BBChar *t; \
+    if( bits==&bbEmptyArray || n_bits==0 ) return &bbEmptyString; \
+    p = (ELEM_T*)BBARRAYDATA( bits, 1 ); \
+    for( i=0; i<n_bits; ++i ){ \
+        MAG_U_T v = (MAG_U_T)p[i]; \
+        sz += DEC_LEN_FN( v ); \
+    } \
+    sz += (n_bits-1) * sep->length; \
+    str = bbStringNew( sz ); \
+    t = str->buf; \
+    p = (ELEM_T*)BBARRAYDATA( bits, 1 ); \
+    for( i=0; i<n_bits; ++i ){ \
+        MAG_U_T v = (MAG_U_T)p[i]; \
+        if( i ){ memcpy( t, sep->buf, sep->length * sizeof(BBChar) ); t += sep->length; } \
+        int dlen = DEC_LEN_FN( v ); \
+        BBChar *end = t + dlen; \
+        (void)WRITE_BACK_FN( end, v ); \
+        t = end; \
+    } \
+    return str; \
+}
+
+BB_DEFINE_JOIN_UNSIGNED(bbStringJoinBytes,  BBBYTE,  uint32_t, u32_dec_len, write_u32_dec_backwards)
+BB_DEFINE_JOIN_UNSIGNED(bbStringJoinShorts, BBSHORT, uint32_t, u32_dec_len, write_u32_dec_backwards)
+BB_DEFINE_JOIN_UNSIGNED(bbStringJoinUInts,  BBUINT,  uint32_t, u32_dec_len, write_u32_dec_backwards)
+BB_DEFINE_JOIN_UNSIGNED(bbStringJoinULongs, BBULONG, uint64_t, u64_dec_len, write_u64_dec_backwards)
+
+BBString *bbStringJoinSizets( BBString *sep, BBArray *bits ){
+    if( sizeof(BBSIZET) == 8 ){
+        return bbStringJoinULongs(sep, bits);
+    }else{
+        return bbStringJoinUInts(sep, bits);
+    }
+}
+
+BBString *bbStringJoinULongInts( BBString *sep, BBArray *bits ){
+    if( sizeof(BBULONGINT) == 8 ){
+        return bbStringJoinULongs(sep, bits);
+    }else{
+        return bbStringJoinUInts(sep, bits);
+    }
+}

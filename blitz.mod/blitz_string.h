@@ -121,6 +121,17 @@ struct BBClass_String{
 	BBString* (*bbStringFromBytesAsHex)( const unsigned char *p, int n, int uppercase );
 	int (*bbStringCompareCase)( BBString *x,BBString *y, int caseSensitive );
 	BBUINT (*bbStringHashCase)( BBString *str, int caseSensitive );
+
+	BBString* (*bbStringJoinInts)( BBString *sep, BBArray *bits );
+	BBString* (*bbStringJoinLongs)( BBString *sep, BBArray *bits );
+	BBString* (*bbStringJoinLongInts)( BBString *sep, BBArray *bits );
+
+	BBString* (*bbStringJoinBytes)( BBString *sep, BBArray *bits );
+	BBString* (*bbStringJoinShorts)( BBString *sep, BBArray *bits );
+	BBString* (*bbStringJoinUInts)( BBString *sep, BBArray *bits );
+	BBString* (*bbStringJoinULongs)( BBString *sep, BBArray *bits );
+	BBString* (*bbStringJoinSizets)( BBString *sep, BBArray *bits );
+	BBString* (*bbStringJoinULongInts)( BBString *sep, BBArray *bits );
 };
 
 extern	struct BBClass_String bbStringClass;
@@ -208,6 +219,17 @@ BBString* bbStringFromLParam( LPARAM n );
 
 BBArray*	bbStringSplit( BBString *str,BBString *sep );
 BBString*	bbStringJoin( BBString *sep,BBArray *bits );
+
+BBString* bbStringJoinInts( BBString *sep, BBArray *bits );
+BBString* bbStringJoinLongs( BBString *sep, BBArray *bits );
+BBString* bbStringJoinLongInts( BBString *sep, BBArray *bits );
+
+BBString* bbStringJoinBytes( BBString *sep, BBArray *bits );
+BBString* bbStringJoinShorts( BBString *sep, BBArray *bits );
+BBString* bbStringJoinUInts( BBString *sep, BBArray *bits );
+BBString* bbStringJoinULongs( BBString *sep, BBArray *bits );
+BBString* bbStringJoinSizets( BBString *sep, BBArray *bits );
+BBString* bbStringJoinULongInts( BBString *sep, BBArray *bits );
 
 char*	bbTmpCString( BBString *str );
 BBChar*	bbTmpWString( BBString *str );
