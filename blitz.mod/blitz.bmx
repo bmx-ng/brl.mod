@@ -104,6 +104,8 @@ ModuleInfo "CC_OPTS: -DJAVA_FINALIZATION -DNO_EXECUTE_PERMISSION"
 ModuleInfo "CC_OPTS: -DBMX_DEBUG"
 ?
 
+ModuleInfo "CC_OPTS: -DRYU_OPTIMIZE_SIZE"
+
 ' c++11 required for fast float
 ModuleInfo "CPP_OPTS: -std=c++11"
 
@@ -194,6 +196,11 @@ Import "bdwgc/thread_local_alloc.c"	'bdwgc only? not gc6.7
 Import "blitz_nx.c"
 ?
 Import "tree/tree.c"
+
+Import "ryu/*.h"
+Import "ryu/ryu/f2s.c"
+Import "ryu/ryu/d2s.c"
+Import "ryu/ryu/d2fixed.c"
 
 Include "builtin.bmx"
 Include "iterator.bmx"

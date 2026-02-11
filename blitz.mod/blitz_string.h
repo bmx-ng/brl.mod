@@ -132,6 +132,9 @@ struct BBClass_String{
 	BBString* (*bbStringJoinULongs)( BBString *sep, BBArray *bits );
 	BBString* (*bbStringJoinSizets)( BBString *sep, BBArray *bits );
 	BBString* (*bbStringJoinULongInts)( BBString *sep, BBArray *bits );
+
+	BBString* (*bbStringJoinFloats)( BBString *sep, BBArray *bits, int fixed );
+	BBString* (*bbStringJoinDoubles)( BBString *sep, BBArray *bits, int fixed );
 };
 
 extern	struct BBClass_String bbStringClass;
@@ -230,6 +233,9 @@ BBString* bbStringJoinUInts( BBString *sep, BBArray *bits );
 BBString* bbStringJoinULongs( BBString *sep, BBArray *bits );
 BBString* bbStringJoinSizets( BBString *sep, BBArray *bits );
 BBString* bbStringJoinULongInts( BBString *sep, BBArray *bits );
+
+BBString *bbStringJoinFloats( BBString *sep, BBArray *bits, int fixed );
+BBString *bbStringJoinDoubles( BBString *sep, BBArray *bits, int fixed );
 
 char*	bbTmpCString( BBString *str );
 BBChar*	bbTmpWString( BBString *str );

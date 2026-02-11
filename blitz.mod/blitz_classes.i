@@ -105,6 +105,9 @@ String^Object{
 	-Join:String( bits:ULong[] )="bbStringJoinULongs"
 	-Join:String( bits:Size_T[] )="bbStringJoinSizets"
 	-Join:String( bits:ULongInt[] )="bbStringJoinULongInts"
+
+	-Join:String( bits:Float[], fixed:Int=0 )="bbStringJoinFloats"
+	-Join:String( bits:Double[], fixed:Int=0 )="bbStringJoinDoubles"
 }AF="bbStringClass"
 
 ___Array^Object{
