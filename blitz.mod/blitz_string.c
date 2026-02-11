@@ -1789,3 +1789,99 @@ BBString *bbStringJoinULongInts( BBString *sep, BBArray *bits ){
         return bbStringJoinUInts(sep, bits);
     }
 }
+
+BBString *bbStringJoinFloats( BBString *sep, BBArray *bits, int fixed ){
+	int i, sz = 0;
+	int n_bits = bits->scales[0];
+	BBFLOAT *p;
+	BBString *str;
+	BBChar *t;
+
+	if( bits==&bbEmptyArray || n_bits==0 ){
+		return &bbEmptyString;
+	}
+
+	/* compute total length */
+	p = (BBFLOAT*)BBARRAYDATA( bits, 1 );
+	for( i=0; i<n_bits; ++i ){
+		char buf[64];
+		int len = fixed ? d2fixed_buffered_n((double)p[i], 9, buf) : f2s_buffered_n(p[i], buf);
+		if( len < 0 ){
+			len = 0;
+		}
+		sz += len;
+	}
+	sz += (n_bits-1) * sep->length;
+
+	str = bbStringNew( sz );
+	t = str->buf;
+
+	/* write */
+	p = (BBFLOAT*)BBARRAYDATA( bits, 1 );
+	for( i=0; i<n_bits; ++i ){
+		if( i ){
+			memcpy( t, sep->buf, sep->length * sizeof(BBChar) );
+			t += sep->length;
+		}
+
+		char buf[64];
+		int len = fixed ? d2fixed_buffered_n((double)p[i], 9, buf) : f2s_buffered_n(p[i], buf);
+		if( len < 0 ){
+			len = 0;
+		}
+
+		for( int k=0; k<len; ++k ){
+			*t++ = (BBChar)(unsigned char)buf[k];
+		}
+	}
+
+	return str;
+}
+
+BBString *bbStringJoinDoubles( BBString *sep, BBArray *bits, int fixed ){
+	int i, sz = 0;
+	int n_bits = bits->scales[0];
+	BBDOUBLE *p;
+	BBString *str;
+	BBChar *t;
+
+	if( bits==&bbEmptyArray || n_bits==0 ){
+		return &bbEmptyString;
+	}
+
+	/* compute total length */
+	p = (BBDOUBLE*)BBARRAYDATA( bits, 1 );
+	for( i=0; i<n_bits; ++i ){
+		char buf[64];
+		int len = fixed ? d2fixed_buffered_n(p[i], 17, buf) : d2s_buffered_n(p[i], buf);
+		if( len < 0 ){
+			len = 0;
+		}
+		sz += len;
+	}
+	sz += (n_bits-1) * sep->length;
+
+	str = bbStringNew( sz );
+	t = str->buf;
+
+	/* write */
+	p = (BBDOUBLE*)BBARRAYDATA( bits, 1 );
+	for( i=0; i<n_bits; ++i ){
+		if( i ){
+			memcpy( t, sep->buf, sep->length * sizeof(BBChar) );
+			t += sep->length;
+		}
+
+		char buf[64];
+		int len = fixed ? d2fixed_buffered_n(p[i], 17, buf) : d2s_buffered_n(p[i], buf);
+		if( len < 0 ){
+			len = 0;
+		}
+
+		for( int k=0; k<len; ++k ){
+			*t++ = (BBChar)(unsigned char)buf[k];
+		}
+	}
+
+	return str;
+}

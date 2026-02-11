@@ -2620,6 +2620,165 @@ End Type
 
 ?
 
+Type TStringJoinFloatsTest Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:Float[] = New Float[0]
+		AssertEquals("", ",".Join(a), "Join of empty Float array should be empty string")
+	End Method
+
+	Method Test_SingleElement_NoSeparator_Default() { test }
+		Local a:Float[] = [ 42.0:Float ]
+		AssertEquals("4.2E1", ",".Join(a), "Join of single Float element should not add separator (default)")
+	End Method
+
+	Method Test_MultipleElements_Commas_Default() { test }
+		Local a:Float[] = [ 1.0:Float, 2.0:Float, 3.5:Float ]
+		AssertEquals("1E0,2E0,3.5E0", ",".Join(a), "Basic Float join with comma separator (default)")
+	End Method
+
+	Method Test_CustomSeparator_Default() { test }
+		Local a:Float[] = [ 1.0:Float, 2.0:Float, 3.5:Float ]
+		AssertEquals("1E0::2E0::3.5E0", "::".Join(a), "Join should use the current string as separator (Float default)")
+	End Method
+
+	Method Test_DefaultFormatting_MatchesExpected() { test }
+
+		Local a:Float[] = [ ..
+			0.0:Float, ..
+			-0.0:Float, ..
+			1.0:Float, ..
+			1.5:Float, ..
+			3.1415927:Float, ..
+			100000.0:Float, ..
+			1e-6:Float, ..
+			1e20:Float ..
+		]
+
+		Local expected:String = "0E0|-0E0|1E0|1.5E0|3.1415927E0|1E5|1E-6|1E20"
+
+		AssertEquals(expected, "|".Join(a), "Float Join default formatting should match expected output")
+	End Method
+
+	Method Test_FixedFormatting_9dp() { test }
+
+		Local a:Float[] = [ ..
+			0.0:Float, ..
+			-0.0:Float, ..
+			1.0:Float, ..
+			1.5:Float, ..
+			3.1415927:Float, ..
+			100000.0:Float, ..
+			0.000001:Float ..
+		]
+
+		Local expected:String = ..
+			"0.000000000|-0.000000000|1.000000000|1.500000000|3.141592741|100000.000000000|0.000001000"
+
+		AssertEquals(expected, "|".Join(a, 1), "Float Join fixed formatting should produce 9 decimal places")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:Float[] = [ 1.0:Float, 2.0:Float, 3.0:Float ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (Float)")
+	End Method
+
+	Method Test_NaNAndInfinity() { test }
+
+		Local nanVal:Float = 0.0:Float / 0.0:Float
+		Local posInf:Float = 1.0:Float / 0.0:Float
+		Local negInf:Float = -1.0:Float / 0.0:Float
+
+		Local a:Float[] = [ nanVal, posInf, negInf ]
+		Local s:String = ",".Join(a)
+
+		Local expected:String = "NaN,Infinity,-Infinity"
+		AssertEquals(expected, s, "Join should represent NaN and Infinity as expected (Float)")
+	End Method
+
+End Type
+
+Type TStringJoinDoublesTest Extends TTest
+
+	Method Test_EmptyArray_ReturnsEmptyString() { test }
+		Local a:Double[] = New Double[0]
+		AssertEquals("", ",".Join(a), "Join of empty Double array should be empty string")
+	End Method
+
+	Method Test_SingleElement_NoSeparator_Default() { test }
+		Local a:Double[] = [ 42.0:Double ]
+		AssertEquals("4.2E1", ",".Join(a), "Join of single Double element should not add separator (default)")
+	End Method
+
+	Method Test_MultipleElements_Commas_Default() { test }
+		Local a:Double[] = [ 1.0:Double, 2.0:Double, 3.5:Double ]
+		AssertEquals("1E0,2E0,3.5E0", ",".Join(a), "Basic Double join with comma separator (default)")
+	End Method
+
+	Method Test_CustomSeparator_Default() { test }
+		Local a:Double[] = [ 1.0:Double, 2.0:Double, 3.5:Double ]
+		AssertEquals("1E0::2E0::3.5E0", "::".Join(a), "Join should use the current string as separator (Double default)")
+	End Method
+
+	Method Test_DefaultFormatting_MatchesExpected() { test }
+
+		Local a:Double[] = [ ..
+			0.0:Double, ..
+			-0.0:Double, ..
+			1.0:Double, ..
+			1.5:Double, ..
+			3.141592653589793:Double, ..
+			100000.0:Double, ..
+			1e-6:Double, ..
+			1e20:Double ..
+		]
+
+		Local expected:String = "0E0|-0E0|1E0|1.5E0|3.141592653589793E0|1E5|1E-6|1E20"
+
+		AssertEquals(expected, "|".Join(a), "Double Join default formatting should match expected output")
+	End Method
+
+	Method Test_FixedFormatting_17dp() { test }
+
+		Local a:Double[] = [ ..
+			0.0:Double, ..
+			-0.0:Double, ..
+			1.0:Double, ..
+			1.5:Double, ..
+			3.141592653589793:Double, ..
+			100000.0:Double, ..
+			0.000001:Double ..
+		]
+
+		Local expected:String = ..
+			"0.00000000000000000|-0.00000000000000000|1.00000000000000000|1.50000000000000000|" + ..
+			"3.14159265358979312|100000.00000000000000000|0.00000100000000000"
+
+		AssertEquals(expected, "|".Join(a, 1), "Double Join fixed formatting should produce 17 decimal places")
+	End Method
+
+	Method Test_NoExtraTrailingSeparator() { test }
+		Local a:Double[] = [ 1.0:Double, 2.0:Double, 3.0:Double ]
+		Local s:String = ",".Join(a)
+		AssertFalse(s.EndsWith(","), "Join should not add trailing separator (Double)")
+	End Method
+
+	Method Test_NaNAndInfinity() { test }
+
+		Local nanVal:Double = 0.0:Double / 0.0:Double
+		Local posInf:Double = 1.0:Double / 0.0:Double
+		Local negInf:Double = -1.0:Double / 0.0:Double
+
+		Local a:Double[] = [ nanVal, posInf, negInf ]
+		Local s:String = ",".Join(a)
+
+		Local expected:String = "NaN,Infinity,-Infinity"
+		AssertEquals(expected, s, "Join should represent NaN and Infinity as expected (Double)")
+	End Method
+
+End Type
+
 Type TStringCompareCaseTest Extends TTest
 
 	' Helper: normalize compare to -1, 0, 1 for easier assertions
