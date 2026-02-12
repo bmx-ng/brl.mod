@@ -181,7 +181,7 @@ int bbObjectIsEmptyString(BBObject * o) {
 	return (BBString*)o == &bbEmptyString;
 }
 
-inline int bbU32DecLen(uint32_t x){
+int bbU32DecLen(uint32_t x){
     if (x >= 1000000000u) return 10;
     if (x >= 100000000u)  return 9;
     if (x >= 10000000u)   return 8;
@@ -194,7 +194,7 @@ inline int bbU32DecLen(uint32_t x){
     return 1;
 }
 
-inline BBChar* bbWriteU32DecBackwards(BBChar *end, uint32_t x){
+BBChar* bbWriteU32DecBackwards(BBChar *end, uint32_t x){
     // writes digits into [..end) backwards and returns new start pointer
     while (x >= 100){
         uint32_t q = x / 100;
@@ -214,7 +214,7 @@ inline BBChar* bbWriteU32DecBackwards(BBChar *end, uint32_t x){
     return end;
 }
 
-inline int bbU64DecLen( uint64_t x ){
+int bbU64DecLen( uint64_t x ){
     if( x <= 0xFFFFFFFFull ){
         return bbU32DecLen((uint32_t)x);
     }
@@ -231,7 +231,7 @@ inline int bbU64DecLen( uint64_t x ){
     return 10;
 }
 
-inline BBChar* bbWriteU64DecBackwards( BBChar *end, uint64_t x ){
+BBChar* bbWriteU64DecBackwards( BBChar *end, uint64_t x ){
     if( x <= 0xFFFFFFFFull ){
         return bbWriteU32DecBackwards(end, (uint32_t)x);
     }
@@ -254,7 +254,6 @@ inline BBChar* bbWriteU64DecBackwards( BBChar *end, uint64_t x ){
 }
 #endif
 
-//***** Note: Not called in THREADED mode.
 static void bbStringFree( BBObject *o ){
 	if (bbCountInstances && !bbCountInstanceTotals) {
 		bbAtomicAdd((int*)&bbStringClass.instance_count, -1);
