@@ -241,6 +241,8 @@ char*	bbTmpCString( BBString *str );
 BBChar*	bbTmpWString( BBString *str );
 char*	bbTmpUTF8String( BBString *str );
 
+extern const char bbDigitTable[200];
+
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 inline BBUINT bbStringHash( BBString * x ) {
 	if (x->hash) return x->hash;
@@ -264,10 +266,86 @@ inline int bbObjectIsEmptyString(BBObject * o) {
 	return (BBString*)o == &bbEmptyString;
 }
 
+inline int bbU32DecLen(uint32_t x){
+    if (x >= 1000000000u) return 10;
+    if (x >= 100000000u)  return 9;
+    if (x >= 10000000u)   return 8;
+    if (x >= 1000000u)    return 7;
+    if (x >= 100000u)     return 6;
+    if (x >= 10000u)      return 5;
+    if (x >= 1000u)       return 4;
+    if (x >= 100u)        return 3;
+    if (x >= 10u)         return 2;
+    return 1;
+}
+
+inline BBChar* bbWriteU32DecBackwards(BBChar *end, uint32_t x){
+    // writes digits into [..end) backwards and returns new start pointer
+    while (x >= 100){
+        uint32_t q = x / 100;
+        uint32_t r = x - q * 100;
+        end -= 2;
+        end[0] = (BBChar)bbDigitTable[r*2 + 0];
+        end[1] = (BBChar)bbDigitTable[r*2 + 1];
+        x = q;
+    }
+    if (x < 10){
+        *--end = (BBChar)('0' + x);
+    }else{
+        end -= 2;
+        end[0] = (BBChar)bbDigitTable[x*2 + 0];
+        end[1] = (BBChar)bbDigitTable[x*2 + 1];
+    }
+    return end;
+}
+
+inline int bbU64DecLen( uint64_t x ){
+    if( x <= 0xFFFFFFFFull ){
+        return bbU32DecLen((uint32_t)x);
+    }
+    if( x >= 10000000000000000000ull ) return 20;
+    if( x >= 1000000000000000000ull )  return 19;
+    if( x >= 100000000000000000ull )   return 18;
+    if( x >= 10000000000000000ull )    return 17;
+    if( x >= 1000000000000000ull )     return 16;
+    if( x >= 100000000000000ull )      return 15;
+    if( x >= 10000000000000ull )       return 14;
+    if( x >= 1000000000000ull )        return 13;
+    if( x >= 100000000000ull )         return 12;
+    if( x >= 10000000000ull )          return 11;
+    return 10;
+}
+
+inline BBChar* bbWriteU64DecBackwards( BBChar *end, uint64_t x ){
+    if( x <= 0xFFFFFFFFull ){
+        return bbWriteU32DecBackwards(end, (uint32_t)x);
+    }
+    while( x >= 100ull ){
+        uint64_t q = x / 100ull;
+        uint64_t r = x - q * 100ull;
+        end -= 2;
+        end[0] = (BBChar)bbDigitTable[r*2 + 0];
+        end[1] = (BBChar)bbDigitTable[r*2 + 1];
+        x = q;
+    }
+    if( x < 10ull ){
+        *--end = (BBChar)('0' + (int)x);
+    }else{
+        end -= 2;
+        end[0] = (BBChar)bbDigitTable[x*2 + 0];
+        end[1] = (BBChar)bbDigitTable[x*2 + 1];
+    }
+    return end;
+}
 #else
 int bbStringEquals( BBString *x,BBString *y );
 int bbObjectIsEmptyString(BBObject * o);
 BBULONG bbStringHash( BBString * x );
+
+int bbU32DecLen(uint32_t x);
+BBChar* bbWriteU32DecBackwards(BBChar *end, uint32_t x);
+int bbU64DecLen( uint64_t x );
+BBChar* bbWriteU64DecBackwards( BBChar *end, uint64_t x );
 #endif
 
 unsigned char *bbStringToUTF8StringBuffer( BBString *str, unsigned char * buf, size_t * length );

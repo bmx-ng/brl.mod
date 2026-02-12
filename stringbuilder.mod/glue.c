@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2025 Bruce A Henderson
+  Copyright (c) 2018-2026 Bruce A Henderson
   
   This software is provided 'as-is', without any express or implied
   warranty. In no event will the authors be held liable for any damages
@@ -547,52 +547,165 @@ void bmx_stringbuilder_append_float(struct MaxStringBuilder * buf, float value) 
 	bmx_stringbuilder_append_cstring(buf, chars);
 }
 
-void bmx_stringbuilder_append_int(struct MaxStringBuilder * buf, int value) {
-	char chars[32];
-	sprintf(chars, "%d", value);
-	bmx_stringbuilder_append_cstring(buf, chars);
+void bmx_stringbuilder_append_int(struct MaxStringBuilder *buf, int value) {
+
+	/* Fast path: 0 */
+	if( value == 0 ){
+		bmx_stringbuilder_resize(buf, buf->count + 1);
+		buf->buffer[buf->count++] = (BBChar)'0';
+		buf->hash = 0;
+		return;
+	}
+
+	int neg = (value < 0);
+	uint32_t mag = neg ? (uint32_t)(-(int64_t)value) : (uint32_t)value;
+
+	int dlen = bbU32DecLen(mag);
+	int add  = dlen + (neg ? 1 : 0);
+
+	/* Ensure capacity once */
+	bmx_stringbuilder_resize(buf, buf->count + add);
+
+	BBChar *t = buf->buffer + buf->count;
+	if( neg ) *t++ = (BBChar)'-';
+
+	BBChar *end = t + dlen;
+	(void)bbWriteU32DecBackwards(end, mag);
+
+	buf->count += add;
+	buf->hash = 0;
 }
 
-void bmx_stringbuilder_append_long(struct MaxStringBuilder * buf, BBInt64 value) {
-	char chars[64];
-	sprintf(chars, "%lld", value);
-	bmx_stringbuilder_append_cstring(buf, chars);
+void bmx_stringbuilder_append_long(struct MaxStringBuilder *buf, BBInt64 value) {
+
+	if( value == 0 ){
+		bmx_stringbuilder_resize(buf, buf->count + 1);
+		buf->buffer[buf->count++] = (BBChar)'0';
+		buf->hash = 0;
+		return;
+	}
+
+	int neg = (value < 0);
+	uint64_t mag = neg ? (uint64_t)(-(int64_t)value) : (uint64_t)value;
+
+	int dlen = bbU64DecLen(mag);
+	int add  = dlen + (neg ? 1 : 0);
+
+	bmx_stringbuilder_resize(buf, buf->count + add);
+
+	BBChar *t = buf->buffer + buf->count;
+	if( neg ) *t++ = (BBChar)'-';
+
+	BBChar *end = t + dlen;
+	(void)bbWriteU64DecBackwards(end, mag);
+
+	buf->count += add;
+	buf->hash = 0;
 }
 
-void bmx_stringbuilder_append_short(struct MaxStringBuilder * buf, BBSHORT value) {
-	char chars[16];
-	sprintf(chars, "%d", value);
-	bmx_stringbuilder_append_cstring(buf, chars);
+void bmx_stringbuilder_append_short(struct MaxStringBuilder *buf, BBSHORT value) {
+
+	uint32_t v = (uint32_t)value;
+
+	if( v == 0u ){
+		bmx_stringbuilder_resize(buf, buf->count + 1);
+		buf->buffer[buf->count++] = (BBChar)'0';
+		buf->hash = 0;
+		return;
+	}
+
+	int dlen = bbU32DecLen(v);
+	bmx_stringbuilder_resize(buf, buf->count + dlen);
+
+	BBChar *end = buf->buffer + buf->count + dlen;
+	(void)bbWriteU32DecBackwards(end, v);
+
+	buf->count += dlen;
+	buf->hash = 0;
 }
 
-void bmx_stringbuilder_append_byte(struct MaxStringBuilder * buf, BBBYTE value) {
-	char chars[8];
-	sprintf(chars, "%d", value);
-	bmx_stringbuilder_append_cstring(buf, chars);
+void bmx_stringbuilder_append_byte(struct MaxStringBuilder *buf, BBBYTE value) {
+
+	uint32_t v = (uint32_t)value;
+
+	if( v == 0u ){
+		bmx_stringbuilder_resize(buf, buf->count + 1);
+		buf->buffer[buf->count++] = (BBChar)'0';
+		buf->hash = 0;
+		return;
+	}
+
+	int dlen = bbU32DecLen(v);
+	bmx_stringbuilder_resize(buf, buf->count + dlen);
+
+	BBChar *end = buf->buffer + buf->count + dlen;
+	(void)bbWriteU32DecBackwards(end, v);
+
+	buf->count += dlen;
+	buf->hash = 0;
 }
 
-void bmx_stringbuilder_append_uint(struct MaxStringBuilder * buf, unsigned int value) {
-	char chars[16];
-	sprintf(chars, "%u", value);
-	bmx_stringbuilder_append_cstring(buf, chars);
+void bmx_stringbuilder_append_uint(struct MaxStringBuilder *buf, unsigned int value) {
+
+	if( value == 0u ){
+		bmx_stringbuilder_resize(buf, buf->count + 1);
+		buf->buffer[buf->count++] = (BBChar)'0';
+		buf->hash = 0;
+		return;
+	}
+
+	uint32_t mag = (uint32_t)value;
+	int dlen = bbU32DecLen(mag);
+
+	bmx_stringbuilder_resize(buf, buf->count + dlen);
+
+	BBChar *end = buf->buffer + buf->count + dlen;
+	(void)bbWriteU32DecBackwards(end, mag);
+
+	buf->count += dlen;
+	buf->hash = 0;
 }
 
-void bmx_stringbuilder_append_ulong(struct MaxStringBuilder * buf, BBUInt64 value) {
-	char chars[64];
-	sprintf(chars, "%llu", value);
-	bmx_stringbuilder_append_cstring(buf, chars);
+void bmx_stringbuilder_append_ulong(struct MaxStringBuilder *buf, BBUInt64 value) {
+
+	if( value == 0ull ){
+		bmx_stringbuilder_resize(buf, buf->count + 1);
+		buf->buffer[buf->count++] = (BBChar)'0';
+		buf->hash = 0;
+		return;
+	}
+
+	uint64_t mag = (uint64_t)value;
+	int dlen = bbU64DecLen(mag);
+
+	bmx_stringbuilder_resize(buf, buf->count + dlen);
+
+	BBChar *end = buf->buffer + buf->count + dlen;
+	(void)bbWriteU64DecBackwards(end, mag);
+
+	buf->count += dlen;
+	buf->hash = 0;
 }
 
-void bmx_stringbuilder_append_sizet(struct MaxStringBuilder * buf, BBSIZET value) {
-	char chars[64];
-	
-#if UINTPTR_MAX == 0xffffffff
-	sprintf(chars, "%u", value);
-#else
-	sprintf(chars, "%llu", value);
-#endif
+void bmx_stringbuilder_append_sizet(struct MaxStringBuilder *buf, BBSIZET value) {
 
-	bmx_stringbuilder_append_cstring(buf, chars);
+	uint64_t v = (uint64_t)value;
+
+	if( v == 0ull ){
+		bmx_stringbuilder_resize(buf, buf->count + 1);
+		buf->buffer[buf->count++] = (BBChar)'0';
+		buf->hash = 0;
+		return;
+	}
+
+	int dlen = bbU64DecLen(v);
+	bmx_stringbuilder_resize(buf, buf->count + dlen);
+
+	BBChar *end = buf->buffer + buf->count + dlen;
+	(void)bbWriteU64DecBackwards(end, v);
+
+	buf->count += dlen;
+	buf->hash = 0;
 }
 
 void bmx_stringbuilder_append_shorts(struct MaxStringBuilder * buf, BBSHORT * shorts, int length) {
