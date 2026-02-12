@@ -117,20 +117,7 @@ BBString bbEmptyString={
 	0				//length
 };
 
-static inline int u32_dec_len(uint32_t x){
-    if (x >= 1000000000u) return 10;
-    if (x >= 100000000u)  return 9;
-    if (x >= 10000000u)   return 8;
-    if (x >= 1000000u)    return 7;
-    if (x >= 100000u)     return 6;
-    if (x >= 10000u)      return 5;
-    if (x >= 1000u)       return 4;
-    if (x >= 100u)        return 3;
-    if (x >= 10u)         return 2;
-    return 1;
-}
-
-static const char DIGIT_TABLE[200] =
+const char bbDigitTable[200] =
     "00010203040506070809"
     "10111213141516171819"
     "20212223242526272829"
@@ -141,65 +128,6 @@ static const char DIGIT_TABLE[200] =
     "70717273747576777879"
     "80818283848586878889"
     "90919293949596979899";
-
-static inline BBChar* write_u32_dec_backwards(BBChar *end, uint32_t x){
-    // writes digits into [..end) backwards and returns new start pointer
-    while (x >= 100){
-        uint32_t q = x / 100;
-        uint32_t r = x - q * 100;
-        end -= 2;
-        end[0] = (BBChar)DIGIT_TABLE[r*2 + 0];
-        end[1] = (BBChar)DIGIT_TABLE[r*2 + 1];
-        x = q;
-    }
-    if (x < 10){
-        *--end = (BBChar)('0' + x);
-    }else{
-        end -= 2;
-        end[0] = (BBChar)DIGIT_TABLE[x*2 + 0];
-        end[1] = (BBChar)DIGIT_TABLE[x*2 + 1];
-    }
-    return end;
-}
-
-static inline int u64_dec_len( uint64_t x ){
-    if( x <= 0xFFFFFFFFull ){
-        return u32_dec_len((uint32_t)x);
-    }
-    if( x >= 10000000000000000000ull ) return 20;
-    if( x >= 1000000000000000000ull )  return 19;
-    if( x >= 100000000000000000ull )   return 18;
-    if( x >= 10000000000000000ull )    return 17;
-    if( x >= 1000000000000000ull )     return 16;
-    if( x >= 100000000000000ull )      return 15;
-    if( x >= 10000000000000ull )       return 14;
-    if( x >= 1000000000000ull )        return 13;
-    if( x >= 100000000000ull )         return 12;
-    if( x >= 10000000000ull )          return 11;
-    return 10;
-}
-
-static inline BBChar* write_u64_dec_backwards( BBChar *end, uint64_t x ){
-    if( x <= 0xFFFFFFFFull ){
-        return write_u32_dec_backwards(end, (uint32_t)x);
-    }
-    while( x >= 100ull ){
-        uint64_t q = x / 100ull;
-        uint64_t r = x - q * 100ull;
-        end -= 2;
-        end[0] = (BBChar)DIGIT_TABLE[r*2 + 0];
-        end[1] = (BBChar)DIGIT_TABLE[r*2 + 1];
-        x = q;
-    }
-    if( x < 10ull ){
-        *--end = (BBChar)('0' + (int)x);
-    }else{
-        end -= 2;
-        end[0] = (BBChar)DIGIT_TABLE[x*2 + 0];
-        end[1] = (BBChar)DIGIT_TABLE[x*2 + 1];
-    }
-    return end;
-}
 
 static int wstrlen( const BBChar *p ){
 	const BBChar *t=p;
@@ -225,6 +153,11 @@ static int charsEqual( unsigned short *a,unsigned short *b,int n ){
 extern int bbStringEquals( BBString *x,BBString *y);
 extern int bbObjectIsEmptyString(BBObject * o);
 extern BBUINT bbStringHash( BBString * x );
+
+extern int bbU32DecLen(uint32_t x);
+extern BBChar* bbWriteU32DecBackwards(BBChar *end, uint32_t x);
+extern int bbU64DecLen( uint64_t x );
+extern BBChar* bbWriteU64DecBackwards( BBChar *end, uint64_t x );
 #else
 BBUINT bbStringHash( BBString * x ) {
 	if (x->hash) return x->hash;
@@ -246,6 +179,78 @@ int bbStringEquals( BBString *x,BBString *y ){
 
 int bbObjectIsEmptyString(BBObject * o) {
 	return (BBString*)o == &bbEmptyString;
+}
+
+inline int bbU32DecLen(uint32_t x){
+    if (x >= 1000000000u) return 10;
+    if (x >= 100000000u)  return 9;
+    if (x >= 10000000u)   return 8;
+    if (x >= 1000000u)    return 7;
+    if (x >= 100000u)     return 6;
+    if (x >= 10000u)      return 5;
+    if (x >= 1000u)       return 4;
+    if (x >= 100u)        return 3;
+    if (x >= 10u)         return 2;
+    return 1;
+}
+
+inline BBChar* bbWriteU32DecBackwards(BBChar *end, uint32_t x){
+    // writes digits into [..end) backwards and returns new start pointer
+    while (x >= 100){
+        uint32_t q = x / 100;
+        uint32_t r = x - q * 100;
+        end -= 2;
+        end[0] = (BBChar)bbDigitTable[r*2 + 0];
+        end[1] = (BBChar)bbDigitTable[r*2 + 1];
+        x = q;
+    }
+    if (x < 10){
+        *--end = (BBChar)('0' + x);
+    }else{
+        end -= 2;
+        end[0] = (BBChar)bbDigitTable[x*2 + 0];
+        end[1] = (BBChar)bbDigitTable[x*2 + 1];
+    }
+    return end;
+}
+
+inline int bbU64DecLen( uint64_t x ){
+    if( x <= 0xFFFFFFFFull ){
+        return bbU32DecLen((uint32_t)x);
+    }
+    if( x >= 10000000000000000000ull ) return 20;
+    if( x >= 1000000000000000000ull )  return 19;
+    if( x >= 100000000000000000ull )   return 18;
+    if( x >= 10000000000000000ull )    return 17;
+    if( x >= 1000000000000000ull )     return 16;
+    if( x >= 100000000000000ull )      return 15;
+    if( x >= 10000000000000ull )       return 14;
+    if( x >= 1000000000000ull )        return 13;
+    if( x >= 100000000000ull )         return 12;
+    if( x >= 10000000000ull )          return 11;
+    return 10;
+}
+
+inline BBChar* bbWriteU64DecBackwards( BBChar *end, uint64_t x ){
+    if( x <= 0xFFFFFFFFull ){
+        return bbWriteU32DecBackwards(end, (uint32_t)x);
+    }
+    while( x >= 100ull ){
+        uint64_t q = x / 100ull;
+        uint64_t r = x - q * 100ull;
+        end -= 2;
+        end[0] = (BBChar)bbDigitTable[r*2 + 0];
+        end[1] = (BBChar)bbDigitTable[r*2 + 1];
+        x = q;
+    }
+    if( x < 10ull ){
+        *--end = (BBChar)('0' + (int)x);
+    }else{
+        end -= 2;
+        end[0] = (BBChar)bbDigitTable[x*2 + 0];
+        end[1] = (BBChar)bbDigitTable[x*2 + 1];
+    }
+    return end;
 }
 #endif
 
@@ -288,7 +293,7 @@ BBString *bbStringFromInt( int n ){
 		mag = (uint32_t)n;
 	}
 
-	int dlen = u32_dec_len( mag );
+	int dlen = bbU32DecLen( mag );
 	int len = dlen + (neg ? 1 : 0);
 
 	BBString *s = bbStringNew( len );
@@ -299,7 +304,7 @@ BBString *bbStringFromInt( int n ){
 	}
 
 	BBChar *end = t + dlen;
-	(void)write_u32_dec_backwards( end, mag );
+	(void)bbWriteU32DecBackwards( end, mag );
 
 	return s;
 }
@@ -312,11 +317,11 @@ BBString *bbStringFromUInt( unsigned int n ){
 	}
 
 	uint32_t mag = (uint32_t)n;
-	int len = u32_dec_len( mag );
+	int len = bbU32DecLen( mag );
 
 	BBString *s = bbStringNew( len );
 	BBChar *end = s->buf + len;
-	(void)write_u32_dec_backwards( end, mag );
+	(void)bbWriteU32DecBackwards( end, mag );
 
 	return s;
 }
@@ -331,7 +336,7 @@ BBString *bbStringFromLong( BBInt64 n ){
 	int neg = (n < 0);
 	uint64_t mag = neg ? (uint64_t)(-(int64_t)n) : (uint64_t)n;
 
-	int dlen = u64_dec_len( mag );
+	int dlen = bbU64DecLen( mag );
 	int len  = dlen + (neg ? 1 : 0);
 
 	BBString *s = bbStringNew( len );
@@ -342,7 +347,7 @@ BBString *bbStringFromLong( BBInt64 n ){
 	}
 
 	BBChar *end = t + dlen;
-	(void)write_u64_dec_backwards( end, mag );
+	(void)bbWriteU64DecBackwards( end, mag );
 
 	return s;
 }
@@ -355,11 +360,11 @@ BBString *bbStringFromULong( BBUInt64 n ){
 	}
 
 	uint64_t mag = (uint64_t)n;
-	int len = u64_dec_len( mag );
+	int len = bbU64DecLen( mag );
 
 	BBString *s = bbStringNew( len );
 	BBChar *end = s->buf + len;
-	(void)write_u64_dec_backwards( end, mag );
+	(void)bbWriteU64DecBackwards( end, mag );
 
 	return s;
 }
@@ -372,11 +377,11 @@ BBString *bbStringFromSizet( BBSIZET n ){
 	}
 
 	uint64_t mag = (uint64_t)n;
-	int len = u64_dec_len( mag );
+	int len = bbU64DecLen( mag );
 
 	BBString *s = bbStringNew( len );
 	BBChar *end = s->buf + len;
-	(void)write_u64_dec_backwards( end, mag );
+	(void)bbWriteU64DecBackwards( end, mag );
 
 	return s;
 }
@@ -391,7 +396,7 @@ BBString *bbStringFromLongInt( BBLONGINT n ){
 	int neg = (n < 0);
 	uint64_t mag = neg ? (uint64_t)(-(int64_t)n) : (uint64_t)n;
 
-	int dlen = u64_dec_len( mag );
+	int dlen = bbU64DecLen( mag );
 	int len  = dlen + (neg ? 1 : 0);
 
 	BBString *s = bbStringNew( len );
@@ -402,7 +407,7 @@ BBString *bbStringFromLongInt( BBLONGINT n ){
 	}
 
 	BBChar *end = t + dlen;
-	(void)write_u64_dec_backwards( end, mag );
+	(void)bbWriteU64DecBackwards( end, mag );
 
 	return s;
 }
@@ -415,11 +420,11 @@ BBString *bbStringFromULongInt( BBULONGINT n ){
 	}
 
 	uint64_t mag = (uint64_t)n;
-	int len = u64_dec_len( mag );
+	int len = bbU64DecLen( mag );
 
 	BBString *s = bbStringNew( len );
 	BBChar *end = s->buf + len;
-	(void)write_u64_dec_backwards( end, mag );
+	(void)bbWriteU64DecBackwards( end, mag );
 
 	return s;
 }
@@ -1824,8 +1829,8 @@ BBString *NAME( BBString *sep, BBArray *bits ){ \
     return str; \
 }
 
-BB_DEFINE_JOIN_SIGNED(bbStringJoinInts,  BBINT,  uint32_t, int64_t,  u32_dec_len, write_u32_dec_backwards)
-BB_DEFINE_JOIN_SIGNED(bbStringJoinLongs, BBLONG, uint64_t, int64_t,  u64_dec_len, write_u64_dec_backwards)
+BB_DEFINE_JOIN_SIGNED(bbStringJoinInts,  BBINT,  uint32_t, int64_t,  bbU32DecLen, bbWriteU32DecBackwards)
+BB_DEFINE_JOIN_SIGNED(bbStringJoinLongs, BBLONG, uint64_t, int64_t,  bbU64DecLen, bbWriteU64DecBackwards)
 
 BBString *bbStringJoinLongInts( BBString *sep, BBArray *bits ){
     if( sizeof(BBLONGINT) == 8 ){
@@ -1863,10 +1868,10 @@ BBString *NAME( BBString *sep, BBArray *bits ){ \
     return str; \
 }
 
-BB_DEFINE_JOIN_UNSIGNED(bbStringJoinBytes,  BBBYTE,  uint32_t, u32_dec_len, write_u32_dec_backwards)
-BB_DEFINE_JOIN_UNSIGNED(bbStringJoinShorts, BBSHORT, uint32_t, u32_dec_len, write_u32_dec_backwards)
-BB_DEFINE_JOIN_UNSIGNED(bbStringJoinUInts,  BBUINT,  uint32_t, u32_dec_len, write_u32_dec_backwards)
-BB_DEFINE_JOIN_UNSIGNED(bbStringJoinULongs, BBULONG, uint64_t, u64_dec_len, write_u64_dec_backwards)
+BB_DEFINE_JOIN_UNSIGNED(bbStringJoinBytes,  BBBYTE,  uint32_t, bbU32DecLen, bbWriteU32DecBackwards)
+BB_DEFINE_JOIN_UNSIGNED(bbStringJoinShorts, BBSHORT, uint32_t, bbU32DecLen, bbWriteU32DecBackwards)
+BB_DEFINE_JOIN_UNSIGNED(bbStringJoinUInts,  BBUINT,  uint32_t, bbU32DecLen, bbWriteU32DecBackwards)
+BB_DEFINE_JOIN_UNSIGNED(bbStringJoinULongs, BBULONG, uint64_t, bbU64DecLen, bbWriteU64DecBackwards)
 
 BBString *bbStringJoinSizets( BBString *sep, BBArray *bits ){
     if( sizeof(BBSIZET) == 8 ){

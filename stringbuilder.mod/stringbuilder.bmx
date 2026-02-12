@@ -1,4 +1,4 @@
-' Copyright (c) 2018-2025 Bruce A Henderson
+' Copyright (c) 2018-2026 Bruce A Henderson
 ' 
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -23,10 +23,12 @@ bbdoc: A string builder.
 End Rem	
 Module BRL.StringBuilder
 
-ModuleInfo "Version: 1.22"
+ModuleInfo "Version: 1.23"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2018-2025 Bruce A Henderson"
+ModuleInfo "Copyright: 2018-2026 Bruce A Henderson"
 
+ModuleInfo "History: 1.23"
+ModuleInfo "History: Reworked Append number methods to use more efficient implementation."
 ModuleInfo "History: 1.22"
 ModuleInfo "History: Added AppendAsHex() method."
 ModuleInfo "History: 1.21"
@@ -335,7 +337,7 @@ Public
 	End Method
 	
 	Rem
-	bbdoc: Appends a Short value to the string builder.
+	bbdoc: Appends a #Short value to the string builder.
 	End Rem
 	Method AppendShort:TStringBuilder(value:Short)
 		bmx_stringbuilder_append_short(buffer, value)
@@ -416,6 +418,7 @@ Public
 
 	Rem
 	bbdoc: Appends an array of shorts onto the string builder.
+	about: These are added as if they were individual characters. So a value of 65 would be added as 'A'.
 	End Rem
 	Method AppendShorts:TStringBuilder(shorts:Short Ptr, length:Int)
 		bmx_stringbuilder_append_shorts(buffer, shorts, length)
@@ -446,6 +449,10 @@ Public
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Appends bytes of length @length as hex values to the string builder.
+	about: If @upperCase is #True, then the hex digits A-F will be upper case, otherwise they will be lower case. This defaults to #True.
+	End Rem
 	Method AppendAsHex:TStringBuilder(bytes:Byte Ptr, length:Int, upperCase:Int = 1)
 		bmx_stringbuilder_append_as_hex(buffer, bytes, length, upperCase)
 		Return Self
