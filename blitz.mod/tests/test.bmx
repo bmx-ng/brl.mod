@@ -2779,6 +2779,508 @@ Type TStringJoinDoublesTest Extends TTest
 
 End Type
 
+Type TStringFromIntTest Extends TTest
+
+	Method Test_Zero() { test }
+		AssertEquals("0", String.FromInt(0), "String.FromInt(0) should be '0'")
+	End Method
+
+	Method Test_Positive() { test }
+		AssertEquals("42", String.FromInt(42), "String.FromInt(42) should be '42'")
+	End Method
+
+	Method Test_Negative() { test }
+		AssertEquals("-42", String.FromInt(-42), "String.FromInt(-42) should be '-42'")
+	End Method
+
+	Method Test_IntMinMax() { test }
+		Local minVal:Int = $80000000 ' -2147483648
+		Local maxVal:Int = $7FFFFFFF '  2147483647
+
+		AssertEquals("-2147483648", String.FromInt(minVal), "String.FromInt(Int Min) should match")
+		AssertEquals("2147483647", String.FromInt(maxVal), "String.FromInt(Int Max) should match")
+	End Method
+
+	Method Test_RangeSweep_DigitBoundaries() { test }
+		' Boundaries around powers of 10 + sign
+		Local vals:Int[] = [ ..
+			0, 1, 9, 10, 11, ..
+			99, 100, 101, ..
+			999, 1000, 1001, ..
+			9999, 10000, 10001, ..
+			99999, 100000, 100001, ..
+			999999, 1000000, 1000001, ..
+			9999999, 10000000, 10000001, ..
+			99999999, 100000000, 100000001, ..
+			999999999, 1000000000, 1000000001, ..
+			-1, -9, -10, -99, -100, -1000, -1000000 ..
+		]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:Int = vals[i]
+			Local s:String = String.FromInt(v)
+
+			' basic sanity: must not be empty
+			AssertTrue(s.Length > 0, "String.FromInt produced empty string for " + v)
+
+			' negative values must start with '-'
+			If v < 0 Then
+				AssertTrue(s.StartsWith("-"), "Negative value should start with '-' for " + v)
+			Else
+				AssertFalse(s.StartsWith("-"), "Non-negative value should not start with '-' for " + v)
+			End If
+
+			' round-trip check via Int parsing
+			AssertEquals(v, Int(s), "String.FromInt round-trip should match for " + v)
+		Next
+	End Method
+
+End Type
+
+Type TStringFromLongTest Extends TTest
+
+	Method Test_Zero() { test }
+		AssertEquals("0", String.FromLong(0:Long), "String.FromLong(0) should be '0'")
+	End Method
+
+	Method Test_Positive() { test }
+		AssertEquals("42", String.FromLong(42:Long), "String.FromLong(42) should be '42'")
+	End Method
+
+	Method Test_Negative() { test }
+		AssertEquals("-42", String.FromLong(-42:Long), "String.FromLong(-42) should be '-42'")
+	End Method
+
+	Method Test_LongMinMax() { test }
+		' Long in BlitzMax is 64-bit signed
+		Local minVal:Long = $8000000000000000:Long ' -9223372036854775808
+		Local maxVal:Long = $7FFFFFFFFFFFFFFF:Long '  9223372036854775807
+
+		AssertEquals("-9223372036854775808", String.FromLong(minVal), "String.FromLong(Long Min) should match")
+		AssertEquals("9223372036854775807", String.FromLong(maxVal), "String.FromLong(Long Max) should match")
+	End Method
+
+	Method Test_RangeSweep_DigitBoundaries() { test }
+		' Boundaries around powers of 10 + sign, including values > 32-bit
+		Local vals:Long[] = [ ..
+			0:Long, 1:Long, 9:Long, 10:Long, 11:Long, ..
+			99:Long, 100:Long, 101:Long, ..
+			999:Long, 1000:Long, 1001:Long, ..
+			9999:Long, 10000:Long, 10001:Long, ..
+			99999:Long, 100000:Long, 100001:Long, ..
+			999999:Long, 1000000:Long, 1000001:Long, ..
+			999999999:Long, 1000000000:Long, 1000000001:Long, ..
+			9999999999:Long, 10000000000:Long, 10000000001:Long, ..
+			999999999999999999:Long, 1000000000000000000:Long, 1000000000000000001:Long, ..
+			-1:Long, -9:Long, -10:Long, -99:Long, -100:Long, -1000:Long, -1000000:Long, -10000000000:Long ..
+		]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:Long = vals[i]
+			Local s:String = String.FromLong(v)
+
+			AssertTrue(s.Length > 0, "String.FromLong produced empty string for " + v)
+
+			If v < 0 Then
+				AssertTrue(s.StartsWith("-"), "Negative value should start with '-' for " + v)
+			Else
+				AssertFalse(s.StartsWith("-"), "Non-negative value should not start with '-' for " + v)
+			End If
+
+			' round-trip check via Long parsing
+			AssertEquals(v, Long(s), "String.FromLong round-trip should match for " + v)
+		Next
+	End Method
+
+End Type
+
+Type TStringFromULongTest Extends TTest
+
+	Method Test_Zero() { test }
+		AssertEquals("0", String.FromULong(0:ULong), "String.FromULong(0) should be '0'")
+	End Method
+
+	Method Test_PositiveSmall() { test }
+		AssertEquals("42", String.FromULong(42:ULong), "String.FromULong(42) should be '42'")
+	End Method
+
+	Method Test_ULongMax() { test }
+		Local maxVal:ULong = $FFFFFFFFFFFFFFFF:ULong ' 18446744073709551615
+		AssertEquals("18446744073709551615", String.FromULong(maxVal), "String.FromULong(ULong Max) should match")
+	End Method
+
+	Method Test_RangeSweep_DigitBoundaries() { test }
+		' Boundaries around powers of 10 and values beyond 32-bit and signed 64-bit
+		Local vals:ULong[] = [ ..
+			0:ULong, 1:ULong, 9:ULong, 10:ULong, 11:ULong, ..
+			99:ULong, 100:ULong, 101:ULong, ..
+			999:ULong, 1000:ULong, 1001:ULong, ..
+			9999:ULong, 10000:ULong, 10001:ULong, ..
+			99999:ULong, 100000:ULong, 100001:ULong, ..
+			999999:ULong, 1000000:ULong, 1000001:ULong, ..
+			9999999:ULong, 10000000:ULong, 10000001:ULong, ..
+			99999999:ULong, 100000000:ULong, 100000001:ULong, ..
+			999999999:ULong, 1000000000:ULong, 1000000001:ULong, ..
+			9999999999:ULong, 10000000000:ULong, 10000000001:ULong, ..
+			999999999999999999:ULong, 1000000000000000000:ULong, 1000000000000000001:ULong, ..
+			9223372036854775807:ULong, ..
+			9223372036854775808:ULong, ..
+			18446744073709551614:ULong, 18446744073709551615:ULong ..
+		]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:ULong = vals[i]
+			Local s:String = String.FromULong(v)
+
+			AssertTrue(s.Length > 0, "String.FromULong produced empty string for " + v)
+
+			' unsigned: must not start with '-'
+			AssertFalse(s.StartsWith("-"), "Unsigned value should not start with '-' for " + v)
+
+			' round-trip check via ULong parsing
+			AssertEquals(v, ULong(s), "String.FromULong round-trip should match for " + v)
+		Next
+	End Method
+
+End Type
+
+Type TStringFromUIntTest Extends TTest
+
+	Method Test_Zero() { test }
+		AssertEquals("0", String.FromUInt(0:UInt), "String.FromUInt(0) should be '0'")
+	End Method
+
+	Method Test_PositiveSmall() { test }
+		AssertEquals("42", String.FromUInt(42:UInt), "String.FromUInt(42) should be '42'")
+	End Method
+
+	Method Test_UIntMax() { test }
+		Local maxVal:UInt = $FFFFFFFF:UInt ' 4294967295
+		AssertEquals("4294967295", String.FromUInt(maxVal), "String.FromUInt(UInt Max) should match")
+	End Method
+
+	Method Test_RangeSweep_DigitBoundaries() { test }
+		' Boundaries around powers of 10, and values above signed 32-bit max
+		Local vals:UInt[] = [ ..
+			0:UInt, 1:UInt, 9:UInt, 10:UInt, 11:UInt, ..
+			99:UInt, 100:UInt, 101:UInt, ..
+			999:UInt, 1000:UInt, 1001:UInt, ..
+			9999:UInt, 10000:UInt, 10001:UInt, ..
+			99999:UInt, 100000:UInt, 100001:UInt, ..
+			999999:UInt, 1000000:UInt, 1000001:UInt, ..
+			9999999:UInt, 10000000:UInt, 10000001:UInt, ..
+			99999999:UInt, 100000000:UInt, 100000001:UInt, ..
+			999999999:UInt, 1000000000:UInt, 1000000001:UInt, ..
+			2147483647:UInt, ..
+			2147483648:UInt, ..
+			4000000000:UInt, ..
+			4294967294:UInt, 4294967295:UInt ..
+		]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:UInt = vals[i]
+			Local s:String = String.FromUInt(v)
+
+			AssertTrue(s.Length > 0, "String.FromUInt produced empty string for " + v)
+
+			' unsigned: must not start with '-'
+			AssertFalse(s.StartsWith("-"), "Unsigned value should not start with '-' for " + v)
+
+			' round-trip check via UInt parsing
+			AssertEquals(v, UInt(s), "String.FromUInt round-trip should match for " + v)
+		Next
+	End Method
+
+End Type
+
+?ptr32
+
+Type TStringFromSizeT32Test Extends TTest
+
+	Method Test_Zero() { test }
+		AssertEquals("0", String.FromSizeT(0:Size_T), "String.FromSizeT(0) should be '0' (ptr32)")
+	End Method
+
+	Method Test_PositiveSmall() { test }
+		AssertEquals("42", String.FromSizeT(42:Size_T), "String.FromSizeT(42) should be '42' (ptr32)")
+	End Method
+
+	Method Test_SizeTMax_32bit() { test }
+		Local maxVal:Size_T = $FFFFFFFF:Size_T ' 4294967295
+		AssertEquals("4294967295", String.FromSizeT(maxVal), "String.FromSizeT(Size_T Max) should match (ptr32)")
+	End Method
+
+	Method Test_RangeSweep_DigitBoundaries() { test }
+		Local vals:Size_T[] = [ ..
+			0:Size_T, 1:Size_T, 9:Size_T, 10:Size_T, 11:Size_T, ..
+			99:Size_T, 100:Size_T, 101:Size_T, ..
+			999:Size_T, 1000:Size_T, 1001:Size_T, ..
+			9999:Size_T, 10000:Size_T, 10001:Size_T, ..
+			99999:Size_T, 100000:Size_T, 100001:Size_T, ..
+			999999:Size_T, 1000000:Size_T, 1000001:Size_T, ..
+			2147483647:Size_T, ..
+			2147483648:Size_T, ..
+			4000000000:Size_T, ..
+			4294967294:Size_T, 4294967295:Size_T ..
+		]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:Size_T = vals[i]
+			Local s:String = String.FromSizeT(v)
+
+			AssertTrue(s.Length > 0, "String.FromSizeT produced empty string for " + v)
+			AssertFalse(s.StartsWith("-"), "Unsigned Size_T should not start with '-' for " + v)
+
+			AssertEquals(v, Size_T(s), "String.FromSizeT round-trip should match for " + v)
+		Next
+	End Method
+
+End Type
+
+?ptr64
+
+Type TStringFromSizeT64Test Extends TTest
+
+	Method Test_Zero() { test }
+		AssertEquals("0", String.FromSizeT(0:Size_T), "String.FromSizeT(0) should be '0' (ptr64)")
+	End Method
+
+	Method Test_PositiveSmall() { test }
+		AssertEquals("42", String.FromSizeT(42:Size_T), "String.FromSizeT(42) should be '42' (ptr64)")
+	End Method
+
+	Method Test_SizeTMax_64bit() { test }
+		' Local maxVal:Size_T = $FFFFFFFFFFFFFFFF:Size_T ' 18446744073709551615
+		' AssertEquals("18446744073709551615", String.FromSizeT(maxVal), "String.FromSizeT(Size_T Max) should match (ptr64)")
+	End Method
+
+	Method Test_RangeSweep_DigitBoundaries() { test }
+		Local vals:Size_T[] = [ ..
+			0:Size_T, 1:Size_T, 9:Size_T, 10:Size_T, 11:Size_T, ..
+			99:Size_T, 100:Size_T, 101:Size_T, ..
+			999:Size_T, 1000:Size_T, 1001:Size_T, ..
+			9999:Size_T, 10000:Size_T, 10001:Size_T, ..
+			99999:Size_T, 100000:Size_T, 100001:Size_T, ..
+			999999:Size_T, 1000000:Size_T, 1000001:Size_T, ..
+			999999999:Size_T, 1000000000:Size_T, 1000000001:Size_T, ..
+			9999999999:Size_T, 10000000000:Size_T, 10000000001:Size_T, ..
+			9223372036854775807:Size_T, ..
+			9223372036854775808:Size_T, ..
+			18446744073709551614:Size_T, 18446744073709551615:Size_T ..
+		]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:Size_T = vals[i]
+			Local s:String = String.FromSizeT(v)
+
+			AssertTrue(s.Length > 0, "String.FromSizeT produced empty string for " + v)
+			AssertFalse(s.StartsWith("-"), "Unsigned Size_T should not start with '-' for " + v)
+
+			AssertEquals(v, Size_T(s), "String.FromSizeT round-trip should match for " + v)
+		Next
+	End Method
+
+End Type
+
+?
+
+?longint4
+
+Type TStringFromLongInt32Test Extends TTest
+
+	Method Test_Zero() { test }
+		AssertEquals("0", String.FromLongInt(0:LongInt), "String.FromLongInt(0) should be '0' (longint4)")
+	End Method
+
+	Method Test_Positive() { test }
+		AssertEquals("42", String.FromLongInt(42:LongInt), "String.FromLongInt(42) should be '42' (longint4)")
+	End Method
+
+	Method Test_Negative() { test }
+		AssertEquals("-42", String.FromLongInt(-42:LongInt), "String.FromLongInt(-42) should be '-42' (longint4)")
+	End Method
+
+	Method Test_LongIntMinMax_32bit() { test }
+		Local minVal:LongInt = $80000000:LongInt
+		Local maxVal:LongInt = $7FFFFFFF:LongInt
+
+		AssertEquals("-2147483648", String.FromLongInt(minVal), "String.FromLongInt(LongInt Min) should match (32-bit)")
+		AssertEquals("2147483647", String.FromLongInt(maxVal), "String.FromLongInt(LongInt Max) should match (32-bit)")
+	End Method
+
+	Method Test_RangeSweep_DigitBoundaries() { test }
+		Local vals:LongInt[] = [ ..
+			0:LongInt, 1:LongInt, 9:LongInt, 10:LongInt, 11:LongInt, ..
+			99:LongInt, 100:LongInt, 101:LongInt, ..
+			999:LongInt, 1000:LongInt, 1001:LongInt, ..
+			9999:LongInt, 10000:LongInt, 10001:LongInt, ..
+			99999:LongInt, 100000:LongInt, 100001:LongInt, ..
+			999999:LongInt, 1000000:LongInt, 1000001:LongInt, ..
+			-1:LongInt, -9:LongInt, -10:LongInt, -99:LongInt, -100:LongInt, -1000:LongInt, -1000000:LongInt ..
+		]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:LongInt = vals[i]
+			Local s:String = String.FromLongInt(v)
+
+			AssertTrue(s.Length > 0, "String.FromLongInt produced empty string for " + v)
+			If v < 0 Then
+				AssertTrue(s.StartsWith("-"), "Negative value should start with '-' for " + v)
+			Else
+				AssertFalse(s.StartsWith("-"), "Non-negative value should not start with '-' for " + v)
+			End If
+
+			AssertEquals(v, LongInt(s), "String.FromLongInt round-trip should match for " + v)
+		Next
+	End Method
+
+End Type
+
+?longint8
+
+Type TStringFromLongInt64Test Extends TTest
+
+	Method Test_Zero() { test }
+		AssertEquals("0", String.FromLongInt(0:LongInt), "String.FromLongInt(0) should be '0' (longint8)")
+	End Method
+
+	Method Test_Positive() { test }
+		AssertEquals("42", String.FromLongInt(42:LongInt), "String.FromLongInt(42) should be '42' (longint8)")
+	End Method
+
+	Method Test_Negative() { test }
+		AssertEquals("-42", String.FromLongInt(-42:LongInt), "String.FromLongInt(-42) should be '-42' (longint8)")
+	End Method
+
+	Method Test_LongIntMinMax_64bit() { test }
+		Local minVal:LongInt = $8000000000000000:LongInt
+		Local maxVal:LongInt = $7FFFFFFFFFFFFFFF:LongInt
+
+		AssertEquals("-9223372036854775808", String.FromLongInt(minVal), "String.FromLongInt(LongInt Min) should match (64-bit)")
+		AssertEquals("9223372036854775807", String.FromLongInt(maxVal), "String.FromLongInt(LongInt Max) should match (64-bit)")
+	End Method
+
+	Method Test_RangeSweep_DigitBoundaries() { test }
+		Local vals:LongInt[] = [ ..
+			0:LongInt, 1:LongInt, 9:LongInt, 10:LongInt, 11:LongInt, ..
+			99:LongInt, 100:LongInt, 101:LongInt, ..
+			999:LongInt, 1000:LongInt, 1001:LongInt, ..
+			9999:LongInt, 10000:LongInt, 10001:LongInt, ..
+			99999:LongInt, 100000:LongInt, 100001:LongInt, ..
+			999999:LongInt, 1000000:LongInt, 1000001:LongInt, ..
+			9999999999:LongInt, 10000000000:LongInt, 10000000001:LongInt, ..
+			999999999999999999:LongInt, 1000000000000000000:LongInt, 1000000000000000001:LongInt, ..
+			-1:LongInt, -9:LongInt, -10:LongInt, -99:LongInt, -100:LongInt, -1000:LongInt, -1000000:LongInt, -10000000000:LongInt ..
+		]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:LongInt = vals[i]
+			Local s:String = String.FromLongInt(v)
+
+			AssertTrue(s.Length > 0, "String.FromLongInt produced empty string for " + v)
+			If v < 0 Then
+				AssertTrue(s.StartsWith("-"), "Negative value should start with '-' for " + v)
+			Else
+				AssertFalse(s.StartsWith("-"), "Non-negative value should not start with '-' for " + v)
+			End If
+
+			AssertEquals(v, LongInt(s), "String.FromLongInt round-trip should match for " + v)
+		Next
+	End Method
+
+End Type
+
+?
+
+?ulongint4
+
+Type TStringFromULongInt32Test Extends TTest
+
+	Method Test_Zero() { test }
+		AssertEquals("0", String.FromULongInt(0:ULongInt), "String.FromULongInt(0) should be '0' (ulongint4)")
+	End Method
+
+	Method Test_PositiveSmall() { test }
+		AssertEquals("42", String.FromULongInt(42:ULongInt), "String.FromULongInt(42) should be '42' (ulongint4)")
+	End Method
+
+	Method Test_ULongIntMax_32bit() { test }
+		Local maxVal:ULongInt = $FFFFFFFF:ULongInt
+		AssertEquals("4294967295", String.FromULongInt(maxVal), "String.FromULongInt(ULongInt Max) should match (32-bit)")
+	End Method
+
+	Method Test_RangeSweep_DigitBoundaries() { test }
+		Local vals:ULongInt[] = [ ..
+			0:ULongInt, 1:ULongInt, 9:ULongInt, 10:ULongInt, 11:ULongInt, ..
+			99:ULongInt, 100:ULongInt, 101:ULongInt, ..
+			999:ULongInt, 1000:ULongInt, 1001:ULongInt, ..
+			9999:ULongInt, 10000:ULongInt, 10001:ULongInt, ..
+			99999:ULongInt, 100000:ULongInt, 100001:ULongInt, ..
+			2147483647:ULongInt, ..
+			2147483648:ULongInt, ..
+			4000000000:ULongInt, ..
+			4294967294:ULongInt, 4294967295:ULongInt ..
+		]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:ULongInt = vals[i]
+			Local s:String = String.FromULongInt(v)
+
+			AssertTrue(s.Length > 0, "String.FromULongInt produced empty string for " + v)
+			AssertFalse(s.StartsWith("-"), "Unsigned ULongInt should not start with '-' for " + v)
+
+			AssertEquals(v, ULongInt(s), "String.FromULongInt round-trip should match for " + v)
+		Next
+	End Method
+
+End Type
+
+?ulongint8
+
+Type TStringFromULongInt64Test Extends TTest
+
+	Method Test_Zero() { test }
+		AssertEquals("0", String.FromULongInt(0:ULongInt), "String.FromULongInt(0) should be '0' (ulongint8)")
+	End Method
+
+	Method Test_PositiveSmall() { test }
+		AssertEquals("42", String.FromULongInt(42:ULongInt), "String.FromULongInt(42) should be '42' (ulongint8)")
+	End Method
+
+	Method Test_ULongIntMax_64bit() { test }
+		Local maxVal:ULongInt = $FFFFFFFFFFFFFFFF:ULongInt
+		AssertEquals("18446744073709551615", String.FromULongInt(maxVal), "String.FromULongInt(ULongInt Max) should match (64-bit)")
+	End Method
+
+	Method Test_RangeSweep_DigitBoundaries() { test }
+		Local vals:ULongInt[] = [ ..
+			0:ULongInt, 1:ULongInt, 9:ULongInt, 10:ULongInt, 11:ULongInt, ..
+			99:ULongInt, 100:ULongInt, 101:ULongInt, ..
+			999:ULongInt, 1000:ULongInt, 1001:ULongInt, ..
+			9999:ULongInt, 10000:ULongInt, 10001:ULongInt, ..
+			99999:ULongInt, 100000:ULongInt, 100001:ULongInt, ..
+			4294967295:ULongInt, ..
+			4294967296:ULongInt, ..
+			9223372036854775807:ULongInt, ..
+			9223372036854775808:ULongInt, ..
+			18446744073709551614:ULongInt, 18446744073709551615:ULongInt ..
+		]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:ULongInt = vals[i]
+			Local s:String = String.FromULongInt(v)
+
+			AssertTrue(s.Length > 0, "String.FromULongInt produced empty string for " + v)
+			AssertFalse(s.StartsWith("-"), "Unsigned ULongInt should not start with '-' for " + v)
+
+			AssertEquals(v, ULongInt(s), "String.FromULongInt round-trip should match for " + v)
+		Next
+	End Method
+
+End Type
+
+?
+
 Type TStringCompareCaseTest Extends TTest
 
 	' Helper: normalize compare to -1, 0, 1 for easier assertions
