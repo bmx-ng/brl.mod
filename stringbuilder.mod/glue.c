@@ -469,6 +469,9 @@ void bmx_stringbuilder_removecharat(struct MaxStringBuilder * buf, int index) {
 }
 
 void bmx_stringbuilder_append_cstring(struct MaxStringBuilder * buf, const char * chars) {
+	if (!chars) {
+		return;
+	}
 	int length = strlen(chars);
 	bmx_stringbuilder_append_cstringbytes(buf, chars, length);
 }
@@ -491,6 +494,9 @@ void bmx_stringbuilder_append_cstringbytes(struct MaxStringBuilder * buf, const 
 }
 
 void bmx_stringbuilder_append_utf8string(struct MaxStringBuilder * buf, const char * chars) {
+	if (!chars) {
+		return;
+	}
 	int length = strlen(chars);
 	bmx_stringbuilder_append_utf8bytes(buf, chars, length);
 }
