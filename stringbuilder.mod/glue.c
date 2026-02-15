@@ -1222,6 +1222,69 @@ void bmx_stringbuilder_append_as_hex(struct MaxStringBuilder * buf, const char *
 	}
 }
 
+BBArray * bmx_stringbuilder_split_ints(struct MaxStringBuilder * buf, BBString * sep) {
+	if (buf->count == 0) {
+		return &bbEmptyArray;
+	}
+	return bbStrSplitInts( buf->buffer, buf->count, sep == &bbEmptyString ? NULL : sep->buf, sep->length );
+}
+
+BBArray * bmx_stringbuilder_split_bytes(struct MaxStringBuilder * buf, BBString * separator) {
+	if (buf->count == 0) {
+		return &bbEmptyArray;
+	}
+	return bbStrSplitBytes( buf->buffer, buf->count, separator == &bbEmptyString ? NULL : separator->buf, separator->length );
+}
+
+BBArray * bmx_stringbuilder_split_shorts(struct MaxStringBuilder * buf, BBString * separator) {
+	if (buf->count == 0) {
+		return &bbEmptyArray;
+	}
+	return bbStrSplitShorts( buf->buffer, buf->count, separator == &bbEmptyString ? NULL : separator->buf, separator->length );
+}
+
+BBArray * bmx_stringbuilder_split_uints(struct MaxStringBuilder * buf, BBString * separator) {
+	if (buf->count == 0) {
+		return &bbEmptyArray;
+	}
+	return bbStrSplitUInts( buf->buffer, buf->count, separator == &bbEmptyString ? NULL : separator->buf, separator->length );
+}
+
+BBArray * bmx_stringbuilder_split_longs(struct MaxStringBuilder * buf, BBString * separator) {
+	if (buf->count == 0) {
+		return &bbEmptyArray;
+	}
+	return bbStrSplitLongs( buf->buffer, buf->count, separator == &bbEmptyString ? NULL : separator->buf, separator->length );
+}
+
+BBArray * bmx_stringbuilder_split_ulongs(struct MaxStringBuilder * buf, BBString * separator) {
+	if (buf->count == 0) {
+		return &bbEmptyArray;
+	}
+	return bbStrSplitULongs( buf->buffer, buf->count, separator == &bbEmptyString ? NULL : separator->buf, separator->length );
+}
+
+BBArray * bmx_stringbuilder_split_sizets(struct MaxStringBuilder * buf, BBString * separator) {
+	if (buf->count == 0) {
+		return &bbEmptyArray;
+	}
+	return bbStrSplitSizets( buf->buffer, buf->count, separator == &bbEmptyString ? NULL : separator->buf, separator->length );
+}
+
+BBArray * bmx_stringbuilder_split_longints(struct MaxStringBuilder * buf, BBString * separator) {
+	if (buf->count == 0) {
+		return &bbEmptyArray;
+	}
+	return bbStrSplitLongInts( buf->buffer, buf->count, separator == &bbEmptyString ? NULL : separator->buf, separator->length );
+}
+
+BBArray * bmx_stringbuilder_split_ulongints(struct MaxStringBuilder * buf, BBString * separator) {
+	if (buf->count == 0) {
+		return &bbEmptyArray;
+	}
+	return bbStrSplitULongInts( buf->buffer, buf->count, separator == &bbEmptyString ? NULL : separator->buf, separator->length );
+}
+
 /* ----------------------------------------------------- */
 
 int bmx_stringbuilder_splitbuffer_length(struct MaxSplitBuffer * buf) {

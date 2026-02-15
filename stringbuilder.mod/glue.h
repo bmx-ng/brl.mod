@@ -115,6 +115,15 @@ BBSIZET bmx_stringbuilder_tosizet(struct MaxStringBuilder * buf);
 BBFLOAT bmx_stringbuilder_tofloat(struct MaxStringBuilder * buf);
 BBDOUBLE bmx_stringbuilder_todouble(struct MaxStringBuilder * buf);
 void bmx_stringbuilder_append_as_hex(struct MaxStringBuilder * buf, const char * bytes, int length, int upperCase);
+BBArray * bmx_stringbuilder_split_ints(struct MaxStringBuilder * buf, BBString * separator);
+BBArray * bmx_stringbuilder_split_bytes(struct MaxStringBuilder * buf, BBString * separator);
+BBArray * bmx_stringbuilder_split_shorts(struct MaxStringBuilder * buf, BBString * separator);
+BBArray * bmx_stringbuilder_split_uints(struct MaxStringBuilder * buf, BBString * separator);
+BBArray * bmx_stringbuilder_split_longs(struct MaxStringBuilder * buf, BBString * separator);
+BBArray * bmx_stringbuilder_split_ulongs(struct MaxStringBuilder * buf, BBString * separator);
+BBArray * bmx_stringbuilder_split_sizets(struct MaxStringBuilder * buf, BBString * separator);
+BBArray * bmx_stringbuilder_split_longints(struct MaxStringBuilder * buf, BBString * separator);
+BBArray * bmx_stringbuilder_split_ulongints(struct MaxStringBuilder * buf, BBString * separator);
 
 /* ----------------------------------------------------- */
 
