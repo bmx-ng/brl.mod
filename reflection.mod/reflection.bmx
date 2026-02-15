@@ -223,15 +223,17 @@ Private
 
 Function _Get:Object(p:Byte Ptr, typeId:TTypeId)
 	Select typeId
-		Case ByteTypeId   Return String.FromInt   ((Byte   Ptr p)[0])
-		Case ShortTypeId  Return String.FromInt   ((Short  Ptr p)[0])
-		Case IntTypeId    Return String.FromInt   ((Int    Ptr p)[0])
-		Case UIntTypeId   Return String.FromUInt  ((UInt   Ptr p)[0])
-		Case LongTypeId   Return String.FromLong  ((Long   Ptr p)[0])
-		Case ULongTypeId  Return String.FromULong ((ULong  Ptr p)[0])
-		Case SizeTTypeId  Return String.FromSizeT ((Size_T Ptr p)[0])
-		Case FloatTypeId  Return String.FromFloat ((Float  Ptr p)[0])
-		Case DoubleTypeId Return String.FromDouble((Double Ptr p)[0])
+		Case ByteTypeId     Return String.FromInt     ((Byte   Ptr p)[0])
+		Case ShortTypeId    Return String.FromInt     ((Short  Ptr p)[0])
+		Case IntTypeId      Return String.FromInt     ((Int    Ptr p)[0])
+		Case UIntTypeId     Return String.FromUInt    ((UInt   Ptr p)[0])
+		Case LongTypeId     Return String.FromLong    ((Long   Ptr p)[0])
+		Case ULongTypeId    Return String.FromULong   ((ULong  Ptr p)[0])
+		Case SizeTTypeId    Return String.FromSizeT   ((Size_T Ptr p)[0])
+		Case LongIntTypeId  Return String.FromLongInt ((LongInt  Ptr p)[0])
+		Case ULongIntTypeId Return String.FromULongInt((ULongInt Ptr p)[0])
+		Case FloatTypeId    Return String.FromFloat   ((Float  Ptr p)[0])
+		Case DoubleTypeId   Return String.FromDouble  ((Double Ptr p)[0])
 		Default
 			Select True
 				Case typeId.ExtendsType(PointerTypeId) Or typeId.ExtendsType(VarTypeId) Or typeId.ExtendsType(FunctionTypeId)
@@ -270,6 +272,8 @@ Function _Assign(p:Byte Ptr, typeId:TTypeId, value:Object)
 			Case LongTypeId   If value Then (Long Ptr   p)[0] = value.ToString().ToLong()   Else (Long Ptr   p)[0] = Long   Null
 			Case ULongTypeId  If value Then (ULong Ptr  p)[0] = value.ToString().ToULong()  Else (ULong Ptr  p)[0] = ULong  Null
 			Case SizeTTypeId  If value Then (Size_T Ptr p)[0] = value.ToString().ToSizeT()  Else (Size_T Ptr p)[0] = Size_T Null
+			Case LongIntTypeId  If value Then (LongInt Ptr  p)[0] = value.ToString().ToLongInt()  Else (LongInt Ptr  p)[0] = LongInt Null
+			Case ULongIntTypeId If value Then (ULongInt Ptr p)[0] = value.ToString().ToULongInt() Else (ULongInt Ptr p)[0] = ULongInt Null
 			Case FloatTypeId  If value Then (Float Ptr  p)[0] = value.ToString().ToFloat()  Else (Float Ptr  p)[0] = Float  Null
 			Case DoubleTypeId If value Then (Double Ptr p)[0] = value.ToString().ToDouble() Else (Double Ptr p)[0] = Double Null
 			Default
