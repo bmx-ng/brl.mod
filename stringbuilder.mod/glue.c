@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
+#include "ryu/ryu.h"
 
 static int utf32strlen( const BBUINT *p ){
 	const BBUINT *t=p;
@@ -541,16 +542,20 @@ void bmx_stringbuilder_append_utf8bytes(struct MaxStringBuilder * buf, const cha
 	}
 }
 
-void bmx_stringbuilder_append_double(struct MaxStringBuilder * buf, double value) {
-	char chars[64];
-	sprintf(chars,"%#.17lg", value);
-	bmx_stringbuilder_append_cstring(buf, chars);
+void bmx_stringbuilder_append_float(struct MaxStringBuilder *buf, float value, int fixed){
+	char tmp[64];
+	int len = fixed ? d2fixed_buffered_n((double)value, 9, tmp) : f2s_buffered_n(value, tmp);
+	if( len <= 0 ) return;
+
+	bmx_stringbuilder_append_cstringbytes(buf, tmp, len);
 }
 
-void bmx_stringbuilder_append_float(struct MaxStringBuilder * buf, float value) {
-	char chars[64];
-	sprintf(chars,"%#.9g", value);
-	bmx_stringbuilder_append_cstring(buf, chars);
+void bmx_stringbuilder_append_double(struct MaxStringBuilder *buf, double value, int fixed){
+	char tmp[64];
+	int len = fixed ? d2fixed_buffered_n(value, 17, tmp) : d2s_buffered_n(value, tmp);
+	if( len <= 0 ) return;
+
+	bmx_stringbuilder_append_cstringbytes(buf, tmp, len);
 }
 
 void bmx_stringbuilder_append_int(struct MaxStringBuilder *buf, int value) {
@@ -1283,6 +1288,20 @@ BBArray * bmx_stringbuilder_split_ulongints(struct MaxStringBuilder * buf, BBStr
 		return &bbEmptyArray;
 	}
 	return bbStrSplitULongInts( buf->buffer, buf->count, separator == &bbEmptyString ? NULL : separator->buf, separator->length );
+}
+
+BBArray * bmx_stringbuilder_split_floats(struct MaxStringBuilder * buf, BBString * separator) {
+	if (buf->count == 0) {
+		return &bbEmptyArray;
+	}
+	return bbStrSplitFloats( buf->buffer, buf->count, separator == &bbEmptyString ? NULL : separator->buf, separator->length );
+}
+
+BBArray * bmx_stringbuilder_split_doubles(struct MaxStringBuilder * buf, BBString * separator) {
+	if (buf->count == 0) {
+		return &bbEmptyArray;
+	}
+	return bbStrSplitDoubles( buf->buffer, buf->count, separator == &bbEmptyString ? NULL : separator->buf, separator->length );
 }
 
 /* ----------------------------------------------------- */

@@ -2551,3 +2551,288 @@ Type TStringBuilderSplitULongInts64Test Extends TTest
 End Type
 
 ?
+
+Type TStringBuilderSplitFloatsTest Extends TTest
+
+	' Helper: assert Float[] equals expected (Length + each element) with delta
+	Method AssertFloatArrayEquals(expected:Float[], actual:Float[], delta:Float, message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(expected[i], actual[i], delta, message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:Float[] = sb.SplitFloats(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty Float[]")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.5")
+		Local a:Float[] = sb.SplitFloats("")
+		AssertFloatArrayEquals([1.5:Float], a, 0.0:Float, "Empty separator should parse whole builder as one entry")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.5   ")
+		Local a:Float[] = sb.SplitFloats("")
+		AssertFloatArrayEquals([1.5:Float], a, 0.0:Float, "Empty separator should allow trailing whitespace (builder)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.5x")
+		Local a:Float[] = sb.SplitFloats("")
+		AssertFloatArrayEquals([0.0:Float], a, 0.0:Float, "Empty separator should reject trailing junk and return 0 (builder)")
+	End Method
+
+	Method Test_BasicCommaSeparated() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.0,2.0,3.5")
+		Local a:Float[] = sb.SplitFloats(",")
+		AssertFloatArrayEquals([1.0:Float,2.0:Float,3.5:Float], a, 0.0:Float, "Basic comma split (builder)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.0::2.0::3.5")
+		Local a:Float[] = sb.SplitFloats("::")
+		AssertFloatArrayEquals([1.0:Float,2.0:Float,3.5:Float], a, 0.0:Float, "Custom separator split (builder)")
+	End Method
+
+	Method Test_LeadingTrailingConsecutiveSeparators_GiveZeros() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1.0,,3.0,")
+		Local a:Float[] = sb.SplitFloats(",")
+		AssertFloatArrayEquals([0.0:Float,1.0:Float,0.0:Float,3.0:Float,0.0:Float], a, 0.0:Float, "Empty tokens should become 0.0 (builder)")
+	End Method
+
+	Method Test_AllEmptyTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",,")
+		Local a:Float[] = sb.SplitFloats(",")
+		AssertFloatArrayEquals([0.0:Float,0.0:Float,0.0:Float], a, 0.0:Float, "Two separators => three empty tokens => 0,0,0 (builder)")
+	End Method
+
+	Method Test_SeparatorNotFound_ParsesWholeStringAsSingleEntry() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.25")
+		Local a:Float[] = sb.SplitFloats(",")
+		AssertEquals(1, a.Length, "Separator not found should produce a single entry (builder length)")
+		AssertEquals(1.25:Float, a[0], 0.0:Float, "Separator not found should parse whole string as one entry (builder)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1.0 ,  2.5  ,   3.0   ")
+		Local a:Float[] = sb.SplitFloats(",")
+		AssertFloatArrayEquals([1.0:Float,2.5:Float,3.0:Float], a, 0.0:Float, "Whitespace around numbers allowed (builder)")
+	End Method
+
+	Method Test_TrailingWhitespaceOnly_AfterNumber_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.25   ,  2.5~t")
+		Local a:Float[] = sb.SplitFloats(",")
+		AssertFloatArrayEquals([1.25:Float,2.5:Float], a, 0.0:Float, "Trailing whitespace allowed in tokens (builder)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.0x, 2.0, 3.0 4.0, 5.0-")
+		Local a:Float[] = sb.SplitFloats(",")
+		AssertFloatArrayEquals([0.0:Float,2.0:Float,0.0:Float,0.0:Float], a, 0.0:Float, "Trailing junk should yield 0 (builder)")
+	End Method
+
+	Method Test_ScientificNotation_E_IsParsed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1E0,3.5E0,1E-6,1E20,-4.2E1")
+		Local a:Float[] = sb.SplitFloats(",")
+		AssertFloatArrayEquals([1.0:Float,3.5:Float,1e-6:Float,1e20:Float,-42.0:Float], a, 1e-6:Float, "Scientific notation should parse (builder)")
+	End Method
+
+	Method Test_NaNAndInfinity() { test }
+		Local sb:TStringBuilder = New TStringBuilder("NaN,Infinity,-Infinity")
+		Local a:Float[] = sb.SplitFloats(",")
+		AssertEquals(3, a.Length, "NaN/Inf should produce 3 entries (builder)")
+
+		Local nanVal:Float = a[0]
+		Local posInf:Float = a[1]
+		Local negInf:Float = a[2]
+
+		AssertFalse(nanVal = nanVal, "First entry should be NaN (builder)")
+		AssertTrue(posInf > 0.0:Float, "Second entry should be +Infinity (builder)")
+		AssertTrue(negInf < 0.0:Float, "Third entry should be -Infinity (builder)")
+	End Method
+
+	Method Test_MultiCharSeparator_Edges() { test }
+		Local sb:TStringBuilder = New TStringBuilder("::1.0::::3.0::")
+		Local a:Float[] = sb.SplitFloats("::")
+		AssertFloatArrayEquals([0.0:Float,1.0:Float,0.0:Float,3.0:Float,0.0:Float], a, 0.0:Float, "Multi-char separator edges (builder)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:Float[] = sb.SplitFloats("aa")
+		AssertFloatArrayEquals([0.0:Float,0.0:Float,0.0:Float], a, 0.0:Float, "Non-overlapping separator matching (builder)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:Float[] = [ 0.0:Float, -0.0:Float, 1.0:Float, 2.5:Float, -3.0:Float, 1e-6:Float, 1e20:Float ]
+		Local joined:String = ",".Join(vals)
+		Local parsed:Float[] = New TStringBuilder(joined).SplitFloats(",")
+		AssertFloatArrayEquals(vals, parsed, 1e-6:Float, "Join(Float[]) then Builder.SplitFloats should round-trip for clean tokens")
+	End Method
+
+	Method Test_MatchesStringSplitFloats_Output() { test }
+		Local content:String = "  NaN, 1E0, 1.5, 12x, , Infinity  "
+		Local sep:String = ","
+		Local sb:TStringBuilder = New TStringBuilder(content)
+
+		Local a1:Float[] = sb.SplitFloats(sep)
+		Local a2:Float[] = content.SplitFloats(sep)
+
+		AssertEquals(a2.Length, a1.Length, "Builder.SplitFloats should match String.SplitFloats (length)")
+		For Local i:Int = 0 Until a2.Length
+			' Special-case NaN comparisons
+			If (a2[i] <> a2[i]) Or (a1[i] <> a1[i]) Then
+				AssertTrue((a2[i] <> a2[i]) And (a1[i] <> a1[i]), "NaN should match at index " + i)
+			Else
+				AssertEquals(a2[i], a1[i], 1e-6:Float, "Builder vs String float value should match (index " + i + ")")
+			End If
+		Next
+	End Method
+
+End Type
+
+Type TStringBuilderSplitDoublesTest Extends TTest
+
+	' Helper: assert Double[] equals expected (Length + each element) with delta
+	Method AssertDoubleArrayEquals(expected:Double[], actual:Double[], delta:Double, message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(expected[i], actual[i], delta, message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:Double[] = sb.SplitDoubles(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty Double[]")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.5")
+		Local a:Double[] = sb.SplitDoubles("")
+		AssertDoubleArrayEquals([1.5:Double], a, 0.0:Double, "Empty separator should parse whole builder as one entry")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.5   ")
+		Local a:Double[] = sb.SplitDoubles("")
+		AssertDoubleArrayEquals([1.5:Double], a, 0.0:Double, "Empty separator should allow trailing whitespace (builder)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.5x")
+		Local a:Double[] = sb.SplitDoubles("")
+		AssertDoubleArrayEquals([0.0:Double], a, 0.0:Double, "Empty separator should reject trailing junk and return 0 (builder)")
+	End Method
+
+	Method Test_BasicCommaSeparated() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.0,2.0,3.5")
+		Local a:Double[] = sb.SplitDoubles(",")
+		AssertDoubleArrayEquals([1.0:Double,2.0:Double,3.5:Double], a, 0.0:Double, "Basic comma split (builder)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.0::2.0::3.5")
+		Local a:Double[] = sb.SplitDoubles("::")
+		AssertDoubleArrayEquals([1.0:Double,2.0:Double,3.5:Double], a, 0.0:Double, "Custom separator split (builder)")
+	End Method
+
+	Method Test_LeadingTrailingConsecutiveSeparators_GiveZeros() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1.0,,3.0,")
+		Local a:Double[] = sb.SplitDoubles(",")
+		AssertDoubleArrayEquals([0.0:Double,1.0:Double,0.0:Double,3.0:Double,0.0:Double], a, 0.0:Double, "Empty tokens should become 0.0 (builder)")
+	End Method
+
+	Method Test_AllEmptyTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",,")
+		Local a:Double[] = sb.SplitDoubles(",")
+		AssertDoubleArrayEquals([0.0:Double,0.0:Double,0.0:Double], a, 0.0:Double, "Two separators => three empty tokens => 0,0,0 (builder)")
+	End Method
+
+	Method Test_SeparatorNotFound_ParsesWholeStringAsSingleEntry() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.25")
+		Local a:Double[] = sb.SplitDoubles(",")
+		AssertEquals(1, a.Length, "Separator not found should produce a single entry (builder length)")
+		AssertEquals(1.25:Double, a[0], 0.0:Double, "Separator not found should parse whole string as one entry (builder)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1.0 ,  2.5  ,   3.0   ")
+		Local a:Double[] = sb.SplitDoubles(",")
+		AssertDoubleArrayEquals([1.0:Double,2.5:Double,3.0:Double], a, 0.0:Double, "Whitespace around numbers allowed (builder)")
+	End Method
+
+	Method Test_TrailingWhitespaceOnly_AfterNumber_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.25   ,  2.5~t")
+		Local a:Double[] = sb.SplitDoubles(",")
+		AssertDoubleArrayEquals([1.25:Double,2.5:Double], a, 0.0:Double, "Trailing whitespace allowed in tokens (builder)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1.0x, 2.0, 3.0 4.0, 5.0-")
+		Local a:Double[] = sb.SplitDoubles(",")
+		AssertDoubleArrayEquals([0.0:Double,2.0:Double,0.0:Double,0.0:Double], a, 0.0:Double, "Trailing junk should yield 0 (builder)")
+	End Method
+
+	Method Test_ScientificNotation_E_IsParsed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1E0,3.5E0,1E-12,1E20,-4.2E1,1E308")
+		Local a:Double[] = sb.SplitDoubles(",")
+		AssertDoubleArrayEquals([1.0:Double,3.5:Double,1e-12:Double,1e20:Double,-42.0:Double,1e308:Double], a, 1e-12:Double, "Scientific notation should parse (builder)")
+	End Method
+
+	Method Test_NaNAndInfinity() { test }
+		Local sb:TStringBuilder = New TStringBuilder("NaN,Infinity,-Infinity")
+		Local a:Double[] = sb.SplitDoubles(",")
+		AssertEquals(3, a.Length, "NaN/Inf should produce 3 entries (builder)")
+
+		Local nanVal:Double = a[0]
+		Local posInf:Double = a[1]
+		Local negInf:Double = a[2]
+
+		AssertFalse(nanVal = nanVal, "First entry should be NaN (builder)")
+		AssertTrue(posInf > 0.0:Double, "Second entry should be +Infinity (builder)")
+		AssertTrue(negInf < 0.0:Double, "Third entry should be -Infinity (builder)")
+	End Method
+
+	Method Test_MultiCharSeparator_Edges() { test }
+		Local sb:TStringBuilder = New TStringBuilder("::1.0::::3.0::")
+		Local a:Double[] = sb.SplitDoubles("::")
+		AssertDoubleArrayEquals([0.0:Double,1.0:Double,0.0:Double,3.0:Double,0.0:Double], a, 0.0:Double, "Multi-char separator edges (builder)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:Double[] = sb.SplitDoubles("aa")
+		AssertDoubleArrayEquals([0.0:Double,0.0:Double,0.0:Double], a, 0.0:Double, "Non-overlapping separator matching (builder)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:Double[] = [ 0.0:Double, -0.0:Double, 1.0:Double, 2.5:Double, -3.0:Double, 1e-12:Double, 1e20:Double, 1e308:Double ]
+		Local joined:String = ",".Join(vals)
+		Local parsed:Double[] = New TStringBuilder(joined).SplitDoubles(",")
+		AssertDoubleArrayEquals(vals, parsed, 1e-12:Double, "Join(Double[]) then Builder.SplitDoubles should round-trip for clean tokens")
+	End Method
+
+	Method Test_MatchesStringSplitDoubles_Output() { test }
+		Local content:String = "  NaN, 1E0, 1.5, 12x, , Infinity  "
+		Local sep:String = ","
+		Local sb:TStringBuilder = New TStringBuilder(content)
+
+		Local a1:Double[] = sb.SplitDoubles(sep)
+		Local a2:Double[] = content.SplitDoubles(sep)
+
+		AssertEquals(a2.Length, a1.Length, "Builder.SplitDoubles should match String.SplitDoubles (length)")
+		For Local i:Int = 0 Until a2.Length
+			If (a2[i] <> a2[i]) Or (a1[i] <> a1[i]) Then
+				AssertTrue((a2[i] <> a2[i]) And (a1[i] <> a1[i]), "NaN should match at index " + i)
+			Else
+				AssertEquals(a2[i], a1[i], 1e-12:Double, "Builder vs String double value should match (index " + i + ")")
+			End If
+		Next
+	End Method
+
+End Type

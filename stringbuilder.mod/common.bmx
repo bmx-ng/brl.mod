@@ -19,6 +19,7 @@
 SuperStrict
 
 Import "glue.c"
+Import "../blitz.mod/ryu/*.h"
 
 Extern
 	Function bmx_stringbuilder_new:Byte Ptr(initial:Int)
@@ -51,8 +52,8 @@ Extern
 	Function bmx_stringbuilder_append_cstringbytes(buffer:Byte Ptr, chars:Byte Ptr, length:Int)
 	Function bmx_stringbuilder_append_utf8string(buffer:Byte Ptr, chars:Byte Ptr)
 	Function bmx_stringbuilder_append_utf8bytes(buffer:Byte Ptr, chars:Byte Ptr, length:Int)
-	Function bmx_stringbuilder_append_double(buffer:Byte Ptr, value:Double)
-	Function bmx_stringbuilder_append_float(buffer:Byte Ptr, value:Float)
+	Function bmx_stringbuilder_append_double(buffer:Byte Ptr, value:Double, fixed:Int)
+	Function bmx_stringbuilder_append_float(buffer:Byte Ptr, value:Float, fixed:Int)
 	Function bmx_stringbuilder_append_int(buffer:Byte Ptr, value:Int)
 	Function bmx_stringbuilder_append_long(buffer:Byte Ptr, value:Long)
 	Function bmx_stringbuilder_append_short(buffer:Byte Ptr, value:Short)
@@ -105,6 +106,8 @@ Extern
 	Function bmx_stringbuilder_split_sizets:Size_T[](buffer:Byte Ptr, separator:String)
 	Function bmx_stringbuilder_split_longints:LongInt[](buffer:Byte Ptr, separator:String)
 	Function bmx_stringbuilder_split_ulongints:ULongInt[](buffer:Byte Ptr, separator:String)
+	Function bmx_stringbuilder_split_floats:Float[](buffer:Byte Ptr, separator:String)
+	Function bmx_stringbuilder_split_doubles:Double[](buffer:Byte Ptr, separator:String)
 
 	Function bmx_stringbuilder_splitbuffer_length:Int(splitPtr:Byte Ptr)
 	Function bmx_stringbuilder_splitbuffer_text:String(splitPtr:Byte Ptr, index:Int)
