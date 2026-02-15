@@ -251,32 +251,32 @@ Public
 	Rem
 	bbdoc: Appends a #Double value to the string builder.
 	End Rem
-	Method AppendDouble:TStringBuilder(value:Double)
-		bmx_stringbuilder_append_double(buffer, value)
+	Method AppendDouble:TStringBuilder(value:Double, fixed:Int = False)
+		bmx_stringbuilder_append_double(buffer, value, fixed)
 		Return Self
 	End Method
 
 	Rem
 	bbdoc: Appends a #Double value to the string builder.
 	End Rem
-	Method Append:TStringBuilder(value:Double)
-		bmx_stringbuilder_append_double(buffer, value)
+	Method Append:TStringBuilder(value:Double, fixed:Int = False)
+		bmx_stringbuilder_append_double(buffer, value, fixed)
 		Return Self
 	End Method
 
 	Rem
 	bbdoc: Appends a #Float value to the string builder.
 	End Rem
-	Method AppendFloat:TStringBuilder(value:Float)
-		bmx_stringbuilder_append_float(buffer, value)
+	Method AppendFloat:TStringBuilder(value:Float, fixed:Int = False)
+		bmx_stringbuilder_append_float(buffer, value, fixed)
 		Return Self
 	End Method
 
 	Rem
 	bbdoc: Appends a #Float value to the string builder.
 	End Rem
-	Method Append:TStringBuilder(value:Float)
-		bmx_stringbuilder_append_float(buffer, value)
+	Method Append:TStringBuilder(value:Float, fixed:Int = False)
+		bmx_stringbuilder_append_float(buffer, value, fixed)
 		Return Self
 	End Method
 
@@ -1129,6 +1129,24 @@ Public
 	End Rem
 	Method SplitULongInts:ULongInt[](separator:String)
 		Return bmx_stringbuilder_split_ulongints(buffer, separator)
+	End Method
+
+	Rem
+	bbdoc: Creates an array of #Float values by splitting the string builder using the specified separator.
+	about: If a split element is not a valid #Float, the corresponding array element will be 0.0.
+	If @separator is empty or not found in the string builder, a single element array will be returned containing the value of the whole string builder as a #Float.
+	End Rem
+	Method SplitFloats:Float[](separator:String)
+		Return bmx_stringbuilder_split_floats(buffer, separator)
+	End Method
+
+	Rem
+	bbdoc: Creates an array of #Double values by splitting the string builder using the specified separator.
+	about: If a split element is not a valid #Double, the corresponding array element will be 0.0.
+	If @separator is empty or not found in the string builder, a single element array will be returned containing the value of the whole string builder as a #Double.
+	End Rem
+	Method SplitDoubles:Double[](separator:String)
+		Return bmx_stringbuilder_split_doubles(buffer, separator)
 	End Method
 
 	Method Delete()

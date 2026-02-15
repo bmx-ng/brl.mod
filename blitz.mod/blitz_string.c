@@ -4,6 +4,7 @@
 #include "bdwgc/libatomic_ops/src/atomic_ops.h"
 
 #include "blitz_unicode.h"
+#include <errno.h>
 
 #define XXH_IMPLEMENTATION
 #define XXH_STATIC_LINKING_ONLY

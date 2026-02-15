@@ -69,8 +69,8 @@ void bmx_stringbuilder_append_cstring(struct MaxStringBuilder * buf, const char 
 void bmx_stringbuilder_append_cstringbytes(struct MaxStringBuilder * buf, const char * chars, int length);
 void bmx_stringbuilder_append_utf8string(struct MaxStringBuilder * buf, const char * chars);
 void bmx_stringbuilder_append_utf8bytes(struct MaxStringBuilder * buf, const char * chars, int length);
-void bmx_stringbuilder_append_double(struct MaxStringBuilder * buf, double value);
-void bmx_stringbuilder_append_float(struct MaxStringBuilder * buf, float value);
+void bmx_stringbuilder_append_double(struct MaxStringBuilder * buf, double value, int fixed);
+void bmx_stringbuilder_append_float(struct MaxStringBuilder * buf, float value, int fixed);
 void bmx_stringbuilder_append_int(struct MaxStringBuilder * buf, int value);
 void bmx_stringbuilder_append_long(struct MaxStringBuilder * buf, BBInt64 value);
 void bmx_stringbuilder_append_short(struct MaxStringBuilder * buf, BBSHORT value);
@@ -124,6 +124,8 @@ BBArray * bmx_stringbuilder_split_ulongs(struct MaxStringBuilder * buf, BBString
 BBArray * bmx_stringbuilder_split_sizets(struct MaxStringBuilder * buf, BBString * separator);
 BBArray * bmx_stringbuilder_split_longints(struct MaxStringBuilder * buf, BBString * separator);
 BBArray * bmx_stringbuilder_split_ulongints(struct MaxStringBuilder * buf, BBString * separator);
+BBArray * bmx_stringbuilder_split_floats(struct MaxStringBuilder * buf, BBString * separator);
+BBArray * bmx_stringbuilder_split_doubles(struct MaxStringBuilder * buf, BBString * separator);
 
 /* ----------------------------------------------------- */
 
