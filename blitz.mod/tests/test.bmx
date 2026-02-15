@@ -3281,6 +3281,185 @@ End Type
 
 ?
 
+Type TStringFromFloatTest Extends TTest
+
+	Method Test_Zero_Default() { test }
+		AssertEquals("0E0", String.FromFloat(0.0:Float), "String.FromFloat(0) default should match ryu")
+	End Method
+
+	Method Test_NegativeZero_Default() { test }
+		Local negZero:Float = -0.0:Float
+		AssertEquals("-0E0", String.FromFloat(negZero), "String.FromFloat(-0) default should preserve sign")
+	End Method
+
+	Method Test_Positive_Default() { test }
+		AssertEquals("4.2E1", String.FromFloat(42.0:Float), "String.FromFloat(42) default should match ryu")
+	End Method
+
+	Method Test_Negative_Default() { test }
+		AssertEquals("-4.2E1", String.FromFloat(-42.0:Float), "String.FromFloat(-42) default should match ryu")
+	End Method
+
+	Method Test_NaNAndInfinity() { test }
+		Local nanVal:Float = 0.0:Float / 0.0:Float
+		Local posInf:Float = 1.0:Float / 0.0:Float
+		Local negInf:Float = -1.0:Float / 0.0:Float
+
+		AssertEquals("NaN", String.FromFloat(nanVal), "NaN should format as NaN")
+		AssertEquals("Infinity", String.FromFloat(posInf), "+Infinity should format as Infinity")
+		AssertEquals("-Infinity", String.FromFloat(negInf), "-Infinity should format as -Infinity")
+	End Method
+
+	Method Test_RoundTrip_Default_CommonValues() { test }
+		Local vals:Float[] = [ ..
+			0.0:Float, -0.0:Float, ..
+			1.0:Float, -1.0:Float, ..
+			1.5:Float, -1.5:Float, ..
+			3.1415927:Float, ..
+			100000.0:Float, ..
+			1e-6:Float, ..
+			1e20:Float ..
+		]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:Float = vals[i]
+			Local s:String = String.FromFloat(v)
+
+			AssertTrue(s.Length > 0, "String.FromFloat produced empty string for index " + i)
+
+			' Skip NaN/Inf round-trip numeric comparisons (handled elsewhere)
+			If s = "NaN" Or s = "Infinity" Or s = "-Infinity" Then
+				Continue
+			End If
+
+			Local parsed:Float = Float(s)
+
+			' Use a relative-ish tolerance; simple absolute delta works OK here.
+			' Ryu should usually round-trip exactly, but delta keeps it robust.
+			AssertEquals(v, parsed, 0.0:Float, "Float round-trip should match for '" + s + "'")
+		Next
+	End Method
+
+	Method Test_FixedFormatting_9dp() { test }
+		Local v:Float = 3.1415927:Float
+		Local s:String = String.FromFloat(v, 1)
+
+		' Should be exactly 9 digits after the decimal point
+		Local dot:Int = s.Find(".")
+		AssertTrue(dot >= 0, "Fixed float should contain '.'")
+		AssertEquals(9, s.Length - dot - 1, "Fixed float should have 9 decimal places")
+
+		' Spot-check known output used in Join tests
+		AssertEquals("3.141592741", s, "Fixed float formatting should match expected")
+	End Method
+
+	Method Test_FixedFormatting_RoundTrip() { test }
+		Local vals:Float[] = [ 0.0:Float, -0.0:Float, 1.0:Float, -1.0:Float, 1e-6:Float, 100000.0:Float ]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:Float = vals[i]
+			Local s:String = String.FromFloat(v, 1)
+
+			AssertTrue(s.Length > 0, "String.FromFloat(fixed) produced empty string for index " + i)
+
+			Local parsed:Float = Float(s)
+
+			' Fixed output is decimal; allow a tiny delta for parsing differences.
+			AssertEquals(v, parsed, 1e-6:Float, "Fixed float round-trip should be close for '" + s + "'")
+		Next
+	End Method
+
+End Type
+
+Type TStringFromDoubleTest Extends TTest
+
+	Method Test_Zero_Default() { test }
+		AssertEquals("0E0", String.FromDouble(0.0:Double), "String.FromDouble(0) default should match ryu")
+	End Method
+
+	Method Test_NegativeZero_Default() { test }
+		Local negZero:Double = -0.0:Double
+		AssertEquals("-0E0", String.FromDouble(negZero), "String.FromDouble(-0) default should preserve sign")
+	End Method
+
+	Method Test_Positive_Default() { test }
+		AssertEquals("4.2E1", String.FromDouble(42.0:Double), "String.FromDouble(42) default should match ryu")
+	End Method
+
+	Method Test_Negative_Default() { test }
+		AssertEquals("-4.2E1", String.FromDouble(-42.0:Double), "String.FromDouble(-42) default should match ryu")
+	End Method
+
+	Method Test_NaNAndInfinity() { test }
+		Local nanVal:Double = 0.0:Double / 0.0:Double
+		Local posInf:Double = 1.0:Double / 0.0:Double
+		Local negInf:Double = -1.0:Double / 0.0:Double
+
+		AssertEquals("NaN", String.FromDouble(nanVal), "NaN should format as NaN")
+		AssertEquals("Infinity", String.FromDouble(posInf), "+Infinity should format as Infinity")
+		AssertEquals("-Infinity", String.FromDouble(negInf), "-Infinity should format as -Infinity")
+	End Method
+
+	Method Test_RoundTrip_Default_CommonValues() { test }
+		Local vals:Double[] = [ ..
+			0.0:Double, -0.0:Double, ..
+			1.0:Double, -1.0:Double, ..
+			1.5:Double, -1.5:Double, ..
+			3.141592653589793:Double, ..
+			100000.0:Double, ..
+			1e-12:Double, ..
+			1e-6:Double, ..
+			1e20:Double, ..
+			1e308:Double ..
+		]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:Double = vals[i]
+			Local s:String = String.FromDouble(v)
+
+			AssertTrue(s.Length > 0, "String.FromDouble produced empty string for index " + i)
+
+			If s = "NaN" Or s = "Infinity" Or s = "-Infinity" Then
+				Continue
+			End If
+
+			Local parsed:Double = Double(s)
+
+			' Ryu d2s should be round-trip exact for finite doubles.
+			AssertEquals(v, parsed, 0.0:Double, "Double round-trip should match for '" + s + "'")
+		Next
+	End Method
+
+	Method Test_FixedFormatting_17dp() { test }
+		Local v:Double = 3.141592653589793:Double
+		Local s:String = String.FromDouble(v, 1)
+
+		Local dot:Int = s.Find(".")
+		AssertTrue(dot >= 0, "Fixed double should contain '.'")
+		AssertEquals(17, s.Length - dot - 1, "Fixed double should have 17 decimal places")
+
+		' Spot-check a stable expected rendering for this exact constant
+		AssertEquals("3.14159265358979312", s, "Fixed double formatting should match expected")
+	End Method
+
+	Method Test_FixedFormatting_RoundTrip_Close() { test }
+		Local vals:Double[] = [ 0.0:Double, -0.0:Double, 1.0:Double, -1.0:Double, 1e-12:Double, 1e-6:Double, 1e20:Double ]
+
+		For Local i:Int = 0 Until vals.Length
+			Local v:Double = vals[i]
+			Local s:String = String.FromDouble(v, 1)
+
+			AssertTrue(s.Length > 0, "String.FromDouble(fixed) produced empty string for index " + i)
+
+			Local parsed:Double = Double(s)
+
+			' Fixed decimal output may not parse back to the exact same binary double.
+			AssertEquals(v, parsed, 1e-12:Double, "Fixed double round-trip should be close for '" + s + "'")
+		Next
+	End Method
+
+End Type
+
 Type TStringCompareCaseTest Extends TTest
 
 	' Helper: normalize compare to -1, 0, 1 for easier assertions
@@ -5641,3 +5820,255 @@ Type TStringSplitULongInts64Test Extends TTest
 End Type
 
 ?
+
+Type TStringSplitFloatsTest Extends TTest
+
+	' Helper: assert Float[] equals expected (Length + each element) with delta
+	Method AssertFloatArrayEquals(expected:Float[], actual:Float[], delta:Float, message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(expected[i], actual[i], delta, message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyString_ReturnsEmptyArray() { test }
+		Local s:String = ""
+		Local a:Float[] = s.SplitFloats(",")
+		AssertEquals(0, a.Length, "Empty string should return empty Float[]")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local s:String = "1.5"
+		Local a:Float[] = s.SplitFloats("")
+		AssertFloatArrayEquals([1.5:Float], a, 0.0:Float, "Empty separator should parse whole string as one entry")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local s:String = "1.5   "
+		Local a:Float[] = s.SplitFloats("")
+		AssertFloatArrayEquals([1.5:Float], a, 0.0:Float, "Empty separator should allow trailing whitespace")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local s:String = "1.5x"
+		Local a:Float[] = s.SplitFloats("")
+		AssertFloatArrayEquals([0.0:Float], a, 0.0:Float, "Empty separator should reject trailing junk and return 0")
+	End Method
+
+	Method Test_BasicCommaSeparated() { test }
+		Local s:String = "1.0,2.0,3.5"
+		Local a:Float[] = s.SplitFloats(",")
+		AssertFloatArrayEquals([1.0:Float,2.0:Float,3.5:Float], a, 0.0:Float, "Basic comma split")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local s:String = "1.0::2.0::3.5"
+		Local a:Float[] = s.SplitFloats("::")
+		AssertFloatArrayEquals([1.0:Float,2.0:Float,3.5:Float], a, 0.0:Float, "Custom separator split")
+	End Method
+
+	Method Test_LeadingTrailingConsecutiveSeparators_GiveZeros() { test }
+		Local s:String = ",1.0,,3.0,"
+		Local a:Float[] = s.SplitFloats(",")
+		AssertFloatArrayEquals([0.0:Float,1.0:Float,0.0:Float,3.0:Float,0.0:Float], a, 0.0:Float, "Empty tokens should become 0.0")
+	End Method
+
+	Method Test_AllEmptyTokens() { test }
+		Local s:String = ",,"
+		Local a:Float[] = s.SplitFloats(",")
+		AssertFloatArrayEquals([0.0:Float,0.0:Float,0.0:Float], a, 0.0:Float, "Two separators should produce three empty tokens => 0,0,0")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local s:String = "  1.0 ,  2.5  ,   3.0   "
+		Local a:Float[] = s.SplitFloats(",")
+		AssertFloatArrayEquals([1.0:Float,2.5:Float,3.0:Float], a, 0.0:Float, "Whitespace around numbers should be allowed")
+	End Method
+
+	Method Test_TrailingWhitespaceOnly_AfterNumber_IsAllowed() { test }
+		Local s:String = "1.25   ,  2.5~t"
+		Local a:Float[] = s.SplitFloats(",")
+		AssertFloatArrayEquals([1.25:Float,2.5:Float], a, 0.0:Float, "Trailing whitespace in tokens should be allowed")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local s:String = "1.0x, 2.0, 3.0 4.0, 5.0-"
+		Local a:Float[] = s.SplitFloats(",")
+		AssertFloatArrayEquals([0.0:Float,2.0:Float,0.0:Float,0.0:Float], a, 0.0:Float, "Trailing non-whitespace junk should become 0")
+	End Method
+
+	Method Test_NoDigits_TokensReturnZero() { test }
+		Local s:String = "abc,  , +, -, ., E, NaNx"
+		Local a:Float[] = s.SplitFloats(",")
+		AssertFloatArrayEquals([0.0:Float,0.0:Float,0.0:Float,0.0:Float,0.0:Float,0.0:Float,0.0:Float], a, 0.0:Float, "Tokens with no valid number should return 0")
+	End Method
+
+	Method Test_ScientificNotation_E_IsParsed() { test }
+		Local s:String = "1E0,3.5E0,1E-6,1E20,-4.2E1"
+		Local a:Float[] = s.SplitFloats(",")
+		' Use a small delta for float parsing
+		AssertFloatArrayEquals([1.0:Float,3.5:Float,1e-6:Float,1e20:Float,-42.0:Float], a, 1e-6:Float, "Scientific notation should parse")
+	End Method
+
+	Method Test_NaNAndInfinity() { test }
+		Local s:String = "NaN,Infinity,-Infinity"
+		Local a:Float[] = s.SplitFloats(",")
+		AssertEquals(3, a.Length, "NaN/Inf should produce 3 entries")
+
+		Local nanVal:Float = a[0]
+		Local posInf:Float = a[1]
+		Local negInf:Float = a[2]
+
+		' NaN is not equal to itself
+		AssertFalse(nanVal = nanVal, "First entry should be NaN")
+
+		AssertTrue(posInf > 0.0:Float, "Second entry should be +Infinity (positive)")
+		AssertTrue(negInf < 0.0:Float, "Third entry should be -Infinity (negative)")
+	End Method
+
+	Method Test_MultiCharSeparator_Edges() { test }
+		Local s:String = "::1.0::::3.0::"
+		Local a:Float[] = s.SplitFloats("::")
+		AssertFloatArrayEquals([0.0:Float,1.0:Float,0.0:Float,3.0:Float,0.0:Float], a, 0.0:Float, "Multi-char separator edges should work")
+	End Method
+
+	Method Test_SeparatorNotFound_ParsesWholeStringAsSingleEntry() { test }
+		Local s:String = "1.25"
+		Local a:Float[] = s.SplitFloats(",")
+		AssertEquals(1, a.Length, "Separator not found should produce a single entry (length)")
+		AssertEquals(1.25:Float, a[0], 0.0:Float, "Separator not found should parse whole string as single entry")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local s:String = "aaaa"
+		Local a:Float[] = s.SplitFloats("aa")
+		AssertFloatArrayEquals([0.0:Float,0.0:Float,0.0:Float], a, 0.0:Float, "Non-overlapping matches should be used")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:Float[] = [ 0.0:Float, -0.0:Float, 1.0:Float, 2.5:Float, -3.0:Float, 1e-6:Float, 1e20:Float ]
+		Local joined:String = ",".Join(vals)
+		Local parsed:Float[] = joined.SplitFloats(",")
+		' For many values Ryu should round-trip exactly; allow tiny delta to keep robust.
+		AssertFloatArrayEquals(vals, parsed, 1e-6:Float, "Join(Float[]) then SplitFloats should round-trip for clean tokens")
+	End Method
+
+End Type
+
+Type TStringSplitDoublesTest Extends TTest
+
+	' Helper: assert Double[] equals expected (Length + each element) with delta
+	Method AssertDoubleArrayEquals(expected:Double[], actual:Double[], delta:Double, message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(expected[i], actual[i], delta, message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyString_ReturnsEmptyArray() { test }
+		Local s:String = ""
+		Local a:Double[] = s.SplitDoubles(",")
+		AssertEquals(0, a.Length, "Empty string should return empty Double[]")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local s:String = "1.5"
+		Local a:Double[] = s.SplitDoubles("")
+		AssertDoubleArrayEquals([1.5:Double], a, 0.0:Double, "Empty separator should parse whole string as one entry")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local s:String = "1.5   "
+		Local a:Double[] = s.SplitDoubles("")
+		AssertDoubleArrayEquals([1.5:Double], a, 0.0:Double, "Empty separator should allow trailing whitespace")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local s:String = "1.5x"
+		Local a:Double[] = s.SplitDoubles("")
+		AssertDoubleArrayEquals([0.0:Double], a, 0.0:Double, "Empty separator should reject trailing junk and return 0")
+	End Method
+
+	Method Test_BasicCommaSeparated() { test }
+		Local s:String = "1.0,2.0,3.5"
+		Local a:Double[] = s.SplitDoubles(",")
+		AssertDoubleArrayEquals([1.0:Double,2.0:Double,3.5:Double], a, 0.0:Double, "Basic comma split")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local s:String = "1.0::2.0::3.5"
+		Local a:Double[] = s.SplitDoubles("::")
+		AssertDoubleArrayEquals([1.0:Double,2.0:Double,3.5:Double], a, 0.0:Double, "Custom separator split")
+	End Method
+
+	Method Test_LeadingTrailingConsecutiveSeparators_GiveZeros() { test }
+		Local s:String = ",1.0,,3.0,"
+		Local a:Double[] = s.SplitDoubles(",")
+		AssertDoubleArrayEquals([0.0:Double,1.0:Double,0.0:Double,3.0:Double,0.0:Double], a, 0.0:Double, "Empty tokens should become 0.0")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local s:String = "  1.0 ,  2.5  ,   3.0   "
+		Local a:Double[] = s.SplitDoubles(",")
+		AssertDoubleArrayEquals([1.0:Double,2.5:Double,3.0:Double], a, 0.0:Double, "Whitespace around numbers should be allowed")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local s:String = "1.0x, 2.0, 3.0 4.0, 5.0-"
+		Local a:Double[] = s.SplitDoubles(",")
+		AssertDoubleArrayEquals([0.0:Double,2.0:Double,0.0:Double,0.0:Double], a, 0.0:Double, "Trailing non-whitespace junk should become 0")
+	End Method
+
+	Method Test_NoDigits_TokensReturnZero() { test }
+		Local s:String = "abc,  , +, -, ., E, NaNx"
+		Local a:Double[] = s.SplitDoubles(",")
+		AssertDoubleArrayEquals([0.0:Double,0.0:Double,0.0:Double,0.0:Double,0.0:Double,0.0:Double,0.0:Double], a, 0.0:Double, "Tokens with no valid number should return 0")
+	End Method
+
+	Method Test_ScientificNotation_E_IsParsed() { test }
+		Local s:String = "1E0,3.5E0,1E-12,1E20,-4.2E1,1E308"
+		Local a:Double[] = s.SplitDoubles(",")
+		AssertDoubleArrayEquals([1.0:Double,3.5:Double,1e-12:Double,1e20:Double,-42.0:Double,1e308:Double], a, 1e-12:Double, "Scientific notation should parse")
+	End Method
+
+	Method Test_NaNAndInfinity() { test }
+		Local s:String = "NaN,Infinity,-Infinity"
+		Local a:Double[] = s.SplitDoubles(",")
+		AssertEquals(3, a.Length, "NaN/Inf should produce 3 entries")
+
+		Local nanVal:Double = a[0]
+		Local posInf:Double = a[1]
+		Local negInf:Double = a[2]
+
+		AssertFalse(nanVal = nanVal, "First entry should be NaN")
+		AssertTrue(posInf > 0.0:Double, "Second entry should be +Infinity (positive)")
+		AssertTrue(negInf < 0.0:Double, "Third entry should be -Infinity (negative)")
+	End Method
+
+	Method Test_MultiCharSeparator_Edges() { test }
+		Local s:String = "::1.0::::3.0::"
+		Local a:Double[] = s.SplitDoubles("::")
+		AssertDoubleArrayEquals([0.0:Double,1.0:Double,0.0:Double,3.0:Double,0.0:Double], a, 0.0:Double, "Multi-char separator edges should work")
+	End Method
+
+	Method Test_SeparatorNotFound_ParsesWholeStringAsSingleEntry() { test }
+		Local s:String = "1.25"
+		Local a:Double[] = s.SplitDoubles(",")
+		AssertEquals(1, a.Length, "Separator not found should produce a single entry (length)")
+		AssertEquals(1.25:Double, a[0], 0.0:Double, "Separator not found should parse whole string as single entry")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local s:String = "aaaa"
+		Local a:Double[] = s.SplitDoubles("aa")
+		AssertDoubleArrayEquals([0.0:Double,0.0:Double,0.0:Double], a, 0.0:Double, "Non-overlapping matches should be used")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:Double[] = [ 0.0:Double, -0.0:Double, 1.0:Double, 2.5:Double, -3.0:Double, 1e-12:Double, 1e20:Double, 1e308:Double ]
+		Local joined:String = ",".Join(vals)
+		Local parsed:Double[] = joined.SplitDoubles(",")
+		AssertDoubleArrayEquals(vals, parsed, 1e-12:Double, "Join(Double[]) then SplitDoubles should round-trip for clean tokens")
+	End Method
+
+End Type

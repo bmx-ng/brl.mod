@@ -123,6 +123,8 @@ String^Object{
 	-SplitSizeTs:Size_T[]( separator:String )="bbStringSplitSizets"
 	-SplitLongInts:LongInt[]( separator:String )="bbStringSplitLongInts"
 	-SplitULongInts:ULongInt[]( separator:String )="bbStringSplitULongInts"
+	-SplitFloats:Float[]( separator:String )="bbStringSplitFloats"
+	-SplitDoubles:Double[]( separator:String )="bbStringSplitDoubles"
 }AF="bbStringClass"
 
 ___Array^Object{

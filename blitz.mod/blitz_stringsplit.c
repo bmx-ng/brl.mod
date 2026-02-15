@@ -95,7 +95,7 @@ static inline int sep_match_at(const BBChar *s, int i, const BBChar *d, int dlen
 	return 1;
 }
 
-#define BB_DEFINE_STR_SPLIT_NUMS(FNNAME, ARRID, CTYPE, PARSEFN)                        \
+#define BB_DEFINE_STR_SPLIT_NUMS(FNNAME, ARRID, CTYPE, PARSEFN, ZERO_VAL)             \
 BBArray *FNNAME( BBChar *str, int strLength, BBChar *sep, int sepLength ){            \
 	/* Empty string => empty array */                                                 \
 	if( !str || strLength==0 ){                                                       \
@@ -117,7 +117,7 @@ BBArray *FNNAME( BBChar *str, int strLength, BBChar *sep, int sepLength ){      
 		/* Reject trailing junk (allow whitespace only) */                            \
 		int j = endi;                                                                 \
 		while( j < slen && bbIsspace(s[j]) ) ++j;                                     \
-		if( j < slen ) v = (CTYPE)0;                                                  \
+		if( j < slen ) v = (CTYPE)(ZERO_VAL);                                         \
                                                                                       \
 		out[0] = v;                                                                   \
 		return arr;                                                                   \
@@ -155,14 +155,14 @@ BBArray *FNNAME( BBChar *str, int strLength, BBChar *sep, int sepLength ){      
 			if( i==slen || s[i]==c ){                                                 \
 				int tokLen = i - start;                                               \
 				if( tokLen <= 0 ){                                                    \
-					out[outIndex++] = 0;                                              \
+					out[outIndex++] = (CTYPE)(ZERO_VAL);                              \
 				}else{                                                                \
 					int endi=0;                                                       \
 					errno = 0;                                                        \
 					CTYPE v = PARSEFN( s+start, tokLen, &endi );                      \
 					int j=endi;                                                       \
 					while( j < tokLen && bbIsspace( (s+start)[j] ) ) ++j;             \
-					if( j < tokLen ) v = 0;                                           \
+					if( j < tokLen ) v = (CTYPE)(ZERO_VAL);                           \
 					out[outIndex++] = v;                                              \
 				}                                                                     \
 				start = i + 1; /* skip delimiter char */                              \
@@ -178,7 +178,7 @@ BBArray *FNNAME( BBChar *str, int strLength, BBChar *sep, int sepLength ){      
 				int tokLen = i - start;                                               \
 				/* Empty entry => 0 */                                                \
 				if( tokLen <= 0 ){                                                    \
-					out[outIndex++] = (CTYPE)0;                                       \
+					out[outIndex++] = (CTYPE)(ZERO_VAL);                              \
 				}else{                                                                \
 					int endi = 0;                                                     \
 					errno = 0;                                                        \
@@ -188,7 +188,7 @@ BBArray *FNNAME( BBChar *str, int strLength, BBChar *sep, int sepLength ){      
 					int j = endi;                                                     \
 					while( j < tokLen && bbIsspace( (s+start)[j] ) ) ++j;             \
 					if( j < tokLen ){                                                 \
-						v = (CTYPE)0;                                                 \
+						v = (CTYPE)(ZERO_VAL);                                        \
 					}                                                                 \
 																						\
 					out[outIndex++] = v;                                              \
@@ -205,12 +205,29 @@ BBArray *FNNAME( BBChar *str, int strLength, BBChar *sep, int sepLength ){      
 	return arr;                                                                       \
 }
 
-BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitInts,     "i", BBINT,     bbStrToInt )
-BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitBytes,    "b", BBBYTE,    bbStrToByte )
-BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitShorts,   "s", BBSHORT,   bbStrToShort )
-BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitUInts,    "u", BBUINT,    bbStrToUInt )
-BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitLongs,    "l", BBLONG,    bbStrToLong )
-BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitULongs,   "y", BBULONG,   bbStrToULong )
-BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitSizets,   "t", BBSIZET,   bbStrToSizet )
-BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitLongInts, "v", BBLONGINT, bbStrToLongInt )
-BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitULongInts,"e", BBULONGINT,bbStrToULongInt )
+BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitInts,     "i", BBINT,     bbStrToInt, 0 )
+BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitBytes,    "b", BBBYTE,    bbStrToByte, 0 )
+BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitShorts,   "s", BBSHORT,   bbStrToShort, 0 )
+BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitUInts,    "u", BBUINT,    bbStrToUInt, 0 )
+BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitLongs,    "l", BBLONG,    bbStrToLong, 0 )
+BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitULongs,   "y", BBULONG,   bbStrToULong, 0 )
+BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitSizets,   "t", BBSIZET,   bbStrToSizet, 0 )
+BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitLongInts, "v", BBLONGINT, bbStrToLongInt, 0 )
+BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitULongInts,"e", BBULONGINT,bbStrToULongInt, 0 )
+
+BBArray *bbStringSplitFloats( BBString *str, BBString *sep ){
+	if( str==&bbEmptyString || str->length==0 ){
+		return &bbEmptyArray;
+	}
+    return bbStrSplitFloats( str->buf, str->length, sep==&bbEmptyString ? NULL : sep->buf, sep->length );
+}
+
+BBArray *bbStringSplitDoubles( BBString *str, BBString *sep ){
+	if( str==&bbEmptyString || str->length==0 ){
+		return &bbEmptyArray;
+	}
+	return bbStrSplitDoubles( str->buf, str->length, sep==&bbEmptyString ? NULL : sep->buf, sep->length );
+}
+
+BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitFloats,     "f", BBFLOAT,     bbStrToFloat, 0.0f )
+BB_DEFINE_STR_SPLIT_NUMS( bbStrSplitDoubles,    "d", BBDOUBLE,    bbStrToDouble, 0.0 )
