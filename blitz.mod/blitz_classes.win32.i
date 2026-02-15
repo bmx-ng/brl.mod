@@ -113,6 +113,16 @@ String^Object{
 
 	-Join:String( bits:Float[], fixed:Int=0 )="bbStringJoinFloats"
 	-Join:String( bits:Double[], fixed:Int=0 )="bbStringJoinDoubles"
+
+	-SplitInts:Int[]( separator:String )="bbStringSplitInts"
+	-SplitBytes:Byte[]( separator:String )="bbStringSplitBytes"
+	-SplitShorts:Short[]( separator:String )="bbStringSplitShorts"
+	-SplitUInts:UInt[]( separator:String )="bbStringSplitUInts"
+	-SplitLongs:Long[]( separator:String )="bbStringSplitLongs"
+	-SplitULongs:ULong[]( separator:String )="bbStringSplitULongs"
+	-SplitSizeTs:Size_T[]( separator:String )="bbStringSplitSizets"
+	-SplitLongInts:LongInt[]( separator:String )="bbStringSplitLongInts"
+	-SplitULongInts:ULongInt[]( separator:String )="bbStringSplitULongInts"
 }AF="bbStringClass"
 
 ___Array^Object{
