@@ -351,7 +351,7 @@ BBSIZET bbStrToSizet(const BBChar *s, int length, int *end_index) {
 
 BBDOUBLE bbStrToDouble(const BBChar *s, int length, int *end_index) {
     double value = 0.0;
-    int res = bbStrToDoubleEx(s, length, &value, 0, length, 0, &bbEmptyString);
+    int res = bbStrToDoubleEx(s, length, &value, 0, length, 1 << 0 /* scientific */ | 1 << 2 /* fixed */ | 1 << 7 /* allow_leading_plus */ | 1 << 8 /* skip_white_space */, &bbEmptyString);
     if (end_index) {
         *end_index = res;
     }
@@ -360,7 +360,7 @@ BBDOUBLE bbStrToDouble(const BBChar *s, int length, int *end_index) {
 
 BBFLOAT bbStrToFloat(const BBChar *s, int length, int *end_index) {
     float value = 0.0f;
-    int res = bbStrToFloatEx(s, length, &value, 0, length, 0, &bbEmptyString);
+    int res = bbStrToFloatEx(s, length, &value, 0, length, 1 << 0 /* scientific */ | 1 << 2 /* fixed */ | 1 << 7 /* allow_leading_plus */ | 1 << 8 /* skip_white_space */, &bbEmptyString);
     if (end_index) {
         *end_index = res;
     }

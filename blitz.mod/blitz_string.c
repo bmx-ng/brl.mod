@@ -430,22 +430,30 @@ BBString *bbStringFromULongInt( BBULONGINT n ){
 
 BBString *bbStringFromFloat( float n, int fixed ){
 	char buf[64];
-	if( fixed ) {
-		sprintf( buf,"%.9f",n );
-	} else {
-		sprintf( buf,"%#.9g",n );
+	int len = fixed ? d2fixed_buffered_n((double)n, 9, buf) : f2s_buffered_n(n, buf);
+	if( len <= 0 ){
+		return &bbEmptyString;
 	}
-	return bbStringFromCString(buf);
+	BBString *str = bbStringNew( len );
+	BBChar *t = str->buf;
+	for( int i=0; i<len; i++ ){
+		t[i] = (BBChar)buf[i];
+	}
+	return str;
 }
 
 BBString *bbStringFromDouble( double n, int fixed ){
 	char buf[64];
-	if( fixed ) {
-		sprintf( buf,"%.17f",n );
-	} else {
-		sprintf( buf,"%#.17g",n );
+	int len = fixed ? d2fixed_buffered_n(n, 17, buf) : d2s_buffered_n(n, buf);
+	if( len <= 0 ){
+		return &bbEmptyString;
 	}
-	return bbStringFromCString(buf);
+	BBString *str = bbStringNew( len );
+	BBChar *t = str->buf;
+	for( int i=0; i<len; i++ ){
+		t[i] = (BBChar)buf[i];
+	}
+	return str;
 }
 
 BBString *bbStringFromBytes( const unsigned char *p,int n ){
