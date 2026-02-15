@@ -42,6 +42,7 @@
 #include "blitz_coverage.h"
 #include "blitz_strto.h"
 #include "blitz_atstart.h"
+#include "blitz_stringsplit.h"
 
 #ifdef __cplusplus
 extern "C"{

@@ -132,6 +132,7 @@ Import "blitz_coverage.c"
 Import "blitz_strto.c"
 Import "blitz_atstart.c"
 Import "blitz_string_ex.cpp"
+Import "blitz_stringsplit.c"
 
 ?coverage
 Import "hashmap/hashmap.c"
