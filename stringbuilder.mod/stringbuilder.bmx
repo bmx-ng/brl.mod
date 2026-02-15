@@ -1050,6 +1050,87 @@ Public
 		Return bmx_stringbuilder_todouble(buffer)
 	End Method
 
+	Rem
+	bbdoc: Creates an array of #Int values by splitting the string builder using the specified separator.
+	about: If a split element is not a valid #Int, the corresponding array element will be 0.
+	If @separator is empty or not found in the string builder, a single element array will be returned containing the value of the whole string builder as an #Int.
+	End Rem
+	Method SplitInts:Int[](separator:String)
+		Return bmx_stringbuilder_split_ints(buffer, separator)
+	End Method
+
+	Rem
+	bbdoc: Creates an array of #Byte values by splitting the string builder using the specified separator.
+	about: If a split element is not a valid #Byte, the corresponding array element will be 0.
+	If @separator is empty or not found in the string builder, a single element array will be returned containing the value of the whole string builder as a #Byte.
+	End Rem
+	Method SplitBytes:Byte[](separator:String)
+		Return bmx_stringbuilder_split_bytes(buffer, separator)
+	End Method
+
+	Rem
+	bbdoc: Creates an array of #Short values by splitting the string builder using the specified separator.
+	about: If a split element is not a valid #Short, the corresponding array element will be 0.
+	If @separator is empty or not found in the string builder, a single element array will be returned containing the value of the whole string builder as a #Short.
+	End Rem
+	Method SplitShorts:Short[](separator:String)
+		Return bmx_stringbuilder_split_shorts(buffer, separator)
+	End Method
+
+	Rem
+	bbdoc: Creates an array of #UInt values by splitting the string builder using the specified separator.
+	about: If a split element is not a valid #UInt, the corresponding array element will be 0.
+	If @separator is empty or not found in the string builder, a single element array will be returned containing the value of the whole string builder as a #UInt.
+	End Rem
+	Method SplitUInts:UInt[](separator:String)
+		Return bmx_stringbuilder_split_uints(buffer, separator)
+	End Method
+
+	Rem
+	bbdoc: Creates an array of #Long values by splitting the string builder using the specified separator.
+	about: If a split element is not a valid #Long, the corresponding array element will be 0.
+	If @separator is empty or not found in the string builder, a single element array will be returned containing the value of the whole string builder as a #Long.
+	End Rem
+	Method SplitLongs:Long[](separator:String)
+		Return bmx_stringbuilder_split_longs(buffer, separator)
+	End Method
+
+	Rem
+	bbdoc: Creates an array of #ULong values by splitting the string builder using the specified separator.
+	about: If a split element is not a valid #ULong, the corresponding array element will be 0.
+	If @separator is empty or not found in the string builder, a single element array will be returned containing the value of the whole string builder as a #ULong.
+	End Rem
+	Method SplitULongs:ULong[](separator:String)
+		Return bmx_stringbuilder_split_ulongs(buffer, separator)
+	End Method
+
+	Rem
+	bbdoc: Creates an array of #Size_T values by splitting the string builder using the specified separator.
+	about: If a split element is not a valid #Size_T, the corresponding array element will be 0.
+	If @separator is empty or not found in the string builder, a single element array will be returned containing the value of the whole string builder as a #Size_T.
+	End Rem
+	Method SplitSizeTs:Size_T[](separator:String)
+		Return bmx_stringbuilder_split_sizets(buffer, separator)
+	End Method
+
+	Rem
+	bbdoc: Creates an array of #LongInt values by splitting the string builder using the specified separator.
+	about: If a split element is not a valid #LongInt, the corresponding array element will be 0.
+	If @separator is empty or not found in the string builder, a single element array will be returned containing the value of the whole string builder as a #LongInt.
+	End Rem
+	Method SplitLongInts:LongInt[](separator:String)
+		Return bmx_stringbuilder_split_longints(buffer, separator)
+	End Method
+
+	Rem
+	bbdoc: Creates an array of #ULongInt values by splitting the string builder using the specified separator.
+	about: If a split element is not a valid #ULongInt, the corresponding array element will be 0.
+	If @separator is empty or not found in the string builder, a single element array will be returned containing the value of the whole string builder as a #ULongInt.
+	End Rem
+	Method SplitULongInts:ULongInt[](separator:String)
+		Return bmx_stringbuilder_split_ulongints(buffer, separator)
+	End Method
+
 	Method Delete()
 		If buffer Then
 			bmx_stringbuilder_free(buffer)

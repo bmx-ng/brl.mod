@@ -939,3 +939,1615 @@ Type TStringBuilderAppendSizeT64Test Extends TTest
 End Type
 
 ?
+
+Type TStringBuilderSplitIntsTest Extends TTest
+
+	' Helper: assert Int[] equals expected (Length + each element)
+	Method AssertIntArrayEquals(expected:Int[], actual:Int[], message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(expected[i], actual[i], message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:Int[] = sb.SplitInts(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty Int[]")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:Int[] = sb.SplitInts("")
+		AssertIntArrayEquals([123], a, "Empty separator should parse whole builder as one entry")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123   ")
+		Local a:Int[] = sb.SplitInts("")
+		AssertIntArrayEquals([123], a, "Empty separator should allow trailing whitespace (builder)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x")
+		Local a:Int[] = sb.SplitInts("")
+		AssertIntArrayEquals([0], a, "Empty separator should reject trailing junk and return 0 (builder)")
+	End Method
+
+	Method Test_BasicCommaSeparated() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,2,3")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([1,2,3], a, "Basic comma split (builder)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1::2::3")
+		Local a:Int[] = sb.SplitInts("::")
+		AssertIntArrayEquals([1,2,3], a, "Custom separator split (builder)")
+	End Method
+
+	Method Test_LeadingSeparator_GivesLeadingZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1,2")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([0,1,2], a, "Leading separator should produce leading empty token => 0 (builder)")
+	End Method
+
+	Method Test_TrailingSeparator_GivesTrailingZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,2,")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([1,2,0], a, "Trailing separator should produce trailing empty token => 0 (builder)")
+	End Method
+
+	Method Test_ConsecutiveSeparators_GiveZeroTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,,3")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([1,0,3], a, "Consecutive separators should produce empty token => 0 (builder)")
+	End Method
+
+	Method Test_AllEmptyTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",,")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([0,0,0], a, "Two separators should produce three empty tokens => 0,0,0 (builder)")
+	End Method
+
+	Method Test_SeparatorNotFound_ParsesWholeStringAsSingleEntry() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([123], a, "Separator not found should produce a single entry (builder)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1 ,  2  ,   3   ")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([1,2,3], a, "Whitespace around numbers should be allowed (builder)")
+	End Method
+
+	Method Test_SignHandling() { test }
+		Local sb:TStringBuilder = New TStringBuilder("-1,+2,0,-300")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([-1,2,0,-300], a, "Signed parsing should handle - and + (builder)")
+	End Method
+
+	Method Test_WhitespaceBetweenSignAndDigits_IsRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("- 1,+ 2,-~t3,+~n4")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([0,0,0,0], a, "Whitespace between sign and digits should produce 0 (builder)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x, 456, 78 9, 10-")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([0,456,0,0], a, "Tokens with trailing non-whitespace junk should become 0 (builder)")
+	End Method
+
+	Method Test_EmbeddedHexAndBinary() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FF,%1010,$0,%0")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([255,10,0,0], a, "Hex and binary prefixes should parse correctly (builder)")
+	End Method
+
+	Method Test_BasePrefixes_WithTrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFG,%10102,$1Z,%10 2")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([0,0,0,0], a, "Trailing junk after base-prefixed numbers should be rejected (builder)")
+	End Method
+
+	Method Test_NoDigits_TokensReturnZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("abc,  , +, -, $, %")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([0,0,0,0,0,0], a, "Tokens with no digits should return 0 (builder)")
+	End Method
+
+	Method Test_IntMinMax() { test }
+		Local minVal:Int = $80000000 ' -2147483648
+		Local maxVal:Int = $7FFFFFFF '  2147483647
+
+		Local sb:TStringBuilder = New TStringBuilder("-2147483648,2147483647")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([minVal, maxVal], a, "Should parse Int min/max exactly (builder)")
+	End Method
+
+	Method Test_IntOverflow_ClampsOrZero() { test }
+		Local minVal:Int = $80000000 ' -2147483648
+		Local maxVal:Int = $7FFFFFFF '  2147483647
+
+		Local sb:TStringBuilder = New TStringBuilder("2147483648,-2147483649,999999999999999999999")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([maxVal, minVal, 0], a, "Overflow should clamp to Int min/max when within Long range, else 0 (builder)")
+	End Method
+
+	Method Test_MultiCharSeparator_Edges() { test }
+		Local sb:TStringBuilder = New TStringBuilder("::1::::3::")
+		Local a:Int[] = sb.SplitInts("::")
+		AssertIntArrayEquals([0,1,0,3,0], a, "Multi-char separator should handle leading/trailing/consecutive correctly (builder)")
+	End Method
+
+	Method Test_NewlineAndTabWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("~t123~n,~r~n-45~t,  6")
+		Local a:Int[] = sb.SplitInts(",")
+		AssertIntArrayEquals([123,-45,6], a, "Various whitespace characters should be allowed (builder)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:Int[] = sb.SplitInts("aa")
+		AssertIntArrayEquals([0,0,0], a, "Non-overlapping separator matching should be used (builder)")
+	End Method
+
+	Method Test_MatchesStringSplitInts_Output() { test }
+		' Sanity: builder and string should produce identical results for the same content/separator
+		Local content:String = "  $FF, -1, 2147483648, 12x, , %1010  "
+		Local sep:String = ","
+
+		Local sb:TStringBuilder = New TStringBuilder(content)
+		Local a1:Int[] = sb.SplitInts(sep)
+		Local a2:Int[] = content.SplitInts(sep)
+
+		AssertIntArrayEquals(a2, a1, "Builder.SplitInts should match String.SplitInts for identical input")
+	End Method
+
+End Type
+
+Type TStringBuilderSplitBytesTest Extends TTest
+
+	' Helper: assert Byte[] equals expected (Length + each element)
+	Method AssertByteArrayEquals(expected:Byte[], actual:Byte[], message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(Int(expected[i]), Int(actual[i]), message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty Byte[]")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:Byte[] = sb.SplitBytes("")
+		AssertByteArrayEquals([Byte(123)], a, "Empty separator should parse whole builder as one entry")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123   ")
+		Local a:Byte[] = sb.SplitBytes("")
+		AssertByteArrayEquals([Byte(123)], a, "Empty separator should allow trailing whitespace (builder)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x")
+		Local a:Byte[] = sb.SplitBytes("")
+		AssertByteArrayEquals([Byte(0)], a, "Empty separator should reject trailing junk and return 0 (builder)")
+	End Method
+
+	Method Test_BasicCommaSeparated() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,2,3")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(1),Byte(2),Byte(3)], a, "Basic comma split (builder)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1::2::3")
+		Local a:Byte[] = sb.SplitBytes("::")
+		AssertByteArrayEquals([Byte(1),Byte(2),Byte(3)], a, "Custom separator split (builder)")
+	End Method
+
+	Method Test_LeadingSeparator_GivesLeadingZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1,2")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(0),Byte(1),Byte(2)], a, "Leading separator should produce leading empty token => 0 (builder)")
+	End Method
+
+	Method Test_TrailingSeparator_GivesTrailingZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,2,")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(1),Byte(2),Byte(0)], a, "Trailing separator should produce trailing empty token => 0 (builder)")
+	End Method
+
+	Method Test_ConsecutiveSeparators_GiveZeroTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,,3")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(1),Byte(0),Byte(3)], a, "Consecutive separators should produce empty token => 0 (builder)")
+	End Method
+
+	Method Test_AllEmptyTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",,")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(0),Byte(0),Byte(0)], a, "Two separators should produce three empty tokens => 0,0,0 (builder)")
+	End Method
+
+	Method Test_SeparatorNotFound_ParsesWholeStringAsSingleEntry() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(123)], a, "Separator not found should produce a single entry (builder)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1 ,  2  ,   3   ")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(1),Byte(2),Byte(3)], a, "Whitespace around numbers should be allowed (builder)")
+	End Method
+
+	Method Test_WhitespaceBetweenSignAndDigits_IsRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("- 1,+ 2,-~t3,+~n4")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(0),Byte(0),Byte(0),Byte(0)], a, "Whitespace between sign and digits should produce 0 (builder)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x, 4, 7 8, 10-")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(0),Byte(4),Byte(0),Byte(0)], a, "Tokens with trailing non-whitespace junk should become 0 (builder)")
+	End Method
+
+	Method Test_EmbeddedHexAndBinary() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FF,%1010,$0,%0")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(255),Byte(10),Byte(0),Byte(0)], a, "Hex/binary prefixes should parse correctly (builder)")
+	End Method
+
+	Method Test_BasePrefixes_WithTrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFG,%10102,$1Z,%10 2")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(0),Byte(0),Byte(0),Byte(0)], a, "Trailing junk after base-prefixed numbers should be rejected (builder)")
+	End Method
+
+	Method Test_NoDigits_TokensReturnZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("abc,  , +, -, $, %")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(0),Byte(0),Byte(0),Byte(0),Byte(0),Byte(0)], a, "Tokens with no digits should return 0 (builder)")
+	End Method
+
+	Method Test_RangeEdges_Byte() { test }
+		Local sb:TStringBuilder = New TStringBuilder("0,1,9,10,99,100,254,255")
+		Local a:Byte[] = sb.SplitBytes(",")
+		AssertByteArrayEquals([Byte(0),Byte(1),Byte(9),Byte(10),Byte(99),Byte(100),Byte(254),Byte(255)], a, "Should parse Byte range edges correctly (builder)")
+	End Method
+
+	Method Test_OutOfRange_ReturnsZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("256,-1,999999999999999999999")
+		Local a:Byte[] = sb.SplitBytes(",")
+
+		AssertByteArrayEquals([Byte(0),Byte(0),Byte(0)], a, "Out-of-range handling should return 0 for Byte (builder)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:Byte[] = sb.SplitBytes("aa")
+		AssertByteArrayEquals([Byte(0),Byte(0),Byte(0)], a, "Non-overlapping separator matching should be used (builder)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:Byte[] = [ Byte(0), Byte(1), Byte(2), Byte(10), Byte(100), Byte(254), Byte(255) ]
+		Local joined:String = ",".Join(vals)
+		Local parsed:Byte[] = New TStringBuilder(joined).SplitBytes(",")
+		AssertByteArrayEquals(vals, parsed, "Join(Byte[]) then Builder.SplitBytes should round-trip for clean tokens")
+	End Method
+
+	Method Test_MatchesStringSplitBytes_Output() { test }
+		' Sanity: builder and string should produce identical results for the same content/separator
+		Local content:String = "  $FF, 1, 256, 12x, , %1010  "
+		Local sep:String = ","
+
+		Local sb:TStringBuilder = New TStringBuilder(content)
+		Local a1:Byte[] = sb.SplitBytes(sep)
+		Local a2:Byte[] = content.SplitBytes(sep)
+
+		AssertByteArrayEquals(a2, a1, "Builder.SplitBytes should match String.SplitBytes for identical input")
+	End Method
+
+End Type
+
+Type TStringBuilderSplitShortsTest Extends TTest
+
+	' Helper: assert Short[] equals expected (Length + each element)
+	Method AssertShortArrayEquals(expected:Short[], actual:Short[], message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(Int(expected[i]), Int(actual[i]), message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty Short[]")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1234")
+		Local a:Short[] = sb.SplitShorts("")
+		AssertShortArrayEquals([Short(1234)], a, "Empty separator should parse whole builder as one entry")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1234   ")
+		Local a:Short[] = sb.SplitShorts("")
+		AssertShortArrayEquals([Short(1234)], a, "Empty separator should allow trailing whitespace (builder)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1234x")
+		Local a:Short[] = sb.SplitShorts("")
+		AssertShortArrayEquals([Short(0)], a, "Empty separator should reject trailing junk and return 0 (builder)")
+	End Method
+
+	Method Test_BasicCommaSeparated() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,2,3")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([Short(1),Short(2),Short(3)], a, "Basic comma split (builder)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1::2::3")
+		Local a:Short[] = sb.SplitShorts("::")
+		AssertShortArrayEquals([Short(1),Short(2),Short(3)], a, "Custom separator split (builder)")
+	End Method
+
+	Method Test_LeadingSeparator_GivesLeadingZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1,2")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([Short(0),Short(1),Short(2)], a, "Leading separator should produce leading empty token => 0 (builder)")
+	End Method
+
+	Method Test_TrailingSeparator_GivesTrailingZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,2,")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([Short(1),Short(2),Short(0)], a, "Trailing separator should produce trailing empty token => 0 (builder)")
+	End Method
+
+	Method Test_ConsecutiveSeparators_GiveZeroTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,,3")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([Short(1),Short(0),Short(3)], a, "Consecutive separators should produce empty token => 0 (builder)")
+	End Method
+
+	Method Test_AllEmptyTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",,")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([Short(0),Short(0),Short(0)], a, "Two separators should produce three empty tokens => 0,0,0 (builder)")
+	End Method
+
+	Method Test_SeparatorNotFound_ParsesWholeStringAsSingleEntry() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1234")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([Short(1234)], a, "Separator not found should produce a single entry (builder)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1 ,  2  ,   3   ")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([Short(1),Short(2),Short(3)], a, "Whitespace around numbers should be allowed (builder)")
+	End Method
+
+	Method Test_WhitespaceBetweenSignAndDigits_IsRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("- 1,+ 2,-~t3,+~n4")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([Short(0),Short(0),Short(0),Short(0)], a, "Whitespace between sign and digits should produce 0 (builder)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1234x, 456, 78 9, 10-")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([Short(0),Short(456),Short(0),Short(0)], a, "Tokens with trailing non-whitespace junk should become 0 (builder)")
+	End Method
+
+	Method Test_EmbeddedHexAndBinary() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFFF,%1010,$0,%0")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([Short(65535),Short(10),Short(0),Short(0)], a, "Hex/binary prefixes should parse correctly (builder)")
+	End Method
+
+	Method Test_BasePrefixes_WithTrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFFFG,%10102,$1Z,%10 2")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([Short(0),Short(0),Short(0),Short(0)], a, "Trailing junk after base-prefixed numbers should be rejected (builder)")
+	End Method
+
+	Method Test_NoDigits_TokensReturnZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("abc,  , +, -, $, %")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([Short(0),Short(0),Short(0),Short(0),Short(0),Short(0)], a, "Tokens with no digits should return 0 (builder)")
+	End Method
+
+	Method Test_RangeEdges_Short() { test }
+		Local sb:TStringBuilder = New TStringBuilder("0,1,9,10,99,100,32767,32768,65534,65535")
+		Local a:Short[] = sb.SplitShorts(",")
+		AssertShortArrayEquals([ ..
+			Short(0),Short(1),Short(9),Short(10),Short(99),Short(100), ..
+			Short(32767),Short(32768),Short(65534),Short(65535) ..
+		], a, "Should parse Short range edges correctly (builder)")
+	End Method
+
+	Method Test_OutOfRange_ReturnsZero() { test }
+		' Unsigned narrow parsers return 0 for out-of-range and for bbStrToULong overflow.
+		Local sb:TStringBuilder = New TStringBuilder("65536,-1,999999999999999999999")
+		Local a:Short[] = sb.SplitShorts(",")
+
+		AssertShortArrayEquals([Short(0),Short(0),Short(0)], a, "Out-of-range handling should return 0 for Short (builder)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:Short[] = sb.SplitShorts("aa")
+		AssertShortArrayEquals([Short(0),Short(0),Short(0)], a, "Non-overlapping separator matching should be used (builder)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:Short[] = [ Short(0), Short(1), Short(2), Short(10), Short(1000), Short(32768), Short(65535) ]
+		Local joined:String = ",".Join(vals)
+		Local parsed:Short[] = New TStringBuilder(joined).SplitShorts(",")
+		AssertShortArrayEquals(vals, parsed, "Join(Short[]) then Builder.SplitShorts should round-trip for clean tokens")
+	End Method
+
+	Method Test_MatchesStringSplitShorts_Output() { test }
+		' Sanity: builder and string should produce identical results for the same content/separator
+		Local content:String = "  $FFFF, 1, 65536, 12x, , %1010  "
+		Local sep:String = ","
+
+		Local sb:TStringBuilder = New TStringBuilder(content)
+		Local a1:Short[] = sb.SplitShorts(sep)
+		Local a2:Short[] = content.SplitShorts(sep)
+
+		AssertShortArrayEquals(a2, a1, "Builder.SplitShorts should match String.SplitShorts for identical input")
+	End Method
+
+End Type
+
+Type TStringBuilderSplitUIntsTest Extends TTest
+
+	' Helper: assert UInt[] equals expected (Length + each element)
+	Method AssertUIntArrayEquals(expected:UInt[], actual:UInt[], message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(ULong(expected[i]), ULong(actual[i]), message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty UInt[]")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:UInt[] = sb.SplitUInts("")
+		AssertUIntArrayEquals([123:UInt], a, "Empty separator should parse whole builder as one entry")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123   ")
+		Local a:UInt[] = sb.SplitUInts("")
+		AssertUIntArrayEquals([123:UInt], a, "Empty separator should allow trailing whitespace (builder)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x")
+		Local a:UInt[] = sb.SplitUInts("")
+		AssertUIntArrayEquals([0:UInt], a, "Empty separator should reject trailing junk and return 0 (builder)")
+	End Method
+
+	Method Test_BasicCommaSeparated() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,2,3")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([1:UInt,2:UInt,3:UInt], a, "Basic comma split (builder)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1::2::3")
+		Local a:UInt[] = sb.SplitUInts("::")
+		AssertUIntArrayEquals([1:UInt,2:UInt,3:UInt], a, "Custom separator split (builder)")
+	End Method
+
+	Method Test_LeadingSeparator_GivesLeadingZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1,2")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([0:UInt,1:UInt,2:UInt], a, "Leading separator should produce leading empty token => 0 (builder)")
+	End Method
+
+	Method Test_TrailingSeparator_GivesTrailingZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,2,")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([1:UInt,2:UInt,0:UInt], a, "Trailing separator should produce trailing empty token => 0 (builder)")
+	End Method
+
+	Method Test_ConsecutiveSeparators_GiveZeroTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,,3")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([1:UInt,0:UInt,3:UInt], a, "Consecutive separators should produce empty token => 0 (builder)")
+	End Method
+
+	Method Test_AllEmptyTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",,")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([0:UInt,0:UInt,0:UInt], a, "Two separators should produce three empty tokens => 0,0,0 (builder)")
+	End Method
+
+	Method Test_SeparatorNotFound_ParsesWholeStringAsSingleEntry() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([123:UInt], a, "Separator not found should produce a single entry (builder)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1 ,  2  ,   3   ")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([1:UInt,2:UInt,3:UInt], a, "Whitespace around numbers should be allowed (builder)")
+	End Method
+
+	Method Test_WhitespaceBetweenSignAndDigits_IsRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("- 1,+ 2,-~t3,+~n4")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([0:UInt,0:UInt,0:UInt,0:UInt], a, "Whitespace between sign and digits should produce 0 (builder)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x, 456, 78 9, 10-")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([0:UInt,456:UInt,0:UInt,0:UInt], a, "Tokens with trailing non-whitespace junk should become 0 (builder)")
+	End Method
+
+	Method Test_EmbeddedHexAndBinary() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFFFFFFF,%1010,$0,%0")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([$FFFFFFFF:UInt,10:UInt,0:UInt,0:UInt], a, "Hex/binary prefixes should parse correctly (builder)")
+	End Method
+
+	Method Test_BasePrefixes_WithTrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFFFFFFFG,%10102,$1Z,%10 2")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([0:UInt,0:UInt,0:UInt,0:UInt], a, "Trailing junk after base-prefixed numbers should be rejected (builder)")
+	End Method
+
+	Method Test_NoDigits_TokensReturnZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("abc,  , +, -, $, %")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([0:UInt,0:UInt,0:UInt,0:UInt,0:UInt,0:UInt], a, "Tokens with no digits should return 0 (builder)")
+	End Method
+
+	Method Test_RangeEdges_UInt() { test }
+		Local sb:TStringBuilder = New TStringBuilder("0,1,9,10,99,100,2147483647,2147483648,4000000000,4294967294,4294967295")
+		Local a:UInt[] = sb.SplitUInts(",")
+		AssertUIntArrayEquals([ ..
+			0:UInt,1:UInt,9:UInt,10:UInt,99:UInt,100:UInt, ..
+			2147483647:UInt,2147483648:UInt,4000000000:UInt,4294967294:UInt,4294967295:UInt ..
+		], a, "Should parse UInt range edges correctly (builder)")
+	End Method
+
+	Method Test_OutOfRange_ReturnsZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("4294967296,-1,999999999999999999999")
+		Local a:UInt[] = sb.SplitUInts(",")
+
+		AssertUIntArrayEquals([0:UInt,0:UInt,0:UInt], a, "Out-of-range handling should return 0 for UInt (builder)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:UInt[] = sb.SplitUInts("aa")
+		AssertUIntArrayEquals([0:UInt,0:UInt,0:UInt], a, "Non-overlapping separator matching should be used (builder)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:UInt[] = [ 0:UInt, 1:UInt, 2:UInt, 10:UInt, 100:UInt, 2147483648:UInt, 4294967295:UInt ]
+		Local joined:String = ",".Join(vals)
+		Local parsed:UInt[] = New TStringBuilder(joined).SplitUInts(",")
+		AssertUIntArrayEquals(vals, parsed, "Join(UInt[]) then Builder.SplitUInts should round-trip for clean tokens")
+	End Method
+
+	Method Test_MatchesStringSplitUInts_Output() { test }
+		' Sanity: builder and string should produce identical results for the same content/separator
+		Local content:String = "  $FFFFFFFF, 1, 4294967296, 12x, , %1010  "
+		Local sep:String = ","
+
+		Local sb:TStringBuilder = New TStringBuilder(content)
+		Local a1:UInt[] = sb.SplitUInts(sep)
+		Local a2:UInt[] = content.SplitUInts(sep)
+
+		AssertUIntArrayEquals(a2, a1, "Builder.SplitUInts should match String.SplitUInts for identical input")
+	End Method
+
+End Type
+
+Type TStringBuilderSplitLongsTest Extends TTest
+
+	' Helper: assert Long[] equals expected (Length + each element)
+	Method AssertLongArrayEquals(expected:Long[], actual:Long[], message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(expected[i], actual[i], message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty Long[]")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:Long[] = sb.SplitLongs("")
+		AssertLongArrayEquals([123:Long], a, "Empty separator should parse whole builder as one entry")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123   ")
+		Local a:Long[] = sb.SplitLongs("")
+		AssertLongArrayEquals([123:Long], a, "Empty separator should allow trailing whitespace (builder)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x")
+		Local a:Long[] = sb.SplitLongs("")
+		AssertLongArrayEquals([0:Long], a, "Empty separator should reject trailing junk and return 0 (builder)")
+	End Method
+
+	Method Test_BasicCommaSeparated() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,2,3")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([1:Long,2:Long,3:Long], a, "Basic comma split (builder)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1::2::3")
+		Local a:Long[] = sb.SplitLongs("::")
+		AssertLongArrayEquals([1:Long,2:Long,3:Long], a, "Custom separator split (builder)")
+	End Method
+
+	Method Test_LeadingSeparator_GivesLeadingZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1,2")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([0:Long,1:Long,2:Long], a, "Leading separator should produce leading empty token => 0 (builder)")
+	End Method
+
+	Method Test_TrailingSeparator_GivesTrailingZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,2,")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([1:Long,2:Long,0:Long], a, "Trailing separator should produce trailing empty token => 0 (builder)")
+	End Method
+
+	Method Test_ConsecutiveSeparators_GiveZeroTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,,3")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([1:Long,0:Long,3:Long], a, "Consecutive separators should produce empty token => 0 (builder)")
+	End Method
+
+	Method Test_AllEmptyTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",,")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([0:Long,0:Long,0:Long], a, "Two separators should produce three empty tokens => 0,0,0 (builder)")
+	End Method
+
+	Method Test_SeparatorNotFound_ParsesWholeStringAsSingleEntry() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([123:Long], a, "Separator not found should produce a single entry (builder)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1 ,  2  ,   3   ")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([1:Long,2:Long,3:Long], a, "Whitespace around numbers should be allowed (builder)")
+	End Method
+
+	Method Test_SignHandling() { test }
+		Local sb:TStringBuilder = New TStringBuilder("-1,+2,0,-300")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([-1:Long,2:Long,0:Long,-300:Long], a, "Signed parsing should handle - and + (builder)")
+	End Method
+
+	Method Test_WhitespaceBetweenSignAndDigits_IsRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("- 1,+ 2,-~t3,+~n4")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([0:Long,0:Long,0:Long,0:Long], a, "Whitespace between sign and digits should produce 0 (builder)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x, 456, 78 9, 10-")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([0:Long,456:Long,0:Long,0:Long], a, "Tokens with trailing non-whitespace junk should become 0 (builder)")
+	End Method
+
+	Method Test_EmbeddedHexAndBinary() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$7FFFFFFFFFFFFFFF,%1010,$0,%0")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([$7FFFFFFFFFFFFFFF:Long,10:Long,0:Long,0:Long], a, "Hex/binary prefixes should parse correctly (builder)")
+	End Method
+
+	Method Test_BasePrefixes_WithTrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFG,%10102,$1Z,%10 2")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([0:Long,0:Long,0:Long,0:Long], a, "Trailing junk after base-prefixed numbers should be rejected (builder)")
+	End Method
+
+	Method Test_NoDigits_TokensReturnZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("abc,  , +, -, $, %")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([0:Long,0:Long,0:Long,0:Long,0:Long,0:Long], a, "Tokens with no digits should return 0 (builder)")
+	End Method
+
+	Method Test_LongMinMax() { test }
+		Local minVal:Long = $8000000000000000:Long ' -9223372036854775808
+		Local maxVal:Long = $7FFFFFFFFFFFFFFF:Long '  9223372036854775807
+
+		Local sb:TStringBuilder = New TStringBuilder("-9223372036854775808,9223372036854775807")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([minVal,maxVal], a, "Should parse Long min/max exactly (builder)")
+	End Method
+
+	Method Test_LongOverflow_Clamps() { test }
+		Local minVal:Long = $8000000000000000:Long
+		Local maxVal:Long = $7FFFFFFFFFFFFFFF:Long
+
+		Local sb:TStringBuilder = New TStringBuilder("9223372036854775808,-9223372036854775809,999999999999999999999999999999")
+		Local a:Long[] = sb.SplitLongs(",")
+
+		AssertLongArrayEquals([maxVal,minVal,maxVal], a, "Overflow should clamp for Long (builder)")
+	End Method
+
+	Method Test_MultiCharSeparator_Edges() { test }
+		Local sb:TStringBuilder = New TStringBuilder("::1::::3::")
+		Local a:Long[] = sb.SplitLongs("::")
+		AssertLongArrayEquals([0:Long,1:Long,0:Long,3:Long,0:Long], a, "Multi-char separator should handle edges (builder)")
+	End Method
+
+	Method Test_NewlineAndTabWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("~t123~n,~r~n-45~t,  6")
+		Local a:Long[] = sb.SplitLongs(",")
+		AssertLongArrayEquals([123:Long,-45:Long,6:Long], a, "Various whitespace characters should be allowed (builder)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:Long[] = sb.SplitLongs("aa")
+		AssertLongArrayEquals([0:Long,0:Long,0:Long], a, "Non-overlapping separator matching should be used (builder)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:Long[] = [ ..
+			-1:Long, 0:Long, 1:Long, 2:Long, 10:Long, 100:Long, ..
+			$7FFFFFFFFFFFFFFF:Long, $8000000000000000:Long ..
+		]
+		Local joined:String = ",".Join(vals)
+		Local parsed:Long[] = New TStringBuilder(joined).SplitLongs(",")
+		AssertLongArrayEquals(vals, parsed, "Join(Long[]) then Builder.SplitLongs should round-trip for clean tokens")
+	End Method
+
+	Method Test_MatchesStringSplitLongs_Output() { test }
+		' Sanity: builder and string should produce identical results for the same content/separator
+		Local content:String = "  $7FFFFFFFFFFFFFFF, -1, 9223372036854775808, 12x, , %1010  "
+		Local sep:String = ","
+
+		Local sb:TStringBuilder = New TStringBuilder(content)
+		Local a1:Long[] = sb.SplitLongs(sep)
+		Local a2:Long[] = content.SplitLongs(sep)
+
+		AssertLongArrayEquals(a2, a1, "Builder.SplitLongs should match String.SplitLongs for identical input")
+	End Method
+
+End Type
+
+Type TStringBuilderSplitULongsTest Extends TTest
+
+	' Helper: assert ULong[] equals expected (Length + each element)
+	Method AssertULongArrayEquals(expected:ULong[], actual:ULong[], message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(expected[i], actual[i], message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty ULong[]")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:ULong[] = sb.SplitULongs("")
+		AssertULongArrayEquals([123:ULong], a, "Empty separator should parse whole builder as one entry")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123   ")
+		Local a:ULong[] = sb.SplitULongs("")
+		AssertULongArrayEquals([123:ULong], a, "Empty separator should allow trailing whitespace (builder)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x")
+		Local a:ULong[] = sb.SplitULongs("")
+		AssertULongArrayEquals([0:ULong], a, "Empty separator should reject trailing junk and return 0 (builder)")
+	End Method
+
+	Method Test_BasicCommaSeparated() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,2,3")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([1:ULong,2:ULong,3:ULong], a, "Basic comma split (builder)")
+	End Method
+
+	Method Test_CustomSeparator() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1::2::3")
+		Local a:ULong[] = sb.SplitULongs("::")
+		AssertULongArrayEquals([1:ULong,2:ULong,3:ULong], a, "Custom separator split (builder)")
+	End Method
+
+	Method Test_LeadingSeparator_GivesLeadingZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1,2")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([0:ULong,1:ULong,2:ULong], a, "Leading separator should produce leading empty token => 0 (builder)")
+	End Method
+
+	Method Test_TrailingSeparator_GivesTrailingZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,2,")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([1:ULong,2:ULong,0:ULong], a, "Trailing separator should produce trailing empty token => 0 (builder)")
+	End Method
+
+	Method Test_ConsecutiveSeparators_GiveZeroTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder("1,,3")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([1:ULong,0:ULong,3:ULong], a, "Consecutive separators should produce empty token => 0 (builder)")
+	End Method
+
+	Method Test_AllEmptyTokens() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",,")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([0:ULong,0:ULong,0:ULong], a, "Two separators should produce three empty tokens => 0,0,0 (builder)")
+	End Method
+
+	Method Test_SeparatorNotFound_ParsesWholeStringAsSingleEntry() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([123:ULong], a, "Separator not found should produce a single entry (builder)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1 ,  2  ,   3   ")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([1:ULong,2:ULong,3:ULong], a, "Whitespace around numbers should be allowed (builder)")
+	End Method
+
+	Method Test_WhitespaceBetweenSignAndDigits_IsRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("- 1,+ 2,-~t3,+~n4")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([0:ULong,0:ULong,0:ULong,0:ULong], a, "Whitespace between sign and digits should produce 0 (builder)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x, 456, 78 9, 10-")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([0:ULong,456:ULong,0:ULong,0:ULong], a, "Tokens with trailing non-whitespace junk should become 0 (builder)")
+	End Method
+
+	Method Test_EmbeddedHexAndBinary() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFFFFFFFFFFFFFFF,%1010,$0,%0")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([$FFFFFFFFFFFFFFFF:ULong,10:ULong,0:ULong,0:ULong], a, "Hex/binary prefixes should parse correctly (builder)")
+	End Method
+
+	Method Test_BasePrefixes_WithTrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFG,%10102,$1Z,%10 2")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([0:ULong,0:ULong,0:ULong,0:ULong], a, "Trailing junk after base-prefixed numbers should be rejected (builder)")
+	End Method
+
+	Method Test_NoDigits_TokensReturnZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("abc,  , +, -, $, %")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([0:ULong,0:ULong,0:ULong,0:ULong,0:ULong,0:ULong], a, "Tokens with no digits should return 0 (builder)")
+	End Method
+
+	Method Test_RangeEdges_ULong() { test }
+		Local sb:TStringBuilder = New TStringBuilder("0,1,9,10,99,100,4294967295,4294967296,9223372036854775807,9223372036854775808,18446744073709551614,18446744073709551615")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([ ..
+			0:ULong,1:ULong,9:ULong,10:ULong,99:ULong,100:ULong, ..
+			4294967295:ULong,4294967296:ULong, ..
+			9223372036854775807:ULong,9223372036854775808:ULong, ..
+			18446744073709551614:ULong,18446744073709551615:ULong ..
+		], a, "Should parse ULong range edges correctly (builder)")
+	End Method
+
+	Method Test_ULongOverflow_ClampsToMax() { test }
+		Local maxVal:ULong = $FFFFFFFFFFFFFFFF:ULong
+
+		Local sb:TStringBuilder = New TStringBuilder("18446744073709551616,999999999999999999999999999999999")
+		Local a:ULong[] = sb.SplitULongs(",")
+
+		AssertULongArrayEquals([maxVal, maxVal], a, "Overflow should clamp to ULong max (builder)")
+	End Method
+
+	Method Test_NegativeWrap_Behaviour() { test }
+		Local sb:TStringBuilder = New TStringBuilder("-1,-0")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([$FFFFFFFFFFFFFFFF:ULong,0:ULong], a, "Negative values should wrap for ULong per bbStrToULong semantics (builder)")
+	End Method
+
+	Method Test_MultiCharSeparator_Edges() { test }
+		Local sb:TStringBuilder = New TStringBuilder("::1::::3::")
+		Local a:ULong[] = sb.SplitULongs("::")
+		AssertULongArrayEquals([0:ULong,1:ULong,0:ULong,3:ULong,0:ULong], a, "Multi-char separator should handle edges (builder)")
+	End Method
+
+	Method Test_NewlineAndTabWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("~t123~n,~r~n45~t,  6")
+		Local a:ULong[] = sb.SplitULongs(",")
+		AssertULongArrayEquals([123:ULong,45:ULong,6:ULong], a, "Various whitespace characters should be allowed (builder)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:ULong[] = sb.SplitULongs("aa")
+		AssertULongArrayEquals([0:ULong,0:ULong,0:ULong], a, "Non-overlapping separator matching should be used (builder)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:ULong[] = [ ..
+			0:ULong, 1:ULong, 2:ULong, 10:ULong, 100:ULong, ..
+			4294967296:ULong, 9223372036854775808:ULong, $FFFFFFFFFFFFFFFF:ULong ..
+		]
+		Local joined:String = ",".Join(vals)
+		Local parsed:ULong[] = New TStringBuilder(joined).SplitULongs(",")
+		AssertULongArrayEquals(vals, parsed, "Join(ULong[]) then Builder.SplitULongs should round-trip for clean tokens")
+	End Method
+
+	Method Test_MatchesStringSplitULongs_Output() { test }
+		' Sanity: builder and string should produce identical results for the same content/separator
+		Local content:String = "  $FFFFFFFFFFFFFFFF, 1, 18446744073709551616, 12x, , %1010  "
+		Local sep:String = ","
+
+		Local sb:TStringBuilder = New TStringBuilder(content)
+		Local a1:ULong[] = sb.SplitULongs(sep)
+		Local a2:ULong[] = content.SplitULongs(sep)
+
+		AssertULongArrayEquals(a2, a1, "Builder.SplitULongs should match String.SplitULongs for identical input")
+	End Method
+
+End Type
+
+?ptr32
+
+Type TStringBuilderSplitSizeTs32Test Extends TTest
+
+	Method AssertSizeTArrayEquals(expected:Size_T[], actual:Size_T[], message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(ULong(expected[i]), ULong(actual[i]), message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty Size_T[] (ptr32)")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:Size_T[] = sb.SplitSizeTs("")
+		AssertSizeTArrayEquals([123:Size_T], a, "Empty separator parses whole builder (ptr32)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123   ")
+		Local a:Size_T[] = sb.SplitSizeTs("")
+		AssertSizeTArrayEquals([123:Size_T], a, "Trailing whitespace allowed (ptr32)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x")
+		Local a:Size_T[] = sb.SplitSizeTs("")
+		AssertSizeTArrayEquals([0:Size_T], a, "Trailing junk rejected (ptr32)")
+	End Method
+
+	Method Test_Separators_LeadingTrailingConsecutive() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1,,3,")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([0:Size_T,1:Size_T,0:Size_T,3:Size_T,0:Size_T], a, "Empty tokens become 0 (ptr32)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1 ,  2  ,   3   ")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([1:Size_T,2:Size_T,3:Size_T], a, "Whitespace allowed (ptr32)")
+	End Method
+
+	Method Test_WhitespaceBetweenSignAndDigits_IsRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("- 1,+ 2")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([0:Size_T,0:Size_T], a, "Whitespace between sign and digits rejected (ptr32)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x, 456, 78 9, 10-")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([0:Size_T,456:Size_T,0:Size_T,0:Size_T], a, "Trailing junk rejected (ptr32)")
+	End Method
+
+	Method Test_EmbeddedHexAndBinary() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFFFFFFF,%1010,$0,%0")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([$FFFFFFFF:Size_T,10:Size_T,0:Size_T,0:Size_T], a, "Hex/binary prefixes parse (ptr32)")
+	End Method
+
+	Method Test_RangeEdges_SizeT32() { test }
+		Local sb:TStringBuilder = New TStringBuilder("0,1,9,10,99,100,2147483647,2147483648,4000000000,4294967294,4294967295")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([ ..
+			0:Size_T,1:Size_T,9:Size_T,10:Size_T,99:Size_T,100:Size_T, ..
+			2147483647:Size_T,2147483648:Size_T,4000000000:Size_T,4294967294:Size_T,4294967295:Size_T ..
+		], a, "Size_T 32-bit range edges parse (ptr32)")
+	End Method
+
+	Method Test_OutOfRange_ReturnsZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("4294967296,-1,999999999999999999999")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([0:Size_T,0:Size_T,0:Size_T], a, "Out-of-range should return 0 for Size_T (ptr32)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:Size_T[] = sb.SplitSizeTs("aa")
+		AssertSizeTArrayEquals([0:Size_T,0:Size_T,0:Size_T], a, "Non-overlapping separator matching (ptr32)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:Size_T[] = [ 0:Size_T, 1:Size_T, 2:Size_T, 10:Size_T, 100:Size_T, 2147483648:Size_T, 4294967295:Size_T ]
+		Local joined:String = ",".Join(vals)
+		Local parsed:Size_T[] = New TStringBuilder(joined).SplitSizeTs(",")
+		AssertSizeTArrayEquals(vals, parsed, "Join(Size_T[]) then Builder.SplitSizeTs round-trip (ptr32)")
+	End Method
+
+	Method Test_MatchesStringSplitSizeTs_Output() { test }
+		Local content:String = "  $FFFFFFFF, 1, 4294967296, 12x, , %1010  "
+		Local sep:String = ","
+		Local sb:TStringBuilder = New TStringBuilder(content)
+		Local a1:Size_T[] = sb.SplitSizeTs(sep)
+		Local a2:Size_T[] = content.SplitSizeTs(sep)
+		AssertSizeTArrayEquals(a2, a1, "Builder.SplitSizeTs should match String.SplitSizeTs (ptr32)")
+	End Method
+
+End Type
+
+?ptr64
+
+Type TStringBuilderSplitSizeTs64Test Extends TTest
+
+	Method AssertSizeTArrayEquals(expected:Size_T[], actual:Size_T[], message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(ULong(expected[i]), ULong(actual[i]), message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty Size_T[] (ptr64)")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:Size_T[] = sb.SplitSizeTs("")
+		AssertSizeTArrayEquals([123:Size_T], a, "Empty separator parses whole builder (ptr64)")
+	End Method
+
+	Method Test_Separators_LeadingTrailingConsecutive() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1,,3,")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([0:Size_T,1:Size_T,0:Size_T,3:Size_T,0:Size_T], a, "Empty tokens become 0 (ptr64)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1 ,  2  ,   3   ")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([1:Size_T,2:Size_T,3:Size_T], a, "Whitespace allowed (ptr64)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x, 456, 78 9, 10-")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([0:Size_T,456:Size_T,0:Size_T,0:Size_T], a, "Trailing junk rejected (ptr64)")
+	End Method
+
+	Method Test_EmbeddedHexAndBinary() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFFFFFFFFFFFFFFF,%1010,$0,%0")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([$FFFFFFFFFFFFFFFF:Size_T,10:Size_T,0:Size_T,0:Size_T], a, "Hex/binary prefixes parse (ptr64)")
+	End Method
+
+	Method Test_RangeEdges_SizeT64() { test }
+		Local sb:TStringBuilder = New TStringBuilder("0,1,9,10,99,100,4294967295,4294967296,9223372036854775807,9223372036854775808,18446744073709551614,18446744073709551615")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([ ..
+			0:Size_T,1:Size_T,9:Size_T,10:Size_T,99:Size_T,100:Size_T, ..
+			4294967295:Size_T,4294967296:Size_T, ..
+			9223372036854775807:Size_T,9223372036854775808:Size_T, ..
+			18446744073709551614:Size_T,18446744073709551615:Size_T ..
+		], a, "Size_T 64-bit range edges parse (ptr64)")
+	End Method
+
+	Method Test_SizeTOverflow_ReturnsZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("18446744073709551616,999999999999999999999999999999999")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([0:Size_T,0:Size_T], a, "Overflow should return 0 for Size_T (ptr64)")
+	End Method
+
+	Method Test_NegativeWrap_AllowedOnPtr64() { test }
+		' On ptr64, SIZE_MAX == 0xFFFFFFFFFFFFFFFF, so -1 wraps to SIZE_MAX and is accepted.
+		Local sb:TStringBuilder = New TStringBuilder("-1,-0")
+		Local a:Size_T[] = sb.SplitSizeTs(",")
+		AssertSizeTArrayEquals([$FFFFFFFFFFFFFFFF:Size_T,0:Size_T], a, "Negative wrap yields SIZE_MAX for -1 on ptr64")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:Size_T[] = sb.SplitSizeTs("aa")
+		AssertSizeTArrayEquals([0:Size_T,0:Size_T,0:Size_T], a, "Non-overlapping separator matching (ptr64)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:Size_T[] = [ 0:Size_T, 1:Size_T, 2:Size_T, 10:Size_T, 100:Size_T, 4294967296:Size_T, 9223372036854775808:Size_T ]
+		Local joined:String = ",".Join(vals)
+		Local parsed:Size_T[] = New TStringBuilder(joined).SplitSizeTs(",")
+		AssertSizeTArrayEquals(vals, parsed, "Join(Size_T[]) then Builder.SplitSizeTs round-trip (ptr64)")
+	End Method
+
+	Method Test_MatchesStringSplitSizeTs_Output() { test }
+		Local content:String = "  $FFFFFFFFFFFFFFFF, 1, 18446744073709551616, 12x, , %1010  "
+		Local sep:String = ","
+		Local sb:TStringBuilder = New TStringBuilder(content)
+		Local a1:Size_T[] = sb.SplitSizeTs(sep)
+		Local a2:Size_T[] = content.SplitSizeTs(sep)
+		AssertSizeTArrayEquals(a2, a1, "Builder.SplitSizeTs should match String.SplitSizeTs (ptr64)")
+	End Method
+
+End Type
+
+?
+
+?longint4
+
+Type TStringBuilderSplitLongInts32Test Extends TTest
+
+	Method AssertLongIntArrayEquals(expected:LongInt[], actual:LongInt[], message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(expected[i], actual[i], message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty LongInt[] (longint4)")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:LongInt[] = sb.SplitLongInts("")
+		AssertLongIntArrayEquals([123:LongInt], a, "Empty separator parses whole builder (longint4)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123   ")
+		Local a:LongInt[] = sb.SplitLongInts("")
+		AssertLongIntArrayEquals([123:LongInt], a, "Trailing whitespace allowed (longint4)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x")
+		Local a:LongInt[] = sb.SplitLongInts("")
+		AssertLongIntArrayEquals([0:LongInt], a, "Trailing junk rejected (longint4)")
+	End Method
+
+	Method Test_Separators_LeadingTrailingConsecutive() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1,,3,")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([0:LongInt,1:LongInt,0:LongInt,3:LongInt,0:LongInt], a, "Empty tokens become 0 (longint4)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1 ,  2  ,   3   ")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([1:LongInt,2:LongInt,3:LongInt], a, "Whitespace allowed (longint4)")
+	End Method
+
+	Method Test_SignHandling() { test }
+		Local sb:TStringBuilder = New TStringBuilder("-1,+2,0,-300")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([-1:LongInt,2:LongInt,0:LongInt,-300:LongInt], a, "Signed parsing works (longint4)")
+	End Method
+
+	Method Test_WhitespaceBetweenSignAndDigits_IsRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("- 1,+ 2,-~t3,+~n4")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([0:LongInt,0:LongInt,0:LongInt,0:LongInt], a, "Whitespace between sign and digits rejected (longint4)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x, 456, 78 9, 10-")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([0:LongInt,456:LongInt,0:LongInt,0:LongInt], a, "Trailing junk rejected (longint4)")
+	End Method
+
+	Method Test_EmbeddedHexAndBinary() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$7FFFFFFF,%1010,$0,%0")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([$7FFFFFFF:LongInt,10:LongInt,0:LongInt,0:LongInt], a, "Hex/binary prefixes parse (longint4)")
+	End Method
+
+	Method Test_NoDigits_TokensReturnZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("abc,  , +, -, $, %")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([0:LongInt,0:LongInt,0:LongInt,0:LongInt,0:LongInt,0:LongInt], a, "No digits => 0 (longint4)")
+	End Method
+
+	Method Test_RangeEdges_LongInt32() { test }
+		Local minVal:LongInt = $80000000:LongInt
+		Local maxVal:LongInt = $7FFFFFFF:LongInt
+		Local sb:TStringBuilder = New TStringBuilder("-2147483648,-1,0,1,2147483647")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([minVal,-1:LongInt,0:LongInt,1:LongInt,maxVal], a, "LongInt 32-bit range edges parse (builder longint4)")
+	End Method
+
+	Method Test_OutOfRange_ReturnsZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("2147483648,-2147483649,999999999999999999999")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([0:LongInt,0:LongInt,0:LongInt], a, "Out-of-range/overflow should return 0 for LongInt (builder longint4)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:LongInt[] = sb.SplitLongInts("aa")
+		AssertLongIntArrayEquals([0:LongInt,0:LongInt,0:LongInt], a, "Non-overlapping separator matching (builder longint4)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:LongInt[] = [ $80000000:LongInt, -1:LongInt, 0:LongInt, 1:LongInt, 42:LongInt, $7FFFFFFF:LongInt ]
+		Local joined:String = ",".Join(vals)
+		Local parsed:LongInt[] = New TStringBuilder(joined).SplitLongInts(",")
+		AssertLongIntArrayEquals(vals, parsed, "Join(LongInt[]) then Builder.SplitLongInts round-trip (longint4)")
+	End Method
+
+	Method Test_MatchesStringSplitLongInts_Output() { test }
+		Local content:String = "  $7FFFFFFF, -1, 2147483648, 12x, , %1010  "
+		Local sep:String = ","
+		Local sb:TStringBuilder = New TStringBuilder(content)
+		Local a1:LongInt[] = sb.SplitLongInts(sep)
+		Local a2:LongInt[] = content.SplitLongInts(sep)
+		AssertLongIntArrayEquals(a2, a1, "Builder.SplitLongInts should match String.SplitLongInts (longint4)")
+	End Method
+
+End Type
+
+?longint8
+
+Type TStringBuilderSplitLongInts64Test Extends TTest
+
+	Method AssertLongIntArrayEquals(expected:LongInt[], actual:LongInt[], message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(expected[i], actual[i], message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty LongInt[] (longint8)")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:LongInt[] = sb.SplitLongInts("")
+		AssertLongIntArrayEquals([123:LongInt], a, "Empty separator parses whole builder (longint8)")
+	End Method
+
+	Method Test_Separators_LeadingTrailingConsecutive() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1,,3,")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([0:LongInt,1:LongInt,0:LongInt,3:LongInt,0:LongInt], a, "Empty tokens become 0 (longint8)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1 ,  2  ,   3   ")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([1:LongInt,2:LongInt,3:LongInt], a, "Whitespace allowed (longint8)")
+	End Method
+
+	Method Test_SignHandling() { test }
+		Local sb:TStringBuilder = New TStringBuilder("-1,+2,0,-300")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([-1:LongInt,2:LongInt,0:LongInt,-300:LongInt], a, "Signed parsing works (longint8)")
+	End Method
+
+	Method Test_WhitespaceBetweenSignAndDigits_IsRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("- 1,+ 2,-~t3,+~n4")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([0:LongInt,0:LongInt,0:LongInt,0:LongInt], a, "Whitespace between sign and digits rejected (longint8)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x, 456, 78 9, 10-")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([0:LongInt,456:LongInt,0:LongInt,0:LongInt], a, "Trailing junk rejected (longint8)")
+	End Method
+
+	Method Test_EmbeddedHexAndBinary() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$7FFFFFFFFFFFFFFF,%1010,$0,%0")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([$7FFFFFFFFFFFFFFF:LongInt,10:LongInt,0:LongInt,0:LongInt], a, "Hex/binary prefixes parse (longint8)")
+	End Method
+
+	Method Test_LongIntMinMax_64bit() { test }
+		Local minVal:LongInt = $8000000000000000:LongInt
+		Local maxVal:LongInt = $7FFFFFFFFFFFFFFF:LongInt
+		Local sb:TStringBuilder = New TStringBuilder("-9223372036854775808,9223372036854775807")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([minVal,maxVal], a, "LongInt 64-bit min/max parse (builder longint8)")
+	End Method
+
+	Method Test_Overflow_ReturnsZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("9223372036854775808,-9223372036854775809,999999999999999999999999999999")
+		Local a:LongInt[] = sb.SplitLongInts(",")
+		AssertLongIntArrayEquals([0:LongInt,0:LongInt,0:LongInt], a, "Overflow/underflow should return 0 for LongInt (builder longint8)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:LongInt[] = sb.SplitLongInts("aa")
+		AssertLongIntArrayEquals([0:LongInt,0:LongInt,0:LongInt], a, "Non-overlapping separator matching (builder longint8)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:LongInt[] = [ ..
+			$8000000000000000:LongInt, -1:LongInt, 0:LongInt, 1:LongInt, 42:LongInt, $7FFFFFFFFFFFFFFF:LongInt ..
+		]
+		Local joined:String = ",".Join(vals)
+		Local parsed:LongInt[] = New TStringBuilder(joined).SplitLongInts(",")
+		AssertLongIntArrayEquals(vals, parsed, "Join(LongInt[]) then Builder.SplitLongInts round-trip (longint8)")
+	End Method
+
+	Method Test_MatchesStringSplitLongInts_Output() { test }
+		Local content:String = "  $7FFFFFFFFFFFFFFF, -1, 9223372036854775808, 12x, , %1010  "
+		Local sep:String = ","
+		Local sb:TStringBuilder = New TStringBuilder(content)
+		Local a1:LongInt[] = sb.SplitLongInts(sep)
+		Local a2:LongInt[] = content.SplitLongInts(sep)
+		AssertLongIntArrayEquals(a2, a1, "Builder.SplitLongInts should match String.SplitLongInts (longint8)")
+	End Method
+
+End Type
+
+?
+
+?ulongint4
+
+Type TStringBuilderSplitULongInts32Test Extends TTest
+
+	Method AssertULongIntArrayEquals(expected:ULongInt[], actual:ULongInt[], message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(ULong(expected[i]), ULong(actual[i]), message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty ULongInt[] (ulongint4)")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:ULongInt[] = sb.SplitULongInts("")
+		AssertULongIntArrayEquals([123:ULongInt], a, "Empty separator parses whole builder (ulongint4)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingWhitespaceAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123   ")
+		Local a:ULongInt[] = sb.SplitULongInts("")
+		AssertULongIntArrayEquals([123:ULongInt], a, "Trailing whitespace allowed (ulongint4)")
+	End Method
+
+	Method Test_EmptySeparator_TrailingJunkRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x")
+		Local a:ULongInt[] = sb.SplitULongInts("")
+		AssertULongIntArrayEquals([0:ULongInt], a, "Trailing junk rejected (ulongint4)")
+	End Method
+
+	Method Test_Separators_LeadingTrailingConsecutive() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1,,3,")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([0:ULongInt,1:ULongInt,0:ULongInt,3:ULongInt,0:ULongInt], a, "Empty tokens become 0 (ulongint4)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1 ,  2  ,   3   ")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([1:ULongInt,2:ULongInt,3:ULongInt], a, "Whitespace allowed (ulongint4)")
+	End Method
+
+	Method Test_WhitespaceBetweenSignAndDigits_IsRejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("- 1,+ 2")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([0:ULongInt,0:ULongInt], a, "Whitespace between sign and digits rejected (ulongint4)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x, 456, 78 9, 10-")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([0:ULongInt,456:ULongInt,0:ULongInt,0:ULongInt], a, "Trailing junk rejected (ulongint4)")
+	End Method
+
+	Method Test_EmbeddedHexAndBinary() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFFFFFFF,%1010,$0,%0")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([$FFFFFFFF:ULongInt,10:ULongInt,0:ULongInt,0:ULongInt], a, "Hex/binary prefixes parse (ulongint4)")
+	End Method
+
+	Method Test_NoDigits_TokensReturnZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("abc,  , +, -, $, %")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([0:ULongInt,0:ULongInt,0:ULongInt,0:ULongInt,0:ULongInt,0:ULongInt], a, "No digits => 0 (ulongint4)")
+	End Method
+
+	Method Test_RangeEdges_ULongInt32() { test }
+		Local sb:TStringBuilder = New TStringBuilder("0,1,9,10,99,100,2147483647,2147483648,4294967294,4294967295")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([ ..
+			0:ULongInt,1:ULongInt,9:ULongInt,10:ULongInt,99:ULongInt,100:ULongInt, ..
+			2147483647:ULongInt,2147483648:ULongInt,4294967294:ULongInt,4294967295:ULongInt ..
+		], a, "ULongInt 32-bit range edges parse (builder ulongint4)")
+	End Method
+
+	Method Test_OutOfRange_ReturnsZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("4294967296,-1,999999999999999999999")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([0:ULongInt,0:ULongInt,0:ULongInt], a, "Out-of-range/overflow should return 0 for ULongInt (builder ulongint4)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:ULongInt[] = sb.SplitULongInts("aa")
+		AssertULongIntArrayEquals([0:ULongInt,0:ULongInt,0:ULongInt], a, "Non-overlapping separator matching (builder ulongint4)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:ULongInt[] = [ 0:ULongInt, 1:ULongInt, 2:ULongInt, 10:ULongInt, 100:ULongInt, 2147483648:ULongInt, $FFFFFFFF:ULongInt ]
+		Local joined:String = ",".Join(vals)
+		Local parsed:ULongInt[] = New TStringBuilder(joined).SplitULongInts(",")
+		AssertULongIntArrayEquals(vals, parsed, "Join(ULongInt[]) then Builder.SplitULongInts round-trip (ulongint4)")
+	End Method
+
+	Method Test_MatchesStringSplitULongInts_Output() { test }
+		Local content:String = "  $FFFFFFFF, 1, 4294967296, 12x, , %1010  "
+		Local sep:String = ","
+		Local sb:TStringBuilder = New TStringBuilder(content)
+		Local a1:ULongInt[] = sb.SplitULongInts(sep)
+		Local a2:ULongInt[] = content.SplitULongInts(sep)
+		AssertULongIntArrayEquals(a2, a1, "Builder.SplitULongInts should match String.SplitULongInts (ulongint4)")
+	End Method
+
+End Type
+
+?ulongint8
+
+Type TStringBuilderSplitULongInts64Test Extends TTest
+
+	Method AssertULongIntArrayEquals(expected:ULongInt[], actual:ULongInt[], message:String)
+		AssertEquals(expected.Length, actual.Length, message + " (length)")
+		For Local i:Int = 0 Until expected.Length
+			AssertEquals(expected[i], actual[i], message + " (index " + i + ")")
+		Next
+	End Method
+
+	Method Test_EmptyBuilder_ReturnsEmptyArray() { test }
+		Local sb:TStringBuilder = New TStringBuilder
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertEquals(0, a.Length, "Empty builder should return empty ULongInt[] (ulongint8)")
+	End Method
+
+	Method Test_EmptySeparator_ParsesWholeString() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123")
+		Local a:ULongInt[] = sb.SplitULongInts("")
+		AssertULongIntArrayEquals([123:ULongInt], a, "Empty separator parses whole builder (ulongint8)")
+	End Method
+
+	Method Test_Separators_LeadingTrailingConsecutive() { test }
+		Local sb:TStringBuilder = New TStringBuilder(",1,,3,")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([0:ULongInt,1:ULongInt,0:ULongInt,3:ULongInt,0:ULongInt], a, "Empty tokens become 0 (ulongint8)")
+	End Method
+
+	Method Test_WhitespaceAroundNumbers_IsAllowed() { test }
+		Local sb:TStringBuilder = New TStringBuilder("  1 ,  2  ,   3   ")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([1:ULongInt,2:ULongInt,3:ULongInt], a, "Whitespace allowed (ulongint8)")
+	End Method
+
+	Method Test_TrailingJunk_Rejected() { test }
+		Local sb:TStringBuilder = New TStringBuilder("123x, 456, 78 9, 10-")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([0:ULongInt,456:ULongInt,0:ULongInt,0:ULongInt], a, "Trailing junk rejected (ulongint8)")
+	End Method
+
+	Method Test_EmbeddedHexAndBinary() { test }
+		Local sb:TStringBuilder = New TStringBuilder("$FFFFFFFFFFFFFFFF,%1010,$0,%0")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([$FFFFFFFFFFFFFFFF:ULongInt,10:ULongInt,0:ULongInt,0:ULongInt], a, "Hex/binary prefixes parse (ulongint8)")
+	End Method
+
+	Method Test_ULongIntMax_64bit() { test }
+		Local maxVal:ULongInt = $FFFFFFFFFFFFFFFF:ULongInt
+		Local sb:TStringBuilder = New TStringBuilder("18446744073709551615")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([maxVal], a, "ULongInt max parses (builder ulongint8)")
+	End Method
+
+	Method Test_Overflow_ReturnsZero() { test }
+		Local sb:TStringBuilder = New TStringBuilder("18446744073709551616,999999999999999999999999999999999")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+		AssertULongIntArrayEquals([0:ULongInt,0:ULongInt], a, "Overflow should return 0 for ULongInt (builder ulongint8)")
+	End Method
+
+	Method Test_NegativeWrap_AllowedOnULongInt64() { test }
+		Local maxVal:ULongInt = $FFFFFFFFFFFFFFFF:ULongInt
+
+		Local sb:TStringBuilder = New TStringBuilder("-1,-0")
+		Local a:ULongInt[] = sb.SplitULongInts(",")
+
+		AssertULongIntArrayEquals([maxVal,0:ULongInt], a, "Negative wrap yields max for -1 on 64-bit ULongInt (builder)")
+	End Method
+
+	Method Test_OverlappingSeparator_NonOverlappingMatches() { test }
+		Local sb:TStringBuilder = New TStringBuilder("aaaa")
+		Local a:ULongInt[] = sb.SplitULongInts("aa")
+		AssertULongIntArrayEquals([0:ULongInt,0:ULongInt,0:ULongInt], a, "Non-overlapping separator matching (builder ulongint8)")
+	End Method
+
+	Method Test_PredictableRoundTrip_Simple() { test }
+		Local vals:ULongInt[] = [ 0:ULongInt, 1:ULongInt, 2:ULongInt, 10:ULongInt, 100:ULongInt, 4294967296:ULongInt, $FFFFFFFFFFFFFFFF:ULongInt ]
+		Local joined:String = ",".Join(vals)
+		Local parsed:ULongInt[] = New TStringBuilder(joined).SplitULongInts(",")
+		AssertULongIntArrayEquals(vals, parsed, "Join(ULongInt[]) then Builder.SplitULongInts round-trip (ulongint8)")
+	End Method
+
+	Method Test_MatchesStringSplitULongInts_Output() { test }
+		Local content:String = "  $FFFFFFFFFFFFFFFF, 1, 18446744073709551616, 12x, , %1010  "
+		Local sep:String = ","
+		Local sb:TStringBuilder = New TStringBuilder(content)
+		Local a1:ULongInt[] = sb.SplitULongInts(sep)
+		Local a2:ULongInt[] = content.SplitULongInts(sep)
+		AssertULongIntArrayEquals(a2, a1, "Builder.SplitULongInts should match String.SplitULongInts (ulongint8)")
+	End Method
+
+End Type
+
+?
