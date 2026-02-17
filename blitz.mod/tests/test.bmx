@@ -2629,17 +2629,17 @@ Type TStringJoinFloatsTest Extends TTest
 
 	Method Test_SingleElement_NoSeparator_Default() { test }
 		Local a:Float[] = [ 42.0:Float ]
-		AssertEquals("4.2E1", ",".Join(a), "Join of single Float element should not add separator (default)")
+		AssertEquals("42", ",".Join(a), "Join of single Float element should not add separator (default)")
 	End Method
 
 	Method Test_MultipleElements_Commas_Default() { test }
 		Local a:Float[] = [ 1.0:Float, 2.0:Float, 3.5:Float ]
-		AssertEquals("1E0,2E0,3.5E0", ",".Join(a), "Basic Float join with comma separator (default)")
+		AssertEquals("1,2,3.5", ",".Join(a), "Basic Float join with comma separator (default)")
 	End Method
 
 	Method Test_CustomSeparator_Default() { test }
 		Local a:Float[] = [ 1.0:Float, 2.0:Float, 3.5:Float ]
-		AssertEquals("1E0::2E0::3.5E0", "::".Join(a), "Join should use the current string as separator (Float default)")
+		AssertEquals("1::2::3.5", "::".Join(a), "Join should use the current string as separator (Float default)")
 	End Method
 
 	Method Test_DefaultFormatting_MatchesExpected() { test }
@@ -2655,7 +2655,7 @@ Type TStringJoinFloatsTest Extends TTest
 			1e20:Float ..
 		]
 
-		Local expected:String = "0E0|-0E0|1E0|1.5E0|3.1415927E0|1E5|1E-6|1E20"
+		Local expected:String = "0|-0|1|1.5|3.1415927|100000|1E-6|1E20"
 
 		AssertEquals(expected, "|".Join(a), "Float Join default formatting should match expected output")
 	End Method
@@ -2708,17 +2708,17 @@ Type TStringJoinDoublesTest Extends TTest
 
 	Method Test_SingleElement_NoSeparator_Default() { test }
 		Local a:Double[] = [ 42.0:Double ]
-		AssertEquals("4.2E1", ",".Join(a), "Join of single Double element should not add separator (default)")
+		AssertEquals("42", ",".Join(a), "Join of single Double element should not add separator (default)")
 	End Method
 
 	Method Test_MultipleElements_Commas_Default() { test }
 		Local a:Double[] = [ 1.0:Double, 2.0:Double, 3.5:Double ]
-		AssertEquals("1E0,2E0,3.5E0", ",".Join(a), "Basic Double join with comma separator (default)")
+		AssertEquals("1,2,3.5", ",".Join(a), "Basic Double join with comma separator (default)")
 	End Method
 
 	Method Test_CustomSeparator_Default() { test }
 		Local a:Double[] = [ 1.0:Double, 2.0:Double, 3.5:Double ]
-		AssertEquals("1E0::2E0::3.5E0", "::".Join(a), "Join should use the current string as separator (Double default)")
+		AssertEquals("1::2::3.5", "::".Join(a), "Join should use the current string as separator (Double default)")
 	End Method
 
 	Method Test_DefaultFormatting_MatchesExpected() { test }
@@ -2734,7 +2734,7 @@ Type TStringJoinDoublesTest Extends TTest
 			1e20:Double ..
 		]
 
-		Local expected:String = "0E0|-0E0|1E0|1.5E0|3.141592653589793E0|1E5|1E-6|1E20"
+		Local expected:String = "0|-0|1|1.5|3.141592653589793|100000|0.000001|1E20"
 
 		AssertEquals(expected, "|".Join(a), "Double Join default formatting should match expected output")
 	End Method
@@ -3284,20 +3284,20 @@ End Type
 Type TStringFromFloatTest Extends TTest
 
 	Method Test_Zero_Default() { test }
-		AssertEquals("0E0", String.FromFloat(0.0:Float), "String.FromFloat(0) default should match ryu")
+		AssertEquals("0", String.FromFloat(0.0:Float), "String.FromFloat(0) default should match ryu")
 	End Method
 
 	Method Test_NegativeZero_Default() { test }
 		Local negZero:Float = -0.0:Float
-		AssertEquals("-0E0", String.FromFloat(negZero), "String.FromFloat(-0) default should preserve sign")
+		AssertEquals("-0", String.FromFloat(negZero), "String.FromFloat(-0) default should preserve sign")
 	End Method
 
 	Method Test_Positive_Default() { test }
-		AssertEquals("4.2E1", String.FromFloat(42.0:Float), "String.FromFloat(42) default should match ryu")
+		AssertEquals("42", String.FromFloat(42.0:Float), "String.FromFloat(42) default should match ryu")
 	End Method
 
 	Method Test_Negative_Default() { test }
-		AssertEquals("-4.2E1", String.FromFloat(-42.0:Float), "String.FromFloat(-42) default should match ryu")
+		AssertEquals("-42", String.FromFloat(-42.0:Float), "String.FromFloat(-42) default should match ryu")
 	End Method
 
 	Method Test_NaNAndInfinity() { test }
@@ -3374,20 +3374,20 @@ End Type
 Type TStringFromDoubleTest Extends TTest
 
 	Method Test_Zero_Default() { test }
-		AssertEquals("0E0", String.FromDouble(0.0:Double), "String.FromDouble(0) default should match ryu")
+		AssertEquals("0", String.FromDouble(0.0:Double), "String.FromDouble(0) default should match ryu")
 	End Method
 
 	Method Test_NegativeZero_Default() { test }
 		Local negZero:Double = -0.0:Double
-		AssertEquals("-0E0", String.FromDouble(negZero), "String.FromDouble(-0) default should preserve sign")
+		AssertEquals("-0", String.FromDouble(negZero), "String.FromDouble(-0) default should preserve sign")
 	End Method
 
 	Method Test_Positive_Default() { test }
-		AssertEquals("4.2E1", String.FromDouble(42.0:Double), "String.FromDouble(42) default should match ryu")
+		AssertEquals("42", String.FromDouble(42.0:Double), "String.FromDouble(42) default should match ryu")
 	End Method
 
 	Method Test_Negative_Default() { test }
-		AssertEquals("-4.2E1", String.FromDouble(-42.0:Double), "String.FromDouble(-42) default should match ryu")
+		AssertEquals("-42", String.FromDouble(-42.0:Double), "String.FromDouble(-42) default should match ryu")
 	End Method
 
 	Method Test_NaNAndInfinity() { test }
