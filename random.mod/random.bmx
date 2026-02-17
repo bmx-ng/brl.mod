@@ -123,9 +123,7 @@ Type TRandomDefault Extends TRandom
 	End Method
 
 	Method RandomInt:Int(minValue:Int, maxValue:Int = 1)
-		Local Range:Long=Long(maxValue)-minValue
-		If Range>0 Return Long( RndDouble()*(1+Range) )+minValue
-		Return Long( RndDouble()*(1-Range) )+maxValue
+		Return Int(RandomLong(minValue, maxValue))
 	End Method
 
 	Method RandomLong:Long(minValue:Long, maxValue:Long = 1)
