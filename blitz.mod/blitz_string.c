@@ -517,12 +517,14 @@ static inline int ryu_expand_small_E(const char *in, int inlen, char *out, int m
 	// The value is: digits * 10^(exp - (nd - dot_index))
 	// Equivalent: move decimal point (dot_index + exp) positions from left of digits
 	int dec_pos = dot_index + exp;
+	int wrote_dot = 0;
 
 	// Now render into out
 	if( dec_pos <= 0 ){
 		// 0.xxx form
 		out[outpos++] = '0';
 		out[outpos++] = '.';
+		wrote_dot = 1;
 		int zeros = -dec_pos;
 		while( zeros-- ){
 			if( outpos >= 63 ){
@@ -559,21 +561,29 @@ static inline int ryu_expand_small_E(const char *in, int inlen, char *out, int m
 			}
 			if( i == dec_pos ){
 				out[outpos++] = '.';
+				wrote_dot = 1;
 			}
 			out[outpos++] = digits[i];
 		}
 	}
 
-	// Trim trailing zeros after '.' and trim '.' if needed
+	/* If no '.', force float style */
+    if( !wrote_dot ){
+        if( outpos + 2 >= 64 ){
+			return 0;
+		}
+        out[outpos++] = '.';
+        out[outpos++] = '0';
+    }
+
+	/* Trim trailing zeros after '.', but always keep one fractional digit */
 	for( int i=0; i<outpos; ++i ){
 		if( out[i]=='.' ){
 			int end = outpos;
-			while( end > i+1 && out[end-1]=='0' ){
-				--end;
-			}
-			if( end > i+1 && out[end-1]=='.' ){
-				--end;
-			}
+
+			/* leave at least one digit after '.' */
+			while( end > i+2 && out[end-1]=='0' ) --end;
+
 			outpos = end;
 			break;
 		}
