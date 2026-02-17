@@ -429,9 +429,192 @@ BBString *bbStringFromULongInt( BBULONGINT n ){
 	return s;
 }
 
+/* Return length of decimal-expanded form written to out, or 0 if not expanded.
+   out must be at least 64 bytes. */
+static inline int ryu_expand_small_E(const char *in, int inlen, char *out, int min_exp, int max_exp){
+	// Find E/e
+	int epos = -1;
+	for( int i=0; i<inlen; ++i ){
+		char c = in[i];
+		if( c=='E' || c=='e' ){
+			epos = i;
+			break;
+		}
+	}
+	if( epos < 0 ){
+		return 0;
+	}
+
+	// Parse exponent
+	int p = epos + 1;
+	if( p >= inlen ){
+		return 0;
+	}
+
+	int exp_neg = 0;
+	if( in[p] == '+' ){
+		++p;
+	} else if( in[p] == '-' ){
+		exp_neg = 1; ++p;
+	}
+
+	if( p >= inlen ){
+		return 0;
+	}
+
+	int exp = 0;
+	int any = 0;
+	for( ; p < inlen; ++p ){
+		char c = in[p];
+		if( c < '0' || c > '9' ){
+			return 0;
+		}
+		any = 1;
+		exp = exp * 10 + (c - '0');
+		// exponent in ryu is small, but still guard
+		if( exp > 1000 ) return 0;
+	}
+	if( !any ){
+		return 0;
+	}
+	if( exp_neg ){
+		exp = -exp;
+	}
+	if( exp < min_exp || exp > max_exp ){
+		return 0;
+	}
+
+	// Handle sign
+	int inpos = 0;
+	int outpos = 0;
+	if( in[0] == '-' ){
+		out[outpos++] = '-';
+		inpos = 1;
+	}
+
+	// Mantissa (up to epos) is in[inpos..epos)
+	// Copy digits excluding '.', remember dot position
+	char digits[64];
+	int nd = 0;
+	int dot_index = -1; // index within mantissa where '.' occurred (in digits count)
+
+	for( int i=inpos; i<epos; ++i ){
+		char c = in[i];
+		if( c == '.' ){
+			dot_index = nd;
+			continue;
+		}
+		// ryu produces digits only here
+		digits[nd++] = c;
+	}
+	if( nd <= 0 ){
+		return 0;
+	}
+	if( dot_index < 0 ){
+		dot_index = nd; // integer mantissa
+	}
+
+	// The value is: digits * 10^(exp - (nd - dot_index))
+	// Equivalent: move decimal point (dot_index + exp) positions from left of digits
+	int dec_pos = dot_index + exp;
+
+	// Now render into out
+	if( dec_pos <= 0 ){
+		// 0.xxx form
+		out[outpos++] = '0';
+		out[outpos++] = '.';
+		int zeros = -dec_pos;
+		while( zeros-- ){
+			if( outpos >= 63 ){
+				return 0;
+			}
+			out[outpos++] = '0';
+		}
+		for( int i=0; i<nd; ++i ){
+			if( outpos >= 63 ){
+				return 0;
+			}
+			out[outpos++] = digits[i];
+		}
+	}else if( dec_pos >= nd ){
+		// xxx000 form
+		for( int i=0; i<nd; ++i ){
+			if( outpos >= 63 ){
+				return 0;
+			}
+			out[outpos++] = digits[i];
+		}
+		int zeros = dec_pos - nd;
+		while( zeros-- ){
+			if( outpos >= 63 ){
+				return 0;
+			}
+			out[outpos++] = '0';
+		}
+	}else{
+		// xx.yy form
+		for( int i=0; i<nd; ++i ){
+			if( outpos >= 63 ){
+				return 0;
+			}
+			if( i == dec_pos ){
+				out[outpos++] = '.';
+			}
+			out[outpos++] = digits[i];
+		}
+	}
+
+	// Trim trailing zeros after '.' and trim '.' if needed
+	for( int i=0; i<outpos; ++i ){
+		if( out[i]=='.' ){
+			int end = outpos;
+			while( end > i+1 && out[end-1]=='0' ){
+				--end;
+			}
+			if( end > i+1 && out[end-1]=='.' ){
+				--end;
+			}
+			outpos = end;
+			break;
+		}
+	}
+
+	return outpos;
+}
+
+int f2s_buffered_expand_n(float v, char *buf){
+	int len = f2s_buffered_n(v, buf);
+	if( len <= 0 ){
+		return len;
+	}
+
+	char tmp[64];
+	int n = ryu_expand_small_E(buf, len, tmp, -3, 7);
+	if( n > 0 ){
+		memcpy(buf, tmp, n);
+		return n;
+	}
+	return len;
+}
+
+int d2s_buffered_expand_n(double v, char *buf){
+	int len = d2s_buffered_n(v, buf);
+	if( len <= 0 ){
+		return len;
+	}
+
+	char tmp[64];
+	int n = ryu_expand_small_E(buf, len, tmp, -6, 15);
+	if( n > 0 ){
+		memcpy(buf, tmp, n);
+		return n;
+	}
+	return len;
+}
+
 BBString *bbStringFromFloat( float n, int fixed ){
 	char buf[64];
-	int len = fixed ? d2fixed_buffered_n((double)n, 9, buf) : f2s_buffered_n(n, buf);
+	int len = fixed ? d2fixed_buffered_n((double)n, 9, buf) : f2s_buffered_expand_n(n, buf);
 	if( len <= 0 ){
 		return &bbEmptyString;
 	}
@@ -445,7 +628,7 @@ BBString *bbStringFromFloat( float n, int fixed ){
 
 BBString *bbStringFromDouble( double n, int fixed ){
 	char buf[64];
-	int len = fixed ? d2fixed_buffered_n(n, 17, buf) : d2s_buffered_n(n, buf);
+	int len = fixed ? d2fixed_buffered_n(n, 17, buf) : d2s_buffered_expand_n(n, buf);
 	if( len <= 0 ){
 		return &bbEmptyString;
 	}
@@ -1912,7 +2095,7 @@ BBString *bbStringJoinFloats( BBString *sep, BBArray *bits, int fixed ){
 	p = (BBFLOAT*)BBARRAYDATA( bits, 1 );
 	for( i=0; i<n_bits; ++i ){
 		char buf[64];
-		int len = fixed ? d2fixed_buffered_n((double)p[i], 9, buf) : f2s_buffered_n(p[i], buf);
+		int len = fixed ? d2fixed_buffered_n((double)p[i], 9, buf) : f2s_buffered_expand_n(p[i], buf);
 		if( len < 0 ){
 			len = 0;
 		}
@@ -1932,7 +2115,7 @@ BBString *bbStringJoinFloats( BBString *sep, BBArray *bits, int fixed ){
 		}
 
 		char buf[64];
-		int len = fixed ? d2fixed_buffered_n((double)p[i], 9, buf) : f2s_buffered_n(p[i], buf);
+		int len = fixed ? d2fixed_buffered_n((double)p[i], 9, buf) : f2s_buffered_expand_n(p[i], buf);
 		if( len < 0 ){
 			len = 0;
 		}
@@ -1960,7 +2143,7 @@ BBString *bbStringJoinDoubles( BBString *sep, BBArray *bits, int fixed ){
 	p = (BBDOUBLE*)BBARRAYDATA( bits, 1 );
 	for( i=0; i<n_bits; ++i ){
 		char buf[64];
-		int len = fixed ? d2fixed_buffered_n(p[i], 17, buf) : d2s_buffered_n(p[i], buf);
+		int len = fixed ? d2fixed_buffered_n(p[i], 17, buf) : d2s_buffered_expand_n(p[i], buf);
 		if( len < 0 ){
 			len = 0;
 		}
@@ -1980,7 +2163,7 @@ BBString *bbStringJoinDoubles( BBString *sep, BBArray *bits, int fixed ){
 		}
 
 		char buf[64];
-		int len = fixed ? d2fixed_buffered_n(p[i], 17, buf) : d2s_buffered_n(p[i], buf);
+		int len = fixed ? d2fixed_buffered_n(p[i], 17, buf) : d2s_buffered_expand_n(p[i], buf);
 		if( len < 0 ){
 			len = 0;
 		}

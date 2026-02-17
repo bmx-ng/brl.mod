@@ -544,7 +544,7 @@ void bmx_stringbuilder_append_utf8bytes(struct MaxStringBuilder * buf, const cha
 
 void bmx_stringbuilder_append_float(struct MaxStringBuilder *buf, float value, int fixed){
 	char tmp[64];
-	int len = fixed ? d2fixed_buffered_n((double)value, 9, tmp) : f2s_buffered_n(value, tmp);
+	int len = fixed ? d2fixed_buffered_n((double)value, 9, tmp) : f2s_buffered_expand_n(value, tmp);
 	if( len <= 0 ) return;
 
 	bmx_stringbuilder_append_cstringbytes(buf, tmp, len);
@@ -552,7 +552,7 @@ void bmx_stringbuilder_append_float(struct MaxStringBuilder *buf, float value, i
 
 void bmx_stringbuilder_append_double(struct MaxStringBuilder *buf, double value, int fixed){
 	char tmp[64];
-	int len = fixed ? d2fixed_buffered_n(value, 17, tmp) : d2s_buffered_n(value, tmp);
+	int len = fixed ? d2fixed_buffered_n(value, 17, tmp) : d2s_buffered_expand_n(value, tmp);
 	if( len <= 0 ) return;
 
 	bmx_stringbuilder_append_cstringbytes(buf, tmp, len);

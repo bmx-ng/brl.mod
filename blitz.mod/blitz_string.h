@@ -358,6 +358,9 @@ int bbStringIdentifierEqualsNoCaseChars(BBString *x, BBChar * y, int ylen);
 BBString *bbStringFromBytesAsHex( const unsigned char * bytes, int length, int upperCase );
 unsigned short bbFoldChar(unsigned short c);
 
+int d2s_buffered_expand_n(double v, char *buf);
+int f2s_buffered_expand_n(float v, char *buf);
+
 #ifdef __cplusplus
 }
 #endif
