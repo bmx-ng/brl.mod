@@ -61,9 +61,10 @@ Struct SColor8
 
 	Rem
 	bbdoc: Creates an #SColor8 instance using the specified hexadecimal color string in the format "RRGGBB", "AARRGGBB", "#RRGGBB" or "#AARRGGBB".
-	about: Invalid characters map to zero.
+	about: Optionally, set @isRGBA to accept "RRGGBBAA" or "#RRGGBBAA" formats.
+	Invalid characters map to zero.
 	End Rem
-	Method New(hex:String)
+	Method New(hex:String, isRGBA:Int = False)
 		' Defaults (white)
 		r = 255
 		g = 255
@@ -90,10 +91,18 @@ Struct SColor8
 				a = 255
 
 			Case 8
-				a = HexByte(hex, start + 0)
-				r = HexByte(hex, start + 2)
-				g = HexByte(hex, start + 4)
-				b = HexByte(hex, start + 6)
+				If isRGBA Then
+					' CSS / JS style : RRGGBBAA
+					r = HexByte(hex, start + 0)
+					g = HexByte(hex, start + 2)
+					b = HexByte(hex, start + 4)
+					a = HexByte(hex, start + 6)
+				Else
+					a = HexByte(hex, start + 0)
+					r = HexByte(hex, start + 2)
+					g = HexByte(hex, start + 4)
+					b = HexByte(hex, start + 6)
+				End If
 
 		End Select
 
