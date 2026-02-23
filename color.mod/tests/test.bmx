@@ -1321,4 +1321,14 @@ Type TColorTest Extends TTest
 		Local c:SColor8 = New SColor8(s)
 		AssertEquals($FFFFFFFF, c.ToARGB(), "Null input should leave default color (white).")
 	End Method
+
+	Method TestHexCtor_RGBA_Mode() {test}
+		Local c:SColor8 = New SColor8("9ACD3280", True)
+
+		AssertEquals($809ACD32, c.ToARGB(), "RGBA mode should map RRGGBBAA → ARGB")
+		AssertEquals($9A, c.r)
+		AssertEquals($CD, c.g)
+		AssertEquals($32, c.b)
+		AssertEquals($80, c.a)
+	End Method
 End Type
