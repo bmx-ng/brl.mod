@@ -58,6 +58,46 @@ Struct SColor8
 	Method New(argb:Int)
 		Int Ptr(Varptr b)[0] = argb
 	End Method
+
+	Rem
+	bbdoc: Creates an #SColor8 instance using the specified hexadecimal color string in the format "RRGGBB", "AARRGGBB", "#RRGGBB" or "#AARRGGBB".
+	about: Invalid characters map to zero.
+	End Rem
+	Method New(hex:String)
+		' Defaults (white)
+		r = 255
+		g = 255
+		b = 255
+		a = 255
+
+		If Not hex Then
+			Return
+		End If
+
+		Local start:Int = 0
+		' optional #
+		If hex.Length > 0 And hex[0] = 35 Then
+			start = 1 ' '#'
+		End If
+
+		Local n:Int = hex.Length - start
+
+		Select n
+			Case 6
+				r = HexByte(hex, start + 0)
+				g = HexByte(hex, start + 2)
+				b = HexByte(hex, start + 4)
+				a = 255
+
+			Case 8
+				a = HexByte(hex, start + 0)
+				r = HexByte(hex, start + 2)
+				g = HexByte(hex, start + 4)
+				b = HexByte(hex, start + 6)
+
+		End Select
+
+	End Method
 	
 	Rem
 	bbdoc: Returns the color as a 32-bit RGBA value.
@@ -312,3 +352,19 @@ Public
 	Global YellowGreen:SColor8 = New SColor8($FF9ACD32)
 	
 End Struct
+
+Private
+
+Function HexNibble:Int(c:Int)
+	If c >= 48 And c <= 57 Then Return c - 48           ' "0".."9"
+	If c >= 65 And c <= 70 Then Return c - 55           ' "A".."F"
+	If c >= 97 And c <= 102 Then Return c - 87          ' "a".."f"
+	Return 0
+End Function
+
+' Parse two hex chars from s at index i into a byte (0..255).
+Function HexByte:Int(s:String, i:Int)
+	Local hi:Int = HexNibble(s[i])
+	Local lo:Int = HexNibble(s[i + 1])
+	Return (hi Shl 4) | lo
+End Function

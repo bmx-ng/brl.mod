@@ -1219,4 +1219,106 @@ Type TColorTest Extends TTest
 		AssertEquals($FF, SColor8.YellowGreen.a)
 	End Method
 
+	Method TestHexCtor_RRGGBB() {test}
+		Local c:SColor8 = New SColor8("9ACD32")
+		AssertEquals($FF9ACD32, c.ToARGB(), "RRGGBB should parse as opaque ARGB.")
+		AssertEquals($9A, c.r, "R from 9A")
+		AssertEquals($CD, c.g, "G from CD")
+		AssertEquals($32, c.b, "B from 32")
+		AssertEquals($FF, c.a, "Alpha should default to FF for RRGGBB")
+	End Method
+
+	Method TestHexCtor_AARRGGBB() {test}
+		Local c:SColor8 = New SColor8("809ACD32")
+		AssertEquals($809ACD32, c.ToARGB(), "AARRGGBB should parse as ARGB.")
+		AssertEquals($9A, c.r, "R from 9A")
+		AssertEquals($CD, c.g, "G from CD")
+		AssertEquals($32, c.b, "B from 32")
+		AssertEquals($80, c.a, "A from 80")
+	End Method
+
+	Method TestHexCtor_RRGGBB_WithHash() {test}
+		Local c:SColor8 = New SColor8("#9ACD32")
+		AssertEquals($FF9ACD32, c.ToARGB(), "Leading # should be accepted for RRGGBB.")
+		AssertEquals($9A, c.r)
+		AssertEquals($CD, c.g)
+		AssertEquals($32, c.b)
+		AssertEquals($FF, c.a)
+	End Method
+
+	Method TestHexCtor_AARRGGBB_WithHash() {test}
+		Local c:SColor8 = New SColor8("#809ACD32")
+		AssertEquals($809ACD32, c.ToARGB(), "Leading # should be accepted for AARRGGBB.")
+		AssertEquals($9A, c.r)
+		AssertEquals($CD, c.g)
+		AssertEquals($32, c.b)
+		AssertEquals($80, c.a)
+	End Method
+
+	Method TestHexCtor_Lowercase() {test}
+		Local c:SColor8 = New SColor8("ff9acd32")
+		AssertEquals($FF9ACD32, c.ToARGB(), "Lowercase hex should parse correctly.")
+		AssertEquals($9A, c.r)
+		AssertEquals($CD, c.g)
+		AssertEquals($32, c.b)
+		AssertEquals($FF, c.a)
+	End Method
+
+	Method TestHexCtor_MixedCase() {test}
+		Local c:SColor8 = New SColor8("Ff9AcD32")
+		AssertEquals($FF9ACD32, c.ToARGB(), "Mixed-case hex should parse correctly.")
+	End Method
+
+	Method TestHexCtor_BlackAndWhite() {test}
+		Local black:SColor8 = New SColor8("000000")
+		AssertEquals($FF000000, black.ToARGB(), "000000 should be opaque black.")
+		AssertEquals($00, black.r)
+		AssertEquals($00, black.g)
+		AssertEquals($00, black.b)
+		AssertEquals($FF, black.a)
+
+		Local white:SColor8 = New SColor8("FFFFFF")
+		AssertEquals($FFFFFFFF, white.ToARGB(), "FFFFFF should be opaque white.")
+		AssertEquals($FF, white.r)
+		AssertEquals($FF, white.g)
+		AssertEquals($FF, white.b)
+		AssertEquals($FF, white.a)
+	End Method
+
+	Method TestHexCtor_AlphaExtremes() {test}
+		Local t:SColor8 = New SColor8("00FFFFFF")
+		AssertEquals($00FFFFFF, t.ToARGB(), "00FFFFFF should be fully transparent white.")
+		AssertEquals($00, t.a)
+
+		Local o:SColor8 = New SColor8("FFFFFFFF")
+		AssertEquals($FFFFFFFF, o.ToARGB(), "FFFFFFFF should be fully opaque white.")
+		AssertEquals($FF, o.a)
+	End Method
+
+	Method TestHexCtor_InvalidLength_DefaultsToWhite() {test}
+		' Current ctor behavior: anything not 6/8 (or # + 6/8) leaves defaults.
+		Local c1:SColor8 = New SColor8("")
+		AssertEquals($FFFFFFFF, c1.ToARGB(), "Empty string should leave default color (white).")
+
+		Local c2:SColor8 = New SColor8("12345")
+		AssertEquals($FFFFFFFF, c2.ToARGB(), "Length 5 should leave default color (white).")
+
+		Local c3:SColor8 = New SColor8("#1234567")
+		AssertEquals($FFFFFFFF, c3.ToARGB(), "Length 7 (with #) should leave default color (white).")
+	End Method
+
+	Method TestHexCtor_InvalidChars_CurrentBehavior() {test}
+		Local c:SColor8 = New SColor8("GGGGGG")
+		AssertEquals($FF000000, c.ToARGB(), "Invalid chars currently map to 0")
+		AssertEquals($00, c.r)
+		AssertEquals($00, c.g)
+		AssertEquals($00, c.b)
+		AssertEquals($FF, c.a)
+	End Method
+
+	Method TestHexCtor_Null_DefaultsToWhite() {test}
+		Local s:String = Null
+		Local c:SColor8 = New SColor8(s)
+		AssertEquals($FFFFFFFF, c.ToARGB(), "Null input should leave default color (white).")
+	End Method
 End Type
