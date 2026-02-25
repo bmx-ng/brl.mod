@@ -2467,12 +2467,12 @@ Type TTypeId Extends TMember
 		Return list
 	End Method
 	
-	Method TypeHierarchyEnumerator:STypeHierarchyEnumerator()
-		Return New STypeHierarchyEnumerator(Self)
+	Method TypeHierarchyEnumerator:TTypeHierarchyEnumerator()
+		Return New TTypeHierarchyEnumerator(Self)
 	End Method
 	
-	Method TypeHierarchyReverseEnumerator:STypeHierarchyReverseEnumerator()
-		Return New STypeHierarchyReverseEnumerator(Self)
+	Method TypeHierarchyReverseEnumerator:TTypeHierarchyReverseEnumerator()
+		Return New TTypeHierarchyReverseEnumerator(Self)
 	End Method
 	
 	Rem
@@ -4683,7 +4683,7 @@ Type TNameMapKey Final
 	End Method
 End Type
 
-Struct STypeHierarchyEnumerator
+Type TTypeHierarchyEnumerator
 	Field ReadOnly typeId:TTypeId
 	
 	Field state:Int = 0
@@ -4699,7 +4699,7 @@ Struct STypeHierarchyEnumerator
 		Advance
 	End Method
 	
-	Method ObjectEnumerator:STypeHierarchyEnumerator()
+	Method ObjectEnumerator:TTypeHierarchyEnumerator()
 		Return Self
 	End Method
 	
@@ -4770,9 +4770,9 @@ Struct STypeHierarchyEnumerator
 		Advance
 		Return obj
 	End Method
-End Struct
+End Type
 
-Struct STypeHierarchyReverseEnumerator
+Type TTypeHierarchyReverseEnumerator
 	Field ReadOnly typeId:TTypeId
 	
 	Field state:Int = 0
@@ -4786,7 +4786,7 @@ Struct STypeHierarchyReverseEnumerator
 		Advance
 	End Method
 	
-	Method ObjectEnumerator:STypeHierarchyReverseEnumerator()
+	Method ObjectEnumerator:TTypeHierarchyReverseEnumerator()
 		Return Self
 	End Method
 	
@@ -4835,7 +4835,7 @@ Struct STypeHierarchyReverseEnumerator
 		Advance
 		Return obj
 	End Method
-End Struct
+End Type
 
 
 
