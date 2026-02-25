@@ -103,6 +103,10 @@ Type MaxIO
 	The mountpoint does not need to exist prior to mounting, which is different than those familiar with the Unix concept of "mounting"
 	may expect. As well, more than one archive can be mounted to the same mountpoint, or mountpoints and archive contents can overlap...the
 	interpolation mechanism still functions as usual.
+
+	Setting @appendToPath to #False will instead prepend the archive to the search path.
+	This is useful if you want to add an archive that should take precedence over all previously added archives and directories.
+	The default is #True, which appends the archive to the end of the search path.
 	End Rem
 	Function Mount:Int(newDir:String, mountPoint:String = Null, appendToPath:Int = True)
 		Assert ioInitialized Else "MaxIO not initialized"

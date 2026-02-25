@@ -59,7 +59,7 @@ Import "-lXxf86vm"
 Import "-lGL"
 Import "glgraphics.linux.c"
 Import "source.bmx"
-?Linuxx64
+?Linuxx64 Or LinuxArm64
 Import "-lX11"
 Import "-lXxf86vm"
 Import "-lGL"
