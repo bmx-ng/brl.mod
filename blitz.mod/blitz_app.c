@@ -87,11 +87,18 @@ void bbDelay( int millis ){
 #if __STDC_VERSION__ >= 199901L
 extern void bbUDelay( int microseconds );
 #else
+#if __POSIX_C_SOURCE >= 199309L
 void bbUDelay( int microseconds ) {
 	if( microseconds<0 ) return;
 	struct timespec req={ microseconds/1000000,(microseconds%1000000)*1000 },rem;
 	nanosleep( &req,&rem );
 }
+#else
+void bbUDelay( int microseconds ) {
+	if (microseconds <0) return
+	usleep( microseconds );
+}
+#endif
 #endif
 
 int bbMilliSecs(){
@@ -203,11 +210,18 @@ void bbDelay( int millis ){
 #if __STDC_VERSION__ >= 199901L
 extern void bbUDelay( int microseconds );
 #else
+#if __POSIX_C_SOURCE >= 199309L
 void bbUDelay( int microseconds ) {
 	if( microseconds<0 ) return;
 	struct timespec req={ microseconds/1000000,(microseconds%1000000)*1000 },rem;
 	nanosleep( &req,&rem );
 }
+#else
+void bbUDelay( int microseconds ) {
+	if (microseconds <0) return
+	usleep( microseconds );
+}
+#endif
 #endif
 
 //***** ThreadSafe! *****
@@ -376,11 +390,18 @@ void bbDelay( int millis ){
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 extern void bbUDelay( int microseconds );
 #else
+#if __POSIX_C_SOURCE >= 199309L
 void bbUDelay( int microseconds ) {
 	if( microseconds<0 ) return;
 	struct timespec req={ microseconds/1000000,(microseconds%1000000)*1000 },rem;
 	nanosleep( &req,&rem );
 }
+#else
+void bbUDelay( int microseconds ) {
+	if (microseconds <0) return
+	usleep( microseconds );
+}
+#endif
 #endif
 
 //***** ThreadSafe! *****
