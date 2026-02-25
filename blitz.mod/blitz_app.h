@@ -34,10 +34,11 @@ int		bbMilliSecs();
 int		bbIsMainThread();
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 #ifndef _WIN32
-#include <unistd.h>
+#include <time.h>
 inline void bbUDelay( int microseconds ) {
 	if( microseconds<0 ) return;
-	usleep( microseconds );
+	struct timespec req={ microseconds/1000000,(microseconds%1000000)*1000 },rem;
+	nanosleep( &req,&rem );
 }
 #else
 void bbUDelay( int microseconds );

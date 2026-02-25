@@ -88,8 +88,9 @@ void bbDelay( int millis ){
 extern void bbUDelay( int microseconds );
 #else
 void bbUDelay( int microseconds ) {
-	if (microseconds <0) return
-	usleep( microseconds );
+	if( microseconds<0 ) return;
+	struct timespec req={ microseconds/1000000,(microseconds%1000000)*1000 },rem;
+	nanosleep( &req,&rem );
 }
 #endif
 
@@ -203,8 +204,9 @@ void bbDelay( int millis ){
 extern void bbUDelay( int microseconds );
 #else
 void bbUDelay( int microseconds ) {
-	if (microseconds <0) return
-	usleep( microseconds );
+	if( microseconds<0 ) return;
+	struct timespec req={ microseconds/1000000,(microseconds%1000000)*1000 },rem;
+	nanosleep( &req,&rem );
 }
 #endif
 
@@ -375,8 +377,9 @@ void bbDelay( int millis ){
 extern void bbUDelay( int microseconds );
 #else
 void bbUDelay( int microseconds ) {
-	if (microseconds <0) return
-	usleep( microseconds );
+	if( microseconds<0 ) return;
+	struct timespec req={ microseconds/1000000,(microseconds%1000000)*1000 },rem;
+	nanosleep( &req,&rem );
 }
 #endif
 
