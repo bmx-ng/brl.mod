@@ -32,28 +32,7 @@ void		bbWriteStderr( BBString *t );
 void		bbDelay( int ms );
 int		bbMilliSecs();
 int		bbIsMainThread();
-#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-#ifndef _WIN32
-#if __POSIX_C_SOURCE >= 199309L
-#include <time.h>
-inline void bbUDelay( int microseconds ) {
-	if( microseconds<0 ) return;
-	struct timespec req={ microseconds/1000000,(microseconds%1000000)*1000 },rem;
-	nanosleep( &req,&rem );
-}
-#else
-#include <unistd.h>
-inline void bbUDelay( int microseconds ) {
-	if( microseconds<0 ) return;
-	usleep( microseconds );
-}
-#endif
-#else
 void bbUDelay( int microseconds );
-#endif
-#else
-void bbUDelay( int microseconds );
-#endif
 
 void		bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 );
 
