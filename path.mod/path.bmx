@@ -1010,7 +1010,11 @@ Private
 
 Function _RootPath:String( path:String )
 	If MaxIO.ioInitialized Then
-		Return "/"
+		If path.StartsWith("/") Then
+			Return "/"
+		Else
+			Return ""
+		End If
 	End If
 ?Win32
 	If path.StartsWith( "//" )
