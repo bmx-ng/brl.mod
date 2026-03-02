@@ -6072,3 +6072,63 @@ Type TStringSplitDoublesTest Extends TTest
 	End Method
 
 End Type
+
+Type TStringReplicateTest Extends TTest
+
+	Method Test_ZeroCount_ReturnsEmptyString() { test }
+		AssertEquals("", "-".Replicate(0), "Replicate(0) should be empty string")
+	End Method
+
+	Method Test_NegativeCount_ReturnsEmptyString() { test }
+		AssertEquals("", "-".Replicate(-1), "Replicate(negative) should be empty string")
+	End Method
+
+	Method Test_EmptyString_ReturnsEmptyString() { test }
+		AssertEquals("", "".Replicate(10), "Empty string replicated should be empty string")
+	End Method
+
+	Method Test_CountOne_ReturnsSameString() { test }
+		AssertEquals("abc", "abc".Replicate(1), "Replicate(1) should return the original string")
+	End Method
+
+	Method Test_SingleChar_Basic() { test }
+		AssertEquals("-----", "-".Replicate(5), "Single char replicate failed")
+	End Method
+
+	Method Test_MultiChar_Basic() { test }
+		AssertEquals("ababab", "ab".Replicate(3), "Multi-char replicate failed")
+	End Method
+
+	Method Test_MultiChar_WithSpaces() { test }
+		AssertEquals("a a a ", "a ".Replicate(3), "Replicate should preserve spaces")
+	End Method
+
+	Method Test_LargerCount_LengthMatches() { test }
+		Local s:String = "-".Replicate(60)
+		AssertEquals(60, s.Length, "Replicate length should be count * original length")
+	End Method
+
+	Method Test_LargerCount_StartAndEnd() { test }
+		Local s:String = "xyz".Replicate(20) ' length 60
+		AssertTrue(s.StartsWith("xyz"), "Replicate should start with the pattern")
+		AssertTrue(s.EndsWith("xyz"), "Replicate should end with the pattern")
+	End Method
+
+	Method Test_Unicode_BMP_Character() { test }
+		' U+00E9 "é" is in BMP and is a single UTF-16 code unit
+		AssertEquals("éééé", "é".Replicate(4), "BMP unicode char replicate failed")
+	End Method
+
+	Method Test_Unicode_MultiChar_BMP() { test }
+		' Greek pi is BMP too
+		AssertEquals("π=3.14;π=3.14;", "π=3.14;".Replicate(2), "Unicode BMP string replicate failed")
+	End Method
+
+	Method Test_IdempotentForEmptyPattern() { test }
+		' Replicating empty should always be empty regardless of count
+		AssertEquals("", "".Replicate(0), "Empty.Replicate(0) should be empty")
+		AssertEquals("", "".Replicate(1), "Empty.Replicate(1) should be empty")
+		AssertEquals("", "".Replicate(999), "Empty.Replicate(999) should be empty")
+	End Method
+
+End Type

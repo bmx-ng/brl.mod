@@ -119,16 +119,16 @@ BBString bbEmptyString={
 };
 
 const char bbDigitTable[200] =
-    "00010203040506070809"
-    "10111213141516171819"
-    "20212223242526272829"
-    "30313233343536373839"
-    "40414243444546474849"
-    "50515253545556575859"
-    "60616263646566676869"
-    "70717273747576777879"
-    "80818283848586878889"
-    "90919293949596979899";
+	"00010203040506070809"
+	"10111213141516171819"
+	"20212223242526272829"
+	"30313233343536373839"
+	"40414243444546474849"
+	"50515253545556575859"
+	"60616263646566676869"
+	"70717273747576777879"
+	"80818283848586878889"
+	"90919293949596979899";
 
 static int wstrlen( const BBChar *p ){
 	const BBChar *t=p;
@@ -183,75 +183,75 @@ int bbObjectIsEmptyString(BBObject * o) {
 }
 
 int bbU32DecLen(uint32_t x){
-    if (x >= 1000000000u) return 10;
-    if (x >= 100000000u)  return 9;
-    if (x >= 10000000u)   return 8;
-    if (x >= 1000000u)    return 7;
-    if (x >= 100000u)     return 6;
-    if (x >= 10000u)      return 5;
-    if (x >= 1000u)       return 4;
-    if (x >= 100u)        return 3;
-    if (x >= 10u)         return 2;
-    return 1;
+	if (x >= 1000000000u) return 10;
+	if (x >= 100000000u)  return 9;
+	if (x >= 10000000u)   return 8;
+	if (x >= 1000000u)    return 7;
+	if (x >= 100000u)     return 6;
+	if (x >= 10000u)      return 5;
+	if (x >= 1000u)       return 4;
+	if (x >= 100u)        return 3;
+	if (x >= 10u)         return 2;
+	return 1;
 }
 
 BBChar* bbWriteU32DecBackwards(BBChar *end, uint32_t x){
-    // writes digits into [..end) backwards and returns new start pointer
-    while (x >= 100){
-        uint32_t q = x / 100;
-        uint32_t r = x - q * 100;
-        end -= 2;
-        end[0] = (BBChar)bbDigitTable[r*2 + 0];
-        end[1] = (BBChar)bbDigitTable[r*2 + 1];
-        x = q;
-    }
-    if (x < 10){
-        *--end = (BBChar)('0' + x);
-    }else{
-        end -= 2;
-        end[0] = (BBChar)bbDigitTable[x*2 + 0];
-        end[1] = (BBChar)bbDigitTable[x*2 + 1];
-    }
-    return end;
+	// writes digits into [..end) backwards and returns new start pointer
+	while (x >= 100){
+		uint32_t q = x / 100;
+		uint32_t r = x - q * 100;
+		end -= 2;
+		end[0] = (BBChar)bbDigitTable[r*2 + 0];
+		end[1] = (BBChar)bbDigitTable[r*2 + 1];
+		x = q;
+	}
+	if (x < 10){
+		*--end = (BBChar)('0' + x);
+	}else{
+		end -= 2;
+		end[0] = (BBChar)bbDigitTable[x*2 + 0];
+		end[1] = (BBChar)bbDigitTable[x*2 + 1];
+	}
+	return end;
 }
 
 int bbU64DecLen( uint64_t x ){
-    if( x <= 0xFFFFFFFFull ){
-        return bbU32DecLen((uint32_t)x);
-    }
-    if( x >= 10000000000000000000ull ) return 20;
-    if( x >= 1000000000000000000ull )  return 19;
-    if( x >= 100000000000000000ull )   return 18;
-    if( x >= 10000000000000000ull )    return 17;
-    if( x >= 1000000000000000ull )     return 16;
-    if( x >= 100000000000000ull )      return 15;
-    if( x >= 10000000000000ull )       return 14;
-    if( x >= 1000000000000ull )        return 13;
-    if( x >= 100000000000ull )         return 12;
-    if( x >= 10000000000ull )          return 11;
-    return 10;
+	if( x <= 0xFFFFFFFFull ){
+		return bbU32DecLen((uint32_t)x);
+	}
+	if( x >= 10000000000000000000ull ) return 20;
+	if( x >= 1000000000000000000ull )  return 19;
+	if( x >= 100000000000000000ull )   return 18;
+	if( x >= 10000000000000000ull )    return 17;
+	if( x >= 1000000000000000ull )     return 16;
+	if( x >= 100000000000000ull )      return 15;
+	if( x >= 10000000000000ull )       return 14;
+	if( x >= 1000000000000ull )        return 13;
+	if( x >= 100000000000ull )         return 12;
+	if( x >= 10000000000ull )          return 11;
+	return 10;
 }
 
 BBChar* bbWriteU64DecBackwards( BBChar *end, uint64_t x ){
-    if( x <= 0xFFFFFFFFull ){
-        return bbWriteU32DecBackwards(end, (uint32_t)x);
-    }
-    while( x >= 100ull ){
-        uint64_t q = x / 100ull;
-        uint64_t r = x - q * 100ull;
-        end -= 2;
-        end[0] = (BBChar)bbDigitTable[r*2 + 0];
-        end[1] = (BBChar)bbDigitTable[r*2 + 1];
-        x = q;
-    }
-    if( x < 10ull ){
-        *--end = (BBChar)('0' + (int)x);
-    }else{
-        end -= 2;
-        end[0] = (BBChar)bbDigitTable[x*2 + 0];
-        end[1] = (BBChar)bbDigitTable[x*2 + 1];
-    }
-    return end;
+	if( x <= 0xFFFFFFFFull ){
+		return bbWriteU32DecBackwards(end, (uint32_t)x);
+	}
+	while( x >= 100ull ){
+		uint64_t q = x / 100ull;
+		uint64_t r = x - q * 100ull;
+		end -= 2;
+		end[0] = (BBChar)bbDigitTable[r*2 + 0];
+		end[1] = (BBChar)bbDigitTable[r*2 + 1];
+		x = q;
+	}
+	if( x < 10ull ){
+		*--end = (BBChar)('0' + (int)x);
+	}else{
+		end -= 2;
+		end[0] = (BBChar)bbDigitTable[x*2 + 0];
+		end[1] = (BBChar)bbDigitTable[x*2 + 1];
+	}
+	return end;
 }
 #endif
 
@@ -568,13 +568,13 @@ static inline int ryu_expand_small_E(const char *in, int inlen, char *out, int m
 	}
 
 	/* If no '.', force float style */
-    if( !wrote_dot ){
-        if( outpos + 2 >= 64 ){
+	if( !wrote_dot ){
+		if( outpos + 2 >= 64 ){
 			return 0;
 		}
-        out[outpos++] = '.';
-        out[outpos++] = '0';
-    }
+		out[outpos++] = '.';
+		out[outpos++] = '0';
+	}
 
 	/* Trim trailing zeros after '.', but always keep one fractional digit */
 	for( int i=0; i<outpos; ++i ){
@@ -714,102 +714,102 @@ BBString *bbStringFromUTF8String( const unsigned char *p ){
 #define REPLACEMENT_CHAR 0xFFFD
 
 BBString *bbStringFromUTF8Bytes(const unsigned char *p, int n) {
-    if (!p || n <= 0) return &bbEmptyString;
+	if (!p || n <= 0) return &bbEmptyString;
 
-    // Allocate worst-case: one output code unit per input byte.
-    unsigned short *buffer = (unsigned short*)malloc(n * sizeof(unsigned short));
-    if (!buffer) return &bbEmptyString; // Allocation failed
+	// Allocate worst-case: one output code unit per input byte.
+	unsigned short *buffer = (unsigned short*)malloc(n * sizeof(unsigned short));
+	if (!buffer) return &bbEmptyString; // Allocation failed
 
-    unsigned short *dest = buffer;
-    const unsigned char *end = p + n;
+	unsigned short *dest = buffer;
+	const unsigned char *end = p + n;
 
-    while (p < end) {
-        unsigned int codepoint;
-        unsigned char byte = *p++;
+	while (p < end) {
+		unsigned int codepoint;
+		unsigned char byte = *p++;
 
-        if (byte < 0x80) {
-            // 1-byte (ASCII)
-            *dest++ = byte;
-        } else if (byte < 0xC0) {
-            // Unexpected continuation byte; insert replacement.
-            *dest++ = REPLACEMENT_CHAR;
-        } else if (byte < 0xE0) {
-            // 2-byte sequence: 110xxxxx 10xxxxxx
-            if (p >= end) {
-                *dest++ = REPLACEMENT_CHAR;
-                break;
-            }
-            unsigned char byte2 = *p++;
-            if ((byte2 & 0xC0) != 0x80) {
-                *dest++ = REPLACEMENT_CHAR;
-                continue;
-            }
-            codepoint = ((byte & 0x1F) << 6) | (byte2 & 0x3F);
-            if (codepoint < 0x80) { // Overlong encoding
-                *dest++ = REPLACEMENT_CHAR;
-            } else {
-                *dest++ = (unsigned short)codepoint;
-            }
-        } else if (byte < 0xF0) {
-            // 3-byte sequence: 1110xxxx 10xxxxxx 10xxxxxx
-            if (p + 1 >= end) {
-                *dest++ = REPLACEMENT_CHAR;
-                break;
-            }
-            unsigned char byte2 = *p++;
-            unsigned char byte3 = *p++;
-            if ((byte2 & 0xC0) != 0x80 || (byte3 & 0xC0) != 0x80) {
-                *dest++ = REPLACEMENT_CHAR;
-                continue;
-            }
-            codepoint = ((byte & 0x0F) << 12) |
-                        ((byte2 & 0x3F) << 6) |
-                        (byte3 & 0x3F);
-            // Reject overlong sequences and surrogate halves.
-            if (codepoint < 0x800 || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
-                *dest++ = REPLACEMENT_CHAR;
-            } else {
-                *dest++ = (unsigned short)codepoint;
-            }
-        } else if (byte < 0xF8) {
-            // 4-byte sequence: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-            if (p + 2 >= end) {
-                *dest++ = REPLACEMENT_CHAR;
-                break;
-            }
-            unsigned char byte2 = *p++;
-            unsigned char byte3 = *p++;
-            unsigned char byte4 = *p++;
-            if ((byte2 & 0xC0) != 0x80 ||
-                (byte3 & 0xC0) != 0x80 ||
-                (byte4 & 0xC0) != 0x80) {
-                *dest++ = REPLACEMENT_CHAR;
-                continue;
-            }
-            codepoint = ((byte & 0x07) << 18) |
-                        ((byte2 & 0x3F) << 12) |
-                        ((byte3 & 0x3F) << 6) |
-                        (byte4 & 0x3F);
-            // Ensure codepoint is within valid range.
-            if (codepoint < 0x10000 || codepoint > 0x10FFFF) {
-                *dest++ = REPLACEMENT_CHAR;
-            } else {
-                // Convert to surrogate pair.
-                codepoint -= 0x10000;
-                unsigned short highSurrogate = 0xD800 | ((codepoint >> 10) & 0x3FF);
-                unsigned short lowSurrogate  = 0xDC00 | (codepoint & 0x3FF);
-                *dest++ = highSurrogate;
-                *dest++ = lowSurrogate;
-            }
-        } else {
-            // Bytes above 0xF7 are invalid in modern UTF-8.
-            *dest++ = REPLACEMENT_CHAR;
-        }
-    }
+		if (byte < 0x80) {
+			// 1-byte (ASCII)
+			*dest++ = byte;
+		} else if (byte < 0xC0) {
+			// Unexpected continuation byte; insert replacement.
+			*dest++ = REPLACEMENT_CHAR;
+		} else if (byte < 0xE0) {
+			// 2-byte sequence: 110xxxxx 10xxxxxx
+			if (p >= end) {
+				*dest++ = REPLACEMENT_CHAR;
+				break;
+			}
+			unsigned char byte2 = *p++;
+			if ((byte2 & 0xC0) != 0x80) {
+				*dest++ = REPLACEMENT_CHAR;
+				continue;
+			}
+			codepoint = ((byte & 0x1F) << 6) | (byte2 & 0x3F);
+			if (codepoint < 0x80) { // Overlong encoding
+				*dest++ = REPLACEMENT_CHAR;
+			} else {
+				*dest++ = (unsigned short)codepoint;
+			}
+		} else if (byte < 0xF0) {
+			// 3-byte sequence: 1110xxxx 10xxxxxx 10xxxxxx
+			if (p + 1 >= end) {
+				*dest++ = REPLACEMENT_CHAR;
+				break;
+			}
+			unsigned char byte2 = *p++;
+			unsigned char byte3 = *p++;
+			if ((byte2 & 0xC0) != 0x80 || (byte3 & 0xC0) != 0x80) {
+				*dest++ = REPLACEMENT_CHAR;
+				continue;
+			}
+			codepoint = ((byte & 0x0F) << 12) |
+						((byte2 & 0x3F) << 6) |
+						(byte3 & 0x3F);
+			// Reject overlong sequences and surrogate halves.
+			if (codepoint < 0x800 || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
+				*dest++ = REPLACEMENT_CHAR;
+			} else {
+				*dest++ = (unsigned short)codepoint;
+			}
+		} else if (byte < 0xF8) {
+			// 4-byte sequence: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+			if (p + 2 >= end) {
+				*dest++ = REPLACEMENT_CHAR;
+				break;
+			}
+			unsigned char byte2 = *p++;
+			unsigned char byte3 = *p++;
+			unsigned char byte4 = *p++;
+			if ((byte2 & 0xC0) != 0x80 ||
+				(byte3 & 0xC0) != 0x80 ||
+				(byte4 & 0xC0) != 0x80) {
+				*dest++ = REPLACEMENT_CHAR;
+				continue;
+			}
+			codepoint = ((byte & 0x07) << 18) |
+						((byte2 & 0x3F) << 12) |
+						((byte3 & 0x3F) << 6) |
+						(byte4 & 0x3F);
+			// Ensure codepoint is within valid range.
+			if (codepoint < 0x10000 || codepoint > 0x10FFFF) {
+				*dest++ = REPLACEMENT_CHAR;
+			} else {
+				// Convert to surrogate pair.
+				codepoint -= 0x10000;
+				unsigned short highSurrogate = 0xD800 | ((codepoint >> 10) & 0x3FF);
+				unsigned short lowSurrogate  = 0xDC00 | (codepoint & 0x3FF);
+				*dest++ = highSurrogate;
+				*dest++ = lowSurrogate;
+			}
+		} else {
+			// Bytes above 0xF7 are invalid in modern UTF-8.
+			*dest++ = REPLACEMENT_CHAR;
+		}
+	}
 
-    BBString *str = bbStringFromShorts(buffer, dest - buffer);
-    free(buffer);
-    return str;
+	BBString *str = bbStringFromShorts(buffer, dest - buffer);
+	free(buffer);
+	return str;
 }
 
 BBString *bbStringToString( BBString *t ){
@@ -850,11 +850,11 @@ int bbStringContains( BBString *x,BBString *y ){
 }
 
 BBString *bbStringConcat( BBString *x,BBString *y ){
-    int len=x->length+y->length;
-    BBString *t=bbStringNew(len);
-    memcpy( t->buf,x->buf,x->length*sizeof(BBChar) );
-    memcpy( t->buf+x->length,y->buf,y->length*sizeof(BBChar) );
-    return t;
+	int len=x->length+y->length;
+	BBString *t=bbStringNew(len);
+	memcpy( t->buf,x->buf,x->length*sizeof(BBChar) );
+	memcpy( t->buf+x->length,y->buf,y->length*sizeof(BBChar) );
+	return t;
 }
 
 BBString *bbStringSlice( BBString *in,int beg,int end ){
@@ -1300,37 +1300,37 @@ BBString *bbStringToLower( BBString *str ){
 	int n = 0;
 	
 	while (n < str->length) {
-        int c = str->buf[n];
-        if (c < 192) {
-            // ASCII character
-            if (c >= 'A' && c <= 'Z') {
-                // Found an uppercase ASCII character
-                break;
-            }
-        } else {
-            // Unicode character
-            // Check if the character is an uppercase Unicode character
-            int lo = 0, hi = (3828 / 4) - 1; // sizeof(bbToLowerData) = 3828
-            int is_upper = 0;
-            while (lo <= hi) {
-                int mid = (lo + hi) / 2;
-                int upper = bbToLowerData[mid * 2];
-                if (c < upper) {
-                    hi = mid - 1;
-                } else if (c > upper) {
-                    lo = mid + 1;
-                } else {
-                    // Found an uppercase Unicode character
-                    is_upper = 1;
-                    break;
-                }
-            }
-            if (is_upper) {
-                break;
-            }
-        }
-        ++n;
-    }
+		int c = str->buf[n];
+		if (c < 192) {
+			// ASCII character
+			if (c >= 'A' && c <= 'Z') {
+				// Found an uppercase ASCII character
+				break;
+			}
+		} else {
+			// Unicode character
+			// Check if the character is an uppercase Unicode character
+			int lo = 0, hi = (3828 / 4) - 1; // sizeof(bbToLowerData) = 3828
+			int is_upper = 0;
+			while (lo <= hi) {
+				int mid = (lo + hi) / 2;
+				int upper = bbToLowerData[mid * 2];
+				if (c < upper) {
+					hi = mid - 1;
+				} else if (c > upper) {
+					lo = mid + 1;
+				} else {
+					// Found an uppercase Unicode character
+					is_upper = 1;
+					break;
+				}
+			}
+			if (is_upper) {
+				break;
+			}
+		}
+		++n;
+	}
 	
 	if (n == str->length) {
 		return str;
@@ -1371,37 +1371,37 @@ BBString *bbStringToUpper( BBString *str ){
 	int n = 0;
 	
 	while (n < str->length) {
-        int c = str->buf[n];
-        if (c < 181) {
-            // ASCII character
-            if (c >= 'a' && c <= 'z') {
-                // Found a lowercase ASCII character
-                break;
-            }
-        } else {
-            // Unicode character
-            // Check if the character is a lowercase Unicode character
-            int lo = 0, hi = (3860 / 4) - 1; // sizeof(bbToUpperData) = 3860
-            int is_lower = 0;
-            while (lo <= hi) {
-                int mid = (lo + hi) / 2;
-                int lower = bbToUpperData[mid * 2];
-                if (c < lower) {
-                    hi = mid - 1;
-                } else if (c > lower) {
-                    lo = mid + 1;
-                } else {
-                    // Found a lowercase Unicode character
-                    is_lower = 1;
-                    break;
-                }
-            }
-            if (is_lower) {
-                break;
-            }
-        }
-        ++n;
-    }
+		int c = str->buf[n];
+		if (c < 181) {
+			// ASCII character
+			if (c >= 'a' && c <= 'z') {
+				// Found a lowercase ASCII character
+				break;
+			}
+		} else {
+			// Unicode character
+			// Check if the character is a lowercase Unicode character
+			int lo = 0, hi = (3860 / 4) - 1; // sizeof(bbToUpperData) = 3860
+			int is_lower = 0;
+			while (lo <= hi) {
+				int mid = (lo + hi) / 2;
+				int lower = bbToUpperData[mid * 2];
+				if (c < lower) {
+					hi = mid - 1;
+				} else if (c > lower) {
+					lo = mid + 1;
+				} else {
+					// Found a lowercase Unicode character
+					is_lower = 1;
+					break;
+				}
+			}
+			if (is_lower) {
+				break;
+			}
+		}
+		++n;
+	}
 	
 	if (n == str->length) {
 		return str;
@@ -1680,11 +1680,11 @@ BBUINT* bbStringToUTF32String( BBString *str ) {
 
 	size_t cap = len + 1;
 	if (cap > SIZE_MAX / sizeof(BBUINT)) {  // overflow guard
-        return NULL;
-    }
+		return NULL;
+	}
 
 	BBUINT *buf = (BBUINT*)bbMemAlloc(cap * sizeof(BBUINT));
-    if (!buf) {
+	if (!buf) {
 		return NULL;
 	}
 
@@ -1694,32 +1694,32 @@ BBUINT* bbStringToUTF32String( BBString *str ) {
 		BBChar c = p[i];
 
 		// Non-surrogate fast path
-        if (c < 0xD800u || c > 0xDFFFu) {
-            *bp++ = (BBUINT)c;
-            continue;
-        }
+		if (c < 0xD800u || c > 0xDFFFu) {
+			*bp++ = (BBUINT)c;
+			continue;
+		}
 
 		// Surrogates
-        if ((c & 0xFC00u) == 0xD800u) { // high surrogate
-            if (i + 1 >= len) {
-                bbMemFree(buf);
-                bbExThrowCString("Failed to create UTF32. Invalid surrogate pair (truncated).");
-            }
-            BBChar c2 = p[i + 1];
-            if ((c2 & 0xFC00u) != 0xDC00u) {
-                bbMemFree(buf);
-                bbExThrowCString("Failed to create UTF32. Invalid surrogate pair.");
-            }
-            // Decode pair
-            BBUINT cp = (((BBUINT)c - 0xD800u) << 10) | ((BBUINT)c2 - 0xDC00u);
-            cp += 0x10000u;
-            *bp++ = cp;
-            ++i; // consumed the low surrogate
-        } else {
-            // Lone low surrogate
-            bbMemFree(buf);
-            bbExThrowCString("Failed to create UTF32. Lone low surrogate.");
-        }
+		if ((c & 0xFC00u) == 0xD800u) { // high surrogate
+			if (i + 1 >= len) {
+				bbMemFree(buf);
+				bbExThrowCString("Failed to create UTF32. Invalid surrogate pair (truncated).");
+			}
+			BBChar c2 = p[i + 1];
+			if ((c2 & 0xFC00u) != 0xDC00u) {
+				bbMemFree(buf);
+				bbExThrowCString("Failed to create UTF32. Invalid surrogate pair.");
+			}
+			// Decode pair
+			BBUINT cp = (((BBUINT)c - 0xD800u) << 10) | ((BBUINT)c2 - 0xDC00u);
+			cp += 0x10000u;
+			*bp++ = cp;
+			++i; // consumed the low surrogate
+		} else {
+			// Lone low surrogate
+			bbMemFree(buf);
+			bbExThrowCString("Failed to create UTF32. Lone low surrogate.");
+		}
 	}
 	*bp = 0;
 	return buf;
@@ -1744,14 +1744,14 @@ BBString* bbStringFromUTF32Bytes( const BBUINT *p, size_t n ) {
 			if (c >= 0xd800u && c <= 0xdfffu) {
 				*q++ = 0xfffd;
 			} else {
-          		*q++ = c;
+		  		*q++ = c;
 			}
 		} else if (c > 0x0010ffffu) {
 			*q++ = 0xfffd;
 		} else {
 			c -= 0x0010000u;
-        	*q++ = (BBChar)((c >> 10) + 0xd800);
-        	*q++ = (BBChar)((c & 0x3ffu) + 0xdc00);
+			*q++ = (BBChar)((c >> 10) + 0xd800);
+			*q++ = (BBChar)((c & 0x3ffu) + 0xdc00);
 		}
 	}
 	BBString * str=bbStringFromShorts( d,q-d );
@@ -1760,11 +1760,11 @@ BBString* bbStringFromUTF32Bytes( const BBUINT *p, size_t n ) {
 }
 
 static inline unsigned int ascii_is_upper(unsigned int c) {
-    return (unsigned int)(c - 'A') <= 25u;
+	return (unsigned int)(c - 'A') <= 25u;
 }
 
 static inline unsigned int ascii_lower(unsigned int c) {
-    return c + ascii_is_upper(c) * 32u;
+	return c + ascii_is_upper(c) * 32u;
 }
 
 // Case-insensitive comparison for string identifiers (ASCII only)
@@ -1774,26 +1774,26 @@ int bbStringIdentifierEqualsNoCase(BBString *x, BBString *y) {
 
 // Case-insensitive comparison for string identifiers (ASCII only)
 int bbStringIdentifierEqualsNoCaseChars(BBString *x, BBChar * y, int ylen) {
-    if (x->clas != (BBClass *)&bbStringClass)
-        return 0;
+	if (x->clas != (BBClass *)&bbStringClass)
+		return 0;
 
-    if (x->length != ylen)
-        return 0;
+	if (x->length != ylen)
+		return 0;
 
-    const BBChar *xb = x->buf;
-    const BBChar *yb = y;
-    int n = x->length;
+	const BBChar *xb = x->buf;
+	const BBChar *yb = y;
+	int n = x->length;
 
-    for (int i = 0; i < n; ++i) {
+	for (int i = 0; i < n; ++i) {
 		unsigned int xc = (unsigned int)xb[i];
-        unsigned int yc = (unsigned int)yb[i];
+		unsigned int yc = (unsigned int)yb[i];
 
-        xc = ascii_lower(xc);
-        yc = ascii_lower(yc);
+		xc = ascii_lower(xc);
+		yc = ascii_lower(yc);
 
-        if (xc != yc) return 0;
-    }
-    return 1;
+		if (xc != yc) return 0;
+	}
+	return 1;
 }
 
 BBString * bbStringFromBytesAsHex( const unsigned char * bytes, int length, int upperCase ) {
@@ -1820,14 +1820,14 @@ BBString * bbStringFromBytesAsHex( const unsigned char * bytes, int length, int 
 }
 
 unsigned short bbFoldChar(unsigned short c) {
-    // ASCII
-    if (c <= 0x7A) {
-        if (c >= 'A' && c <= 'Z') {
+	// ASCII
+	if (c <= 0x7A) {
+		if (c >= 'A' && c <= 'Z') {
 			return (unsigned short)(c | 32);
 		}
-        return c;
-    }
-    return bbFoldCharLUT(c);
+		return c;
+	}
+	return bbFoldCharLUT(c);
 }
 
 int bbStringCompareCase( BBString *x,BBString *y, int caseSensitive ) {
@@ -1836,26 +1836,26 @@ int bbStringCompareCase( BBString *x,BBString *y, int caseSensitive ) {
 	}
 
 	const int nx = x->length;
-    const int ny = y->length;
-    const BBChar *sx = x->buf;
-    const BBChar *sy = y->buf;
+	const int ny = y->length;
+	const BBChar *sx = x->buf;
+	const BBChar *sy = y->buf;
 
-    int n = nx < ny ? nx : ny;
-    for (int i = 0; i < n; ++i) {
-        unsigned short ax = (unsigned short)sx[i];
-        unsigned short ay = (unsigned short)sy[i];
+	int n = nx < ny ? nx : ny;
+	for (int i = 0; i < n; ++i) {
+		unsigned short ax = (unsigned short)sx[i];
+		unsigned short ay = (unsigned short)sy[i];
 
 		if (ax == ay) {
 			continue;
 		}
-        unsigned short cx = bbFoldChar(ax);
-        unsigned short cy = bbFoldChar(ay);
-        if (cx != cy) {
-            return (int)cx - (int)cy;
-        }
-    }
+		unsigned short cx = bbFoldChar(ax);
+		unsigned short cy = bbFoldChar(ay);
+		if (cx != cy) {
+			return (int)cx - (int)cy;
+		}
+	}
 	// shorter string is less
-    return nx - ny;
+	return nx - ny;
 }
 
 int bbStringEqualsCase( BBString *x,BBString *y, int caseSensitive ) {
@@ -1873,7 +1873,7 @@ int bbStringEqualsCase( BBString *x,BBString *y, int caseSensitive ) {
 
 	for (int i = 0; i < n; ++i) {
 		unsigned short ax = (unsigned short)sx[i];
-        unsigned short ay = (unsigned short)sy[i];
+		unsigned short ay = (unsigned short)sy[i];
 
 		if (ax == ay) {
 			continue;
@@ -1888,30 +1888,30 @@ int bbStringEqualsCase( BBString *x,BBString *y, int caseSensitive ) {
 }
 
 static inline unsigned short fold_ascii(unsigned short c) {
-    if (c >= 'A' && c <= 'Z') {
+	if (c >= 'A' && c <= 'Z') {
 		return (unsigned short)(c | 32);
 	}
-    return c;
+	return c;
 }
 
 static inline unsigned short fold16(unsigned short c) {
-    // ASCII fast path
-    if (c <= 0x7F) {
+	// ASCII fast path
+	if (c <= 0x7F) {
 		return fold_ascii(c);
 	}
-    return bbFoldCharLUT(c);
+	return bbFoldCharLUT(c);
 }
 
 BBUINT bbStringHashCase( BBString *str, int caseSensitive ) {
-    int n = str->length;
+	int n = str->length;
 
 	if (caseSensitive != 0 || n == 0) {
 		return bbStringHash(str);
 	}
 	
-    const BBChar *s = str->buf;
+	const BBChar *s = str->buf;
 
-    // Use stack buffer for small strings
+	// Use stack buffer for small strings
 	if (n <= 512) {
 		unsigned short tmp[512];
 
@@ -1993,80 +1993,80 @@ BBUINT bbStringHashCase( BBString *str, int caseSensitive ) {
 
 #define BB_DEFINE_JOIN_SIGNED(NAME, ELEM_T, MAG_U_T, WIDE_S_T, DEC_LEN_FN, WRITE_BACK_FN) \
 BBString *NAME( BBString *sep, BBArray *bits ){ \
-    int i, sz = 0; \
-    int n_bits = bits->scales[0]; \
-    ELEM_T *p; \
-    BBString *str; \
-    BBChar *t; \
-    if( bits==&bbEmptyArray || n_bits==0 ) return &bbEmptyString; \
-    p = (ELEM_T*)BBARRAYDATA( bits, 1 ); \
-    for( i=0; i<n_bits; ++i ){ \
-        ELEM_T v = p[i]; \
-        if( v==0 ){ sz += 1; continue; } \
-        if( v < 0 ){ sz += 1; /* '-' */ \
-            MAG_U_T mag = (MAG_U_T)(-(WIDE_S_T)v); \
-            sz += DEC_LEN_FN( mag ); \
-        }else{ \
-            MAG_U_T mag = (MAG_U_T)v; \
-            sz += DEC_LEN_FN( mag ); \
-        } \
-    } \
-    sz += (n_bits-1) * sep->length; \
-    str = bbStringNew( sz ); \
-    t = str->buf; \
-    p = (ELEM_T*)BBARRAYDATA( bits, 1 ); \
-    for( i=0; i<n_bits; ++i ){ \
-        ELEM_T v = p[i]; \
-        if( i ){ memcpy( t, sep->buf, sep->length * sizeof(BBChar) ); t += sep->length; } \
-        if( v==0 ){ *t++ = (BBChar)'0'; continue; } \
-        MAG_U_T mag; \
-        if( v < 0 ){ *t++ = (BBChar)'-'; mag = (MAG_U_T)(-(WIDE_S_T)v); } \
-        else{ mag = (MAG_U_T)v; } \
-        int dlen = DEC_LEN_FN( mag ); \
-        BBChar *end = t + dlen; \
-        (void)WRITE_BACK_FN( end, mag ); \
-        t = end; \
-    } \
-    return str; \
+	int i, sz = 0; \
+	int n_bits = bits->scales[0]; \
+	ELEM_T *p; \
+	BBString *str; \
+	BBChar *t; \
+	if( bits==&bbEmptyArray || n_bits==0 ) return &bbEmptyString; \
+	p = (ELEM_T*)BBARRAYDATA( bits, 1 ); \
+	for( i=0; i<n_bits; ++i ){ \
+		ELEM_T v = p[i]; \
+		if( v==0 ){ sz += 1; continue; } \
+		if( v < 0 ){ sz += 1; /* '-' */ \
+			MAG_U_T mag = (MAG_U_T)(-(WIDE_S_T)v); \
+			sz += DEC_LEN_FN( mag ); \
+		}else{ \
+			MAG_U_T mag = (MAG_U_T)v; \
+			sz += DEC_LEN_FN( mag ); \
+		} \
+	} \
+	sz += (n_bits-1) * sep->length; \
+	str = bbStringNew( sz ); \
+	t = str->buf; \
+	p = (ELEM_T*)BBARRAYDATA( bits, 1 ); \
+	for( i=0; i<n_bits; ++i ){ \
+		ELEM_T v = p[i]; \
+		if( i ){ memcpy( t, sep->buf, sep->length * sizeof(BBChar) ); t += sep->length; } \
+		if( v==0 ){ *t++ = (BBChar)'0'; continue; } \
+		MAG_U_T mag; \
+		if( v < 0 ){ *t++ = (BBChar)'-'; mag = (MAG_U_T)(-(WIDE_S_T)v); } \
+		else{ mag = (MAG_U_T)v; } \
+		int dlen = DEC_LEN_FN( mag ); \
+		BBChar *end = t + dlen; \
+		(void)WRITE_BACK_FN( end, mag ); \
+		t = end; \
+	} \
+	return str; \
 }
 
 BB_DEFINE_JOIN_SIGNED(bbStringJoinInts,  BBINT,  uint32_t, int64_t,  bbU32DecLen, bbWriteU32DecBackwards)
 BB_DEFINE_JOIN_SIGNED(bbStringJoinLongs, BBLONG, uint64_t, int64_t,  bbU64DecLen, bbWriteU64DecBackwards)
 
 BBString *bbStringJoinLongInts( BBString *sep, BBArray *bits ){
-    if( sizeof(BBLONGINT) == 8 ){
-        return bbStringJoinLongs(sep, bits);
-    }else{
-        return bbStringJoinInts(sep, bits);
-    }
+	if( sizeof(BBLONGINT) == 8 ){
+		return bbStringJoinLongs(sep, bits);
+	}else{
+		return bbStringJoinInts(sep, bits);
+	}
 }
 
 #define BB_DEFINE_JOIN_UNSIGNED(NAME, ELEM_T, MAG_U_T, DEC_LEN_FN, WRITE_BACK_FN) \
 BBString *NAME( BBString *sep, BBArray *bits ){ \
-    int i, sz = 0; \
-    int n_bits = bits->scales[0]; \
-    ELEM_T *p; \
-    BBString *str; \
-    BBChar *t; \
-    if( bits==&bbEmptyArray || n_bits==0 ) return &bbEmptyString; \
-    p = (ELEM_T*)BBARRAYDATA( bits, 1 ); \
-    for( i=0; i<n_bits; ++i ){ \
-        MAG_U_T v = (MAG_U_T)p[i]; \
-        sz += DEC_LEN_FN( v ); \
-    } \
-    sz += (n_bits-1) * sep->length; \
-    str = bbStringNew( sz ); \
-    t = str->buf; \
-    p = (ELEM_T*)BBARRAYDATA( bits, 1 ); \
-    for( i=0; i<n_bits; ++i ){ \
-        MAG_U_T v = (MAG_U_T)p[i]; \
-        if( i ){ memcpy( t, sep->buf, sep->length * sizeof(BBChar) ); t += sep->length; } \
-        int dlen = DEC_LEN_FN( v ); \
-        BBChar *end = t + dlen; \
-        (void)WRITE_BACK_FN( end, v ); \
-        t = end; \
-    } \
-    return str; \
+	int i, sz = 0; \
+	int n_bits = bits->scales[0]; \
+	ELEM_T *p; \
+	BBString *str; \
+	BBChar *t; \
+	if( bits==&bbEmptyArray || n_bits==0 ) return &bbEmptyString; \
+	p = (ELEM_T*)BBARRAYDATA( bits, 1 ); \
+	for( i=0; i<n_bits; ++i ){ \
+		MAG_U_T v = (MAG_U_T)p[i]; \
+		sz += DEC_LEN_FN( v ); \
+	} \
+	sz += (n_bits-1) * sep->length; \
+	str = bbStringNew( sz ); \
+	t = str->buf; \
+	p = (ELEM_T*)BBARRAYDATA( bits, 1 ); \
+	for( i=0; i<n_bits; ++i ){ \
+		MAG_U_T v = (MAG_U_T)p[i]; \
+		if( i ){ memcpy( t, sep->buf, sep->length * sizeof(BBChar) ); t += sep->length; } \
+		int dlen = DEC_LEN_FN( v ); \
+		BBChar *end = t + dlen; \
+		(void)WRITE_BACK_FN( end, v ); \
+		t = end; \
+	} \
+	return str; \
 }
 
 BB_DEFINE_JOIN_UNSIGNED(bbStringJoinBytes,  BBBYTE,  uint32_t, bbU32DecLen, bbWriteU32DecBackwards)
@@ -2075,19 +2075,19 @@ BB_DEFINE_JOIN_UNSIGNED(bbStringJoinUInts,  BBUINT,  uint32_t, bbU32DecLen, bbWr
 BB_DEFINE_JOIN_UNSIGNED(bbStringJoinULongs, BBULONG, uint64_t, bbU64DecLen, bbWriteU64DecBackwards)
 
 BBString *bbStringJoinSizets( BBString *sep, BBArray *bits ){
-    if( sizeof(BBSIZET) == 8 ){
-        return bbStringJoinULongs(sep, bits);
-    }else{
-        return bbStringJoinUInts(sep, bits);
-    }
+	if( sizeof(BBSIZET) == 8 ){
+		return bbStringJoinULongs(sep, bits);
+	}else{
+		return bbStringJoinUInts(sep, bits);
+	}
 }
 
 BBString *bbStringJoinULongInts( BBString *sep, BBArray *bits ){
-    if( sizeof(BBULONGINT) == 8 ){
-        return bbStringJoinULongs(sep, bits);
-    }else{
-        return bbStringJoinUInts(sep, bits);
-    }
+	if( sizeof(BBULONGINT) == 8 ){
+		return bbStringJoinULongs(sep, bits);
+	}else{
+		return bbStringJoinUInts(sep, bits);
+	}
 }
 
 BBString *bbStringJoinFloats( BBString *sep, BBArray *bits, int fixed ){
@@ -2184,4 +2184,69 @@ BBString *bbStringJoinDoubles( BBString *sep, BBArray *bits, int fixed ){
 	}
 
 	return str;
+}
+
+BBString *bbStringReplicate( BBString *pat, int count ){
+	int patLen;
+	int outLen;
+	BBString *out;
+	int i;
+	BBChar *dst;
+
+	if( count <= 0 ){
+		return &bbEmptyString;
+	}
+
+	patLen = pat->length;
+
+	if( patLen <= 0 ){
+		return &bbEmptyString;
+	}
+
+	/* overflow guard: outLen = patLen * count */
+	if( patLen > INT_MAX / count ) {
+		return &bbEmptyString;
+	}
+	outLen = patLen * count;
+
+	out = bbStringNew( outLen );
+	dst = out->buf;
+
+	switch (patLen) {
+		case 1: {
+			BBChar ch = pat->buf[0];
+			for( i = 0; i < outLen; ++i ){
+				dst[i] = ch;
+			}
+			return out;
+		}
+		case 2: {
+			BBChar ch0 = pat->buf[0];
+			BBChar ch1 = pat->buf[1];
+			for( i = 0; i < outLen; i += 2 ){
+				dst[i] = ch0;
+				dst[i + 1] = ch1;
+			}
+			return out;
+		}
+		case 3: {
+			BBChar ch0 = pat->buf[0];
+			BBChar ch1 = pat->buf[1];
+			BBChar ch2 = pat->buf[2];
+			for( i = 0; i < outLen; i += 3 ){
+				dst[i] = ch0;
+				dst[i + 1] = ch1;
+				dst[i + 2] = ch2;
+			}
+			return out;
+		}
+		default:
+			break;
+	}
+
+	for( i = 0; i < count; ++i ){
+		memcpy( dst + i * patLen, pat->buf, patLen * sizeof(BBChar) );
+	}
+
+	return out;
 }
