@@ -135,6 +135,8 @@ struct BBClass_String{
 
 	BBString* (*bbStringJoinFloats)( BBString *sep, BBArray *bits, int fixed );
 	BBString* (*bbStringJoinDoubles)( BBString *sep, BBArray *bits, int fixed );
+
+	BBString * (*bbStringReplicate)( BBString *str, int count );
 };
 
 extern	struct BBClass_String bbStringClass;
@@ -236,6 +238,8 @@ BBString* bbStringJoinULongInts( BBString *sep, BBArray *bits );
 
 BBString *bbStringJoinFloats( BBString *sep, BBArray *bits, int fixed );
 BBString *bbStringJoinDoubles( BBString *sep, BBArray *bits, int fixed );
+
+BBString *bbStringReplicate( BBString *pat, int count );
 
 char*	bbTmpCString( BBString *str );
 BBChar*	bbTmpWString( BBString *str );

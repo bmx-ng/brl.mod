@@ -125,6 +125,8 @@ String^Object{
 	-SplitULongInts:ULongInt[]( separator:String )="bbStringSplitULongInts"
 	-SplitFloats:Float[]( separator:String )="bbStringSplitFloats"
 	-SplitDoubles:Double[]( separator:String )="bbStringSplitDoubles"
+
+	-Replicate:String( count:Int )="bbStringReplicate"
 }AF="bbStringClass"
 
 ___Array^Object{
