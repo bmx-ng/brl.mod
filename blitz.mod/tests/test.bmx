@@ -6132,3 +6132,192 @@ Type TStringReplicateTest Extends TTest
 	End Method
 
 End Type
+
+Type TStringToBytesFromHexTest Extends TTest
+
+	Method Test_EmptyString_ReturnsZero() { test }
+		Local bytes:Byte[4]
+		AssertEquals(0, "".ToBytesFromHex(bytes, bytes.Length), "Empty string should write 0 bytes")
+	End Method
+
+	Method Test_ValidHex_ReturnsExpectedByteCount() { test }
+		Local bytes:Byte[6]
+		Local count:Int = "010203040506".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(6, count, "Should write 6 bytes")
+		AssertEquals(1, bytes[0], "Byte 0")
+		AssertEquals(2, bytes[1], "Byte 1")
+		AssertEquals(3, bytes[2], "Byte 2")
+		AssertEquals(4, bytes[3], "Byte 3")
+		AssertEquals(5, bytes[4], "Byte 4")
+		AssertEquals(6, bytes[5], "Byte 5")
+	End Method
+
+	Method Test_LowerCaseHex_DecodesCorrectly() { test }
+		Local bytes:Byte[3]
+		Local count:Int = "0a1b2c".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(3, count, "Should write 3 bytes")
+		AssertEquals($0A, bytes[0] & $ff, "Byte 0")
+		AssertEquals($1B, bytes[1] & $ff, "Byte 1")
+		AssertEquals($2C, bytes[2] & $ff, "Byte 2")
+	End Method
+
+	Method Test_UpperCaseHex_DecodesCorrectly() { test }
+		Local bytes:Byte[3]
+		Local count:Int = "0A1B2C".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(3, count, "Should write 3 bytes")
+		AssertEquals($0A, bytes[0] & $ff, "Byte 0")
+		AssertEquals($1B, bytes[1] & $ff, "Byte 1")
+		AssertEquals($2C, bytes[2] & $ff, "Byte 2")
+	End Method
+
+	Method Test_MixedCaseHex_DecodesCorrectly() { test }
+		Local bytes:Byte[3]
+		Local count:Int = "0a1B2c".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(3, count, "Should write 3 bytes")
+		AssertEquals($0A, bytes[0] & $ff, "Byte 0")
+		AssertEquals($1B, bytes[1] & $ff, "Byte 1")
+		AssertEquals($2C, bytes[2] & $ff, "Byte 2")
+	End Method
+
+	Method Test_TrailingSingleNibble_IsIgnored() { test }
+		Local bytes:Byte[4]
+		Local count:Int = "01020".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(2, count, "Trailing single hex digit should be ignored")
+		AssertEquals(1, bytes[0], "Byte 0")
+		AssertEquals(2, bytes[1], "Byte 1")
+	End Method
+
+	Method Test_SingleHexDigit_ReturnsZero() { test }
+		Local bytes:Byte[4]
+		Local count:Int = "A".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(0, count, "Single trailing hex digit should not produce a byte")
+	End Method
+
+	Method Test_InvalidFirstCharacter_ReturnsZero() { test }
+		Local bytes:Byte[4]
+		Local count:Int = "X10203".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(0, count, "Invalid first character should stop immediately")
+	End Method
+
+	Method Test_InvalidSecondNibble_ReturnsZero() { test }
+		Local bytes:Byte[4]
+		Local count:Int = "0X0203".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(0, count, "Invalid second nibble should stop immediately without writing")
+	End Method
+
+	Method Test_StopsAtFirstInvalidCharacter() { test }
+		Local bytes:Byte[4]
+		Local count:Int = "0102X304".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(2, count, "Should stop at first invalid character")
+		AssertEquals(1, bytes[0], "Byte 0")
+		AssertEquals(2, bytes[1], "Byte 1")
+	End Method
+
+	Method Test_StopsAtInvalidLowNibble() { test }
+		Local bytes:Byte[4]
+		Local count:Int = "01Z2".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(1, count, "Should stop before invalid pair")
+		AssertEquals(1, bytes[0], "Byte 0")
+	End Method
+
+	Method Test_BufferTooSmall_ReturnsMinusOne() { test }
+		Local bytes:Byte[2]
+		Local count:Int = "010203".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(-1, count, "Should return -1 on overflow")
+	End Method
+
+	Method Test_ExactFit_WritesAllBytes() { test }
+		Local bytes:Byte[3]
+		Local count:Int = "010203".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(3, count, "Should write all bytes when buffer fits exactly")
+		AssertEquals(1, bytes[0], "Byte 0")
+		AssertEquals(2, bytes[1], "Byte 1")
+		AssertEquals(3, bytes[2], "Byte 2")
+	End Method
+
+	Method Test_ZeroLengthBuffer_ReturnsMinusOneForValidInput() { test }
+		Local bytes:Byte[0]
+		Local count:Int = "01".ToBytesFromHex(bytes, bytes.Length)
+		
+		AssertEquals(-1, count, "Should return -1 when output buffer has no space")
+	End Method
+
+	Method Test_OffsetCount_ValidRange_DecodesCorrectly() { test }
+		Local bytes:Byte[3]
+		Local count:Int = "XX010203YY".ToBytesFromHex(2, 6, bytes, bytes.Length)
+		
+		AssertEquals(3, count, "Offset/count should decode requested substring")
+		AssertEquals(1, bytes[0], "Byte 0")
+		AssertEquals(2, bytes[1], "Byte 1")
+		AssertEquals(3, bytes[2], "Byte 2")
+	End Method
+
+	Method Test_OffsetCount_StopsAtInvalidCharacter() { test }
+		Local bytes:Byte[3]
+		Local count:Int = "XX0102Z3YY".ToBytesFromHex(2, 6, bytes, bytes.Length)
+		
+		AssertEquals(2, count, "Offset/count should stop at invalid character")
+		AssertEquals(1, bytes[0], "Byte 0")
+		AssertEquals(2, bytes[1], "Byte 1")
+	End Method
+
+	Method Test_OffsetCount_TrailingSingleNibble_IsIgnored() { test }
+		Local bytes:Byte[3]
+		Local count:Int = "XX01020YY".ToBytesFromHex(2, 5, bytes, bytes.Length)
+		
+		AssertEquals(2, count, "Offset/count should ignore trailing single nibble")
+		AssertEquals(1, bytes[0], "Byte 0")
+		AssertEquals(2, bytes[1], "Byte 1")
+	End Method
+
+	Method Test_OffsetCount_BufferTooSmall_ReturnsMinusOne() { test }
+		Local bytes:Byte[2]
+		Local count:Int = "XX010203YY".ToBytesFromHex(2, 6, bytes, bytes.Length)
+		
+		AssertEquals(-1, count, "Offset/count should return -1 on overflow")
+	End Method
+
+	Method Test_OffsetCount_ZeroCount_ReturnsZero() { test }
+		Local bytes:Byte[4]
+		Local count:Int = "010203".ToBytesFromHex(2, 0, bytes, bytes.Length)
+		
+		AssertEquals(0, count, "Zero count should decode nothing")
+	End Method
+
+	Method Test_OffsetCount_OddCount_DecodesFullPairsOnly() { test }
+		Local bytes:Byte[4]
+		Local count:Int = "00112233".ToBytesFromHex(2, 5, bytes, bytes.Length)
+		
+		AssertEquals(2, count, "Odd count should decode full pairs only")
+		AssertEquals($11, bytes[0] & $ff, "Byte 0")
+		AssertEquals($22, bytes[1] & $ff, "Byte 1")
+	End Method
+
+	Method Test_OffsetCount_CountPastEnd_IsClamped() { test }
+		Local bytes:Byte[3]
+		Local count:Int = "010203".ToBytesFromHex(2, 99, bytes, bytes.Length)
+		
+		AssertEquals(2, count, "Count past end should be clamped")
+		AssertEquals(2, bytes[0], "Byte 0")
+		AssertEquals(3, bytes[1], "Byte 1")
+	End Method
+
+	Method Test_OffsetCount_OffsetAtEnd_ReturnsZero() { test }
+		Local bytes:Byte[3]
+		Local count:Int = "010203".ToBytesFromHex(6, 2, bytes, bytes.Length)
+		
+		AssertEquals(0, count, "Offset at end should decode nothing")
+	End Method
+End Type

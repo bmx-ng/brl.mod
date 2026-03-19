@@ -137,6 +137,9 @@ struct BBClass_String{
 	BBString* (*bbStringJoinDoubles)( BBString *sep, BBArray *bits, int fixed );
 
 	BBString * (*bbStringReplicate)( BBString *str, int count );
+
+	int (*bbStringToBytesFromHex)( BBString *str, unsigned char *bytes, int length );
+	int (*bbStringToBytesFromHexEx)( BBString *str, int offset, int count, unsigned char *bytes, int length );
 };
 
 extern	struct BBClass_String bbStringClass;
@@ -240,6 +243,9 @@ BBString *bbStringJoinFloats( BBString *sep, BBArray *bits, int fixed );
 BBString *bbStringJoinDoubles( BBString *sep, BBArray *bits, int fixed );
 
 BBString *bbStringReplicate( BBString *pat, int count );
+
+int bbStringToBytesFromHex(BBString * str, unsigned char * bytes, int length);
+int bbStringToBytesFromHexEx(BBString * str, int offset, int count, unsigned char * bytes, int length);
 
 char*	bbTmpCString( BBString *str );
 BBChar*	bbTmpWString( BBString *str );

@@ -1819,6 +1819,86 @@ BBString * bbStringFromBytesAsHex( const unsigned char * bytes, int length, int 
 	return str;
 }
 
+static inline int bbHexCharToValue(BBChar c) {
+	if (c >= '0' && c <= '9') return c - '0';
+	if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+	if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+	return -1;
+}
+
+int bbStringToBytesFromHex(BBString * str, unsigned char * bytes, int length) {
+	if (str == &bbEmptyString) {
+		return 0;
+	}
+
+	if (!bytes || length <= 0) {
+		return -1;
+	}
+
+	int written = 0;
+	int i = 0;
+
+	while (i + 1 < str->length) {
+		int hi = bbHexCharToValue(str->buf[i]);
+		if (hi < 0) {
+			break;
+		}
+
+		int lo = bbHexCharToValue(str->buf[i + 1]);
+		if (lo < 0) {
+			break;
+		}
+
+		if (written >= length) {
+			return -1;
+		}
+
+		bytes[written++] = (unsigned char)((hi << 4) | lo);
+		i += 2;
+	}
+
+	return written;
+}
+
+int bbStringToBytesFromHexEx(BBString * str, int offset, int count, unsigned char * bytes, int length) {
+	if (str == &bbEmptyString || offset < 0 || count < 0 || offset > str->length) {
+		return 0;
+	}
+
+	if (!bytes || length <= 0) {
+		return -1;
+	}
+
+	int end = str->length;
+	if (count < end - offset) {
+		end = offset + count;
+	}
+
+	int written = 0;
+	int i = offset;
+
+	while (i + 1 < end) {
+		int hi = bbHexCharToValue(str->buf[i]);
+		if (hi < 0) {
+			break;
+		}
+
+		int lo = bbHexCharToValue(str->buf[i + 1]);
+		if (lo < 0) {
+			break;
+		}
+
+		if (written >= length) {
+			return -1;
+		}
+
+		bytes[written++] = (unsigned char)((hi << 4) | lo);
+		i += 2;
+	}
+
+	return written;
+}
+
 unsigned short bbFoldChar(unsigned short c) {
 	// ASCII
 	if (c <= 0x7A) {

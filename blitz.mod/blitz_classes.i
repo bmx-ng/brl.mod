@@ -122,6 +122,9 @@ String^Object{
 	-SplitDoubles:Double[]( separator:String )="bbStringSplitDoubles"
 
 	-Replicate:String( count:Int )="bbStringReplicate"
+
+	-ToBytesFromHex:Int( bytes:Byte Ptr, length:Int )="bbStringToBytesFromHex"
+	-ToBytesFromHex:Int( offset:Int, count:Int, bytes:Byte Ptr, length:Int )="bbStringToBytesFromHexEx"
 }AF="bbStringClass"
 
 ___Array^Object{
