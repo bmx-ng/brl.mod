@@ -58,8 +58,12 @@ Type TRandomDefault Extends TRandom
 	Rem
 	bbdoc: Create a new random number generator with the specified seed
 	End Rem
-	Method New(seed:Int)
-		SeedRnd seed
+	Method New(seed:Int, fromState:Int = False)
+		If Not fromState Then
+			SeedRnd seed
+		Else
+			rnd_state = seed
+		End If
 	End Method
 
 	Method NextState:Int()
@@ -235,7 +239,14 @@ Type TRandomDefault Extends TRandom
 	End Method
 
 	Method GetName:String()
-		Return "Random"
+		Return "Default"
+	End Method
+
+	Method SerializeState:String() Override
+		Local data:TJSONObject = New TJSONObject.Create()
+		data.Set("state", New TJSONString.Create(String.FromInt(rnd_state)))
+
+		Return data.SaveString(JSON_COMPACT, 0)
 	End Method
 End Type
 
@@ -248,7 +259,7 @@ Type TRandomDefaultFactory Extends TRandomFactory
 	End Method
 	
 	Method GetName:String()
-		Return "Random"
+		Return "Default"
 	End Method
 	
 	Method Create:TRandom(seed:Int)
@@ -258,7 +269,17 @@ Type TRandomDefaultFactory Extends TRandomFactory
 	Method Create:TRandom()
 		Return New TRandomDefault()
 	End Method
-		
+
+	Method DeserializeState:TRandom(data:TJSONObject) Override
+		Local stateValue:TJSONString = TJSONString(data.Get("state"))
+
+		If Not stateValue Then
+			Return Null
+		End If
+
+		Local state:Int = stateValue.Value().ToInt()
+		Return New TRandomDefault(state, True)
+	End Method
 End Type
 
 New TRandomDefaultFactory
