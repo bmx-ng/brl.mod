@@ -1,9 +1,38 @@
 
 #include <brl.mod/blitz.mod/blitz.h>
-
+#include <pub.mod/macos.mod/macos.h>
 #import <AppKit/AppKit.h>
 
 void __bb_brl_appstub_appstub();
+
+typedef NSApplicationTerminateReply (*BBAppShouldTerminateHook)(NSApplication *app);
+typedef void (*BBAppWillTerminateHook)(NSNotification *notification);
+typedef int (*BBAppOpenFileHook)(NSApplication *app, BBString *path);
+
+static NSMutableArray *g_shouldTerminateHooks;
+static NSMutableArray *g_willTerminateHooks;
+static NSMutableArray *g_openFileHooks;
+
+void bbRegisterAppShouldTerminateHook(BBAppShouldTerminateHook hook) {
+	if (!g_shouldTerminateHooks) {
+		g_shouldTerminateHooks = [[NSMutableArray alloc] init];
+	}
+	[g_shouldTerminateHooks addObject:[NSValue valueWithBytes:&hook objCType:@encode(BBAppShouldTerminateHook)]];
+}
+
+void bbRegisterAppWillTerminateHook(BBAppWillTerminateHook hook) {
+	if (!g_willTerminateHooks) {
+		g_willTerminateHooks = [[NSMutableArray alloc] init];
+	}
+	[g_willTerminateHooks addObject:[NSValue valueWithBytes:&hook objCType:@encode(BBAppWillTerminateHook)]];
+}
+
+void bbRegisterAppOpenFileHook(BBAppOpenFileHook hook) {
+	if (!g_openFileHooks) {
+		g_openFileHooks = [[NSMutableArray alloc] init];
+	}
+	[g_openFileHooks addObject:[NSValue valueWithBytes:&hook objCType:@encode(BBAppOpenFileHook)]];
+}
 
 static int app_argc;
 static char **app_argv;
@@ -118,15 +147,55 @@ void bbFlushAutoreleasePool(){
 
 @implementation BlitzMaxAppDelegate
 -(void)applicationWillTerminate:(NSNotification*)notification{
+
+	if (g_willTerminateHooks) {
+		for (NSValue *v in g_willTerminateHooks) {
+			BBAppWillTerminateHook func = [v pointerValue];
+			if (func) {
+				func(notification);
+			}
+		}
+	}
+
 	exit(0);
 }
 
 -(NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender{
+	if (g_shouldTerminateHooks) {
+		for (NSValue *v in g_shouldTerminateHooks) {
+			BBAppShouldTerminateHook func = [v pointerValue];
+			if (func) {
+				NSApplicationTerminateReply r = func(sender);
+				if (r != NSTerminateNow) {
+					return r;
+				}
+			}
+		}
+	}
 	return NSTerminateCancel;
 }
 
 -(BOOL)application:(NSApplication*)app openFile:(NSString*)path{
-	[_appArgs addObject:path];
+	if (_appArgs) {
+		[_appArgs addObject:path];
+	}
+
+	if (g_openFileHooks) {
+		BBString * bbPath = NULL;
+		for (NSValue *v in g_openFileHooks) {
+			BBAppOpenFileHook func = [v pointerValue];
+			if (func) {
+				if (!bbPath) {
+					bbPath = bbStringFromNSString(path);
+				}
+				int r = func(app, bbPath);
+				if (r) {
+					return YES;
+				}
+			}
+		}
+	}
+
 	return YES;
 }
 
@@ -142,6 +211,7 @@ void bbFlushAutoreleasePool(){
 	}
 	app_argv[i]=0;
 	[_appArgs release];
+	_appArgs=nil;
 
 	[NSApp activateIgnoringOtherApps:YES];
 	

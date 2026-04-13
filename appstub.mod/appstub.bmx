@@ -5,12 +5,14 @@ NoDebug
 
 Module BRL.AppStub
 
-ModuleInfo "Version: 1.20"
+ModuleInfo "Version: 1.21"
 ModuleInfo "Authors: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.21 Release"
+ModuleInfo "History: Added callback hooks for MacOS app termination and file opening"
 ModuleInfo "History: 1.20 Release"
 ModuleInfo "History: Fixed 'invalid typetag' issue"
 ModuleInfo "History: 1.19 Release"
@@ -55,6 +57,7 @@ Import "debugger_mt.stdio.bmx"	'Let's give Otus's new MT friendly debugger a whi
 ?
 
 ?osx
+Import pub.macos
 Import "appstub.macos.m"
 Import "-framework Cocoa"
 Import "-framework Carbon"
