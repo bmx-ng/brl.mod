@@ -6,12 +6,14 @@ bbdoc: System/File system
 End Rem
 Module BRL.FileSystem
 
-ModuleInfo "Version: 1.14"
+ModuleInfo "Version: 1.15"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.15"
+ModuleInfo "History: Documented file type and time constants."
 ModuleInfo "History: 1.14"
 ModuleInfo "History: Fixed file tree walking. Added unit tests."
 ModuleInfo "History: 1.13"
@@ -41,8 +43,34 @@ Import BRL.BankStream
 
 Import "glue.c"
 
-Const FILETYPE_NONE:Int=0,FILETYPE_FILE:Int=1,FILETYPE_DIR:Int=2,FILETYPE_SYM:Int=3
-Const FILETIME_MODIFIED:Int=0,FILETIME_CREATED:Int=1,FILETIME_ACCESSED:Int=2
+Rem
+bbdoc: The specified path is not a valid file or directory.
+End Rem
+Const FILETYPE_NONE:Int=0
+Rem
+bbdoc: The specified path is a regular file.
+End Rem
+Const FILETYPE_FILE:Int=1
+Rem
+bbdoc: The specified path is a directory.
+End Rem
+Const FILETYPE_DIR:Int=2
+Rem
+bbdoc: The specified path is a symbolic link.
+End Rem
+Const FILETYPE_SYM:Int=3
+Rem
+bbdoc: Used to request a file's modified time from #FileTime and #SetFileTime.
+End Rem
+Const FILETIME_MODIFIED:Int=0
+Rem
+bbdoc: Used to request a file's creation time from #FileTime and #SetFileTime.
+End Rem
+Const FILETIME_CREATED:Int=1
+Rem
+bbdoc: Used to request a file's last accessed time from #FileTime and #SetFileTime.
+End Rem
+Const FILETIME_ACCESSED:Int=2
 
 Private
 
@@ -215,20 +243,20 @@ End Function
 
 Rem
 bbdoc: Gets the file type
-returns: 0 if file at @path doesn't exist, FILETYPE_FILE (1) if the file is a plain file or FILETYPE_DIR (2) if the file is a directory
+returns: #FILETYPE_NONE (0) if file at @path doesn't exist, #FILETYPE_FILE (1) if the file is a plain file or #FILETYPE_DIR (2) if the file is a directory
 End Rem
 Function FileType:Int( path:String )
 	FixPath path
 	If MaxIO.ioInitialized Then
 		Local stat:SMaxIO_Stat
-		If Not MaxIO.Stat(path, stat) Return 0
+		If Not MaxIO.Stat(path, stat) Return FILETYPE_NONE
 		Select stat._filetype
 			Case EMaxIOFileType.REGULAR Return FILETYPE_FILE
 			Case EMaxIOFileType.DIRECTORY Return FILETYPE_DIR
 		End Select
 	Else
 		Local Mode:Int,size:Long,mtime:Int,ctime:Int,atime:Int
-		If stat_( path,Mode,size,mtime,ctime,atime ) Return 0
+		If stat_( path,Mode,size,mtime,ctime,atime ) Return FILETYPE_NONE
 		Select Mode & S_IFMT_
 		Case S_IFREG_ Return FILETYPE_FILE
 		Case S_IFDIR_ Return FILETYPE_DIR
