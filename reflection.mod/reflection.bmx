@@ -6,12 +6,14 @@ bbdoc: BASIC/Reflection
 End Rem
 Module BRL.Reflection
 
-ModuleInfo "Version: 1.12"
+ModuleInfo "Version: 1.13"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.13"
+ModuleInfo "History: Enum field get/set now operates correctly on the underlying type, rather than throwing error."
 ModuleInfo "History: 1.12"
 ModuleInfo "History: Metadata keys are now case-insensitive."
 ModuleInfo "History: 1.11"
@@ -1093,7 +1095,11 @@ Type TField Extends TMember
 	End Rem
 	Method GetByte:Byte( obj:Object )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum() Then
+			ty = ty.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
 			Case ShortTypeId
@@ -1125,7 +1131,11 @@ Type TField Extends TMember
 	End Rem
 	Method GetShort:Short( obj:Object )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum() Then
+			ty = ty.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
 			Case ShortTypeId
@@ -1157,7 +1167,11 @@ Type TField Extends TMember
 	End Rem
 	Method GetInt:Int( obj:Object )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum() Then
+			ty = ty.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
 			Case ShortTypeId
@@ -1189,7 +1203,11 @@ Type TField Extends TMember
 	End Rem
 	Method GetUInt:UInt( obj:Object )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum() Then
+			ty = ty.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
 			Case ShortTypeId
@@ -1221,7 +1239,11 @@ Type TField Extends TMember
 	End Rem
 	Method GetLong:Long( obj:Object )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum() Then
+			ty = ty.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
 			Case ShortTypeId
@@ -1253,7 +1275,11 @@ Type TField Extends TMember
 	End Rem
 	Method GetULong:ULong( obj:Object )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum() Then
+			ty = ty.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
 			Case ShortTypeId
@@ -1285,7 +1311,11 @@ Type TField Extends TMember
 	End Rem
 	Method GetSizeT:Size_T( obj:Object )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum() Then
+			ty = ty.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
 			Case ShortTypeId
@@ -1381,7 +1411,11 @@ Type TField Extends TMember
 	End Rem
 	Method GetLongInt:LongInt( obj:Object )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum() Then
+			ty = ty.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
 			Case ShortTypeId
@@ -1413,7 +1447,11 @@ Type TField Extends TMember
 	End Rem
 	Method GetULongInt:ULongInt( obj:Object )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum() Then
+			ty = ty.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				Return (Byte Ptr p)[0]
 			Case ShortTypeId
@@ -1570,7 +1608,11 @@ Type TField Extends TMember
 	End Rem
 	Method SetByte( obj:Object,value:Byte )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum()
+			ty = _typeId.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				(Byte Ptr p)[0]=value
 			Case ShortTypeId
@@ -1609,7 +1651,11 @@ Type TField Extends TMember
 	End Rem
 	Method SetShort( obj:Object,value:Short )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum()
+			ty = _typeId.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
 			Case ShortTypeId
@@ -1648,7 +1694,11 @@ Type TField Extends TMember
 	End Rem
 	Method SetInt( obj:Object,value:Int )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum()
+			ty = _typeId.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
 			Case ShortTypeId
@@ -1687,7 +1737,11 @@ Type TField Extends TMember
 	End Rem
 	Method SetUInt( obj:Object,value:UInt )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum()
+			ty = _typeId.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
 			Case ShortTypeId
@@ -1726,7 +1780,11 @@ Type TField Extends TMember
 	End Rem
 	Method SetLong( obj:Object,value:Long )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum()
+			ty = _typeId.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
 			Case ShortTypeId
@@ -1765,7 +1823,11 @@ Type TField Extends TMember
 	End Rem
 	Method SetULong( obj:Object,value:ULong )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum()
+			ty = _typeId.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
 			Case ShortTypeId
@@ -1804,7 +1866,11 @@ Type TField Extends TMember
 	End Rem
 	Method SetSizet( obj:Object,value:Size_T )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum()
+			ty = _typeId.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
 			Case ShortTypeId
@@ -1921,7 +1987,11 @@ Type TField Extends TMember
 	End Rem
 	Method SetLongInt( obj:Object,value:LongInt )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum()
+			ty = _typeId.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
 			Case ShortTypeId
@@ -1960,7 +2030,11 @@ Type TField Extends TMember
 	End Rem
 	Method SetULongInt( obj:Object,value:ULongInt )
 		Local p:Byte Ptr = FieldPtr(obj)
-		Select _typeId
+		Local ty:TTypeId = _typeId
+		If ty.IsEnum()
+			ty = _typeId.UnderlyingType()
+		End If
+		Select ty
 			Case ByteTypeId
 				(Byte Ptr p)[0]=Byte(value)
 			Case ShortTypeId
