@@ -2742,6 +2742,7 @@ Type TTypeId Extends TMember
 			If Not _class Then Throw "Unable to create instance of this type"
 			If _interface Then Throw "Unable to create instance from interface"
 			If _elementType Then Throw "Unable to create array this way"
+			If IsAbstract() Then Throw "Unable to create instance of abstract class"
 			If _class = bbRefStringClass Then
 				Return bbRefEmptyString
 			End If
@@ -2768,6 +2769,7 @@ Type TTypeId Extends TMember
 			If Not _class Then Throw "Unable to create instance of this type"
 			If _interface Then Throw "Unable to create instance from interface"
 			If _elementType Then Throw "Unable to create array this way"
+			If IsAbstract() Then Throw "Unable to create instance of abstract class"
 			If _class = bbRefStringClass Or _class = bbRefArrayClass Then
 				Throw "Unable to create instance of this type with constructor"
 			End If
