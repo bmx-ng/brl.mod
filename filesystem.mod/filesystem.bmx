@@ -41,6 +41,10 @@ ModuleInfo "History: Added optional resurse parameter to CreateDir"
 Import Pub.StdC
 Import BRL.BankStream
 
+?haiku
+Import "-lbsd"
+?
+
 Import "glue.c"
 
 Rem
