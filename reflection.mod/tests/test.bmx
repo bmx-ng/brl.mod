@@ -3,7 +3,7 @@ SuperStrict
 Framework BRL.StandardIO
 Import BRL.Reflection
 Import BRL.MaxUnit
-Import BRL.Collections
+Import Collections.TreeMap
 
 '------------------------------------------------------------
 ' Test fixtures to reflect over
@@ -465,8 +465,8 @@ Type TMoreArrayOpsTest Extends TTest
 	Method testArrayTypeAndElementRoundtrip() { test }
 		' Build an Int[] type from the scalar Int type
 		Local intArrayType:TTypeId = IntTypeId.ArrayType()
-		AssertEquals(True, Not intArrayType.IsArrayType())
-		AssertEquals("Int[]", intArrayType.Name())
+		AssertTrue(intArrayType.IsArrayType(), "ArrayType() should return an array type")
+		AssertEquals("Int[]", intArrayType.Name(), "Expected name like 'Int[]' for array type")
 
 		Local arr:Object = intArrayType.NewArray(4)
 		intArrayType.SetIntArrayElement(arr, 0, 1)
@@ -474,11 +474,11 @@ Type TMoreArrayOpsTest Extends TTest
 		intArrayType.SetArrayElement(arr, 2, String(3)) ' numeric-as-string should coerce
 		intArrayType.SetArrayElement(arr, 3, String(4))
 
-		AssertEquals(4, intArrayType.ArrayLength(arr))
-		AssertEquals(1, intArrayType.GetIntArrayElement(arr, 0))
-		AssertEquals(2, intArrayType.GetIntArrayElement(arr, 1))
-		AssertEquals(3, intArrayType.GetIntArrayElement(arr, 2))
-		AssertEquals(4, intArrayType.GetIntArrayElement(arr, 3))
+		AssertEquals(4, intArrayType.ArrayLength(arr), "Expected array length of 4")
+		AssertEquals(1, intArrayType.GetIntArrayElement(arr, 0), "Expected first element to be 1")
+		AssertEquals(2, intArrayType.GetIntArrayElement(arr, 1), "Expected second element to be 2")
+		AssertEquals(3, intArrayType.GetIntArrayElement(arr, 2), "Expected third element to be 3")
+		AssertEquals(4, intArrayType.GetIntArrayElement(arr, 3), "Expected fourth element to be 4")
 	End Method
 End Type
 
