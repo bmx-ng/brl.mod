@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.28"
+ModuleInfo "Version: 1.29"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 '
+ModuleInfo "History: 1.29"
+ModuleInfo "History: Adds EndWithCode function"
 ModuleInfo "History: 1.28"
 ModuleInfo "History: Updated to fast_float 8.2.3"
 ModuleInfo "History: 1.27"
@@ -723,6 +725,15 @@ End Rem
 Function GCUnregisterMyThread:Int()="bbGCUnregisterMyThread"
 
 Rem
+bbdoc: Exits the program with the specified exit code.
+about: Any functions registered with #OnEnd will be called before the program exits.
+The standard exit code 0 (zero) is used to indicate successful completion of the program.
+Non-zero exit codes typically indicate an error or abnormal termination, and the specific meaning of non-zero exit codes can vary
+between different programs and operating systems.
+End Rem
+Function EndWithCode( code:Int )="bbEndWithCode"
+
+Rem
 bbdoc: Structure for holding Garbage Collection statistics as provided by #GCGetStats().
 End Rem
 Struct SGCStats
@@ -903,7 +914,7 @@ End Interface
 'BlitzMax keyword definitions
 
 Rem
-bbdoc: Denote a class, function or method as abstract
+bbdoc: Denotes a class, function or method as abstract
 keyword: "Abstract"
 End Rem
 
@@ -918,7 +929,7 @@ keyword: "Asc"
 End Rem
 
 Rem
-bbdoc: Throw a RuntimeError if a condition is false
+bbdoc: Throws a RuntimeError if a condition is false
 keyword: "Assert"
 End Rem
 
@@ -933,22 +944,22 @@ keyword: "Case"
 End Rem
 
 Rem
-bbdoc: Catch an exception object in a Try block
+bbdoc: Catches an exception object in a Try block
 keyword: "Catch"
 End Rem
 
 Rem
-bbdoc: Create a string of length 1 with a character code
+bbdoc: Creates a string of length 1 with a character code
 keyword: "Chr"
 End Rem
 
 Rem
-bbdoc: Declare a constant
+bbdoc: Declares a constant
 keyword: "Const"
 End Rem
 
 Rem
-bbdoc: Continue execution of enclosing loop
+bbdoc: Continues execution of enclosing loop
 keyword: "Continue"
 End Rem
 
@@ -979,7 +990,7 @@ keyword: "Double128"
 End Rem
 
 Rem
-bbdoc: Iterate through an array or collection
+bbdoc: Iterates through an array or collection
 keyword: "EachIn"
 End Rem
 
@@ -994,12 +1005,15 @@ keyword: "ElseIf"
 End Rem
 
 Rem
-bbdoc: End program execution
+bbdoc: Ends program execution
 keyword: "End"
+about: Any functions registered with #OnEnd will be called before the program exits.
+Always exits with an exit code of 0 (zero) which indicates successful completion of the program.
+To exit with a specific exit code, use #EndWithCode instead.
 End Rem
 
 Rem
-bbdoc: End an enumeration declaration
+bbdoc: Ends an enumeration declaration
 keyword: "EndEnum"
 End Rem
 
@@ -1009,7 +1023,7 @@ keyword: "EndExtern"
 End Rem
 
 Rem
-bbdoc: End a function declaration
+bbdoc: Ends a function declaration
 keyword: "EndFunction"
 End Rem
 
@@ -1019,67 +1033,67 @@ keyword: "EndIf"
 End Rem
 
 Rem
-bbdoc: End a user defined interface declaration
+bbdoc: Ends a user defined interface declaration
 keyword: "EndInterface"
 End Rem
 
 Rem
-bbdoc: End a method declaration
+bbdoc: Ends a method declaration
 keyword: "EndMethod"
 End Rem
 
 Rem
-bbdoc: End a remark block
+bbdoc: Ends a remark block
 keyword: "EndRem"
 End Rem
 
 Rem
-bbdoc: End a Select block
+bbdoc: Ends a Select block
 keyword: "EndSelect"
 End Rem
 
 Rem
-bbdoc: End a user defined structure declaration
+bbdoc: Ends a user defined structure declaration
 keyword: "EndStruct"
 End Rem
 
 Rem
-bbdoc: End declaration of a Try block
+bbdoc: Ends declaration of a Try block
 keyword: "EndTry"
 End Rem
 
 Rem
-bbdoc: End a user defined class declaration
+bbdoc: Ends a user defined class declaration
 keyword: "EndType"
 End Rem
 
 Rem
-bbdoc: End a While block
+bbdoc: Ends a While block
 keyword: "EndWhile"
 End Rem
 
 Rem
-bbdoc: Begin an enumeration declaration
+bbdoc: Begins an enumeration declaration
 keyword: "Enum"
 End Rem
 
 Rem
-bbdoc: Exit enclosing loop
+bbdoc: Exits enclosing loop
 keyword: "Exit"
 End Rem
 
 Rem
-bbdoc: Denote a function for export to a shared library. The generated function name will not be mangled.
+bbdoc: Denotes a function for export to a shared library. The generated function name will not be mangled.
 keyword: "Export"
 End Rem
 
 Rem
-bbdoc: Specify supertype(s) of a user defined type
+bbdoc: Specifies supertype(s) of a user defined type
 keyword: "Extends"
 End Rem
 
 Rem
-bbdoc: Begin an Extern section (a list of imported external declarations)
+bbdoc: Begins an Extern section (a list of imported external declarations)
 keyword: "Extern"
 End Rem
 
@@ -1089,7 +1103,7 @@ keyword: "False"
 End Rem
 
 Rem
-bbdoc: Declare a field variable
+bbdoc: Declares a field variable
 keyword: "Field"
 End Rem
 
@@ -1099,12 +1113,12 @@ keyword: "FieldOffset"
 End Rem
 
 Rem
-bbdoc: Denote a class, function or method as final
+bbdoc: Denotes a class, function or method as final
 keyword: "Final"
 End Rem
 
 Rem
-bbdoc: Execute a block of code upon exiting a Try or Catch block
+bbdoc: Executes a block of code upon exiting a Try or Catch block
 keyword: "Finally"
 End Rem
 

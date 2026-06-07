@@ -15,6 +15,10 @@ void bbEnd(){
 	exit(0);
 }
 
+void bbEndWithCode( int code ){
+	exit( code );
+}
+
 void bbOnEnd( void (*f)() ){
 	atexit( f );
 }
