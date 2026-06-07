@@ -62,7 +62,7 @@ static void createAppMenu( NSString *appName ){
 
     [appMenu addItem:[NSMenuItem separatorItem]];
 
-	[appMenu addItemWithTitle:@"Preferences…" action:nil keyEquivalent:@","];
+	[appMenu addItemWithTitle:@"Preferences…" action:@selector(showPreferences:) keyEquivalent:@","];
 
     [appMenu addItem:[NSMenuItem separatorItem]];
 
@@ -76,7 +76,7 @@ static void createAppMenu( NSString *appName ){
     [appMenu addItem:[NSMenuItem separatorItem]];
 
 	title=[@"Hide " stringByAppendingString:appName];
-	[appMenu addItemWithTitle:@"Hide" action:@selector(hide:) keyEquivalent:@"h"];
+	[appMenu addItemWithTitle:title action:@selector(hide:) keyEquivalent:@"h"];
 
 	item=(NSMenuItem*)[appMenu addItemWithTitle:@"Hide Others" action:@selector(hideOtherApplications:) keyEquivalent:@"h"];
 	[item setKeyEquivalentModifierMask:(NSAlternateKeyMask|NSCommandKeyMask)];

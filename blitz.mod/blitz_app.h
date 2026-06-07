@@ -24,6 +24,7 @@ extern char * bbArgv0;
 
 void		bbEnd();
 void		bbOnEnd( void(*f)() );
+void		bbEndWithCode( int code );
 
 BBString*	bbReadStdin();
 void		bbWriteStdout( BBString *t );
