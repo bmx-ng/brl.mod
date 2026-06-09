@@ -942,7 +942,8 @@ int bbStringFindLast( BBString *x,BBString *y,int i ){
 }
 
 int bbStringToInt( BBString *t ){
-	int i=0,neg=0,n=0;
+	int i=0,neg=0;
+	uint32_t n=0;
 	
 	while( i<t->length && isspace(t->buf[i]) ) ++i;
 	if( i==t->length ) return 0;
@@ -971,7 +972,7 @@ int bbStringToInt( BBString *t ){
 			n=n*10+(c-'0');
 		}
 	}
-	return neg ? -n : n;
+	return neg ? (int)(0u - n) : (int)n;
 }
 
 unsigned int bbStringToUInt( BBString *t ){
@@ -1010,7 +1011,7 @@ unsigned int bbStringToUInt( BBString *t ){
 
 BBInt64 bbStringToLong( BBString *t ){
 	int i=0,neg=0;
-	BBInt64 n=0;
+	uint64_t n=0;
 	
 	while( i<t->length && isspace(t->buf[i]) ) ++i;
 	if( i==t->length ){ return 0; }
@@ -1040,7 +1041,7 @@ BBInt64 bbStringToLong( BBString *t ){
 		}
 	}
 	//*r=neg ? -n : n;
-	return neg ? -n : n;
+	return neg ? (BBInt64)(0ull - n) : (BBInt64)n;
 }
 
 BBUInt64 bbStringToULong( BBString *t ){
@@ -2071,7 +2072,7 @@ BBUINT bbStringHashCase( BBString *str, int caseSensitive ) {
 	}
 }
 
-#define BB_DEFINE_JOIN_SIGNED(NAME, ELEM_T, MAG_U_T, WIDE_S_T, DEC_LEN_FN, WRITE_BACK_FN) \
+#define BB_DEFINE_JOIN_SIGNED(NAME, ELEM_T, MAG_U_T, DEC_LEN_FN, WRITE_BACK_FN) \
 BBString *NAME( BBString *sep, BBArray *bits ){ \
 	int i, sz = 0; \
 	int n_bits = bits->scales[0]; \
@@ -2084,7 +2085,7 @@ BBString *NAME( BBString *sep, BBArray *bits ){ \
 		ELEM_T v = p[i]; \
 		if( v==0 ){ sz += 1; continue; } \
 		if( v < 0 ){ sz += 1; /* '-' */ \
-			MAG_U_T mag = (MAG_U_T)(-(WIDE_S_T)v); \
+			MAG_U_T mag = (MAG_U_T)(0-(MAG_U_T)v); \
 			sz += DEC_LEN_FN( mag ); \
 		}else{ \
 			MAG_U_T mag = (MAG_U_T)v; \
@@ -2100,7 +2101,7 @@ BBString *NAME( BBString *sep, BBArray *bits ){ \
 		if( i ){ memcpy( t, sep->buf, sep->length * sizeof(BBChar) ); t += sep->length; } \
 		if( v==0 ){ *t++ = (BBChar)'0'; continue; } \
 		MAG_U_T mag; \
-		if( v < 0 ){ *t++ = (BBChar)'-'; mag = (MAG_U_T)(-(WIDE_S_T)v); } \
+		if( v < 0 ){ *t++ = (BBChar)'-'; mag = (MAG_U_T)(0-(MAG_U_T)v); } \
 		else{ mag = (MAG_U_T)v; } \
 		int dlen = DEC_LEN_FN( mag ); \
 		BBChar *end = t + dlen; \
@@ -2110,8 +2111,8 @@ BBString *NAME( BBString *sep, BBArray *bits ){ \
 	return str; \
 }
 
-BB_DEFINE_JOIN_SIGNED(bbStringJoinInts,  BBINT,  uint32_t, int64_t,  bbU32DecLen, bbWriteU32DecBackwards)
-BB_DEFINE_JOIN_SIGNED(bbStringJoinLongs, BBLONG, uint64_t, int64_t,  bbU64DecLen, bbWriteU64DecBackwards)
+BB_DEFINE_JOIN_SIGNED(bbStringJoinInts,  BBINT, uint32_t, bbU32DecLen, bbWriteU32DecBackwards)
+BB_DEFINE_JOIN_SIGNED(bbStringJoinLongs, BBLONG, uint64_t, bbU64DecLen, bbWriteU64DecBackwards)
 
 BBString *bbStringJoinLongInts( BBString *sep, BBArray *bits ){
 	if( sizeof(BBLONGINT) == 8 ){
