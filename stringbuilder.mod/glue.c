@@ -597,7 +597,7 @@ void bmx_stringbuilder_append_long(struct MaxStringBuilder *buf, BBInt64 value) 
 	}
 
 	int neg = (value < 0);
-	uint64_t mag = neg ? (uint64_t)(-(int64_t)value) : (uint64_t)value;
+	uint64_t mag = neg ? (uint64_t)(0 - (uint64_t)value) : (uint64_t)value;
 
 	int dlen = bbU64DecLen(mag);
 	int add  = dlen + (neg ? 1 : 0);
