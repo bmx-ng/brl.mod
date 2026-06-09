@@ -334,7 +334,7 @@ BBString *bbStringFromLong( BBInt64 n ){
 	}
 
 	int neg = (n < 0);
-	uint64_t mag = neg ? (uint64_t)(-(int64_t)n) : (uint64_t)n;
+	uint64_t mag = neg ? (uint64_t)(0 - (uint64_t)n) : (uint64_t)n;
 
 	int dlen = bbU64DecLen( mag );
 	int len  = dlen + (neg ? 1 : 0);
@@ -394,7 +394,7 @@ BBString *bbStringFromLongInt( BBLONGINT n ){
 	}
 
 	int neg = (n < 0);
-	uint64_t mag = neg ? (uint64_t)(-(int64_t)n) : (uint64_t)n;
+	uint64_t mag = neg ? (uint64_t)(0 - (uint64_t)n) : (uint64_t)n;
 
 	int dlen = bbU64DecLen( mag );
 	int len  = dlen + (neg ? 1 : 0);
