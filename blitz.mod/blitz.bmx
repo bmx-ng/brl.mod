@@ -1405,6 +1405,11 @@ keyword: "SizeOf"
 End Rem
 
 Rem
+bbdoc: Alignment, in bytes, of a primitive, struct or object type.
+keyword: "AlignOf"
+End Rem
+
+Rem
 bbdoc: Allocates memory from the stack.
 keyword: "StackAlloc"
 about: This memory is automatically freed on leaving the function where it was created.
