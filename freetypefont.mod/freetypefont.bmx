@@ -3,12 +3,14 @@ SuperStrict
 
 Module BRL.FreeTypeFont
 
-ModuleInfo "Version: 1.12"
+ModuleInfo "Version: 1.13"
 ModuleInfo "Author: Simon Armstrong, Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.13"
+ModuleInfo "History: Load glyphs in monochrome when SMOOTHFONT is not set"
 ModuleInfo "History: 1.12"
 ModuleInfo "History: Added support for loading fonts from TBanks."
 ModuleInfo "History: 1.11"
@@ -118,8 +120,15 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 		glyph=New TFreeTypeGlyph
 		glyph._index=index
 		_glyphs[index]=glyph
+
+		Local flags:Int=FT_LOAD_RENDER
+		IF _style & SMOOTHFONT
+			'flags :| FT_LOAD_TARGET_NORMAL
+		Else
+			flags :| FT_LOAD_MONOCHROME
+		EndIf
 		
-		If FT_Load_Glyph( _ft_face,UInt(index+1),FT_LOAD_RENDER ) Return glyph
+		If FT_Load_Glyph( _ft_face,UInt(index+1),flags ) Return glyph
 			
 		Local _slot:Byte Ptr = bmx_freetype_Face_glyph(_ft_face)
 
@@ -139,7 +148,7 @@ Type TFreeTypeFont Extends BRL.Font.TFont
 	
 		Local pixmap:TPixmap
 		
-		If bmx_freetype_Slot_bitmap_numgreys(_slot)
+		If bmx_freetype_Slot_bitmap_pixelmode(_slot) = FT_PIXEL_MODE_GRAY
 			pixmap=TPixmap.CreateStatic( buffer,width,rows,pitch,PF_A8 ).Copy()
 		Else
 			pixmap=CreatePixmap( width,rows,PF_A8 )
