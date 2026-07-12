@@ -1,4 +1,6 @@
-
+Rem
+bbdoc: Comparator interface
+EndRem
 Interface IComparator<T>
 
 	Method Compare:Int(o1:T, o2:T)
