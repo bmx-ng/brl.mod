@@ -188,7 +188,7 @@ Type TThreadPoolExecutor Extends TExecutor
 		End If
 	End Method
 
-Private
+Internal
 	Method doExecute(command:TRunnable)
 		If maxThreads < 0 Then
 			Local newThread:Int
