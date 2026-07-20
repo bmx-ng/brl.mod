@@ -1164,7 +1164,7 @@ about: Note that the #TSplitBuffer is only valid while its parent #TStringBuilde
 Once you modify the #TSplitBuffer you should call Split() again.
 End Rem
 Type TSplitBuffer
-Private
+Internal
 	Field buffer:TStringBuilder
 	Field splitPtr:Byte Ptr
 Public
