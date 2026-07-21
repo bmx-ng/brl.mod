@@ -315,7 +315,7 @@ End Type
 Type TStringToIntExTest Extends TTest
 
 	' Helper: expect success
-	Method assertParse(expectedPos:Int, expectedVal:Int, s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+	Method assertParse(expectedPos:Int, expectedVal:Int, s:String, startPos:Int=0, endPos:Int=-1, format:ULong=CHARSFORMAT_GENERAL, base:Int=10)
 		Local v:Int = -123456789 ' sentinel
 		Local p:Int = s.ToIntEx(v, startPos, endPos, format, base)
 		assertEquals(expectedPos, p)
@@ -323,7 +323,7 @@ Type TStringToIntExTest Extends TTest
 	End Method
 
 	' Helper: expect failure; optionally assert val unchanged
-	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:ULong=CHARSFORMAT_GENERAL, base:Int=10)
 		Local v:Int = 42
 		Local p:Int = s.ToIntEx(v, startPos, endPos, format, base)
 		assertEquals(0, p, "Expected failure but got position " + p)
@@ -438,7 +438,7 @@ End Type
 Type TStringToLongExTest Extends TTest
 
 	' Helper: expect success
-	Method assertParse(expectedPos:Long, expectedVal:Long, s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+	Method assertParse(expectedPos:Long, expectedVal:Long, s:String, startPos:Int=0, endPos:Int=-1, format:ULong=CHARSFORMAT_GENERAL, base:Int=10)
 		Local v:Long = -123456789 ' sentinel
 		Local p:Int = s.ToLongEx(v, startPos, endPos, format, base)
 		assertEquals(expectedPos, p)
@@ -446,7 +446,7 @@ Type TStringToLongExTest Extends TTest
 	End Method
 
 	' Helper: expect failure; optionally assert val unchanged
-	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:ULong=CHARSFORMAT_GENERAL, base:Int=10)
 		Local v:Long = 42
 		Local p:Int = s.ToLongEx(v, startPos, endPos, format, base)
 		assertEquals(0, p, "Expected failure but got position " + p)
@@ -561,7 +561,7 @@ End Type
 Type TStringToLongIntExTest Extends TTest
 
 	' Helper: expect success
-	Method assertParse(expectedPos:LongInt, expectedVal:LongInt, s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+	Method assertParse(expectedPos:LongInt, expectedVal:LongInt, s:String, startPos:Int=0, endPos:Int=-1, format:ULong=CHARSFORMAT_GENERAL, base:Int=10)
 		Local v:LongInt = -123456789 ' sentinel
 		Local p:Int = s.ToLongIntEx(v, startPos, endPos, format, base)
 		assertEquals(expectedPos, p)
@@ -569,7 +569,7 @@ Type TStringToLongIntExTest Extends TTest
 	End Method
 
 	' Helper: expect failure; optionally assert val unchanged
-	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:ULong=CHARSFORMAT_GENERAL, base:Int=10)
 		Local v:LongInt = 42
 		Local p:Int = s.ToLongIntEx(v, startPos, endPos, format, base)
 		assertEquals(0, p, "Expected failure but got position " + p)
@@ -684,7 +684,7 @@ End Type
 Type TStringToUIntExTest Extends TTest
 
 	' Helper: expect success
-	Method assertParse(expectedPos:Int, expectedVal:UInt, s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+	Method assertParse(expectedPos:Int, expectedVal:UInt, s:String, startPos:Int=0, endPos:Int=-1, format:ULong=CHARSFORMAT_GENERAL, base:Int=10)
 		Local v:UInt = 987654321:UInt ' sentinel
 		Local p:Int = s.ToUIntEx(v, startPos, endPos, format, base)
 		assertEquals(expectedPos, p)
@@ -692,7 +692,7 @@ Type TStringToUIntExTest Extends TTest
 	End Method
 
 	' Helper: expect failure; assert val unchanged
-	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:ULong=CHARSFORMAT_GENERAL, base:Int=10)
 		Local v:UInt = 42:UInt
 		Local p:Int = s.ToUIntEx(v, startPos, endPos, format, base)
 		assertEquals(0, p)
@@ -812,7 +812,7 @@ End Type
 Type TStringToULongExTest Extends TTest
 
 	' Helper: expect success
-	Method assertParse(expectedPos:Int, expectedVal:ULong, s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+	Method assertParse(expectedPos:Int, expectedVal:ULong, s:String, startPos:Int=0, endPos:Int=-1, format:ULong=CHARSFORMAT_GENERAL, base:Int=10)
 		Local v:ULong = 987654321:ULong ' sentinel
 		Local p:Int = s.ToULongEx(v, startPos, endPos, format, base)
 		assertEquals(expectedPos, p)
@@ -820,7 +820,7 @@ Type TStringToULongExTest Extends TTest
 	End Method
 
 	' Helper: expect failure; assert val unchanged
-	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:ULong=CHARSFORMAT_GENERAL, base:Int=10)
 		Local v:ULong = 42:ULong
 		Local p:Int = s.ToULongEx(v, startPos, endPos, format, base)
 		assertEquals(0, p)
@@ -940,7 +940,7 @@ End Type
 Type TStringToULongIntExTest Extends TTest
 
 	' Helper: expect success
-	Method assertParse(expectedPos:Int, expectedVal:ULongInt, s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+	Method assertParse(expectedPos:Int, expectedVal:ULongInt, s:String, startPos:Int=0, endPos:Int=-1, format:ULong=CHARSFORMAT_GENERAL, base:Int=10)
 		Local v:ULongInt = 987654321:ULongInt ' sentinel
 		Local p:Int = s.ToULongIntEx(v, startPos, endPos, format, base)
 		assertEquals(expectedPos, p)
@@ -948,7 +948,7 @@ Type TStringToULongIntExTest Extends TTest
 	End Method
 
 	' Helper: expect failure; assert val unchanged
-	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:Int=CHARSFORMAT_GENERAL, base:Int=10)
+	Method assertFail(s:String, startPos:Int=0, endPos:Int=-1, format:ULong=CHARSFORMAT_GENERAL, base:Int=10)
 		Local v:ULongInt = 42:ULongInt
 		Local p:Int = s.ToULongIntEx(v, startPos, endPos, format, base)
 		assertEquals(0, p)
@@ -2487,12 +2487,12 @@ Type TStringJoinULongInts32Test Extends TTest
 
 	Method Test_ULongIntRangeEdges_32bit() { test }
 		' ulongint4 => ULongInt is unsigned 32-bit (0..4294967295)
-		Local a:ULongInt[] = [ _
-			0:ULongInt, 1:ULongInt, 9:ULongInt, 10:ULongInt, 99:ULongInt, 100:ULongInt, _
-			2147483647:ULongInt, _
-			2147483648:ULongInt, _
-			4000000000:ULongInt, _
-			4294967294:ULongInt, 4294967295:ULongInt _
+		Local a:ULongInt[] = [ ..
+			0:ULongInt, 1:ULongInt, 9:ULongInt, 10:ULongInt, 99:ULongInt, 100:ULongInt, ..
+			2147483647:ULongInt, ..
+			2147483648:ULongInt, ..
+			4000000000:ULongInt, ..
+			4294967294:ULongInt, 4294967295:ULongInt ..
 		]
 
 		Local expected:String = "0,1,9,10,99,100,2147483647,2147483648,4000000000,4294967294,4294967295"
