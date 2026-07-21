@@ -710,7 +710,7 @@ End Rem
 Function AtomicSwap:Int( target:Int Var,value:Int )
 	Repeat
 		Local oldval:Int=target
-		If CompareAndSwap( Varptr target,oldval,value ) Return oldval
+		If CompareAndSwap( target,oldval,value ) Return oldval
 	Forever
 End Function
 

@@ -1,3 +1,4 @@
+'@docs "blitz_classes.docs.bmx"
 
 Object^Null{
 
@@ -85,15 +86,15 @@ String^Object{
 	-ToULongInt:ULongInt()="bbStringToULongInt"
 	+FromULongInt:String( ulongIntValue:ULongInt )="bbStringFromULongInt"
 
-	-ToDoubleEx:Int( val:Double Var,startPos:Int=0,endPos:Int=-1,format:Int=5,sep:String="." )="bbStringToDoubleEx"
-	-ToFloatEx:Int( val:Float Var,startPos:Int=0,endPos:Int=-1,format:Int=5,sep:String="." )="bbStringToFloatEx"
-	-ToIntEx:Int( val:Int Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToIntEx"
-	-ToUIntEx:Int( val:UInt Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToUIntEx"
-	-ToLongEx:Int( val:Long Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToLongEx"
-	-ToULongEx:Int( val:ULong Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToULongEx"
-	-ToSizeTEx:Int( val:Size_T Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToSizeTEx"
-	-ToLongIntEx:Int( val:LongInt Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToLongIntEx"
-	-ToULongIntEx:Int( val:ULongInt Var,startPos:Int=0,endPos:Int=-1,format:Int=5,base:Int=10 )="bbStringToULongIntEx"
+	-ToDoubleEx:Int( val:Double Var,startPos:Int=0,endPos:Int=-1,format:ULong=5,sep:String="." )="bbStringToDoubleEx"
+	-ToFloatEx:Int( val:Float Var,startPos:Int=0,endPos:Int=-1,format:ULong=5,sep:String="." )="bbStringToFloatEx"
+	-ToIntEx:Int( val:Int Var,startPos:Int=0,endPos:Int=-1,format:ULong=5,base:Int=10 )="bbStringToIntEx"
+	-ToUIntEx:Int( val:UInt Var,startPos:Int=0,endPos:Int=-1,format:ULong=5,base:Int=10 )="bbStringToUIntEx"
+	-ToLongEx:Int( val:Long Var,startPos:Int=0,endPos:Int=-1,format:ULong=5,base:Int=10 )="bbStringToLongEx"
+	-ToULongEx:Int( val:ULong Var,startPos:Int=0,endPos:Int=-1,format:ULong=5,base:Int=10 )="bbStringToULongEx"
+	-ToSizeTEx:Int( val:Size_T Var,startPos:Int=0,endPos:Int=-1,format:ULong=5,base:Int=10 )="bbStringToSizeTEx"
+	-ToLongIntEx:Int( val:LongInt Var,startPos:Int=0,endPos:Int=-1,format:ULong=5,base:Int=10 )="bbStringToLongIntEx"
+	-ToULongIntEx:Int( val:ULongInt Var,startPos:Int=0,endPos:Int=-1,format:ULong=5,base:Int=10 )="bbStringToULongIntEx"
 
 	+FromBytesAsHex:String( buf:Byte Ptr, length:Int, upperCase:Int=1 )="bbStringFromBytesAsHex"
 	-Compare:Int(otherString:String, caseSensitive:Int)="bbStringCompareCase"

@@ -402,9 +402,9 @@ Function LoadText:String( url:Object, checkForUTF8:Int = True )
 		End If
 	EndIf
 	
-	Local TStream:TTextStream=TTextStream.Create( stream,format )
-	Local str:String=TStream.ReadFile()
-	TStream.Close
+	Local textStream:TTextStream=TTextStream.Create( stream,format )
+	Local str:String=textStream.ReadFile()
+	textStream.Close
 	stream.Close
 	Return str
 
@@ -458,9 +458,9 @@ Function SaveText:Int( str:String,url:Object, format:ETextStreamFormat = ETextSt
 		End Select
 	End If
 	
-	Local TStream:TTextStream=TTextStream.Create( stream,format )
-	TStream.WriteString str
-	TStream.Close
+	Local textStream:TTextStream=TTextStream.Create( stream,format )
+	textStream.WriteString str
+	textStream.Close
 	stream.Close
 	Return True
 

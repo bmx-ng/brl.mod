@@ -455,7 +455,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		Return RenderTarget
 	EndFunction
 	
-Private
+Internal
 	Method Delete()
 		If Not seq Then Return
 		If Not FBO Then Return

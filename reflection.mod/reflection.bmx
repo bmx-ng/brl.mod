@@ -953,7 +953,7 @@ bbdoc: Type member constant
 EndRem
 Type TConstant Extends TMember
 	
-	Private
+	Internal
 	
 	Method Init:TConstant(name$, typeId:TTypeId, modifiers:EModifiers, meta$, str$)
 		_name = name
@@ -1047,7 +1047,7 @@ bbdoc: Type member field
 End Rem
 Type TField Extends TMember
 	
-	Private
+	Internal
 	
 	Method Init:TField(name:String, typeId:TTypeId, modifiers:EModifiers, meta:String, offset:Size_T)
 		_name = name
@@ -2122,6 +2122,13 @@ Type TField Extends TMember
 		'TODO
 '		Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T GetFieldPtr(obj, _offset))] + args, _invokeBufferSize)
 	End Method
+
+	Rem
+	bbdoc: Get field offset
+	End Rem
+	Method GetOffset:Size_T()
+		Return _offset
+	End Method
 	
 	Field _offset:Size_T
 	
@@ -2134,7 +2141,7 @@ bbdoc: Type member global variable
 End Rem
 Type TGlobal Extends TMember
 	
-	Private
+	Internal
 	
 	Method Init:TGlobal(name$, typeId:TTypeId, modifiers:EModifiers, meta$, ref:Byte Ptr)
 		_name = name
@@ -2322,7 +2329,7 @@ bbdoc: Type member function
 EndRem
 Type TFunction Extends TMember
 	
-	Private
+	Internal
 	
 	Method Init:TFunction(name$, typeId:TTypeId, modifiers:EModifiers, meta$, ref:Byte Ptr, invokeRef:Byte Ptr)
 		_name = name
@@ -2404,7 +2411,7 @@ bbdoc: Type member method
 End Rem
 Type TMethod Extends TMember
 	
-	Private
+	Internal
 	
 	Method Init:TMethod(name$, typeId:TTypeId, modifiers:EModifiers, meta$, ref:Byte Ptr, invokeRef:Byte Ptr, selfTypeId:TTypeId)
 		_name = name
@@ -4438,7 +4445,7 @@ Type TTypeId Extends TMember
 		Return list
 	End Function
 	
-	Private
+	Internal
 	
 	Method Init:TTypeId(name$, size:Size_T, class:Byte Ptr = Null, supor:TTypeId = Null, isFinal:Int = True)
 		_name = name
