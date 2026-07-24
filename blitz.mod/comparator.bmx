@@ -1,8 +1,28 @@
 Rem
-bbdoc: Comparator interface
-EndRem
+bbdoc: Defines the ordering of two values.
+about: A comparator determines the relative ordering of values without requiring
+the values themselves to implement comparison operations.
+
+Comparators are commonly used by sorting algorithms and ordered
+collections.
+
+Implementations should provide a consistent ordering. Comparing the same
+two values should always produce the same result unless the values
+themselves have changed.
+End Rem
 Interface IComparator<T>
 
+	Rem
+	bbdoc: Compares two values.
+	param: The first value to compare.
+	param: The second value to compare.
+	returns: A value less than zero if #o1 is ordered before #o2; zero if the values compare as equal; or a value greater than zero if #o1 is ordered after #o2.
+	about: The magnitude of the returned value is not significant; only whether it
+	is negative, zero, or positive.
+
+	A comparator should define a consistent ordering suitable for sorting and
+	searching algorithms.
+	End Rem
 	Method Compare:Int(o1:T, o2:T)
 
 End Interface
