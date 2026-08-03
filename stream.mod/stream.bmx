@@ -717,7 +717,7 @@ Type TCStream Extends TFileStream
 	Method Read:Long( buf:Byte Ptr,count:Long ) Override
 		Assert _stream Else "Attempt to read from closed stream"
 		Assert _mode & MODE_READ Else "Attempt to read from write-only stream"
-		count=fread_( buf,1,count,_stream )	
+		count=fread_( buf,1,Size_T(count),_stream )	
 		_pos:+count
 		Return count
 	End Method
@@ -725,7 +725,7 @@ Type TCStream Extends TFileStream
 	Method Write:Long( buf:Byte Ptr,count:Long ) Override
 		Assert _stream Else "Attempt to write to closed stream"
 		Assert _mode & (MODE_WRITE | MODE_APPEND) Else "Attempt to write to read-only stream"
-		count=fwrite_( buf,1,count,_stream )
+		count=fwrite_( buf,1,Size_T(count),_stream )
 		_pos:+count
 		If _pos>_size _size=_pos
 		Return count

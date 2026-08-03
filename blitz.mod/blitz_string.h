@@ -211,8 +211,8 @@ int	bbStringToSizeTEx( BBString *str, BBSIZET *val, int start, int end, BBULONG 
 int	bbStringToLongIntEx( BBString *str, BBLONGINT *val, int start, int end, BBULONG format, int base );
 int	bbStringToULongIntEx( BBString *str, BBULONGINT *val, int start, int end, BBULONG format, int base );
 
-int bbStrToDoubleEx( BBChar *buf, int length, double * val, int startPos, int endPos, BBULONG format, BBString* sep );
-int bbStrToFloatEx( BBChar *buf, int length, float * val, int startPos, int endPos, BBULONG format, BBString* sep );
+int bbStrToDoubleEx( const BBChar *buf, int length, double * val, int startPos, int endPos, BBULONG format, BBString* sep );
+int bbStrToFloatEx( const BBChar *buf, int length, float * val, int startPos, int endPos, BBULONG format, BBString* sep );
 
 BBUINT* bbStringToUTF32String( BBString *str );
 BBString* bbStringFromUTF32String( const BBUINT *p );
