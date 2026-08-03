@@ -33,11 +33,11 @@ Type TCStandardIO Extends TStream
 	End Method
 
 	Method Read:Long( buf:Byte Ptr,count:Long ) Override
-		Return fread_( buf,1,count,stdin_ )
+		Return fread_( buf,1,Size_T(count),stdin_ )
 	End Method
 
 	Method Write:Long( buf:Byte Ptr,count:Long ) Override
-		Return fwrite_( buf,1,count,stdout_ )
+		Return fwrite_( buf,1,Size_T(count),stdout_ )
 	End Method
 
 End Type
@@ -49,7 +49,7 @@ Type TCStandardErrIO Extends TStream
 	End Method
 
 	Method Write:Long( buf:Byte Ptr,count:Long ) Override
-		Return fwrite_( buf,1,count,stderr_ )
+		Return fwrite_( buf,1,Size_T(count),stderr_ )
 	End Method
 
 End Type

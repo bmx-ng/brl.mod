@@ -623,7 +623,7 @@ int d2s_buffered_expand_n(double v, char *buf){
 }
 
 BBString *bbStringFromFloat( float n, int fixed ){
-	char buf[64];
+	char buf[350];
 	int len = fixed ? d2fixed_buffered_n((double)n, 9, buf) : f2s_buffered_expand_n(n, buf);
 	if( len <= 0 ){
 		return &bbEmptyString;
@@ -637,7 +637,7 @@ BBString *bbStringFromFloat( float n, int fixed ){
 }
 
 BBString *bbStringFromDouble( double n, int fixed ){
-	char buf[64];
+	char buf[350];
 	int len = fixed ? d2fixed_buffered_n(n, 17, buf) : d2s_buffered_expand_n(n, buf);
 	if( len <= 0 ){
 		return &bbEmptyString;
@@ -1736,7 +1736,7 @@ BBString* bbStringFromUTF32Bytes( const BBUINT *p, size_t n ) {
 	BBChar * d=(BBChar*)malloc( n * sizeof(BBChar) * 2 );
 	BBChar * q=d;
 
-	BBUINT* bp = p;
+	const BBUINT* bp = p;
 
 	int i = 0;
 	while (i++ < n) {
@@ -2185,7 +2185,7 @@ BBString *bbStringJoinFloats( BBString *sep, BBArray *bits, int fixed ){
 	/* compute total length */
 	p = (BBFLOAT*)BBARRAYDATA( bits, 1 );
 	for( i=0; i<n_bits; ++i ){
-		char buf[64];
+		char buf[350];
 		int len = fixed ? d2fixed_buffered_n((double)p[i], 9, buf) : f2s_buffered_expand_n(p[i], buf);
 		if( len < 0 ){
 			len = 0;
@@ -2205,7 +2205,7 @@ BBString *bbStringJoinFloats( BBString *sep, BBArray *bits, int fixed ){
 			t += sep->length;
 		}
 
-		char buf[64];
+		char buf[350];
 		int len = fixed ? d2fixed_buffered_n((double)p[i], 9, buf) : f2s_buffered_expand_n(p[i], buf);
 		if( len < 0 ){
 			len = 0;
@@ -2233,7 +2233,7 @@ BBString *bbStringJoinDoubles( BBString *sep, BBArray *bits, int fixed ){
 	/* compute total length */
 	p = (BBDOUBLE*)BBARRAYDATA( bits, 1 );
 	for( i=0; i<n_bits; ++i ){
-		char buf[64];
+		char buf[350];
 		int len = fixed ? d2fixed_buffered_n(p[i], 17, buf) : d2s_buffered_expand_n(p[i], buf);
 		if( len < 0 ){
 			len = 0;
@@ -2253,7 +2253,7 @@ BBString *bbStringJoinDoubles( BBString *sep, BBArray *bits, int fixed ){
 			t += sep->length;
 		}
 
-		char buf[64];
+		char buf[350];
 		int len = fixed ? d2fixed_buffered_n(p[i], 17, buf) : d2s_buffered_expand_n(p[i], buf);
 		if( len < 0 ){
 			len = 0;

@@ -33,7 +33,7 @@ int bbStringToDoubleEx( BBString *str, double * val, int startPos, int endPos, B
     return bbStrToDoubleEx( str->buf, str->length, val, startPos, endPos, format, sep );
 }
 
-int bbStrToDoubleEx( BBChar *buf, int length, double * val, int startPos, int endPos, BBULONG format, BBString* sep ) {
+int bbStrToDoubleEx( const BBChar *buf, int length, double * val, int startPos, int endPos, BBULONG format, BBString* sep ) {
     if ( startPos < 0 || startPos >= length || endPos < -1 || endPos > length ) {
         return 0;
     }
@@ -80,7 +80,7 @@ int bbStringToFloatEx( BBString *str, float * val, int startPos, int endPos, BBU
     return bbStrToFloatEx( str->buf, str->length, val, startPos, endPos, format, sep );
 }
 
-int bbStrToFloatEx( BBChar *buf, int length, float * val, int startPos, int endPos, BBULONG format, BBString* sep ) {
+int bbStrToFloatEx( const BBChar *buf, int length, float * val, int startPos, int endPos, BBULONG format, BBString* sep ) {
     if ( startPos < 0 || startPos >= length || endPos < -1 || endPos > length ) {
         return 0;
     }
