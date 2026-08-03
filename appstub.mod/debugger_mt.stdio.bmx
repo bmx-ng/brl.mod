@@ -651,6 +651,7 @@ End Type
 
 Type TExState
 	Field scopeStackTop:Int
+	Field funcLevel:Int
 End Type
 
 Type TDbgState
@@ -1017,6 +1018,7 @@ Function OnDebugPushExState()
 	EndIf
 	
 	dbgState.exStateStack[dbgState.exStateStackTop].scopeStackTop=dbgState.scopeStackTop
+	dbgState.exStateStack[dbgState.exStateStackTop].funcLevel=dbgState.funcLevel
 	
 	dbgState.exStateStackTop:+1
 
@@ -1033,6 +1035,7 @@ Function OnDebugPopExState()
 	dbgState.exStateStackTop:-1
 
 	dbgState.scopeStackTop=dbgState.exStateStack[dbgState.exStateStackTop].scopeStackTop
+	dbgState.funcLevel=dbgState.exStateStack[dbgState.exStateStackTop].funcLevel
 	
 	If dbgState.scopeStackTop
 		dbgState.currentScope=dbgState.scopeStack[dbgState.scopeStackTop-1]
