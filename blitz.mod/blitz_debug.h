@@ -78,7 +78,7 @@ struct BBDebugStm{
 
 typedef struct BBSource {
 	BBULONG id;
-	char * file;
+	const char * file;
 	unsigned int count;
 	unsigned int lines[32];
 } BBSource;

@@ -20,11 +20,11 @@
 #include "physfs.h"
 #include "brl.mod/blitz.mod/blitz.h"
 
-static BBString * bmx_char_to_bbstring(char* txt) {
+static BBString * bmx_char_to_bbstring(const char* txt) {
 	if (txt == NULL) {
 		return &bbEmptyString;
 	} else {
-		return bbStringFromUTF8String(txt);
+		return bbStringFromUTF8String((const unsigned char*)txt);
 	}
 }
 
@@ -180,7 +180,7 @@ int bmx_PHYSFS_setWriteDir(BBString * newDir) {
 }
 
 BBString * bmx_PHYSFS_getWriteDir() {
-	char * dir = PHYSFS_getWriteDir();
+	const char * dir = PHYSFS_getWriteDir();
 
 	return bmx_char_to_bbstring(dir);
 }
@@ -190,7 +190,7 @@ BBString * bmx_PHYSFS_getRealDir(BBString * filename) {
 	size_t len = 1024;
 	bbStringToUTF8StringBuffer(filename, buf, &len);
 
-	char * dir = PHYSFS_getRealDir(buf);
+	const char * dir = PHYSFS_getRealDir(buf);
 
 	return bmx_char_to_bbstring(dir);
 }
@@ -200,7 +200,7 @@ BBString * bmx_PHYSFS_getMountPoint(BBString * dir) {
 	size_t len = 1024;
 	bbStringToUTF8StringBuffer(dir, buf, &len);
 
-	char * mount = PHYSFS_getMountPoint(buf);
+	const char * mount = PHYSFS_getMountPoint(buf);
 
 	return bmx_char_to_bbstring(mount);
 }
