@@ -346,7 +346,7 @@ void bbThreadStartup(){
 
 	if( bb_mutex_init( &_bbLock )<0 ) exit(-1);
 		
-	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
+	BBThread *thread=(BBThread *)GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
 	memset( thread->data,0,sizeof(thread->data) );
 	
 	thread->proc=0;
@@ -410,7 +410,7 @@ BBThread *bbThreadRegister( bb_thread_t thd ) {
 
 	GC_call_with_stack_base(bbRegisterGCThread, NULL);
 
-	BBThread *thread=GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
+	BBThread *thread=(BBThread *)GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
 	memset( thread->data,0,sizeof(thread->data) );
 	
 	thread->handle = thd;
