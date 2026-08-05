@@ -12,7 +12,7 @@ extern "C"{
 
 #define BBARRAYSIZE(q,n) (((offsetof(BBArray, scales) + n * sizeof(int)+0x0f) & ~0x0f)+(q))
 //#define BBARRAYDATA(p,n) ((void*)((char*)(p)+((offsetof(BBArray, scales) + n * sizeof(int)+0x0f) & ~0x0f)))
-#define BBARRAYDATA(p,n) ((void*)((char*)(p)+((BBArray*)(p))->data_start))
+#define BBARRAYDATA(p,n) bbArrayData((BBArray*)(p))
 #define BBARRAYDATAINDEX(p,n,i) bbArrayIndex(p,n,i)
 
 #define BBARRAYNEW1DSTRUCT_FUNC(FUNC_SUFFIX, STRUCT_TYPE, CONSTRUCTOR_FUNC, TYPE_STRING) \
@@ -81,6 +81,10 @@ struct BBArray{
 	unsigned short  data_start; // start offset of data
 	int    scales[1];  // [dims]
 };
+
+static inline void *bbArrayData(BBArray *array) {
+	return (void*)((char*)array + array->data_start);
+}
 
 struct BBClass_Array{
 	//extends BBGCPool

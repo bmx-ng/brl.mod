@@ -36,35 +36,24 @@ static unsigned int bpCount = 0;
 static unsigned int bpSize = 0;
 static BBSource * sources = 0;
 
-static void swap(BBSource* a, BBSource* b) {
-	BBSource s = *a;
-	*a = *b;
-	*b = s;
-}
-
-static int partition (BBSource arr[], int low, int high) {
-	BBULONG pivot = arr[high].id;
-	int i = (low - 1);
-	int j;
-	for (j = low; j <= high- 1; j++) {
-		if (arr[j].id < pivot) {
-			i++;
-			swap(&arr[i], &arr[j]);
+void bbRegisterSource(BBULONG sourceId, const char * source) {
+	unsigned int first = 0;
+	unsigned int last = bpCount;
+	while (first < last) {
+		unsigned int index = first + (last - first) / 2;
+		if (sources[index].id < sourceId) {
+			first = index + 1;
+		} else {
+			last = index;
 		}
 	}
-	swap(&arr[i + 1], &arr[high]);
-	return (i + 1);
-}
-
-static void sort(BBSource arr[], int low, int high) {
-	if (low < high) {
-		int part = partition(arr, low, high);
-		sort(arr, low, part - 1);
-		sort(arr, part + 1, high);
+	/* Every generated unit can reference source locations owned by one of its
+	   dependencies. Registering the same stable source id again is harmless and
+	   must not grow or repeatedly sort the process-wide table. */
+	if (first < bpCount && sources[first].id == sourceId) {
+		return;
 	}
-}
 
-void bbRegisterSource(BBULONG sourceId, const char * source) {
 	if (sources == 0) {
 		bpSize = 32;
 		sources = calloc(bpSize, sizeof(BBSource));
@@ -78,15 +67,13 @@ void bbRegisterSource(BBULONG sourceId, const char * source) {
 			bpSize *= 2;
 		}
 	}
-	
-	sources[bpCount].id = sourceId;
-	sources[bpCount].file = source;
-	
-	bpCount++;
-	
-	if (bpCount > 1) {
-		sort(sources, 0, bpCount - 1);
+
+	if (first < bpCount) {
+		memmove(sources + first + 1, sources + first, (bpCount - first) * sizeof(BBSource));
 	}
+	sources[first].id = sourceId;
+	sources[first].file = source;
+	bpCount++;
 }
 
 BBSource * bbSourceForId(BBULONG id) {
