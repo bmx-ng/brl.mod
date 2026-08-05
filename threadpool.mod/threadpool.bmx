@@ -77,7 +77,9 @@ Type TThreadPoolExecutor Extends TExecutor
 
 	Field threads:TList
 	Field threadsLock:TMutex
+	Private
 	Field jobQueue:TJobQueue
+	Public
 	
 	Field threadsAlive:Int
 	Field threadsWorking:Int
@@ -114,6 +116,8 @@ Type TThreadPoolExecutor Extends TExecutor
 		End If
 	End Method
 	
+	Private
+
 	' thread callback
 	Function _processThread:Object( data:Object)
 		Local thread:TPooledThread = TPooledThread(data)
@@ -177,6 +181,8 @@ Type TThreadPoolExecutor Extends TExecutor
 
 		Return Null
 	End Method
+
+	Public
 	
 
 	Rem
@@ -188,7 +194,7 @@ Type TThreadPoolExecutor Extends TExecutor
 		End If
 	End Method
 
-Internal
+Protected
 	Method doExecute(command:TRunnable)
 		If maxThreads < 0 Then
 			Local newThread:Int
