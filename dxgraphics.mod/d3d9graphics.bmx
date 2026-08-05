@@ -37,15 +37,15 @@ Type TD3D9AutoRelease
 	Field unk:IUnknown_
 End Type
 
-Function D3D9WndProc:Byte Ptr( hwnd:Byte Ptr,msg:UInt,wp:WParam,lp:LParam) "win32"
+Function D3D9WndProc:LParam( hwnd:Byte Ptr,msg:UInt,wp:WParam,lp:LParam) "win32"
 
 	bbSystemEmitOSEvent hwnd,msg,wp,lp,Null
 	
 	Select msg
 	Case WM_CLOSE
-		Return Null
+		Return 0
 	Case WM_SYSKEYDOWN
-		If wp<>KEY_F4 Return Null
+		If wp<>KEY_F4 Return 0
 	Case WM_ACTIVATE
 		If _graphics _graphics.OnWMActivate(wp)
 		Return 0
