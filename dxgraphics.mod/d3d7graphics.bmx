@@ -53,7 +53,7 @@ Function dlog( t:String )
 	WriteStdout t+"~n"
 End Function
 	
-Function WndProc( hwnd,message,wp,lp ) "win32"
+Function WndProc:LParam( hwnd:Byte Ptr,message:UInt,wp:WParam,lp:LParam ) "win32"
 	bbSystemEmitOSEvent hwnd,message,wp,lp,Null
 
 	Select message
