@@ -71,6 +71,7 @@ static int arrayCellSize(const char * type, unsigned short data_size, int * flag
 		case 'd':size=8;break;
 		case '*':size=sizeof(void*);break;
 		case ':':size=sizeof(void*);*flags=0;break;
+		case '!':size=sizeof(void*);*flags=0;break;
 		case '$':size=sizeof(void*);*flags=0;break;
 		case '[':size=sizeof(void*);*flags=0;break;
 		case '(':size=sizeof(void*);break;
@@ -130,6 +131,7 @@ BBArray *bbAllocateArray( const char *type,int dims,int *lens, unsigned short da
 static void *arrayInitializer( BBArray *arr ){
 	switch( arr->type[0] ){
 	case ':':return &bbNullObject;
+	case '!':return &bbNullObject;
 	case '$':return &bbEmptyString;
 	case '[':return &bbEmptyArray;
 	case '(':return &brl_blitz_NullFunctionError;
