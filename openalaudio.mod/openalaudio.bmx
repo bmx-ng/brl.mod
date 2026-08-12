@@ -319,7 +319,9 @@ Type TOpenALChannel Extends TChannel
 		Return t
 	End Function
 	
-	Field _source:TOpenALSource,_seq:Int,_static:Int
+	Private Field _source:TOpenALSource,_seq:Int
+	Internal Field _static:Int
+	Public
 	
 End Type
 
