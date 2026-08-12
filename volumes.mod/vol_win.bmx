@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2022 Bruce A Henderson
+' Copyright (c) 2007-2026 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -349,8 +349,10 @@ Type TWinVolume Extends TVolume
 		Local maxLength:Int
 		Local flags:Int
 
-		Local ret:Int = GetVolumeInformation(volume.volumeDevice, volname, PATH_MAX, ..
+		Local v:Short Ptr = vol.ToWString()
+		Local ret:Int = GetVolumeInformation(v, volname, PATH_MAX, ..
 			snum, maxLength, flags, filesys, PATH_MAX)
+		MemFree(v)
 
 		If ret Then
 			volume.volumeName = String.fromWString(volname)
@@ -434,7 +436,7 @@ Type TWinVolume Extends TVolume
 				Return s
 			End If
 		Else
-			Local b:Short[] = New Short[MAX_PATH]
+			Local b:Short[] = New Short[PATH_MAX]
 		
 			Local ret:Int = SHGetFolderPath(Null, kind, Null, SHGFP_TYPE_CURRENT, b)
 		
