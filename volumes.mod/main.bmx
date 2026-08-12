@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2022 Bruce A Henderson
+' Copyright (c) 2007-2026 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -96,10 +96,7 @@ End Function
 
 Rem
 bbdoc: Returns the amount of free space (in bytes) on the given volume.
-about: Parameters:
-<ul>
-<li><b>vol</b> : the name of the volume</li>
-</ul>
+param: The name of the volume
 End Rem
 Function GetVolumeFreeSpace:Long(vol:String)
 
@@ -109,10 +106,7 @@ End Function
 
 Rem
 bbdoc: Returns the size (in bytes) of the given volume.
-about: Parameters:
-<ul>
-<li><b>vol</b> : the name of the volume</li>
-</ul>
+param: The name of the volume
 End Rem
 Function GetVolumeSize:Long(vol:String)
 
@@ -122,10 +116,7 @@ End Function
 
 Rem
 bbdoc: Populates and returns a #TVolume object.
-about: Parameters:
-<ul>
-<li><b>vol</b> : the name of the volume</li>
-</ul>
+param: the name of the volume
 End Rem
 Function GetVolumeInfo:TVolume(vol:String)
 
@@ -136,12 +127,11 @@ End Function
 Rem
 bbdoc: Returns the user home directory.
 about: The table lists examples for the various platforms -
-<table align="center">
-<tr><th>Platform</th><th>Example</th><th>Equivalent</th></tr>
-<tr><td>Linux</td><td>`/home/username`</td><td>`~`</td></tr>
-<tr><td>Mac OS</td><td>`/Users/username`</td><td>`~`</td></tr>
-<tr><td>Win32</td><td>`C:\Documents and Settings\username`</td><td>&nbsp;</td></tr>
-</table>
+| Platform | Example | Equivalent |
+| --------- | ------- | ---------- |
+| Linux | `/home/username` | `~` |
+| Mac OS | `/Users/username` | `~` |
+| Win32 | `C:\Documents and Settings\username` |  |
 End Rem
 Function GetUserHomeDir:String()
 	Return volume_driver.GetUserHomeDir()
@@ -150,12 +140,11 @@ End Function
 Rem
 bbdoc: Returns the user Desktop directory.
 about: The table lists examples for the various platforms -
-<table align="center">
-<tr><th>Platform</th><th>Example</th><th>Equivalent</th></tr>
-<tr><td>Linux</td><td>`/home/username/Desktop`</td><td>`~/Desktop`</td></tr>
-<tr><td>Mac OS</td><td>`/Users/username/Desktop`</td><td>`~/Desktop`</td></tr>
-<tr><td>Win32</td><td>`C:\Documents and Settings\username\Desktop`</td><td>&nbsp;</td></tr>
-</table>
+| Platform | Example | Equivalent |
+| --------- | ------- | ---------- |
+| Linux | `/home/username/Desktop` | `~/Desktop` |
+| Mac OS | `/Users/username/Desktop` | `~/Desktop` |
+| Win32 | `C:\Documents and Settings\username\Desktop` |  |
 End Rem
 Function GetUserDesktopDir:String()
 	Return volume_driver.GetUserDesktopDir()
@@ -164,12 +153,11 @@ End Function
 Rem
 bbdoc: Returns the user directory for application data.
 about: The table lists examples for the various platforms -
-<table align="center">
-<tr><th>Platform</th><th>Example</th><th>Equivalent</th></tr>
-<tr><td>Linux</td><td>`/home/username`</td><td>`~`</td></tr>
-<tr><td>Mac OS</td><td>`/Users/username/Library/Application Support`</td><td>`~/Library/Application Support`</td></tr>
-<tr><td>Win32</td><td>`C:\Documents and Settings\username\Application Data`</td><td>&nbsp;</td></tr>
-</table>
+| Platform | Example | Equivalent |
+| --------- | ------- | ---------- |
+| Linux | `/home/username` | `~` |
+| Mac OS | `/Users/username/Library/Application Support` | `~/Library/Application Support` |
+| Win32 | `C:\Documents and Settings\username\Application Data` |  |
 End Rem
 Function GetUserAppDir:String()
 	Return volume_driver.GetUserAppDir()
@@ -178,12 +166,11 @@ End Function
 Rem
 bbdoc: Returns the user Documents directory.
 about: The table lists examples for the various platforms -
-<table align="center">
-<tr><th>Platform</th><th>Example</th><th>Equivalent</th></tr>
-<tr><td>Linux</td><td>`/home/username/Documents`</td><td>`~/Documents`</td></tr>
-<tr><td>Mac OS</td><td>`/Users/username/Documents`</td><td>`~/Documents`</td></tr>
-<tr><td>Win32</td><td>`C:\Documents and Settings\username\My Documents`</td><td>&nbsp;</td></tr>
-</table>
+| Platform | Example | Equivalent |
+| --------- | ------- | ---------- |
+| Linux | `/home/username/Documents` | `~/Documents` |
+| Mac OS | `/Users/username/Documents` | `~/Documents` |
+| Win32 | `C:\Documents and Settings\username\My Documents` |  |
 End Rem
 Function GetUserDocumentsDir:String()
 	Return volume_driver.GetUserDocumentsDir()
@@ -191,16 +178,17 @@ End Function
 
 Rem
 bbdoc: Returns the custom directory path.
+returns: Null if @dirType is not valid for the platform.
+param: The type of directory to return. See below for valid values.
+param: Optional flags to modify the behaviour of the function. See below for valid values.
 about: The following table lists valid @dirType -
-<table align="center">
-<tr><th>Platform</th><th>dirType</th><th>Description</th></tr>
-<tr><td>Mac, Linux</td><td>DT_SHAREDUSERDATA</td><td>The Shared documents folder.</td></tr>
-<tr><td>All</td><td>DT_USERPICTURES</td><td>The &quot;Pictures&quot; or &quot;My Pictures&quot; folder of the user.</td></tr>
-<tr><td>All</td><td>DT_USERMUSIC</td><td>The &quot;Music&quot; or &quot;My Music&quot; folder of the user.</td></tr>
-<tr><td>All</td><td>DT_USERMOVIES</td><td>The &quot;Movies&quot;, &quot;Videos&quot; or &quot;My Videos&quot; folder of the user.</td></tr>
-<tr><td>Win32</td><td>CSIDL_xxxxxxxx</td><td>Any of the Windows-specific CSIDL identifiers that represent different folders on the system.</td></tr>
-</table>
-<p>Returns Null if @dirType is not valid for the platform.</p>
+| Platform | dirType | Description |
+| --------- | ------- | ---------- |
+| Mac, Linux | DT_SHAREDUSERDATA | The Shared documents folder. |
+| All | DT_USERPICTURES | The &quot;Pictures&quot; or &quot;My Pictures&quot; folder of the user. |
+| All | DT_USERMUSIC | The &quot;Music&quot; or &quot;My Music&quot; folder of the user. |
+| All | DT_USERMOVIES | The &quot;Movies&quot;, &quot;Videos&quot; or &quot;My Videos&quot; folder of the user. |
+| Win32 | CSIDL_xxxxxxxx | Any of the Windows-specific CSIDL identifiers that represent different folders on the system. |
 End Rem
 Function GetCustomDir:String(dirType:Int, flags:Int = 0)
 	Return volume_driver.GetCustomDir(dirType, flags)
