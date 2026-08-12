@@ -1361,7 +1361,8 @@ Type TGlobIter Implements IIterator<String>, ICloseable
 	Field baseDir:String
 	Field pats:String[]
 	Field patIndex:Int
-	Field inner:TGlobOneIter
+	Private Field inner:TGlobOneIter
+	Public
 	Field _current:String
 	Field _closed:Int
 
