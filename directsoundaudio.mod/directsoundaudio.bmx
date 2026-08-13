@@ -128,7 +128,9 @@ Type TDirectSoundSound Extends TSound
 		Return t
 	End Function
 	
-	Field _seq:Int,_buffer:Byte Ptr,_hertz:Int,_loop:Int,_bufs:TBuf
+	Field _seq:Int,_buffer:Byte Ptr,_hertz:Int,_loop:Int
+	Internal
+	Field _bufs:TBuf
 	
 End Type
 
@@ -233,7 +235,9 @@ Type TDirectSoundChannel Extends TChannel
 	End Function
 
 	Field _volume:Float=1,_pan:Float=0,_rate:Float=1,_static:Int
-	Field _sound:TSound,_buf:TBuf,_seq:Int,_hertz:Int,_playFlags:Int
+	Field _sound:TSound,_seq:Int,_hertz:Int,_playFlags:Int
+	Private
+	Field _buf:TBuf
 	
 End Type
 
@@ -295,6 +299,7 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 		Return t
 	End Function
 
+	Internal
 	Method AddLonely( bufs:TBuf )
 		Local t:TBuf=bufs
 		While t._succ
@@ -318,8 +323,11 @@ Type TDirectSoundAudioDriver Extends TAudioDriver
 		Wend
 	End Method
 
-	Field _name:String,_mode:Int,_dsound:Byte Ptr,_lonely:TBuf
+	Field _name:String,_mode:Int,_dsound:Byte Ptr
+	Private
+	Field _lonely:TBuf
 
+	Internal
 	Global _seq:Int
 		
 End Type
