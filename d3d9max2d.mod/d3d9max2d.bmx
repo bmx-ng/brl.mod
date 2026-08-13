@@ -358,7 +358,8 @@ Private
 		replacementSurface.Release_()
 	End Method
 	
-	Method RenderTargetToPixmap:TPixmap()	
+	Internal
+	Method RenderTargetToPixmap:TPixmap()
 		' use a staging surface to get the texture contents
 		Local StagingSurface:IDirect3DSurface9
 		If _d3ddev.CreateOffscreenPlainSurface(_width, _height, D3DFMT_A8R8G8B8, D3DPOOL_SYSTEMMEM, StagingSurface, Null) < 0
