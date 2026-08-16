@@ -248,13 +248,15 @@ int threads_TimedWaitSemaphore( bb_sem_t *sem, int millisecs ){
 	}
 	
 	ts.tv_sec += millisecs / 1000;
-	ts.tv_nsec += (millisecs % 1000) * 1000000L;
+	BBInt64 nsec = ts.tv_nsec + ((millisecs % 1000) * 1000000L);
+	ts.tv_sec += nsec / 1000000000L;
+	ts.tv_nsec = nsec % 1000000000L;
 	
 	int res = sem_timedwait(sem, &ts);
 	
 	if (res == 0) {
 		return 0;
-	} else if (res == ETIMEDOUT) {
+	} else if (errno == ETIMEDOUT) {
 		return 1;
 	}
 
