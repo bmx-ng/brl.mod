@@ -100,7 +100,11 @@ BBString *bbObjectToString( BBObject *o ){
 }
 
 int bbObjectCompare( BBObject *x,BBObject *y ){
-	return (char*)x-(char*)y;
+	uintptr_t left=(uintptr_t)x;
+	uintptr_t right=(uintptr_t)y;
+	if( left<right ) return -1;
+	if( left>right ) return 1;
+	return 0;
 }
 
 int bbObjectEquals( BBObject *x,BBObject *y ){

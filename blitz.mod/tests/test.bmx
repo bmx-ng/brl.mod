@@ -2,6 +2,7 @@ SuperStrict
 
 Framework brl.standardio
 Import BRL.MaxUnit
+Import "object_compare_glue.c"
 
 New TTestSuite.run()
 
@@ -1214,6 +1215,7 @@ Type TStringFromUTF8BytesTest Extends TTest
 End Type
 
 Extern
+	Function bmx_test_object_compare_wide_identity:Int()
 	Function bbStrToInt:Int(s:Short Ptr, length:Int, end_index:Int Ptr)="int bbStrToInt(const BBChar *,int,int*)"
 	Function bbStrToLong:Long(s:Short Ptr, length:Int, end_index:Int Ptr)="BBLONG bbStrToLong(const BBChar *,int,int*)"
 	Function bbStrToUInt:UInt(s:Short Ptr, length:Int, end_index:Int Ptr)="BBUINT bbStrToUInt(const BBChar *,int,int*)"
@@ -1221,6 +1223,12 @@ Extern
 	Function bbStrToByte:Byte(s:Short Ptr, length:Int, end_index:Int Ptr)="BBBYTE bbStrToByte(const BBChar *,int,int*)"
 	Function bbStrToULong:ULong(s:Short Ptr, length:Int, end_index:Int Ptr)="BBULONG bbStrToULong(const BBChar *,int,int*)"
 End Extern
+
+Type TObjectIdentityComparisonTest Extends TTest
+	Method TestWideObjectIdentitiesRemainDistinct() { test }
+		AssertTrue(bmx_test_object_compare_wide_identity(), "Object comparison must retain identity bits above 32 bits")
+	End Method
+End Type
 
 Const INT_MAX:Int = 2147483647
 Const INT_MIN:Int = -2147483648
