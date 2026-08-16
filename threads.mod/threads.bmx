@@ -470,11 +470,11 @@ Type TThreadEvent
         Local endTime:ULong = CurrentUnixTime() + timeoutMs
         While Not _isSet
             Local now:ULong = CurrentUnixTime()
-            If now >= timeoutMs Then
+            If now >= endTime Then
                 lock.Unlock()
                 Return False
             End If
-            condition.TimedWait(lock, Int(timeoutMs - now))
+            condition.TimedWait(lock, Int(endTime - now))
         Wend
         lock.Unlock()
         Return True
