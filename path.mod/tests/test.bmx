@@ -179,6 +179,14 @@ Type TPathFsTest Extends TTest
 		AssertTrue((root / "sub").IsDir(), "Expected sub to be a dir")
 	End Method
 
+	Method StatReturnsAllMetadata() { test }
+		Local info:SFileStat
+		AssertTrue((root / "a.txt").Stat(info), "Expected Stat to succeed")
+		AssertEquals(FILETYPE_FILE, info.fileType)
+		AssertEquals(Long(2), info.size)
+		AssertTrue(info.modifiedTime > 0)
+	End Method
+
 	Method IterDirYieldsImmediateChildren() { test }
 		Using
 			Local it:TPathDirIterator = root.IterDir()

@@ -6,6 +6,49 @@ Import BRL.MaxUnit
 
 New TTestSuite.run()
 
+Type TFileStatTest Extends TTest
+	Field root:String
+
+	Method Before() { before }
+		root = _MakeUniqueRoot()
+		AssertTrue(_EnsureDir(root), "Failed to create stat test directory")
+		AssertTrue(_WriteSmallFile(root + "/value.txt", "value"), "Failed to create stat test file")
+	End Method
+
+	Method After() { after }
+		If root And FileType(root) = FILETYPE_DIR Then DeleteDir(root, True)
+	End Method
+
+	Method FileMetadataIsReturnedTogether() { test }
+		Local info:SFileStat
+		AssertTrue(Stat(root + "/value.txt", info), "Expected Stat to succeed")
+		AssertEquals(FILETYPE_FILE, info.fileType)
+		AssertEquals(Long(5), info.size)
+		AssertTrue(info.IsFile())
+		AssertFalse(info.IsDirectory())
+		AssertTrue(info.modifiedTime > 0)
+		AssertEquals(info.modifiedTime, info.ModifiedDateTime().ToEpochSecs())
+	End Method
+
+	Method DirectoryMetadataIsReturned() { test }
+		Local info:SFileStat
+		AssertTrue(Stat(root, info), "Expected directory Stat to succeed")
+		AssertEquals(FILETYPE_DIR, info.fileType)
+		AssertTrue(info.IsDirectory())
+	End Method
+
+	Method MissingPathFailsAndClearsOutput() { test }
+		Local info:SFileStat
+		info.fileType = FILETYPE_FILE
+		info.size = 99
+		info.modifiedTime = 99
+		AssertFalse(Stat(root + "/missing", info))
+		AssertEquals(FILETYPE_NONE, info.fileType)
+		AssertEquals(Long(0), info.size)
+		AssertEquals(Long(0), info.modifiedTime)
+	End Method
+End Type
+
 Type TWalkTreeTest Extends TTest
 
 	Field root:String
@@ -246,6 +289,16 @@ Type TVirtualWalkTreeTest Extends TTest
 		AssertEquals(1, subRec.depth, "sub depth should be 1")
 		AssertEquals(2, cRec.depth, "c.txt depth should be 2")
 		AssertEquals(3, dRec.depth, "d.txt depth should be 3")
+	End Method
+
+	Method StatUsesMaxIO_Virtual() { test }
+		Local info:SFileStat
+		AssertTrue(Stat("/a.txt", info), "Expected virtual Stat to succeed")
+		AssertEquals(FILETYPE_FILE, info.fileType)
+		AssertEquals(Long(1), info.size)
+		AssertTrue(info.IsFile())
+		AssertFalse(Stat("/missing.txt", info), "Expected missing virtual Stat to fail")
+		AssertEquals(FILETYPE_NONE, info.fileType)
 	End Method
 
 	Method SkipSubtreeIsHonored_Virtual() { test }

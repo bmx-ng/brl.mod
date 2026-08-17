@@ -380,6 +380,14 @@ Public
 	End Method
 
 	Rem
+	bbdoc: Gets metadata for this path in one filesystem query.
+	returns: #True if the path was found and @fileStat was populated, otherwise #False.
+	End Rem
+	Method Stat:Int(fileStat:SFileStat Var)
+		Return Brl.FileSystem.Stat(_path, fileStat)
+	End Method
+
+	Rem
 	bbdoc: Returns #True if the path exists.
 	End Rem
 	Method Exists:Int()
