@@ -21,7 +21,7 @@ Type TFileStatTest Extends TTest
 
 	Method FileMetadataIsReturnedTogether() { test }
 		Local info:SFileStat
-		AssertTrue(Stat(root + "/value.txt", info), "Expected Stat to succeed")
+		AssertTrue(FileStat(root + "/value.txt", info), "Expected FileStat to succeed")
 		AssertEquals(FILETYPE_FILE, info.fileType)
 		AssertEquals(Long(5), info.size)
 		AssertTrue(info.IsFile())
@@ -32,7 +32,7 @@ Type TFileStatTest Extends TTest
 
 	Method DirectoryMetadataIsReturned() { test }
 		Local info:SFileStat
-		AssertTrue(Stat(root, info), "Expected directory Stat to succeed")
+		AssertTrue(FileStat(root, info), "Expected directory FileStat to succeed")
 		AssertEquals(FILETYPE_DIR, info.fileType)
 		AssertTrue(info.IsDirectory())
 	End Method
@@ -42,7 +42,7 @@ Type TFileStatTest Extends TTest
 		info.fileType = FILETYPE_FILE
 		info.size = 99
 		info.modifiedTime = 99
-		AssertFalse(Stat(root + "/missing", info))
+		AssertFalse(FileStat(root + "/missing", info))
 		AssertEquals(FILETYPE_NONE, info.fileType)
 		AssertEquals(Long(0), info.size)
 		AssertEquals(Long(0), info.modifiedTime)
@@ -293,11 +293,11 @@ Type TVirtualWalkTreeTest Extends TTest
 
 	Method StatUsesMaxIO_Virtual() { test }
 		Local info:SFileStat
-		AssertTrue(Stat("/a.txt", info), "Expected virtual Stat to succeed")
+		AssertTrue(FileStat("/a.txt", info), "Expected virtual FileStat to succeed")
 		AssertEquals(FILETYPE_FILE, info.fileType)
 		AssertEquals(Long(1), info.size)
 		AssertTrue(info.IsFile())
-		AssertFalse(Stat("/missing.txt", info), "Expected missing virtual Stat to fail")
+		AssertFalse(FileStat("/missing.txt", info), "Expected missing virtual FileStat to fail")
 		AssertEquals(FILETYPE_NONE, info.fileType)
 	End Method
 
