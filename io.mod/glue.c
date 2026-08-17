@@ -20,12 +20,16 @@
 #include "physfs.h"
 #include "brl.mod/blitz.mod/blitz.h"
 
-static BBString * bmx_char_to_bbstring(const char* txt) {
+static BBString * bmx_char_to_bbstring(const char * txt) {
 	if (txt == NULL) {
 		return &bbEmptyString;
 	} else {
-		return bbStringFromUTF8String((const unsigned char*)txt);
+		return bbStringFromUTF8String((const unsigned char *)txt);
 	}
+}
+
+static void bmx_bbstring_to_utf8_buffer(BBString * str, char * buf, size_t * length) {
+	bbStringToUTF8StringBuffer(str, (unsigned char *)buf, length);
 }
 
 struct MaxFilesEnumeration {
@@ -42,7 +46,7 @@ int bmx_PHYSFS_getLastErrorCode() {
 }
 
 BBString * bmx_PHYSFS_getErrorForCode(int code) {
-	return bbStringFromUTF8String(PHYSFS_getErrorByCode(code));
+	return bmx_char_to_bbstring(PHYSFS_getErrorByCode(code));
 }
 
 BBString * bmx_PHYSFS_getLastError() {
@@ -56,40 +60,40 @@ BBString * bmx_PHYSFS_getLastError() {
 int bmx_PHYSFS_mount(BBString * newDir, BBString * mountPoint, int appendToPath) {
 	char dbuf[1024];
 	size_t dlen = 1024;
-	bbStringToUTF8StringBuffer(newDir, dbuf, &dlen);
+	bmx_bbstring_to_utf8_buffer(newDir, dbuf, &dlen);
 	char mbuf[256];
 	size_t mlen = 256;
 	if (mountPoint != &bbEmptyString) {
-		bbStringToUTF8StringBuffer(mountPoint, mbuf, &mlen);
+		bmx_bbstring_to_utf8_buffer(mountPoint, mbuf, &mlen);
 		return PHYSFS_mount(dbuf, mbuf, appendToPath);
 	}
 	return PHYSFS_mount(dbuf, NULL, appendToPath);
 }
 
 BBString * bmx_PHYSFS_getBaseDir() {
-	return bbStringFromUTF8String(PHYSFS_getBaseDir());
+	return bmx_char_to_bbstring(PHYSFS_getBaseDir());
 }
 
 BBString * bmx_PHYSFS_getPrefDir(BBString * org, BBString * app) {
 	char obuf[128];
 	size_t olen = 128;
-	bbStringToUTF8StringBuffer(org, obuf, &olen);
+	bmx_bbstring_to_utf8_buffer(org, obuf, &olen);
 
 	char abuf[128];
 	size_t alen = 128;
-	bbStringToUTF8StringBuffer(app, abuf, &alen);
+	bmx_bbstring_to_utf8_buffer(app, abuf, &alen);
 
-	return bbStringFromUTF8String(PHYSFS_getPrefDir(obuf, abuf));
+	return bmx_char_to_bbstring(PHYSFS_getPrefDir(obuf, abuf));
 }
 
 int bmx_PHYSFS_mountMemory(void * dirPtr, int dirLen, BBString * newDir, BBString * mountPoint, int appendToPath) {
 	char dbuf[1024];
 	size_t dlen = 1024;
-	bbStringToUTF8StringBuffer(newDir, dbuf, &dlen);
+	bmx_bbstring_to_utf8_buffer(newDir, dbuf, &dlen);
 	char mbuf[256];
 	size_t mlen = 256;
 	if (mountPoint != &bbEmptyString) {
-		bbStringToUTF8StringBuffer(mountPoint, mbuf, &mlen);
+		bmx_bbstring_to_utf8_buffer(mountPoint, mbuf, &mlen);
 		return PHYSFS_mountMemory(dirPtr, dirLen, NULL, dbuf, mbuf, appendToPath);
 	}
 	return PHYSFS_mountMemory(dirPtr, dirLen, NULL, dbuf, NULL, appendToPath);
@@ -98,49 +102,49 @@ int bmx_PHYSFS_mountMemory(void * dirPtr, int dirLen, BBString * newDir, BBStrin
 PHYSFS_File * bmx_PHYSFS_openAppend(BBString * path) {
 	char buf[1024];
 	size_t len = 1024;
-	bbStringToUTF8StringBuffer(path, buf, &len);
+	bmx_bbstring_to_utf8_buffer(path, buf, &len);
 	return PHYSFS_openAppend(buf);
 }
 
 PHYSFS_File * bmx_PHYSFS_openWrite(BBString * path) {
 	char buf[1024];
 	size_t len = 1024;
-	bbStringToUTF8StringBuffer(path, buf, &len);
+	bmx_bbstring_to_utf8_buffer(path, buf, &len);
 	return PHYSFS_openWrite(buf);
 }
 
 PHYSFS_File * bmx_PHYSFS_openRead(BBString * path) {
 	char buf[1024];
 	size_t len = 1024;
-	bbStringToUTF8StringBuffer(path, buf, &len);
+	bmx_bbstring_to_utf8_buffer(path, buf, &len);
 	return PHYSFS_openRead(buf);
 }
 
 int bmx_PHYSFS_stat(BBString * filename, PHYSFS_Stat * stat) {
 	char buf[1024];
 	size_t len = 1024;
-	bbStringToUTF8StringBuffer(filename, buf, &len);
+	bmx_bbstring_to_utf8_buffer(filename, buf, &len);
 	return PHYSFS_stat(buf, stat);
 }
 
 int bmx_PHYSFS_delete(BBString * filename) {
 	char buf[1024];
 	size_t len = 1024;
-	bbStringToUTF8StringBuffer(filename, buf, &len);
+	bmx_bbstring_to_utf8_buffer(filename, buf, &len);
 	return PHYSFS_delete(buf);
 }
 
 int bmx_PHYSFS_mkdir(BBString * dirName) {
 	char buf[1024];
 	size_t len = 1024;
-	bbStringToUTF8StringBuffer(dirName, buf, &len);
+	bmx_bbstring_to_utf8_buffer(dirName, buf, &len);
 	return PHYSFS_mkdir(buf);
 }
 
 struct MaxFilesEnumeration * bmx_blitzio_readdir(BBString * dir) {
 	char buf[1024];
 	size_t len = 1024;
-	bbStringToUTF8StringBuffer(dir, buf, &len);
+	bmx_bbstring_to_utf8_buffer(dir, buf, &len);
 	
 	char ** files = PHYSFS_enumerateFiles(buf);
 	
@@ -158,7 +162,7 @@ BBString * bmx_blitzio_nextFile(struct MaxFilesEnumeration * mfe) {
 	char * f = mfe->files[mfe->index];
 	if (f) {
 		mfe->index++;
-		return bbStringFromUTF8String(f);
+		return bmx_char_to_bbstring(f);
 	}
 	return &bbEmptyString;
 }
@@ -174,7 +178,7 @@ int bmx_PHYSFS_setWriteDir(BBString * newDir) {
 	} else {
 		char buf[1024];
 		size_t len = 1024;
-		bbStringToUTF8StringBuffer(newDir, buf, &len);
+		bmx_bbstring_to_utf8_buffer(newDir, buf, &len);
 		return PHYSFS_setWriteDir(buf);
 	}
 }
@@ -188,7 +192,7 @@ BBString * bmx_PHYSFS_getWriteDir() {
 BBString * bmx_PHYSFS_getRealDir(BBString * filename) {
 	char buf[1024];
 	size_t len = 1024;
-	bbStringToUTF8StringBuffer(filename, buf, &len);
+	bmx_bbstring_to_utf8_buffer(filename, buf, &len);
 
 	const char * dir = PHYSFS_getRealDir(buf);
 
@@ -198,7 +202,7 @@ BBString * bmx_PHYSFS_getRealDir(BBString * filename) {
 BBString * bmx_PHYSFS_getMountPoint(BBString * dir) {
 	char buf[1024];
 	size_t len = 1024;
-	bbStringToUTF8StringBuffer(dir, buf, &len);
+	bmx_bbstring_to_utf8_buffer(dir, buf, &len);
 
 	const char * mount = PHYSFS_getMountPoint(buf);
 
@@ -208,13 +212,13 @@ BBString * bmx_PHYSFS_getMountPoint(BBString * dir) {
 int bmx_PHYSFS_setRoot(BBString * archive, BBString * subdir) {
 	char abuf[1024];
 	size_t len = 1024;
-	bbStringToUTF8StringBuffer(archive, abuf, &len);
+	bmx_bbstring_to_utf8_buffer(archive, abuf, &len);
 
 	char sbuf[1024];
 	size_t slen = 1024;
 
 	if (subdir != &bbEmptyString) {
-		bbStringToUTF8StringBuffer(subdir, sbuf, &slen);
+		bmx_bbstring_to_utf8_buffer(subdir, sbuf, &slen);
 	}
 
 	return PHYSFS_setRoot(abuf, sbuf);
@@ -223,7 +227,7 @@ int bmx_PHYSFS_setRoot(BBString * archive, BBString * subdir) {
 int bmx_PHYSFS_unmount(BBString * oldDir) {
 	char buf[1024];
 	size_t len = 1024;
-	bbStringToUTF8StringBuffer(oldDir, buf, &len);
+	bmx_bbstring_to_utf8_buffer(oldDir, buf, &len);
 
 	return PHYSFS_unmount(buf);
 }
@@ -245,7 +249,7 @@ BBArray * bmx_PHYSFS_getSearchPath() {
 	BBArray * p = bbArrayNew1D("$", count);
 	BBString **s=(BBString**)BBARRAYDATA( p,p->dims );
 	for (i = list; *i != NULL; i++) {
-		s[n++]=bbStringFromUTF8String( *i );
+		s[n++]=bmx_char_to_bbstring(*i);
 	}
 	PHYSFS_freeList(list);
 	return p;
