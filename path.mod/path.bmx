@@ -381,10 +381,10 @@ Public
 
 	Rem
 	bbdoc: Gets metadata for this path in one filesystem query.
-	returns: #True if the path was found and @fileStat was populated, otherwise #False.
+	returns: #True if the path was found and @info was populated, otherwise #False.
 	End Rem
-	Method Stat:Int(fileStat:SFileStat Var)
-		Return Brl.FileSystem.Stat(_path, fileStat)
+	Method Stat:Int(info:SFileStat Var)
+		Return Brl.FileSystem.FileStat(_path, info)
 	End Method
 
 	Rem

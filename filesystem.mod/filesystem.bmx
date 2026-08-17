@@ -13,7 +13,7 @@ ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
 ModuleInfo "History: 1.16"
-ModuleInfo "History: Added SFileStat and Stat for single-query file metadata."
+ModuleInfo "History: Added SFileStat and FileStat for single-query file metadata."
 ModuleInfo "History: 1.15"
 ModuleInfo "History: Documented file type and time constants."
 ModuleInfo "History: 1.14"
@@ -79,10 +79,10 @@ End Rem
 Const FILETIME_ACCESSED:Int=2
 
 Rem
-bbdoc: Metadata returned by #Stat.
-about: A successful call to #Stat populates all fields from one filesystem query.
+bbdoc: Metadata returned by #FileStat.
+about: A successful call to #FileStat populates all fields from one filesystem query.
 The file type uses the #FILETYPE_NONE, #FILETYPE_FILE, #FILETYPE_DIR and
-#FILETYPE_SYM.
+#FILETYPE_SYM constants used elsewhere in this module.
 End Rem
 Struct SFileStat
 	Field fileType:Int
@@ -288,46 +288,47 @@ End Function
 
 Rem
 bbdoc: Gets metadata for a file or directory in one filesystem query.
-returns: #True if @path was found and @fileStat was populated, otherwise #False.
-about: When MaxIO is initialized, the path is resolved through MaxIO.
+returns: #True if @path was found and @info was populated, otherwise #False.
+about: When MaxIO is initialized, the path is resolved through MaxIO in the
+same way as the other functions in this module.
 End Rem
-Function Stat:Int(path:String, fileStat:SFileStat Var)
+Function FileStat:Int(path:String, info:SFileStat Var)
 	FixPath path
-	fileStat.fileType = FILETYPE_NONE
-	fileStat.size = 0
-	fileStat.modifiedTime = 0
-	fileStat.creationTime = 0
-	fileStat.accessTime = 0
-	fileStat.isReadOnly = False
+	info.fileType = FILETYPE_NONE
+	info.size = 0
+	info.modifiedTime = 0
+	info.creationTime = 0
+	info.accessTime = 0
+	info.isReadOnly = False
 
 	If MaxIO.ioInitialized Then
 		Local maxIOStat:SMaxIO_Stat
 		If Not MaxIO.Stat(path, maxIOStat) Then Return False
 		Select maxIOStat._filetype
 			Case EMaxIOFileType.REGULAR
-				fileStat.fileType = FILETYPE_FILE
+				info.fileType = FILETYPE_FILE
 			Case EMaxIOFileType.DIRECTORY
-				fileStat.fileType = FILETYPE_DIR
+				info.fileType = FILETYPE_DIR
 			Case EMaxIOFileType.SYMLINK
-				fileStat.fileType = FILETYPE_SYM
+				info.fileType = FILETYPE_SYM
 		End Select
-		fileStat.size = maxIOStat._filesize
-		fileStat.modifiedTime = maxIOStat._modtime
-		fileStat.creationTime = maxIOStat._createtime
-		fileStat.accessTime = maxIOStat._accesstime
-		fileStat.isReadOnly = maxIOStat._readonly
+		info.size = maxIOStat._filesize
+		info.modifiedTime = maxIOStat._modtime
+		info.creationTime = maxIOStat._createtime
+		info.accessTime = maxIOStat._accesstime
+		info.isReadOnly = maxIOStat._readonly
 	Else
 		Local mode:Int
-		If stat64_(path, mode, fileStat.size, fileStat.modifiedTime, fileStat.creationTime, fileStat.accessTime) Then Return False
+		If stat64_(path, mode, info.size, info.modifiedTime, info.creationTime, info.accessTime) Then Return False
 		Select Mode & S_IFMT_
 			Case S_IFREG_
-				fileStat.fileType = FILETYPE_FILE
+				info.fileType = FILETYPE_FILE
 			Case S_IFDIR_
-				fileStat.fileType = FILETYPE_DIR
+				info.fileType = FILETYPE_DIR
 		End Select
 		' POSIX write bits are 0200, 0020 and 0002. On Windows _stati64
 		' reports the owner write bit, which is covered by the same mask.
-		fileStat.isReadOnly = (mode & $92) = 0
+		info.isReadOnly = (mode & $92) = 0
 	End If
 	Return True
 End Function
@@ -337,8 +338,8 @@ bbdoc: Gets the file type
 returns: #FILETYPE_NONE (0) if file at @path doesn't exist, #FILETYPE_FILE (1) if the file is a plain file or #FILETYPE_DIR (2) if the file is a directory
 End Rem
 Function FileType:Int( path:String )
-	Local fileStat:SFileStat
-	If Stat(path, fileStat) Then Return fileStat.fileType
+	Local info:SFileStat
+	If FileStat(path, info) Then Return info.fileType
 	Return FILETYPE_NONE
 End Function
 
@@ -356,15 +357,15 @@ bbdoc: Gets file time
 returns: The time the file at @path was last modified.
 End Rem
 Function FileTime:Long( path:String, timetype:Int=FILETIME_MODIFIED )
-	Local fileStat:SFileStat
-	If Not Stat(path, fileStat) Then Return 0
+	Local info:SFileStat
+	If Not FileStat(path, info) Then Return 0
 	Select timetype
 		Case FILETIME_CREATED
-			Return fileStat.creationTime
+			Return info.creationTime
 		Case FILETIME_MODIFIED
-			Return fileStat.modifiedTime
+			Return info.modifiedTime
 		Case FILETIME_ACCESSED
-			Return fileStat.accessTime
+			Return info.accessTime
 	End Select
 End Function
 
@@ -415,9 +416,9 @@ bbdoc: Gets the file size
 returns: The size, in bytes, of the file at @path, or -1 if the file does not exist
 End Rem
 Function FileSize:Long( path:String )
-	Local fileStat:SFileStat
-	If Not Stat(path, fileStat) Then Return -1
-	Return fileStat.size
+	Local info:SFileStat
+	If Not FileStat(path, info) Then Return -1
+	Return info.size
 End Function
 
 Rem
@@ -896,7 +897,7 @@ End Function
 Function FSWalkFileTree:Int(dir:string, fileWalker:IFileWalker, options:EFileWalkOption, depth:Int, maxDepth:Int)
 
 	Local attributes:SFileAttributes
-	ApplyAttributes(dir, depth, VarPtr attributes)
+	_ApplyAttributes(dir, depth, VarPtr attributes)
 
 	Local res:EFileWalkResult = fileWalker.WalkFile(attributes)
 
@@ -939,7 +940,7 @@ Function FSWalkFileTree:Int(dir:string, fileWalker:IFileWalker, options:EFileWal
 		Local path:String = dir + "/" + f
 
 		' Compute attributes for this child
-		If Not ApplyAttributes(path, depth + 1, VarPtr attributes) Then
+		If Not _ApplyAttributes(path, depth + 1, VarPtr attributes) Then
 			Continue
 		End If
 
@@ -987,13 +988,13 @@ Function FSWalkFileTree:Int(dir:string, fileWalker:IFileWalker, options:EFileWal
 	Return 0
 End Function
 
-Function ApplyAttributes:Int(path:String, depth:Int, attributes:SFileAttributes Ptr)
-	Local fileStat:SFileStat
-	If Not Stat(path, fileStat) Then
+Function _ApplyAttributes:Int(path:String, depth:Int, attributes:SFileAttributes Ptr)
+	Local info:SFileStat
+	If Not FileStat(path, info) Then
 		Return False
 	End If
 
-	attributes.fileType = fileStat.fileType
+	attributes.fileType = info.fileType
 
 	Local length:Size_T = 8192
 ?win32
@@ -1003,9 +1004,9 @@ Function ApplyAttributes:Int(path:String, depth:Int, attributes:SFileAttributes 
 ?
 
 	attributes.depth = depth
-	attributes.size = fileStat.size
-	attributes.creationTime = fileStat.creationTime
-	attributes.modifiedTime = fileStat.modifiedTime
+	attributes.size = info.size
+	attributes.creationTime = info.creationTime
+	attributes.modifiedTime = info.modifiedTime
 
 	Return True
 End Function
