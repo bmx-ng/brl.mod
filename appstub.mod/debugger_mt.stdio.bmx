@@ -219,6 +219,9 @@ Function TypeName:String( tag:String Var )
 		EndIf
 		tag=tag[1..]
 		Return TypeName( tag )+t+")"
+	Case "!"
+		If tag[..1]<>"(" DebugError "Invalid closure typetag"
+		Return "Closure<" + TypeName(tag) + ">"
 	End Select
 
 	If Not tag.length Return ""
@@ -420,6 +423,9 @@ Function DebugDeclValue:String( decl:Int Ptr,inst:Byte Ptr )
 	Case Asc("(")
 		p=(Byte Ptr Ptr p)[0]
 		If p=bmx_debugger_ref_brl_blitz_NullFunctionError() Return "Null"
+	Case Asc("!")
+		p=(Byte Ptr Ptr p)[0]
+		If p=bmx_debugger_ref_bbNullObject() Return "Null"
 	Case Asc(":")
 		p=(Byte Ptr Ptr p)[0]
 		If p=bmx_debugger_ref_bbNullObject() Return "Null"
