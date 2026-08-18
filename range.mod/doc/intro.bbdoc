@@ -1,0 +1,57 @@
+BRL.Range provides reusable half-open ranges and enables typed Range expressions in BlitzMax source.
+
+A #Range describes a start endpoint and an exclusive end endpoint. Either endpoint may be open, absolute from the start, or relative to the receiver's end. The same Range can therefore be resolved against receivers of different lengths.
+
+## Half-open coordinates
+
+Ranges use the common `[start, end)` convention: start is included and end is excluded. The length of `1..4` is three, representing coordinates 1, 2, and 3.
+
+Half-open ranges compose naturally because adjacent ranges can share an endpoint without overlapping.
+
+## Range expressions
+
+Importing BRL.Range enables expressions such as:
+
+```blitzmax
+Local middle:Range = 1..4
+Local prefix:Range = ..3
+Local suffix:Range = ^2..
+Local trimmed:Range = ^5..^2
+```
+
+`^n` creates an endpoint measured from the receiver end. `^0` is the end itself, while `^2` is two coordinates before it.
+
+Because `..` at the end of a source line is also BlitzMax's line-continuation token, parenthesize a trailing open range when necessary:
+
+```blitzmax
+Local suffix:Range = (^2..)
+```
+
+Factory functions such as #Range.FromUntil, #Range.FromEnd, and #Range.FromEndpoints provide the same values without expression syntax.
+
+## Resolving a Range
+
+#Range.Resolve converts endpoints into a #ResolvedRange for a particular receiver length:
+
+```blitzmax
+Local selected:Range = ^5..^2
+Local coordinates:ResolvedRange = selected.Resolve(10)
+
+Print coordinates.Start()        ' 5
+Print coordinates.EndExclusive() ' 8
+Print coordinates.Length()       ' 3
+```
+
+Resolve preserves explicit coordinates even when they lie outside the receiver. #Range.Clamp additionally constrains each coordinate to the receiver bounds.
+
+## Open and explicit endpoints
+
+#RangeEndpoint.Open represents an endpoint supplied by the receiver: zero for an open start and receiver length for an open end. #RangeEndpoint.FromStart stores an absolute coordinate. #RangeEndpoint.FromEnd stores a distance subtracted from receiver length.
+
+Negative absolute coordinates are retained as padding coordinates; they are not automatically translated from the end. Use FromEnd or `^` for end-relative behavior.
+
+## Empty and reversed ranges
+
+#ResolvedRange considers equal or reversed coordinates empty and reports a length of zero. Range does not silently reorder endpoints.
+
+Coordinate arithmetic is checked. Operations which exceed the Int domain throw #TRangeCoordinateException, and reading the value of an open endpoint throws #TRangeEndpointValueException.

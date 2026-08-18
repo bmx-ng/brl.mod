@@ -1,5 +1,6 @@
 
 #include <brl.mod/blitz.mod/blitz.h>
+#include "reflection.h"
 //#include <cstdarg>
 
 
@@ -34,12 +35,12 @@ BBDebugScope* bbRefClassDebugScope(BBClass* clas) {
 	return clas->debug_scope;
 }
 
-const char* bbRefClassDebugScopeName(BBClass* clas) {
-	return clas->debug_scope->name;
+BBString* bbRefClassDebugScopeName(BBClass* clas) {
+	return bbStringFromCString(clas->debug_scope->name);
 }
 
-const char* bbDebugScopeName(BBDebugScope* scope) {
-	return scope->name;
+BBString* bbDebugScopeName(BBDebugScope* scope) {
+	return bbStringFromCString(scope->name);
 }
 
 BBDebugDecl* bbDebugScopeDecl(BBDebugScope* scope) {
@@ -54,12 +55,12 @@ int bbDebugDeclKind(BBDebugDecl* decl) {
 	return decl->kind;
 }
 
-const char* bbDebugDeclName(BBDebugDecl* decl) {
-	return decl->name;
+BBString* bbDebugDeclName(BBDebugDecl* decl) {
+	return bbStringFromCString(decl->name);
 }
 
-const char* bbDebugDeclType(BBDebugDecl* decl) {
-	return decl->type_tag;
+BBString* bbDebugDeclType(BBDebugDecl* decl) {
+	return bbStringFromCString(decl->type_tag);
 }
 
 BBString* bbDebugDeclConstValue(BBDebugDecl* decl) {
@@ -151,8 +152,8 @@ BBString* bbRefEmptyString = &bbEmptyString;
 
 BBArray* bbRefEmptyArray = &bbEmptyArray;
 
-const char* bbInterfaceName(BBInterface* ifc) {
-	return ifc->clas->debug_scope->name;
+BBString* bbInterfaceName(BBInterface* ifc) {
+	return bbStringFromCString(ifc->clas->debug_scope->name);
 }
 
 BBClass* bbInterfaceClass(BBInterface* ifc) {

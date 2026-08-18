@@ -1,0 +1,40 @@
+BRL.Arrays provides eager, strongly typed functional algorithms for ordinary BlitzMax arrays.
+
+The module complements BRL.Sequence. Its operations run immediately and return concrete results, making them a good fit when the source is already an array and a materialized array is required.
+
+## Eager transformation
+
+#Map creates a new result array with one transformed value for each source element. #Filter creates a new array containing accepted elements:
+
+```blitzmax
+Local values:Int[] = [1, 2, 3, 4]
+Local squares:Int[] = Map<Int, Int>(values, Square)
+Local evens:Int[] = Filter<Int>(values, IsEven)
+```
+
+The source array is not modified. Functions are invoked in index order, and normal exceptions propagate unchanged.
+
+## Reducing and querying
+
+#Fold combines every element into an accumulator. #Count, #Any, and #All evaluate predicates, while #FirstOrNone and #LastOrNone represent an absent element with BRL.Optional.
+
+```blitzmax
+Local total:Int = Fold<Int, Int>(values, 0, Add)
+Local firstEven:Optional<Int> = FirstOrNone<Int>(values, IsEven)
+```
+
+#Any, #All, and predicate-based #FirstOrNone stop as soon as their answer is known.
+
+## Arrays or Sequence?
+
+Use BRL.Arrays when eager evaluation and a concrete result are wanted. A chain such as Map followed by Filter allocates an array for each eager step.
+
+Use BRL.Sequence when several operations should be lazy, when early termination can avoid work, or when the source is an #IIterable<T> rather than an array:
+
+```blitzmax
+Local result:Int[] = Sequence<Int>.FromArray(values).Map<Int>(Square).Filter(IsEven).ToArray()
+```
+
+For a single pass in performance-critical code, a direct loop may remain the simplest and fastest option. Benchmark the actual workload.
+
+Most algorithms provide Closure and non-capturing function overloads. Prefer non-capturing functions in hot code when surrounding state is not required.

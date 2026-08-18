@@ -1,0 +1,67 @@
+BRL.Sequence provides #Sequence<T>, a lazy, strongly typed pipeline over arrays and #IIterable<T> sources.
+
+A Sequence describes how values should be produced. Intermediate operations such as #Sequence.Map, #Sequence.Filter, #Sequence.Take, and #Sequence.Skip do not enumerate the source and do not create intermediate arrays. Enumeration begins only when values are requested by EachIn or a terminal operation.
+
+## Creating a Sequence
+
+Construct a Sequence from an array or any compatible iterable:
+
+```blitzmax
+Local numbers:Sequence<Int> = Sequence<Int>.FromArray([1, 2, 3, 4, 5])
+
+For Local value:Int = EachIn numbers
+	Print value
+Next
+```
+
+Collections implementing #IIterable<T>, including generic lists, sets, queues, stacks, and compatible map views, can be adapted with #Sequence.FromIterable.
+
+The source is retained rather than copied. Mutations made before a later enumeration are therefore visible.
+
+## Lazy pipelines
+
+Operations can be chained without allocating intermediate arrays:
+
+```blitzmax
+Local result:Int[] = Sequence<Int>.FromArray([1, 2, 3, 4, 5, 6]). ..
+	Filter(IsEven). ..
+	Map<Int>(Square). ..
+	Take(2). ..
+	ToArray()
+```
+
+Each value flows through the chain only when requested. #Sequence.Take, #Sequence.Any, and #Sequence.FirstOrNone can stop enumeration early.
+
+## Intermediate and terminal operations
+
+The lazy intermediate operations are:
+
+* #Sequence.Map transforms values.
+* #Sequence.Filter retains accepted values.
+* #Sequence.Take limits the number of produced values.
+* #Sequence.Skip omits initial values.
+
+Terminal operations enumerate the pipeline:
+
+* #Sequence.Fold, #Sequence.Count, #Sequence.Any, and #Sequence.All summarize it.
+* #Sequence.FirstOrNone and #Sequence.LastOrNone return BRL.Optional values.
+* #Sequence.ForEach performs an action.
+* #Sequence.ToArray materializes all produced values.
+
+Normal exceptions from user functions propagate unchanged.
+
+## Repeated enumeration and one-shot sources
+
+A Sequence is a reusable query recipe, not a Java-style single-use stream. Every call to #Sequence.GetIterator asks the source for an iterator again.
+
+Replayability ultimately belongs to the source. Arrays and ordinary Collections return fresh iterators and can normally be enumerated repeatedly. A custom iterable which returns the same consumed iterator remains one-shot; Sequence does not buffer or copy it.
+
+Iterator ownership also remains with the source. If a custom iterator owns an external resource, its normal lifetime and cleanup rules still apply.
+
+## Function choice and performance
+
+Operators accept both Closures and non-capturing functions. A Closure is convenient when a predicate or mapper needs surrounding local state, but it carries a captured environment and may prevent some compiler optimizations.
+
+For hot pipelines, prefer a named or non-capturing function when practical. The compiler can fuse supported non-capturing Sequence pipelines into direct loops. Capturing Closures remain correct and lazy, but may use the iterator implementation path and cost more dispatch per element.
+
+For small fixed arrays or very tight game loops, BRL.Arrays or a direct loop may still be the better choice. Measure representative workloads rather than assuming a lazy pipeline is free.

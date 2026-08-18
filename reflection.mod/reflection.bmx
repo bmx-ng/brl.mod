@@ -6,12 +6,16 @@ bbdoc: BASIC/Reflection
 End Rem
 Module BRL.Reflection
 
-ModuleInfo "Version: 1.13"
+ModuleInfo "Version: 1.15"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.15"
+ModuleInfo "History: Added structural managed Closure type IDs while retaining erased runtime-object reflection."
+ModuleInfo "History: 1.14"
+ModuleInfo "History: Added callable Field and Global invocation and explicit unavailable-wrapper errors."
 ModuleInfo "History: 1.13"
 ModuleInfo "History: Enum field get/set now operates correctly on the underlying type, rather than throwing error."
 ModuleInfo "History: 1.12"
@@ -47,6 +51,7 @@ Import BRL.Map
 Import Collections.PtrMap
 Import Collections.StringMap
 Import BRL.Threads
+Import "reflection.h"
 Import "reflection.c"
 
 
@@ -93,7 +98,7 @@ Extern
 	Global bbRefEmptyString:Object
 	Global bbRefEmptyArray:Object
 	
-	Function bbInterfaceName:Byte Ptr(ifc:Byte Ptr)
+	Function bbInterfaceName:String(ifc:Byte Ptr) = "BBString* bbInterfaceName(BBInterface*)!"
 	Function bbInterfaceClass:Byte Ptr(ifc:Byte Ptr)
 	Function bbObjectImplementsInterfaces:Int(class:Byte Ptr)
 	Function bbObjectImplementedCount:Int(class:Byte Ptr)
@@ -105,11 +110,11 @@ Extern
 	Function bbRefClassDebugScope:Byte Ptr(clas:Byte Ptr)
 	Function bbRefClassDebugDecl:Byte Ptr(clas:Byte Ptr)
 	Function bbDebugScopeDecl:Byte Ptr(scope:Byte Ptr)
-	Function bbRefClassDebugScopeName:Byte Ptr(class:Byte Ptr)
-	Function bbDebugScopeName:Byte Ptr(scope:Byte Ptr)
+	Function bbRefClassDebugScopeName:String(class:Byte Ptr) = "BBString* bbRefClassDebugScopeName(BBClass*)!"
+	Function bbDebugScopeName:String(scope:Byte Ptr) = "BBString* bbDebugScopeName(BBDebugScope*)!"
 	Function bbDebugDeclKind:Int(decl:Byte Ptr)
-	Function bbDebugDeclName:Byte Ptr(decl:Byte Ptr)
-	Function bbDebugDeclType:Byte Ptr(decl:Byte Ptr)
+	Function bbDebugDeclName:String(decl:Byte Ptr) = "BBString* bbDebugDeclName(BBDebugDecl*)!"
+	Function bbDebugDeclType:String(decl:Byte Ptr) = "BBString* bbDebugDeclType(BBDebugDecl*)!"
 	Function bbDebugDeclConstValue:String(decl:Byte Ptr)
 	Function bbDebugDeclFieldOffset:Size_T(decl:Byte Ptr)
 	Function bbDebugDeclVarAddress:Byte Ptr(decl:Byte Ptr)
@@ -314,11 +319,14 @@ End Function
 
 
 Function _GetBufferSize:Int(funcTypeId:TTypeId, selfTypeId:TTypeId = Null)
-	Local p:Byte Ptr Ptr = Null
+	Local size:Int
+	Local pointerSize:Int = SizeOf Byte Ptr Null
 	For Local t:TTypeId = EachIn [funcTypeId._retType, selfTypeId] + funcTypeId._argTypes
-		p = _AdvanceBufferPointer(p, t)
+		If t <> VoidTypeId Then
+			size :+ ((t._size + pointerSize - 1) / pointerSize) * pointerSize
+		End If
 	Next
-	Return Int(p)
+	Return size
 End Function
 
 
@@ -335,6 +343,7 @@ End Function
 
 
 Function _Invoke:Object(reflectionWrapper(buf:Byte Ptr Ptr), retType:TTypeId, argTypes:TTypeId[], args:Object[], bufferSize:Int, returnBoxedValue:Int = False)
+	If Not reflectionWrapper Then Throw "Reflection invocation is unavailable for this callable signature"
 	Local buf:Byte Ptr[bufferSize / (SizeOf Byte Ptr Null)]
 	Local bufPtr:Byte Ptr Ptr = Byte Ptr Ptr buf
 	
@@ -380,6 +389,7 @@ Function TypeTagForId$(id:TTypeId)
 		Case PointerTypeId   Return "*"
 		Case VarTypeId       Return "&"
 		Case FunctionTypeId  Return "("
+		Case ClosureTypeId   Return "!"
 		Case VoidTypeId      Return ""
 		? Win32
 		Case LParamTypeId    Return "X"
@@ -409,6 +419,15 @@ Function TypeTagForId$(id:TTypeId)
 			s = "(" + s + ")"
 			If id._retType Then s :+ TypeTagForId(id._retType)
 			Return s
+		Case id.ExtendsType(ClosureTypeId)
+			Local s:String
+			For Local t:TTypeId = EachIn id._argTypes
+				If s Then s :+ ", "
+				s :+ TypeTagForId(t)
+			Next
+			s = "!(" + s + ")"
+			If id._retType Then s :+ TypeTagForId(id._retType)
+			Return s
 		Case id.ExtendsType(ObjectTypeId)
 			Return ":" + id.Name()
 		Case id.IsStruct()
@@ -434,6 +453,7 @@ Function TypeIdForTag:TTypeId(ty$)
 		Case "*" Return PointerTypeId
 		Case "&" Return VarTypeId
 		Case "(" Return FunctionTypeId
+		Case "!" Return ClosureTypeId
 		Case ""  Return VoidTypeId
 		? Win32
 		Case "X" Return LParamTypeId
@@ -483,7 +503,9 @@ Function TypeIdForTag:TTypeId(ty$)
 				id = id.VarType()
 			EndIf
 			Return id
-		Case ty.StartsWith("(") ' function
+		Case ty.StartsWith("(") Or ty.StartsWith("!(") ' function or managed Closure
+			Local managedClosure:Int = ty.StartsWith("!(")
+			If managedClosure Then ty = ty[1..]
 			Local idx:Int
 			Local p:Int = 1
 			For idx = 1 Until ty.Length
@@ -496,14 +518,25 @@ Function TypeIdForTag:TTypeId(ty$)
 			If params.length > 0 Then
 				Local i:Int
 				Local b:Int
+				Local angleDepth:Int
 				Local q:String = params
 				Local args:TList = New TList
 				While i < q.length
 					Select q[i]
 						Case Asc(",")
-							args.AddLast q[b..i]
+							If angleDepth = 0 Then
+								args.AddLast q[b..i]
+								i :+ 1
+								b = i
+							Else
+								i :+ 1
+							End If
+						Case Asc("<")
+							angleDepth :+ 1
 							i :+ 1
-							b = i
+						Case Asc(">")
+							angleDepth :- 1
+							i :+ 1
 						Case Asc("[")
 							i :+ 1
 							While i < q.length And q[i] = Asc(",")
@@ -541,6 +574,7 @@ Function TypeIdForTag:TTypeId(ty$)
 			End If
 			If Not retType Then retType = ObjectTypeId
 			'retType._functionType = Null
+			If managedClosure Then Return retType.ClosureType(argTypes)
 			Return retType.FunctionType(argTypes)
 
 		Case ty.StartsWith("#") ' extern type/interface
@@ -875,6 +909,12 @@ bbdoc: Mock function/method base type ID
 End Rem
 Global FunctionTypeId:TTypeId = New TTypeId.Init("Null()", SizeOf Byte Ptr Null, , , False)
 
+Rem
+bbdoc: Mock managed Closure base type ID
+about: Exact Closure signatures are structural static types. Runtime Closure objects retain an erased representation, so object-only reflection cannot recover their signature.
+End Rem
+Global ClosureTypeId:TTypeId = TTypeId.CreateClosureBase()
+
 
 
 Rem
@@ -953,7 +993,11 @@ bbdoc: Type member constant
 EndRem
 Type TConstant Extends TMember
 	
+	?bmxng2
+	Private Internal
+	?Not bmxng2
 	Internal
+	?
 	
 	Method Init:TConstant(name$, typeId:TTypeId, modifiers:EModifiers, meta$, str$)
 		_name = name
@@ -1047,14 +1091,23 @@ bbdoc: Type member field
 End Rem
 Type TField Extends TMember
 	
+	?bmxng2
+	Private Internal
+	?Not bmxng2
 	Internal
+	?
 	
-	Method Init:TField(name:String, typeId:TTypeId, modifiers:EModifiers, meta:String, offset:Size_T)
+	Method Init:TField(name:String, typeId:TTypeId, modifiers:EModifiers, meta:String, offset:Size_T, invokeRef:Byte Ptr = Null)
 		_name = name
 		_typeId = typeId
 		_modifiers = modifiers
 		InitMeta(meta)
 		_offset = offset
+		_invokeRef = invokeRef
+		If typeId.ExtendsType(FunctionTypeId) Then
+			_invokeBufferSize = _GetBufferSize(typeId, FunctionTypeId)
+			_invokeArgTypes = [FunctionTypeId] + typeId._argTypes
+		End If
 		Return Self
 	End Method
 	
@@ -1065,6 +1118,13 @@ Type TField Extends TMember
 	End Rem	
 	Method IsReadOnly:Int()
 		Return _modifiers & EModifiers.IsReadOnly <> Null
+	End Method
+
+	Rem
+	bbdoc: Get the byte offset of the field within its declaring value.
+	End Rem
+	Method GetOffset:Size_T()
+		Return _offset
 	End Method
 	
 	Rem
@@ -2118,19 +2178,14 @@ Type TField Extends TMember
 	Method Invoke:Object(obj:Object, args:Object[] = Null)
 		If Not _typeId.ExtendsType(FunctionTypeId) Then Throw "Value type ID is not a function type"
 		If args.Length <> _typeId.ArgTypes().Length Then Throw "Function invoked with wrong number of arguments"
-		Throw "Not implemented yet"
-		'TODO
-'		Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T GetFieldPtr(obj, _offset))] + args, _invokeBufferSize)
-	End Method
-
-	Rem
-	bbdoc: Get field offset
-	End Rem
-	Method GetOffset:Size_T()
-		Return _offset
+		Local callableAddress:Size_T = (Size_T Ptr FieldPtr(obj))[0]
+		Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(callableAddress)] + args, _invokeBufferSize)
 	End Method
 	
 	Field _offset:Size_T
+	Field _invokeRef:Byte Ptr
+	Field _invokeBufferSize:Int
+	Field _invokeArgTypes:TTypeId[]
 	
 End Type
 
@@ -2141,14 +2196,23 @@ bbdoc: Type member global variable
 End Rem
 Type TGlobal Extends TMember
 	
+	?bmxng2
+	Private Internal
+	?Not bmxng2
 	Internal
+	?
 	
-	Method Init:TGlobal(name$, typeId:TTypeId, modifiers:EModifiers, meta$, ref:Byte Ptr)
+	Method Init:TGlobal(name$, typeId:TTypeId, modifiers:EModifiers, meta$, ref:Byte Ptr, invokeRef:Byte Ptr = Null)
 		_name = name
 		_typeId = typeId
 		_modifiers = modifiers
 		InitMeta(meta)
 		_ref = ref
+		_invokeRef = invokeRef
+		If typeId.ExtendsType(FunctionTypeId) Then
+			_invokeBufferSize = _GetBufferSize(typeId, FunctionTypeId)
+			_invokeArgTypes = [FunctionTypeId] + typeId._argTypes
+		End If
 		Return Self
 	End Method
 	
@@ -2313,12 +2377,14 @@ Type TGlobal Extends TMember
 	Method Invoke:Object(args:Object[] = Null)
 		If Not _typeId.ExtendsType(FunctionTypeId) Then Throw "Value type ID is not a function type"
 		If args.Length <> _typeId.ArgTypes().Length Then Throw "Function invoked with wrong number of arguments"
-		' TODO
-		Throw "Not implemented yet"
-'		Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(Size_T _ref)] + args, _invokeBufferSize)
+		Local callableAddress:Size_T = (Size_T Ptr _ref)[0]
+		Return _Invoke(_invokeRef, _typeId._retType, _invokeArgTypes, [String.FromSizeT(callableAddress)] + args, _invokeBufferSize)
 	End Method
 	
 	Field _ref:Byte Ptr
+	Field _invokeRef:Byte Ptr
+	Field _invokeBufferSize:Int
+	Field _invokeArgTypes:TTypeId[]
 	
 End Type
 
@@ -2329,7 +2395,11 @@ bbdoc: Type member function
 EndRem
 Type TFunction Extends TMember
 	
+	?bmxng2
+	Private Internal
+	?Not bmxng2
 	Internal
+	?
 	
 	Method Init:TFunction(name$, typeId:TTypeId, modifiers:EModifiers, meta$, ref:Byte Ptr, invokeRef:Byte Ptr)
 		_name = name
@@ -2411,7 +2481,11 @@ bbdoc: Type member method
 End Rem
 Type TMethod Extends TMember
 	
+	?bmxng2
+	Private Internal
+	?Not bmxng2
 	Internal
+	?
 	
 	Method Init:TMethod(name$, typeId:TTypeId, modifiers:EModifiers, meta$, ref:Byte Ptr, invokeRef:Byte Ptr, selfTypeId:TTypeId)
 		_name = name
@@ -2683,6 +2757,46 @@ Type TTypeId Extends TMember
 			'EndIf
 			If Not _functionTypes[argTypes.Length] Then _functionTypes[argTypes.Length] = New TList
 			_functionTypes[argTypes.Length].AddLast t
+			Return t
+		Finally
+			ReflectionMutex.Unlock
+		End Try
+	End Method
+
+	Rem
+	bbdoc: Get managed Closure type with this return type
+	End Rem
+	Method ClosureType:TTypeId(argTypes:TTypeId[] = Null)
+		Try
+			ReflectionMutex.Lock
+			If _closureTypes.Length <= argTypes.Length Then
+				_closureTypes = _closureTypes[..argTypes.Length + 1]
+			Else If _closureTypes[argTypes.Length] Then
+				#FindClosureType
+				For Local t:TTypeId = EachIn _closureTypes[argTypes.Length]
+					For Local a:Int = 0 Until argTypes.Length
+						If t._argTypes[a] <> argTypes[a] Then Continue FindClosureType
+					Next
+					Return t
+				Next
+			End If
+
+			Local argsStr:String
+			For Local arg:TTypeId = EachIn argTypes
+				If argsStr Then argsStr :+ ", "
+				argsStr :+ arg.Name()
+			Next
+			Local returnName:String
+			If Self <> VoidTypeId Then returnName = _name
+			Local t:TTypeId = New TTypeId.Init("Closure<" + returnName + "(" + argsStr + ")>", SizeOf Byte Ptr Null)
+			' Closure values are managed references, but every runtime object uses
+			' the erased BBClosure layout rather than a signature-specific class.
+			t._class = bbRefObjectClass
+			t._retType = Self
+			t._argTypes = argTypes
+			t._super = ClosureTypeId
+			If Not _closureTypes[argTypes.Length] Then _closureTypes[argTypes.Length] = New TList
+			_closureTypes[argTypes.Length].AddLast t
 			Return t
 		Finally
 			ReflectionMutex.Unlock
@@ -4265,6 +4379,71 @@ Type TTypeId Extends TMember
 			name = name.Trim()
 			If name.length = 0 Then
 				Return VoidTypeId
+			Else If name.length >= 10 And name[..8].ToLower() = "closure<" And name[name.length - 1] = Asc(">")
+				Local signature:String = name[8..name.length - 1].Trim()
+				Local openParen:Int = -1
+				Local angleDepth:Int
+				Local bracketDepth:Int
+				For Local index:Int = 0 Until signature.length
+					Select signature[index]
+						Case Asc("<") angleDepth :+ 1
+						Case Asc(">") angleDepth :- 1
+						Case Asc("[") bracketDepth :+ 1
+						Case Asc("]") bracketDepth :- 1
+						Case Asc("(")
+							If angleDepth = 0 And bracketDepth = 0 Then openParen = index; Exit
+					End Select
+				Next
+				If openParen < 0 Or signature[signature.length - 1] <> Asc(")") Then Return Null
+				Local returnName:String = signature[..openParen].Trim()
+				Local returnType:TTypeId = VoidTypeId
+				If returnName.length Then returnType = ForName_(returnName)
+				If Not returnType Then Return Null
+				Local argumentText:String = signature[openParen + 1..signature.length - 1]
+				Local argumentNames:String[]
+				Local start:Int
+				Local parenDepth:Int
+				angleDepth = 0
+				bracketDepth = 0
+				For Local index:Int = 0 To argumentText.length
+					Local separator:Int = index = argumentText.length
+					If Not separator Then
+						Select argumentText[index]
+							Case Asc("<") angleDepth :+ 1
+							Case Asc(">") angleDepth :- 1
+							Case Asc("(") parenDepth :+ 1
+							Case Asc(")") parenDepth :- 1
+							Case Asc("[") bracketDepth :+ 1
+							Case Asc("]") bracketDepth :- 1
+							Case Asc(",") separator = angleDepth = 0 And parenDepth = 0 And bracketDepth = 0
+						End Select
+					End If
+					If separator Then
+						Local argumentName:String = argumentText[start..index].Trim()
+						If argumentName.length Then argumentNames :+ [argumentName]
+						start = index + 1
+					End If
+				Next
+				Local argumentTypes:TTypeId[] = New TTypeId[argumentNames.length]
+				For Local argumentIndex:Int = 0 Until argumentNames.length
+					Local argumentName:String = argumentNames[argumentIndex]
+					angleDepth = 0; parenDepth = 0; bracketDepth = 0
+					For Local index:Int = 0 Until argumentName.length
+						Select argumentName[index]
+							Case Asc("<") angleDepth :+ 1
+							Case Asc(">") angleDepth :- 1
+							Case Asc("(") parenDepth :+ 1
+							Case Asc(")") parenDepth :- 1
+							Case Asc("[") bracketDepth :+ 1
+							Case Asc("]") bracketDepth :- 1
+							Case Asc(":")
+								If angleDepth = 0 And parenDepth = 0 And bracketDepth = 0 Then argumentName = argumentName[index + 1..].Trim(); Exit
+						End Select
+					Next
+					argumentTypes[argumentIndex] = ForName_(argumentName)
+					If Not argumentTypes[argumentIndex] Then Return Null
+				Next
+				Return returnType.ClosureType(argumentTypes)
 			Else If name[name.length - 1] = Asc("]")
 				Local dimensions:Int = 1
 				Local c:Int = name.length - 2
@@ -4445,8 +4624,20 @@ Type TTypeId Extends TMember
 		Return list
 	End Function
 	
+	?bmxng2
+	Private Internal
+	?Not bmxng2
 	Internal
-	
+	?
+
+	Function CreateClosureBase:TTypeId()
+		Local result:TTypeId = New TTypeId.Init("Closure", SizeOf Byte Ptr Null, , ObjectTypeId, False)
+		' Assign after Init so the erased Object class is not inserted into the
+		' nominal class map a second time.
+		result._class = bbRefObjectClass
+		Return result
+	End Function
+
 	Method Init:TTypeId(name$, size:Size_T, class:Byte Ptr = Null, supor:TTypeId = Null, isFinal:Int = True)
 		_name = name
 		_size = size
@@ -4459,7 +4650,7 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Method InitClass:TTypeId(class:Byte Ptr) ' BBClass*
-		Local name:String = String.FromCString(bbRefClassDebugScopeName(class))
+		Local name:String = bbRefClassDebugScopeName(class)
 		Local modifierString:String
 		Local meta:String
 		Local i% = name.Find("{")
@@ -4484,7 +4675,7 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Method InitInterface:TTypeId(ifc:Byte Ptr) ' BBInterface*
-		Local name:String = String.FromCString(bbInterfaceName(ifc))
+		Local name:String = bbInterfaceName(ifc)
 		Local modifierString:String
 		Local meta:String
 		Local i% = name.Find("{")
@@ -4511,7 +4702,7 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Method InitStruct:TTypeId(scope:Byte Ptr) ' BBDebugScope*
-		Local name:String = String.FromCString(bbDebugScopeName(scope))
+		Local name:String = bbDebugScopeName(scope)
 		Local modifierString:String
 		Local meta:String
 		Local i% = name.Find("{")
@@ -4541,7 +4732,7 @@ Type TTypeId Extends TMember
 	End Method
 	
 	Method InitEnum:TTypeId(scope:Byte Ptr) ' BBDebugScope*
-		Local name:String = String.FromCString(bbDebugScopeName(scope))
+		Local name:String = bbDebugScopeName(scope)
 		Local modifierString:String
 		Local meta:String
 		Local i% = name.Find("{")
@@ -4563,7 +4754,7 @@ Type TTypeId Extends TMember
 		While bbDebugDeclKind(p)
 			p = bbDebugDeclNext(p)
 		Wend
-		_underlyingType = TypeIdForTag(String.FromCString(bbDebugDeclType(p)))
+		_underlyingType = TypeIdForTag(bbDebugDeclType(p))
 		'TODO: if enums support more than just primitives, then
 		'      _underlyingType must be checked against Null (unsupported
 		'      tag variant found) 
@@ -4648,8 +4839,8 @@ Type TTypeId Extends TMember
 		End If
 		
 		While bbDebugDeclKind(p)
-			Local id$ = String.FromCString(bbDebugDeclName(p))
-			Local ty$ = String.FromCString(bbDebugDeclType(p))
+			Local id$ = bbDebugDeclName(p)
+			Local ty$ = bbDebugDeclType(p)
 			Local meta$
 			Local modifierString$
 			Local i% = ty.Find("{")
@@ -4669,10 +4860,10 @@ Type TTypeId Extends TMember
 					If typeId Then _consts :+ [New TConstant.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclConstValue(p))]
 				Case 3 ' field
 					Local typeId:TTypeId = TypeIdForTag(ty)
-					If typeId Then _fields :+ [New TField.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclFieldOffset(p))]
+					If typeId Then _fields :+ [New TField.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclFieldOffset(p), bbDebugDeclReflectionWrapper(p))]
 				Case 4 ' global
 					Local typeId:TTypeId = TypeIdForTag(ty)
-					If typeId Then _globals :+ [New TGlobal.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclVarAddress(p))]
+					If typeId Then _globals :+ [New TGlobal.Init(id, typeId, ModifiersForTag(modifierString), meta, bbDebugDeclVarAddress(p), bbDebugDeclReflectionWrapper(p))]
 				Case 6 ' method
 					Local typeId:TTypeId = TypeIdForTag(ty)
 					If typeId Then
@@ -4736,6 +4927,7 @@ Type TTypeId Extends TMember
 	Field _pointerType:TTypeId
 	Field _varType:TTypeId
 	Field _functionTypes:TList[]
+	Field _closureTypes:TList[]
 	Field _elementType:TTypeId
 	Field _dimensions:Int
 	Field _argTypes:TTypeId[]
@@ -4766,6 +4958,7 @@ Type TNameMapKey Final
 	End Method
 End Type
 
+Public
 Type TTypeHierarchyEnumerator
 	Field ReadOnly typeId:TTypeId
 	
