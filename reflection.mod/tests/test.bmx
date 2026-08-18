@@ -184,9 +184,11 @@ Type TFieldAccessTest Extends TTest
 
 		AssertEquals("Int", fId.TypeId().Name())
 		AssertEquals("String", fName.TypeId().Name())
-		AssertEquals("Float", fScore.TypeId().Name())
+			AssertEquals("Float", fScore.TypeId().Name())
+			AssertTrue(fName.GetOffset() > fId.GetOffset(), "field offsets should follow the reflected object layout")
+			AssertTrue(fScore.GetOffset() > fName.GetOffset(), "field offsets should distinguish successive fields")
 
-		' Metadata on field
+			' Metadata on field
 		AssertEquals(True, fId.HasMetaData("role"))
 		AssertEquals("id", fId.MetaData("role"))
 

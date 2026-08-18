@@ -1,0 +1,55 @@
+BRL.Functions contains small helpers for working with typed function values and Closures.
+
+The module is deliberately compact. It provides #Identity, #Constant, #Compose, and #Pipe as reusable building blocks for functional APIs such as BRL.Sequence, BRL.Arrays, BRL.Optional, and BRL.Result.
+
+## Non-capturing functions and Closures
+
+A non-capturing function value refers to a named or anonymous function which does not retain surrounding local state. A #Closure may capture local values and carries that captured environment with it.
+
+Both are strongly typed. Several helpers have overloads for both forms so callers can retain the cheaper non-capturing representation where possible.
+
+## Identity
+
+#Identity returns its argument unchanged:
+
+```blitzmax
+Local value:Int = Identity<Int>(42)
+```
+
+An explicit specialization can be used as a function value:
+
+```blitzmax
+Local identityFunction:Int(value:Int) = Identity<Int>
+```
+
+The explicit `<Int>` is important because a generic routine reference must identify the concrete function signature.
+
+## Constant functions
+
+#Constant creates a Closure which ignores its argument and always returns the captured value:
+
+```blitzmax
+Local alwaysReady:Closure<String(value:Int)> = Constant<String, Int>("ready")
+Print alwaysReady(123)
+```
+
+## Composition
+
+#Compose combines two functions. The inner function runs first, and its result becomes the outer function's argument:
+
+```blitzmax
+Local transform:Closure<String(value:Int)> = Compose<Int, Int, String>(FormatNumber, DoubleValue)
+Print transform(21)
+```
+
+Compose returns a Closure because it retains the two supplied function values. Construct composed functions once when they will be reused in repeated work.
+
+## Pipe
+
+#Pipe applies one function immediately. It can make a left-to-right sequence of transformations easier to read:
+
+```blitzmax
+Local doubled:Int = Pipe<Int, Int>(21, DoubleValue)
+```
+
+Exceptions raised by invoked functions propagate unchanged.

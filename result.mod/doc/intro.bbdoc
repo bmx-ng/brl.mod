@@ -1,0 +1,62 @@
+BRL.Result provides #Result<T, E>, a value type representing either a successful value or an error value.
+
+Result is useful when failure is expected and callers should decide how to handle it. It keeps the success type T and error type E visible in the API instead of using a sentinel value or throwing for every failure.
+
+## Three states
+
+A Result has three possible states:
+
+* #EResultState.Ok contains a value of T.
+* #EResultState.Err contains an error of E.
+* #EResultState.Uninitialized is the state of a default-initialized Result.
+
+Create initialized values with #Result.Ok and #Result.Err:
+
+```blitzmax
+Local success:Result<Int, String> = Result<Int, String>.Ok(42)
+Local failure:Result<Int, String> = Result<Int, String>.Err("not a number")
+```
+
+The explicit uninitialized state prevents a default Struct value from silently becoming a successful result. Operations which must choose Ok or Err throw #TResultStateException when the Result is uninitialized.
+
+## Inspecting a Result
+
+Use #Result.IsOk and #Result.IsErr before reading #Result.Value or #Result.Error. #Result.TryValue and #Result.TryError provide non-throwing extraction.
+
+```blitzmax
+Local value:Int
+If success.TryValue(value) Then Print value
+```
+
+Reading Value from Err throws #TResultValueException. Reading Error from Ok throws #TResultErrorException.
+
+## Building a success pipeline
+
+#Result.Map changes a successful value while preserving an error. #Result.AndThen chains an operation which itself returns a Result:
+
+```blitzmax
+Local doubleValue:Closure<Int(value:Int)> = Function:Int(value:Int)
+	Return value * 2
+End Function
+Local answer:Result<Int, String> = ParseNumber("21").Map<Int>(doubleValue)
+```
+
+The mapper is not invoked for Err. Exceptions raised inside a mapper propagate normally; Result does not convert exceptions into error values automatically.
+
+## Transforming or recovering errors
+
+#Result.MapError changes the error type while preserving Ok. #Result.OrElse can recover from Err by returning another Result, possibly with a different error type.
+
+Use #Result.Fold when both initialized branches should produce one common type:
+
+```blitzmax
+Local onValue:Closure<String(value:Int)> = Function:String(value:Int)
+	Return "answer=" + value
+End Function
+Local onError:Closure<String(error:String)> = Function:String(error:String)
+	Return "error: " + error
+End Function
+Local message:String = answer.Fold<String>(onValue, onError)
+```
+
+Result is a Struct. Assigning or returning it copies its state and both storage fields; managed values retain their normal reference identity.

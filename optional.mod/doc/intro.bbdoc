@@ -1,0 +1,66 @@
+BRL.Optional provides #Optional<T>, a small value type for representing a value which may be present, explicitly null, or undefined.
+
+An Optional makes absence part of a function's type instead of relying on a sentinel value. Unlike a nullable object reference, it can distinguish all three of these situations:
+
+* #EOptionalState.Value: a value is present. For managed types, that value may itself be Null.
+* #EOptionalState.NullValue: the producer explicitly supplied null.
+* #EOptionalState.Undefined: no value was supplied.
+
+## Creating Optional values
+
+Use #Optional.FromValue, #Optional.NullValue, or #Optional.Undefined to make the intended state explicit:
+
+```blitzmax
+Local score:Optional<Int> = Optional<Int>.FromValue(42)
+Local missing:Optional<Int> = Optional<Int>.Undefined()
+Local cleared:Optional<String> = Optional<String>.NullValue()
+```
+
+A default-initialized Optional is undefined. Optional is a Struct, so assigning or returning it copies its state and stored value. Managed values retain their normal reference identity.
+
+## Reading safely
+
+#Optional.Value returns the contained value, but throws #TOptionalValueException for null or undefined states. Use #Optional.HasValue, #Optional.ValueOr, or #Optional.TryGet when absence is expected:
+
+```blitzmax
+Local value:Int
+If score.TryGet(value) Then
+	Print "Score: " + value
+Else
+	Print "No score"
+End If
+```
+
+#Optional.State, #Optional.IsNull, and #Optional.IsUndefined preserve the distinction between the two absence states.
+
+## Transforming without branching
+
+#Optional.Map transforms only a present value. #Optional.FlatMap is useful when the next operation already returns an Optional. Existing null and undefined states pass through without invoking the function.
+
+```blitzmax
+Local doubleValue:Closure<Int(value:Int)> = Function:Int(value:Int)
+	Return value * 2
+End Function
+Local doubled:Optional<Int> = score.Map<Int>(doubleValue)
+```
+
+#Optional.Filter retains an accepted value and converts a rejected value to undefined. #Optional.ValueOrElse and the `OrIf...` methods create fallbacks lazily.
+
+## Handling all three states
+
+Use #Optional.Match to produce a value from every state, or #Optional.Visit for side effects:
+
+```blitzmax
+Local onValue:Closure<String(value:Int)> = Function:String(value:Int)
+	Return "score=" + value
+End Function
+Local onNull:Closure<String()> = Function:String()
+	Return "explicitly null"
+End Function
+Local onUndefined:Closure<String()> = Function:String()
+	Return "undefined"
+End Function
+Local text:String = score.Match<String>(onValue, onNull, onUndefined)
+```
+
+These methods are useful at API boundaries because adding a new unhandled state cannot silently fall through.
