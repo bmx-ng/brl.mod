@@ -145,7 +145,33 @@ void bbObjectReserved(){
 	bbExThrowCString( "Illegal call to reserved method" );
 }
 
+BBObject *bbManagedObjectAssert( BBObject *o ){
+#ifdef BMX_DEBUG
+	if( !o ) bbExThrowCString( "Compiler-generated managed Object contains C NULL" );
+#endif
+	return o;
+}
+
+BBString *bbManagedStringAssert( BBString *s ){
+#ifdef BMX_DEBUG
+	if( !s ) bbExThrowCString( "Compiler-generated managed String contains C NULL" );
+	if( s->clas!=(BBClass*)&bbStringClass ) bbExThrowCString( "Compiler-generated managed String contains an invalid sentinel or object kind" );
+#endif
+	return s;
+}
+
+BBArray *bbManagedArrayAssert( BBArray *a ){
+#ifdef BMX_DEBUG
+	if( !a ) bbExThrowCString( "Compiler-generated managed Array contains C NULL" );
+	if( a->clas!=(BBClass*)&bbArrayClass ) bbExThrowCString( "Compiler-generated managed Array contains an invalid sentinel or object kind" );
+#endif
+	return a;
+}
+
 BBObject *bbObjectStringcast( BBObject *o ){
+#ifdef BMX_DEBUG
+	o=bbManagedObjectAssert( o );
+#endif
 	if (o->clas == (BBClass *)&bbStringClass) {
 		return o;
 	} else {
@@ -154,10 +180,16 @@ BBObject *bbObjectStringcast( BBObject *o ){
 }
 
 int bbObjectIsString( BBObject *o ){
+#ifdef BMX_DEBUG
+	o=bbManagedObjectAssert( o );
+#endif
 	return o->clas == (BBClass *)&bbStringClass;
 }
 
 BBObject *bbObjectArraycast( BBObject *o ){
+#ifdef BMX_DEBUG
+	o=bbManagedObjectAssert( o );
+#endif
 	if (o->clas == (BBClass *)&bbArrayClass) {
 		return o;
 	} else {
@@ -166,10 +198,17 @@ BBObject *bbObjectArraycast( BBObject *o ){
 }
 
 int bbObjectIsArray( BBObject *o ){
+#ifdef BMX_DEBUG
+	o=bbManagedObjectAssert( o );
+#endif
 	return o->clas == (BBClass *)&bbArrayClass;
 }
 
 BBObject *bbObjectDowncast( BBObject *o,BBClass *t ){
+#ifdef BMX_DEBUG
+	o=bbManagedObjectAssert( o );
+	if( !t ) bbExThrowCString( "Compiler-generated managed Type cast contains a C NULL descriptor" );
+#endif
 	BBClass *p=o->clas;
 	while( p && p!=t ) p=p->super;
 	return p ? o : (t==(BBClass *)&bbStringClass) ? (BBObject *)&bbEmptyString : (t==(BBClass *)&bbArrayClass) ? (BBObject *)&bbEmptyArray : &bbNullObject;
@@ -269,6 +308,10 @@ BBInterface **bbObjectRegisteredInterfaces( int *count ){
 
 BBObject * bbInterfaceDowncast(BBOBJECT o, BBINTERFACE ifc) {
 	int i;
+#ifdef BMX_DEBUG
+	o=bbManagedObjectAssert( o );
+	if( !ifc ) bbExThrowCString( "Compiler-generated Interface cast contains a C NULL descriptor" );
+#endif
 
 	BBCLASS superclas = o->clas;
 
@@ -293,6 +336,10 @@ BBObject * bbInterfaceDowncast(BBOBJECT o, BBINTERFACE ifc) {
 
 void * bbObjectInterface(BBOBJECT o, BBINTERFACE ifc) {
 	int i;
+#ifdef BMX_DEBUG
+	o=bbManagedObjectAssert( o );
+	if( !ifc ) bbExThrowCString( "Compiler-generated Interface dispatch contains a C NULL descriptor" );
+#endif
 
 	BBCLASS superclas = o->clas;
 
@@ -368,6 +415,9 @@ BBDebugScope * bbObjectStructInfo( char * name ) {
 }
 
 BBObject * bbNullObjectTest( BBObject *o ) {
+#ifdef BMX_DEBUG
+	o=bbManagedObjectAssert( o );
+#endif
 	if (o == &bbNullObject) brl_blitz_NullObjectError();
 	return o;
 }

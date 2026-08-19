@@ -449,11 +449,18 @@ BBArray *bbArrayDimensions( BBArray *arr ){
 }
 
 void * bbArrayIndex( BBArray * arr, int offset, int index) {
+#ifdef BMX_DEBUG
+	arr=bbManagedArrayAssert( arr );
+#endif
 	if (index < 0 || index >= arr->scales[0]) brl_blitz_ArrayBoundsError();
 	return BBARRAYDATA(arr, offset);
 }
 
 BBArray *bbArrayCastFromObject( BBObject *o,const char *type ){
+#ifdef BMX_DEBUG
+	o=bbManagedObjectAssert( o );
+	if( !type ) bbExThrowCString( "Compiler-generated managed Array cast contains a C NULL type encoding" );
+#endif
 	BBArray *arr=(BBArray*)o;
 	if( arr==&bbEmptyArray ) return arr;
 	if( arr->clas!=(BBClass*)&bbArrayClass ) return &bbEmptyArray;
