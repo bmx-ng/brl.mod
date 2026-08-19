@@ -86,6 +86,15 @@ BBObject*	bbObjectArraycast( BBObject *o );
 int bbObjectIsString( BBObject *o );
 int bbObjectIsArray( BBObject *o );
 
+/*
+ * Objects and must never contain a C NULL pointer. Debug builds also use the family-specific
+ * checks to catch a raw cast which leaks an Object into a String or
+ * Array slot before the value is dereferenced.
+ */
+BBObject* bbManagedObjectAssert( BBObject *o );
+BBString* bbManagedStringAssert( BBString *s );
+BBArray* bbManagedArrayAssert( BBArray *a );
+
 void		bbObjectRegisterType( BBClass *clas );
 BBClass**	bbObjectRegisteredTypes( int *count );
 void bbObjectDumpInstanceCounts(char * buf, int size, int includeZeros);
