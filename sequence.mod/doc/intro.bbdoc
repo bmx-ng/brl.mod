@@ -1,6 +1,6 @@
 BRL.Sequence provides #Sequence<T>, a lazy, strongly typed pipeline over arrays and #IIterable<T> sources.
 
-A Sequence describes how values should be produced. Intermediate operations such as #Sequence.Map, #Sequence.Filter, #Sequence.Take, and #Sequence.Skip do not enumerate the source and do not create intermediate arrays. Enumeration begins only when values are requested by EachIn or a terminal operation.
+A Sequence describes how values should be produced. Intermediate operations such as #Sequence.Map, #Sequence.Filter, #Sequence.FlatMap, #Sequence.TakeWhile, and #Sequence.Concat do not enumerate the source and do not create intermediate arrays. Enumeration begins only when values are requested by EachIn or a terminal operation.
 
 ## Creating a Sequence
 
@@ -40,15 +40,42 @@ The lazy intermediate operations are:
 * #Sequence.Filter retains accepted values.
 * #Sequence.Take limits the number of produced values.
 * #Sequence.Skip omits initial values.
+* #Sequence.FlatMap maps each value to another Sequence and flattens those values.
+* #Sequence.Concat joins two sequences without materializing either one.
+* #Sequence.TakeWhile produces a prefix while its predicate succeeds.
+* #Sequence.SkipWhile omits a prefix while its predicate succeeds.
+* #Sequence.Append and #Sequence.Prepend add one lazily produced endpoint value.
 
 Terminal operations enumerate the pipeline:
 
 * #Sequence.Fold, #Sequence.Count, #Sequence.Any, and #Sequence.All summarize it.
 * #Sequence.FirstOrNone and #Sequence.LastOrNone return BRL.Optional values.
+* #Sequence.ElementAtOrNone returns a value by zero-based position.
+* #Sequence.SingleOrNone succeeds only when exactly one value is produced.
 * #Sequence.ForEach performs an action.
 * #Sequence.ToArray materializes all produced values.
 
 Normal exceptions from user functions propagate unchanged.
+
+## Flattening nested data
+
+#Sequence.FlatMap is useful when each input produces zero or more output values:
+
+```blitzmax
+Function Words:Sequence<String>(line:String)
+	Return Sequence<String>.FromArray(line.Split(" "))
+End Function
+
+Local words:String[] = Sequence<String>.FromArray(lines). ..
+	FlatMap<String>(Words). ..
+	ToArray()
+```
+
+Inner sequences are requested one at a time. Empty inner sequences contribute no values, and an early terminal operation does not request later inner sequences. Replayability and mutation visibility follow both the outer source and every inner Sequence returned by the mapper.
+
+`Concat` likewise waits until its first sequence is exhausted before requesting an iterator from the second sequence.
+
+`TakeWhile` consumes the first value which fails its predicate but does not produce it. `SkipWhile` produces that first failing value and stops testing the predicate thereafter.
 
 ## Repeated enumeration and one-shot sources
 
@@ -63,5 +90,7 @@ Iterator ownership also remains with the source. If a custom iterator owns an ex
 Operators accept both Closures and non-capturing functions. A Closure is convenient when a predicate or mapper needs surrounding local state, but it carries a captured environment and may prevent some compiler optimizations.
 
 For hot pipelines, prefer a named or non-capturing function when practical. The compiler can fuse supported non-capturing Sequence pipelines into direct loops. Capturing Closures remain correct and lazy, but may use the iterator implementation path and cost more dispatch per element.
+
+When a complete `FromArray` pipeline remains visible at a terminal call, the bcc2 compiler can fuse `TakeWhile` and `SkipWhile` with the original `Map`, `Filter`, `Take`, and `Skip` operators into one typed loop. A pipeline stored in a variable, returned from a function, or based on a general iterable retains the ordinary replayable iterator implementation. In particular, #Sequence.FlatMap obtains one inner iterator for every outer value whose mapped sequence is reached. That is an excellent fit for naturally nested or irregular data, but can be substantially more expensive than a hand-written nested loop when every inner sequence is tiny.
 
 For small fixed arrays or very tight game loops, BRL.Arrays or a direct loop may still be the better choice. Measure representative workloads rather than assuming a lazy pipeline is free.

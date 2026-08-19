@@ -109,6 +109,20 @@ Function FusionTakeCount:Int()
 	Return 1
 End Function
 
+Function FusionTakeWhilePredicate:Closure<Int(value:Int)>()
+	fusionEvaluationOrder :+ "takeWhile,"
+	Return Function:Int(value:Int)
+		Return value < 10
+	End Function
+End Function
+
+Function FusionSkipWhilePredicate:Closure<Int(value:Int)>()
+	fusionEvaluationOrder :+ "skipWhile,"
+	Return Function:Int(value:Int)
+		Return value < 0
+	End Function
+End Function
+
 Function FusionSeed:Int()
 	fusionEvaluationOrder :+ "seed,"
 	Return 3
@@ -146,6 +160,14 @@ End Function
 Function ThinFail:Int(value:Int)
 	If value = 2 Then Throw "thin failure"
 	Return value
+End Function
+
+Function ExpandPair:Sequence<Int>(value:Int)
+	Return Sequence<Int>.FromArray([value, value * 10])
+End Function
+
+Function LessThanFour:Int(value:Int)
+	Return value < 4
 End Function
 
 Type TSequenceTest Extends TTest
@@ -240,6 +262,47 @@ Type TSequenceTest Extends TTest
 		AssertEquals(4, Sequence<Int>.FromArray([1, 2, 3, 4]).Filter(terminalEven).LastOrNone().Value())
 	End Method
 
+	Method CompilerFusedTakeWhileAndSkipWhilePreservePrefixState() { test }
+		Local takeCalls:Int
+		Local belowThree:Closure<Int(value:Int)> = Function:Int(value:Int)
+			takeCalls :+ 1
+			Return value < 3
+		End Function
+		AssertEquals(2, Sequence<Int>.FromArray([1, 2, 3, 1]).TakeWhile(belowThree).Count())
+		AssertEquals(3, takeCalls, "TakeWhile must test and consume its first rejected value")
+
+		Local mappedCalls:Int
+		Local identity:Closure<Int(value:Int)> = Function:Int(value:Int)
+			mappedCalls :+ 1
+			Return value
+		End Function
+		AssertEquals(2, Sequence<Int>.FromArray([1, 2, 3, 1]).TakeWhile(belowThree).Map<Int>(identity).Count())
+		AssertEquals(2, mappedCalls, "a rejected TakeWhile value must not reach downstream stages")
+
+		Local skipCalls:Int
+		Local skipBelowThree:Closure<Int(value:Int)> = Function:Int(value:Int)
+			skipCalls :+ 1
+			Return value < 3
+		End Function
+		Local skipped:Int[] = Sequence<Int>.FromArray([1, 2, 3, 1]).SkipWhile(skipBelowThree).ToArray()
+		AssertEquals(2, skipped.Length)
+		AssertEquals(3, skipped[0])
+		AssertEquals(1, skipped[1])
+		AssertEquals(3, skipCalls, "SkipWhile must stop invoking its predicate after the first rejection")
+
+		Local upstreamCalls:Int
+		Local alwaysTrue:Closure<Int(value:Int)> = Function:Int(value:Int)
+			upstreamCalls :+ 1
+			Return True
+		End Function
+		AssertEquals(0, Sequence<Int>.FromArray([1, 2, 3]).Take(2).SkipWhile(alwaysTrue).Count())
+		AssertEquals(2, upstreamCalls, "an exhausted upstream Take must stop SkipWhile without another test")
+
+		skipCalls = 0
+		AssertEquals(1, Sequence<Int>.FromArray([1, 2, 3, 4]).SkipWhile(skipBelowThree).Take(1).Count())
+		AssertEquals(3, skipCalls, "a downstream Take must stop after SkipWhile releases its first value")
+	End Method
+
 	Method CompilerFusedFoldRetainsManagedValuesAndExceptions() { test }
 		Local join:Closure<String(total:String, value:String)> = Function:String(total:String, value:String)
 			Return total + value
@@ -261,9 +324,9 @@ Type TSequenceTest Extends TTest
 
 	Method CompilerFusionPreservesReceiverAndArgumentEvaluationOrder() { test }
 		fusionEvaluationOrder = ""
-		Local result:Int = Sequence<Int>.FromArray(FusionValues()).Filter(FusionPredicate()).Take(FusionTakeCount()).Fold<Int>(FusionSeed(), FusionFolder())
+		Local result:Int = Sequence<Int>.FromArray(FusionValues()).Filter(FusionPredicate()).Take(FusionTakeCount()).TakeWhile(FusionTakeWhilePredicate()).SkipWhile(FusionSkipWhilePredicate()).Fold<Int>(FusionSeed(), FusionFolder())
 		AssertEquals(5, result)
-		AssertEquals("source,predicate,take,seed,folder,", fusionEvaluationOrder)
+		AssertEquals("source,predicate,take,takeWhile,skipWhile,seed,folder,", fusionEvaluationOrder)
 	End Method
 
 	Method CompilerFusionRetainsMappedStructAndArrayTypes() { test }
@@ -338,6 +401,200 @@ Type TSequenceTest Extends TTest
 		Local skipped:String[] = pipeline.Skip(1).ToArray()
 		AssertEquals(1, skipped.Length)
 		AssertEquals("v4", skipped[0])
+	End Method
+
+	Method FlatMapIsLazyOrderedAndStopsInsideAnInnerSequence() { test }
+		Local outer:TCountingIterable<Int> = New TCountingIterable<Int>([1, 2, 3])
+		Local first:TCountingIterable<Int> = New TCountingIterable<Int>([10, 11])
+		Local second:TCountingIterable<Int> = New TCountingIterable<Int>([20, 21])
+		Local third:TCountingIterable<Int> = New TCountingIterable<Int>([30, 31])
+		Local mapperCalls:Int
+		Local mapper:Closure<Sequence<Int>(value:Int)> = Function:Sequence<Int>(value:Int)
+			mapperCalls :+ 1
+			Select value
+				Case 1 Return Sequence<Int>.FromIterable(first)
+				Case 2 Return Sequence<Int>.FromIterable(second)
+				Default Return Sequence<Int>.FromIterable(third)
+			End Select
+		End Function
+
+		Local pipeline:Sequence<Int> = Sequence<Int>.FromIterable(outer).FlatMap<Int>(mapper).Take(3)
+		AssertEquals(0, outer.iteratorRequests)
+		AssertEquals(0, mapperCalls)
+		Local values:Int[] = pipeline.ToArray()
+		AssertEquals(3, values.Length)
+		AssertEquals(10, values[0])
+		AssertEquals(11, values[1])
+		AssertEquals(20, values[2])
+		AssertEquals(2, mapperCalls, "FlatMap invokes its mapper once per requested outer value")
+		AssertEquals(2, outer.moveCalls, "FlatMap requests only the outer values needed by Take")
+		AssertEquals(1, first.iteratorRequests)
+		AssertEquals(1, second.iteratorRequests)
+		AssertEquals(0, third.iteratorRequests, "Later inner sequences must not be requested after Take terminates")
+		AssertEquals(3, first.moveCalls, "An exhausted inner sequence includes its terminating probe")
+		AssertEquals(1, second.moveCalls, "Take must not probe beyond its last requested inner value")
+	End Method
+
+	Method FlatMapSupportsNonCapturingFunctionsEmptyInnersAndReplay() { test }
+		Local values:Int[] = Sequence<Int>.FromArray([1, 2]).FlatMap<Int>(ExpandPair).ToArray()
+		AssertEquals(4, values.Length)
+		AssertEquals(1, values[0])
+		AssertEquals(10, values[1])
+		AssertEquals(2, values[2])
+		AssertEquals(20, values[3])
+
+		Local mapper:Closure<Sequence<String>(value:Int)> = Function:Sequence<String>(value:Int)
+			If value = 2 Then Return New Sequence<String>()
+			Return Sequence<String>.FromArray(["v" + value])
+		End Function
+		Local pipeline:Sequence<String> = Sequence<Int>.FromArray([1, 2, 3]).FlatMap<String>(mapper)
+		Local join:Closure<String(total:String, value:String)> = Function:String(total:String, value:String)
+			If total Then Return total + "," + value
+			Return value
+		End Function
+		AssertEquals("v1,v3", pipeline.Fold<String>("", join))
+		AssertEquals(2, pipeline.Count(), "A replayable FlatMap recipe requests fresh outer and inner iterators")
+	End Method
+
+	Method ConcatDefersSecondIteratorAndReplaysBothSources() { test }
+		Local first:TCountingIterable<Int> = New TCountingIterable<Int>([1, 2])
+		Local second:TCountingIterable<Int> = New TCountingIterable<Int>([3, 4])
+		Local combined:Sequence<Int> = Sequence<Int>.FromIterable(first).Concat(Sequence<Int>.FromIterable(second))
+		AssertEquals(0, first.iteratorRequests)
+		AssertEquals(0, second.iteratorRequests)
+		Local iterator:IIterator<Int> = combined.GetIterator()
+		AssertEquals(1, first.iteratorRequests)
+		AssertEquals(0, second.iteratorRequests)
+		AssertTrue(iterator.MoveNext())
+		AssertEquals(1, iterator.Current())
+		AssertTrue(iterator.MoveNext())
+		AssertEquals(2, iterator.Current())
+		AssertEquals(0, second.iteratorRequests)
+		AssertTrue(iterator.MoveNext())
+		AssertEquals(3, iterator.Current())
+		AssertEquals(1, second.iteratorRequests)
+		AssertEquals(4, combined.Count())
+		AssertEquals(2, first.iteratorRequests)
+		AssertEquals(2, second.iteratorRequests)
+	End Method
+
+	Method TakeWhileAndSkipWhileHavePrefixSemantics() { test }
+		Local takeSource:TCountingIterable<Int> = New TCountingIterable<Int>([1, 2, 4, 3])
+		Local takeCalls:Int
+		Local belowFour:Closure<Int(value:Int)> = Function:Int(value:Int)
+			takeCalls :+ 1
+			Return value < 4
+		End Function
+		Local taken:Int[] = Sequence<Int>.FromIterable(takeSource).TakeWhile(belowFour).ToArray()
+		AssertEquals(2, taken.Length)
+		AssertEquals(1, taken[0])
+		AssertEquals(2, taken[1])
+		AssertEquals(3, takeCalls)
+		AssertEquals(3, takeSource.moveCalls, "TakeWhile consumes its rejecting value but nothing after it")
+
+		Local skipSource:TCountingIterable<Int> = New TCountingIterable<Int>([1, 2, 4, 3])
+		Local skipCalls:Int
+		Local skipBelowFour:Closure<Int(value:Int)> = Function:Int(value:Int)
+			skipCalls :+ 1
+			Return value < 4
+		End Function
+		Local skipped:Int[] = Sequence<Int>.FromIterable(skipSource).SkipWhile(skipBelowFour).ToArray()
+		AssertEquals(2, skipped.Length)
+		AssertEquals(4, skipped[0])
+		AssertEquals(3, skipped[1])
+		AssertEquals(3, skipCalls, "SkipWhile stops invoking its predicate after the first rejection")
+		AssertEquals(4, Sequence<Int>.FromArray([1, 2, 4, 3]).SkipWhile(LessThanFour).FirstOrNone().Value())
+		AssertEquals(2, Sequence<Int>.FromArray([1, 2, 4, 3]).TakeWhile(LessThanFour).Count())
+	End Method
+
+	Method AppendAndPrependPreserveOrderAndManagedNullValues() { test }
+		Local values:Int[] = Sequence<Int>.FromArray([2, 3]).Prepend(1).Append(4).ToArray()
+		AssertEquals(4, values.Length)
+		For Local index:Int = 0 Until values.Length
+			AssertEquals(index + 1, values[index])
+		Next
+		AssertEquals(9, New Sequence<Int>().Append(9).SingleOrNone().Value())
+		AssertEquals(8, New Sequence<Int>().Prepend(8).SingleOrNone().Value())
+
+		Local marker:TSequenceMarker
+		Local appended:Optional<TSequenceMarker> = New Sequence<TSequenceMarker>().Append(marker).SingleOrNone()
+		AssertTrue(appended.HasValue())
+		AssertNull(appended.Value())
+	End Method
+
+	Method ElementAtAndSingleStopAsSoonAsTheirAnswerIsKnown() { test }
+		Local negative:TCountingIterable<Int> = New TCountingIterable<Int>([1, 2])
+		AssertTrue(Sequence<Int>.FromIterable(negative).ElementAtOrNone(-1).IsUndefined())
+		AssertEquals(0, negative.iteratorRequests)
+
+		Local found:TCountingIterable<Int> = New TCountingIterable<Int>([4, 5, 6])
+		AssertEquals(5, Sequence<Int>.FromIterable(found).ElementAtOrNone(1).Value())
+		AssertEquals(2, found.moveCalls)
+		Local missing:TCountingIterable<Int> = New TCountingIterable<Int>([4, 5])
+		AssertTrue(Sequence<Int>.FromIterable(missing).ElementAtOrNone(3).IsUndefined())
+		AssertEquals(3, missing.moveCalls)
+
+		AssertTrue(New Sequence<Int>().SingleOrNone().IsUndefined())
+		AssertEquals(7, Sequence<Int>.FromArray([7]).SingleOrNone().Value())
+		Local multiple:TCountingIterable<Int> = New TCountingIterable<Int>([7, 8, 9])
+		AssertTrue(Sequence<Int>.FromIterable(multiple).SingleOrNone().IsUndefined())
+		AssertEquals(2, multiple.moveCalls, "SingleOrNone stops after proving that a second value exists")
+	End Method
+
+	Method SecondTierOperatorsPreserveComplexGenericTypes() { test }
+		Local expandArray:Closure<Sequence<Int>(value:Int[])> = Function:Sequence<Int>(value:Int[])
+			Return Sequence<Int>.FromArray(value)
+		End Function
+		Local flattened:Int[] = Sequence<Int[]>.FromArray([[1, 2], New Int[0], [3]]).FlatMap<Int>(expandArray).ToArray()
+		AssertEquals(3, flattened.Length)
+		AssertEquals(3, flattened[2])
+
+		Local first:SSequencePoint
+		first.x = 4
+		Local second:SSequencePoint
+		second.x = 5
+		Local points:SSequencePoint[] = Sequence<SSequencePoint>.FromArray([first]).Concat(Sequence<SSequencePoint>.FromArray([second])).ToArray()
+		AssertEquals(4, points[0].x)
+		AssertEquals(5, points[1].x)
+
+		Local interfaceValue:ISequenceMarker = New TSequenceInterfaceMarker(23)
+		AssertEquals(23, New Sequence<ISequenceMarker>().Append(interfaceValue).SingleOrNone().Value().Value())
+		Local nested:Optional<Int> = Optional<Int>.FromValue(29)
+		AssertEquals(29, New Sequence<Optional<Int>>().Prepend(nested).ElementAtOrNone(0).Value().Value())
+	End Method
+
+	Method SecondTierClosureExceptionsPropagateUnchanged() { test }
+		Local flattenFailure:Closure<Sequence<Int>(value:Int)> = Function:Sequence<Int>(value:Int)
+			If value = 2 Then Throw "flat-map failure"
+			Return Sequence<Int>.FromArray([value])
+		End Function
+		Local caught:String
+		Try
+			Sequence<Int>.FromArray([1, 2, 3]).FlatMap<Int>(flattenFailure).Count()
+		Catch message:String
+			caught = message
+		End Try
+		AssertEquals("flat-map failure", caught)
+
+		Local predicateFailure:Closure<Int(value:Int)> = Function:Int(value:Int)
+			If value = 2 Then Throw "prefix failure"
+			Return True
+		End Function
+		caught = ""
+		Try
+			Sequence<Int>.FromArray([1, 2, 3]).TakeWhile(predicateFailure).Count()
+		Catch message:String
+			caught = message
+		End Try
+		AssertEquals("prefix failure", caught)
+
+		caught = ""
+		Try
+			Sequence<Int>.FromArray([1, 2, 3]).SkipWhile(predicateFailure).Count()
+		Catch message:String
+			caught = message
+		End Try
+		AssertEquals("prefix failure", caught)
 	End Method
 
 	Method TakeZeroAndNegativeDoNotAdvanceSource() { test }
