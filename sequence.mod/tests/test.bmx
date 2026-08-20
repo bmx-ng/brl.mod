@@ -71,6 +71,49 @@ Type TCountingIterator<T> Implements IIterator<T>
 	End Method
 End Type
 
+Type TCloseableCountingIterable<T> Implements IIterable<T>
+	Field values:T[]
+	Field iteratorRequests:Int
+	Field moveCalls:Int
+	Field closeCalls:Int
+
+	Method New(values:T[])
+		Self.values = values
+	End Method
+
+	Method GetIterator:IIterator<T>()
+		iteratorRequests :+ 1
+		Return New TCloseableCountingIterator<T>(Self)
+	End Method
+End Type
+
+Type TCloseableCountingIterator<T> Implements ICloseableIterator<T>
+	Field owner:TCloseableCountingIterable<T>
+	Field index:Int = -1
+	Field closed:Int
+
+	Method New(owner:TCloseableCountingIterable<T>)
+		Self.owner = owner
+	End Method
+
+	Method Current:T()
+		Return owner.values[index]
+	End Method
+
+	Method MoveNext:Int()
+		If closed Then Return False
+		owner.moveCalls :+ 1
+		index :+ 1
+		Return index < owner.values.Length
+	End Method
+
+	Method Close() Override
+		If closed Then Return
+		closed = True
+		owner.closeCalls :+ 1
+	End Method
+End Type
+
 Type TOneShotIterable<T> Implements IIterable<T>
 	Field iterator:IIterator<T>
 	Field iteratorRequests:Int
@@ -357,6 +400,70 @@ Type TSequenceTest Extends TTest
 			total :+ value
 		Next
 		AssertEquals(6, total)
+	End Method
+
+	Method CloseableSourcesAreReleasedByTerminalsAndEachIn() { test }
+		Local counted:TCloseableCountingIterable<Int> = New TCloseableCountingIterable<Int>([1, 2, 3])
+		AssertEquals(3, Sequence<Int>.FromIterable(counted).Count())
+		AssertEquals(1, counted.closeCalls)
+
+		Local early:TCloseableCountingIterable<Int> = New TCloseableCountingIterable<Int>([1, 2, 3])
+		AssertTrue(Sequence<Int>.FromIterable(early).Any())
+		AssertEquals(1, early.moveCalls)
+		AssertEquals(1, early.closeCalls)
+
+		Local eachSource:TCloseableCountingIterable<Int> = New TCloseableCountingIterable<Int>([1, 2, 3])
+		For Local value:Int = EachIn Sequence<Int>.FromIterable(eachSource).Map<Int>(ThinTriple)
+			AssertEquals(3, value)
+			Exit
+		Next
+		AssertEquals(1, eachSource.closeCalls)
+	End Method
+
+	Method PipelineCloseIsExactlyOnceAndPropagatesThroughEveryStage() { test }
+		Local source:TCloseableCountingIterable<Int> = New TCloseableCountingIterable<Int>([1, 2, 3, 4])
+		Local iterator:IIterator<Int> = Sequence<Int>.FromIterable(source).Filter(ThinEven).Map<Int>(ThinTriple).Skip(0).TakeWhile(ThinBelowTen).Append(12).Prepend(0).GetIterator()
+		AssertTrue(iterator.MoveNext())
+		ICloseable(iterator).Close()
+		ICloseable(iterator).Close()
+		AssertFalse(iterator.MoveNext())
+		AssertEquals(1, source.closeCalls)
+	End Method
+
+	Method FlatMapAndConcatCloseCompletedAndActiveChildren() { test }
+		Local outer:TCloseableCountingIterable<Int> = New TCloseableCountingIterable<Int>([1, 2])
+		Local firstInner:TCloseableCountingIterable<Int> = New TCloseableCountingIterable<Int>([10])
+		Local secondInner:TCloseableCountingIterable<Int> = New TCloseableCountingIterable<Int>([20, 21])
+		Local expand:Closure<Sequence<Int>(value:Int)> = Function:Sequence<Int>(value:Int)
+			If value = 1 Then Return Sequence<Int>.FromIterable(firstInner)
+			Return Sequence<Int>.FromIterable(secondInner)
+		End Function
+		AssertEquals(2, Sequence<Int>.FromIterable(outer).FlatMap<Int>(expand).Take(2).Count())
+		AssertEquals(1, firstInner.closeCalls, "FlatMap closes an exhausted inner iterator before replacing it")
+		AssertEquals(1, secondInner.closeCalls, "terminal cleanup closes the active inner iterator")
+		AssertEquals(1, outer.closeCalls)
+
+		Local first:TCloseableCountingIterable<Int> = New TCloseableCountingIterable<Int>([1])
+		Local second:TCloseableCountingIterable<Int> = New TCloseableCountingIterable<Int>([2, 3])
+		AssertEquals(2, Sequence<Int>.FromIterable(first).Concat(Sequence<Int>.FromIterable(second)).FirstOrNone(ThinEven).Value())
+		AssertEquals(1, first.closeCalls, "Concat closes its exhausted first iterator before acquiring the second")
+		AssertEquals(1, second.closeCalls, "early terminal cleanup closes the active second iterator")
+	End Method
+
+	Method ClosureFailureStillClosesThePipelineAndPropagates() { test }
+		Local source:TCloseableCountingIterable<Int> = New TCloseableCountingIterable<Int>([1, 2, 3])
+		Local fail:Closure<Int(value:Int)> = Function:Int(value:Int)
+			If value = 2 Then Throw "closeable sequence failure"
+			Return value
+		End Function
+		Local caught:String
+		Try
+			Sequence<Int>.FromIterable(source).Map<Int>(fail).Count()
+		Catch message:String
+			caught = message
+		End Try
+		AssertEquals("closeable sequence failure", caught)
+		AssertEquals(1, source.closeCalls)
 	End Method
 
 	Method EmptySingleAndMultipleMaterialize() { test }
