@@ -767,7 +767,7 @@ Public
 End Type
 
 
-Type TPathIterator Implements IIterator<TPath>, ICloseable
+Type TPathIterator Implements ICloseableIterator<TPath>
 
 	Field _inner:IIterator<String>
 	Field _closeable:ICloseable
@@ -783,11 +783,11 @@ Type TPathIterator Implements IIterator<TPath>, ICloseable
 		Return it
 	End Function
 
-	Method Current:TPath()
+	Method Current:TPath() Override
 		Return _current
 	End Method
 
-	Method MoveNext:Int()
+	Method MoveNext:Int() Override
 		_current = Null
 		If Not _inner Then
 			Return False
@@ -808,7 +808,7 @@ Type TPathIterator Implements IIterator<TPath>, ICloseable
 		Return True
 	End Method
 
-	Method Close()
+	Method Close() Override
 		If _closed Then
 			Return
 		End If
@@ -938,7 +938,7 @@ The iterator holds an open directory handle while iterating. It should be closed
 when no longer needed, either explicitly via #Close or automatically using a
 #Using block.
 End Rem
-Type TPathDirIterator Implements IIterator<TPath>, ICloseable
+Type TPathDirIterator Implements ICloseableIterator<TPath>
 
 	Field _base:TPath
 	Field _dir:Byte Ptr
@@ -965,11 +965,11 @@ Type TPathDirIterator Implements IIterator<TPath>, ICloseable
 		Return it
 	End Function
 
-	Method Current:TPath()
+	Method Current:TPath() Override
 		Return _current
 	End Method
 
-	Method MoveNext:Int()
+	Method MoveNext:Int() Override
 		_current = Null
 		If _closed Or Not _dir Then
 			Return False
@@ -992,7 +992,7 @@ Type TPathDirIterator Implements IIterator<TPath>, ICloseable
 		Wend
 	End Method
 
-	Method Close()
+	Method Close() Override
 		If _closed Then
 			Return
 		End If

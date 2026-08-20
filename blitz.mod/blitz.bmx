@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.29"
+ModuleInfo "Version: 1.30"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 '
+ModuleInfo "History: 1.30"
+ModuleInfo "History: Added ICloseableIterator interface"
 ModuleInfo "History: 1.29"
 ModuleInfo "History: Adds EndWithCode function"
 ModuleInfo "History: 1.28"

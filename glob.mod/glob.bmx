@@ -1051,7 +1051,7 @@ Type TGlobFrame
 	Field globZeroDone:Int
 End Type
 
-Type TGlobOneIter Implements IIterator<String>, ICloseable
+Type TGlobOneIter Implements ICloseableIterator<String>
 
 	Field flags:EGlobOptions
 	Field segs:String[]
@@ -1356,7 +1356,7 @@ Public
 Rem
 bbdoc: An iterator that yields all paths matching the given glob pattern.
 End Rem
-Type TGlobIter Implements IIterator<String>, ICloseable
+Type TGlobIter Implements ICloseableIterator<String>
 	Field flags:EGlobOptions
 	Field baseDir:String
 	Field pats:String[]
