@@ -25,16 +25,32 @@ Module BRL.Sequence
 
 ?bmxng2
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "Author: Bruce A Henderson and contributors"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2026 Bruce A Henderson and contributors"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Added automatic closeable-iterator cleanup throughout lazy pipelines and terminal operations."
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Added FlatMap, Concat, TakeWhile, SkipWhile, Append, Prepend, predicate overloads, additional Optional terminals, and expanded compiler pipeline fusion."
 ModuleInfo "History: 1.00 Initial Release"
 
 Import BRL.Optional
+
+Private
+
+Function CloseSequenceIterator(iterator:Object)
+	If Not iterator Then Return
+	Local closeable:ICloseable = ICloseable(iterator)
+	If Not closeable Then Return
+	Try
+		closeable.Close()
+	Catch ignored:Object
+	End Try
+End Function
+
+Public
 
 Rem
 bbdoc: A lazy, typed sequence of values.
@@ -46,7 +62,8 @@ Sequences retain their source rather than copying it. Changes made to an array
 or collection before a later enumeration are therefore visible. Replayability
 ultimately follows the source's #IIterable contract: a source that returns the
 same one-shot iterator on every call remains one-shot and is not buffered by
-Sequence.
+Sequence. An iterator which implements #ICloseable is closed when enumeration
+finishes, stops early, returns from its enclosing function, or fails.
 End Rem
 Type Sequence<T> Implements IIterable<T>
 	Private
@@ -263,9 +280,13 @@ Type Sequence<T> Implements IIterable<T>
 		Local accumulator:U = seed
 		Local iterable:IIterable<T> = Self
 		Local iterator:IIterator<T> = iterable.GetIterator()
-		While iterator.MoveNext()
-			accumulator = folder(accumulator, iterator.Current())
-		Wend
+		Try
+			While iterator.MoveNext()
+				accumulator = folder(accumulator, iterator.Current())
+			Wend
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 		Return accumulator
 	End Method
 
@@ -279,9 +300,13 @@ Type Sequence<T> Implements IIterable<T>
 		Local accumulator:U = seed
 		Local iterable:IIterable<T> = Self
 		Local iterator:IIterator<T> = iterable.GetIterator()
-		While iterator.MoveNext()
-			accumulator = folder(accumulator, iterator.Current())
-		Wend
+		Try
+			While iterator.MoveNext()
+				accumulator = folder(accumulator, iterator.Current())
+			Wend
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 		Return accumulator
 	End Method
 
@@ -292,9 +317,13 @@ Type Sequence<T> Implements IIterable<T>
 	Method Count:Int()
 		Local count:Int
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			count :+ 1
-		Wend
+		Try
+			While iterator.MoveNext()
+				count :+ 1
+			Wend
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 		Return count
 	End Method
 
@@ -306,9 +335,13 @@ Type Sequence<T> Implements IIterable<T>
 	Method Count:Int(predicate:Closure<Int(value:T)>)
 		Local count:Int
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			If predicate(iterator.Current()) Then count :+ 1
-		Wend
+		Try
+			While iterator.MoveNext()
+				If predicate(iterator.Current()) Then count :+ 1
+			Wend
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 		Return count
 	End Method
 
@@ -320,9 +353,13 @@ Type Sequence<T> Implements IIterable<T>
 	Method Count:Int(predicate:Int(value:T))
 		Local count:Int
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			If predicate(iterator.Current()) Then count :+ 1
-		Wend
+		Try
+			While iterator.MoveNext()
+				If predicate(iterator.Current()) Then count :+ 1
+			Wend
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 		Return count
 	End Method
 
@@ -331,7 +368,12 @@ Type Sequence<T> Implements IIterable<T>
 	returns: True after finding the first value; otherwise False.
 	End Rem
 	Method Any:Int()
-		Return GetIterator().MoveNext()
+		Local iterator:IIterator<T> = GetIterator()
+		Try
+			Return iterator.MoveNext()
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 	End Method
 
 	Rem
@@ -341,10 +383,14 @@ Type Sequence<T> Implements IIterable<T>
 	End Rem
 	Method Any:Int(predicate:Closure<Int(value:T)>)
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			If predicate(iterator.Current()) Then Return True
-		Wend
-		Return False
+		Try
+			While iterator.MoveNext()
+				If predicate(iterator.Current()) Then Return True
+			Wend
+			Return False
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 	End Method
 
 	Rem
@@ -354,10 +400,14 @@ Type Sequence<T> Implements IIterable<T>
 	End Rem
 	Method Any:Int(predicate:Int(value:T))
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			If predicate(iterator.Current()) Then Return True
-		Wend
-		Return False
+		Try
+			While iterator.MoveNext()
+				If predicate(iterator.Current()) Then Return True
+			Wend
+			Return False
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 	End Method
 
 	Rem
@@ -368,10 +418,14 @@ Type Sequence<T> Implements IIterable<T>
 	End Rem
 	Method All:Int(predicate:Closure<Int(value:T)>)
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			If Not predicate(iterator.Current()) Then Return False
-		Wend
-		Return True
+		Try
+			While iterator.MoveNext()
+				If Not predicate(iterator.Current()) Then Return False
+			Wend
+			Return True
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 	End Method
 
 	Rem
@@ -381,10 +435,14 @@ Type Sequence<T> Implements IIterable<T>
 	End Rem
 	Method All:Int(predicate:Int(value:T))
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			If Not predicate(iterator.Current()) Then Return False
-		Wend
-		Return True
+		Try
+			While iterator.MoveNext()
+				If Not predicate(iterator.Current()) Then Return False
+			Wend
+			Return True
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 	End Method
 
 	Rem
@@ -395,8 +453,12 @@ Type Sequence<T> Implements IIterable<T>
 	End Rem
 	Method FirstOrNone:Optional<T>()
 		Local iterator:IIterator<T> = GetIterator()
-		If iterator.MoveNext() Then Return Optional<T>.FromValue(iterator.Current())
-		Return Optional<T>.Undefined()
+		Try
+			If iterator.MoveNext() Then Return Optional<T>.FromValue(iterator.Current())
+			Return Optional<T>.Undefined()
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 	End Method
 
 	Rem
@@ -407,11 +469,15 @@ Type Sequence<T> Implements IIterable<T>
 	End Rem
 	Method FirstOrNone:Optional<T>(predicate:Closure<Int(value:T)>)
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			Local value:T = iterator.Current()
-			If predicate(value) Then Return Optional<T>.FromValue(value)
-		Wend
-		Return Optional<T>.Undefined()
+		Try
+			While iterator.MoveNext()
+				Local value:T = iterator.Current()
+				If predicate(value) Then Return Optional<T>.FromValue(value)
+			Wend
+			Return Optional<T>.Undefined()
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 	End Method
 
 	Rem
@@ -422,11 +488,15 @@ Type Sequence<T> Implements IIterable<T>
 	End Rem
 	Method FirstOrNone:Optional<T>(predicate:Int(value:T))
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			Local value:T = iterator.Current()
-			If predicate(value) Then Return Optional<T>.FromValue(value)
-		Wend
-		Return Optional<T>.Undefined()
+		Try
+			While iterator.MoveNext()
+				Local value:T = iterator.Current()
+				If predicate(value) Then Return Optional<T>.FromValue(value)
+			Wend
+			Return Optional<T>.Undefined()
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 	End Method
 
 	Rem
@@ -438,9 +508,13 @@ Type Sequence<T> Implements IIterable<T>
 	Method LastOrNone:Optional<T>()
 		Local result:Optional<T> = Optional<T>.Undefined()
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			result = Optional<T>.FromValue(iterator.Current())
-		Wend
+		Try
+			While iterator.MoveNext()
+				result = Optional<T>.FromValue(iterator.Current())
+			Wend
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 		Return result
 	End Method
 
@@ -454,11 +528,15 @@ Type Sequence<T> Implements IIterable<T>
 	Method ElementAtOrNone:Optional<T>(index:Int)
 		If index < 0 Then Return Optional<T>.Undefined()
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			If index = 0 Then Return Optional<T>.FromValue(iterator.Current())
-			index :- 1
-		Wend
-		Return Optional<T>.Undefined()
+		Try
+			While iterator.MoveNext()
+				If index = 0 Then Return Optional<T>.FromValue(iterator.Current())
+				index :- 1
+			Wend
+			Return Optional<T>.Undefined()
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 	End Method
 
 	Rem
@@ -468,10 +546,14 @@ Type Sequence<T> Implements IIterable<T>
 	End Rem
 	Method SingleOrNone:Optional<T>()
 		Local iterator:IIterator<T> = GetIterator()
-		If Not iterator.MoveNext() Then Return Optional<T>.Undefined()
-		Local value:T = iterator.Current()
-		If iterator.MoveNext() Then Return Optional<T>.Undefined()
-		Return Optional<T>.FromValue(value)
+		Try
+			If Not iterator.MoveNext() Then Return Optional<T>.Undefined()
+			Local value:T = iterator.Current()
+			If iterator.MoveNext() Then Return Optional<T>.Undefined()
+			Return Optional<T>.FromValue(value)
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 	End Method
 
 	Rem
@@ -480,9 +562,13 @@ Type Sequence<T> Implements IIterable<T>
 	End Rem
 	Method ForEach(action:Closure<(value:T)>)
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			action(iterator.Current())
-		Wend
+		Try
+			While iterator.MoveNext()
+				action(iterator.Current())
+			Wend
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 	End Method
 
 	Rem
@@ -491,9 +577,13 @@ Type Sequence<T> Implements IIterable<T>
 	End Rem
 	Method ForEach(action:Void(value:T))
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			action(iterator.Current())
-		Wend
+		Try
+			While iterator.MoveNext()
+				action(iterator.Current())
+			Wend
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 	End Method
 
 	Rem
@@ -504,13 +594,17 @@ Type Sequence<T> Implements IIterable<T>
 		Local values:T[] = New T[16]
 		Local count:Int
 		Local iterator:IIterator<T> = GetIterator()
-		While iterator.MoveNext()
-			If count = values.Length Then
-				values = values[..values.Length * 2]
-			End If
-			values[count] = iterator.Current()
-			count :+ 1
-		Wend
+		Try
+			While iterator.MoveNext()
+				If count = values.Length Then
+					values = values[..values.Length * 2]
+				End If
+				values[count] = iterator.Current()
+				count :+ 1
+			Wend
+		Finally
+			CloseSequenceIterator(iterator)
+		End Try
 		Return values[..count]
 	End Method
 End Type
@@ -584,11 +678,12 @@ End Type
 Rem
 bbdoc: Closure-backed mapping iterator used internally by #TMapSequence.
 End Rem
-Type TMapSequenceIterator<T, U> Implements IIterator<U>
+Type TMapSequenceIterator<T, U> Implements ICloseableIterator<U>
 	Private
 	Field _source:IIterator<T>
 	Field _mapper:Closure<U(value:T)>
 	Field _current:U
+	Field _closed:Int
 
 	Public
 	Rem
@@ -614,9 +709,16 @@ Type TMapSequenceIterator<T, U> Implements IIterator<U>
 	returns: True when a mapped value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		If Not _source.MoveNext() Then Return False
 		_current = _mapper(_source.Current())
 		Return True
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -651,11 +753,12 @@ End Type
 Rem
 bbdoc: Non-capturing function mapping iterator used internally by #TFunctionMapSequence.
 End Rem
-Type TFunctionMapSequenceIterator<T, U> Implements IIterator<U>
+Type TFunctionMapSequenceIterator<T, U> Implements ICloseableIterator<U>
 	Private
 	Field _source:IIterator<T>
 	Field _mapper:U(value:T)
 	Field _current:U
+	Field _closed:Int
 
 	Public
 	Rem
@@ -681,9 +784,16 @@ Type TFunctionMapSequenceIterator<T, U> Implements IIterator<U>
 	returns: True when a mapped value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		If Not _source.MoveNext() Then Return False
 		_current = _mapper(_source.Current())
 		Return True
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -718,11 +828,12 @@ End Type
 Rem
 bbdoc: Closure-backed filtering iterator used internally by #TFilterSequence.
 End Rem
-Type TFilterSequenceIterator<T> Implements IIterator<T>
+Type TFilterSequenceIterator<T> Implements ICloseableIterator<T>
 	Private
 	Field _source:IIterator<T>
 	Field _predicate:Closure<Int(value:T)>
 	Field _current:T
+	Field _closed:Int
 
 	Public
 	Rem
@@ -748,6 +859,7 @@ Type TFilterSequenceIterator<T> Implements IIterator<T>
 	returns: True when an accepted value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		While _source.MoveNext()
 			Local value:T = _source.Current()
 			If _predicate(value) Then
@@ -756,6 +868,12 @@ Type TFilterSequenceIterator<T> Implements IIterator<T>
 			End If
 		Wend
 		Return False
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -790,11 +908,12 @@ End Type
 Rem
 bbdoc: Non-capturing function filtering iterator used internally by #TFunctionFilterSequence.
 End Rem
-Type TFunctionFilterSequenceIterator<T> Implements IIterator<T>
+Type TFunctionFilterSequenceIterator<T> Implements ICloseableIterator<T>
 	Private
 	Field _source:IIterator<T>
 	Field _predicate:Int(value:T)
 	Field _current:T
+	Field _closed:Int
 
 	Public
 	Rem
@@ -820,6 +939,7 @@ Type TFunctionFilterSequenceIterator<T> Implements IIterator<T>
 	returns: True when an accepted value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		While _source.MoveNext()
 			Local value:T = _source.Current()
 			If _predicate(value) Then
@@ -828,6 +948,12 @@ Type TFunctionFilterSequenceIterator<T> Implements IIterator<T>
 			End If
 		Wend
 		Return False
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -862,11 +988,12 @@ End Type
 Rem
 bbdoc: Limiting iterator used internally by #TTakeSequence.
 End Rem
-Type TTakeSequenceIterator<T> Implements IIterator<T>
+Type TTakeSequenceIterator<T> Implements ICloseableIterator<T>
 	Private
 	Field _source:IIterator<T>
 	Field _remaining:Int
 	Field _current:T
+	Field _closed:Int
 
 	Public
 	Rem
@@ -892,6 +1019,7 @@ Type TTakeSequenceIterator<T> Implements IIterator<T>
 	returns: True when a current value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		If _remaining <= 0 Then Return False
 		If Not _source.MoveNext() Then
 			_remaining = 0
@@ -900,6 +1028,12 @@ Type TTakeSequenceIterator<T> Implements IIterator<T>
 		_remaining :- 1
 		_current = _source.Current()
 		Return True
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -934,11 +1068,12 @@ End Type
 Rem
 bbdoc: Omitting iterator used internally by #TSkipSequence.
 End Rem
-Type TSkipSequenceIterator<T> Implements IIterator<T>
+Type TSkipSequenceIterator<T> Implements ICloseableIterator<T>
 	Private
 	Field _source:IIterator<T>
 	Field _remaining:Int
 	Field _current:T
+	Field _closed:Int
 
 	Public
 	Rem
@@ -964,6 +1099,7 @@ Type TSkipSequenceIterator<T> Implements IIterator<T>
 	returns: True when a current value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		While _remaining > 0
 			If Not _source.MoveNext() Then
 				_remaining = 0
@@ -974,6 +1110,12 @@ Type TSkipSequenceIterator<T> Implements IIterator<T>
 		If Not _source.MoveNext() Then Return False
 		_current = _source.Current()
 		Return True
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -1008,13 +1150,14 @@ End Type
 Rem
 bbdoc: Closure-backed flattening iterator used internally by #TFlatMapSequence.
 End Rem
-Type TFlatMapSequenceIterator<T, U> Implements IIterator<U>
+Type TFlatMapSequenceIterator<T, U> Implements ICloseableIterator<U>
 	Private
 	Field _source:IIterator<T>
 	Field _mapper:Closure<Sequence<U>(value:T)>
 	Field _inner:IIterator<U>
 	Field _hasInner:Int
 	Field _current:U
+	Field _closed:Int
 
 	Public
 	Rem
@@ -1040,16 +1183,28 @@ Type TFlatMapSequenceIterator<T, U> Implements IIterator<U>
 	returns: True when a current value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		While True
 			If _hasInner And _inner.MoveNext() Then
 				_current = _inner.Current()
 				Return True
+			End If
+			If _hasInner Then
+				CloseSequenceIterator(_inner)
+				_hasInner = False
 			End If
 			If Not _source.MoveNext() Then Return False
 			Local inner:Sequence<U> = _mapper(_source.Current())
 			_inner = inner.GetIterator()
 			_hasInner = True
 		Wend
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		If _hasInner Then CloseSequenceIterator(_inner)
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -1084,13 +1239,14 @@ End Type
 Rem
 bbdoc: Non-capturing function flattening iterator used internally by #TFunctionFlatMapSequence.
 End Rem
-Type TFunctionFlatMapSequenceIterator<T, U> Implements IIterator<U>
+Type TFunctionFlatMapSequenceIterator<T, U> Implements ICloseableIterator<U>
 	Private
 	Field _source:IIterator<T>
 	Field _mapper:Sequence<U>(value:T)
 	Field _inner:IIterator<U>
 	Field _hasInner:Int
 	Field _current:U
+	Field _closed:Int
 
 	Public
 	Rem
@@ -1116,16 +1272,28 @@ Type TFunctionFlatMapSequenceIterator<T, U> Implements IIterator<U>
 	returns: True when a current value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		While True
 			If _hasInner And _inner.MoveNext() Then
 				_current = _inner.Current()
 				Return True
+			End If
+			If _hasInner Then
+				CloseSequenceIterator(_inner)
+				_hasInner = False
 			End If
 			If Not _source.MoveNext() Then Return False
 			Local inner:Sequence<U> = _mapper(_source.Current())
 			_inner = inner.GetIterator()
 			_hasInner = True
 		Wend
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		If _hasInner Then CloseSequenceIterator(_inner)
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -1160,13 +1328,15 @@ End Type
 Rem
 bbdoc: Concatenating iterator used internally by #TConcatSequence.
 End Rem
-Type TConcatSequenceIterator<T> Implements IIterator<T>
+Type TConcatSequenceIterator<T> Implements ICloseableIterator<T>
 	Private
 	Field _first:IIterator<T>
 	Field _secondSource:Sequence<T>
 	Field _second:IIterator<T>
 	Field _inSecond:Int
 	Field _current:T
+	Field _closed:Int
+	Field _firstClosed:Int
 
 	Public
 	Rem
@@ -1192,17 +1362,27 @@ Type TConcatSequenceIterator<T> Implements IIterator<T>
 	returns: True when a current value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		If Not _inSecond Then
 			If _first.MoveNext() Then
 				_current = _first.Current()
 				Return True
 			End If
+			CloseSequenceIterator(_first)
+			_firstClosed = True
 			_second = _secondSource.GetIterator()
 			_inSecond = True
 		End If
 		If Not _second.MoveNext() Then Return False
 		_current = _second.Current()
 		Return True
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		If _inSecond Then CloseSequenceIterator(_second)
+		If Not _firstClosed Then CloseSequenceIterator(_first)
 	End Method
 End Type
 
@@ -1237,12 +1417,13 @@ End Type
 Rem
 bbdoc: Closure-backed prefix iterator used internally by #TTakeWhileSequence.
 End Rem
-Type TTakeWhileSequenceIterator<T> Implements IIterator<T>
+Type TTakeWhileSequenceIterator<T> Implements ICloseableIterator<T>
 	Private
 	Field _source:IIterator<T>
 	Field _predicate:Closure<Int(value:T)>
 	Field _current:T
 	Field _done:Int
+	Field _closed:Int
 
 	Public
 	Rem
@@ -1268,6 +1449,7 @@ Type TTakeWhileSequenceIterator<T> Implements IIterator<T>
 	returns: True when a current value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		If _done Or Not _source.MoveNext() Then Return False
 		Local value:T = _source.Current()
 		If Not _predicate(value) Then
@@ -1276,6 +1458,12 @@ Type TTakeWhileSequenceIterator<T> Implements IIterator<T>
 		End If
 		_current = value
 		Return True
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -1310,12 +1498,13 @@ End Type
 Rem
 bbdoc: Non-capturing function prefix iterator used internally by #TFunctionTakeWhileSequence.
 End Rem
-Type TFunctionTakeWhileSequenceIterator<T> Implements IIterator<T>
+Type TFunctionTakeWhileSequenceIterator<T> Implements ICloseableIterator<T>
 	Private
 	Field _source:IIterator<T>
 	Field _predicate:Int(value:T)
 	Field _current:T
 	Field _done:Int
+	Field _closed:Int
 
 	Public
 	Rem
@@ -1341,6 +1530,7 @@ Type TFunctionTakeWhileSequenceIterator<T> Implements IIterator<T>
 	returns: True when a current value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		If _done Or Not _source.MoveNext() Then Return False
 		Local value:T = _source.Current()
 		If Not _predicate(value) Then
@@ -1349,6 +1539,12 @@ Type TFunctionTakeWhileSequenceIterator<T> Implements IIterator<T>
 		End If
 		_current = value
 		Return True
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -1383,12 +1579,13 @@ End Type
 Rem
 bbdoc: Closure-backed prefix-skipping iterator used internally by #TSkipWhileSequence.
 End Rem
-Type TSkipWhileSequenceIterator<T> Implements IIterator<T>
+Type TSkipWhileSequenceIterator<T> Implements ICloseableIterator<T>
 	Private
 	Field _source:IIterator<T>
 	Field _predicate:Closure<Int(value:T)>
 	Field _current:T
 	Field _skipping:Int = True
+	Field _closed:Int
 
 	Public
 	Rem
@@ -1414,6 +1611,7 @@ Type TSkipWhileSequenceIterator<T> Implements IIterator<T>
 	returns: True when a current value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		While _source.MoveNext()
 			Local value:T = _source.Current()
 			If _skipping And _predicate(value) Then Continue
@@ -1422,6 +1620,12 @@ Type TSkipWhileSequenceIterator<T> Implements IIterator<T>
 			Return True
 		Wend
 		Return False
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -1456,12 +1660,13 @@ End Type
 Rem
 bbdoc: Non-capturing function prefix-skipping iterator used internally by #TFunctionSkipWhileSequence.
 End Rem
-Type TFunctionSkipWhileSequenceIterator<T> Implements IIterator<T>
+Type TFunctionSkipWhileSequenceIterator<T> Implements ICloseableIterator<T>
 	Private
 	Field _source:IIterator<T>
 	Field _predicate:Int(value:T)
 	Field _current:T
 	Field _skipping:Int = True
+	Field _closed:Int
 
 	Public
 	Rem
@@ -1487,6 +1692,7 @@ Type TFunctionSkipWhileSequenceIterator<T> Implements IIterator<T>
 	returns: True when a current value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		While _source.MoveNext()
 			Local value:T = _source.Current()
 			If _skipping And _predicate(value) Then Continue
@@ -1495,6 +1701,12 @@ Type TFunctionSkipWhileSequenceIterator<T> Implements IIterator<T>
 			Return True
 		Wend
 		Return False
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -1529,13 +1741,14 @@ End Type
 Rem
 bbdoc: Trailing-value iterator used internally by #TAppendSequence.
 End Rem
-Type TAppendSequenceIterator<T> Implements IIterator<T>
+Type TAppendSequenceIterator<T> Implements ICloseableIterator<T>
 	Private
 	Field _source:IIterator<T>
 	Field _value:T
 	Field _current:T
 	Field _sourceDone:Int
 	Field _appended:Int
+	Field _closed:Int
 
 	Public
 	Rem
@@ -1561,15 +1774,23 @@ Type TAppendSequenceIterator<T> Implements IIterator<T>
 	returns: True when a current value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		If Not _sourceDone And _source.MoveNext() Then
 			_current = _source.Current()
 			Return True
 		End If
+		If Not _sourceDone Then CloseSequenceIterator(_source)
 		_sourceDone = True
 		If _appended Then Return False
 		_appended = True
 		_current = _value
 		Return True
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		If Not _sourceDone Then CloseSequenceIterator(_source)
 	End Method
 End Type
 
@@ -1604,12 +1825,13 @@ End Type
 Rem
 bbdoc: Leading-value iterator used internally by #TPrependSequence.
 End Rem
-Type TPrependSequenceIterator<T> Implements IIterator<T>
+Type TPrependSequenceIterator<T> Implements ICloseableIterator<T>
 	Private
 	Field _source:IIterator<T>
 	Field _value:T
 	Field _current:T
 	Field _prepended:Int
+	Field _closed:Int
 
 	Public
 	Rem
@@ -1635,6 +1857,7 @@ Type TPrependSequenceIterator<T> Implements IIterator<T>
 	returns: True when a current value is available; otherwise False.
 	End Rem
 	Method MoveNext:Int()
+		If _closed Then Return False
 		If Not _prepended Then
 			_prepended = True
 			_current = _value
@@ -1643,6 +1866,12 @@ Type TPrependSequenceIterator<T> Implements IIterator<T>
 		If Not _source.MoveNext() Then Return False
 		_current = _source.Current()
 		Return True
+	End Method
+
+	Method Close() Override
+		If _closed Then Return
+		_closed = True
+		CloseSequenceIterator(_source)
 	End Method
 End Type
 

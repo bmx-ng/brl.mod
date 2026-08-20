@@ -83,7 +83,9 @@ A Sequence is a reusable query recipe, not a Java-style single-use stream. Every
 
 Replayability ultimately belongs to the source. Arrays and ordinary Collections return fresh iterators and can normally be enumerated repeatedly. A custom iterable which returns the same consumed iterator remains one-shot; Sequence does not buffer or copy it.
 
-Iterator ownership also remains with the source. If a custom iterator owns an external resource, its normal lifetime and cleanup rules still apply.
+Each enumeration owns the iterator it acquires. If that iterator implements #ICloseable (including #ICloseableIterator), it is closed exactly once when enumeration is exhausted, stopped early, left by `Return`, or interrupted by an exception. Sequence pipeline iterators propagate that close operation to their active upstream and nested iterators. This makes resource-backed sources safe with ordinary `EachIn` and terminal operations without changing replayability: a source which returns the same consumed iterator is still one-shot.
+
+As with `Using`, cleanup failures are suppressed so that they do not replace an exception raised by the iterator, predicate, mapper, or loop body.
 
 ## Function choice and performance
 
