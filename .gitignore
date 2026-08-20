@@ -24,3 +24,7 @@
 commands.html
 
 .DS_Store
+
+.generics/
+*.bmxbuild
+*.bmxbuild.stamp

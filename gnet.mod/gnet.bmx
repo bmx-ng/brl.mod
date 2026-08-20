@@ -241,7 +241,7 @@ Type TGNetObject
 		Local msg:TGNetMsg
 		
 		If Not _peer
-			msg:TGNetMsg=New TGNetmsg
+			msg=New TGNetmsg
 			msg.id=_id
 			msg.state=_state
 			msg.data=PackSlots( _modified )

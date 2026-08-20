@@ -63,7 +63,7 @@ Type TImageFont
 		Local glyph:TImageGlyph=_glyphs[index]
 		If glyph Return glyph
 		
-		glyph:TImageGlyph=New TImageGlyph
+		glyph=New TImageGlyph
 		_glyphs[index]=glyph
 		
 		Local src_glyph:TGlyph=_src_font.LoadGlyph( index )
