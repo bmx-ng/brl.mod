@@ -55,3 +55,11 @@ Interface IIterator<T>
 	Method MoveNext:Int()
 
 End Interface
+
+Rem
+bbdoc: Closeable iterator interface
+about: Combines the #IIterator and #ICloseable contracts for iterators that own resources which should be
+released when iteration finishes or is abandoned.
+End Rem
+Interface ICloseableIterator<T> Extends IIterator<T>, ICloseable
+End Interface
