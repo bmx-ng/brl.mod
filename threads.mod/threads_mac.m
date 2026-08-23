@@ -21,5 +21,6 @@ void threads_PostSemaphore( dispatch_semaphore_t sem ){
 }
 
 int threads_TimedWaitSemaphore( dispatch_semaphore_t sem, int millisecs ){
-	return dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, (int64_t)millisecs * 1000000));
+	intptr_t res = dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, (int64_t)millisecs * 1000000));
+	return res != 0 ? 1 : 0;
 }

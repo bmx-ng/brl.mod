@@ -8,6 +8,8 @@ Import BRL.Sequence
 
 New TTestSuite.Run()
 
+?bmxng2
+
 Global ArrayVisitTotal:Int
 
 Type TArrayMarker
@@ -266,3 +268,5 @@ Type TArraysTest Extends TTest
 		AssertSame(expected, caught)
 	End Method
 End Type
+
+?

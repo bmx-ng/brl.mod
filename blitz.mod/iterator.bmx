@@ -1,4 +1,27 @@
 Rem
+bbdoc: Describes a value that can be separated into two component values.
+about: Implement this interface when a value has a stable, meaningful pair of
+components. #Deconstruct writes both components to its Var parameters.
+
+bcc2 also uses this contract for a two-binding EachIn loop such as
+```blitzmax
+For Local first:A, second:B = EachIn values
+```
+The collection still yields one value per iteration; that yielded value must
+implement #IDeconstruct2 and is deconstructed once before the loop body runs.
+End Rem
+Interface IDeconstruct2<A, B>
+
+	Rem
+	bbdoc: Writes this value's first and second components.
+	param: Receives the first component.
+	param: Receives the second component.
+	End Rem
+	Method Deconstruct(first:A Var, second:B Var)
+
+End Interface
+
+Rem
 bbdoc: Provides sequential access to a collection of values.
 about: An iterable object can create an #IIterator for traversing its values.
 Each call to #GetIterator should return an iterator positioned before the

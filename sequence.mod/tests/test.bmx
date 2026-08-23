@@ -12,6 +12,8 @@ Import Collections.HashMap
 
 New TTestSuite.Run()
 
+?bmxng2
+
 Type TSequenceMarker
 	Field value:Int
 End Type
@@ -925,3 +927,5 @@ Type TSequenceTest Extends TTest
 		AssertTrue(New Sequence<Int>(map.Values()).Any(isTwo))
 	End Method
 End Type
+
+?
