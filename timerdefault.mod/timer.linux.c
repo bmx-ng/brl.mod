@@ -69,7 +69,7 @@ BBTimer *bbTimerStart( float hertz,BBObject *bbTimer ){
 	timer->period=1000.0f/hertz;
 	timer->bbTimer=bbTimer;
 	
-	if( pthread_create( &timer->thread,0,(void*(*)(void*))timerProc,timer )<0 ){
+	if( pthread_create( &timer->thread,0,(void*(*)(void*))timerProc,timer ) != 0 ){
 		free( timer );
 		return 0;
 	}
