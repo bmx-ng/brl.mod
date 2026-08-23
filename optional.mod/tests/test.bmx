@@ -5,6 +5,8 @@ Import BRL.Optional
 
 New TTestSuite.Run()
 
+?bmxng2
+
 Type TOptionalMarker
 	Field value:Int
 End Type
@@ -485,3 +487,5 @@ Type TOptionalTest Extends TTest
 		AssertEquals(8, failures, "Every selected missing Closure follows normal Closure call failure semantics")
 	End Method
 End Type
+
+?
