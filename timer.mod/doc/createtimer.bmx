@@ -1,5 +1,8 @@
 SuperStrict
 
+Framework BRL.StandardIO
+Import BRL.TimerDefault
+
 'Maximum allowable Timer is 16
 Global timers:TTimer[500]
 

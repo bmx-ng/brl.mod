@@ -1,7 +1,10 @@
 'Animation on MaxGUI canvas
 SuperStrict
 
-Import MaxGUI.Drivers
+Framework MaxGUI.Drivers
+Import BRL.TimerDefault
+Import BRL.EventQueue
+Import BRL.Max2D
 
 Local MyWindow:TGadget=CreateWindow("Canvas Example", 200,200,320,240)
 Local MyCanvas:TGadget=CreateCanvas(10,10,290,140,MyWindow)
