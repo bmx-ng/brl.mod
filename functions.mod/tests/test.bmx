@@ -7,6 +7,8 @@ Import BRL.Sequence
 
 New TTestSuite.Run()
 
+?bmxng2
+
 Type TFunctionsMarker
 	Field value:Int
 End Type
@@ -181,3 +183,5 @@ Type TFunctionsTest Extends TTest
 		AssertEquals(2, values[1])
 	End Method
 End Type
+
+?

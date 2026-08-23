@@ -5,6 +5,8 @@ Import BRL.Result
 
 New TTestSuite.Run()
 
+?bmxng2
+
 Type TResultMarker
 	Field value:Int
 End Type
@@ -335,3 +337,5 @@ Type TResultTest Extends TTest
 		AssertEquals("Result is uninitialized", caught.ToString())
 	End Method
 End Type
+
+?

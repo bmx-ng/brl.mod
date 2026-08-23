@@ -5,6 +5,8 @@ Import BRL.Range
 
 New TTestSuite.Run()
 
+?bmxng2
+
 Global rangeReceiverEvaluations:Int
 Global rangeValueEvaluations:Int
 Global rangeEndpointEvaluations:Int
@@ -509,3 +511,5 @@ Type TArrayRangeTest Extends TTest
 		AssertEquals("c", strings[1])
 	End Method
 End Type
+
+?
