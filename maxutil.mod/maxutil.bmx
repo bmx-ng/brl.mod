@@ -68,7 +68,6 @@ Function ModuleInterface:String( modid:String,mung:String="" )
 	Return ModulePath(modid)+"/"+ModuleIdent(modid)+mung+".i"
 End Function
 
-?bmxng2
 Const MAX_MODULE_DIRECTORY_DEPTH:Int = 256
 
 Rem
@@ -188,6 +187,7 @@ Function EnumModuleDirectoriesFrom:TList( dir:String,modid:String,directories:TL
 End Function
 Public
 
+?bmxng2
 Function EnumModules:TList( modid:String="",mods:TList=Null )
 	If Not mods mods=New TList
 	Local paths:TList=New TList
