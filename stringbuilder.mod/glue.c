@@ -508,7 +508,7 @@ void bmx_stringbuilder_append_utf8bytes(struct MaxStringBuilder * buf, const cha
 		
 		bmx_stringbuilder_resize(buf, buf->count + length);
 		
-		char * p = chars;
+		const char * p = chars;
 		BBChar * b = buf->buffer + buf->count;
 		
 		while( length-- ){
