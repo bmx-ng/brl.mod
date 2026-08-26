@@ -3,12 +3,14 @@ Strict
 
 Module BRL.MaxUtil
 
-ModuleInfo "Version: 1.02"
+ModuleInfo "Version: 1.03"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Added optional issues list to EnumModuleDirectories() to collect and report malformed module directory layouts instead of throwing."
 ModuleInfo "History: 1.02"
 ModuleInfo "History: Added support for many levels of nested module directories"
 ModuleInfo "History: 1.01 Release"
@@ -146,19 +148,25 @@ Rem
 bbdoc: Enumerates every recursively nested .mod directory beneath a module root.
 about: Each .mod path segment contributes one component to name. Namespace-only
 containers are included; callers decide whether a source or interface makes an
-entry concrete. Traversal is bounded only to defend against malformed cyclic
-layouts.
+entry concrete. If @issues is supplied, malformed directories are skipped and
+their diagnostic messages are appended to it; otherwise malformed layouts throw.
+Traversal is bounded only to defend against malformed cyclic layouts.
 End Rem
-Function EnumModuleDirectories:TList( moduleRoot:String="",modid:String="",directories:TList=Null,depth:Int=0 )
+Function EnumModuleDirectories:TList( moduleRoot:String="",modid:String="",directories:TList=Null,depth:Int=0,issues:TList=Null )
 	If Not directories directories=New TList
 	If Not moduleRoot moduleRoot=BlitzMaxPath()+"/mod"
 	Local dir:String=ModulePathAtRoot(moduleRoot,modid)
-	Return EnumModuleDirectoriesFrom(dir,modid,directories,depth)
+	Return EnumModuleDirectoriesFrom(dir,modid,directories,depth,issues)
 End Function
 
 Private
-Function EnumModuleDirectoriesFrom:TList( dir:String,modid:String,directories:TList,depth:Int )
-	If depth>=MAX_MODULE_DIRECTORY_DEPTH Throw "Module directory nesting exceeds defensive limit of "+MAX_MODULE_DIRECTORY_DEPTH+": "+dir
+Function EnumModuleDirectoriesFrom:TList( dir:String,modid:String,directories:TList,depth:Int,issues:TList )
+	If depth>=MAX_MODULE_DIRECTORY_DEPTH Then
+		Local issue:String="Module directory nesting exceeds defensive limit of "+MAX_MODULE_DIRECTORY_DEPTH+": "+dir
+		If Not issues Throw issue
+		issues.AddLast issue
+		Return directories
+	EndIf
 	If FileType(dir)<>FILETYPE_DIR Return directories
 	Local files:String[]=LoadDir(dir)
 	files.Sort()
@@ -170,7 +178,10 @@ Function EnumModuleDirectoriesFrom:TList( dir:String,modid:String,directories:TL
 
 		Local identifier:String=file[..file.length-4]
 		If Not IsModuleDirectoryIdentifier(identifier) Then
-			Throw "Invalid module directory '"+path+"': '.mod' basename '"+identifier+"' must be a single BlitzMax identifier"
+			Local issue:String="Invalid module directory '"+path+"': '.mod' basename '"+identifier+"' must be a single BlitzMax identifier"
+			If Not issues Throw issue
+			issues.AddLast issue
+			Continue
 		EndIf
 		Local name:String=identifier
 		If modid name=modid+"."+identifier
@@ -180,7 +191,7 @@ Function EnumModuleDirectoriesFrom:TList( dir:String,modid:String,directories:TL
 		item.identifier=identifier
 		item.depth=depth+1
 		directories.AddLast item
-		EnumModuleDirectoriesFrom path,name,directories,depth+1
+		EnumModuleDirectoriesFrom path,name,directories,depth+1,issues
 	Next
 
 	Return directories
