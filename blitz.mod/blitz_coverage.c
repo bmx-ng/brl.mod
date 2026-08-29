@@ -67,6 +67,28 @@ static BBCoverageFileState *bbCoverageAddFile(const char *filename) {
     return state;
 }
 
+static int bbCoverageCompareFiles(const void *a, const void *b) {
+    const BBCoverageFileState *state_a = *(const BBCoverageFileState * const *)a;
+    const BBCoverageFileState *state_b = *(const BBCoverageFileState * const *)b;
+    return strcmp(state_a->filename, state_b->filename);
+}
+
+static int bbCoverageCompareFunctions(const void *a, const void *b) {
+    const BBCoverageFuncExecInfo *info_a = *(const BBCoverageFuncExecInfo * const *)a;
+    const BBCoverageFuncExecInfo *info_b = *(const BBCoverageFuncExecInfo * const *)b;
+    if (info_a->line < info_b->line) return -1;
+    if (info_a->line > info_b->line) return 1;
+    return strcmp(info_a->func, info_b->func);
+}
+
+static int bbCoverageCompareLines(const void *a, const void *b) {
+    const BBCoverageLineExecInfo *info_a = *(const BBCoverageLineExecInfo * const *)a;
+    const BBCoverageLineExecInfo *info_b = *(const BBCoverageLineExecInfo * const *)b;
+    if (info_a->line < info_b->line) return -1;
+    if (info_a->line > info_b->line) return 1;
+    return 0;
+}
+
 static BBCoverageLineExecInfo *bbCoverageAddLine(BBCoverageFileState *state, int line) {
     BBCoverageLineExecInfo *info = (BBCoverageLineExecInfo *)hashmapGet(state->line_map, (intptr_t)line);
     if (info) return info;
@@ -155,6 +177,8 @@ void bbCoverageUpdateFunctionLineInfo(const char *file, const char *func, int li
 void bbCoverageGenerateOutput() {
     const char *output_file_name;
     char *allocated_output_file_name = NULL;
+    BBCoverageFileState **files = NULL;
+    size_t files_count = 0;
 
     if (bbCoverageOutputFileName == &bbEmptyString) {
         output_file_name = "lcov.info";
@@ -171,9 +195,30 @@ void bbCoverageGenerateOutput() {
     }
 
     bb_mutex_lock(&bbCoverageMutex);
-    for (BBCoverageFileState *state = bbCoverageFiles; state; state = state->next) {
+    for (BBCoverageFileState *state = bbCoverageFiles; state; state = state->next) ++files_count;
+    if (files_count) {
+        files = (BBCoverageFileState **)malloc(files_count * sizeof(BBCoverageFileState *));
+        if (!files) {
+            fprintf(stderr, "Coverage bookkeeping allocation failed\n");
+            abort();
+        }
+        size_t file_index = 0;
+        for (BBCoverageFileState *state = bbCoverageFiles; state; state = state->next) {
+            files[file_index++] = state;
+        }
+        qsort(files, files_count, sizeof(BBCoverageFileState *), bbCoverageCompareFiles);
+    }
+
+    for (size_t file_index = 0; file_index < files_count; ++file_index) {
+        BBCoverageFileState *state = files[file_index];
         int lines_hit = 0;
         int functions_hit = 0;
+        if (state->functions_count > 1) {
+            qsort(state->functions, state->functions_count, sizeof(BBCoverageFuncExecInfo *), bbCoverageCompareFunctions);
+        }
+        if (state->lines_count > 1) {
+            qsort(state->lines, state->lines_count, sizeof(BBCoverageLineExecInfo *), bbCoverageCompareLines);
+        }
         fprintf(lcov_file, "SF:%s\n", state->filename);
 
         for (size_t i = 0; i < state->functions_count; ++i) {
@@ -197,6 +242,7 @@ void bbCoverageGenerateOutput() {
         fprintf(lcov_file, "LH:%d\n", lines_hit);
         fprintf(lcov_file, "end_of_record\n");
     }
+    free(files);
     bb_mutex_unlock(&bbCoverageMutex);
 
     fclose(lcov_file);

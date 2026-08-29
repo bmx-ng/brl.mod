@@ -8,6 +8,14 @@
 extern "C"{
 #endif
 
+#if defined(_MSC_VER)
+#define BB_NORETURN __declspec(noreturn)
+#elif defined(__GNUC__) || defined(__clang__)
+#define BB_NORETURN __attribute__((noreturn))
+#else
+#define BB_NORETURN
+#endif
+
 #if __APPLE__
 #if __i386__
 #define BB_ARGP 1
@@ -48,8 +56,8 @@ typedef jmp_buf BBExJmpBuf;
 	switch(setjmp(*buf))
 #endif
 BBExJmpBuf* bbExEnter();
-void        bbExThrow( BBObject *p );
-void        bbExThrowCString( const char *p );
+BB_NORETURN void bbExThrow( BBObject *p );
+BB_NORETURN void bbExThrowCString( const char *p );
 void        bbExLeave();
 int         bbExStatus();
 BBObject*   bbExCatchAndReenter();
