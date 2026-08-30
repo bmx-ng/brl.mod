@@ -85,9 +85,11 @@ Therefore, hook functions should generally return the @data parameter when finis
 End Rem
 Function RunHooks:Object( id,data:Object )
 
+	Local fast:Int=data<>Null
 	Local hook:THook=hooks[id]
 	While hook
 		data=hook.Func( id,data,hook.context )
+		If fast And Not data Then Return Null
 		hook=hook.succ
 	Wend
 	Return data
