@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.30"
+ModuleInfo "Version: 1.31"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 '
+ModuleInfo "History: 1.31"
+ModuleInfo "History: Added Pico DebugStop debugger breakpoint support"
 ModuleInfo "History: 1.30"
 ModuleInfo "History: Added ICloseableIterator interface"
 ModuleInfo "History: 1.29"
@@ -116,6 +118,7 @@ ModuleInfo "CPP_OPTS: -std=c++11"
 ' uncomment to enable allocation counting
 'ModuleInfo "CC_OPTS: -DBBCC_ALLOCCOUNT"
 
+?not pico
 Import "blitz_app.c"
 Import "blitz_types.c"
 Import "blitz_cclib.c"
@@ -138,9 +141,10 @@ Import "blitz_atstart.c"
 Import "blitz_string_ex.cpp"
 Import "blitz_stringsplit.c"
 
-?coverage
+?coverage and not pico
 Import "hashmap/hashmap.c"
 ?
+?not pico
 
 '?Threaded
 'Import "blitz_gc_ms.c"
@@ -197,15 +201,17 @@ Import "bdwgc/gc_dlopen.c"
 Import "bdwgc/backgraph.c"
 Import "bdwgc/win32_threads.c"
 Import "bdwgc/thread_local_alloc.c"	'bdwgc only? not gc6.7
-?nx
+?nx and not pico
 Import "blitz_nx.c"
 ?
+?not pico
 Import "tree/tree.c"
 
 Import "ryu/*.h"
 Import "ryu/ryu/f2s.c"
 Import "ryu/ryu/d2s.c"
 Import "ryu/ryu/d2fixed.c"
+?
 
 Include "builtin.bmx"
 Include "iterator.bmx"
@@ -214,7 +220,9 @@ Include "hash.bmx"
 Include "equal.bmx"
 
 Extern
+?Not pico
 Global OnDebugStop()="bbOnDebugStop"
+?
 Global OnDebugLog( message:String )="bbOnDebugLog"
 End Extern
 
@@ -390,9 +398,15 @@ Rem
 bbdoc: Stop program execution and enter debugger
 about: If there is no debugger present, this command is ignored.
 End Rem
+?pico
+Extern
+Function DebugStop()="bmx_pico_debug_stop"
+End Extern
+?Not pico
 Function DebugStop()
 	OnDebugStop
 End Function
+?
 
 Rem
 bbdoc: Write a string to debug log

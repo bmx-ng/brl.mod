@@ -6,12 +6,16 @@ bbdoc: Streams/Streams
 End Rem
 Module BRL.Stream
 
-ModuleInfo "Version: 1.12"
+ModuleInfo "Version: 1.14"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.14"
+ModuleInfo "History: Share protocol URL parsing with Pico stream factories."
+ModuleInfo "History: 1.13"
+ModuleInfo "History: Added Pico target support using the shared stream implementation."
 ModuleInfo "History: 1.12"
 ModuleInfo "History: Streams can now be automatically closed when used within a Using..Do block."
 ModuleInfo "History: 1.11"
@@ -37,8 +41,18 @@ ModuleInfo "History: Added LoadString"
 ModuleInfo "History: Added LoadByteArray"
 ModuleInfo "History: Cleaned up docs a bit"
 
+?pico
+Import BRL.Blitz
+Const SEEK_SET_:Int = 0
+Const SEEK_CUR_:Int = 1
+Const SEEK_END_:Int = 2
+Extern
+	Function PicoStreamURLString:String(url:Object)="bmx_pico_stream_url_string"
+End Extern
+?Not pico
 Import BRL.IO
 Import Pub.StdC
+?
 
 Rem
 bbdoc: Base exception type thrown by streams
@@ -148,8 +162,12 @@ Type TIO Implements ICloseable
 	If this method returns 0, the stream has reached end of file.
 	End Rem
 	Method Read:Long( buf:Byte Ptr,count:Long )
+?pico
+		Throw "Stream is not readable"
+?Not pico
 		RuntimeError "Stream is not readable"
 		Return 0
+?
 	End Method
 
 	Rem
@@ -162,8 +180,12 @@ Type TIO Implements ICloseable
 	If this method returns 0, the stream has reached end of file.
 	End Rem
 	Method Write:Long( buf:Byte Ptr,count:Long )
+?pico
+		Throw "Stream is not writeable"
+?Not pico
 		RuntimeError "Stream is not writeable"
 		Return 0
+?
 	End Method
 	
 	Rem
@@ -172,8 +194,12 @@ Type TIO Implements ICloseable
 	about: Only a few stream types support resizing.
 	End Rem
 	Method SetSize:Int(size:Long)
+?pico
+		Throw "Stream does not support resizing"
+?Not pico
 		RuntimeError "Stream does not support resizing"
 		Return 0
+?
 	End Method
 
 	Method Delete()
@@ -431,17 +457,21 @@ Type TStream Extends TIO
 
 	Method WriteLine:Int( str:String, asUTF8:Int )
 		Local buf:Byte Ptr
-		Local length:Int
+		Local length:Size_T
 		If asUTF8 Then
-			buf=str.ToUTF8String()
-			length = strlen_(buf)
+			buf=str.ToUTF8String(length)
 		Else
 			buf=str.ToCString()
-			length = str.length
+			length = Size_T(str.length)
 		End If
-		Local ok:Int=Write( buf,length )=length And Write( [13:Byte,10:Byte],2 )=2
-		MemFree buf
-		Return ok
+		Try
+			Local ending:Byte[2]
+			ending[0] = 13
+			ending[1] = 10
+			Return Write(buf, Long(length)) = Long(length) And Write(ending, 2) = 2
+		Finally
+			MemFree buf
+		End Try
 	End Method
 
 	Rem
@@ -476,16 +506,18 @@ Type TStream Extends TIO
 
 	Method WriteString( str:String, asUTF8:Int )
 		Local buf:Byte Ptr
-		Local length:Int
+		Local length:Size_T
 		If asUTF8 Then
-			buf=str.ToUTF8String()
-			length = strlen_(buf)
+			buf=str.ToUTF8String(length)
 		Else
 			buf=str.ToCString()
-			length = str.length
+			length = Size_T(str.length)
 		End If
-		WriteBytes buf,length
-		MemFree buf
+		Try
+			WriteBytes buf,Long(length)
+		Finally
+			MemFree buf
+		End Try
 	End Method
 	
 	Method ReadObject:Object()
@@ -643,6 +675,7 @@ Type TStreamWrapper Extends TStream
 	End Method
 End Type	
 
+?Not pico
 Type TStreamStream Extends TStreamWrapper
 
 	Method Close() Override
@@ -656,7 +689,57 @@ Type TStreamStream Extends TStreamWrapper
 	End Function
 	
 End Type
+?pico
+' The Pico compiler currently needs the non-owning stream view to provide its
+' primitive operations directly rather than inherit them through two modules.
+Type TStreamStream Extends TStream
+	Field _source:TStream
 
+	Method Eof:Int() Override
+		Return _source.Eof()
+	End Method
+
+	Method Pos:Long() Override
+		Return _source.Pos()
+	End Method
+
+	Method Size:Long() Override
+		Return _source.Size()
+	End Method
+
+	Method Seek:Long(pos:Long, whence:Int = SEEK_SET_) Override
+		Return _source.Seek(pos, whence)
+	End Method
+
+	Method Flush() Override
+		_source.Flush()
+	End Method
+
+	Method Close() Override
+		_source = Null
+	End Method
+
+	Method Read:Long(buf:Byte Ptr, count:Long) Override
+		Return _source.Read(buf, count)
+	End Method
+
+	Method Write:Long(buf:Byte Ptr, count:Long) Override
+		Return _source.Write(buf, count)
+	End Method
+
+	Method SetSize:Int(size:Long) Override
+		Return _source.SetSize(size)
+	End Method
+
+	Function Create:TStreamStream(source:TStream)
+		Local stream:TStreamStream = New TStreamStream
+		stream._source = source
+		Return stream
+	End Function
+End Type
+?
+
+?Not pico
 Type TFileStream Extends TStream
 
 	Const MODE_READ:Int=1
@@ -766,12 +849,12 @@ Type TCStream Extends TFileStream
 		Mode = GetMode(readable, writeMode, _mode)
 		path=path.Replace( "\","/" )
 		Local cstream:Byte Ptr=fopen_( path,Mode )
-?Linux
+?Linux And Not pico
 		If (Not cstream) And (Not writeMode)
 			path=CasedFileName(path)
 			If path cstream=fopen_( path,Mode )
 		EndIf
-?
+?Not pico
 		If cstream Return CreateWithCStream( cstream,_mode )
 	End Function
 
@@ -790,6 +873,7 @@ Type TCStream Extends TFileStream
 	End Function
 
 End Type
+?
 
 Private
 Global stream_factories:TStreamFactory
@@ -833,7 +917,13 @@ Type TStreamFactory
 	
 	If @url is not a string, both @proto and @path will be Null.
 	End Rem
+?Not pico
 	Method CreateStream:TStream( url:Object,proto:String,path:String,readable:Int,writeMode:Int ) Abstract
+?pico
+	Method CreateStream:TStream( url:Object,proto:String,path:String,readable:Int,writeMode:Int )
+		Return Null
+	End Method
+?
 
 End Type
 
@@ -850,18 +940,27 @@ Function OpenStream:TStream( url:Object,readable:Int=True,writeMode:Int=WRITE_MO
 		Return TStreamStream.Create( stream )
 	EndIf
 
-	Local str:String=String( url ),proto:String,path:String
+	Local proto:String,path:String
+
+?pico
+	Local str:String=PicoStreamURLString( url )
+?Not pico
+	Local str:String=String( url )
+?
 	If str
 		Local i:Int=str.Find( "::",0 )
-		If i=-1 Then
+		If i<>-1 Then
+			proto=str[..i].ToLower()
+			path=str[i+2..]
+?Not pico
+		Else
 			If MaxIO.ioInitialized Then
 				Return TIOStream.OpenFile(str, readable, writemode)
 			Else
 				Return TCStream.OpenFile( str,readable,writeMode )
 			End If
-		End If
-		proto=str[..i].ToLower()
-		path=str[i+2..]
+?
+		EndIf
 	EndIf
 
 	Local factory:TStreamFactory=stream_factories
@@ -1163,26 +1262,17 @@ resultant stream.
 A #TStreamWriteException is thrown if not all bytes could be written.
 End Rem
 Function SaveString( str:String,url:Object )
-	Local stream:TStream=WriteStream( url )
-	If Not stream Throw New TStreamWriteException
-	Local t:Byte Ptr=str.ToCString()
-	stream.WriteBytes t,str.length	'Should be in a try block...or t is leaked!
-	MemFree t
-	stream.Close
+	SaveString(str, url, False)
 End Function
 
 Function SaveString( str:String,url:Object, asUTF8:Int )
 	Local stream:TStream=WriteStream( url )
 	If Not stream Throw New TStreamWriteException
-	Local t:Byte Ptr
-	If asUTF8 Then
-		t=str.ToUTF8String()
-	Else
-		t=str.ToCString()
-	End If
-	stream.WriteBytes t,str.length	'Should be in a try block...or t is leaked!
-	MemFree t
-	stream.Close
+	Try
+		stream.WriteString(str, asUTF8)
+	Finally
+		stream.Close
+	End Try
 End Function
 
 Function LoadObject:Object( url:Object )
@@ -1280,6 +1370,7 @@ End Function
 Rem
 bbdoc: Returns a case sensitive filename if it exists from a case insensitive file path.
 End Rem
+?Not pico
 Function CasedFileName:String(path:String)
 	Local	dir:Byte Ptr
 	Local   sub:String,s:String,f:String,folder:String,p:Int
@@ -1317,6 +1408,7 @@ Function CasedFileName:String(path:String)
 		closedir_(dir)
 	EndIf
 End Function
+?
 
 Rem
 bbdoc: Opens a file for output operations.
@@ -1329,6 +1421,7 @@ End Rem
 Const WRITE_MODE_APPEND:Int = 2
 
 
+?Not pico
 Type TIOStream Extends TFileStream
 
 	Method Pos:Long() Override
@@ -1424,3 +1517,4 @@ Type TIOStream Extends TFileStream
 	End Function
 
 End Type
+?
