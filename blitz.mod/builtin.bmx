@@ -220,6 +220,7 @@ Function Min:ULongInt(a:ULongInt, b:ULongInt) Inline
 	Return a
 End Function
 
+?not pico
 Extern
 	Function bbIntAbs:Int(a:Int)="int bbIntAbs(int)!"
 	Function bbFloatAbs:Double(a:Double)="double bbFloatAbs(double)!"
@@ -228,6 +229,34 @@ Extern
 	Function bbFloatSgn:Int(a:Double)="double bbFloatSgn(double)!"
 	Function bbLongSgn:Int(a:Long)="BBInt64 bbLongSgn(BBInt64)!"
 End Extern
+?pico
+Function bbIntAbs:Int(a:Int) Inline
+	If a < 0 Then Return -a
+	Return a
+End Function
+
+Function bbFloatAbs:Double(a:Double) Inline
+	If a < 0 Then Return -a
+	Return a
+End Function
+
+Function bbLongAbs:Long(a:Long) Inline
+	If a < 0 Then Return -a
+	Return a
+End Function
+
+Function bbIntSgn:Int(a:Int) Inline
+	Return (a > 0) - (a < 0)
+End Function
+
+Function bbFloatSgn:Int(a:Double) Inline
+	Return (a > 0) - (a < 0)
+End Function
+
+Function bbLongSgn:Int(a:Long) Inline
+	Return (a > 0) - (a < 0)
+End Function
+?
 
 Rem
 bbdoc: Returns the absolute value of the #Int argument.

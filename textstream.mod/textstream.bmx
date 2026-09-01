@@ -594,5 +594,4 @@ Function Encode:Int(char:Int, buf:Byte Ptr, count:Int)
 		buf[3] = (char & $3f) | $80
 		Return 4
 	End If
-	Return -1
 End Function
