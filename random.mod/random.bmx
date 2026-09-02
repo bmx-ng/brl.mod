@@ -6,12 +6,14 @@ bbdoc: Random numbers - Default implementation
 End Rem
 Module BRL.Random
 
-ModuleInfo "Version: 1.11"
+ModuleInfo "Version: 1.12"
 ModuleInfo "Author: Mark Sibly, Floyd"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.12"
+ModuleInfo "History: Save and restore random state"
 ModuleInfo "History: 1.11"
 ModuleInfo "History: Improved range of Rand()"
 ModuleInfo "History: 1.10"
@@ -42,8 +44,9 @@ random number generators can be used in parallel.
 End Rem
 Type TRandomDefault Extends TRandom
 	
+	Internal
+	Field orig_state:Int
 	Private
-	
 	Field rnd_state:Int=$1234
 	
 	Public
@@ -63,6 +66,7 @@ Type TRandomDefault Extends TRandom
 			SeedRnd seed
 		Else
 			rnd_state = seed
+			orig_state = seed
 		End If
 	End Method
 
@@ -226,6 +230,7 @@ Type TRandomDefault Extends TRandom
 	Method SeedRnd(seed:Int)
 		rnd_state=seed & $7fffffff             				'enforces rnd_state >= 0
 		If rnd_state=0 Or rnd_state=RND_M rnd_state=$1234	'disallow 0 and M
+		orig_state = rnd_state
 	End Method
 	
 	Rem
@@ -235,7 +240,7 @@ Type TRandomDefault Extends TRandom
 	numbers.
 	End Rem
 	Method RndSeed:Int()
-		Return rnd_state
+		Return orig_state
 	End Method
 
 	Method GetName:String()
@@ -243,10 +248,9 @@ Type TRandomDefault Extends TRandom
 	End Method
 
 	Method SerializeState:String() Override
-		Local data:TJSONObject = New TJSONObject.Create()
-		data.Set("state", New TJSONString.Create(String.FromInt(rnd_state)))
-
-		Return data.SaveString(JSON_COMPACT, 0)
+		Local data:String = String.FromInt(rnd_state)
+		data :+ ":" + String.FromInt(orig_state)
+		Return data
 	End Method
 End Type
 
@@ -270,15 +274,30 @@ Type TRandomDefaultFactory Extends TRandomFactory
 		Return New TRandomDefault()
 	End Method
 
-	Method DeserializeState:TRandom(data:TJSONObject) Override
-		Local stateValue:TJSONString = TJSONString(data.Get("state"))
+	Method DeserializeState:TRandom(data:String) Override
 
-		If Not stateValue Then
+		If Not data Then
 			Return Null
 		End If
 
-		Local state:Int = stateValue.Value().ToInt()
-		Return New TRandomDefault(state, True)
+		Local parts:String[] = data.Split(":")
+		If Len(parts) <> 2 Then
+			Return Null
+		End If
+
+		Local stateValue:String = parts[0]
+		Local origStateValue:String = parts[1]
+
+		If Not stateValue Or Not origStateValue Then
+			Return Null
+		End If
+
+		Local state:Int = stateValue.ToInt()
+		Local origState:Int = origStateValue.ToInt()
+
+		Local r:TRandomDefault =  New TRandomDefault(state, True)
+		r.orig_state = origState
+		Return r
 	End Method
 End Type
 
