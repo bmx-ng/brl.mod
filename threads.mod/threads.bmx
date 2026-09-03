@@ -6,10 +6,12 @@ bbdoc: System/Threads
 End Rem
 Module BRL.Threads
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.04"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Import Pub.Time explicitly for CurrentUnixTime."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Added TFuture type."
 ModuleInfo "History: 1.02"
@@ -25,7 +27,7 @@ Import "threads_mac.m"
 
 ?Threaded
 
-Import Pub.Stdc
+Import Pub.Time
 Import BRL.Time
 Import "threads.c"
 
