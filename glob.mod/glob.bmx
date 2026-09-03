@@ -23,10 +23,12 @@ bbdoc: FileSystem/Glob Pattern Matching
 End Rem
 Module BRL.Glob
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2026 Bruce A Henderson"
 
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Added Pico filesystem and portable sorting support."
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release."
 
@@ -69,9 +71,11 @@ Private
 Const _GLOB_BRACE_EXPAND_LIMIT:Int = 4096
 
 Function _RootPath:String( path:String )
+?Not pico
 	If MaxIO.ioInitialized Then
 		Return "/"
 	End If
+?
 ?Win32
 	If path.StartsWith( "//" )
 		Return path[ ..path.Find( "/",2 )+1 ]
@@ -141,22 +145,19 @@ The globbing implementation works consistently for both the native filesystem
 and the virtual filesystem when #BRL.Io / #MaxIO is enabled.
 End Rem
 Function Glob:String[](pattern:String, flags:EGlobOptions = EGlobOptions.None, baseDir:String = "")
-	Local lst:TList = New TList
+	Local out:String[0]
+	Local count:Int
 
 	Using
 		Local it:TGlobIter = GlobIter(pattern, flags, baseDir)
 	Do
 		While it.MoveNext()
-			lst.AddLast(it.Current())
+			If count = out.length Then out = out[..count + 16]
+			out[count] = it.Current()
+			count :+ 1
 		Wend
 	End Using
-
-	Local out:String[] = New String[lst.Count()]
-	Local i:Int = 0
-	For Local s:String = EachIn lst
-		out[i] = s
-		i :+ 1
-	Next
+	out = out[..count]
 
 	If (flags & EGlobOptions.NoSort) <> EGlobOptions.NoSort Then
 		_SortStrings(out)
@@ -284,9 +285,15 @@ Function GlobIter:TGlobIter(pattern:String, flags:EGlobOptions = EGlobOptions.No
 	Return TGlobIter.Create(pattern, flags, baseDir)
 End Function
 
+?Not pico
 Extern
 	Function bbFoldChar:Short(c:Short)
 End Extern
+?pico
+Extern "C"
+	Function bbFoldChar:Short(c:Short) = "bmx_pico_string_fold_character"
+End Extern
+?
 
 Private
 
@@ -670,7 +677,15 @@ Function _SortStrings(arr:String[])
 	If arr.Length <= 1 Then
 		Return
 	End If
-	arr.Sort()
+	For Local i:Int = 1 Until arr.length
+		Local value:String = arr[i]
+		Local j:Int = i - 1
+		While j >= 0 And arr[j].Compare(value) > 0
+			arr[j + 1] = arr[j]
+			j :- 1
+		Wend
+		arr[j + 1] = value
+	Next
 End Function
 
 Function _UniqueSorted:String[](arr:String[])
@@ -761,34 +776,28 @@ Function _UnescapeGlobLiteral:String(seg:String, flags:EGlobOptions)
 End Function
 
 Function _ExpandBraces:String[](pattern:String, flags:EGlobOptions)
-	' Returns all brace-expanded patterns (or [pattern] if none expand)
-	Local lst:TList = New TList
-	Local count:Int = 0
-	_ExpandBracesToList(lst, pattern, flags, count)
-
-	Local out:String[] = New String[lst.Count()]
-	Local i:Int = 0
-	For Local s:String = EachIn lst
-		out[i] = s
-		i :+ 1
-	Next
-	Return out
+	Local out:String[0]
+	Local count:Int
+	_ExpandBracesToArray(out, pattern, flags, count)
+	Return out[..count]
 End Function
 
-Function _ExpandBracesToList(results:TList, pat:String, flags:EGlobOptions, count:Int Var)
+Function _ExpandBracesToArray(results:String[] Var, pat:String, flags:EGlobOptions, count:Int Var)
 	' Recursively expands braces into results.
 	' count tracks number of emitted patterns for explosion control.
 
 	If count >= _GLOB_BRACE_EXPAND_LIMIT Then
 		' Stop expanding further; treat remaining braces literally
-		results.AddLast(pat)
+		If count = results.length Then results = results[..count + 16]
+		results[count] = pat
 		count :+ 1
 		Return
 	End If
 
 	Local openIndex:Int, closeIndex:Int
 	If Not _FindFirstBrace(pat, flags, openIndex, closeIndex) Then
-		results.AddLast(pat)
+		If count = results.length Then results = results[..count + 16]
+		results[count] = pat
 		count :+ 1
 		Return
 	End If
@@ -802,20 +811,19 @@ Function _ExpandBracesToList(results:TList, pat:String, flags:EGlobOptions, coun
 		' Continue scanning after this brace pair by expanding the suffix part recursively.
 		' Easiest: replace the first "{...}" with itself and expand braces in the suffix.
 		' This maintains correct behavior for patterns like "a{b}c{d,e}".
-		Local nextPat:String = prefix + "{" + inner + "}" + suffix
-
 		' To avoid infinite loops, skip past this brace by temporarily masking it:
 		' We'll expand braces in the suffix by searching from after the close brace.
 		' Simple approach: expand braces in suffix only, then rejoin.
-		Local suffixExp:TList = New TList
+		Local suffixExp:String[0]
 		Local tmpCount:Int = 0
-		_ExpandBracesToList(suffixExp, suffix, flags, tmpCount)
+		_ExpandBracesToArray(suffixExp, suffix, flags, tmpCount)
 
-		For Local s:String = EachIn suffixExp
+		For Local suffixIndex:Int = 0 Until tmpCount
 			If count >= _GLOB_BRACE_EXPAND_LIMIT Then
 				Exit
 			End If
-			results.AddLast(prefix + "{" + inner + "}" + s)
+			If count = results.length Then results = results[..count + 16]
+			results[count] = prefix + "{" + inner + "}" + suffixExp[suffixIndex]
 			count :+ 1
 		Next
 		Return
@@ -827,20 +835,23 @@ Function _ExpandBracesToList(results:TList, pat:String, flags:EGlobOptions, coun
 		If count >= _GLOB_BRACE_EXPAND_LIMIT Then
 			Exit
 		End If
-		_ExpandBracesToList(results, prefix + opt + suffix, flags, count)
+		_ExpandBracesToArray(results, prefix + opt + suffix, flags, count)
 	Next
 End Function
 
 Function _SplitTopLevelCommas:String[](inner:String, flags:EGlobOptions)
 	' Splits "a,{b,c},d" -> ["a", "{b,c}", "d"] (only top-level commas)
-	Local parts:TList = New TList
+	Local parts:String[0]
+	Local count:Int
 	Local depth:Int = 0
 	Local start:Int = 0
 	Local i:Int = 0
 
 	While i <= inner.Length
 		If i = inner.Length Then
-			parts.AddLast(inner[start..i])
+			If count = parts.length Then parts = parts[..count + 8]
+			parts[count] = inner[start..i]
+			count :+ 1
 			Exit
 		End If
 
@@ -858,20 +869,16 @@ Function _SplitTopLevelCommas:String[](inner:String, flags:EGlobOptions)
 				depth :- 1
 			End If
 		ElseIf c = Asc(",") And depth = 0 Then
-			parts.AddLast(inner[start..i])
+			If count = parts.length Then parts = parts[..count + 8]
+			parts[count] = inner[start..i]
+			count :+ 1
 			start = i + 1
 		End If
 
 		i :+ 1
 	Wend
 
-	Local out:String[] = New String[parts.Count()]
-	Local n:Int = 0
-	For Local s:String = EachIn parts
-		out[n] = s
-		n :+ 1
-	Next
-	Return out
+	Return parts[..count]
 End Function
 
 Function _BraceHasTopLevelComma:Int(inner:String, flags:EGlobOptions)
@@ -980,6 +987,7 @@ Function _MatchGlobOne:Int(pattern:String, path:String, flags:EGlobOptions = EGl
 
 	' Root handling: rooted patterns must match rooted paths from the same root
 	Local root:String = ""
+?Not pico
 	If MaxIO.ioInitialized Then
 		If pattern.StartsWith("/") Then
 			root = "/"
@@ -987,6 +995,9 @@ Function _MatchGlobOne:Int(pattern:String, path:String, flags:EGlobOptions = EGl
 	Else
 		root = _RootPath(pattern)
 	End If
+?pico
+	root = _RootPath(pattern)
+?
 
 	If root <> "" Then
 		If Not path.StartsWith(root) Then
@@ -1106,6 +1117,7 @@ Type TGlobOneIter Implements ICloseableIterator<String>
 		Local root:String = ""
 		iterator.rooted = False
 
+?Not pico
 		If MaxIO.ioInitialized Then
 			iterator.rooted = pattern.StartsWith("/")
 			If iterator.rooted Then
@@ -1115,6 +1127,10 @@ Type TGlobOneIter Implements ICloseableIterator<String>
 			root = _RootPath(pattern)
 			iterator.rooted = (root <> "")
 		End If
+?pico
+		root = _RootPath(pattern)
+		iterator.rooted = (root <> "")
+?
 
 		Local remainder:String = pattern
 		If iterator.rooted Then
@@ -1143,7 +1159,7 @@ Type TGlobOneIter Implements ICloseableIterator<String>
 		' Base for relativizing outputs
 		iterator.relBase = iterator.start
 
-		iterator.stack = New TList
+		iterator.stack = CreateList()
 
 		' Seed the stack with the first “call”
 		Local frame:TGlobFrame = New TGlobFrame

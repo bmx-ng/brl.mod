@@ -24,10 +24,12 @@ about: Provides the #TPath class for representing and manipulating filesystem pa
 End Rem
 Module BRL.Path
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2026 Bruce A Henderson"
 
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Added Pico filesystem compatibility."
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release."
 
@@ -71,7 +73,8 @@ Public
 
 		Local acc:TPath = Null
 
-		For Local part:Object = EachIn parts
+		For Local partIndex:Int = 0 Until parts.length
+			Local part:Object = parts[partIndex]
 			Local s:String
 
 			Local tp:TPath = TPath(part)
@@ -79,7 +82,11 @@ Public
 				s = tp._path
 			Else
 				If ObjectIsString(part) Then
+?pico
+					s = PicoStreamURLString(part)
+?Not pico
 					s = String(part)
+?
 				Else
 					Throw "TPath.FromParts: Invalid part. Must be TPath or String."
 				End If
@@ -99,6 +106,11 @@ Public
 	bbdoc: Returns the string representation of the path.
 	End Rem
 	Method ToString:String() Override
+		Return _path
+	End Method
+
+	' Internal non-Object virtual used where Pico does not need dynamic Object.ToString.
+	Method _PathValue:String()
 		Return _path
 	End Method
 
@@ -332,14 +344,17 @@ Public
 		Wend
 
 		' Build relative segments
-		Local rel:TList = New TList
+		Local rel:String[asegs.Length - i + bsegs.Length - i]
+		Local relCount:Int
 
 		For Local j:Int = i Until asegs.Length
-			rel.AddLast("..")
+			rel[relCount] = ".."
+			relCount :+ 1
 		Next
 
 		For Local j:Int = i Until bsegs.Length
-			rel.AddLast(bsegs[j])
+			rel[relCount] = bsegs[j]
+			relCount :+ 1
 		Next
 
 		' Join segments
@@ -594,22 +609,18 @@ Public
 	about: This is the eager equivalent of #IterDir.
 	End Rem
 	Method List:TPath[](skipDots:Int = True)
-		Local lst:TList = New TList
+		Local out:TPath[0]
+		Local count:Int
 		Using
 			Local iter:TPathDirIterator = IterDir(skipDots)
 		Do
 			While iter.MoveNext()
-				lst.AddLast(iter.Current())
+				If count = out.length Then out = out[..count + 16]
+				out[count] = iter.Current()
+				count :+ 1
 			Wend
 		End Using
-
-		Local out:TPath[] = New TPath[lst.Count()]
-		Local i:Int = 0
-		For Local path:TPath = EachIn lst
-			out[i] = path
-			i :+ 1
-		Next
-		Return out
+		Return out[..count]
 	End Method
 
 	Rem
@@ -956,10 +967,8 @@ Type TPathDirIterator Implements ICloseableIterator<TPath>
 		it._skipDots = skipDots
 
 		' Open lazily or eagerly. Eager is fine: ReadDir returns Null if not a dir.
-		If baseDir And baseDir.IsDir() Then
-			it._dir = ReadDir(baseDir.ToString())
-		Else
-			it._dir = Null
+		If baseDir <> Null Then
+			If baseDir.IsDir() Then it._dir = ReadDir(baseDir._PathValue())
 		End If
 
 		Return it
@@ -1017,6 +1026,7 @@ End Type
 Private
 
 Function _RootPath:String( path:String )
+?Not pico
 	If MaxIO.ioInitialized Then
 		If path.StartsWith("/") Then
 			Return "/"
@@ -1024,6 +1034,7 @@ Function _RootPath:String( path:String )
 			Return ""
 		End If
 	End If
+?
 ?Win32
 	If path.StartsWith( "//" )
 		Return path[ ..path.Find( "/",2 )+1 ]
