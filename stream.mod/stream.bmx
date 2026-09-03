@@ -6,12 +6,14 @@ bbdoc: Streams/Streams
 End Rem
 Module BRL.Stream
 
-ModuleInfo "Version: 1.14"
+ModuleInfo "Version: 1.15"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.15"
+ModuleInfo "History: Allow Pico filesystem factories to handle ordinary paths."
 ModuleInfo "History: 1.14"
 ModuleInfo "History: Share protocol URL parsing with Pico stream factories."
 ModuleInfo "History: 1.13"
@@ -959,6 +961,11 @@ Function OpenStream:TStream( url:Object,readable:Int=True,writeMode:Int=WRITE_MO
 			Else
 				Return TCStream.OpenFile( str,readable,writeMode )
 			End If
+?
+?pico
+		Else
+			proto=""
+			path=str
 ?
 		EndIf
 	EndIf

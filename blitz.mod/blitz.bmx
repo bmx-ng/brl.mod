@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.31"
+ModuleInfo "Version: 1.32"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 '
+ModuleInfo "History: 1.32"
+ModuleInfo "History: Added Pico ObjectIsString support"
 ModuleInfo "History: 1.31"
 ModuleInfo "History: Added Pico DebugStop debugger breakpoint support"
 ModuleInfo "History: 1.30"
@@ -895,7 +897,11 @@ Rem
 bbdoc: Determines whether the #Object @obj is a #String.
 returns: #True if @obj is a #String, or #False otherwise.
 End Rem
+?pico
+Function ObjectIsString:Int(obj:Object)="bmx_pico_object_is_string"
+?Not pico
 Function ObjectIsString:Int(obj:Object)="int bbObjectIsString(BBOBJECT)!"
+?
 
 Function DumpObjectCounts(buffer:Byte Ptr, size:Int, includeZeros:Int)="void bbObjectDumpInstanceCounts(char *, int, int)!"
 Global CountObjectInstances:Int="bbCountInstances"
