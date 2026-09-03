@@ -23,10 +23,12 @@ bbdoc: IO Abstraction
 End Rem
 Module BRL.IO
 
-ModuleInfo "Version: 1.02"
+ModuleInfo "Version: 1.03"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Bruce A Henderson"
 
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Import Pub.Time explicitly for SDateTime support."
 ModuleInfo "History: 1.02"
 ModuleInfo "History: Added PermitSymbolicLinks()"
 ModuleInfo "History: Documented SMaxIO_Stat and added SDateTime getters."

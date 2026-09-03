@@ -20,6 +20,7 @@ SuperStrict
 
 Import Pub.Physfs
 Import Pub.Stdc
+Import Pub.Time
 
 Import "../../pub.mod/physfs.mod/physfs/src/*.h"
 Import "glue.c"

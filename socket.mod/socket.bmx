@@ -6,12 +6,14 @@ bbdoc: Networking/Sockets
 End Rem
 Module BRL.Socket
 
-ModuleInfo "Version: 1.05"
+ModuleInfo "Version: 1.06"
 ModuleInfo "Author: Mark Sibly and Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.06"
+ModuleInfo "History: Use the dedicated Pub.Net module."
 ModuleInfo "History: 1.05"
 ModuleInfo "History: Added ShutdownSocket()."
 ModuleInfo "History: 1.04"
@@ -21,7 +23,7 @@ ModuleInfo "History: Added IPV6 support."
 ModuleInfo "History: 1.02 Release"
 ModuleInfo "History: Fixed socket name 0 failing"
 
-Import Pub.StdC
+Import Pub.Net
 
 Private
 
@@ -150,7 +152,11 @@ Type TSocket
 			End If
 		End If
 		
+?win32 And ptr64
+		Local client:Long
+?Not (win32 And ptr64)
 		Local client:Int
+?
 		
 		If storage Then
 			client = bmx_stdc_accept_(_socket, storage.storagePtr)
@@ -158,7 +164,7 @@ Type TSocket
 			client = bmx_stdc_accept_(_socket, Null)
 		End If
 		
-		If client > 0 Then
+		If client <> INVALID_SOCKET Then
 			Return Create( client )
 		End If
 	End Method
