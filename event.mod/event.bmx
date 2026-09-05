@@ -6,12 +6,14 @@ bbdoc: Events/Events
 End Rem
 Module BRL.Event
 
-ModuleInfo "Version: 1.08"
+ModuleInfo "Version: 1.09"
 ModuleInfo "Author: Mark Sibly, Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.09"
+ModuleInfo "History: Added Pico-compatible event formatting."
 ModuleInfo "History: 1.08"
 ModuleInfo "History: Added EVENT_DISPLAYMOVED."
 ModuleInfo "History: 1.07"
@@ -107,7 +109,13 @@ Type TEvent
 				t="Unknown Event, id="+id
 			EndIf
 		EndIf
-		Return t+": data="+data+", mods="+mods+", x="+x+", y="+y+", extra=~q"+String(extra)+"~q"
+		Local extraText:String
+		?not pico
+		If extra Then extraText=extra.ToString()
+		?pico
+		If extra Then extraText="Object"
+		?
+		Return t+": data="+data+", mods="+mods+", x="+x+", y="+y+", extra=~q"+extraText+"~q"
 	End Method
 	
 	Rem

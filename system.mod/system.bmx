@@ -6,12 +6,14 @@ bbdoc: System/System
 End Rem
 Module BRL.System
 
-ModuleInfo "Version: 1.29"
+ModuleInfo "Version: 1.30"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.30"
+ModuleInfo "History: Added PollSystemHook and Pico-compatible platform handling."
 ModuleInfo "History: 1.29"
 ModuleInfo "History: Split out into BRL.System and BRL.SystemDefault modules."
 ModuleInfo "History: 1.28"
@@ -69,10 +71,12 @@ ModuleInfo "History: Added mouse capture to Win32"
 ModuleInfo "History: Fixed C Compiler warnings"
 
 Import BRL.Event
-Import BRL.KeyCodes
 Import BRL.Hook
+?Not pico
+Import BRL.KeyCodes
 Import BRL.FileSystem
 Import Pub.StdC
+?
 
 Import "driver.bmx"
 
@@ -81,6 +85,13 @@ Private
 Global _busy
 
 Public
+
+Rem
+bbdoc: Hook id run after the system driver has polled or waited for platform events.
+about: Hook functions run in normal application context and may emit events. Hardware
+interrupt handlers must defer managed work until this hook is run.
+End Rem
+Global PollSystemHook:Int=AllocHookId()
 
 Rem
 bbdoc: Poll operating system
@@ -97,6 +108,7 @@ Function PollSystem()
 	If _busy Return
 	_busy=True
 	SystemDriver().Poll
+	RunHooks PollSystemHook,Null
 	_busy=False
 End Function
 
@@ -117,6 +129,7 @@ Function WaitSystem()
 	If _busy Return
 	_busy=True
 	SystemDriver().Wait
+	RunHooks PollSystemHook,Null
 	_busy=False
 End Function
 
@@ -222,6 +235,7 @@ bbdoc: Opens a URL with the system's default web browser.
 about: Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
 Function OpenURL( url:String )
+	?Not pico
 	Local dev:String,anchor:String
 
 	dev=url[..5].toLower()
@@ -239,6 +253,9 @@ Function OpenURL( url:String )
 		EndIf
 	EndIf
 	Return SystemDriver().OpenURL( url )
+	?pico
+	Return False
+	?
 End Function
 
 

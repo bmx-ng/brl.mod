@@ -6,12 +6,14 @@ bbdoc: Events/Event queue
 End Rem
 Module BRL.EventQueue
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.04"
 ModuleInfo "Author: Mark Sibly, Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Added Pico system-driver and event-text integration."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.02"
@@ -23,6 +25,13 @@ ModuleInfo "History: Created module"
 
 Import BRL.Event
 Import BRL.System
+?pico
+Import BRL.SystemDefault
+
+Extern "C"
+	Function _PicoEventString:String(value:Object) = "bmx_pico_stream_url_string"
+End Extern
+?
 
 Private
 
@@ -212,7 +221,11 @@ bbdoc: Get current event extra value converted to a string
 returns: The @extra field of the #CurrentEvent global variable converted to a string
 EndRem
 Function EventText:String()
+	?not pico
 	Return String( CurrentEvent.extra )
+	?pico
+	Return _PicoEventString(CurrentEvent.extra)
+	?
 End Function
 
 Rem
