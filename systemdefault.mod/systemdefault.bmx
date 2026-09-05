@@ -6,12 +6,14 @@ bbdoc: System/System
 End Rem
 Module BRL.SystemDefault
 
-ModuleInfo "Version: 1.29"
+ModuleInfo "Version: 1.30"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.30"
+ModuleInfo "History: Added the Pico system driver."
 ModuleInfo "History: 1.29"
 ModuleInfo "History: Split out into BRL.System and BRL.SystemDefault modules."
 ModuleInfo "History: 1.28"
@@ -72,7 +74,7 @@ Import BRL.System
 Import BRL.KeyCodes
 Import BRL.Hook
 
-?Not android
+?Not android And Not pico
 Import "system.c"
 ?
 
@@ -85,4 +87,7 @@ Import "-lcomdlg32"
 InitSystemDriver(New TWin32SystemDriver)
 ?Linux
 Import "system.linux.bmx"
+?pico
+Import "system.pico.bmx"
+InitSystemDriver(New TPicoSystemDriver)
 ?

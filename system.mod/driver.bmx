@@ -45,11 +45,15 @@ about: There can only be one system driver initialised. A second call to this fu
 End Rem
 Function InitSystemDriver(driver:TSystemDriver)
 	If _Driver Then
-		If IWrappedSystemDriver(driver) Then
-			IWrappedSystemDriver(driver).SetDriver(_Driver)
-		Else
-			Throw "Cannot initialise " + driver.ToString() + ". System driver already configured as " + _Driver.ToString()
-		End If
+			If IWrappedSystemDriver(driver) Then
+				IWrappedSystemDriver(driver).SetDriver(_Driver)
+			Else
+				?Not pico
+				Throw "Cannot initialise " + driver.ToString() + ". System driver already configured as " + _Driver.ToString()
+				?pico
+				Throw "Cannot initialise " + driver.Name() + ". System driver already configured as " + _Driver.Name()
+				?
+			End If
 	End If
 	_Driver = driver
 End Function
