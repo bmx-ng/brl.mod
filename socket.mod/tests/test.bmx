@@ -28,8 +28,8 @@ Type TSocketTest Extends TTest
 
 		Local sent:Byte[] = [Byte(11), Byte(22), Byte(33), Byte(44)]
 		Local received:Byte[4]
-		AssertEquals(sent.Length, Int(client.Send(sent, sent.Length)))
-		AssertEquals(received.Length, Int(server.Recv(received, received.Length)))
+		AssertEquals(sent.Length, Int(client.Send(sent, Size_T(sent.Length))))
+		AssertEquals(received.Length, Int(server.Recv(received, Size_T(received.Length))))
 
 		For Local i:Int = 0 Until sent.Length
 			AssertEquals(Int(sent[i]), Int(received[i]))
