@@ -6,12 +6,14 @@ bbdoc: Networking/Sockets
 End Rem
 Module BRL.Socket
 
-ModuleInfo "Version: 1.07"
+ModuleInfo "Version: 1.08"
 ModuleInfo "Author: Mark Sibly and Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.08"
+ModuleInfo "History: Added Pico socket readiness events and portable error access."
 ModuleInfo "History: 1.07"
 ModuleInfo "History: Added Pico socket support and integer IPv4 conversion."
 ModuleInfo "History: 1.06"
@@ -26,6 +28,10 @@ ModuleInfo "History: 1.02 Release"
 ModuleInfo "History: Fixed socket name 0 failing"
 
 Import Pub.Net
+?pico
+Import BRL.Event
+Import Pico.Runtime.Events
+?
 
 Private
 
@@ -63,6 +69,22 @@ End Extern
 
 Public
 
+?pico
+Global EVENT_SOCKETREADABLE:Int = AllocUserEventId("SocketReadable")
+Global EVENT_SOCKETWRITABLE:Int = AllocUserEventId("SocketWritable")
+Global EVENT_SOCKETACCEPT:Int = AllocUserEventId("SocketAccept")
+Global EVENT_SOCKETCLOSED:Int = AllocUserEventId("SocketClosed")
+Global EVENT_SOCKETERROR:Int = AllocUserEventId("SocketError")
+
+Const SocketEventReadable:Int = 1
+Const SocketEventWritable:Int = 2
+Const SocketEventAccept:Int = 4
+Const SocketEventClosed:Int = 8
+Const SocketEventError:Int = 16
+Const SocketEventAll:Int = SocketEventReadable | SocketEventWritable | ..
+	SocketEventAccept | SocketEventClosed | SocketEventError
+?
+
 Type TSocketException
 	Method ToString:String() Override
 		Return "Internal socket error"
@@ -92,6 +114,9 @@ Type TSocket
 	End Method
 
 	Method Close()
+		?pico
+		DisableEvents()
+		?
 		If _socket=INVALID_SOCKET Return
 		If _autoClose closesocket_ _socket
 		_socket=INVALID_SOCKET
@@ -181,6 +206,75 @@ Type TSocket
 		Return n
 ?
 	End Method
+
+	Method LastError:Int()
+		If _socket = INVALID_SOCKET Then Return -1
+		Local socketError:Int
+		Local count:Int = 4
+		If getsockopt_(_socket, SOL_SOCKET, SO_ERROR, Varptr socketError, count) < 0 Then
+			Return -1
+		End If
+		Return socketError
+	End Method
+
+?pico
+	Rem
+	bbdoc: Enables deferred readiness events for this Pico socket.
+	about: Events are edge-triggered and use this TSocket as EventSource. EventData
+	contains the available byte count, pending client count, writable byte count,
+	or native error code as appropriate. Drain readable data and pending clients
+	before waiting for another edge.
+	End Rem
+	Method EnableEvents:Int(events:Int = SocketEventAll)
+		DisableEvents()
+		If _socket = INVALID_SOCKET Then Return False
+		If events & SocketEventReadable Then
+			_readableToken = RegisterPicoEventSource(Self, EVENT_SOCKETREADABLE, True)
+		End If
+		If events & SocketEventWritable Then
+			_writableToken = RegisterPicoEventSource(Self, EVENT_SOCKETWRITABLE, True)
+		End If
+		If events & SocketEventAccept Then
+			_acceptToken = RegisterPicoEventSource(Self, EVENT_SOCKETACCEPT, True)
+		End If
+		If events & SocketEventClosed Then
+			_closedToken = RegisterPicoEventSource(Self, EVENT_SOCKETCLOSED, True)
+		End If
+		If events & SocketEventError Then
+			_errorToken = RegisterPicoEventSource(Self, EVENT_SOCKETERROR, True)
+		End If
+		If ((events & SocketEventReadable) And Not _readableToken) Or ..
+				((events & SocketEventWritable) And Not _writableToken) Or ..
+				((events & SocketEventAccept) And Not _acceptToken) Or ..
+				((events & SocketEventClosed) And Not _closedToken) Or ..
+				((events & SocketEventError) And Not _errorToken) Or ..
+				Not bmx_net_set_event_tokens(_socket, _readableToken, _writableToken, ..
+					_acceptToken, _closedToken, _errorToken) Then
+			DisableEvents()
+			Return False
+		End If
+		Return True
+	End Method
+
+	Rem
+	bbdoc: Disables deferred readiness events for this Pico socket.
+	End Rem
+	Method DisableEvents()
+		If _socket <> INVALID_SOCKET Then
+			bmx_net_set_event_tokens(_socket, 0, 0, 0, 0, 0)
+		End If
+		If _readableToken Then ReleasePicoEventSource(_readableToken)
+		If _writableToken Then ReleasePicoEventSource(_writableToken)
+		If _acceptToken Then ReleasePicoEventSource(_acceptToken)
+		If _closedToken Then ReleasePicoEventSource(_closedToken)
+		If _errorToken Then ReleasePicoEventSource(_errorToken)
+		_readableToken = 0
+		_writableToken = 0
+		_acceptToken = 0
+		_closedToken = 0
+		_errorToken = 0
+	End Method
+?
 	
 	Method SetTCPNoDelay( enable )
 		Local flag=enable
@@ -307,6 +401,13 @@ Type TSocket
 	Field _socket:Long
 ?
 	Field _autoClose:Int
+	?pico
+	Field _readableToken:UInt
+	Field _writableToken:UInt
+	Field _acceptToken:UInt
+	Field _closedToken:UInt
+	Field _errorToken:UInt
+	?
 	
 	Field _localIp:String,_localPort:Int
 	Field _remoteIp:String,_remotePort:Int
@@ -407,6 +508,13 @@ returns: Number of bytes that may be read without causing the socket to block
 End Rem
 Function SocketReadAvail( socket:TSocket )
 	Return socket.ReadAvail()
+End Function
+
+Rem
+bbdoc: Returns and clears the socket's pending error code, or -1 when unavailable.
+End Rem
+Function SocketLastError:Int(socket:TSocket)
+	Return socket.LastError()
 End Function
 
 Rem
