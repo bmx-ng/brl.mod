@@ -6,12 +6,14 @@ bbdoc: Networking/Sockets
 End Rem
 Module BRL.Socket
 
-ModuleInfo "Version: 1.06"
+ModuleInfo "Version: 1.07"
 ModuleInfo "Author: Mark Sibly and Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.07"
+ModuleInfo "History: Added Pico socket support and integer IPv4 conversion."
 ModuleInfo "History: 1.06"
 ModuleInfo "History: Use the dedicated Pub.Net module."
 ModuleInfo "History: 1.05"
@@ -170,10 +172,14 @@ Type TSocket
 	End Method
 	
 	Method ReadAvail:Int()
+?pico
+		Return bmx_net_read_avail(_socket)
+?not pico
 		Local n
 		Local t=ioctl_( _socket,FIONREAD,Varptr n )
 		If t<0 Return 0
 		Return n
+?
 	End Method
 	
 	Method SetTCPNoDelay( enable )
@@ -445,11 +451,19 @@ returns: An integer version of an ip address.
 End Rem
 Function DottedIPToInt:Int(addr:String)
 	Local parts:String[] = addr.Split(".")
+?pico
+	If parts.length <> 4 Then Return 0
+	Local num:Int
+	For Local i:Int = 0 Until 4
+		num = (num Shl 8) | (parts[i].ToInt() & 255)
+	Next
+?not pico
 	Local num:Long
 	For Local i:Int = 0 Until parts.length
 		Local power:Int = 3 - i
 		num :+ (parts[i].ToInt() Mod 256) * (256 ^ power)
 	Next
+?
 	Return num
 End Function
 
