@@ -82,9 +82,9 @@ Public
 				s = tp._path
 			Else
 				If ObjectIsString(part) Then
-?pico
-					s = PicoStreamURLString(part)
-?Not pico
+?embedded
+					s = EmbeddedStreamURLString(part)
+?Not embedded
 					s = String(part)
 ?
 				Else

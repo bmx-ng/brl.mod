@@ -120,7 +120,7 @@ ModuleInfo "CPP_OPTS: -std=c++11"
 ' uncomment to enable allocation counting
 'ModuleInfo "CC_OPTS: -DBBCC_ALLOCCOUNT"
 
-?not pico
+?not embedded
 Import "blitz_app.c"
 Import "blitz_types.c"
 Import "blitz_cclib.c"
@@ -143,10 +143,10 @@ Import "blitz_atstart.c"
 Import "blitz_string_ex.cpp"
 Import "blitz_stringsplit.c"
 
-?coverage and not pico
+?coverage and not embedded
 Import "hashmap/hashmap.c"
 ?
-?not pico
+?not embedded
 
 '?Threaded
 'Import "blitz_gc_ms.c"
@@ -203,10 +203,10 @@ Import "bdwgc/gc_dlopen.c"
 Import "bdwgc/backgraph.c"
 Import "bdwgc/win32_threads.c"
 Import "bdwgc/thread_local_alloc.c"	'bdwgc only? not gc6.7
-?nx and not pico
+?nx and not embedded
 Import "blitz_nx.c"
 ?
-?not pico
+?not embedded
 Import "tree/tree.c"
 
 Import "ryu/*.h"
@@ -222,7 +222,7 @@ Include "hash.bmx"
 Include "equal.bmx"
 
 Extern
-?Not pico
+?Not embedded
 Global OnDebugStop()="bbOnDebugStop"
 ?
 Global OnDebugLog( message:String )="bbOnDebugLog"
@@ -400,11 +400,11 @@ Rem
 bbdoc: Stop program execution and enter debugger
 about: If there is no debugger present, this command is ignored.
 End Rem
-?pico
+?embedded
 Extern
-Function DebugStop()="bmx_pico_debug_stop"
+Function DebugStop()="bmx_embedded_debug_stop"
 End Extern
-?Not pico
+?Not embedded
 Function DebugStop()
 	OnDebugStop
 End Function
@@ -897,9 +897,9 @@ Rem
 bbdoc: Determines whether the #Object @obj is a #String.
 returns: #True if @obj is a #String, or #False otherwise.
 End Rem
-?pico
-Function ObjectIsString:Int(obj:Object)="bmx_pico_object_is_string"
-?Not pico
+?embedded
+Function ObjectIsString:Int(obj:Object)="bmx_embedded_object_is_string"
+?Not embedded
 Function ObjectIsString:Int(obj:Object)="int bbObjectIsString(BBOBJECT)!"
 ?
 
