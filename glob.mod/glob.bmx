@@ -285,13 +285,13 @@ Function GlobIter:TGlobIter(pattern:String, flags:EGlobOptions = EGlobOptions.No
 	Return TGlobIter.Create(pattern, flags, baseDir)
 End Function
 
-?Not pico
+?Not embedded
 Extern
 	Function bbFoldChar:Short(c:Short)
 End Extern
-?pico
+?embedded
 Extern "C"
-	Function bbFoldChar:Short(c:Short) = "bmx_pico_string_fold_character"
+	Function bbFoldChar:Short(c:Short) = "bmx_embedded_string_fold_character"
 End Extern
 ?
 

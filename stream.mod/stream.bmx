@@ -43,15 +43,15 @@ ModuleInfo "History: Added LoadString"
 ModuleInfo "History: Added LoadByteArray"
 ModuleInfo "History: Cleaned up docs a bit"
 
-?pico
+?embedded
 Import BRL.Blitz
 Const SEEK_SET_:Int = 0
 Const SEEK_CUR_:Int = 1
 Const SEEK_END_:Int = 2
 Extern
-	Function PicoStreamURLString:String(url:Object)="bmx_pico_stream_url_string"
+	Function EmbeddedStreamURLString:String(url:Object)="bmx_embedded_stream_url_string"
 End Extern
-?Not pico
+?Not embedded
 Import BRL.IO
 Import Pub.StdC
 ?
@@ -164,9 +164,9 @@ Type TIO Implements ICloseable
 	If this method returns 0, the stream has reached end of file.
 	End Rem
 	Method Read:Long( buf:Byte Ptr,count:Long )
-?pico
+?embedded
 		Throw "Stream is not readable"
-?Not pico
+?Not embedded
 		RuntimeError "Stream is not readable"
 		Return 0
 ?
@@ -182,9 +182,9 @@ Type TIO Implements ICloseable
 	If this method returns 0, the stream has reached end of file.
 	End Rem
 	Method Write:Long( buf:Byte Ptr,count:Long )
-?pico
+?embedded
 		Throw "Stream is not writeable"
-?Not pico
+?Not embedded
 		RuntimeError "Stream is not writeable"
 		Return 0
 ?
@@ -196,9 +196,9 @@ Type TIO Implements ICloseable
 	about: Only a few stream types support resizing.
 	End Rem
 	Method SetSize:Int(size:Long)
-?pico
+?embedded
 		Throw "Stream does not support resizing"
-?Not pico
+?Not embedded
 		RuntimeError "Stream does not support resizing"
 		Return 0
 ?
@@ -677,7 +677,7 @@ Type TStreamWrapper Extends TStream
 	End Method
 End Type	
 
-?Not pico
+?Not embedded
 Type TStreamStream Extends TStreamWrapper
 
 	Method Close() Override
@@ -691,7 +691,7 @@ Type TStreamStream Extends TStreamWrapper
 	End Function
 	
 End Type
-?pico
+?embedded
 ' The Pico compiler currently needs the non-owning stream view to provide its
 ' primitive operations directly rather than inherit them through two modules.
 Type TStreamStream Extends TStream
@@ -741,7 +741,7 @@ Type TStreamStream Extends TStream
 End Type
 ?
 
-?Not pico
+?Not embedded
 Type TFileStream Extends TStream
 
 	Const MODE_READ:Int=1
@@ -851,12 +851,12 @@ Type TCStream Extends TFileStream
 		Mode = GetMode(readable, writeMode, _mode)
 		path=path.Replace( "\","/" )
 		Local cstream:Byte Ptr=fopen_( path,Mode )
-?Linux And Not pico
+?Linux And Not embedded
 		If (Not cstream) And (Not writeMode)
 			path=CasedFileName(path)
 			If path cstream=fopen_( path,Mode )
 		EndIf
-?Not pico
+?Not embedded
 		If cstream Return CreateWithCStream( cstream,_mode )
 	End Function
 
@@ -919,9 +919,9 @@ Type TStreamFactory
 	
 	If @url is not a string, both @proto and @path will be Null.
 	End Rem
-?Not pico
+?Not embedded
 	Method CreateStream:TStream( url:Object,proto:String,path:String,readable:Int,writeMode:Int ) Abstract
-?pico
+?embedded
 	Method CreateStream:TStream( url:Object,proto:String,path:String,readable:Int,writeMode:Int )
 		Return Null
 	End Method
@@ -944,9 +944,9 @@ Function OpenStream:TStream( url:Object,readable:Int=True,writeMode:Int=WRITE_MO
 
 	Local proto:String,path:String
 
-?pico
-	Local str:String=PicoStreamURLString( url )
-?Not pico
+?embedded
+	Local str:String=EmbeddedStreamURLString( url )
+?Not embedded
 	Local str:String=String( url )
 ?
 	If str
@@ -954,7 +954,7 @@ Function OpenStream:TStream( url:Object,readable:Int=True,writeMode:Int=WRITE_MO
 		If i<>-1 Then
 			proto=str[..i].ToLower()
 			path=str[i+2..]
-?Not pico
+?Not embedded
 		Else
 			If MaxIO.ioInitialized Then
 				Return TIOStream.OpenFile(str, readable, writemode)
@@ -962,7 +962,7 @@ Function OpenStream:TStream( url:Object,readable:Int=True,writeMode:Int=WRITE_MO
 				Return TCStream.OpenFile( str,readable,writeMode )
 			End If
 ?
-?pico
+?embedded
 		Else
 			proto=""
 			path=str
@@ -1377,7 +1377,7 @@ End Function
 Rem
 bbdoc: Returns a case sensitive filename if it exists from a case insensitive file path.
 End Rem
-?Not pico
+?Not embedded
 Function CasedFileName:String(path:String)
 	Local	dir:Byte Ptr
 	Local   sub:String,s:String,f:String,folder:String,p:Int
@@ -1428,7 +1428,7 @@ End Rem
 Const WRITE_MODE_APPEND:Int = 2
 
 
-?Not pico
+?Not embedded
 Type TIOStream Extends TFileStream
 
 	Method Pos:Long() Override

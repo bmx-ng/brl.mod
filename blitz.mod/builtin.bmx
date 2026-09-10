@@ -220,7 +220,7 @@ Function Min:ULongInt(a:ULongInt, b:ULongInt) Inline
 	Return a
 End Function
 
-?not pico
+?not embedded
 Extern
 	Function bbIntAbs:Int(a:Int)="int bbIntAbs(int)!"
 	Function bbFloatAbs:Double(a:Double)="double bbFloatAbs(double)!"
@@ -229,7 +229,7 @@ Extern
 	Function bbFloatSgn:Int(a:Double)="double bbFloatSgn(double)!"
 	Function bbLongSgn:Int(a:Long)="BBInt64 bbLongSgn(BBInt64)!"
 End Extern
-?pico
+?embedded
 Function bbIntAbs:Int(a:Int) Inline
 	If a < 0 Then Return -a
 	Return a
