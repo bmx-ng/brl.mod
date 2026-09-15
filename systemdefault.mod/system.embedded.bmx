@@ -3,19 +3,19 @@ SuperStrict
 Import BRL.System
 
 Extern "C"
-	Function _PicoSystemWait() = "bmx_pico_system_wait"
+	Function _EmbeddedSystemWait() = "bmx_embedded_system_wait"
 End Extern
 
-Type TPicoSystemDriver Extends TSystemDriver
+Type TEmbeddedSystemDriver Extends TSystemDriver
 	Method Name:String()
-		Return "Pico"
+		Return "Embedded"
 	End Method
 
 	Method Poll()
 	End Method
 
 	Method Wait()
-		_PicoSystemWait()
+		_EmbeddedSystemWait()
 	End Method
 
 	Method MoveMouse(x:Int, y:Int)

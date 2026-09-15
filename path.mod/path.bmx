@@ -1026,7 +1026,7 @@ End Type
 Private
 
 Function _RootPath:String( path:String )
-?Not pico
+?Not embedded
 	If MaxIO.ioInitialized Then
 		If path.StartsWith("/") Then
 			Return "/"

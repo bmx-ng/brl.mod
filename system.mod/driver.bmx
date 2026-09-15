@@ -48,9 +48,9 @@ Function InitSystemDriver(driver:TSystemDriver)
 			If IWrappedSystemDriver(driver) Then
 				IWrappedSystemDriver(driver).SetDriver(_Driver)
 			Else
-				?Not pico
+				?Not embedded
 				Throw "Cannot initialise " + driver.ToString() + ". System driver already configured as " + _Driver.ToString()
-				?pico
+				?embedded
 				Throw "Cannot initialise " + driver.Name() + ". System driver already configured as " + _Driver.Name()
 				?
 			End If

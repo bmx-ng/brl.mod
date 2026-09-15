@@ -72,7 +72,7 @@ ModuleInfo "History: Fixed C Compiler warnings"
 
 Import BRL.Event
 Import BRL.Hook
-?Not pico
+?Not embedded
 Import BRL.KeyCodes
 Import BRL.FileSystem
 Import Pub.StdC
@@ -235,7 +235,7 @@ bbdoc: Opens a URL with the system's default web browser.
 about: Note that a user interface may not be available when in graphics mode on some platforms.
 End Rem
 Function OpenURL( url:String )
-	?Not pico
+	?Not embedded
 	Local dev:String,anchor:String
 
 	dev=url[..5].toLower()
@@ -253,7 +253,7 @@ Function OpenURL( url:String )
 		EndIf
 	EndIf
 	Return SystemDriver().OpenURL( url )
-	?pico
+	?embedded
 	Return False
 	?
 End Function

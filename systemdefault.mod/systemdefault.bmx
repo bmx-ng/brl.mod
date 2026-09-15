@@ -74,7 +74,7 @@ Import BRL.System
 Import BRL.KeyCodes
 Import BRL.Hook
 
-?Not android And Not pico
+?Not android And Not embedded
 Import "system.c"
 ?
 
@@ -87,7 +87,7 @@ Import "-lcomdlg32"
 InitSystemDriver(New TWin32SystemDriver)
 ?Linux
 Import "system.linux.bmx"
-?pico
-Import "system.pico.bmx"
-InitSystemDriver(New TPicoSystemDriver)
+?embedded
+Import "system.embedded.bmx"
+InitSystemDriver(New TEmbeddedSystemDriver)
 ?
