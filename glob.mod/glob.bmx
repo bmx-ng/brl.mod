@@ -71,7 +71,7 @@ Private
 Const _GLOB_BRACE_EXPAND_LIMIT:Int = 4096
 
 Function _RootPath:String( path:String )
-?Not pico
+?Not embedded
 	If MaxIO.ioInitialized Then
 		Return "/"
 	End If
@@ -987,7 +987,7 @@ Function _MatchGlobOne:Int(pattern:String, path:String, flags:EGlobOptions = EGl
 
 	' Root handling: rooted patterns must match rooted paths from the same root
 	Local root:String = ""
-?Not pico
+?Not embedded
 	If MaxIO.ioInitialized Then
 		If pattern.StartsWith("/") Then
 			root = "/"
@@ -995,7 +995,7 @@ Function _MatchGlobOne:Int(pattern:String, path:String, flags:EGlobOptions = EGl
 	Else
 		root = _RootPath(pattern)
 	End If
-?pico
+?embedded
 	root = _RootPath(pattern)
 ?
 
@@ -1117,7 +1117,7 @@ Type TGlobOneIter Implements ICloseableIterator<String>
 		Local root:String = ""
 		iterator.rooted = False
 
-?Not pico
+?Not embedded
 		If MaxIO.ioInitialized Then
 			iterator.rooted = pattern.StartsWith("/")
 			If iterator.rooted Then
@@ -1127,7 +1127,7 @@ Type TGlobOneIter Implements ICloseableIterator<String>
 			root = _RootPath(pattern)
 			iterator.rooted = (root <> "")
 		End If
-?pico
+?embedded
 		root = _RootPath(pattern)
 		iterator.rooted = (root <> "")
 ?

@@ -13,7 +13,7 @@ ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
 ModuleInfo "History: 1.04"
-ModuleInfo "History: Added Pico system-driver and event-text integration."
+ModuleInfo "History: Added embedded system-driver and event-text integration."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Module is now SuperStrict"
 ModuleInfo "History: 1.02"
@@ -25,11 +25,11 @@ ModuleInfo "History: Created module"
 
 Import BRL.Event
 Import BRL.System
-?pico
+?embedded
 Import BRL.SystemDefault
 
 Extern "C"
-	Function _PicoEventString:String(value:Object) = "bmx_pico_stream_url_string"
+	Function _EmbeddedEventString:String(value:Object) = "bmx_embedded_stream_url_string"
 End Extern
 ?
 
@@ -221,10 +221,10 @@ bbdoc: Get current event extra value converted to a string
 returns: The @extra field of the #CurrentEvent global variable converted to a string
 EndRem
 Function EventText:String()
-	?not pico
+	?not embedded
 	Return String( CurrentEvent.extra )
-	?pico
-	Return _PicoEventString(CurrentEvent.extra)
+	?embedded
+	Return _EmbeddedEventString(CurrentEvent.extra)
 	?
 End Function
 

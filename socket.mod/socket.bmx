@@ -6,12 +6,14 @@ bbdoc: Networking/Sockets
 End Rem
 Module BRL.Socket
 
-ModuleInfo "Version: 1.08"
+ModuleInfo "Version: 1.09"
 ModuleInfo "Author: Mark Sibly and Bruce A Henderson"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.09"
+ModuleInfo "History: Generalized socket readiness events for embedded targets."
 ModuleInfo "History: 1.08"
 ModuleInfo "History: Added Pico socket readiness events and portable error access."
 ModuleInfo "History: 1.07"
@@ -28,9 +30,9 @@ ModuleInfo "History: 1.02 Release"
 ModuleInfo "History: Fixed socket name 0 failing"
 
 Import Pub.Net
-?pico
+?embedded
 Import BRL.Event
-Import Pico.Runtime.Events
+Import Embedded.Runtime.Events
 ?
 
 Private
@@ -69,7 +71,7 @@ End Extern
 
 Public
 
-?pico
+?embedded
 Global EVENT_SOCKETREADABLE:Int = AllocUserEventId("SocketReadable")
 Global EVENT_SOCKETWRITABLE:Int = AllocUserEventId("SocketWritable")
 Global EVENT_SOCKETACCEPT:Int = AllocUserEventId("SocketAccept")
@@ -114,7 +116,7 @@ Type TSocket
 	End Method
 
 	Method Close()
-		?pico
+		?embedded
 		DisableEvents()
 		?
 		If _socket=INVALID_SOCKET Return
@@ -197,9 +199,9 @@ Type TSocket
 	End Method
 	
 	Method ReadAvail:Int()
-?pico
+?embedded
 		Return bmx_net_read_avail(_socket)
-?not pico
+?not embedded
 		Local n
 		Local t=ioctl_( _socket,FIONREAD,Varptr n )
 		If t<0 Return 0
@@ -217,9 +219,9 @@ Type TSocket
 		Return socketError
 	End Method
 
-?pico
+?embedded
 	Rem
-	bbdoc: Enables deferred readiness events for this Pico socket.
+	bbdoc: Enables deferred readiness events for this embedded socket.
 	about: Events are edge-triggered and use this TSocket as EventSource. EventData
 	contains the available byte count, pending client count, writable byte count,
 	or native error code as appropriate. Drain readable data and pending clients
@@ -229,19 +231,19 @@ Type TSocket
 		DisableEvents()
 		If _socket = INVALID_SOCKET Then Return False
 		If events & SocketEventReadable Then
-			_readableToken = RegisterPicoEventSource(Self, EVENT_SOCKETREADABLE, True)
+			_readableToken = RegisterEmbeddedEventSource(Self, EVENT_SOCKETREADABLE, True)
 		End If
 		If events & SocketEventWritable Then
-			_writableToken = RegisterPicoEventSource(Self, EVENT_SOCKETWRITABLE, True)
+			_writableToken = RegisterEmbeddedEventSource(Self, EVENT_SOCKETWRITABLE, True)
 		End If
 		If events & SocketEventAccept Then
-			_acceptToken = RegisterPicoEventSource(Self, EVENT_SOCKETACCEPT, True)
+			_acceptToken = RegisterEmbeddedEventSource(Self, EVENT_SOCKETACCEPT, True)
 		End If
 		If events & SocketEventClosed Then
-			_closedToken = RegisterPicoEventSource(Self, EVENT_SOCKETCLOSED, True)
+			_closedToken = RegisterEmbeddedEventSource(Self, EVENT_SOCKETCLOSED, True)
 		End If
 		If events & SocketEventError Then
-			_errorToken = RegisterPicoEventSource(Self, EVENT_SOCKETERROR, True)
+			_errorToken = RegisterEmbeddedEventSource(Self, EVENT_SOCKETERROR, True)
 		End If
 		If ((events & SocketEventReadable) And Not _readableToken) Or ..
 				((events & SocketEventWritable) And Not _writableToken) Or ..
@@ -257,17 +259,17 @@ Type TSocket
 	End Method
 
 	Rem
-	bbdoc: Disables deferred readiness events for this Pico socket.
+	bbdoc: Disables deferred readiness events for this embedded socket.
 	End Rem
 	Method DisableEvents()
 		If _socket <> INVALID_SOCKET Then
 			bmx_net_set_event_tokens(_socket, 0, 0, 0, 0, 0)
 		End If
-		If _readableToken Then ReleasePicoEventSource(_readableToken)
-		If _writableToken Then ReleasePicoEventSource(_writableToken)
-		If _acceptToken Then ReleasePicoEventSource(_acceptToken)
-		If _closedToken Then ReleasePicoEventSource(_closedToken)
-		If _errorToken Then ReleasePicoEventSource(_errorToken)
+		If _readableToken Then ReleaseEmbeddedEventSource(_readableToken)
+		If _writableToken Then ReleaseEmbeddedEventSource(_writableToken)
+		If _acceptToken Then ReleaseEmbeddedEventSource(_acceptToken)
+		If _closedToken Then ReleaseEmbeddedEventSource(_closedToken)
+		If _errorToken Then ReleaseEmbeddedEventSource(_errorToken)
 		_readableToken = 0
 		_writableToken = 0
 		_acceptToken = 0
@@ -401,7 +403,7 @@ Type TSocket
 	Field _socket:Long
 ?
 	Field _autoClose:Int
-	?pico
+	?embedded
 	Field _readableToken:UInt
 	Field _writableToken:UInt
 	Field _acceptToken:UInt
@@ -559,13 +561,13 @@ returns: An integer version of an ip address.
 End Rem
 Function DottedIPToInt:Int(addr:String)
 	Local parts:String[] = addr.Split(".")
-?pico
+?embedded
 	If parts.length <> 4 Then Return 0
 	Local num:Int
 	For Local i:Int = 0 Until 4
 		num = (num Shl 8) | (parts[i].ToInt() & 255)
 	Next
-?not pico
+?not embedded
 	Local num:Long
 	For Local i:Int = 0 Until parts.length
 		Local power:Int = 3 - i

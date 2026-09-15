@@ -18,6 +18,8 @@
 *.armv7.i
 *.arm64.a
 *.arm64.i
+*.xtensa.i
+*.riscv32.i
 .bmx/
 *.i2
 *.exe

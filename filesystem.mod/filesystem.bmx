@@ -45,14 +45,14 @@ ModuleInfo "History: Added optional resurse parameter to CreateDir"
 Import Pub.Time
 Import BRL.BankStream
 
-?Not pico
+?Not embedded
 Import Pub.StdC
 
 ?haiku
 Import "-lbsd"
 ?
 
-?Not pico
+?Not embedded
 Import "glue.c"
 ?
 
@@ -124,13 +124,20 @@ Struct SFileStat
 	End Method
 End Struct
 
-?pico
+?embedded
 Rem
 bbdoc: Backend used by BRL.FileSystem on targets without a native filesystem.
 about: A backend also acts as a stream factory. It may claim named protocols and
 may be selected as the default handler for ordinary paths.
 End Rem
 Type TFileSystemBackend Extends TStreamFactory
+	Field _nextFileSystemBackend:TFileSystemBackend
+
+	Method New()
+		_nextFileSystemBackend = _fileSystemBackends
+		_fileSystemBackends = Self
+	End Method
+
 	Method HandlesProtocol:Int(protocol:String)
 		Return False
 	End Method
@@ -141,6 +148,31 @@ Type TFileSystemBackend Extends TStreamFactory
 
 	Method CurrentDirectory:String()
 		Return "/"
+	End Method
+
+	Method ResolvePath:String(path:String)
+		FixPath path
+		Local directory:String = _RootPath(path)
+		If directory
+			path = path[directory.length..]
+		Else
+			directory = CurrentDirectory()
+		End If
+		path :+ "/"
+		While path
+			Local separator:Int = path.Find("/")
+			Local part:String = path[..separator]
+			path = path[separator + 1..]
+			Select part
+				Case "", "."
+				Case ".."
+					If Not _IsRootPath(directory) Then directory = directory[..directory.FindLast("/")]
+				Default
+					If Not directory.EndsWith("/") Then directory :+ "/"
+					directory :+ part
+			End Select
+		Wend
+		Return directory
 	End Method
 
 	Method ChangeDirectory:Int(path:String)
@@ -194,7 +226,11 @@ Type TFileSystemBackend Extends TStreamFactory
 
 	Method CreateStream:TStream(url:Object, protocol:String, path:String, readable:Int, writeMode:Int) Override
 		If protocol.length Then
-			If Not HandlesProtocol(protocol) Then Return Null
+			If protocol = "file"
+				If Self <> _defaultFileSystemBackend Then Return Null
+			Else If Not HandlesProtocol(protocol)
+				Return Null
+			End If
 		Else If Self <> _defaultFileSystemBackend Then
 			Return Null
 		End If
@@ -204,10 +240,74 @@ End Type
 
 Private
 Global _defaultFileSystemBackend:TFileSystemBackend
+Global _fileSystemBackends:TFileSystemBackend
+
+Type TFileSystemDirectoryRoute
+	Field handle:Byte Ptr
+	Field backend:TFileSystemBackend
+	Field nextRoute:TFileSystemDirectoryRoute
+End Type
+
+Global _fileSystemDirectoryRoutes:TFileSystemDirectoryRoute
+
+Function _EmbeddedFileSystemBackend:TFileSystemBackend(path:String Var)
+	Local separator:Int = path.Find("::")
+	If separator < 0 Then Return _defaultFileSystemBackend
+	Local protocol:String = path[..separator].ToLower()
+	path = path[separator + 2..]
+	If protocol = "file" Then Return _defaultFileSystemBackend
+	Local backend:TFileSystemBackend = _fileSystemBackends
+	While backend
+		If backend.HandlesProtocol(protocol) Then Return backend
+		backend = backend._nextFileSystemBackend
+	Wend
+	Return Null
+End Function
+
+Function _EmbeddedDirectoryRoute:TFileSystemDirectoryRoute(handle:Byte Ptr)
+	Local route:TFileSystemDirectoryRoute = _fileSystemDirectoryRoutes
+	While route
+		If route.handle = handle Then Return route
+		route = route.nextRoute
+	Wend
+End Function
+
+Function _EmbeddedDeleteDirectory:Int(backend:TFileSystemBackend, path:String, recurse:Int)
+	If recurse
+		Local handle:Byte Ptr = backend.OpenDirectory(path)
+		If Not handle Then Return False
+		Repeat
+			Local name:String = backend.NextDirectoryEntry(handle)
+			If Not name.length Then Exit
+			If name = "." Or name = ".." Then Continue
+			Local child:String = path
+			If Not child.EndsWith("/") Then child :+ "/"
+			child :+ name
+			Local info:SFileStat
+			If Not backend.Stat(child, info)
+				backend.CloseDirectory(handle)
+				Return False
+			End If
+			If info.fileType = FILETYPE_DIR
+				If Not _EmbeddedDeleteDirectory(backend, child, True)
+					backend.CloseDirectory(handle)
+					Return False
+				End If
+			Else If info.fileType = FILETYPE_FILE
+				If Not backend.DeleteFile(child)
+					backend.CloseDirectory(handle)
+					Return False
+				End If
+			End If
+		Forever
+		backend.CloseDirectory(handle)
+	End If
+	Return backend.DeleteDirectory(path)
+End Function
 Public
 
 Rem
-bbdoc: Selects the backend used for ordinary filesystem paths on Pico.
+bbdoc: Selects the backend used for ordinary filesystem paths on embedded targets.
 End Rem
 Function SetDefaultFileSystemBackend(backend:TFileSystemBackend)
 	_defaultFileSystemBackend = backend
@@ -221,7 +321,7 @@ End Function
 Private
 
 Function _RootPath:String( path:String )
-?Not pico
+?Not embedded
 	If MaxIO.ioInitialized Then
 		Return "/"
 	End If
@@ -256,7 +356,7 @@ Public
 
 Function FixPath( path:String Var,dirPath:Int=False )
 	path=path.Replace("\","/")
-?Not pico
+?Not embedded
 	If Not MaxIO.ioInitialized Then
 ?Win32
 	If path.StartsWith( "//" )
@@ -269,7 +369,7 @@ Function FixPath( path:String Var,dirPath:Int=False )
 		EndIf
 	EndIf
 ?
-?Not pico
+?Not embedded
 	End If
 ?
 	If dirPath And path.EndsWith( "/" )
@@ -345,10 +445,10 @@ bbdoc: Gets the Current Directory
 returns: The current directory
 End Rem
 Function CurrentDir:String()
-?pico
+?embedded
 	If _defaultFileSystemBackend Then Return _defaultFileSystemBackend.CurrentDirectory()
 	Return "/"
-?Not pico
+?Not embedded
 	If MaxIO.ioInitialized Then
 		Return "/"
 	End If
@@ -371,11 +471,11 @@ Function RealPath:String( path:String )
 	Local cd:String=_RootPath( path )
 
 	If cd
-?Not pico
+?Not embedded
 		If Not MaxIO.ioInitialized Then
 			path=path[cd.length..]
 		End If
-?pico
+?embedded
 		path=path[cd.length..]
 ?
 	Else
@@ -416,10 +516,11 @@ Function FileStat:Int(path:String, info:SFileStat Var)
 	info.accessTime = 0
 	info.isReadOnly = False
 
-?pico
-	If _defaultFileSystemBackend Then Return _defaultFileSystemBackend.Stat(path, info)
+?embedded
+	Local backend:TFileSystemBackend = _EmbeddedFileSystemBackend(path)
+	If backend Then Return backend.Stat(path, info)
 	Return False
-?Not pico
+?Not embedded
 	If MaxIO.ioInitialized Then
 		Local maxIOStat:SMaxIO_Stat
 		If Not MaxIO.Stat(path, maxIOStat) Then Return False
@@ -495,9 +596,10 @@ about: @time should be number of seconds since epoch.
 End Rem
 Function SetFileTime( path:String, time:Long, timeType:Int=FILETIME_MODIFIED)
 	FixPath path
-?pico
-	If _defaultFileSystemBackend Then _defaultFileSystemBackend.SetTime(path, time, timeType)
-?Not pico
+?embedded
+	Local backend:TFileSystemBackend = _EmbeddedFileSystemBackend(path)
+	If backend Then backend.SetTime(path, time, timeType)
+?Not embedded
 	If MaxIO.ioInitialized Then
 		' Not available
 	Else
@@ -551,10 +653,11 @@ returns: The file mode flags
 End Rem
 Function FileMode:Int( path:String )
 	FixPath path
-?pico
-	If _defaultFileSystemBackend Then Return _defaultFileSystemBackend.FileMode(path)
+?embedded
+	Local backend:TFileSystemBackend = _EmbeddedFileSystemBackend(path)
+	If backend Then Return backend.FileMode(path)
 	Return -1
-?Not pico
+?Not embedded
 	If Not MaxIO.ioInitialized Then
 		Local Mode:Int,size:Long,mtime:Int,ctime:Int,atime:Int
 		If stat_( path,Mode,size,mtime,ctime,atime ) Return -1
@@ -568,9 +671,10 @@ bbdoc: Sets file mode
 End Rem
 Function SetFileMode( path:String,Mode:Int )
 	FixPath path
-?pico
-	If _defaultFileSystemBackend Then _defaultFileSystemBackend.SetFileMode(path, Mode)
-?Not pico
+?embedded
+	Local backend:TFileSystemBackend = _EmbeddedFileSystemBackend(path)
+	If backend Then backend.SetFileMode(path, Mode)
+?Not embedded
 	If Not MaxIO.ioInitialized Then
 		chmod_ path,Mode
 	End If
@@ -583,10 +687,11 @@ returns: #True if successful
 End Rem
 Function CreateFile:Int( path:String )
 	FixPath path
-?pico
-	If Not _defaultFileSystemBackend Then Return False
-	Return _defaultFileSystemBackend.CreateFile(path)
-?Not pico
+?embedded
+	Local backend:TFileSystemBackend = _EmbeddedFileSystemBackend(path)
+	If Not backend Then Return False
+	Return backend.CreateFile(path)
+?Not embedded
 	If MaxIO.ioInitialized Then
 		MaxIO.DeletePath(path)
 		Local t:Byte Ptr = MaxIO.OpenWrite(path)
@@ -608,25 +713,28 @@ If @recurse is #True, any required subdirectories are also created.
 End Rem
 Function CreateDir:Int( path:String,recurse:Int=False )
 	FixPath path,True
-?pico
-	If Not _defaultFileSystemBackend Then Return False
-	If Not recurse Then Return _defaultFileSystemBackend.CreateDirectory(path)
-	Local target:String = RealPath(path)
+?embedded
+	Local backend:TFileSystemBackend = _EmbeddedFileSystemBackend(path)
+	If Not backend Then Return False
+	If Not recurse Then Return backend.CreateDirectory(path)
+	Local target:String = backend.ResolvePath(path)
 	Local current:String = "/"
 	For Local part:String = EachIn target.Split("/")
 		If Not part.length Then Continue
 		If current <> "/" Then current :+ "/"
 		current :+ part
-		Select FileType(current)
+		Local info:SFileStat
+		Local exists:Int = backend.Stat(current, info)
+		Select info.fileType
 			Case FILETYPE_DIR
 			Case FILETYPE_NONE
-				If Not _defaultFileSystemBackend.CreateDirectory(current) Then Return False
+				If exists Or Not backend.CreateDirectory(current) Then Return False
 			Default
 				Return False
 		End Select
 	Next
 	Return True
-?Not pico
+?Not embedded
 	If MaxIO.ioInitialized Then
 		Return MaxIO.MkDir(path)
 	Else
@@ -661,10 +769,11 @@ returns: #True if successful
 End Rem
 Function DeleteFile:Int( path:String )
 	FixPath path
-?pico
-	If Not _defaultFileSystemBackend Then Return False
-	Return _defaultFileSystemBackend.DeleteFile(path)
-?Not pico
+?embedded
+	Local backend:TFileSystemBackend = _EmbeddedFileSystemBackend(path)
+	If Not backend Then Return False
+	Return backend.DeleteFile(path)
+?Not embedded
 	If MaxIO.ioInitialized Then
 		MaxIO.DeletePath(path)
 	Else
@@ -679,12 +788,14 @@ bbdoc: Renames a file
 returns: #True if successful
 End Rem
 Function RenameFile:Int( oldpath:String,newpath:String )
-?pico
+?embedded
 	FixPath oldpath
 	FixPath newpath
-	If Not _defaultFileSystemBackend Then Return False
-	Return _defaultFileSystemBackend.Rename(oldpath, newpath)
-?Not pico
+	Local oldBackend:TFileSystemBackend = _EmbeddedFileSystemBackend(oldpath)
+	Local newBackend:TFileSystemBackend = _EmbeddedFileSystemBackend(newpath)
+	If Not oldBackend Or oldBackend <> newBackend Then Return False
+	Return oldBackend.Rename(oldpath, newpath)
+?Not embedded
 	If MaxIO.ioInitialized Then
 		Return False
 	End If
@@ -752,6 +863,11 @@ but be careful!
 End Rem
 Function DeleteDir:Int( path:String,recurse:Int=False )
 	FixPath path,True
+?embedded
+	Local backend:TFileSystemBackend = _EmbeddedFileSystemBackend(path)
+	If Not backend Then Return False
+	Return _EmbeddedDeleteDirectory(backend, path, recurse)
+?Not embedded
 	If recurse
 		Local dir:Byte Ptr=ReadDir( path )
 		If Not dir Return False
@@ -767,10 +883,6 @@ Function DeleteDir:Int( path:String,recurse:Int=False )
 		Forever
 		CloseDir dir
 	EndIf
-?pico
-	If Not _defaultFileSystemBackend Then Return False
-	Return _defaultFileSystemBackend.DeleteDirectory(path)
-?Not pico
 	If MaxIO.ioInitialized Then
 		MaxIO.DeletePath(path)
 	Else
@@ -785,11 +897,12 @@ bbdoc: Changes the current directory
 returns: True if successful
 End Rem
 Function ChangeDir:Int( path:String )
-?pico
+?embedded
 	FixPath path,True
-	If _defaultFileSystemBackend Then Return _defaultFileSystemBackend.ChangeDirectory(path)
+	Local backend:TFileSystemBackend = _EmbeddedFileSystemBackend(path)
+	If backend Then Return backend.ChangeDirectory(path)
 	Return False
-?Not pico
+?Not embedded
 	If MaxIO.ioInitialized Then
 		Return False
 	Else
@@ -807,10 +920,21 @@ The directory must be closed with #CloseDir.
 End Rem
 Function ReadDir:Byte Ptr( path:String )
 	FixPath path,True
-?pico
-	If _defaultFileSystemBackend Then Return _defaultFileSystemBackend.OpenDirectory(path)
+?embedded
+	Local backend:TFileSystemBackend = _EmbeddedFileSystemBackend(path)
+	If backend
+		Local handle:Byte Ptr = backend.OpenDirectory(path)
+		If handle
+			Local route:TFileSystemDirectoryRoute = New TFileSystemDirectoryRoute
+			route.handle = handle
+			route.backend = backend
+			route.nextRoute = _fileSystemDirectoryRoutes
+			_fileSystemDirectoryRoutes = route
+		End If
+		Return handle
+	End If
 	Return Null
-?Not pico
+?Not embedded
 	If MaxIO.ioInitialized Then
 		Return bmx_blitzio_readdir(path)
 	Else
@@ -824,10 +948,11 @@ bbdoc: Returns the next file in a directory
 returns: File name of next file in the directory opened using #ReadDir, or an empty #String if there are no more files to read.
 End Rem
 Function NextFile:String( dir:Byte Ptr )
-?pico
-	If _defaultFileSystemBackend Then Return _defaultFileSystemBackend.NextDirectoryEntry(dir)
+?embedded
+	Local route:TFileSystemDirectoryRoute = _EmbeddedDirectoryRoute(dir)
+	If route Then Return route.backend.NextDirectoryEntry(dir)
 	Return ""
-?Not pico
+?Not embedded
 	If MaxIO.ioInitialized Then
 		Return bmx_blitzio_nextFile(dir)
 	Else
@@ -841,9 +966,19 @@ bbdoc: Closes a directory.
 about: Closes a directory opened with #ReadDir.
 End Rem
 Function CloseDir( dir:Byte Ptr )
-?pico
-	If _defaultFileSystemBackend Then _defaultFileSystemBackend.CloseDirectory(dir)
-?Not pico
+?embedded
+	Local previous:TFileSystemDirectoryRoute
+	Local route:TFileSystemDirectoryRoute = _fileSystemDirectoryRoutes
+	While route
+		If route.handle = dir
+			route.backend.CloseDirectory(dir)
+			If previous Then previous.nextRoute = route.nextRoute Else _fileSystemDirectoryRoutes = route.nextRoute
+			Return
+		End If
+		previous = route
+		route = route.nextRoute
+	Wend
+?Not embedded
 	If MaxIO.ioInitialized Then
 		bmx_blitzio_closeDir(dir)
 	Else
@@ -941,9 +1076,9 @@ the traversal.
 End Rem
 Function WalkFileTree:Int(path:String, fileWalker:IFileWalker, options:EFileWalkOption = EFileWalkOption.None, maxDepth:Int = 0)
 	FixPath(path)
-?pico
+?embedded
 	If FileType(path) = FILETYPE_DIR Then Return FSWalkFileTree(path, fileWalker, options, 0, maxDepth)
-?Not pico
+?Not embedded
 	If MaxIO.ioInitialized Then
 		If FileType(path) = FILETYPE_DIR Then
 			Return FSWalkFileTree(path, fileWalker, options, 0, maxDepth)
@@ -1210,7 +1345,7 @@ Function _ApplyAttributes:Int(path:String, depth:Int, attributes:SFileAttributes
 	Return True
 End Function
 
-?Not pico
+?Not embedded
 Extern
 	Function bmx_filesystem_walkfiletree:Int(path:String, callback:EFileWalkResult(fileWalker:IFileWalker, attributes:SFileAttributes Var), walker:IFileWalker, options:EFileWalkOption, maxDepth:Int)
 End Extern

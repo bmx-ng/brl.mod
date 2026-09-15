@@ -20,54 +20,61 @@ ModuleInfo "History: 1.05 Release"
 ModuleInfo "History: 1.04 Release"
 ModuleInfo "History: CStandardIO now goes through a UTF8 textstream"
 
-?pico
+?embedded
 Import BRL.Stream
 
 Extern "C"
-	Function PicoStandardIOInit:Int() = "bmx_pico_stdio_init_all"
-	Function PicoStandardIORead:Long(buffer:Byte Ptr, count:Long) = "bmx_pico_stdio_read"
-	Function PicoStandardIOWrite:Long(buffer:Byte Ptr, count:Long) = "bmx_pico_stdio_write"
-	Function PicoStandardIOFlush() = "bmx_pico_stdio_flush"
+?pico
+	Function EmbeddedStandardIOInit:Int() = "bmx_pico_stdio_init_all"
+	Function EmbeddedStandardIORead:Long(buffer:Byte Ptr, count:Long) = "bmx_pico_stdio_read"
+	Function EmbeddedStandardIOWrite:Long(buffer:Byte Ptr, count:Long) = "bmx_pico_stdio_write"
+	Function EmbeddedStandardIOFlush() = "bmx_pico_stdio_flush"
+?esp32
+	Function EmbeddedStandardIOInit:Int() = "bmx_esp32_stdio_init_all"
+	Function EmbeddedStandardIORead:Long(buffer:Byte Ptr, count:Long) = "bmx_esp32_stdio_read"
+	Function EmbeddedStandardIOWrite:Long(buffer:Byte Ptr, count:Long) = "bmx_esp32_stdio_write"
+	Function EmbeddedStandardIOFlush() = "bmx_esp32_stdio_flush"
+?embedded
 End Extern
-?Not pico
+?Not embedded
 Import BRL.TextStream
 ?
 
 Type TCStandardIO Extends TStream
 
 	Method Eof:Int() Override
-?pico
+?embedded
 		Return False
-?Not pico
+?Not embedded
 		Return feof_( stdin_ )
 ?
 	End Method
 	
 	Method Flush() Override
-?pico
-		PicoStandardIOFlush()
-?Not pico
+?embedded
+		EmbeddedStandardIOFlush()
+?Not embedded
 		fflush_ stdout_
 ?
 	End Method
 
 	Method Read:Long( buf:Byte Ptr,count:Long ) Override
-?pico
-		Return PicoStandardIORead(buf, count)
-?Not pico
+?embedded
+		Return EmbeddedStandardIORead(buf, count)
+?Not embedded
 		Return fread_( buf,1,Size_T(count),stdin_ )
 ?
 	End Method
 
 	Method Write:Long( buf:Byte Ptr,count:Long ) Override
-?pico
-		Return PicoStandardIOWrite(buf, count)
-?Not pico
+?embedded
+		Return EmbeddedStandardIOWrite(buf, count)
+?Not embedded
 		Return fwrite_( buf,1,Size_T(count),stdout_ )
 ?
 	End Method
 
-?pico
+?embedded
 	Method ReadLine:String() Override
 		Return Super.ReadLine(True)
 	End Method
@@ -86,22 +93,22 @@ End Type
 Type TCStandardErrIO Extends TStream
 
 	Method Flush() Override
-?pico
-		PicoStandardIOFlush()
-?Not pico
+?embedded
+		EmbeddedStandardIOFlush()
+?Not embedded
 		fflush_ stderr_
 ?
 	End Method
 
 	Method Write:Long( buf:Byte Ptr,count:Long ) Override
-?pico
-		Return PicoStandardIOWrite(buf, count)
-?Not pico
+?embedded
+		Return EmbeddedStandardIOWrite(buf, count)
+?Not embedded
 		Return fwrite_( buf,1,Size_T(count),stderr_ )
 ?
 	End Method
 
-?pico
+?embedded
 	Method WriteLine:Int(str:String) Override
 		Return Super.WriteLine(str, True)
 	End Method
@@ -117,21 +124,21 @@ Rem
 bbdoc: BlitzMax Stream object used for Print and Input
 about: The #Print and #Input commands can be redirected by setting the @StandardIOStream Global to an alternative Stream Object.
 End Rem
-?pico
+?embedded
 Private
-Global picoStandardIOInitialized:Int = PicoStandardIOInit()
+Global embeddedStandardIOInitialized:Int = EmbeddedStandardIOInit()
 Public
 Global StandardIOStream:TStream = New TCStandardIO
-?Not pico
+?Not embedded
 Global StandardIOStream:TStream=TTextStream.Create( New TCStandardIO,ETextStreamFormat.UTF8 )
 ?
 
 Rem
 bbdoc: BlitzMax Stream object used for #ErrPrint
 End Rem
-?pico
+?embedded
 Global StandardErrIOStream:TStream = New TCStandardErrIO
-?Not pico
+?Not embedded
 Global StandardErrIOStream:TStream=TTextStream.Create( New TCStandardErrIO,ETextStreamFormat.UTF8 )
 ?
 

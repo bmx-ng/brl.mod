@@ -110,9 +110,9 @@ Type TEvent
 			EndIf
 		EndIf
 		Local extraText:String
-		?not pico
+		?not embedded
 		If extra Then extraText=extra.ToString()
-		?pico
+		?embedded
 		If extra Then extraText="Object"
 		?
 		Return t+": data="+data+", mods="+mods+", x="+x+", y="+y+", extra=~q"+extraText+"~q"
