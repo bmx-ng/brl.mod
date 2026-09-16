@@ -745,7 +745,7 @@ Type TMax2DGraphics Extends TGraphics
 
 
 	Method GrabImage( image:TImage, x:Int, y:Int, frame:Int = 0 )
-		Local pixmap:TPixmap = _max2dDriver.GrabPixmap(x, y, image.width, image.height)
+		Local pixmap:TPixmap = _max2dDriver.GrabPixmap(x, y, Int(image.width), Int(image.height))
 
 		If image.flags & MASKEDIMAGE 
 			pixmap = MaskPixmap(pixmap, mask_red, mask_green, mask_blue)
@@ -759,7 +759,7 @@ Type TMax2DGraphics Extends TGraphics
 	
 	Function CreateRenderImage:TRenderImage(width:UInt, height:UInt, flags:Int=-1)
 		If flags = -1 Then flags = auto_imageflags
-		Local image:TRenderImage = TRenderImage.Create(width, height, flags, mask_red, mask_green, mask_blue)
+		Local image:TRenderImage = TRenderImage.Create(Int(width), Int(height), flags, mask_red, mask_green, mask_blue)
 		
 		If auto_midhandle Then MidHandleImage(image)
 		Return image

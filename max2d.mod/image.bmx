@@ -48,7 +48,7 @@ Type TImage
 			frames[index]=Null
 		EndIf
 		If Not pixmaps[index]
-			pixmaps[index]=CreatePixmap( width,height,PF_RGBA8888 )
+			pixmaps[index]=CreatePixmap( Int(width),Int(height),PF_RGBA8888 )
 		EndIf
 		Return pixmaps[index]
 	End Method

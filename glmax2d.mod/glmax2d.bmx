@@ -423,7 +423,7 @@ Type TGLRenderImageFrame Extends TGLImageFrame
 		' do not just call glBindTexture directly!
 		BindTex(TextureName)
 		'glBindTexture(GL_TEXTURE_2D, TextureName)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Null)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Int(width), Int(height), 0, GL_RGBA, GL_UNSIGNED_BYTE, Null)
 		
 		If flags & FILTEREDIMAGE
 			glTexParameteri GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR
