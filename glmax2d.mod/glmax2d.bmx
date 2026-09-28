@@ -43,6 +43,12 @@ ModuleInfo "History: Added checks to prevent invalid textures deletes"
 Import BRL.Max2D
 Import BRL.GLGraphics
 Import BRL.Threads
+?osx And Not opengles And Not nx And Not raspberrypi And Not haiku
+Import "drawable.m"
+Extern "C"
+ Function brl_glmax2d_drawable_size:Int(width:Int Ptr,height:Int Ptr)
+End Extern
+?Not opengles And Not nx And Not raspberrypi And Not haiku
 
 Private
 
@@ -522,7 +528,11 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		glOrtho 0,gw,gh,0,-1,1
 		glMatrixMode GL_MODELVIEW
 		glLoadIdentity
-		glViewport 0,0,gw,gh
+		Local pixelWidth:Int=gw,pixelHeight:Int=gh
+?osx And Not opengles And Not nx And Not raspberrypi And Not haiku
+		brl_glmax2d_drawable_size(Varptr pixelWidth,Varptr pixelHeight)
+?Not opengles And Not nx And Not raspberrypi And Not haiku
+		glViewport 0,0,pixelWidth,pixelHeight
 
 		' Need this to enable "glBlendFuncSeparate" (required for
 		' alpha blending on non-opaque backgrounds like render images)
@@ -704,9 +714,11 @@ Type TGLMax2DDriver Extends TMax2DDriver
 		Local t:TPixmap = p
 		If t.format <> PF_RGBA8888 Then t = ConvertPixmap( t, PF_RGBA8888 )
 
-		glPixelZoom( 1, -1 )
+		Local sx:Float,sy:Float
+		TargetScale(sx,sy)
+		glPixelZoom( sx, -sy )
 		glRasterPos2i( 0, 0 )
-		glBitmap( 0, 0, 0, 0, x, -y, Null)
+		glBitmap( 0, 0, 0, 0, x*sx, -y*sy, Null)
 		glPixelStorei( GL_UNPACK_ROW_LENGTH, t.pitch Shr 2 )
 		glDrawPixels( t.width, t.height, GL_RGBA, GL_UNSIGNED_BYTE, t.pixels )
 		glPixelStorei( GL_UNPACK_ROW_LENGTH, 0 )
@@ -718,19 +730,16 @@ Type TGLMax2DDriver Extends TMax2DDriver
 	Method GrabPixmap:TPixmap( x:Int, y:Int, w:Int, h:Int ) Override
 		Local blend:Int = state_blend
 		SetBlend( SOLIDBLEND )
-		Local p:TPixmap=CreatePixmap( w, h, PF_RGBA8888 )
-
-		'The default backbuffer in Max2D was opaque so overwrote any
-		'trash data of a freshly created pixmap. Potentially transparent
-		'backbuffers require a complete transparent pixmap to start with.
+		Local sx:Float,sy:Float
+		TargetScale(sx,sy)
+		Local px:Int=Int(Floor(x*sx)),py:Int=Int(Floor(y*sy))
+		Local pw:Int=Int(Ceil((x+w)*sx))-px,ph:Int=Int(Ceil((y+h)*sy))-py
+		Local p:TPixmap=CreatePixmap(pw,ph,PF_RGBA8888)
 		p.ClearPixels(0)
-		
-		If _CurrentRenderImageFrame and _CurrentRenderImageFrame <> _BackbufferRenderImageFrame
-			glReadPixels(x, _CurrentRenderImageFrame.height - h - y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, p.pixels)
-		Else
-			glReadPixels(x, _BackbufferRenderImageFrame.height - h - y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, p.pixels)
-		EndIf
-		p = YFlipPixmap( p )
+		Local targetHeight:Int=Int(_CurrentRenderImageFrame.height*sy+0.5)
+		glReadPixels(px,targetHeight-ph-py,pw,ph,GL_RGBA,GL_UNSIGNED_BYTE,p.pixels)
+		p=YFlipPixmap(p)
+		If pw<>w Or ph<>h Then p=ResizePixmap(p,w,h)
 		SetBlend( blend )
 		Return p
 	End Method
@@ -770,8 +779,23 @@ Private
 		glOrtho(0, _CurrentRenderImageFrame.width, _CurrentRenderImageFrame.height, 0, -1, 1)
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
-		glViewport(0, 0, _CurrentRenderImageFrame.width, _CurrentRenderImageFrame.height)
+		Local sx:Float,sy:Float
+		TargetScale(sx,sy)
+		glViewport(0,0,Int(_CurrentRenderImageFrame.width*sx+0.5),Int(_CurrentRenderImageFrame.height*sy+0.5))
 	EndMethod
+
+	Method TargetScale(sx:Float Var,sy:Float Var)
+		sx=1;sy=1
+?osx And Not opengles And Not nx And Not raspberrypi And Not haiku
+		If _CurrentRenderImageFrame=_BackbufferRenderImageFrame And _BackbufferRenderImageFrame Then
+			Local width:Int,height:Int
+			If brl_glmax2d_drawable_size(Varptr width,Varptr height) Then
+				sx=Float(width)/_BackbufferRenderImageFrame.width
+				sy=Float(height)/_BackbufferRenderImageFrame.height
+			EndIf
+		EndIf
+?Not opengles And Not nx And Not raspberrypi And Not haiku
+	End Method
 
 	Method SetScissor(x:Int, y:Int, w:Int, h:Int)
 		Local ri:TImageFrame = _CurrentRenderImageFrame
@@ -779,7 +803,12 @@ Private
 			glDisable(GL_SCISSOR_TEST)
 		Else
 			glEnable(GL_SCISSOR_TEST)
-			glScissor(x, _CurrentRenderImageFrame.height - y - h, w, h)
+			Local sx:Float,sy:Float
+			TargetScale(sx,sy)
+			Local left:Int=Int(Floor(x*sx)),right:Int=Int(Ceil((x+w)*sx))
+			Local bottom:Int=Int(Floor((_CurrentRenderImageFrame.height-y-h)*sy))
+			Local top:Int=Int(Ceil((_CurrentRenderImageFrame.height-y)*sy))
+			glScissor(left,bottom,right-left,top-bottom)
 		EndIf
 	EndMethod
 End Type
