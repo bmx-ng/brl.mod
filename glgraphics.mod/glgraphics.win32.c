@@ -150,6 +150,12 @@ typedef struct BBGLContext BBGLContext;
 struct BBGLContext{
 	BBGLContext *succ;
 	int mode,width,height,depth,hertz;
+	int borderless;
+	int exclusive,exclusiveActive,transition,savedHertz;
+	WCHAR displayName[CCHDEVICENAME];
+	DEVMODEW desktopMode,exclusiveMode;
+	RECT savedWindowRect;
+	LONG_PTR savedStyle,savedExStyle;
 	BBInt64 flags;
 	
 	HDC hdc;
@@ -157,6 +163,9 @@ struct BBGLContext{
 	HGLRC hglrc;
 };
 
+static BBGLContext *_exclusiveOwner;
+static int runtimeFocus(BBGLContext *context,int active);
+int bbGLGraphicsSetFullscreen(BBGLContext *context,int enabled,int width,int height,int hertz);
 static BBGLContext *_contexts;
 static BBGLContext *_sharedContext;
 static BBGLContext *_currentContext;
@@ -213,6 +222,7 @@ static _stdcall long _wndProc( HWND hwnd,UINT msg,WPARAM wp,LPARAM lp ){
 		if( wp!=VK_F4 ) return 0;
 		break;
 	case WM_SETFOCUS:
+		if(c->exclusive && !c->transition)runtimeFocus(c,1);
 		if( c && c->mode==MODE_DISPLAY && hwnd!=_fullScreen ){
 			DEVMODE dm;
 			int swapInt=0;
@@ -245,6 +255,7 @@ static _stdcall long _wndProc( HWND hwnd,UINT msg,WPARAM wp,LPARAM lp ){
 		return 0;
 	case WM_DESTROY:
 	case WM_KILLFOCUS:
+		if(c->exclusive && !c->transition)runtimeFocus(c,0);
 		if( hwnd==_fullScreen ){
 			ChangeDisplaySettings( 0,CDS_FULLSCREEN );
 			ShowWindow( hwnd,SW_MINIMIZE );
@@ -295,7 +306,8 @@ static void _initWndClass(){
 }
 
 static void _validateSize( BBGLContext *context ){
-	if( context->mode==MODE_WIDGET ){
+	if(context->exclusive)return;
+	if( context->mode==MODE_WIDGET || context->mode==MODE_WINDOW ){
 		RECT rect;
 		GetClientRect( context->hwnd,&rect );
 		context->width=rect.right-rect.left;
@@ -420,6 +432,7 @@ BBGLContext *bbGLGraphicsAttachGraphics( HWND hwnd,BBInt64 flags ){
 }
 
 BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hertz, BBInt64 flags, int x, int y ){
+	if(depth && _exclusiveOwner)bbExThrowCString("GLGraphics: leave runtime exclusive fullscreen before creating legacy exclusive graphics");
 	BBGLContext *context;
 	
 	int mode;
@@ -496,7 +509,7 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hert
 	if( _sharedContext ) wglShareLists( _sharedContext->hglrc,hglrc );
 	
 	context=(BBGLContext*)malloc( sizeof(BBGLContext) );
-	memset( context,0,sizeof(context) );
+	memset( context,0,sizeof(*context) );
 	
 	context->mode=mode;
 	context->width=width;
@@ -522,8 +535,151 @@ void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *d
 	*width=context->width;
 	*height=context->height;
 	*depth=context->depth;
-	*hertz=context->hertz;
+	*hertz=context->borderless && !context->exclusive ? 0 : context->hertz;
 	*flags=context->flags;
+}
+
+int bbGLGraphicsSupportsBorderless(BBGLContext *context){
+	return context && context->mode==MODE_WINDOW;
+}
+int bbGLGraphicsIsBorderless(BBGLContext *context){
+	return context && context->borderless && !context->exclusive;
+}
+static int setWindowStyle(HWND window,int index,LONG_PTR style){
+	SetLastError(0);
+	return SetWindowLongPtr(window,index,style)!=0 || GetLastError()==0;
+}
+int bbGLGraphicsSetBorderless(BBGLContext *context,int enabled){
+	RECT before,target;
+	LONG_PTR style,exStyle,newStyle,newExStyle;
+	MONITORINFO monitor;
+	if(!bbGLGraphicsSupportsBorderless(context))return 0;
+	if(context->exclusive && !bbGLGraphicsSetFullscreen(context,0,0,0,0))return 0;
+	enabled=!!enabled;
+	if(context->borderless==enabled)return 1;
+	if(!GetWindowRect(context->hwnd,&before))return 0;
+	style=GetWindowLongPtr(context->hwnd,GWL_STYLE);
+	exStyle=GetWindowLongPtr(context->hwnd,GWL_EXSTYLE);
+	if(enabled){
+		memset(&monitor,0,sizeof(monitor));monitor.cbSize=sizeof(monitor);
+		if(!GetMonitorInfo(MonitorFromWindow(context->hwnd,MONITOR_DEFAULTTONEAREST),&monitor))return 0;
+		target=monitor.rcMonitor;
+		newStyle=(style & ~WS_OVERLAPPEDWINDOW)|WS_POPUP;
+		newExStyle=exStyle & ~(WS_EX_WINDOWEDGE|WS_EX_CLIENTEDGE|WS_EX_STATICEDGE|WS_EX_DLGMODALFRAME);
+	}else{
+		target=context->savedWindowRect;
+		newStyle=context->savedStyle;newExStyle=context->savedExStyle;
+	}
+	if(!setWindowStyle(context->hwnd,GWL_STYLE,newStyle) ||
+	   !setWindowStyle(context->hwnd,GWL_EXSTYLE,newExStyle) ||
+	   !SetWindowPos(context->hwnd,NULL,target.left,target.top,target.right-target.left,target.bottom-target.top,
+	                 SWP_FRAMECHANGED|SWP_NOZORDER|SWP_NOACTIVATE)){
+		setWindowStyle(context->hwnd,GWL_STYLE,style);
+		setWindowStyle(context->hwnd,GWL_EXSTYLE,exStyle);
+		SetWindowPos(context->hwnd,NULL,before.left,before.top,before.right-before.left,before.bottom-before.top,
+		             SWP_FRAMECHANGED|SWP_NOZORDER|SWP_NOACTIVATE);
+		_validateSize(context);
+		return 0;
+	}
+	if(enabled){
+		context->savedWindowRect=before;
+		context->savedStyle=style;context->savedExStyle=exStyle;
+	}
+	context->borderless=enabled;
+	_validateSize(context);
+	return 1;
+}
+void bbGLGraphicsClientSize(BBGLContext *context,int *width,int *height){
+ RECT r={0};if(context)GetClientRect(context->hwnd,&r);*width=r.right;*height=r.bottom;
+}
+int bbGLGraphicsSupportsFullscreen(BBGLContext *context){return context && context->mode==MODE_WINDOW;}
+static int runtimeMonitor(BBGLContext *context,MONITORINFOEXW *monitor){
+ memset(monitor,0,sizeof(*monitor));monitor->cbSize=sizeof(*monitor);
+ return GetMonitorInfoW(MonitorFromWindow(context->hwnd,MONITOR_DEFAULTTONEAREST),(MONITORINFO*)monitor);
+}
+int bbGLGraphicsFullscreenModes(BBGLContext *context,int *buf,int count){
+ MONITORINFOEXW monitor;DEVMODEW mode;int n=0,index;
+ if(!bbGLGraphicsSupportsFullscreen(context)||!runtimeMonitor(context,&monitor))return 0;
+ for(index=0;;++index){
+  memset(&mode,0,sizeof(mode));mode.dmSize=sizeof(mode);
+  if(!EnumDisplaySettingsW(monitor.szDevice,index,&mode))break;
+  if(mode.dmBitsPerPel!=32)continue;
+  if(buf){if(n==count)break;buf[n*4]=mode.dmPelsWidth;buf[n*4+1]=mode.dmPelsHeight;buf[n*4+2]=32;buf[n*4+3]=mode.dmDisplayFrequency;}
+  ++n;
+ }
+ return n;
+}
+static int runtimeFocus(BBGLContext *context,int active){
+ MONITORINFOEXW monitor;int ok=1;
+ if(!context->exclusive || context->transition || active==context->exclusiveActive)return 1;
+ context->transition=1;
+ if(active){
+  ok=ChangeDisplaySettingsExW(context->displayName,&context->exclusiveMode,NULL,CDS_FULLSCREEN,NULL)==DISP_CHANGE_SUCCESSFUL;
+  if(ok){
+   context->exclusiveActive=1;
+   if(runtimeMonitor(context,&monitor))ok=SetWindowPos(context->hwnd,NULL,monitor.rcMonitor.left,monitor.rcMonitor.top,
+     monitor.rcMonitor.right-monitor.rcMonitor.left,monitor.rcMonitor.bottom-monitor.rcMonitor.top,SWP_NOZORDER|SWP_NOACTIVATE)!=0;
+  }
+ }else{
+  ok=ChangeDisplaySettingsExW(context->displayName,&context->desktopMode,NULL,0,NULL)==DISP_CHANGE_SUCCESSFUL;
+  if(ok)context->exclusiveActive=0;
+ }
+ context->transition=0;
+ return ok;
+}
+int bbGLGraphicsSetFullscreen(BBGLContext *context,int enabled,int width,int height,int hertz){
+ MONITORINFOEXW monitor;DEVMODEW mode,chosen;int found=0,index;
+ if(!bbGLGraphicsSupportsFullscreen(context))return 0;
+ if(!enabled){
+  if(!context->exclusive)return bbGLGraphicsSetBorderless(context,0);
+  if(!runtimeFocus(context,0))return 0;
+  context->exclusive=0;_exclusiveOwner=NULL;context->depth=0;context->hertz=context->savedHertz;
+  return bbGLGraphicsSetBorderless(context,0);
+ }
+ if(GetForegroundWindow()!=context->hwnd)return 0;
+ if(width<0 || height<0 || hertz<0 || (_exclusiveOwner && _exclusiveOwner!=context))return 0;
+ for(BBGLContext *c=_contexts;c;c=c->succ)if(c->mode==MODE_DISPLAY)return 0;
+ if(!runtimeMonitor(context,&monitor))return 0;
+ if(!width)width=context->width;if(!height)height=context->height;
+ memset(&chosen,0,sizeof(chosen));
+ for(index=0;;++index){
+  memset(&mode,0,sizeof(mode));mode.dmSize=sizeof(mode);
+  if(!EnumDisplaySettingsW(monitor.szDevice,index,&mode))break;
+  if(mode.dmBitsPerPel!=32 || mode.dmPelsWidth!=(DWORD)width || mode.dmPelsHeight!=(DWORD)height || (hertz && mode.dmDisplayFrequency!=(DWORD)hertz))continue;
+  if(!found || mode.dmDisplayFrequency>chosen.dmDisplayFrequency){chosen=mode;found=1;}
+ }
+ if(!found || ChangeDisplaySettingsExW(monitor.szDevice,&chosen,NULL,CDS_TEST,NULL)!=DISP_CHANGE_SUCCESSFUL)return 0;
+ if(context->exclusive && context->width==width && context->height==height && context->hertz==(int)chosen.dmDisplayFrequency)return 1;
+ if(context->exclusive && !bbGLGraphicsSetFullscreen(context,0,0,0,0))return 0;
+ if(context->borderless && !bbGLGraphicsSetBorderless(context,0))return 0;
+ memset(&context->desktopMode,0,sizeof(context->desktopMode));context->desktopMode.dmSize=sizeof(context->desktopMode);
+ if(!EnumDisplaySettingsW(monitor.szDevice,ENUM_CURRENT_SETTINGS,&context->desktopMode))return 0;
+ if(!bbGLGraphicsSetBorderless(context,1))return 0;
+ memcpy(context->displayName,monitor.szDevice,sizeof(context->displayName));context->exclusiveMode=chosen;
+ context->savedHertz=context->hertz;context->exclusive=1;context->exclusiveActive=0;_exclusiveOwner=context;
+ context->width=width;context->height=height;context->depth=32;context->hertz=chosen.dmDisplayFrequency;
+ if(!runtimeFocus(context,1)){
+  bbGLGraphicsSetFullscreen(context,0,0,0,0);return 0;
+ }
+ return 1;
+}
+void bbGLGraphicsGetPosition(BBGLContext *context,int *x,int *y){
+ POINT p={0,0};*x=*y=-1;
+ if(context && ClientToScreen(context->hwnd,&p)){*x=p.x;*y=p.y;}
+}
+int bbGLGraphicsResize(BBGLContext *context,int width,int height){
+ RECT r={0,0,width,height};
+ if(!context || context->mode!=MODE_WINDOW || context->borderless || width<=0 || height<=0)return 0;
+ if(!AdjustWindowRectEx(&r,(DWORD)GetWindowLongPtr(context->hwnd,GWL_STYLE),FALSE,(DWORD)GetWindowLongPtr(context->hwnd,GWL_EXSTYLE)))return 0;
+ if(!SetWindowPos(context->hwnd,NULL,0,0,r.right-r.left,r.bottom-r.top,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE))return 0;
+ _validateSize(context);
+ return 1;
+}
+int bbGLGraphicsPosition(BBGLContext *context,int x,int y){
+ RECT r={0,0,0,0};
+ if(!context || context->mode!=MODE_WINDOW || context->borderless)return 0;
+ if(!AdjustWindowRectEx(&r,(DWORD)GetWindowLongPtr(context->hwnd,GWL_STYLE),FALSE,(DWORD)GetWindowLongPtr(context->hwnd,GWL_EXSTYLE)))return 0;
+ return SetWindowPos(context->hwnd,NULL,x+r.left,y+r.top,0,0,SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE)!=0;
 }
 
 void bbGLGraphicsClose( BBGLContext *context ){
@@ -536,6 +692,7 @@ void bbGLGraphicsClose( BBGLContext *context ){
 		bbGLGraphicsSetGraphics( 0 );
 	}
 	
+	if(context->exclusive && !bbGLGraphicsSetFullscreen(context,0,0,0,0))bbExThrowCString("GLGraphics: unable to restore desktop display mode");
 	wglDeleteContext( context->hglrc );
 
 	if( t->mode==MODE_DISPLAY || t->mode==MODE_WINDOW ){
@@ -557,6 +714,9 @@ void bbGLGraphicsSwapSharedContext(){
 }
 
 void bbGLGraphicsSetGraphics( BBGLContext *context ){
+	if(context && context->exclusive && !context->exclusiveActive && GetForegroundWindow()==context->hwnd){
+		if(!runtimeFocus(context,1))bbExThrowCString("GLGraphics: unable to resume exclusive display mode");
+	}
 
 	if( context==_currentContext ) return;
 	

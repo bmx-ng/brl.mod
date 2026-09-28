@@ -16,6 +16,16 @@ Extern
 	Function bbGLGraphicsAttachGraphics:Byte Ptr( widget:Byte Ptr,flags:Long )
 	Function bbGLGraphicsCreateGraphics:Byte Ptr( width:Int,height:Int,depth:Int,hertz:Int,flags:Long,x:Int,y:Int )
 	Function bbGLGraphicsGetSettings( context:Byte Ptr,width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Long Var )
+	Function bbGLGraphicsSupportsFullscreen:Int(context:Byte Ptr)
+	Function bbGLGraphicsSetFullscreen:Int(context:Byte Ptr,enabled:Int,width:Int,height:Int,hertz:Int)
+	Function bbGLGraphicsFullscreenModes:Int(context:Byte Ptr,buf:Int Ptr,count:Int)
+	Function bbGLGraphicsClientSize(context:Byte Ptr,width:Int Var,height:Int Var)
+	Function bbGLGraphicsSetBorderless:Int(context:Byte Ptr,enabled:Int)
+	Function bbGLGraphicsIsBorderless:Int(context:Byte Ptr)
+	Function bbGLGraphicsSupportsBorderless:Int(context:Byte Ptr)
+	Function bbGLGraphicsResize:Int(context:Byte Ptr,width:Int,height:Int)
+	Function bbGLGraphicsPosition:Int(context:Byte Ptr,x:Int,y:Int)
+	Function bbGLGraphicsGetPosition(context:Byte Ptr,x:Int Var,y:Int Var)
 	Function bbGLGraphicsClose( context:Byte Ptr )	
 	Function bbGLGraphicsSetGraphics( context:Byte Ptr )
 	Function bbGLGraphicsFlip( sync:Int )
@@ -39,8 +49,7 @@ Type TGLGraphics Extends TGraphics
 		depth=d
 		hertz=r
 		flags=f
-		x=-1
-		y=-1
+		bbGLGraphicsGetPosition _context,x,y
 	End Method
 	
 	Method Close() Override
@@ -50,9 +59,47 @@ Type TGLGraphics Extends TGraphics
 	End Method
 	
 	Method Resize(width:Int, height:Int) Override
+		If Not _context Then Throw "GLGraphics: graphics is closed"
+		If width<=0 Or height<=0 Then Throw "GLGraphics: window dimensions must be positive"
+		If Not bbGLGraphicsResize(_context,width,height) Then Throw "GLGraphics: resize requires an owned windowed context and a successful window-system request"
 	End Method
 	
 	Method Position(x:Int, y:Int) Override
+		If Not _context Then Throw "GLGraphics: graphics is closed"
+		If Not bbGLGraphicsPosition(_context,x,y) Then Throw "GLGraphics: position requires an owned windowed context and a successful window-system request"
+	End Method
+
+	Method SupportsFullscreen:Int()
+		Return bbGLGraphicsSupportsFullscreen(_context)
+	End Method
+	Method FullscreenModes:TGraphicsMode[]()
+		Local count:Int=bbGLGraphicsFullscreenModes(_context,Null,0)
+		Local data:Int[count*4]
+		count=bbGLGraphicsFullscreenModes(_context,data,count)
+		Local result:TGraphicsMode[count]
+		For Local i:Int=0 Until count
+			Local mode:TGraphicsMode=New TGraphicsMode
+			mode.width=data[i*4];mode.height=data[i*4+1];mode.depth=data[i*4+2];mode.hertz=data[i*4+3]
+			result[i]=mode
+		Next
+		Return result
+	End Method
+	Method ClientSize(width:Int Var,height:Int Var)
+		bbGLGraphicsClientSize(_context,width,height)
+	End Method
+	Method SetFullscreen(enabled:Int,width:Int=0,height:Int=0,hertz:Int=0)
+		If Not bbGLGraphicsSetFullscreen(_context,enabled,width,height,hertz) Then Throw "GLGraphics: exclusive transition failed (unsupported window, unavailable exact mode, display busy or native display operation failed)"
+	End Method
+	Method SupportsBorderless:Int()
+		Return bbGLGraphicsSupportsBorderless(_context)
+	End Method
+
+	Method IsBorderless:Int()
+		Return bbGLGraphicsIsBorderless(_context)
+	End Method
+
+	Method SetBorderless(enabled:Int)
+		If Not bbGLGraphicsSetBorderless(_context,enabled) Then Throw "GLGraphics: borderless fullscreen is unsupported or the window-system request failed"
 	End Method
 
 	Field _context:Byte Ptr
@@ -100,6 +147,10 @@ Type TGLGraphicsDriver Extends TGraphicsDriver
 		bbGLGraphicsFlip sync
 	End Method
 	
+	Method CanResize:Int() Override
+		Return True
+	End Method
+
 	Method ToString:String() Override
 		Return "TGLGraphicsDriver"
 	End Method

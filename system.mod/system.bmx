@@ -107,8 +107,13 @@ End Rem
 Function PollSystem()
 	If _busy Return
 	_busy=True
-	SystemDriver().Poll
-	RunHooks PollSystemHook,Null
+	Try
+		SystemDriver().Poll
+		RunHooks PollSystemHook,Null
+	Catch error:Object
+		_busy=False
+		Throw error
+	End Try
 	_busy=False
 End Function
 
@@ -128,8 +133,13 @@ End Rem
 Function WaitSystem()
 	If _busy Return
 	_busy=True
-	SystemDriver().Wait
-	RunHooks PollSystemHook,Null
+	Try
+		SystemDriver().Wait
+		RunHooks PollSystemHook,Null
+	Catch error:Object
+		_busy=False
+		Throw error
+	End Try
 	_busy=False
 End Function
 

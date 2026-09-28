@@ -4,10 +4,13 @@
 #include <GL/glx.h>
 #include <X11/extensions/xf86vmode.h>
 #include <assert.h>
+#include <time.h>
 
 /* Added by BaH */
 #include <brl.mod/blitz.mod/blitz.h>
 #include <X11/Xutil.h>
+#include <X11/Xatom.h>
+#include <X11/extensions/Xrandr.h>
 
 extern void bbSystemPoll();
 extern Display *bbSystemDisplay();
@@ -54,6 +57,8 @@ struct BBGLContext{
 	int mode,width,height,depth,hertz;
 	BBInt64 flags;
 	int sync;
+	int savedWindow,savedX,savedY,savedWidth,savedHeight;
+	XSizeHints savedHints;
 	Window window;
 	GLXContext glContext;
 };
@@ -68,6 +73,8 @@ void bbGLGraphicsClose( BBGLContext *context );
 void bbGLGraphicsSetGraphics( BBGLContext *context );
 void bbGLGraphicsFlip( int sync );
 void bbGLExit();
+int bbGLGraphicsIsBorderless(BBGLContext *context);
+void bbGLGraphicsGetPosition(BBGLContext *context,int *x,int *y);
 
 static BBGLContext *_currentContext;
 static BBGLContext *_activeContext;
@@ -171,7 +178,7 @@ static void _validateSize( BBGLContext *context ){
 	Window			root_return;
 	int				x,y;
 	unsigned int	w,h,border,d;
-	if( !context || context->mode!=MODE_WIDGET ) return;
+	if( !context || (context->mode!=MODE_WIDGET && context->mode!=MODE_WINDOW) ) return;
 	if (_initDisplay()) return;
 	XGetGeometry(xdisplay,context->window,&root_return,&x,&y,&w,&h,&border,&d);
 	context->width=w;
@@ -200,7 +207,7 @@ void bbGLGraphicsGetSettings( BBGLContext *context,int *width,int *height,int *d
 	*width=context->width;
 	*height=context->height;
 	*depth=context->depth;
-	*hertz=context->hertz;
+	*hertz=bbGLGraphicsIsBorderless(context)?0:context->hertz;
 	*flags=context->flags;
 }
 
@@ -355,7 +362,7 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,B
 		}
 		glXMakeCurrent(xdisplay,window,context);	
 		XIfEvent(xdisplay,&event,WaitForNotify,(XPointer)window);	     
-		XSelectInput(xdisplay,window,ResizeRedirectMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|KeyPressMask|KeyReleaseMask);	
+		XSelectInput(xdisplay,window,StructureNotifyMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|KeyPressMask|KeyReleaseMask);
 		xwindow=window;
 		bbSetSystemWindow(xwindow);
 	}
@@ -375,7 +382,7 @@ BBGLContext *bbGLGraphicsCreateGraphics( int width,int height,int depth,int hz,B
 	bbcontext->mode=displaymode;	
 	bbcontext->width=width;	
 	bbcontext->height=height;	
-	bbcontext->depth=24;	
+	bbcontext->depth=depth?24:0;
 	bbcontext->hertz=hz;
 	bbcontext->flags=flags;
 	bbcontext->sync=-1;	
@@ -404,6 +411,157 @@ void bbGLGraphicsFlip( int sync ){
 		}
 	}
 	_swapBuffers( _currentContext );
+}
+
+/* EWMH fullscreen is desktop borderless, not an exclusive display-mode change. */
+static int _hasAtom(Window window,const char *property,Atom wanted){
+ Atom type;int format,found=0;unsigned long count,remaining;unsigned char *data=0;
+ if(XGetWindowProperty(xdisplay,window,XInternAtom(xdisplay,property,False),0,1024,
+   False,XA_ATOM,&type,&format,&count,&remaining,&data)==Success && type==XA_ATOM && format==32){
+  unsigned long i;for(i=0;i<count;i++)if(((Atom*)data)[i]==wanted){found=1;break;}
+ }
+ if(data)XFree(data);
+ return found;
+}
+int bbGLGraphicsSupportsBorderless(BBGLContext *context){
+ int major=1,minor=5;
+ if(!context || context->mode!=MODE_WINDOW || _initDisplay())return 0;
+ if(!XRRQueryVersion(xdisplay,&major,&minor) || major<1 || (major==1 && minor<5))return 0;
+ return _hasAtom(RootWindow(xdisplay,xscreen),"_NET_SUPPORTED",XInternAtom(xdisplay,"_NET_WM_STATE_FULLSCREEN",False));
+}
+int bbGLGraphicsIsBorderless(BBGLContext *context){
+ if(!context || context->mode!=MODE_WINDOW || _initDisplay())return 0;
+ return _hasAtom(context->window,"_NET_WM_STATE",XInternAtom(xdisplay,"_NET_WM_STATE_FULLSCREEN",False));
+}
+static int _requestBorderless(BBGLContext *context,int enabled){
+ XEvent event;memset(&event,0,sizeof(event));
+ event.xclient.type=ClientMessage;
+ event.xclient.window=context->window;
+ event.xclient.message_type=XInternAtom(xdisplay,"_NET_WM_STATE",False);
+ event.xclient.format=32;
+ event.xclient.data.l[0]=enabled?1:0;
+ event.xclient.data.l[1]=XInternAtom(xdisplay,"_NET_WM_STATE_FULLSCREEN",False);
+ event.xclient.data.l[3]=1; /* Normal application, not a pager. */
+ int ok=XSendEvent(xdisplay,RootWindow(xdisplay,xscreen),False,
+  SubstructureRedirectMask|SubstructureNotifyMask,&event);
+ XFlush(xdisplay);return ok;
+}
+static int _monitorBounds(BBGLContext *context,int *x,int *y,int *width,int *height){
+ int count=0,major=1,minor=5,wx,wy;long long best=0;
+ if(!XRRQueryVersion(xdisplay,&major,&minor) || major<1 || (major==1 && minor<5))return 0;
+ XRRMonitorInfo *monitors=XRRGetMonitors(xdisplay,RootWindow(xdisplay,xscreen),True,&count);
+ bbGLGraphicsGetPosition(context,&wx,&wy);
+ for(int i=0;i<count;i++){
+  XRRMonitorInfo *m=&monitors[i];
+  int left=wx>m->x?wx:m->x,top=wy>m->y?wy:m->y;
+  int right=wx+context->width<m->x+m->width?wx+context->width:m->x+m->width;
+  int bottom=wy+context->height<m->y+m->height?wy+context->height:m->y+m->height;
+  long long area=right>left && bottom>top?(long long)(right-left)*(bottom-top):0;
+  if(area>best){best=area;*x=m->x;*y=m->y;*width=m->width;*height=m->height;}
+ }
+ if(monitors)XRRFreeMonitors(monitors);
+ return best>0;
+}
+static int _waitBorderless(BBGLContext *context,int enabled,int x,int y,int width,int height){
+ struct timespec start,now,pause={0,5000000};clock_gettime(CLOCK_MONOTONIC,&start);
+ for(;;){
+  int wx,wy;
+  _validateSize(context);bbGLGraphicsGetPosition(context,&wx,&wy);
+  if(bbGLGraphicsIsBorderless(context)==enabled && wx==x && wy==y &&
+    context->width==width && context->height==height)return 1;
+  clock_gettime(CLOCK_MONOTONIC,&now);
+  if((now.tv_sec-start.tv_sec)*1000000000LL+now.tv_nsec-start.tv_nsec>=2000000000LL)return 0;
+  nanosleep(&pause,0);
+ }
+}
+int bbGLGraphicsSetBorderless(BBGLContext *context,int enabled){
+ int x,y,width,height;
+ if(!context || context->mode!=MODE_WINDOW || _initDisplay())return 0;
+ enabled=enabled!=0;
+ if(!enabled && !context->savedWindow && !bbGLGraphicsIsBorderless(context))return 1;
+ if(enabled && context->savedWindow && bbGLGraphicsIsBorderless(context))return 1;
+ if(!bbGLGraphicsSupportsBorderless(context))return 0;
+ if(enabled){
+  _validateSize(context);
+  if(!_monitorBounds(context,&x,&y,&width,&height))return 0;
+  if(!context->savedWindow){
+   bbGLGraphicsGetPosition(context,&context->savedX,&context->savedY);
+   context->savedWidth=context->width;context->savedHeight=context->height;
+   long supplied;
+   memset(&context->savedHints,0,sizeof(context->savedHints));
+   XGetWMNormalHints(xdisplay,context->window,&context->savedHints,&supplied);
+   context->savedWindow=1;
+  }
+  XSizeHints hints=context->savedHints;
+  hints.flags&=~(PMinSize|PMaxSize|PAspect|PResizeInc|PBaseSize);
+  XSetWMNormalHints(xdisplay,context->window,&hints);
+  if(_requestBorderless(context,1) && _waitBorderless(context,1,x,y,width,height))return 1;
+  /* A refused/delayed entry must not strand the caller in fullscreen. */
+  XSetWMNormalHints(xdisplay,context->window,&context->savedHints);
+  _requestBorderless(context,0);
+  if(_waitBorderless(context,0,context->savedX,context->savedY,context->savedWidth,context->savedHeight))context->savedWindow=0;
+  return 0;
+ }
+ if(!context->savedWindow)return 0;
+ XSetWMNormalHints(xdisplay,context->window,&context->savedHints);
+ if(!_requestBorderless(context,0))return 0;
+ if(!_waitBorderless(context,0,context->savedX,context->savedY,context->savedWidth,context->savedHeight))return 0;
+ context->savedWindow=0;return 1;
+}
+int bbGLGraphicsSupportsFullscreen(BBGLContext *context){return 0;}
+int bbGLGraphicsSetFullscreen(BBGLContext *context,int enabled,int width,int height,int hertz){
+ return enabled?0:bbGLGraphicsSetBorderless(context,0);
+}
+int bbGLGraphicsFullscreenModes(BBGLContext *context,int *buf,int count){return 0;}
+void bbGLGraphicsClientSize(BBGLContext *context,int *width,int *height){
+ _validateSize(context);*width=context?context->width:0;*height=context?context->height:0;
+}
+
+void bbGLGraphicsGetPosition(BBGLContext *context,int *x,int *y){
+ Window child;*x=*y=-1;
+ if(!context || _initDisplay())return;
+ XTranslateCoordinates(xdisplay,context->window,RootWindow(xdisplay,xscreen),0,0,x,y,&child);
+}
+/* The WM processes configure requests on another connection. XSync alone
+   cannot acknowledge that work. Query real geometry with a bounded wait and
+   leave queued input/configure events for BRL.System's normal dispatch. */
+static int _waitGeometry(BBGLContext *context,int width,int height,int x,int y,int position){
+ struct timespec start,now,pause={0,5000000};
+ clock_gettime(CLOCK_MONOTONIC,&start);
+ for(;;){
+  int actualX,actualY;
+  _validateSize(context);
+  if(position){
+   bbGLGraphicsGetPosition(context,&actualX,&actualY);
+   if(actualX==x && actualY==y)return 1;
+  }else if(context->width==width && context->height==height)return 1;
+  clock_gettime(CLOCK_MONOTONIC,&now);
+  if((now.tv_sec-start.tv_sec)*1000000000LL+now.tv_nsec-start.tv_nsec>=1000000000LL)return 0;
+  nanosleep(&pause,0);
+ }
+}
+int bbGLGraphicsResize(BBGLContext *context,int width,int height){
+ XSizeHints hints;long supplied;
+ if(!context || context->mode!=MODE_WINDOW || context->savedWindow || bbGLGraphicsIsBorderless(context) || width<=0 || height<=0 || _initDisplay())return 0;
+ memset(&hints,0,sizeof(hints));
+ XGetWMNormalHints(xdisplay,context->window,&hints,&supplied);
+ hints.flags|=PMinSize|PMaxSize;
+ hints.min_width=hints.max_width=width;hints.min_height=hints.max_height=height;
+ XSetWMNormalHints(xdisplay,context->window,&hints);
+ XResizeWindow(xdisplay,context->window,width,height);
+ XFlush(xdisplay);
+ return _waitGeometry(context,width,height,0,0,0);
+}
+int bbGLGraphicsPosition(BBGLContext *context,int x,int y){
+ XSizeHints hints;long supplied;
+ if(!context || context->mode!=MODE_WINDOW || context->savedWindow || bbGLGraphicsIsBorderless(context) || _initDisplay())return 0;
+ memset(&hints,0,sizeof(hints));
+ XGetWMNormalHints(xdisplay,context->window,&hints,&supplied);
+ hints.flags|=PPosition|PWinGravity;hints.x=x;hints.y=y;hints.win_gravity=StaticGravity;
+ XSetWMNormalHints(xdisplay,context->window,&hints);
+ XMoveWindow(xdisplay,context->window,x,y);
+ XFlush(xdisplay);
+ return _waitGeometry(context,0,0,x,y,1);
 }
 
 void bbGLGraphicsClose( BBGLContext *context ){

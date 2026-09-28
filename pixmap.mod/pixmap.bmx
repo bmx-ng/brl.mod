@@ -6,12 +6,19 @@ bbdoc: Graphics/Pixmaps
 End Rem
 Module BRL.Pixmap
 
-ModuleInfo "Version: 1.08"
+ModuleInfo "Version: 1.11"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.11 Release"
+ModuleInfo "History: Added R8, RG88, intensity/alpha and alpha/intensity formats"
+ModuleInfo "History: 1.10 Release"
+ModuleInfo "History: RGB332, RGBA/BGRA/ARGB/ABGR4444 and 5551/1555 packed formats"
+ModuleInfo "History: 1.09 Release"
+ModuleInfo "History: Shared BRL.PixelFormat definitions and RGB565/BGR565 support"
+ModuleInfo "History: Corrected ARGB clearing and ABGR integer writes/clearing"
 ModuleInfo "History: 1.08 Release"
 ModuleInfo "History: Made SuperStrict"
 ModuleInfo "History: 1.07 Release"
@@ -141,6 +148,18 @@ Type TPixmap
 		Assert x>=0 And x<width And y>=0 And y<height Else "Pixmap coordinates out of bounds"
 		Local p:Byte Ptr=PixelPtr(x,y)
 		Select format
+		Case PF_R8
+			Return $ff000000 | (Int(p[0]) Shl 16)
+		Case PF_RG88
+			Return $ff000000 | (Int(p[0]) Shl 16) | (Int(p[1]) Shl 8)
+		Case PF_IA88
+			Return (Int(p[1]) Shl 24) | (Int(p[0]) Shl 16) | (Int(p[0]) Shl 8) | p[0]
+		Case PF_AI88
+			Return (Int(p[0]) Shl 24) | (Int(p[1]) Shl 16) | (Int(p[1]) Shl 8) | p[1]
+		Case PF_RGB332,PF_RGBA4444_LE,PF_RGBA4444_BE,PF_BGRA4444_LE,PF_BGRA4444_BE,PF_ARGB4444_LE,PF_ARGB4444_BE,PF_ABGR4444_LE,PF_ABGR4444_BE,PF_RGBA5551_LE,PF_RGBA5551_BE,PF_BGRA5551_LE,PF_BGRA5551_BE,PF_ARGB1555_LE,PF_ARGB1555_BE,PF_ABGR1555_LE,PF_ABGR1555_BE
+			Return _ReadPackedColour(p,format)
+		Case PF_RGB565_LE,PF_RGB565_BE,PF_BGR565_LE,PF_BGR565_BE
+			Return _ReadPacked565(p,format)
 		Case PF_A8
 			Return p[0] Shl 24 | $00ffffff
 		Case PF_I8
@@ -171,6 +190,21 @@ Type TPixmap
 		Assert x>=0 And x<width And y>=0 And y<height Else "Pixmap coordinates out of bounds"
 		Local p:Byte Ptr=PixelPtr(x,y)
 		Select format
+		Case PF_R8
+			p[0]=argb Shr 16
+		Case PF_RG88
+			p[0]=argb Shr 16
+			p[1]=argb Shr 8
+		Case PF_IA88
+			p[0]=((argb Shr 16 & 255)+(argb Shr 8 & 255)+(argb & 255))/3
+			p[1]=argb Shr 24
+		Case PF_AI88
+			p[0]=argb Shr 24
+			p[1]=((argb Shr 16 & 255)+(argb Shr 8 & 255)+(argb & 255))/3
+		Case PF_RGB332,PF_RGBA4444_LE,PF_RGBA4444_BE,PF_BGRA4444_LE,PF_BGRA4444_BE,PF_ARGB4444_LE,PF_ARGB4444_BE,PF_ABGR4444_LE,PF_ABGR4444_BE,PF_RGBA5551_LE,PF_RGBA5551_BE,PF_BGRA5551_LE,PF_BGRA5551_BE,PF_ARGB1555_LE,PF_ARGB1555_BE,PF_ABGR1555_LE,PF_ABGR1555_BE
+			_WritePackedColour(p,format,argb)
+		Case PF_RGB565_LE,PF_RGB565_BE,PF_BGR565_LE,PF_BGR565_BE
+			_WritePacked565(p,format,argb)
 		Case PF_A8
 			p[0]=argb Shr 24
 		Case PF_I8
@@ -186,7 +220,10 @@ Type TPixmap
 		Case PF_ARGB8888
 			p[0]=argb Shr 24 ; p[1]=argb Shr 16 ; p[2]=argb Shr 8 ; p[3]=argb
 		Case PF_ABGR8888
-			p[0]=argb Shr 24 ; p[1]=argb Shr 8 ; p[2]=argb Shr 16 ; p[3]=argb Shr 8
+			p[0]=argb Shr 24
+			p[1]=argb
+			p[2]=argb Shr 8
+			p[3]=argb Shr 16
 		End Select
 	End Method
 	
@@ -197,6 +234,12 @@ Type TPixmap
 		Assert x>=0 And x<width And y>=0 And y<height Else "Pixmap coordinates out of bounds"
 		Local p:Byte Ptr=PixelPtr(x,y)
 		Select format
+		Case PF_R8,PF_RG88,PF_IA88,PF_AI88
+			WritePixel(x,y,col.ToARGB())
+		Case PF_RGB332,PF_RGBA4444_LE,PF_RGBA4444_BE,PF_BGRA4444_LE,PF_BGRA4444_BE,PF_ARGB4444_LE,PF_ARGB4444_BE,PF_ABGR4444_LE,PF_ABGR4444_BE,PF_RGBA5551_LE,PF_RGBA5551_BE,PF_BGRA5551_LE,PF_BGRA5551_BE,PF_ARGB1555_LE,PF_ARGB1555_BE,PF_ABGR1555_LE,PF_ABGR1555_BE
+			_WritePackedColour(p,format,col.ToARGB())
+		Case PF_RGB565_LE,PF_RGB565_BE,PF_BGR565_LE,PF_BGR565_BE
+			_WritePacked565(p,format,col.ToARGB())
 		Case PF_A8
 			p[0]=col.a
 		Case PF_I8
@@ -221,6 +264,7 @@ Type TPixmap
 	returns: A new TPixmap object
 	end rem	
 	Function Create:TPixmap( width:Int,height:Int,format:Int,align:Int=4 )
+		If format<0 Or format>PF_AI88 Then Throw "Pixmap: unsupported format; use texture data for this storage format"
 		Local pitch:Int=width*BytesPerPixel[format]
 		pitch=(pitch+(align-1))/align*align
 		Local capacity:Size_T=pitch*height
@@ -241,6 +285,7 @@ Type TPixmap
 	The memory must not freed before the pixmap is deleted.
 	end rem
 	Function CreateStatic:TPixmap( pixels:Byte Ptr,width:Int,height:Int,pitch:Int,format:Int )
+		If format<0 Or format>PF_AI88 Then Throw "Pixmap: unsupported format; use texture data for this storage format"
 		Local pixmap:TPixmap=New TPixmap
 		pixmap.pixels=pixels
 		pixmap.width=width
@@ -266,6 +311,35 @@ Type TPixmap
 				Continue
 			EndIf			
 			Select format
+			Case PF_R8
+				For Local x:Int=0 Until width
+					p[x]=argb Shr 16
+				Next
+			Case PF_RG88
+				For Local x:Int=0 Until width*2 Step 2
+					p[x]=argb Shr 16
+					p[x+1]=argb Shr 8
+				Next
+			Case PF_IA88,PF_AI88
+				Local intensity:Int=((argb Shr 16 & 255)+(argb Shr 8 & 255)+(argb & 255))/3
+				Local first:Int=intensity
+				Local second:Int=argb Shr 24
+				If format=PF_AI88 Then
+					first=second
+					second=intensity
+				End If
+				For Local x:Int=0 Until width*2 Step 2
+					p[x]=first
+					p[x+1]=second
+				Next
+			Case PF_RGB332,PF_RGBA4444_LE,PF_RGBA4444_BE,PF_BGRA4444_LE,PF_BGRA4444_BE,PF_ARGB4444_LE,PF_ARGB4444_BE,PF_ABGR4444_LE,PF_ABGR4444_BE,PF_RGBA5551_LE,PF_RGBA5551_BE,PF_BGRA5551_LE,PF_BGRA5551_BE,PF_ARGB1555_LE,PF_ARGB1555_BE,PF_ABGR1555_LE,PF_ABGR1555_BE
+				For Local x:Int=0 Until width
+					_WritePackedColour(p+x*BytesPerPixel[format],format,argb)
+				Next
+			Case PF_RGB565_LE,PF_RGB565_BE,PF_BGR565_LE,PF_BGR565_BE
+				For Local x:Int=0 Until width
+					_WritePacked565(p+x*2,format,argb)
+				Next
 			Case PF_A8
 				For Local x:Int=0 Until width
 					p[x]=argb Shr 24
@@ -290,13 +364,19 @@ Type TPixmap
 				For Local x:Int=0 Until width*4 Step 4
 					p[x]=argb ; p[x+1]=argb Shr 8 ; p[x+2]=argb Shr 16 ; p[x+3]=argb Shr 24
 				Next
-			Case PF_ARGB8888 ' arg is already in ARGB format
+			Case PF_ARGB8888
 				For Local x:Int=0 Until width*4 Step 4
-					(Int Ptr p)[x]=argb
+					p[x]=argb Shr 24
+					p[x+1]=argb Shr 16
+					p[x+2]=argb Shr 8
+					p[x+3]=argb
 				Next
 			Case PF_ABGR8888
 				For Local x:Int=0 Until width*4 Step 4
-					p[x]=argb Shr 24 ; p[x+1]=argb Shr 8 ; p[x+2]=argb Shr 16 ; p[x+3]=argb Shr 8
+					p[x]=argb Shr 24
+					p[x+1]=argb
+					p[x+2]=argb Shr 8
+					p[x+3]=argb Shr 16
 				Next
 			End Select
 		Next
@@ -351,7 +431,25 @@ about:
 * PF_BGR888 | 24 bit little endian RGB
 * PF_RGBA8888 | 32 bit big endian RGB with alpha
 * PF_BGRA8888 | 32 bit little endian RGB with alpha
+* PF_ARGB8888, PF_ABGR8888 | Four bytes in the named channel order
+* PF_R8, PF_RG88 | One or two colour-channel bytes, missing colour channels zero and alpha opaque
+* PF_IA88, PF_AI88 | Intensity and alpha bytes in the named order
+* PF_RGB332 | One byte with 3/3/2-bit colour, no alpha
+* PF_RGBA4444, PF_BGRA4444, PF_ARGB4444, PF_ABGR4444 | Native-endian four-bit channels
+* PF_RGBA5551, PF_BGRA5551, PF_ARGB1555, PF_ABGR1555 | Native-endian five-bit colour and one-bit alpha
+* PF_RGB565, PF_BGR565 | Native-endian packed 16-bit colour, no alpha
+* PF_RGB565_LE, PF_BGR565_LE | Packed 16-bit colour, low byte first
+* PF_RGB565_BE, PF_BGR565_BE | Packed 16-bit colour, high byte first
 ]
+
+All packed two-byte families have _LE and _BE variants, with low or high byte
+first respectively. One-bit alpha discards values below 128 and reads as 0 or 255;
+four-bit alpha reads as multiples of 17.
+
+RGB565 stores red in bits 11..15, green in 5..10 and blue in 0..4. BGR565 swaps
+red and blue. Conversion discards low channel bits and expands by bit replication;
+alpha is discarded on write and reads back as 255. The explicit endian variants
+have identical byte order on every host, including for unaligned external storage.
 
 Note that the newly created pixmap will contain random data. #ClearPixels can
 be used to set all pixels to a known value prior to use.

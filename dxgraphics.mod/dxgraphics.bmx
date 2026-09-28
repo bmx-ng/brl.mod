@@ -3,12 +3,16 @@ SuperStrict
 
 Module BRL.DXGraphics
 
-ModuleInfo "Version: 1.32"
+ModuleInfo "Version: 1.34"
 ModuleInfo "Author: Simon Armstrong, Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.34"
+ModuleInfo "History: Added resizable windowed Direct3D11 graphics foundation"
+ModuleInfo "History: 1.33"
+ModuleInfo "History: Experimental windowed D3D7 foundation with native SDK structures"
 ModuleInfo "History: 1.32"
 ModuleInfo "History: Changed to SuperStrict"
 ModuleInfo "History: Extended flags to Long"
@@ -77,4 +81,5 @@ ModuleInfo "History: Fixed D3D7 mouse capture in 'windowed' fullscreen mode"
 Import "d3d7graphics.bmx"
 ?win32
 Import "d3d9graphics.bmx"
+Import "d3d11graphics.bmx"
 ?
