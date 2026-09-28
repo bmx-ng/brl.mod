@@ -284,6 +284,7 @@ Function FlushMouse()
 		mouseHits[i]=0
 	Next
 	mouseLocation[2]=0
+	lastMouseLocation[2]=0
 End Function
 
 Rem
