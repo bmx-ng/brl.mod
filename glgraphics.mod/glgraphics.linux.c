@@ -567,9 +567,10 @@ int bbGLGraphicsPosition(BBGLContext *context,int x,int y){
 void bbGLGraphicsClose( BBGLContext *context ){
 	if (context){
 		if (_currentContext==context) _currentContext=0;
+		if (_activeContext==context) _activeContext=0;
 		if (context->glContext) 
 		{
-			glXMakeCurrent(xdisplay,None,NULL);
+			if(glXGetCurrentContext()==context->glContext)glXMakeCurrent(xdisplay,None,NULL);
 			glXDestroyContext(xdisplay,context->glContext);	
 		}
 		if (context->window && context->mode!=MODE_WIDGET){
@@ -593,4 +594,116 @@ void bbGLExit(){
 	bbGLGraphicsClose( _sharedContext );
 	_currentContext=0;
 	_sharedContext=0;
+}
+
+#include "context_request.h"
+
+/* GLX reports unsupported requests as X errors. Trap them while creating the
+   context so callers can handle a Null result rather than losing the process.
+   Like the rest of GLGraphics this runs on the main window-system thread. */
+static int requestedContextError;
+static int (*previousContextErrorHandler)(Display*,XErrorEvent*);
+static int requestedContextErrorHandler(Display *display,XErrorEvent *event){
+	if(display==xdisplay){
+		requestedContextError=1;
+		return 0;
+	}
+	return previousContextErrorHandler?previousContextErrorHandler(display,event):0;
+}
+
+static int configureRequestedContext(BBGLContext *context,int major,int minor,int profile,BBGLContext *share){
+	typedef GLXContext (*CreateContextAttribs)(Display*,GLXFBConfig,GLXContext,Bool,const int*);
+	CreateContextAttribs create;
+	GLXFBConfig *configs,chosen=NULL;
+	GLXContext modern;
+	XWindowAttributes window;
+	int count,i,visual,drawable,renderable,renderType,bits;
+	int attrs[7]={0x2091,major,0x2092,minor,0,0,0};
+	const char *extensions=glXQueryExtensionsString(xdisplay,xscreen);
+	if(!extensions || !strstr(extensions,"GLX_ARB_create_context"))return 0;
+	if(profile && !strstr(extensions,"GLX_ARB_create_context_profile"))return 0;
+	create=(CreateContextAttribs)glXGetProcAddressARB((const GLubyte*)"glXCreateContextAttribsARB");
+	if(!create || !XGetWindowAttributes(xdisplay,context->window,&window))return 0;
+	configs=glXGetFBConfigs(xdisplay,XScreenNumberOfScreen(window.screen),&count);
+	for(i=0;configs && i<count;++i){
+		glXGetFBConfigAttrib(xdisplay,configs[i],GLX_VISUAL_ID,&visual);
+		glXGetFBConfigAttrib(xdisplay,configs[i],GLX_DRAWABLE_TYPE,&drawable);
+		glXGetFBConfigAttrib(xdisplay,configs[i],GLX_X_RENDERABLE,&renderable);
+		glXGetFBConfigAttrib(xdisplay,configs[i],GLX_RENDER_TYPE,&renderType);
+		if((VisualID)visual==XVisualIDFromVisual(window.visual) && (drawable & GLX_WINDOW_BIT) && renderable && (renderType & GLX_RGBA_BIT)){
+			glXGetFBConfigAttrib(xdisplay,configs[i],GLX_DOUBLEBUFFER,&bits);
+			if(!!bits!=!!(context->flags & FLAGS_BACKBUFFER))continue;
+			glXGetFBConfigAttrib(xdisplay,configs[i],GLX_DEPTH_SIZE,&bits);
+			if((context->flags & FLAGS_DEPTHBUFFER) && bits<24)continue;
+			glXGetFBConfigAttrib(xdisplay,configs[i],GLX_STENCIL_SIZE,&bits);
+			if((context->flags & FLAGS_STENCILBUFFER) && bits<1)continue;
+			glXGetFBConfigAttrib(xdisplay,configs[i],GLX_ALPHA_SIZE,&bits);
+			if((context->flags & FLAGS_ALPHABUFFER) && bits<1)continue;
+			glXGetFBConfigAttrib(xdisplay,configs[i],GLX_ACCUM_RED_SIZE,&bits);
+			if((context->flags & FLAGS_ACCUMBUFFER) && bits<1)continue;
+			chosen=configs[i];
+			break;
+		}
+	}
+	if(profile){
+		attrs[4]=0x9126; /* GLX_CONTEXT_PROFILE_MASK_ARB */
+		attrs[5]=profile;
+	}
+	if(!chosen){
+		if(configs)XFree(configs);
+		return 0;
+	}
+	XSync(xdisplay,False);
+	requestedContextError=0;
+	previousContextErrorHandler=XSetErrorHandler(requestedContextErrorHandler);
+	modern=create(xdisplay,chosen,share?share->glContext:NULL,True,attrs);
+	XSync(xdisplay,False);
+	if(modern && !requestedContextError){
+		if(!glXMakeCurrent(xdisplay,context->window,modern))requestedContextError=1;
+		XSync(xdisplay,False);
+	}
+	XSetErrorHandler(previousContextErrorHandler);
+	XFree(configs);
+	if(!modern)return 0;
+	if(requestedContextError || !bbGLContextMatches(major,minor,profile)){
+		glXMakeCurrent(xdisplay,None,NULL);
+		glXDestroyContext(xdisplay,modern);
+		return 0;
+	}
+	if(context->glContext)glXDestroyContext(xdisplay,context->glContext);
+	context->glContext=modern;
+	return 1;
+}
+
+BBGLContext *bbGLGraphicsCreateGraphicsEx(int width,int height,int depth,int hertz,BBInt64 flags,int x,int y,int major,int minor,int profile,BBGLContext *share){
+	GLXContext previous=glXGetCurrentContext();
+	GLXDrawable previousDraw=glXGetCurrentDrawable();
+	BBGLContext *context=bbGLGraphicsCreateGraphics(width,height,depth,hertz,flags,x,y);
+	if(context && !configureRequestedContext(context,major,minor,profile,share)){
+		bbGLGraphicsClose(context);
+		context=NULL;
+	}
+	if(xdisplay){
+		glXMakeCurrent(xdisplay,previousDraw,previous);
+		bbSetSystemWindow(_currentContext?_currentContext->window:0);
+	}
+	return context;
+}
+
+BBGLContext *bbGLGraphicsAttachGraphicsEx(void *widget,BBInt64 flags,int major,int minor,int profile,BBGLContext *share){
+	GLXContext previous=glXGetCurrentContext();
+	GLXDrawable previousDraw=glXGetCurrentDrawable();
+	BBGLContext *context;
+	if(_initDisplay())return NULL;
+	context=bbGLGraphicsAttachGraphics(widget,flags);
+	if(context && !configureRequestedContext(context,major,minor,profile,share)){
+		bbGLGraphicsClose(context);
+		context=NULL;
+	}
+	glXMakeCurrent(xdisplay,previousDraw,previous);
+	return context;
+}
+
+void bbGLGraphicsDrawableSize(BBGLContext *context,int *width,int *height){
+	bbGLGraphicsClientSize(context,width,height);
 }

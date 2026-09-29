@@ -6,12 +6,14 @@ bbdoc: Graphics/OpenGL Graphics
 End Rem
 Module BRL.GLGraphics
 
-ModuleInfo "Version: 1.16"
+ModuleInfo "Version: 1.17"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.17"
+ModuleInfo "History: Added optional OpenGL version/profile requests, explicit context sharing and drawable pixel sizes."
 ModuleInfo "History: 1.16"
 ModuleInfo "History: Changed to SuperStrict"
 ModuleInfo "History: Extended flags to Long"

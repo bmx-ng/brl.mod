@@ -746,3 +746,67 @@ void bbGLGraphicsFlip( int sync ){
 
 	SwapBuffers( _currentContext->hdc );
 }
+
+#include "context_request.h"
+
+/* Upgrade a newly created bootstrap context before exposing it to the caller.
+   The old entry points remain unchanged for legacy graphics drivers. */
+static int configureRequestedContext(BBGLContext *context,int major,int minor,int profile,BBGLContext *share){
+	typedef HGLRC (WINAPI *CreateContextAttribs)(HDC,HGLRC,const int*);
+	CreateContextAttribs create;
+	HGLRC modern;
+	int attrs[7]={0x2091,major,0x2092,minor,0,0,0};
+	if(!context->hglrc || !wglMakeCurrent(context->hdc,context->hglrc))return 0;
+	create=(CreateContextAttribs)wglGetProcAddress("wglCreateContextAttribsARB");
+	if(!create || (INT_PTR)create==1 || (INT_PTR)create==2 || (INT_PTR)create==3 || (INT_PTR)create==-1)return 0;
+	if(profile){
+		attrs[4]=0x9126; /* WGL_CONTEXT_PROFILE_MASK_ARB */
+		attrs[5]=profile;
+	}
+	modern=create(context->hdc,share?share->hglrc:NULL,attrs);
+	if(!modern)return 0;
+	if(!wglMakeCurrent(context->hdc,modern) || !bbGLContextMatches(major,minor,profile)){
+		wglMakeCurrent(NULL,NULL);
+		wglDeleteContext(modern);
+		return 0;
+	}
+	wglDeleteContext(context->hglrc);
+	context->hglrc=modern;
+	return 1;
+}
+
+BBGLContext *bbGLGraphicsCreateGraphicsEx(int width,int height,int depth,int hertz,BBInt64 flags,int x,int y,int major,int minor,int profile,BBGLContext *share){
+	HDC previousDC=wglGetCurrentDC();
+	HGLRC previous=wglGetCurrentContext();
+	BBGLContext *context=bbGLGraphicsCreateGraphics(width,height,depth,hertz,flags,x,y);
+	int ok=context && configureRequestedContext(context,major,minor,profile,share);
+	wglMakeCurrent(previousDC,previous);
+	if(context && !ok){
+		HDC dc=context->hdc;
+		HWND window=context->hwnd;
+		ReleaseDC(window,dc);
+		bbGLGraphicsClose(context);
+		free(context);
+		context=NULL;
+	}
+	return context;
+}
+
+BBGLContext *bbGLGraphicsAttachGraphicsEx(HWND widget,BBInt64 flags,int major,int minor,int profile,BBGLContext *share){
+	HDC previousDC=wglGetCurrentDC();
+	HGLRC previous=wglGetCurrentContext();
+	BBGLContext *context=bbGLGraphicsAttachGraphics(widget,flags);
+	int ok=context && configureRequestedContext(context,major,minor,profile,share);
+	wglMakeCurrent(previousDC,previous);
+	if(context && !ok){
+		ReleaseDC(context->hwnd,context->hdc);
+		bbGLGraphicsClose(context);
+		free(context);
+		context=NULL;
+	}
+	return context;
+}
+
+void bbGLGraphicsDrawableSize(BBGLContext *context,int *width,int *height){
+	bbGLGraphicsClientSize(context,width,height);
+}
