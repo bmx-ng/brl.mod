@@ -572,3 +572,88 @@ void bbGLGraphicsFlip( int sync ){
 		[_currentContext->glContext update];
 	}
 }
+
+#include "context_request.h"
+
+/* NSOpenGL offers legacy, 3.2 core and 4.1 core profiles, not arbitrary versions. */
+static int configureRequestedContext(BBGLContext *context,int major,int minor,int profile,BBGLContext *share){
+	CGLPixelFormatAttribute attrs[24];
+	NSOpenGLPixelFormat *format;
+	NSOpenGLContext *modern;
+	int n;
+	if(major>4 || (major==4 && minor>1) || (major==3 && (minor==0 || minor>3)))return 0;
+	if(major>=3 && profile==2)return 0;
+	/* Validate a lazy sharing context before constructing the new context. */
+	if(share)_validateContext(share);
+	n=_initAttrs(attrs,context->flags);
+	if(major>=3){
+		attrs[n++]=kCGLPFAOpenGLProfile;
+		attrs[n++]=(major>3 || (major==3 && minor>=3))?kCGLOGLPVersion_GL4_Core:kCGLOGLPVersion_3_2_Core;
+		attrs[n]=0;
+	}
+	format=[[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
+	if(!format)return 0;
+	modern=[[NSOpenGLContext alloc] initWithFormat:format shareContext:share?share->glContext:nil];
+	[format release];
+	if(!modern)return 0;
+	if(context->mode==MODE_WIDGET)[modern setView:context->view];
+	else if(context->mode==MODE_WINDOW)[modern setView:[context->window contentView]];
+	else{
+#if MAC_OS_X_VERSION_MAX_ALLOWED < 101500
+		[modern setFullScreen];
+#else
+		[modern setView:[context->window contentView]];
+#endif
+	}
+	[modern makeCurrentContext];
+	if(!bbGLContextMatches(major,minor,profile)){
+		[NSOpenGLContext clearCurrentContext];
+		[modern clearDrawable];
+		[modern release];
+		return 0;
+	}
+	[context->glContext clearDrawable];
+	[context->glContext release];
+	context->glContext=modern;
+	return 1;
+}
+
+BBGLContext *bbGLGraphicsCreateGraphicsEx(int width,int height,int depth,int hertz,BBInt64 flags,int x,int y,int major,int minor,int profile,BBGLContext *share){
+	NSOpenGLContext *previous=[[NSOpenGLContext currentContext] retain];
+	BBGLContext *context=bbGLGraphicsCreateGraphics(width,height,depth,hertz,flags,x,y);
+	if(context && !configureRequestedContext(context,major,minor,profile,share)){
+		bbGLGraphicsClose(context);
+		context=NULL;
+	}
+	if(previous)[previous makeCurrentContext];
+	else [NSOpenGLContext clearCurrentContext];
+	[previous release];
+	return context;
+}
+
+BBGLContext *bbGLGraphicsAttachGraphicsEx(NSView *widget,BBInt64 flags,int major,int minor,int profile,BBGLContext *share){
+	NSOpenGLContext *previous=[[NSOpenGLContext currentContext] retain];
+	BBGLContext *context=bbGLGraphicsAttachGraphics(widget,flags);
+	if(context && !configureRequestedContext(context,major,minor,profile,share)){
+		bbGLGraphicsClose(context);
+		context=NULL;
+	}
+	if(previous)[previous makeCurrentContext];
+	else [NSOpenGLContext clearCurrentContext];
+	[previous release];
+	return context;
+}
+
+void bbGLGraphicsDrawableSize(BBGLContext *context,int *width,int *height){
+	NSView *view;
+	NSRect bounds;
+	*width=*height=0;
+	if(!context)return;
+	view=context->mode==MODE_WIDGET?context->view:[context->window contentView];
+	if(!view)return;
+	[context->glContext update];
+	bounds=[view bounds];
+	if([view wantsBestResolutionOpenGLSurface] || [view wantsLayer])bounds=[view convertRectToBacking:bounds];
+	*width=(int)bounds.size.width;
+	*height=(int)bounds.size.height;
+}

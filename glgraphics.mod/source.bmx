@@ -11,6 +11,8 @@ Private
 Incbin "gldrawtextfont.bin"
 
 Extern
+	Function bbGLGraphicsCreateGraphicsEx:Byte Ptr(width:Int,height:Int,depth:Int,hertz:Int,flags:Long,x:Int,y:Int,major:Int,minor:Int,profile:Int,share:Byte Ptr)
+	Function bbGLGraphicsAttachGraphicsEx:Byte Ptr(widget:Byte Ptr,flags:Long,major:Int,minor:Int,profile:Int,share:Byte Ptr)
 	Function bbGLGraphicsShareContexts()
 	Function bbGLGraphicsGraphicsModes:Int( buf:Byte Ptr,size:Int )
 	Function bbGLGraphicsAttachGraphics:Byte Ptr( widget:Byte Ptr,flags:Long )
@@ -20,6 +22,7 @@ Extern
 	Function bbGLGraphicsSetFullscreen:Int(context:Byte Ptr,enabled:Int,width:Int,height:Int,hertz:Int)
 	Function bbGLGraphicsFullscreenModes:Int(context:Byte Ptr,buf:Int Ptr,count:Int)
 	Function bbGLGraphicsClientSize(context:Byte Ptr,width:Int Var,height:Int Var)
+	Function bbGLGraphicsDrawableSize(context:Byte Ptr,width:Int Var,height:Int Var)
 	Function bbGLGraphicsSetBorderless:Int(context:Byte Ptr,enabled:Int)
 	Function bbGLGraphicsIsBorderless:Int(context:Byte Ptr)
 	Function bbGLGraphicsSupportsBorderless:Int(context:Byte Ptr)
@@ -33,10 +36,71 @@ End Extern
 
 Public
 
+Rem
+bbdoc: Leaves profile selection to the platform for an explicitly requested OpenGL version.
+about: For OpenGL 3.2 and newer, platforms normally select a core profile. Use an explicit profile when your code requires one.
+End Rem
+Const GL_CONTEXT_ANY:Int=0
+
+Rem
+bbdoc: Requests a core profile, without legacy fixed-function drawing APIs.
+about: Requires OpenGL 3.2 or newer. BRL.Max2D and GLDraw helpers require legacy functionality and must not use this profile.
+End Rem
+Const GL_CONTEXT_CORE:Int=1
+
+Rem
+bbdoc: Requests a compatibility profile containing legacy and modern drawing APIs.
+about: Requires OpenGL 3.2 or newer; unavailable on macOS.
+End Rem
+Const GL_CONTEXT_COMPATIBILITY:Int=2
+
+Rem
+bbdoc: An explicit OpenGL context request for raw OpenGL applications.
+about: Pass to GLGraphics or GLGraphicsDriver. Settings are copied when the driver is created. Requests specify a minimum version; the driver may provide a newer compatible version. Unsupported requests return Null when graphics are created. Omitting this object retains legacy behaviour. Create, attach and select graphics on the main thread.
+End Rem
+Type TGLContextOptions
+
+	Rem
+	bbdoc: Minimum OpenGL major version, initially 3.
+	End Rem
+	Field major:Int=3
+
+	Rem
+	bbdoc: Minimum OpenGL minor version, initially 3.
+	End Rem
+	Field minor:Int=3
+
+	Rem
+	bbdoc: Requested profile: GL_CONTEXT_ANY, GL_CONTEXT_CORE or GL_CONTEXT_COMPATIBILITY.
+	End Rem
+	Field profile:Int=GL_CONTEXT_CORE
+
+	Rem
+	bbdoc: Optional live GLGraphics context with which to share textures, buffers and other shareable objects.
+	about: Explicit requests do not join the legacy GLShareContexts group automatically. The referenced context must remain open until creation completes and must be compatible with the new context. Vertex arrays and other non-shareable objects remain per-context.
+	End Rem
+	Field shareWith:TGLGraphics
+
+	Rem
+	bbdoc: Creates an explicit minimum-version and profile request.
+	param: Minimum major version.
+	param: Minimum minor version.
+	param: Profile to request; defaults to core. Use GL_CONTEXT_ANY for versions before 3.2.
+	End Rem
+	Function Create:TGLContextOptions(major:Int,minor:Int,profile:Int=GL_CONTEXT_CORE)
+		Local options:TGLContextOptions=New TGLContextOptions
+		options.major=major
+		options.minor=minor
+		options.profile=profile
+		Return options
+	End Function
+End Type
+
 Type TGLGraphics Extends TGraphics
 
 	Method Driver:TGLGraphicsDriver() Override
 		Assert _context
+		If _driver Then Return _driver
 		Return GLGraphicsDriver()
 	End Method
 	
@@ -87,6 +151,16 @@ Type TGLGraphics Extends TGraphics
 	Method ClientSize(width:Int Var,height:Int Var)
 		bbGLGraphicsClientSize(_context,width,height)
 	End Method
+	Rem
+	bbdoc: Gets the OpenGL drawable size in pixels for viewport and framebuffer operations.
+	param: Receives the drawable width in pixels, or zero for closed graphics.
+	param: Receives the drawable height in pixels, or zero for closed graphics.
+	about: May differ from logical window dimensions on high-DPI displays. Query again after resizing or moving between displays.
+	End Rem
+	Method DrawableSize(width:Int Var,height:Int Var)
+		bbGLGraphicsDrawableSize(_context,width,height)
+	End Method
+
 	Method SetFullscreen(enabled:Int,width:Int=0,height:Int=0,hertz:Int=0)
 		If Not bbGLGraphicsSetFullscreen(_context,enabled,width,height,hertz) Then Throw "GLGraphics: exclusive transition failed (unsupported window, unavailable exact mode, display busy or native display operation failed)"
 	End Method
@@ -102,11 +176,46 @@ Type TGLGraphics Extends TGraphics
 		If Not bbGLGraphicsSetBorderless(_context,enabled) Then Throw "GLGraphics: borderless fullscreen is unsupported or the window-system request failed"
 	End Method
 
+	Rem
+	bbdoc: Driver that created this graphics object; maintained internally.
+	End Rem
+	Field _driver:TGLGraphicsDriver
 	Field _context:Byte Ptr
 	
 End Type
 
 Type TGLGraphicsDriver Extends TGraphicsDriver
+
+	Private
+	Field _major:Int
+	Field _minor:Int
+	Field _profile:Int
+	Field _shareWith:TGLGraphics
+
+	Method ShareContext:Byte Ptr()
+		If Not _shareWith Then Return Null
+		If Not _shareWith._context Then Throw "GLGraphics: sharing context is closed"
+		Return _shareWith._context
+	End Method
+
+	Public
+	Rem
+	bbdoc: Creates a driver with a snapshot of an explicit OpenGL context request.
+	param: Version, profile and optional sharing context; must not be Null.
+	End Rem
+	Function WithContext:TGLGraphicsDriver(options:TGLContextOptions)
+		If Not options Then Throw "GLGraphics: context options are required"
+		If options.major<1 Or options.minor<0 Then Throw "GLGraphics: invalid context version"
+		If (options.major=1 And options.minor>5) Or (options.major=2 And options.minor>1) Or (options.major=3 And options.minor>3) Or (options.major=4 And options.minor>6) Then Throw "GLGraphics: undefined context version"
+		If options.profile<GL_CONTEXT_ANY Or options.profile>GL_CONTEXT_COMPATIBILITY Then Throw "GLGraphics: invalid context profile"
+		If options.profile<>GL_CONTEXT_ANY And (options.major<3 Or (options.major=3 And options.minor<2)) Then Throw "GLGraphics: profiles require OpenGL 3.2 or newer"
+		Local driver:TGLGraphicsDriver=New TGLGraphicsDriver
+		driver._major=options.major
+		driver._minor=options.minor
+		driver._profile=options.profile
+		driver._shareWith=options.shareWith
+		Return driver
+	End Function
 
 	Method GraphicsModes:TGraphicsMode[]() Override
 		Local buf:Int[1024*4]
@@ -126,13 +235,25 @@ Type TGLGraphicsDriver Extends TGraphicsDriver
 	
 	Method AttachGraphics:TGLGraphics( widget:Byte Ptr,flags:Long ) Override
 		Local t:TGLGraphics=New TGLGraphics
-		t._context=bbGLGraphicsAttachGraphics( widget,flags )
+		If _major
+			t._context=bbGLGraphicsAttachGraphicsEx(widget,flags,_major,_minor,_profile,ShareContext())
+		Else
+			t._context=bbGLGraphicsAttachGraphics(widget,flags)
+		End If
+		If Not t._context Then Return Null
+		t._driver=Self
 		Return t
 	End Method
 	
 	Method CreateGraphics:TGLGraphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Long,x:Int,y:Int ) Override
 		Local t:TGLGraphics=New TGLGraphics
-		t._context=bbGLGraphicsCreateGraphics( width,height,depth,hertz,flags,x,y )
+		If _major
+			t._context=bbGLGraphicsCreateGraphicsEx(width,height,depth,hertz,flags,x,y,_major,_minor,_profile,ShareContext())
+		Else
+			t._context=bbGLGraphicsCreateGraphics(width,height,depth,hertz,flags,x,y)
+		End If
+		If Not t._context Then Return Null
+		t._driver=Self
 		Return t
 	End Method
 	
@@ -157,24 +278,32 @@ Type TGLGraphicsDriver Extends TGraphicsDriver
 End Type
 
 Rem
-bbdoc: Get OpenGL graphics driver
+bbdoc: Get an OpenGL graphics driver with optional context settings.
+param: Explicit context request, or Null for the existing shared legacy driver.
 returns: An OpenGL graphics driver
 about:
 The returned driver can be used with #SetGraphicsDriver
 End Rem
-Function GLGraphicsDriver:TGLGraphicsDriver()
+Function GLGraphicsDriver:TGLGraphicsDriver(options:TGLContextOptions=Null)
+	If options Then Return TGLGraphicsDriver.WithContext(options)
 	Global _driver:TGLGraphicsDriver=New TGLGraphicsDriver
 	Return _driver
 End Function
 
 Rem
-bbdoc: Create OpenGL graphics
-returns: An OpenGL graphics object
+bbdoc: Create OpenGL graphics with optional version and profile selection.
+param: Window width in logical units.
+param: Window height in logical units.
+param: Fullscreen colour depth, or zero for a window.
+param: Requested refresh/synchronisation rate.
+param: Graphics buffer and window flags.
+param: Explicit context request, or Null to preserve legacy context creation.
+returns: An OpenGL graphics object, or Null if creation or the context request fails.
 about:
 This is a convenience function that allows you to easily create an OpenGL graphics context.
 End Rem
-Function GLGraphics:TGraphics( width:Int,height:Int,depth:Int=0,hertz:Int=60,flags:Long=GRAPHICS_BACKBUFFER|GRAPHICS_DEPTHBUFFER )
-	SetGraphicsDriver GLGraphicsDriver()
+Function GLGraphics:TGraphics( width:Int,height:Int,depth:Int=0,hertz:Int=60,flags:Long=GRAPHICS_BACKBUFFER|GRAPHICS_DEPTHBUFFER,options:TGLContextOptions=Null )
+	SetGraphicsDriver GLGraphicsDriver(options)
 	Return Graphics( width,height,depth,hertz,flags )
 End Function
 	
