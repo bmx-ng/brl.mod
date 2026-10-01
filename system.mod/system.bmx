@@ -6,12 +6,14 @@ bbdoc: System/System
 End Rem
 Module BRL.System
 
-ModuleInfo "Version: 1.30"
+ModuleInfo "Version: 1.31"
 ModuleInfo "Author: Mark Sibly, Simon Armstrong"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.31"
+ModuleInfo "History: Added lazy fallback system-driver registration for optional native GUI integration."
 ModuleInfo "History: 1.30"
 ModuleInfo "History: Added PollSystemHook and Pico-compatible platform handling."
 ModuleInfo "History: 1.29"
