@@ -58,7 +58,7 @@ typedef Semaphore bb_sem_t;
 typedef pthread_t bb_thread_t;
 typedef pthread_mutex_t bb_mutex_t;
 extern pthread_mutexattr_t _bb_mutexattr;
-#define bb_mutex_init(MUTPTR) (pthread_mutex_init((MUTPTR),&_bb_mutexattr)>=0)
+#define bb_mutex_init(MUTPTR) (pthread_mutex_init((MUTPTR),&_bb_mutexattr)==0)
 #define bb_mutex_destroy(MUTPTR) pthread_mutex_destroy(MUTPTR)
 #define bb_mutex_lock(MUTPTR) pthread_mutex_lock(MUTPTR)
 #define bb_mutex_unlock(MUTPTR) pthread_mutex_unlock(MUTPTR)
