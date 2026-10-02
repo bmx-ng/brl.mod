@@ -37,6 +37,8 @@ End Interface
 
 Private
 Global _Driver:TSystemDriver
+Global _FallbackFactory:TSystemDriver()
+Global _FallbackDriver:TSystemDriver
 Public
 
 Rem
@@ -54,14 +56,22 @@ Function InitSystemDriver(driver:TSystemDriver)
 				Throw "Cannot initialise " + driver.Name() + ". System driver already configured as " + _Driver.Name()
 				?
 			End If
+	Else If IWrappedSystemDriver(driver) And _FallbackFactory Then
+		IWrappedSystemDriver(driver).SetDriver(SystemDriver())
 	End If
 	_Driver = driver
 End Function
 
 Rem
-bbdoc: Returns the BlitzMax system driver, or throws an exception if #InitSystemDriver() hasn't been called with one.
+bbdoc: Returns the explicit system driver, or the registered fallback when no explicit driver exists.
+about: Throws an exception when neither is available.
 End Rem
 Function SystemDriver:TSystemDriver()
+	If Not _Driver And _FallbackFactory Then
+		If Not _FallbackDriver Then _FallbackDriver = _FallbackFactory()
+		If Not _FallbackDriver Then Throw "The fallback system driver factory returned Null"
+		Return _FallbackDriver
+	End If
 	If Not _Driver Then
 		Throw "No System Driver installed. Maybe Import BRL.SystemDefault ?"
 	End If
@@ -69,3 +79,15 @@ Function SystemDriver:TSystemDriver()
 End Function
 
 
+
+Rem
+bbdoc: Registers a lazily created system driver used when no explicit driver is installed.
+param: Factory returning the fallback driver.
+about: Explicit drivers installed with InitSystemDriver take precedence, regardless of import order.
+Only one fallback factory may be registered. Existing explicit-driver conflict checks are unchanged.
+End Rem
+Function RegisterFallbackSystemDriver(factory:TSystemDriver())
+	If Not factory Then Throw "A fallback system driver requires a factory"
+	If _FallbackFactory Then Throw "A fallback system driver is already registered"
+	_FallbackFactory = factory
+End Function
