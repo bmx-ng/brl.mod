@@ -693,15 +693,28 @@ Function OnDebugPopExState()
 
 	exStateStackTop:-1
 
-	scopeStackTop=exStateStack[exStateStackTop].scopeStackTop
-	
+	' An exception can bypass the normal leave calls for local scopes. Preserve
+	' the most precise statement from those scopes on the function frame that
+	' survives the unwind. Stop at a called function so its source location is
+	' never attributed to its caller.
+	Local restoredScopeStackTop:Int = exStateStack[exStateStackTop].scopeStackTop
+	Local statement:Int Ptr
+	For Local i:Int = restoredScopeStackTop Until scopeStackTop
+		Local scope:TScope = scopeStack[i]
+		If scope.scope[DEBUGSCOPE_KIND] = DEBUGSCOPEKIND_FUNCTION Then Exit
+		If scope.stm Then statement = scope.stm
+	Next
+
+	scopeStackTop=restoredScopeStackTop
+
 	If scopeStackTop
 		currentScope=scopeStack[scopeStackTop-1]
 	Else
 		currentScope=New TScope
 	EndIf
+	If statement Then currentScope.stm = statement
 
-	GCResume	
+	GCResume
 End Function
 
 Function OnDebugUnhandledEx( ex:Object )

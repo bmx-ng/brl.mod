@@ -1040,16 +1040,31 @@ Function OnDebugPopExState()
 
 	dbgState.exStateStackTop:-1
 
-	dbgState.scopeStackTop=dbgState.exStateStack[dbgState.exStateStackTop].scopeStackTop
+	' An exception can bypass the normal leave calls for local scopes. Preserve
+	' the most precise statement from those scopes on the function frame that
+	' survives the unwind. Stop at a called function so its source location is
+	' never attributed to its caller.
+	Local restoredScopeStackTop:Int = dbgState.exStateStack[dbgState.exStateStackTop].scopeStackTop
+	Local statement:Int Ptr
+	For Local i:Int = restoredScopeStackTop Until dbgState.scopeStackTop
+		Local scope:TScope = dbgState.scopeStack[i]
+		If bmx_debugger_DebugScopeKind(scope.scope) = DEBUGSCOPEKIND_FUNCTION Then Exit
+		If scope.stm Then statement = scope.stm
+	Next
+
+	dbgState.scopeStackTop=restoredScopeStackTop
 	dbgState.funcLevel=dbgState.exStateStack[dbgState.exStateStackTop].funcLevel
-	
+
 	If dbgState.scopeStackTop
 		dbgState.currentScope=dbgState.scopeStack[dbgState.scopeStackTop-1]
 	Else
 		dbgState.currentScope=Null
 	EndIf
+	If statement
+		If dbgState.currentScope Then dbgState.currentScope.stm = statement
+	End If
 
-	GCResume	
+	GCResume
 End Function
 
 Function OnDebugUnhandledEx( ex:Object )
