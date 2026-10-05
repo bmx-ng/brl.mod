@@ -6,7 +6,7 @@ NoDebug
 
 ?win32
 Include "deref_win32.bmx"
-?linux
+?linux And Not android
 Include "deref_linux.bmx"
 ?macos
 Include "deref_macos.bmx"
@@ -548,7 +548,7 @@ Function DebugDerefPointer:String(decl:Int Ptr, pointer:Byte Ptr)
 	Local res:Int
 	?win32
 	result = DebugDerefPointerWin32(dataSize, ptrDepth, pointer, buffer, res)
-	?linux
+	?linux And Not android
 	result = DebugDerefPointerLinux(dataSize, ptrDepth, pointer, buffer, res)
 	?macos
 	result = DebugDerefPointerMacos(dataSize, ptrDepth, pointer, buffer, res)
