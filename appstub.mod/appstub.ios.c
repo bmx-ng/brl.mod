@@ -1,6 +1,4 @@
 
-#include "SDL.h"
-
 #include <brl.mod/blitz.mod/blitz.h>
 
 #include <signal.h>
