@@ -32,7 +32,7 @@ Function GetCurrentThreadId:Int()="DWORD GetCurrentThreadId()!"
 End Extern
 ?
 
-?MacOS
+?MacOS And Not ios
 Extern
 Function CGDisplayIsCaptured:Int( displayId:Int )
 End Extern
@@ -822,7 +822,7 @@ Function UpdateDebug( msg:String )
 	_appHwnd=GetForegroundWindow();
 	'SetForegroundWindow( _ideHwnd );
 ?
-?MacOs
+?MacOs And Not ios
 	'fullscreen debug too hard in MacOS!
 	If CGDisplayIsCaptured( 0 )
 		WriteStdout msg
