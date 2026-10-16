@@ -382,10 +382,19 @@ Type TPixmap
 		Next
 	End Method
 	
+	Rem
+	bbdoc: Clear a pixmap
+	End Rem	
 	Method ClearPixels( color:SColor8 )
 		ClearPixels(color.ToARGB())
 	End Method
 
+	Rem
+	bbdoc: Clear a pixmap
+	End Rem	
+	Method ClearPixels( color:UInt )
+		ClearPixels(Int(color))
+	End Method
 	
 End Type
 
