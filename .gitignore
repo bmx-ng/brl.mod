@@ -32,6 +32,7 @@ commands.html
 .generics/
 *.bmxbuild
 *.bmxbuild.stamp
+*.bmk-tmp*
 
 # Extensionless test executables
 **/tests/test
