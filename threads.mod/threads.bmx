@@ -429,7 +429,7 @@ Type TThreadEvent
     End Method
 
     Rem
-	bboc: Sets the internal flag to #True and signals any waiting threads.
+	bbdoc: Sets the internal flag to #True and signals any waiting threads.
 	about: All threads waiting for it to become #True are awakened. Threads that call #Wait once the flag is true will not block at all.
 	End Rem
     Method Set()
