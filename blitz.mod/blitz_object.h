@@ -120,6 +120,8 @@ BBDebugScope * bbObjectStructInfo( char * name );
 
 BBObject * bbNullObjectTest( BBObject *o );
 
+int bbIsNullObject( BBObject *o );
+
 struct enum_node {
 	struct avl_root link;
 	BBDebugScope * scope;

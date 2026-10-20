@@ -422,6 +422,10 @@ BBObject * bbNullObjectTest( BBObject *o ) {
 	return o;
 }
 
+int bbIsNullObject( BBObject *o ) {
+	return o == &bbNullObject || o == &bbEmptyArray || o == &bbEmptyString;
+}
+
 static struct avl_root *enum_root = 0;
 
 int enum_node_compare(const void *x, const void *y) {

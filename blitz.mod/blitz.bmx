@@ -892,6 +892,12 @@ bbdoc: Determines whether the #Object @obj is an empty #String.
 returns: #True if @obj is an empty #String, or #False otherwise.
 End Rem
 Function IsEmptyString:Int(obj:Object)="int bbObjectIsEmptyString(BBOBJECT)!"
+Rem
+bbdoc: Determines whether the #Object @obj is null.
+returns: #True if @obj is null, or #False otherwise.
+about: Will also return #True if the object is an empty array or an empty string.
+End Rem
+Function IsNullObject:Int(obj:Object)="int bbIsNullObject(BBOBJECT)!"
 
 Rem
 bbdoc: Determines whether the #Object @obj is a #String.
