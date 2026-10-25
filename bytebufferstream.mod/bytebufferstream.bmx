@@ -46,16 +46,16 @@ Type TByteBufferStream Extends TStream
 
 	Rem
 	bbdoc: Creates a stream over the remaining bytes in @buffer.
-	about: The optional @readOnly parameter controls whether writes are allowed and defaults
+	about: The optional @isReadOnly parameter controls whether writes are allowed and defaults
 	to #True. A writable stream cannot grow beyond the captured byte-buffer window.
 	End Rem
-	Method New(buffer:TByteBuffer, readOnly:Int = True)
+	Method New(buffer:TByteBuffer, isReadOnly:Int = True)
 		Assert buffer Else "Byte buffer cannot be Null"
 		_buffer = buffer.Slice()
-		If readOnly Then
+		If isReadOnly Then
 			_buffer = _buffer.AsReadOnly()
 		End If
-		_readOnly = readOnly
+		_readOnly = isReadOnly
 	End Method
 
 	Method Pos:Long() Override
@@ -132,11 +132,11 @@ End Type
 
 Rem
 bbdoc: Creates a seekable stream over the remaining bytes in @buffer.
-about: The optional @readOnly parameter controls whether writes are allowed and defaults
+about: The optional @isReadOnly parameter controls whether writes are allowed and defaults
 to #True. The stream shares storage with @buffer but has an independent position.
 End Rem
-Function CreateByteBufferStream:TByteBufferStream(buffer:TByteBuffer, readOnly:Int = True)
-	Return New TByteBufferStream(buffer, readOnly)
+Function CreateByteBufferStream:TByteBufferStream(buffer:TByteBuffer, isReadOnly:Int = True)
+	Return New TByteBufferStream(buffer, isReadOnly)
 End Function
 
 Type TByteBufferStreamFactory Extends TStreamFactory
