@@ -397,7 +397,8 @@ Type MaxIO
 	you've called #Init(), and is disabled by default.
 	End Rem
 	Function PermitSymbolicLinks:Int(allow:Int)
-		Return PHYSFS_permitSymbolicLinks(allow)
+		PHYSFS_permitSymbolicLinks(allow)
+		Return PHYSFS_symbolicLinksPermitted()
 	End Function
 
 	Rem

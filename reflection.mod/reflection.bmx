@@ -222,7 +222,18 @@ Type TBoxedValue Final
 	End Method
 End Type
 
+?Threaded
 Global ReflectionMutex:TMutex = TMutex.Create()
+?Not Threaded
+' Reflection caches are only accessed by the main thread in this build.
+Type TReflectionMutex
+	Method Lock()
+	End Method
+	Method Unlock()
+	End Method
+End Type
+Global ReflectionMutex:TReflectionMutex = New TReflectionMutex
+?
 
 
 

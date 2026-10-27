@@ -45,7 +45,7 @@ Extern
 	Function bmx_PHYSFS_setRoot:Int(archive:String, subdir:String)
 	Function bmx_PHYSFS_unmount:Int(oldDir:String)
 	Function bmx_PHYSFS_getSearchPath:String[]()
-	Function PHYSFS_permitSymbolicLinks:Int(allow:Int)
+	Function PHYSFS_permitSymbolicLinks(allow:Int)
 	Function PHYSFS_symbolicLinksPermitted:Int()
 	
 	Function PHYSFS_tell:Long(filePtr:Byte Ptr)

@@ -504,6 +504,11 @@ Function Graphics:TGraphics( width:Int,height:Int,depth:Int=0,hertz:Int=60,flags
 		_hardSync=False
 		_softSync=(hertz<>0)
 	EndIf
+	?emscripten
+	' The browser schedules frames; waiting here would block its event loop.
+	_softSync=False
+	_hardSync=(hertz<>0)
+	?
 	
 	If _softSync
 		_syncRate=hertz

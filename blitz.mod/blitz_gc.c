@@ -74,6 +74,12 @@ void bbGCStartup(){
 #endif
 */
 	GC_INIT();
+#ifdef __EMSCRIPTEN__
+	/* Include both initialized data and BSS: module globals in BSS may hold
+	   managed objects after startup. These symbols are provided by wasm-ld. */
+	extern char __global_base, __heap_base;
+	GC_add_roots(&__global_base, &__heap_base);
+#endif
 #if !defined(__EMSCRIPTEN__) && !defined(__SWITCH__)
 #ifdef GC_THREADS
 	GC_allow_register_threads();

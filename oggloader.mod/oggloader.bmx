@@ -39,7 +39,11 @@ End Function
 Function closefunc( src:Object )
 End Function
 
+?emscripten
+Function tellfunc:Int( src:Object )
+?Not emscripten
 Function tellfunc:Long( src:Object )
+?
 	Return TStream(src).Pos()
 End Function
 
