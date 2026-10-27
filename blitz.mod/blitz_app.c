@@ -241,19 +241,13 @@ int bbIsMainThread(){
 #include <limits.h>
 #include <signal.h>
 #include <sys/time.h>
-#include <sys/sysinfo.h>
+#include <emscripten/emscripten.h>
 
-static int base_time;
+static double base_time;
 //static pthread_t _mainThread;
 
 static void startup(){
-	struct sysinfo info;
-	
-	//_mainThread=pthread_self();
-
-	// TODO : appears as "undefined" when linking... need this for millisecs support.
-	//sysinfo( &info );
-	base_time=bbMilliSecs()-info.uptime*1000;
+	base_time=emscripten_get_now();
 }
 
 //***** ThreadSafe! *****
@@ -276,12 +270,7 @@ void bbDelay( int millis ){
 
 //***** ThreadSafe! *****
 int bbMilliSecs(){
-	int t;
-	struct timeval tv;
-	gettimeofday(&tv,0);
-	t=tv.tv_sec*1000;
-	t+=tv.tv_usec/1000;
-	return t-base_time;
+	return (int)(emscripten_get_now()-base_time);
 }
 
 int bbIsMainThread(){
@@ -481,6 +470,21 @@ void bbStartup( int argc,char *argv[],void *dummy1,void *dummy2 ){
 		_chdir( p );
 		bbMemFree(p);
 	}
+
+#elif __EMSCRIPTEN__
+
+	/* The collector must know the main WebAssembly stack before any managed
+	   strings or arrays are allocated. */
+	bbGCStartup();
+
+	char buf[PATH_MAX];
+	if( getcwd( buf,sizeof(buf) ) ){
+		bbLaunchDir=bbStringFromUTF8String( (const unsigned char*)buf );
+	}else{
+		bbLaunchDir=&bbEmptyString;
+	}
+	bbAppFile=bbStringFromUTF8String( (const unsigned char*)(argc > 0 && argv && argv[0] ? argv[0] : "") );
+	bbAppDir=bbLaunchDir;
 
 #elif __linux__
 

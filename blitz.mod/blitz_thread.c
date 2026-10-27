@@ -486,4 +486,20 @@ int bbAtomicAdd( volatile int *p,int incr ){
 #endif
 }
 
+#else
+
+/* WebAssembly builds are single-threaded for now. These operations support
+   runtime bookkeeping without requiring shared-memory atomics. */
+int bbAtomicCAS( volatile int *addr,int old,int new_val ){
+	if( *addr!=old ) return 0;
+	*addr=new_val;
+	return 1;
+}
+
+int bbAtomicAdd( volatile int *addr,int incr ){
+	int old=*addr;
+	*addr=old+incr;
+	return old;
+}
+
 #endif // __EMSCRIPTEN__

@@ -8,12 +8,14 @@ bbdoc: BASIC/BlitzMax runtime
 End Rem
 Module BRL.Blitz
 
-ModuleInfo "Version: 1.32"
+ModuleInfo "Version: 1.33"
 ModuleInfo "Author: Mark Sibly"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: Blitz Research Ltd"
 ModuleInfo "Modserver: BRL"
 '
+ModuleInfo "History: 1.33"
+ModuleInfo "History: Added optional RunAppLoop frame and stop callbacks"
 ModuleInfo "History: 1.32"
 ModuleInfo "History: Added Pico ObjectIsString support"
 ModuleInfo "History: 1.31"
@@ -96,7 +98,7 @@ ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DPARALLEL_MARK -DATOMIC_UNCOLLEC
 ?android
 ModuleInfo "CC_OPTS: -DGC_THREADS -D_REENTRANT -DATOMIC_UNCOLLECTABLE"
 ?emscripten
-ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE"
+ModuleInfo "CC_OPTS: -DATOMIC_UNCOLLECTABLE -DEMSCRIPTEN_ASYNCIFY -DUSE_EMSCRIPTEN_SCAN_STACK"
 ?ios
 ModuleInfo "CC_OPTS: -DGC_THREADS -DATOMIC_UNCOLLECTABLE -DNO_DYLD_BIND_FULLY_IMAGE -DMAX_ROOT_SETS=8192"
 ?musl
@@ -220,6 +222,7 @@ Include "iterator.bmx"
 Include "comparator.bmx"
 Include "hash.bmx"
 Include "equal.bmx"
+Include "app_loop.bmx"
 
 Extern
 ?Not embedded
@@ -922,6 +925,45 @@ End Rem
 Function AtStart:Int(func(), priority:Int = 0)="bbAtstart"
 
 End Extern
+
+Rem
+bbdoc: Run an application one frame at a time.
+about:
+Calls @frame repeatedly while it returns #True. Returning #False ends the loop and
+calls @onStop once, if supplied. An @onStop callback may start another loop by
+calling #RunAppLoop.
+
+On Emscripten, frames run on the browser's animation schedule and this function
+returns immediately after registering the loop. Code after #RunAppLoop does not
+wait for the loop to end; put cleanup in @onStop. On other platforms, this
+function runs the loop synchronously. Existing application loops do not need
+to use #RunAppLoop.
+
+Only one #RunAppLoop may be active at a time, on the application's main thread.
+Callbacks must return promptly so the browser can process events and present frames.
+End Rem
+Function RunAppLoop(frame:Int(), onStop() = Null)
+	If Not frame Then Throw "RunAppLoop requires a frame callback"
+	If _appLoopActive Then Throw "RunAppLoop already has an active loop"
+	_appLoopFrame = frame
+	_appLoopOnStop = onStop
+	_appLoopActive = True
+	?emscripten
+	emscripten_set_main_loop(_AppLoopTick, 0, False)
+	?Not emscripten
+	If _appLoopDispatching Then Return
+	_appLoopDispatching = True
+	Try
+		While _appLoopActive
+			_AppLoopTick()
+		Wend
+	Catch error:Object
+		_appLoopDispatching = False
+		Throw error
+	End Try
+	_appLoopDispatching = False
+	?
+End Function
 
 Rem
 bbdoc: An object that can be closed to release resources.

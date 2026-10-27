@@ -147,7 +147,11 @@ int bmx_filesystem_walkfiletree(BBString * path, WalkFile walkFile, BBObject * w
 
 #include<sys/types.h>
 #include<sys/stat.h>
+#ifdef __EMSCRIPTEN__
+#include<dirent.h>
+#else
 #include<fts.h>
+#endif
 
 struct SFileAttributes {
 	char name[8192];
@@ -163,6 +167,66 @@ static const struct SFileAttributes emptyAttributes;
 extern int brl_filesystem__walkFile(BBObject * fileWalker, struct SFileAttributes * attributes);
 
 typedef int (*WalkFile)(BBObject * walker, struct SFileAttributes * attributes);
+
+#ifdef __EMSCRIPTEN__
+
+struct WalkAncestor {
+    dev_t device;
+    ino_t inode;
+    const struct WalkAncestor *parent;
+};
+
+static int walk_browser_path(BBObject *walker, const char *path, int depth,
+        int options, int maxDepth, const struct WalkAncestor *parent) {
+    struct stat info;
+    if ((options == FOLLOW_LINKS ? stat(path, &info) : lstat(path, &info)) != 0) return WALKRESULT_OK;
+
+    struct SFileAttributes attributes = emptyAttributes;
+    if (snprintf(attributes.name, sizeof(attributes.name), "%s", path) >= sizeof(attributes.name)) return WALKRESULT_OK;
+    attributes.depth = (short)depth;
+    attributes.creationTime = (int)info.st_ctime;
+    attributes.modifiedTime = (int)info.st_mtime;
+    if (S_ISDIR(info.st_mode)) attributes.fileType = FILETYPE_DIR;
+    else if (S_ISLNK(info.st_mode)) attributes.fileType = FILETYPE_SYM;
+    else if (S_ISREG(info.st_mode)) {
+        attributes.fileType = FILETYPE_FILE;
+        attributes.size = (BBUInt64)info.st_size;
+    }
+
+    int result = brl_filesystem__walkFile(walker, &attributes);
+    if (result == WALKRESULT_SKIP_SUBTREE) return WALKRESULT_OK;
+    if (result != WALKRESULT_OK || !S_ISDIR(info.st_mode) || (maxDepth && depth >= maxDepth)) return result;
+
+    for (const struct WalkAncestor *p = parent; p; p = p->parent) {
+        if (p->device == info.st_dev && p->inode == info.st_ino) return WALKRESULT_OK;
+    }
+    const struct WalkAncestor current = { info.st_dev, info.st_ino, parent };
+    DIR *dir = opendir(path);
+    if (!dir) return WALKRESULT_OK;
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) continue;
+        char child[8192];
+        if (snprintf(child, sizeof(child), "%s/%s", path, entry->d_name) >= sizeof(child)) continue;
+        result = walk_browser_path(walker, child, depth + 1, options, maxDepth, &current);
+        if (result == WALKRESULT_TERMINATE) break;
+        if (result == WALKRESULT_SKIP_SIBLINGS) {
+            result = WALKRESULT_OK;
+            break;
+        }
+    }
+    closedir(dir);
+    return result;
+}
+
+int bmx_filesystem_walkfiletree(BBString *path, WalkFile walkFile, BBObject *walker, int options, int maxDepth) {
+    char *name = (char*)bbStringToUTF8String(path);
+    int result = walk_browser_path(walker, name, 0, options, maxDepth, NULL);
+    bbMemFree(name);
+    return result;
+}
+
+#else
 
 static int get_parent_dir_from_ent(const FTSENT *e, char *out, size_t outsz) {
     if (!e || !e->fts_path || outsz == 0) return 0;
@@ -324,5 +388,6 @@ int bmx_filesystem_walkfiletree(BBString * path, WalkFile walkFile, BBObject * w
     return 0;
 }
 
+#endif /* __EMSCRIPTEN__ */
 
 #endif

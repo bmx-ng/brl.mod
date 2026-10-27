@@ -6,7 +6,19 @@
 extern "C"{
 #endif
 
-#ifdef _WIN32
+#ifdef __EMSCRIPTEN__
+
+/* The initial WebAssembly target has one thread. GC bookkeeping still uses
+   mutex operations, so provide the single-threaded definitions explicitly. */
+typedef int bb_thread_t;
+typedef int bb_mutex_t;
+#define bb_mutex_init(MUTPTR) ((void)(MUTPTR), 1)
+#define bb_mutex_destroy(MUTPTR) ((void)(MUTPTR))
+#define bb_mutex_lock(MUTPTR) ((void)(MUTPTR))
+#define bb_mutex_unlock(MUTPTR) ((void)(MUTPTR))
+#define bb_mutex_trylock(MUTPTR) ((void)(MUTPTR), 1)
+
+#elif defined(_WIN32)
 
 #include <windows.h>
 typedef DWORD bb_thread_t;

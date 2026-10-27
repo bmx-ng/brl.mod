@@ -1,5 +1,6 @@
 
 #include "blitz.h"
+#include <stdio.h>
 
 void bbCAssertEx(){
 	bbExThrowCString( "C Assert failed" );
@@ -19,6 +20,10 @@ static void debugScpNop(BBDebugScope * o){
 
 static void debugUnhandledEx( BBObject *ex ){
 	bbWriteStderr( ex->clas->ToString( ex ) );
+#ifdef __EMSCRIPTEN__
+	fputc('\n', stderr);
+	fflush(stderr);
+#endif
 	exit(-1);
 }
 
