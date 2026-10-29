@@ -332,8 +332,8 @@ static BBThread *threads;
 static pthread_key_t curThreadTls;
 
 void bbThreadPreStartup(){
-	if( pthread_mutexattr_init( &_bb_mutexattr )<0 ) exit(-1);
-	if( pthread_mutexattr_settype( &_bb_mutexattr,MUTEX_RECURSIVE )<0 ) exit(-1);
+	if( pthread_mutexattr_init( &_bb_mutexattr )!=0 ) exit(-1);
+	if( pthread_mutexattr_settype( &_bb_mutexattr,MUTEX_RECURSIVE )!=0 ) exit(-1);
 #if __APPLE__
 	// can fail on 10.13 or lower, which we ignore
 	pthread_mutexattr_setpolicy_np(&_bb_mutexattr, MUTEX_POLICY_FIRSTFIT);
@@ -342,9 +342,9 @@ void bbThreadPreStartup(){
 
 void bbThreadStartup(){
 
-	if( pthread_key_create( &curThreadTls,0 )<0 ) exit(-1);
+	if( pthread_key_create( &curThreadTls,0 )!=0 ) exit(-1);
 
-	if( bb_mutex_init( &_bbLock )<0 ) exit(-1);
+	if( !bb_mutex_init( &_bbLock ) ) exit(-1);
 		
 	BBThread *thread=(BBThread *)GC_MALLOC_UNCOLLECTABLE( sizeof( BBThread ) );
 	memset( thread->data,0,sizeof(thread->data) );
