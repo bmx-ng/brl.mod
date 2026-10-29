@@ -26,8 +26,8 @@ Function bbOpenURL:Int( url:String )
 
 Function bbSystemEmitOSEvent( hwnd:Byte Ptr,msg:Int,WParam:WParam,LParam:LParam,source:Object )
 
-Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet:Int ),syncInfo:Object,asyncRet:Int )
-Function bbSystemStartAsyncOp( asyncOp( asyncInfo:Int ),asyncInfo:Int,syncOp( syncInfo:Object,asyncRet:Int ),syncInfo:Object )
+Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet:Size_T ),syncInfo:Object,asyncRet:Size_T )
+Function bbSystemStartAsyncOp( asyncOp( asyncInfo:Int ),asyncInfo:Int,syncOp( syncInfo:Object,asyncRet:Size_T ),syncInfo:Object )
 
 Function bbSystemDesktopWidth:Int()
 Function bbSystemDesktopHeight:Int()

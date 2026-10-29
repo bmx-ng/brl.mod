@@ -22,8 +22,8 @@ Function bbMoveMouse(x:Int,y:Int)
 Function bbSystemDisplay()
 Function bbSystemEventHandler( callback(xevent:Byte Ptr) )
 
-Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet:Int ),syncInfo:Object,asyncRet:Int )
-Function bbSystemStartAsyncOp( asyncOp( asyncInfo:Int ),asyncInfo:Int,syncOp( syncInfo:Object,asyncRet:Int ),syncInfo:Object )
+Function bbSystemPostSyncOp( syncOp( syncInfo:Object,asyncRet:Size_T ),syncInfo:Object,asyncRet:Size_T )
+Function bbSystemStartAsyncOp( asyncOp( asyncInfo:Int ),asyncInfo:Int,syncOp( syncInfo:Object,asyncRet:Size_T ),syncInfo:Object )
 
 Function bbSystemAsyncFD:Int()
 Function bbSystemFlushAsyncOps()

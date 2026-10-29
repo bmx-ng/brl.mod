@@ -11,14 +11,14 @@ void brl_timerdefault__TimerFired( BBObject *bbTimer );
 
 static uintptr_t timers[MAX_TIMERS],n_timers;
 
-static void timerSyncOp( BBObject *bbTimer,int timer ){
+static void timerSyncOp( BBObject *bbTimer,size_t timer ){
 	int i;
 	for( i=0;i<n_timers && timer!=timers[i];++i ) {}
 	if( i<n_timers ) brl_timerdefault__TimerFired( bbTimer );
 }
 
 static void __stdcall timerProc( UINT timer,UINT msg,DWORD_PTR user,DWORD_PTR u1,DWORD_PTR u2 ){
-	bbSystemPostSyncOp( timerSyncOp,(BBObject*)user,timer );
+	bbSystemPostSyncOp( timerSyncOp,(BBObject*)user,(size_t)timer );
 }
 
 void * bbTimerStart( float hertz,BBObject *bbTimer ){
