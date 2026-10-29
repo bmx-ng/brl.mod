@@ -25,6 +25,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 # include <windows.h>
+#include <stdio.h>
 
 void uuid_generate(char * buf) {
     UUID uuid;
