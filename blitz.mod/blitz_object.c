@@ -423,7 +423,7 @@ BBObject * bbNullObjectTest( BBObject *o ) {
 }
 
 int bbIsNullObject( BBObject *o ) {
-	return o == &bbNullObject || o == &bbEmptyArray || o == &bbEmptyString;
+	return o == &bbNullObject || o == (BBObject*)&bbEmptyArray || o == (BBObject*)&bbEmptyString;
 }
 
 static struct avl_root *enum_root = 0;
