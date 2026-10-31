@@ -4,7 +4,9 @@
 #include <windows.h>
 
 //Enable exception debugging
-#define BB_DEBUG_EXCEPTIONS
+#ifndef NDEBUG
+ #define BB_DEBUG_EXCEPTIONS
+#endif
 
 #ifdef BB_DEBUG_EXCEPTIONS
 
