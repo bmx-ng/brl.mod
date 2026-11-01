@@ -95,6 +95,24 @@ End Type
 
 Type TSocket
 
+?not win32
+	Rem
+	bbdoc: Sends without waiting. Returns -2 when the socket is not ready, -1 on error, or a byte count.
+	End Rem
+	Method TrySend:Int(buf:Byte Ptr, count:Size_T)
+		If _socket = INVALID_SOCKET Then Return -1
+		Return bmx_net_try_send(_socket, buf, count)
+	End Method
+
+	Rem
+	bbdoc: Receives without waiting. Returns -2 when no data is ready, -1 on error, 0 on peer closure, or a byte count.
+	End Rem
+	Method TryRecv:Int(buf:Byte Ptr, count:Size_T)
+		If _socket = INVALID_SOCKET Then Return -1
+		Return bmx_net_try_recv(_socket, buf, count)
+	End Method
+?
+
 ?Ptr64
 	Method Send:Long( buf:Byte Ptr, count:Size_T, flags:Int = 0 )
 		Local n:Long=send_( _socket,buf,count,flags )
