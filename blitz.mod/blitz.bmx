@@ -1390,6 +1390,11 @@ keyword: "Protected"
 End Rem
 
 Rem
+bbdoc: Make declarations only accessible from within the same compilation unit (the source file and any included files).
+keyword: "Internal"
+End Rem
+
+Rem
 bbdoc: Composite type specifier for pointer types
 keyword: "Ptr"
 End Rem
