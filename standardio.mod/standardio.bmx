@@ -34,6 +34,11 @@ Extern "C"
 	Function EmbeddedStandardIORead:Long(buffer:Byte Ptr, count:Long) = "bmx_esp32_stdio_read"
 	Function EmbeddedStandardIOWrite:Long(buffer:Byte Ptr, count:Long) = "bmx_esp32_stdio_write"
 	Function EmbeddedStandardIOFlush() = "bmx_esp32_stdio_flush"
+?nrf52
+	Function EmbeddedStandardIOInit:Int() = "bmx_nrf52_stdio_init_all"
+	Function EmbeddedStandardIORead:Long(buffer:Byte Ptr, count:Long) = "bmx_nrf52_stdio_read"
+	Function EmbeddedStandardIOWrite:Long(buffer:Byte Ptr, count:Long) = "bmx_nrf52_stdio_write"
+	Function EmbeddedStandardIOFlush() = "bmx_nrf52_stdio_flush"
 ?embedded
 End Extern
 ?Not embedded
