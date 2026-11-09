@@ -147,23 +147,27 @@ static void updateMouseVisibility(){
 }
 
 static int mouseViewPos( NSView *view,int *x,int *y ){
-	NSRect rect;
-	NSPoint point;
-	NSWindow *window;
+	// if now view is defined and the complete display is captured
+	// then we need to invert y as in macOS the origin is "bottom, left"
+	// for displays, but "top, left" for NSView elements.
 	if( displayCaptured || !view ){
-		point = [NSEvent mouseLocation];
-		*x=point.x;
-		*y=point.y;
-		return 1;
+        NSPoint point = [NSEvent mouseLocation];
+        CGFloat screenHeight = [[NSScreen mainScreen] frame].size.height;
+        *x = point.x;
+        *y = screenHeight - point.y;
+        return 1;
+	} else {
+		NSWindow *window = [view window];
+        NSRect rect = [view bounds];
+        NSPoint point = [window mouseLocationOutsideOfEventStream];
+        point = [view convertPoint:point fromView:nil];
+        if (![view isFlipped]) {
+            point.y = rect.size.height - point.y;
+        }		
+		*x = point.x;
+		*y = point.y;
+        return point.x >= 0 && point.y >= 0 && point.x < rect.size.width && point.y < rect.size.height;
 	}
-	window=[view window];
-	point=[window mouseLocationOutsideOfEventStream];
-	rect=[view bounds];
-	point=[view convertPoint:point fromView:nil];
-	if( ![view isFlipped] ) point.y=rect.size.height-point.y;
-	*x=point.x;
-	*y=point.y;
-	return point.x>=0 && point.y>=0 && point.x<rect.size.width && point.y<rect.size.height;
 }
 
 static void setMouseView( NSView *view,int x,int y,BBObject *source ){
